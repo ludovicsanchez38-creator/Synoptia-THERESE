@@ -80,13 +80,13 @@ Prompt 6 : Stories (*sm) → docs/stories/*.md
 - [x] Placeholders docs/ créés
 - [x] Backend FastAPI minimal (health check)
 - [x] BMAD installé (BMB + BMM + CIS + TTS)
+- [x] Prompt 1 : Benchmark Cowork (docs/benchmark-cowork.md - 380 lignes)
+- [x] Prompt 2 : Benchmark Mémoire (docs/benchmark-memoire.md - 567 lignes)
 
 ### En cours
-- [ ] Prompt 1 : Benchmark Cowork
+- [ ] Prompt 3 : Benchmark UX
 
 ### À faire
-- [ ] Prompt 2 : Benchmark Mémoire
-- [ ] Prompt 3 : Benchmark UX
 - [ ] Prompt 4 : PRD
 - [ ] Prompt 5 : Architecture
 - [ ] Prompt 6 : Stories
