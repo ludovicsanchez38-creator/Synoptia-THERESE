@@ -1,0 +1,37 @@
+{
+  "name": "therese-v2",
+  "version": "0.1.0",
+  "description": "THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français",
+  "author": {
+    "name": "Ludo Sanchez",
+    "email": "ludo@synoptia.fr",
+    "url": "https://synoptia.fr"
+  },
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cd src/frontend && npm run dev",
+    "build": "cd src/frontend && npm run build",
+    "preview": "cd src/frontend && npm run preview",
+    "lint": "cd src/frontend && npm run lint",
+    "lint:fix": "cd src/frontend && npm run lint:fix",
+    "test": "cd src/frontend && npm test",
+    "tauri": "cd src/frontend && npm run tauri"
+  },
+  "keywords": [
+    "ai",
+    "assistant",
+    "memory",
+    "tauri",
+    "react",
+    "desktop"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ludovicsanchez38-creator/therese-v2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

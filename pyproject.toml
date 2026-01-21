@@ -1,0 +1,56 @@
+[project]
+name = "therese-backend"
+version = "0.1.0"
+description = "Backend THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Ludo Sanchez", email = "ludo@synoptia.fr" }
+]
+keywords = ["ai", "assistant", "memory", "rag", "llm"]
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "httpx>=0.26.0",
+    "anthropic>=0.18.0",
+    "qdrant-client>=1.7.0",
+    "sentence-transformers>=2.3.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.1",
+    "python-docx>=1.1.0",
+    "pypdf>=4.0.0",
+    "python-magic>=0.4.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
