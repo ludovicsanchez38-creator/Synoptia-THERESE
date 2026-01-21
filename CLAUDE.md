@@ -84,12 +84,12 @@ Prompt 6 : Stories (*sm) → docs/stories/*.md
 - [x] Prompt 2 : Benchmark Mémoire (docs/benchmark-memoire.md - 567 lignes)
 - [x] Prompt 3 : Benchmark UX (docs/benchmark-ux.md - 640 lignes)
 - [x] Prompt 4 : PRD (docs/prd-therese.md - 639 lignes)
+- [x] Prompt 5 : Architecture (docs/architecture.md - 1276 lignes)
 
 ### En cours
-- [ ] Prompt 5 : Architecture
+- [ ] Prompt 6 : Stories
 
 ### À faire
-- [ ] Prompt 6 : Stories
 - [ ] Développement MVP
 
 ---
