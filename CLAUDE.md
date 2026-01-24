@@ -14,12 +14,13 @@
 2. **UX/UI premium** dark mode
 3. **Souveraineté** des données (100% local)
 4. **Marché français**
+5. **Guided Prompts adaptés** solopreneurs/TPE (vs générique Cowork)
 
 ### Stack technique
-- Frontend : Tauri 2.0 + React + TailwindCSS
+- Frontend : Tauri 2.0 + React + TailwindCSS + Framer Motion
 - Backend : Python FastAPI + UV
 - Database : SQLite + Qdrant (embeddings)
-- LLM : Claude API → Mistral → local (évolution)
+- LLM : Multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, Ollama)
 
 ### Identité visuelle
 ```yaml
@@ -34,69 +35,448 @@ palette:
 
 ---
 
+## Avancement Développement
+
+### MVP Chat - FAIT (21 janvier 2026)
+
+**Frontend Tauri (src/frontend/)** :
+- [x] Structure Tauri 2.0 + React + TailwindCSS
+- [x] `ChatLayout.tsx` - Layout principal avec raccourcis clavier
+- [x] `ChatHeader.tsx` - Header avec branding, drag region macOS
+- [x] `MessageList.tsx` - Liste messages + état vide premium
+- [x] `MessageBubble.tsx` - Rendu Markdown + coloration syntaxique
+- [x] `ChatInput.tsx` - Saisie + commandes slash + streaming
+- [x] `CommandPalette.tsx` - Palette Cmd+K
+- [x] `ShortcutsModal.tsx` - Affichage raccourcis
+- [x] `TypingIndicator.tsx` - Animation "réflexion"
+- [x] `SlashCommandsMenu.tsx` - Menu commandes /
+- [x] `chatStore.ts` - Zustand store avec persistance
+- [x] `statusStore.ts` - État connexion
+- [x] `api.ts` - Service API avec streaming SSE
+- [x] `useHealthCheck.ts` - Health check backend
+- [x] `useKeyboardShortcuts.ts` - Raccourcis globaux
+- [x] `useConversationSync.ts` - Sync conversations
+
+**Backend FastAPI (src/backend/)** :
+- [x] `app/main.py` - App FastAPI avec lifespan
+- [x] `app/routers/chat.py` - Endpoints chat + streaming SSE
+- [x] `app/routers/memory.py` - Contacts/Projets CRUD
+- [x] `app/routers/files.py` - Upload fichiers
+- [x] `app/routers/config.py` - Préférences/API keys
+- [x] `app/services/llm.py` - Service LLM (Claude API)
+- [x] `app/services/qdrant.py` - Vector store
+- [x] `app/services/embeddings.py` - Embeddings
+- [x] `app/models/entities.py` - SQLModel entities
+- [x] `app/models/schemas.py` - Pydantic schemas
+- [x] Alembic migrations configurées
+
+### Derniers fixes (session actuelle)
+- [x] Fix erreur 404 "Conversation not found" (sync conversation_id)
+- [x] Fix drag fenêtre Tauri (data-tauri-drag-region + z-index)
+- [x] Padding pour boutons macOS (pl-20)
+
+### Session 21 janvier - après-midi
+- [x] Streaming API testé et fonctionnel
+- [x] Panel Mémoire (`src/frontend/src/components/memory/MemoryPanel.tsx`)
+  - Sidebar slide-in avec tabs Contacts/Projets
+  - Recherche intégrée, liste avec avatars/badges
+  - Toggle via Cmd+M ou bouton header
+- [x] Page Paramètres (`src/frontend/src/components/settings/SettingsModal.tsx`)
+  - Modal config clé API Anthropic
+  - Validation format sk-ant-*, show/hide password
+  - Status visuel (configuré/non configuré)
+
+### Session 21 janvier - soirée (BMAD P0 complété)
+- [x] `ContactModal.tsx` - CRUD contacts (nom, email, entreprise, téléphone, notes, tags)
+- [x] `ProjectModal.tsx` - CRUD projets (nom, description, statut, budget, contact lié, tags)
+- [x] `ConversationSidebar.tsx` - Sidebar gauche avec liste groupée par date, recherche, Cmd+B
+- [x] `SettingsModal.tsx` refondu - 3 onglets (API, Modèle, Données), sélection LLM Claude
+- [x] `ChatLayout.tsx` - Intégration de tous les nouveaux composants
+- [x] `useKeyboardShortcuts.ts` - Ajout Cmd+B, Cmd+Shift+C, Cmd+Shift+P
+
+### Session 21 janvier - nuit (BMAD P1 Mémoire complété)
+- [x] **E3-02: Embeddings nomic-embed-text**
+  - Modèle: `nomic-ai/nomic-embed-text-v1.5` (768 dims)
+  - Auto-embedding contacts/projets à la création/màj/suppression
+  - Dépendance `einops` ajoutée, `trust_remote_code=True`
+- [x] **E3-03: Recherche hybride BM25 + semantic**
+  - Semantic search via Qdrant `query_points()`
+  - Fallback keyword search pour compléter
+  - Score sémantique prioritaire sur keyword
+- [x] **E3-04: Injection contexte auto dans LLM**
+  - `_get_memory_context()` dans chat.py
+  - Recherche mémoire sur chaque message user
+  - Injection dans system prompt via `memory_context`
+  - Testé avec succès: "Qui est Pierre?" → répond avec infos contact
+
+### Session 21 janvier - suite (BMAD P2 File Management + Polish)
+- [x] **E4-05: Drag & Drop Fichiers**
+  - `useFileDrop.ts` - Hook Tauri pour événements drag/drop
+  - `DropZone.tsx` - Composant overlay full-screen + inline variant
+  - `FileChip.tsx` - Badge fichier avec taille/type/suppression
+  - Intégré dans `ChatInput.tsx` avec bouton pièce jointe + picker
+  - Support Tauri dialog plugin pour sélection fichiers
+- [x] **E4-06: Indexation fichiers en mémoire**
+  - `file_parser.py` - Service extraction texte + chunking (1000 chars, 200 overlap)
+  - Support: .txt, .md, .json, .py, .js, .ts, .html, .css
+  - Chunks indexés dans Qdrant avec `entity_id` référence
+  - `chat.py` mis à jour pour inclure fichiers dans contexte mémoire
+- [x] **E5-04: Animations Framer Motion**
+  - `animations.ts` - Bibliothèque variants (fade, scale, slide, modal, message)
+  - `useReducedMotion.ts` - Hook accessibilité (prefers-reduced-motion)
+  - `MessageBubble.tsx` - Animation spring sur messages
+  - Transitions: spring 500/30, ease [0.4,0,0.2,1]
+
+### Session 21 janvier - fin (BMAD E5 Polish complété)
+- [x] **E5-05: Animation stagger liste conversations**
+  - `ConversationSidebar.tsx` - staggerContainer + staggerItem sur liste
+  - Groupement par date avec animations entrée décalées
+- [x] **E5-06: Animation ouverture/fermeture modals**
+  - `ContactModal.tsx`, `ProjectModal.tsx`, `SettingsModal.tsx`
+  - modalVariants + overlayVariants (scale + fade)
+- [x] **E5-07: Animation sidebar et panels**
+  - `MemoryPanel.tsx` - sidebarVariants (slide-in droite)
+  - `ConversationSidebar.tsx` - sidebarLeftVariants (slide-in gauche)
+- [x] **Fix bug double drop fichiers**
+  - Pattern refs pour éviter recréation listeners
+  - `isSetupRef` pour React StrictMode
+  - Déduplication par path dans ChatInput
+
+### Session 21 janvier - finale (Tests + Optimisation)
+- [x] **Tests Vitest**
+  - Config `vitest.config.ts` + setup mocks Tauri
+  - 32 tests : chatStore (15) + utils (17)
+  - Scripts: `npm test`, `npm run test:watch`
+- [x] **Code splitting bundle**
+  - Chunks séparés: react, ui, markdown, state, tauri
+  - Bundle principal: 1.2 MB → 303 KB (-75%)
+
+### MVP v1.0 - COMPLET
+
+### Session 21 janvier - UI Guided Prompts (style Cowork)
+- [x] **Guided Prompts UI** - Interface guidée pour l'écran vide
+  - `src/frontend/src/components/guided/` - Nouveau module complet
+  - `actionData.ts` - Configuration 6 actions + 24 sous-options avec prompts
+  - `ActionCard.tsx` - Cartes actions avec animations hover/tap Framer Motion
+  - `SubOptionsPanel.tsx` - Panel sous-options en pills avec navigation retour
+  - `GuidedPrompts.tsx` - Composant orchestrateur avec transitions AnimatePresence
+  - `index.ts` - Exports module
+- [x] **Intégration MessageList.tsx**
+  - Remplacement état vide par `<GuidedPrompts />`
+  - Prop `onPromptSelect` pour remonter le prompt sélectionné
+- [x] **Intégration ChatInput.tsx**
+  - Props `initialPrompt` + `onInitialPromptConsumed`
+  - Auto-fill textarea avec resize et focus cursor fin
+- [x] **Intégration ChatLayout.tsx**
+  - État `guidedPrompt` pour câblage MessageList → ChatInput
+  - Handlers `handleGuidedPromptSelect` et `handleGuidedPromptConsumed`
+
+**Les 6 actions Synoptïa** :
+| Action | Icône | Sous-options |
+|--------|-------|--------------|
+| Rédiger | PenLine | Email pro, Post LinkedIn, Proposition commerciale, Document |
+| Analyser | BarChart3 | Fichier Excel, Document PDF, Site web, Marché |
+| Planifier | Calendar | Réunion, Projet, Semaine, Objectifs |
+| Automatiser | Workflow | n8n, Apps Script, Make, Zapier |
+| Créer | Sparkles | Présentation, Tableau de bord, Formulaire, Landing page |
+| Apprendre | GraduationCap | Outil IA, Concept, Processus, Best practices |
+
+### MVP v1.1 - COMPLET
+
+### Session 21-22 janvier - Identité & Multi-Provider LLM (Phases 1-5)
+- [x] **Phase 1 : Identité utilisateur** (fix bug "Pierre" au lieu de "Ludo")
+  - `app/services/user_profile.py` - Service profil utilisateur avec cache
+  - Endpoints `/api/config/profile` (GET/POST/DELETE)
+  - Injection identité dans system prompt LLM
+  - Onglet Profil dans SettingsModal (nom, surnom, entreprise, rôle, contexte)
+- [x] **Phase 2 : Import CLAUDE.md**
+  - Endpoint `/api/config/profile/import-claude-md`
+  - Parse sections Identité/Infos perso automatique
+  - Bouton import dans UI avec Tauri dialog
+- [x] **Phase 3 : UI Conversations améliorée**
+  - Bouton conversations dans ChatHeader
+  - Hint raccourci Cmd+B dans GuidedPrompts
+- [x] **Phase 4 : Sélecteur dossier de travail**
+  - Endpoints `/api/config/working-directory` (GET/POST)
+  - UI dans SettingsModal onglet Données
+  - Validation chemin existant
+- [x] **Phase 5 : Multi-Provider LLM**
+  - Support 5 providers : Anthropic, OpenAI, Gemini, Mistral, Ollama
+  - `llm.py` - Streaming pour tous les providers
+  - Endpoints `/api/config/llm` et `/api/config/ollama/status`
+  - UI unifiée dans SettingsModal (sélection provider, clé API, modèle)
+  - Ollama : détection auto des modèles locaux
+
+**Providers supportés** :
+| Provider | Modèles | Notes |
+|----------|---------|-------|
+| Anthropic | Claude 4 Sonnet/Haiku/Opus | Recommandé |
+| OpenAI | GPT-4o, GPT-4 Turbo, GPT-3.5 | Polyvalent |
+| Gemini | 2.0 Flash, 1.5 Pro/Flash | 1M tokens context |
+| Mistral | Large, Medium, Small | IA française |
+| Ollama | Dynamique (local) | 100% local |
+
+### MVP v1.2 - COMPLET (Multi-Provider)
+
+### Session 22 janvier - Skills Office (Phase 6) COMPLET
+- [x] `actionData.ts` avec `generatesFile` sur sous-options
+- [x] Backend `app/services/skills/` - DOCX/PPTX/XLSX generators
+- [x] `app/routers/skills.py` - Endpoints execute/download/list
+- [x] UI `SkillExecutionPanel.tsx` - Spinner, preview, téléchargement
+- [x] Intégration `GuidedPrompts.tsx` avec détection skill
+- [x] **Fix** : Bug cache fichiers (`registry.py` - name mangling Python)
+- [x] **Fix** : Bug XLSX merged cells (`xlsx_generator.py` - `column_letter`)
+
+**Skills disponibles** :
+| Skill | Format | Description |
+|-------|--------|-------------|
+| docx-pro | .docx | Document Word avec style Synoptïa |
+| pptx-pro | .pptx | Présentation PowerPoint |
+| xlsx-pro | .xlsx | Tableur Excel avec formules |
+
+### MVP v1.3 - COMPLET (Skills Office)
+
+### Session 22 janvier - UI Side Toggles
+- [x] **SideToggle.tsx** - Rails latéraux pour ouvrir/fermer panels
+  - Composant `src/frontend/src/components/ui/SideToggle.tsx`
+  - Rails minces (10px) qui s'élargissent au hover (36px)
+  - Indicateur vertical cyan (glow quand panel ouvert)
+  - Animation spring Framer Motion
+  - Icônes contextuelles (PanelLeftOpen/Close, PanelRightOpen/Close)
+- [x] **ChatLayout.tsx** - Intégration des toggles gauche/droite
+- [x] **ChatHeader.tsx** - Suppression des icônes Conversations/Mémoire (remplacées par toggles)
+- [x] **Fix TS** - Correction erreurs pré-existantes (SkillExecutionPanel, SettingsModal)
+
+**Nouvelles interactions UI** :
+- Rail gauche : Ouvre ConversationSidebar (⌘B)
+- Rail droit : Ouvre MemoryPanel (⌘M)
+- Hover : Rail s'élargit + icône visible
+- Click : Toggle le panel correspondant
+
+### MVP v1.4 - COMPLET (Side Toggles)
+
+### Session 22 janvier - Voice Input (Groq Whisper)
+- [x] **useVoiceRecorder.ts** - Hook MediaRecorder API
+  - Capture audio WebM/Opus via getUserMedia
+  - États: idle → recording → processing → idle
+  - Gestion permissions micro navigateur
+- [x] **transcribeAudio** dans api.ts - Envoi audio au backend
+- [x] **Backend /api/voice/transcribe** - Endpoint transcription
+  - Groq API avec modèle whisper-large-v3-turbo
+  - Chunking si fichier > 25 MB
+  - Prompt optimisé pour français
+- [x] **ChatInput.tsx** - Bouton micro intégré
+  - Icône Mic/MicOff selon état
+  - Animation pulse rouge pendant enregistrement
+  - Spinner pendant transcription
+  - Transcription insérée dans textarea
+- [x] **SettingsModal.tsx** - Configuration clé API Groq
+  - Section "Transcription vocale" dans onglet LLM
+  - Validation format clé (doit commencer par "gsk_")
+  - Lien vers console.groq.com
+
+**Configuration requise** :
+- Clé API Groq (gratuit sur console.groq.com)
+- Permissions micro navigateur
+
+### MVP v1.5 - COMPLET (Voice Input)
+
+### Session 22 janvier - Image Generation
+- [x] **app/services/image_generator.py** - Service génération images
+  - Support GPT Image 1.5 (OpenAI) + Nano Banana Pro (Gemini)
+  - Modes: génération simple + avec image de référence
+  - Sauvegarde images dans ~/.therese/images/
+- [x] **app/routers/images.py** - API endpoints
+  - POST /api/images/generate - Génération texte→image
+  - POST /api/images/generate-with-reference - Avec image référence
+  - GET /api/images/download/{id} - Téléchargement
+  - GET /api/images/list - Liste des images générées
+  - GET /api/images/status - Status providers disponibles
+- [x] **api.ts** - Fonctions frontend
+  - generateImage(), downloadGeneratedImage(), getImageStatus()
+- [x] **SettingsModal.tsx** - UI sélection provider image
+
+**Providers images supportés** :
+| Provider | Modèle | Résolutions |
+|----------|--------|-------------|
+| GPT Image 1.5 | gpt-image-1.5 | 1024x1024, 1536x1024, 1024x1536 |
+| Nano Banana Pro | gemini-3-pro-image-preview | 1K, 2K, 4K |
+
+**Configuration requise** :
+- Clé API OpenAI (pour GPT Image 1.5)
+- Clé API Gemini (pour Nano Banana Pro)
+
+### MVP v1.6 - COMPLET (Image Generation)
+
+### Session 23 janvier - E3-05 Scope memoire + E3-06 Oubli selectif
+- [x] **entities.py** - Champs scope sur Contact, Project, FileMetadata
+  - `scope: str` = global | project | conversation
+  - `scope_id: str | None` = ID de l'entite parente si scope
+- [x] **qdrant.py** - Filtrage par scope dans search()
+  - Params: `scope`, `scope_id`, `include_global`
+  - Nouvelle methode `delete_by_scope()` pour suppression en cascade
+- [x] **memory.py** - API endpoints avec scope
+  - `list_contacts(scope, scope_id)` et `list_projects(scope, scope_id)`
+  - `delete_contact(cascade=True)` et `delete_project(cascade=True)`
+  - Cascade supprime projets/fichiers lies
+- [x] **api.ts** - Types et fonctions frontend
+  - `MemoryScope`, `ScopeFilter`, `DeleteResponse`
+  - `listContactsWithScope()`, `deleteContactWithCascade()`
+  - `listProjectsWithScope()`, `deleteProjectWithCascade()`
+- [x] **MemoryPanel.tsx** - UI scope et suppression
+  - Pills de filtrage (Tout / Global / Projet / Conv.)
+  - Boutons suppression sur contacts et projets
+  - Modal confirmation avec info cascade
+  - Animation Framer Motion sur confirmation
+
+### Session 23 janvier - E4-01 File Browser natif + E4-07 Analyse fichiers chat
+- [x] **FileBrowser.tsx** - Navigateur fichiers natif Tauri
+  - API Tauri fs (readDir, stat, homeDir)
+  - Navigation breadcrumb + boutons (home, up, refresh)
+  - Icones par type de fichier (code, doc, image, spreadsheet)
+  - Filtrage par recherche
+  - Bouton indexation vers Qdrant par fichier
+  - Animations Framer Motion (stagger list)
+- [x] **chat.py** - Commandes slash fichiers
+  - `/fichier [chemin]` - Ajoute le contenu du fichier au contexte
+  - `/analyse [chemin]` - Demande une analyse du fichier
+  - Extraction texte via file_parser.py (txt, md, pdf, docx, etc.)
+  - Message systeme avec contenu fichier avant envoi LLM
+- [x] **ChatInput.tsx** - Parsing commandes /fichier et /analyse
+  - Detection pattern `/fichier` ou `/analyse` + chemin
+  - Envoi du chemin dans metadata message
+
+**Commandes disponibles** :
+- `/fichier ~/Documents/rapport.pdf` - Inclut le contenu dans le contexte
+- `/analyse ~/Code/script.py` - Demande une analyse detaillee
+
+### Session 23 janvier - E3-08 Extraction automatique d'entites
+- [x] **app/services/entity_extractor.py** - Service d'extraction d'entites
+  - Utilise le LLM pour extraire contacts et projets des messages
+  - Prompt structure retournant du JSON
+  - Seuil de confiance configurable (MIN_CONFIDENCE = 0.6)
+  - Filtrage des entites deja existantes
+- [x] **app/routers/chat.py** - Integration dans le streaming SSE
+  - Extraction apres chaque reponse du LLM
+  - Nouvel event SSE `entities_detected`
+  - Helper `_get_existing_entity_names()` pour eviter les doublons
+- [x] **app/models/schemas.py** - Nouveaux schemas
+  - `ExtractedContactSchema` et `ExtractedProjectSchema`
+  - `EntitiesDetectedResponse`
+  - `StreamChunk.entities` pour le transport SSE
+- [x] **EntitySuggestion.tsx** - Composant UI de confirmation
+  - Affiche les entites detectees sous le message
+  - Boutons "Sauvegarder" / "Ignorer" par entite
+  - Animation slide-in Framer Motion
+  - Appel API pour creer contact/projet
+- [x] **chatStore.ts** - Gestion des entites detectees
+  - `setMessageEntities()` et `clearMessageEntities()`
+  - `detectedEntities` sur les messages
+- [x] **MessageList.tsx** - Affichage conditionnel des suggestions
+- [x] **ChatInput.tsx** - Parsing de l'event `entities_detected`
+- [x] **api.ts** - Types `ExtractedContact`, `ExtractedProject`, `DetectedEntities`
+
+**Flux de fonctionnement** :
+1. Utilisateur envoie un message mentionnant une personne/projet
+2. LLM repond normalement (streaming)
+3. Apres la reponse, extraction d'entites en arriere-plan
+4. Si entites detectees, event SSE `entities_detected`
+5. UI affiche suggestion sous le message
+6. Utilisateur peut sauvegarder ou ignorer chaque entite
+
+### MVP v1.7 - COMPLET (Entity Extraction)
+
+### Session 23 janvier - E5-08 Onboarding Wizard
+- [x] **OnboardingWizard.tsx** - Composant principal wizard
+  - Modal plein écran avec backdrop blur
+  - Stepper 5 étapes avec indicateurs visuels
+  - Transitions AnimatePresence entre étapes
+  - Barre de progression en bas
+- [x] **WelcomeStep.tsx** - Étape 1 : Bienvenue
+  - Branding THÉRÈSE avec gradient cyan→magenta
+  - 3 features highlights (Mémoire, Local, Multi-LLM)
+  - Animation entrée avec stagger
+- [x] **ProfileStep.tsx** - Étape 2 : Profil utilisateur
+  - Formulaire : nom, surnom, entreprise, rôle, contexte
+  - Import CLAUDE.md via Tauri dialog
+  - Réutilise api.setProfile() et api.importClaudeMd()
+- [x] **LLMStep.tsx** - Étape 3 : Configuration LLM
+  - Sélection provider (Anthropic, OpenAI, Gemini, Mistral, Ollama)
+  - Input clé API avec validation préfixe
+  - Sélection modèle dynamique par provider
+  - Badge "Recommandé" sur Anthropic
+- [x] **WorkingDirStep.tsx** - Étape 4 : Dossier de travail
+  - Sélection répertoire via Tauri dialog
+  - Affichage chemin sélectionné
+  - Option "Passer" si non nécessaire
+- [x] **CompleteStep.tsx** - Étape 5 : Terminé
+  - Résumé configuration (profil, LLM, dossier)
+  - Animation célébration (confettis CSS)
+  - Appel api.completeOnboarding()
+- [x] **Backend endpoints**
+  - GET `/api/config/onboarding-complete` - Status onboarding
+  - POST `/api/config/onboarding-complete` - Marquer terminé
+  - Stockage dans table Preferences (SQLite)
+- [x] **Schemas Pydantic**
+  - `OnboardingStatusResponse` - completed, completed_at
+  - `OnboardingCompleteRequest` - completed flag
+- [x] **api.ts** - Fonctions frontend
+  - `getOnboardingStatus()` - Récupère status
+  - `completeOnboarding()` - Marque terminé
+- [x] **App.tsx** - Intégration
+  - Check onboarding status au démarrage
+  - Affiche wizard si non complété
+  - Écran de chargement pendant vérification
+
+**Fichiers créés** :
+- `src/frontend/src/components/onboarding/index.ts`
+- `src/frontend/src/components/onboarding/OnboardingWizard.tsx`
+- `src/frontend/src/components/onboarding/WelcomeStep.tsx`
+- `src/frontend/src/components/onboarding/ProfileStep.tsx`
+- `src/frontend/src/components/onboarding/LLMStep.tsx`
+- `src/frontend/src/components/onboarding/WorkingDirStep.tsx`
+- `src/frontend/src/components/onboarding/CompleteStep.tsx`
+
+**Fichiers modifiés** :
+- `src/backend/app/routers/config.py` - Endpoints onboarding
+- `src/backend/app/models/schemas.py` - Schemas onboarding
+- `src/frontend/src/services/api.ts` - Fonctions API onboarding
+- `src/frontend/src/App.tsx` - Intégration wizard
+
+### MVP v1.8 - COMPLET (Onboarding Wizard)
+
+---
+
+## Lancer le projet
+
+```bash
+# Terminal 1 - Backend
+cd src/backend
+uv run uvicorn app.main:app --reload --port 8000
+
+# Terminal 2 - Frontend Tauri
+cd src/frontend
+npm run tauri dev
+```
+
+**URLs** :
+- Frontend Tauri : http://localhost:1420
+- Backend API : http://localhost:8000
+- API Docs : http://localhost:8000/docs (si debug=true)
+
+---
+
 ## BMAD Method
 
-BMAD (Breakthrough Method for Agile AI-Driven Development) est installé dans ce projet.
+BMAD (Breakthrough Method for Agile AI-Driven Development) est installé.
 
-### Installation faite
-- **Modules** : BMB + BMM + CIS
-- **IDE** : Claude Code
-- **TTS** : macOS Say
-- **Langue** : French
-- **Dossier** : `_bmad/`
-
-### Commandes BMAD principales
-```bash
-*help              # Liste toutes les commandes
-*workflow-init     # Analyse projet et recommande un track
-*analyst           # Agent Analyst (benchmarks, recherche)
-*pm                # Agent Product Manager (PRD)
-*ux                # Agent UX Designer (design, wireframes)
-*architect         # Agent Architect (architecture technique)
-*sm                # Agent Scrum Master (stories, sprints)
-*dev               # Agent Developer (implémentation)
-*qa                # Agent QA (tests, validation)
-```
-
-### Workflow BMAD pour THÉRÈSE
-```
-Prompt 0 : Setup initial ✅ FAIT
-Prompt 1 : Benchmark Cowork (*analyst) → docs/benchmark-cowork.md
-Prompt 2 : Benchmark Mémoire (*analyst) → docs/benchmark-memoire.md
-Prompt 3 : Benchmark UX (*ux) → docs/benchmark-ux.md
-Prompt 4 : PRD (*pm) → docs/prd-therese.md
-Prompt 5 : Architecture (*architect) → docs/architecture.md
-Prompt 6 : Stories (*sm) → docs/stories/*.md
-```
-
----
-
-## Avancement
-
-### Fait
-- [x] Structure projet créée
-- [x] Git initialisé + premier commit
-- [x] README.md, Makefile, pyproject.toml, package.json
-- [x] Placeholders docs/ créés
-- [x] Backend FastAPI minimal (health check)
-- [x] BMAD installé (BMB + BMM + CIS + TTS)
-- [x] Prompt 1 : Benchmark Cowork (docs/benchmark-cowork.md - 380 lignes)
-- [x] Prompt 2 : Benchmark Mémoire (docs/benchmark-memoire.md - 567 lignes)
-- [x] Prompt 3 : Benchmark UX (docs/benchmark-ux.md - 640 lignes)
-- [x] Prompt 4 : PRD (docs/prd-therese.md - 639 lignes)
-- [x] Prompt 5 : Architecture (docs/architecture.md - 1276 lignes)
-- [x] Prompt 6 : Stories (35 stories, 5 epics, 4 sprints - 143 pts total)
-
-### À faire
-- [ ] Développement MVP (Sprint 1 à 4)
-
----
-
-## Fichier prompts
-
-Les prompts BMAD sont dans : `prompts-bmad-therese-v2.md`
-
-Chaque prompt correspond à un agent BMAD et génère un document dans `docs/`.
+### Documentation générée
+- [x] `docs/benchmark-cowork.md` - Analyse Cowork (380 lignes)
+- [x] `docs/benchmark-memoire.md` - Benchmark mémoire (567 lignes)
+- [x] `docs/benchmark-ux.md` - Benchmark UX (640 lignes)
+- [x] `docs/prd-therese.md` - PRD complet (639 lignes)
+- [x] `docs/architecture.md` - Architecture technique (1276 lignes)
+- [x] `docs/stories/` - 35 stories, 5 epics, 4 sprints (143 pts)
 
 ---
 
@@ -109,4 +489,650 @@ Chaque prompt correspond à un agent BMAD et génère un document dans `docs/`.
 
 ---
 
-*Dernière mise à jour : 21 janvier 2026*
+---
+
+## Session 23 janvier - Corrections Onboarding (COMPLET)
+
+### Audit complet par 3 agents spécialisés
+**23 problèmes identifiés → 12 user stories → Toutes implémentées**
+
+### Corrections UX/Navigation (P0)
+- [x] **US-01: WorkingDirStep** - Bouton "Continuer" disabled si pas de dossier
+- [x] **US-02: LLMStep** - Warning si pas de clé API + "Continuer" disabled
+- [x] **US-03: CompleteStep** - Affichage erreur si finalisation échoue + bouton Réessayer
+- [x] **US-04: Accents français** - Tous les accents manquants corrigés
+
+### Accessibilité (P1)
+- [x] **US-05: Labels accessibles** - Ajout `id` et `htmlFor` sur tous les inputs
+- [x] **US-06: Focus visible** - Remplacement `focus:border-*` par `focus:ring-2 focus:ring-accent-cyan`
+- [x] **US-07: Radios sémantiques** - Ajout `role="radiogroup"`, `role="radio"`, `aria-checked`
+- [x] **US-08: ARIA modal** - Ajout `role="dialog"`, `aria-modal`, `aria-labelledby`
+- [x] **US-09: Contraste placeholders** - Passage de `/50` à `/70` pour meilleure lisibilité
+
+### Intégration Backend/Types (P2)
+- [x] **US-10: Types nullable** - `UserProfile` fields en `string | null`
+- [x] **US-11: Validation clés API** - Backend valide format (sk-ant-, sk-, AIza, gsk_)
+- [x] **US-12: Animations unifiées** - WelcomeStep en animation horizontale (x: 50)
+
+### Fichiers modifiés
+| Fichier | Corrections |
+|---------|-------------|
+| `ProfileStep.tsx` | US-04, US-05, US-06, US-09 |
+| `LLMStep.tsx` | US-02, US-04, US-06, US-07, US-09 |
+| `WorkingDirStep.tsx` | US-01, US-04 |
+| `CompleteStep.tsx` | US-03, US-04 |
+| `WelcomeStep.tsx` | US-04, US-12 |
+| `OnboardingWizard.tsx` | US-08 |
+| `api.ts` | US-10 |
+| `config.py` (backend) | US-11 |
+
+### MVP v1.9 - COMPLET (Onboarding Polish)
+
+### Session 24 janvier - Board de Décision Stratégique (Epic 1)
+
+Feature complète permettant de convoquer un "board" de 5 conseillers IA pour les décisions stratégiques.
+
+#### US-BOARD-01 : Module Board créé
+- [x] **BoardPanel.tsx** - Panel principal modal
+  - États: input, deliberating, history, viewing
+  - Question stratégique + contexte optionnel
+  - Preview des 5 conseillers
+  - Raccourci clavier ⌘+D
+- [x] **AdvisorCard.tsx** - Carte conseiller
+  - Avatar emoji, nom, couleur personnalisée
+  - Badge provider LLM (Claude, GPT, Gemini...)
+  - Animation streaming Framer Motion
+- [x] **DeliberationView.tsx** - Vue délibération
+  - Grille responsive des conseillers
+  - Streaming simultané des avis
+- [x] **SynthesisCard.tsx** - Carte synthèse
+  - Recommandation, consensus, divergences
+  - Niveau de confiance (high/medium/low)
+  - Prochaines étapes suggérées
+
+#### US-BOARD-02 : Délibération Multi-LLM
+- [x] **Providers par conseiller**
+  | Conseiller | Provider préféré | Raison |
+  |------------|------------------|--------|
+  | L'Analyste | Anthropic (Claude) | Analyse structurée |
+  | Le Stratège | OpenAI (GPT) | Créativité stratégique |
+  | L'Avocat du Diable | Anthropic (Claude) | Argumentation nuancée |
+  | Le Pragmatique | Mistral | IA française, pragmatisme |
+  | Le Visionnaire | Gemini | Vision futuriste |
+- [x] **Fallback automatique** - Si provider non configuré, utilise le défaut
+- [x] **Badge provider** - UI affiche le provider utilisé par chaque conseiller
+
+#### US-BOARD-03/04 : Synthèse & Historique
+- [x] **Synthèse automatique** après tous les avis
+  - Points de consensus vs divergences
+  - Recommandation finale avec justification
+  - Niveau de confiance basé sur le consensus
+  - Prochaines étapes concrètes
+- [x] **Persistance SQLite** - Table `board_decisions`
+  - ID, question, contexte, opinions (JSON), synthesis (JSON)
+  - confidence, recommendation (dénormalisés pour queries rapides)
+- [x] **API Historique**
+  - `GET /api/board/decisions` - Liste des décisions
+  - `GET /api/board/decisions/{id}` - Détail complet
+  - `DELETE /api/board/decisions/{id}` - Suppression
+
+#### Fichiers créés
+```
+src/frontend/src/components/board/
+├── BoardPanel.tsx
+├── AdvisorCard.tsx
+├── DeliberationView.tsx
+├── SynthesisCard.tsx
+└── index.ts
+
+src/backend/app/
+├── models/board.py        # AdvisorRole, BoardSynthesis, etc.
+├── services/board.py      # BoardService avec SQLite
+└── routers/board.py       # API endpoints
+```
+
+#### Fichiers modifiés
+- `ChatLayout.tsx` - Intégration BoardPanel + raccourci ⌘+D
+- `useKeyboardShortcuts.ts` - Handler onToggleBoardPanel
+- `ShortcutsModal.tsx` - Affichage raccourci ⌘+D
+- `api.ts` - Types et fonctions Board
+- `entities.py` - BoardDecisionDB SQLModel
+- `llm.py` - `get_llm_service_for_provider()` pour multi-LLM
+
+### MVP v2.0 - COMPLET (Board de Décision)
+
+### Session 24 janvier - Calculateurs Financiers (Epic 2)
+
+Module de calculateurs financiers et décisionnels pour les entrepreneurs.
+
+#### Calculateurs disponibles
+
+| Calculateur | Endpoint | Description |
+|-------------|----------|-------------|
+| **ROI** | `POST /api/calc/roi` | Return on Investment |
+| **ICE** | `POST /api/calc/ice` | Impact × Confidence × Ease |
+| **RICE** | `POST /api/calc/rice` | (Reach × Impact × Confidence) / Effort |
+| **NPV** | `POST /api/calc/npv` | Net Present Value (VAN) |
+| **Break-even** | `POST /api/calc/break-even` | Seuil de rentabilité |
+
+#### Fichiers créés
+- `src/backend/app/services/calculators.py` - Service de calculs
+- `src/backend/app/routers/calculators.py` - API endpoints
+
+#### Fichiers modifiés
+- `routers/__init__.py` - Export calc_router
+- `main.py` - Enregistrement /api/calc
+- `api.ts` - Types et fonctions frontend
+
+#### Exemples d'utilisation
+
+```typescript
+// ROI
+const roi = await calculateROI(10000, 15000);
+// => { roi_percent: 50, profit: 5000, interpretation: "✅ Très bon ROI..." }
+
+// ICE (priorisation)
+const ice = await calculateICE(8, 7, 6);
+// => { score: 336, interpretation: "✅ Bon score ICE..." }
+
+// RICE (priorisation produit)
+const rice = await calculateRICE(1000, 2, 80, 2);
+// => { score: 800, interpretation: "🚀 Score RICE exceptionnel..." }
+```
+
+### MVP v2.1 - COMPLET (Calculateurs)
+
+### Session 24 janvier - Soir (Bugs & Features)
+
+#### Bugs corrigés
+
+- [x] **Bug 1: GPT Image 1.5** - Retiré `response_format="b64_json"` (paramètre non supporté)
+- [x] **Bug 2: Clé Gemini** - Ajout `_get_api_key_from_db()` pour charger les clés depuis SQLite
+- [x] **Bug 3: OpenAI 400** - Corrigé modèle par défaut de "gpt-5.2" vers "gpt-4o"
+
+#### Feature 1: Provider Grok (xAI)
+
+| Modèle | Description |
+|--------|-------------|
+| grok-3 | Flagship |
+| grok-3-fast | Rapide |
+| grok-2 | Standard |
+
+**Fichiers modifiés** :
+- `llm.py` - Enum GROK + `_stream_grok()` (API compatible OpenAI via api.x.ai)
+- `config.py` - Validation clé xai-*, endpoints LLM
+- `schemas.py` - `has_grok_key` dans ConfigResponse
+- `SettingsModal.tsx` - Provider Grok dans la liste
+- `api.ts` - Type `'grok'` dans LLMProvider
+
+#### Feature 2: Conversations éphémères
+
+- `Conversation.ephemeral?: boolean` - Flag pour conversations temporaires
+- `createConversation(ephemeral)` - Paramètre optionnel
+- `partialize` - Exclut les éphémères de la persistance localStorage
+
+#### Feature 3: Bouton + désactivé si conversation vide
+
+- `isCurrentConversationEmpty()` - Nouvelle fonction computed dans chatStore
+- `ChatHeader.tsx` - Bouton + désactivé avec opacité réduite si conversation vide
+
+### MVP v2.2 - COMPLET (Grok + UX)
+
+### Session 24 janvier - Nuit (MCP Integration)
+
+#### Feature 4 : MCP (Model Context Protocol)
+
+**Backend `src/backend/app/services/mcp_service.py`** :
+- `MCPService` - Gestion des serveurs MCP (start/stop/restart)
+- Transport stdio pour communication JSON-RPC
+- Auto-discovery des tools via `tools/list`
+- Exécution des tools via `tools/call`
+- Persistance config dans `~/.therese/mcp_servers.json`
+
+**API `src/backend/app/routers/mcp.py`** :
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/mcp/servers` | Liste des serveurs |
+| `POST /api/mcp/servers` | Ajouter un serveur |
+| `POST /api/mcp/servers/{id}/start` | Démarrer |
+| `POST /api/mcp/servers/{id}/stop` | Arrêter |
+| `DELETE /api/mcp/servers/{id}` | Supprimer |
+| `GET /api/mcp/tools` | Liste des tools disponibles |
+| `POST /api/mcp/tools/call` | Exécuter un tool |
+| `GET /api/mcp/presets` | Presets disponibles |
+| `POST /api/mcp/presets/{id}/install` | Installer preset |
+
+**Presets MCP inclus** :
+- Filesystem - Gestion fichiers
+- Fetch - Récupération URLs
+- Memory - Mémoire persistante
+- Brave Search - Recherche web
+- GitHub - Accès repos
+- Notion - Workspace Notion
+- Slack - Workspace Slack
+- Google Drive - Fichiers Drive
+
+**Frontend** :
+- `ToolsPanel.tsx` - Composant complet gestion MCP
+- Onglet "Tools" dans SettingsModal
+- UI : liste serveurs, presets, status, tools
+
+### MVP v2.3 - COMPLET (MCP)
+
+### Session 24 janvier - Suite (MCP Tool Calling Integration)
+
+#### Feature 5 : Tool Calling LLM intégré
+
+**Objectif** : Permettre au LLM d'utiliser automatiquement les tools MCP pendant la conversation.
+
+**Backend `src/backend/app/services/llm.py`** :
+- Nouveaux dataclasses : `ToolCall`, `ToolResult`, `StreamEvent`
+- `stream_response_with_tools()` - Streaming avec support tools
+- `_stream_anthropic_with_tools()` - Gère les tool_use blocks Claude
+- `_stream_openai_with_tools()` - Gère les tool_calls OpenAI
+- `continue_with_tool_results()` - Continue après exécution des tools
+- Support chaînage de tools (récursif, max 5 itérations)
+
+**Backend `src/backend/app/routers/chat.py`** :
+- `_stream_response()` modifié pour tool calling
+- `_execute_tools_and_continue()` - Exécute tools MCP et continue
+- Intégration automatique des tools disponibles depuis MCPService
+- Affichage status et résultats dans le stream SSE
+
+**Frontend** :
+- `StreamChunk.type` étendu : 'status' | 'tool_result'
+- `ChatInput.tsx` - Gestion des événements status/tool_result
+- Affichage du statut d'exécution des tools dans l'activité
+
+**Flux de fonctionnement** :
+1. User envoie un message
+2. LLM reçoit la liste des tools MCP disponibles
+3. LLM peut décider d'utiliser un tool (stop_reason: "tool_calls")
+4. Backend exécute le tool via MCPService
+5. Résultat envoyé au LLM pour continuation
+6. LLM génère la réponse finale (ou utilise d'autres tools)
+7. Réponse streamée au frontend
+
+**Fichiers modifiés** :
+| Fichier | Modifications |
+|---------|--------------|
+| `llm.py` | +ToolCall, +ToolResult, +StreamEvent, +stream_response_with_tools, +continue_with_tool_results |
+| `chat.py` | +_execute_tools_and_continue, streaming avec tools |
+| `schemas.py` | StreamChunk.type += 'status', 'tool_result' |
+| `api.ts` | StreamChunk.type mis à jour |
+| `ChatInput.tsx` | Gestion status/tool_result |
+
+### MVP v2.4 - COMPLET (MCP Tool Calling)
+
+---
+
+## Récapitulatif des fonctionnalités (MVP v2.4)
+
+### Chat & Conversations
+- [x] Chat avec LLM multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, Ollama)
+- [x] Conversations éphémères (non persistées)
+- [x] Streaming SSE des réponses
+- [x] Conversations persistées SQLite
+- [x] Sidebar conversations avec groupement par date
+- [x] Commandes slash (/fichier, /analyse)
+
+### Mémoire
+- [x] Contacts et Projets avec CRUD complet
+- [x] Embeddings Qdrant (nomic-embed-text)
+- [x] Recherche hybride BM25 + sémantique
+- [x] Injection contexte auto dans LLM
+- [x] Scope (global, project, conversation)
+
+### Fichiers
+- [x] Drag & Drop avec indexation Qdrant
+- [x] File Browser natif Tauri
+- [x] Support: txt, md, json, py, js, ts, html, css
+
+### Skills Office
+- [x] Génération DOCX (python-docx)
+- [x] Génération PPTX (pptxgenjs)
+- [x] Génération XLSX (openpyxl)
+
+### Board de Décision (nouveau v2.0)
+- [x] 5 conseillers IA avec personnalités distinctes
+- [x] Multi-LLM par conseiller (Claude, GPT, Gemini, Mistral)
+- [x] Synthèse automatique avec consensus/divergences
+- [x] Historique SQLite des décisions
+- [x] Raccourci ⌘+D
+
+### Calculateurs (nouveau v2.1)
+- [x] ROI (Return on Investment)
+- [x] ICE (Impact, Confidence, Ease)
+- [x] RICE (Reach, Impact, Confidence, Effort)
+- [x] NPV (Net Present Value)
+- [x] Break-even (Seuil de rentabilité)
+
+### Onboarding
+- [x] Wizard 5 étapes au premier lancement
+- [x] Import profil depuis CLAUDE.md
+- [x] Configuration LLM guidée
+
+### UI/UX
+- [x] Dark mode premium (charte Synoptïa)
+- [x] Animations Framer Motion
+- [x] Guided Prompts (6 actions × 4 options)
+- [x] Side Toggles latéraux
+- [x] Input vocal (Groq Whisper)
+
+### MCP & Tool Calling (nouveau v2.3/v2.4)
+- [x] Service MCP avec transport stdio
+- [x] Gestion serveurs (start/stop/restart)
+- [x] Auto-discovery tools
+- [x] Presets prédéfinis (filesystem, fetch, notion, github...)
+- [x] Onglet Tools dans Settings
+- [x] API complète /api/mcp/*
+- [x] **Tool Calling LLM intégré** (v2.4)
+  - [x] Auto-discovery tools MCP dans le chat
+  - [x] Support Claude (Anthropic) et OpenAI pour function calling
+  - [x] Exécution automatique des tools via MCP
+  - [x] Continuation de conversation avec résultats des tools
+  - [x] Chaînage de tools (max 5 itérations)
+  - [x] Affichage status tool execution dans l'UI
+
+### MVP v2.4 - COMPLET (MCP Tool Calling)
+
+### Session 24 janvier - Corrections UX (suite)
+
+#### Fixes apportés
+
+| Problème | Fix | Fichier |
+|----------|-----|---------|
+| Dossier de travail ne persiste pas | FileBrowser charge maintenant le dossier configuré au démarrage | `FileBrowser.tsx` |
+| Sidebar "Mémoire" pas adapté | Renommé en "Espace de travail" | `MemoryPanel.tsx` |
+| Audio non supporté message peu clair | Messages d'erreur améliorés pour Tauri + bouton désactivé | `useVoiceRecorder.ts`, `ChatInput.tsx` |
+| Clés API images non visibles | Indicateurs "Clé OpenAI OK / requise" sur chaque provider image | `SettingsModal.tsx` |
+
+**Détails techniques** :
+
+1. **FileBrowser.tsx** :
+   - Appel `getWorkingDirectory()` au mount avant de tomber sur `homeDir()`
+   - Si un dossier de travail est configuré et existe, il est utilisé
+
+2. **MemoryPanel.tsx** :
+   - Titre "Memoire" → "Espace de travail" (plus neutre pour les 3 tabs)
+
+3. **useVoiceRecorder.ts** / **ChatInput.tsx** :
+   - Détection Tauri WebView (`__TAURI__` in window)
+   - Messages spécifiques : "La dictée vocale n'est pas disponible dans l'application desktop"
+   - `voiceSupported` state pour désactiver le bouton micro proprement
+   - Tooltip "Dictée vocale non disponible (prochainement)"
+
+4. **SettingsModal.tsx** :
+   - `IMAGE_PROVIDERS` enrichi avec `requiredApiKey` et `keyName`
+   - Badges verts "Clé OpenAI OK" ou jaunes "Clé Gemini requise" sur chaque provider
+   - Texte explicatif sous la section
+
+### MVP v2.5 - COMPLET (UX Fixes)
+
+### Session 24 janvier - Clés API Images Séparées
+
+#### Feature : Clés API dédiées pour la génération d'images
+
+La clé API Gemini pour le LLM et celle pour Nano Banana Pro (génération d'images) peuvent être différentes. Même chose pour OpenAI (chat vs GPT Image 1.5).
+
+**Modifications backend** :
+- `schemas.py` : Ajout `has_openai_image_key` et `has_gemini_image_key` dans ConfigResponse
+- `config.py` : Vérification et retour des status des clés image séparées
+- `image_generator.py` : Recherche `openai_image_api_key` / `gemini_image_api_key` en priorité
+
+**Modifications frontend** :
+- `api.ts` : `getApiKeys()` retourne `openai_image` et `gemini_image`
+- `SettingsModal.tsx` :
+  - Nouveau format `IMAGE_PROVIDERS` avec `apiKeyId`, `keyPrefix`, `consoleUrl`
+  - Champs de saisie dédiés pour chaque clé image
+  - Status visuel par provider (vert OK / jaune requis)
+  - Liens vers les consoles respectives
+
+**Configuration requise** :
+| Provider | Clé API | Préfixe | Console |
+|----------|---------|---------|---------|
+| GPT Image 1.5 | `openai_image_api_key` | `sk-` | platform.openai.com |
+| Nano Banana Pro | `gemini_image_api_key` | `AIza` | aistudio.google.com |
+
+### MVP v2.6 - COMPLET (Clés Images Séparées)
+
+### Session 24 janvier - Mise à jour Modèles LLM
+
+#### Mise à jour des modèles disponibles (janvier 2026)
+
+Tous les modèles LLM ont été mis à jour vers les versions actuelles.
+
+| Provider | Modèles disponibles |
+|----------|---------------------|
+| **Anthropic** | claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001, claude-opus-4-5-20251101 |
+| **OpenAI** | gpt-4o, gpt-4-turbo, o3, o4-mini |
+| **Gemini** | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro, gemini-2.5-flash |
+| **Mistral** | mistral-large-latest, codestral-latest, mistral-small-latest |
+| **Grok** | grok-3, grok-3-fast |
+| **Ollama** | Dynamique (modèles locaux) |
+
+**Fichiers modifiés** :
+- `config.py` - `available_models` pour chaque provider
+- `llm.py` - `_default_config()` et `get_llm_service_for_provider()`
+- `SettingsModal.tsx` - Array PROVIDERS avec nouveaux modèles
+- `LLMStep.tsx` - Onboarding avec modèles à jour
+
+### Session 24 janvier - Recherche Web pour LLMs
+
+#### Feature : Web Search intégré
+
+Les LLMs peuvent maintenant rechercher sur le web à la demande de l'utilisateur.
+
+**Deux méthodes selon le provider** :
+
+| Provider | Méthode | Description |
+|----------|---------|-------------|
+| **Gemini** | Google Search Grounding | Intégré nativement via `google_search_retrieval` |
+| **Claude, GPT, Mistral, Grok** | Tool calling DuckDuckGo | Tool `web_search` ajouté automatiquement |
+
+**Fichiers créés** :
+- `src/backend/app/services/web_search.py` - Service DuckDuckGo (gratuit, sans API key)
+  - `WebSearchService` - Client async DuckDuckGo HTML
+  - `SearchResult`, `SearchResponse` - Dataclasses résultats
+  - `WEB_SEARCH_TOOL` - Définition tool pour function calling
+  - `execute_web_search()` - Exécution du tool
+
+**Fichiers modifiés** :
+
+| Fichier | Modifications |
+|---------|---------------|
+| `llm.py` | `_stream_gemini()` avec `google_search_retrieval` grounding (dynamic_threshold: 0.3) |
+| `chat.py` | Import `WEB_SEARCH_TOOL`, ajout conditionnel aux tools, exécution dans `_execute_tools_and_continue()` |
+| `config.py` | Endpoints `GET/POST /api/config/web-search`, préférence `web_search_enabled` |
+| `schemas.py` | `web_search_enabled: bool` dans `ConfigResponse` |
+| `api.ts` | `getWebSearchStatus()`, `setWebSearchEnabled()`, types `WebSearchStatus` |
+| `SettingsModal.tsx` | Toggle "Recherche Web" avec explications par provider |
+
+**API Endpoints** :
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/config/web-search` | Status et configuration recherche web |
+| `POST /api/config/web-search?enabled=true` | Activer/désactiver la recherche |
+
+**Comportement** :
+- Gemini : Grounding automatique si le modèle détecte un besoin de recherche (threshold 0.3)
+- Autres : Le LLM peut appeler le tool `web_search` quand l'utilisateur demande des infos actuelles
+- Toggle dans Settings → LLM → Recherche Web
+
+### MVP v2.7 - COMPLET (Web Search)
+
+### Session 24 janvier - 30 Nouvelles User Stories (Phases 12-18)
+
+Implémentation de 30 User Stories couvrant 7 nouveaux domaines :
+
+#### US-ERR-01 à US-ERR-05 : Gestion d'erreurs
+- [x] `error_handler.py` - Service centralisé avec codes erreurs standardisés
+- [x] Messages d'erreur en français (TheresError)
+- [x] Retry automatique avec backoff exponentiel
+- [x] Mode dégradé si Qdrant indisponible (ServiceStatus singleton)
+- [x] Annulation génération en cours (`/api/chat/cancel/{id}`)
+- [x] Classification erreurs LLM (contexte trop long, rate limit, auth)
+
+#### US-BAK-01 à US-BAK-05 : Backup & Données
+- [x] `data.py` router - Endpoints export/import/backup
+- [x] Export conversations JSON/Markdown
+- [x] Export complet données (sauf clés API)
+- [x] Backup quotidien automatique
+- [x] Restauration depuis backup
+
+#### US-SEC-01 à US-SEC-05 : Sécurité & Privacy
+- [x] Chiffrement clés API avec Fernet (cryptography)
+- [x] Export RGPD (droit de portabilité)
+- [x] Sanitization des données exportées (pas de secrets)
+
+#### US-PERF-01 à US-PERF-05 : Performance
+- [x] `performance.py` service - StreamingMetrics, PerformanceMonitor
+- [x] Tracking first token latency (SLA < 2s)
+- [x] Memory management avec cleanup callbacks
+- [x] Search index in-memory pour conversations
+- [x] PowerSettings (battery saver mode)
+- [x] `performance.py` router - `/api/perf/*` endpoints
+
+#### US-PERS-01 à US-PERS-05 : Personnalisation
+- [x] `personalisation.py` router - Templates, comportement LLM
+- [x] `personalisationStore.ts` - Zustand store frontend
+- [x] Prompt templates CRUD
+- [x] Comportement LLM configurable (temperature, max_tokens)
+- [x] Feature visibility (masquer fonctionnalités)
+
+#### US-ESC-01 à US-ESC-05 : Escalation & Limites
+- [x] `token_tracker.py` - Suivi consommation tokens
+- [x] Estimation coût par requête (EUR)
+- [x] Limites configurables (tokens/jour, budget/mois)
+- [x] Historique usage (daily/monthly)
+- [x] Détection d'incertitude dans les réponses LLM
+- [x] `escalation.py` router - `/api/escalation/*` endpoints
+
+#### UI Onglets Settings
+- [x] Onglet Performance (métriques, memory, battery saver)
+- [x] Onglet Limites (usage, coûts, configuration limites)
+
+#### Tests Backend
+- [x] `test_error_handling.py` - 19 tests
+- [x] `test_backup.py` - 11 tests
+- [x] `test_services_security.py` - 10 tests
+- [x] `test_performance.py` - 17 tests
+- [x] `test_personalisation.py` - 15 tests
+- [x] `test_escalation.py` - 16 tests
+- [x] **Total : 103 tests passent**
+
+### MVP v2.8 - COMPLET (30 User Stories Qualité)
+
+---
+
+## Récapitulatif des fonctionnalités (MVP v2.8)
+
+### Chat & Conversations
+- [x] Chat avec LLM multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, Ollama)
+- [x] Conversations éphémères (non persistées)
+- [x] Streaming SSE des réponses
+- [x] Conversations persistées SQLite
+- [x] Sidebar conversations avec groupement par date
+- [x] Commandes slash (/fichier, /analyse)
+
+### Mémoire
+- [x] Contacts et Projets avec CRUD complet
+- [x] Embeddings Qdrant (nomic-embed-text)
+- [x] Recherche hybride BM25 + sémantique
+- [x] Injection contexte auto dans LLM
+- [x] Scope (global, project, conversation)
+
+### Fichiers
+- [x] Drag & Drop avec indexation Qdrant
+- [x] File Browser natif Tauri
+- [x] Support: txt, md, json, py, js, ts, html, css
+
+### Skills Office
+- [x] Génération DOCX (python-docx)
+- [x] Génération PPTX (pptxgenjs)
+- [x] Génération XLSX (openpyxl)
+
+### Board de Décision
+- [x] 5 conseillers IA avec personnalités distinctes
+- [x] Multi-LLM par conseiller (Claude, GPT, Gemini, Mistral)
+- [x] Synthèse automatique avec consensus/divergences
+- [x] Historique SQLite des décisions
+- [x] Raccourci ⌘+D
+
+### Calculateurs Financiers
+- [x] ROI (Return on Investment)
+- [x] ICE (Impact, Confidence, Ease)
+- [x] RICE (Reach, Impact, Confidence, Effort)
+- [x] NPV (Net Present Value)
+- [x] Break-even (Seuil de rentabilité)
+
+### Onboarding
+- [x] Wizard 5 étapes au premier lancement
+- [x] Import profil depuis CLAUDE.md
+- [x] Configuration LLM guidée
+
+### UI/UX
+- [x] Dark mode premium (charte Synoptïa)
+- [x] Animations Framer Motion
+- [x] Guided Prompts (6 actions × 4 options)
+- [x] Side Toggles latéraux
+- [x] Input vocal (Groq Whisper)
+
+### MCP & Tool Calling
+- [x] Service MCP avec transport stdio
+- [x] Gestion serveurs (start/stop/restart)
+- [x] Auto-discovery tools
+- [x] Presets prédéfinis (filesystem, fetch, notion, github...)
+- [x] Onglet Tools dans Settings
+- [x] API complète /api/mcp/*
+- [x] Tool Calling LLM intégré
+  - [x] Auto-discovery tools MCP dans le chat
+  - [x] Support Claude (Anthropic) et OpenAI pour function calling
+  - [x] Exécution automatique des tools via MCP
+  - [x] Continuation de conversation avec résultats des tools
+  - [x] Chaînage de tools (max 5 itérations)
+  - [x] Affichage status tool execution dans l'UI
+
+### Génération d'Images
+- [x] GPT Image 1.5 (OpenAI)
+- [x] Nano Banana Pro (Gemini)
+- [x] Clés API séparées pour images
+- [x] Téléchargement et prévisualisation
+
+### Recherche Web
+- [x] Gemini : Google Search Grounding natif
+- [x] Autres LLMs : Tool DuckDuckGo (gratuit, sans API)
+- [x] Toggle on/off dans Settings
+- [x] Détection automatique du besoin de recherche
+
+### Gestion d'Erreurs (nouveau v2.8)
+- [x] Messages d'erreur en français
+- [x] Retry automatique avec backoff
+- [x] Mode dégradé si services indisponibles
+- [x] Annulation génération en cours
+- [x] Classification erreurs LLM
+
+### Backup & Données (nouveau v2.8)
+- [x] Export conversations JSON/Markdown
+- [x] Export complet données RGPD
+- [x] Backup automatique quotidien
+- [x] Restauration depuis backup
+
+### Performance (nouveau v2.8)
+- [x] Tracking first token latency
+- [x] Memory management avec cleanup
+- [x] Search index conversations
+- [x] Battery saver mode
+
+### Limites & Coûts (nouveau v2.8)
+- [x] Suivi consommation tokens
+- [x] Estimation coût par requête
+- [x] Limites configurables
+- [x] Historique usage
+- [x] Détection d'incertitude LLM
+- [x] Affichage coût et tokens par message dans le chat (US-ESC-02)
+- [x] Indicateur de confiance sur les réponses IA (US-ESC-01)
+
+---
+
+*Dernière mise à jour : 24 janvier 2026 - MVP v2.8 (103 tests, 30 User Stories Qualité, Intégration Chat complète)*
