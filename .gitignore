@@ -67,3 +67,22 @@ htmlcov/
 *.msi
 *.deb
 *.rpm
+
+# Backup/Temp
+*.bak
+*.timestamp-*
+oauth_callback_server.py
+test1.md
+
+# Implementation notes (session docs)
+IMPLEMENTATION_*.md
+PLAN_PROGRESS.md
+SESSION_*.md
+RECAP_*.md
+PHASE*_*.md
+TODO_*.md
+US_*.md
+UI_ACTIVATION.md
+EMAIL_CLASSIFIER_V2.md
+INSTALL_E2E.md
+FIX_ASYNC_SESSIONS.md

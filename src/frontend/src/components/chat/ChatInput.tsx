@@ -235,6 +235,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
 
+    // Sprint 2 - PERF-2.7: Batching SSE updates with requestAnimationFrame
+    // This reduces re-renders from ~50/sec to max 60fps (frame-aligned)
+    let pendingUpdate = false;
+    let rafId: number | null = null;
+
+    const batchedUpdateMessage = (content: string) => {
+      accumulatedContent = content;
+      if (!pendingUpdate) {
+        pendingUpdate = true;
+        rafId = requestAnimationFrame(() => {
+          updateMessage(assistantMessageId, accumulatedContent);
+          pendingUpdate = false;
+        });
+      }
+    };
+
     try {
       // Only send conversation_id if it's synced with backend
       const conversation = currentConversation();
@@ -259,11 +275,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
 
         if (chunk.type === 'text') {
-          // Accumulate content
+          // Accumulate content and batch update (Sprint 2 - PERF-2.7)
           accumulatedContent += chunk.content;
           setActivity('streaming', "En train d'écrire...");
-          // Update the message with new content
-          updateMessage(assistantMessageId, accumulatedContent);
+          batchedUpdateMessage(accumulatedContent);
         } else if (chunk.type === 'status') {
           // Status updates (file processing, tool execution start, etc.)
           setActivity('thinking', chunk.content || 'Traitement...');
@@ -283,9 +298,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
       }
 
+      // Cancel any pending RAF and do final update (Sprint 2 - PERF-2.7)
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       // Finalize the message (remove streaming flag)
       updateMessage(assistantMessageId, accumulatedContent);
     } catch (error) {
+      // Cancel any pending RAF on error (Sprint 2 - PERF-2.7)
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       console.error('Error sending message:', error);
       const errorMessage = error instanceof ApiError
         ? `Erreur serveur (${error.status}): ${error.message}`

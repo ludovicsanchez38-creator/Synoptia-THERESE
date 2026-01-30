@@ -4,6 +4,7 @@ THERESE v2 - Chat Router
 Endpoints for chat and conversation management.
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -13,6 +14,7 @@ from typing import AsyncGenerator
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func
 from sqlmodel import select
 
 from app.models.database import get_session
@@ -42,8 +44,10 @@ from app.services.entity_extractor import (
 from app.services.file_parser import extract_text, chunk_text, get_file_metadata
 from app.services.mcp_service import get_mcp_service
 from app.services.web_search import WEB_SEARCH_TOOL, execute_web_search
+from app.services.memory_tools import MEMORY_TOOLS, MEMORY_TOOL_NAMES, execute_memory_tool
 from app.services.performance import get_performance_monitor, get_search_index
 from app.services.token_tracker import get_token_tracker, detect_uncertainty
+from app.services.path_security import validate_file_path
 from app.models.entities import Contact, Project
 
 logger = logging.getLogger(__name__)
@@ -127,10 +131,13 @@ async def _get_file_context(
     Returns:
         Tuple of (context_string, error_message)
     """
-    path = Path(file_path).expanduser().resolve()
-
-    if not path.exists():
-        return None, f"Fichier non trouve: {file_path}"
+    # Validation securite du chemin (SEC-002)
+    try:
+        path = validate_file_path(file_path)
+    except PermissionError as e:
+        return None, str(e)
+    except FileNotFoundError as e:
+        return None, str(e)
 
     if not path.is_file():
         return None, f"Ce n'est pas un fichier: {file_path}"
@@ -181,7 +188,7 @@ async def _get_file_context(
                 })
 
             if items:
-                qdrant.add_memories(items)
+                await qdrant.async_add_memories(items)
                 logger.info(f"Indexed {len(chunks)} chunks for file {path.name}")
 
             file_meta.chunk_count = len(chunks)
@@ -221,7 +228,7 @@ Chemin: {path}
 # ============================================================
 
 
-def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
+async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
     """
     Search memory for context relevant to the user's message.
 
@@ -229,7 +236,7 @@ def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
     """
     try:
         qdrant = get_qdrant_service()
-        results = qdrant.search(
+        results = await qdrant.async_search(
             query=user_message,
             limit=limit,
             score_threshold=0.35,  # Lower threshold for broader context
@@ -301,6 +308,41 @@ async def _get_existing_entity_names(session: AsyncSession) -> tuple[list[str], 
     project_names = [p.name for p in projects if p.name]
 
     return contact_names, project_names
+
+
+async def _extract_entities_background(
+    user_message: str,
+    conversation_id: str,
+    message_id: str,
+    session: AsyncSession,
+) -> None:
+    """
+    Extrait les entites en arriere-plan (PERF-001).
+
+    Les resultats ne sont plus envoyes via SSE (le stream est deja ferme).
+    A terme, ils pourront etre envoyes via WebSocket ou polling endpoint.
+    """
+    try:
+        extractor = get_entity_extractor()
+        contact_names, project_names = await _get_existing_entity_names(session)
+
+        extraction_result = await extractor.extract_entities(
+            user_message=user_message,
+            existing_contacts=contact_names,
+            existing_projects=project_names,
+        )
+
+        if extraction_result.contacts or extraction_result.projects:
+            logger.info(
+                f"[Background] Detected {len(extraction_result.contacts)} contacts, "
+                f"{len(extraction_result.projects)} projects in message {message_id}"
+            )
+            # TODO: Envoyer via WebSocket ou stocker pour polling
+            # Pour l'instant, les entites sont loggees mais pas envoyees au frontend
+            # Le frontend devra interroger un endpoint GET /api/chat/{conv_id}/entities
+
+    except Exception as e:
+        logger.warning(f"[Background] Entity extraction failed: {e}")
 
 
 # ============================================================
@@ -385,7 +427,7 @@ async def send_message(
     messages = history + [LLMMessage(role="user", content=request.message)]
 
     # Get relevant memory context
-    memory_context = _get_memory_context(request.message)
+    memory_context = await _get_memory_context(request.message)
 
     # Check for file commands and add file context
     file_commands = _parse_file_commands(request.message)
@@ -463,6 +505,17 @@ async def _do_stream_response(
     history: list[LLMMessage] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    # Sprint 2 - PERF-2.11: Check for prompt injection
+    from app.services.prompt_security import check_prompt_safety, ThreatLevel
+    security_check = check_prompt_safety(user_message)
+    if not security_check.is_safe:
+        logger.warning(
+            f"Blocked message due to {security_check.threat_type}: "
+            f"level={security_check.threat_level.value}"
+        )
+        yield f"data: {json.dumps({'type': 'error', 'content': 'Message bloqué pour raison de sécurité.'})}\n\n"
+        return
+
     llm_service = get_llm_service()
     mcp_service = get_mcp_service()
 
@@ -480,7 +533,7 @@ async def _do_stream_response(
     messages.append(LLMMessage(role="user", content=user_message))
 
     # Get relevant memory context for the user's message
-    memory_context = _get_memory_context(user_message)
+    memory_context = await _get_memory_context(user_message)
 
     # Check for file commands and add file context
     file_commands = _parse_file_commands(user_message)
@@ -528,16 +581,19 @@ async def _do_stream_response(
     web_search_pref = result.scalar_one_or_none()
     web_search_enabled = web_search_pref.value.lower() == "true" if web_search_pref else True
 
-    # Get available tools: MCP tools + built-in web search
+    # Get available tools: MCP tools + built-in web search + memory tools
     # Note: For Gemini, web search is handled via native grounding (not tool calling)
     tools = mcp_service.get_tools_for_llm() or []
+
+    # Add memory tools (create_contact, create_project)
+    tools = MEMORY_TOOLS + tools
 
     # Add web_search tool for non-Gemini providers (if enabled)
     if web_search_enabled and llm_service.config.provider.value != "gemini":
         tools = [WEB_SEARCH_TOOL] + tools
-        logger.info(f"Providing {len(tools)} tools to LLM (including web_search)")
-    elif tools:
-        logger.info(f"Providing {len(tools)} MCP tools to LLM")
+
+    if tools:
+        logger.info(f"Providing {len(tools)} tools to LLM")
 
     full_content = ""
     tool_calls_collected: list[ToolCall] = []
@@ -577,6 +633,7 @@ async def _do_stream_response(
                         tools,
                         conversation_id,
                         max_tool_iterations,
+                        session=session,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -655,34 +712,16 @@ async def _do_stream_response(
     done_dict["uncertainty"] = uncertainty
     yield f"data: {json.dumps(done_dict)}\n\n"
 
-    # Extract entities from user message (async, after main response)
-    try:
-        extractor = get_entity_extractor()
-        contact_names, project_names = await _get_existing_entity_names(session)
-
-        extraction_result = await extractor.extract_entities(
+    # Fire-and-forget entity extraction (PERF-001)
+    # L'extraction continue en arriere-plan sans bloquer le stream SSE
+    asyncio.create_task(
+        _extract_entities_background(
             user_message=user_message,
-            existing_contacts=contact_names,
-            existing_projects=project_names,
+            conversation_id=conversation_id,
+            message_id=assistant_message.id,
+            session=session,
         )
-
-        # Only send event if entities were detected
-        if extraction_result.contacts or extraction_result.projects:
-            entities_data = StreamChunk(
-                type="entities_detected",
-                content="",
-                conversation_id=conversation_id,
-                message_id=assistant_message.id,
-                entities=extraction_result_to_dict(extraction_result),
-            )
-            yield f"data: {json.dumps(entities_data.model_dump())}\n\n"
-            logger.info(
-                f"Detected {len(extraction_result.contacts)} contacts, "
-                f"{len(extraction_result.projects)} projects in message"
-            )
-
-    except Exception as e:
-        logger.warning(f"Entity extraction failed: {e}")
+    )
 
 
 async def _execute_tools_and_continue(
@@ -694,6 +733,7 @@ async def _execute_tools_and_continue(
     tools: list[dict],
     conversation_id: str,
     remaining_iterations: int,
+    session: AsyncSession | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -748,6 +788,35 @@ async def _execute_tools_and_continue(
                         self.execution_time_ms = exec_time
 
                 result = WebSearchError(str(e), execution_time)
+        elif tc.name in MEMORY_TOOL_NAMES:
+            # Built-in memory tools (create_contact, create_project)
+            import time
+            start_time = time.time()
+            try:
+                if session is None:
+                    raise RuntimeError("Database session not available for memory tools")
+                tool_result_str = await execute_memory_tool(tc.name, tc.arguments, session)
+                execution_time = (time.time() - start_time) * 1000
+
+                class MemoryToolResult:
+                    def __init__(self, result_text: str, exec_time: float):
+                        self.success = True
+                        self.result = result_text
+                        self.error = None
+                        self.execution_time_ms = exec_time
+
+                result = MemoryToolResult(tool_result_str, execution_time)
+            except Exception as e:
+                execution_time = (time.time() - start_time) * 1000
+
+                class MemoryToolError:
+                    def __init__(self, error_msg: str, exec_time: float):
+                        self.success = False
+                        self.result = None
+                        self.error = error_msg
+                        self.execution_time_ms = exec_time
+
+                result = MemoryToolError(str(e), execution_time)
         else:
             # Execute via MCP service
             result = await mcp_service.execute_tool_call(tc.name, tc.arguments)
@@ -815,6 +884,7 @@ async def _execute_tools_and_continue(
                     tools,
                     conversation_id,
                     remaining_iterations - 1,
+                    session=session,
                 ):
                     yield nested_event
 
@@ -838,35 +908,40 @@ async def list_conversations(
     offset: int = 0,
     session: AsyncSession = Depends(get_session),
 ):
-    """List all conversations."""
-    result = await session.execute(
-        select(Conversation)
+    """
+    List all conversations with message counts.
+
+    Sprint 2 - PERF-2.9: Use COUNT(*) with GROUP BY instead of N+1 queries.
+    Before: 1 query for conversations + N queries for message counts
+    After: 1 query with LEFT JOIN and GROUP BY
+    """
+    # Single query with COUNT (Sprint 2 - PERF-2.9)
+    stmt = (
+        select(
+            Conversation,
+            func.count(Message.id).label("message_count")
+        )
+        .outerjoin(Message, Message.conversation_id == Conversation.id)
+        .group_by(Conversation.id)
         .order_by(Conversation.updated_at.desc())
         .offset(offset)
         .limit(limit)
     )
-    conversations = result.scalars().all()
 
-    responses = []
-    for conv in conversations:
-        # Count messages
-        msg_result = await session.execute(
-            select(Message).where(Message.conversation_id == conv.id)
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    return [
+        ConversationResponse(
+            id=conv.id,
+            title=conv.title,
+            summary=conv.summary,
+            message_count=msg_count,
+            created_at=conv.created_at,
+            updated_at=conv.updated_at,
         )
-        message_count = len(msg_result.scalars().all())
-
-        responses.append(
-            ConversationResponse(
-                id=conv.id,
-                title=conv.title,
-                summary=conv.summary,
-                message_count=message_count,
-                created_at=conv.created_at,
-                updated_at=conv.updated_at,
-            )
-        )
-
-    return responses
+        for conv, msg_count in rows
+    ]
 
 
 @router.post("/conversations", response_model=ConversationResponse)

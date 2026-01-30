@@ -35,6 +35,18 @@ palette:
 
 ---
 
+## TODO / Backlog
+
+- [x] **Bug génération d'images** : RESOLU - Clé Gemini image configurée (26/01/2026)
+- [x] **Tests E2E automatisés** : FAIT - 18 tests Playwright (26/01/2026)
+- [ ] **Tool `create_contact`** : Permettre à THÉRÈSE d'ajouter directement des contacts en mémoire via un tool
+- [ ] **Tool `create_project`** : Idem pour les projets
+- [ ] **Tests E2E Skills** : test_skills.py (génération DOCX/PPTX/XLSX)
+- [ ] **Tests E2E Images** : test_images.py (génération GPT/Gemini)
+- [ ] **Packaging macOS** : Icône + build .app + .dmg
+
+---
+
 ## Avancement Développement
 
 ### MVP Chat - FAIT (21 janvier 2026)
@@ -156,7 +168,7 @@ palette:
 ### Session 21 janvier - UI Guided Prompts (style Cowork)
 - [x] **Guided Prompts UI** - Interface guidée pour l'écran vide
   - `src/frontend/src/components/guided/` - Nouveau module complet
-  - `actionData.ts` - Configuration 6 actions + 24 sous-options avec prompts
+  - `actionData.ts` - Configuration 3 actions + 24 sous-options avec prompts
   - `ActionCard.tsx` - Cartes actions avec animations hover/tap Framer Motion
   - `SubOptionsPanel.tsx` - Panel sous-options en pills avec navigation retour
   - `GuidedPrompts.tsx` - Composant orchestrateur avec transitions AnimatePresence
@@ -171,15 +183,12 @@ palette:
   - État `guidedPrompt` pour câblage MessageList → ChatInput
   - Handlers `handleGuidedPromptSelect` et `handleGuidedPromptConsumed`
 
-**Les 6 actions Synoptïa** :
-| Action | Icône | Sous-options |
-|--------|-------|--------------|
-| Rédiger | PenLine | Email pro, Post LinkedIn, Proposition commerciale, Document |
-| Analyser | BarChart3 | Fichier Excel, Document PDF, Site web, Marché |
-| Planifier | Calendar | Réunion, Projet, Semaine, Objectifs |
-| Automatiser | Workflow | n8n, Apps Script, Make, Zapier |
-| Créer | Sparkles | Présentation, Tableau de bord, Formulaire, Landing page |
-| Apprendre | GraduationCap | Outil IA, Concept, Processus, Best practices |
+**Les 3 actions Synoptïa** (consolidation 25 janvier 2026) :
+| Action | Icône | Sous-options (24 total) |
+|--------|-------|------------------------|
+| Produire | Sparkles | Email pro, Post LinkedIn, Proposition commerciale, Document Word, Présentation PPT, Tableur Excel, Image IA GPT, Image IA Gemini (8) |
+| Comprendre | Brain | Fichier Excel, Document PDF, Site web, Marché, Outil IA, Concept, Best practices (7) |
+| Organiser | GitBranch | Réunion, Projet, Semaine, Objectifs, Workflow n8n, Apps Script, Make, Zapier, Processus (9) |
 
 ### MVP v1.1 - COMPLET
 
@@ -207,13 +216,14 @@ palette:
   - UI unifiée dans SettingsModal (sélection provider, clé API, modèle)
   - Ollama : détection auto des modèles locaux
 
-**Providers supportés** :
-| Provider | Modèles | Notes |
-|----------|---------|-------|
-| Anthropic | Claude 4 Sonnet/Haiku/Opus | Recommandé |
-| OpenAI | GPT-4o, GPT-4 Turbo, GPT-3.5 | Polyvalent |
-| Gemini | 2.0 Flash, 1.5 Pro/Flash | 1M tokens context |
-| Mistral | Large, Medium, Small | IA française |
+**Providers supportés (janvier 2026)** :
+| Provider | Modèle ID API | Notes |
+|----------|---------------|-------|
+| Anthropic | `claude-opus-4-5-20251101` | Opus 4.5 - Recommandé |
+| OpenAI | `gpt-5.2` | GPT-5.2 |
+| Gemini | `gemini-3-pro-preview` | Gemini 3 Pro - 1M context |
+| Mistral | `mistral-large-latest` | Mistral Large 3 - IA française |
+| Grok | `grok-4` | Grok 4 - xAI |
 | Ollama | Dynamique (local) | 100% local |
 
 ### MVP v1.2 - COMPLET (Multi-Provider)
@@ -528,6 +538,33 @@ BMAD (Breakthrough Method for Agile AI-Driven Development) est installé.
 
 ### MVP v1.9 - COMPLET (Onboarding Polish)
 
+### Session 26 janvier - SecurityStep Onboarding
+
+Ajout d'une etape de securite obligatoire dans le wizard d'onboarding.
+
+- [x] **SecurityStep.tsx** - Nouvelle etape 4/6
+  - Avertissement sur les risques lies aux connexions cloud
+  - Liste des 5 risques : LLMs cloud, MCP servers, fichiers, web search, transcription
+  - Indicateurs de severite (high/medium/low)
+  - Checkbox d'acknowledgement obligatoire
+  - Liens vers documentation securite
+- [x] **OnboardingWizard.tsx** - Integration SecurityStep
+  - Wizard passe de 5 a 6 etapes
+  - Ordre: Welcome → Profile → LLM → **Security** → WorkingDir → Complete
+
+**Risques documentes**:
+| Connexion | Severite | Description |
+|-----------|----------|-------------|
+| LLMs Cloud | High | Donnees envoyees aux providers |
+| MCP Servers | High | Execution commandes, lecture/ecriture fichiers |
+| Acces fichiers | Medium | Lecture fichiers locaux pour contexte |
+| Recherche Web | Low | Requetes tracables DuckDuckGo/Google |
+| Transcription | Medium | Audio envoye a Groq |
+
+**Sources** : Best practices MCP Security 2026 (Bitdefender, Palo Alto, StackHawk)
+
+### MVP v2.9 - COMPLET (Security Onboarding)
+
 ### Session 24 janvier - Board de Décision Stratégique (Epic 1)
 
 Feature complète permettant de convoquer un "board" de 5 conseillers IA pour les décisions stratégiques.
@@ -815,7 +852,7 @@ const rice = await calculateRICE(1000, 2, 80, 2);
 ### UI/UX
 - [x] Dark mode premium (charte Synoptïa)
 - [x] Animations Framer Motion
-- [x] Guided Prompts (6 actions × 4 options)
+- [x] Guided Prompts (3 actions × 24 options)
 - [x] Side Toggles latéraux
 - [x] Input vocal (Groq Whisper)
 
@@ -1074,7 +1111,7 @@ Implémentation de 30 User Stories couvrant 7 nouveaux domaines :
 ### UI/UX
 - [x] Dark mode premium (charte Synoptïa)
 - [x] Animations Framer Motion
-- [x] Guided Prompts (6 actions × 4 options)
+- [x] Guided Prompts (3 actions × 24 options)
 - [x] Side Toggles latéraux
 - [x] Input vocal (Groq Whisper)
 
@@ -1136,3 +1173,323 @@ Implémentation de 30 User Stories couvrant 7 nouveaux domaines :
 ---
 
 *Dernière mise à jour : 24 janvier 2026 - MVP v2.8 (103 tests, 30 User Stories Qualité, Intégration Chat complète)*
+
+### Session 26 janvier - Tests E2E automatisés (COMPLET)
+
+**Infrastructure de tests end-to-end avec Playwright** :
+
+- [x] **Structure tests/e2e/** - Configuration complète
+  - `conftest.py` - Fixtures (sandbox, backend, browser, page)
+  - `test_onboarding.py` - 5 tests wizard
+  - `test_chat.py` - 7 tests chat/messages
+  - `test_guided_prompts.py` - 6 tests navigation
+  - Screenshots automatiques pour debug
+  
+- [x] **Sandbox isolé** - `~/.therese-test-sandbox`
+  - Variable env `THERESE_DATA_DIR` pour isolation
+  - Reset DB entre chaque test
+  - N'affecte pas `~/.therese` principal
+
+- [x] **Makefile amélioré** - Commandes E2E
+  - `make install-e2e` - Install Playwright + dépendances
+  - `make test-e2e` - Tests headless (CI)
+  - `make test-e2e-headed` - Tests avec navigateur visible
+  - `make reset-sandbox` - Reset environnement test
+  - `make reset-onboarding` - Reset wizard pour tests
+
+**Tests implémentés (18 total)** :
+
+| Fichier | Tests | Description |
+|---------|-------|-------------|
+| `test_onboarding.py` | 5 | Wizard 6 étapes, validation champs, navigation |
+| `test_chat.py` | 7 | Envoi/réception, streaming, shortcuts, persistence |
+| `test_guided_prompts.py` | 6 | Navigation actions, sous-options, animations |
+
+**Commandes rapides** :
+```bash
+# Installation
+make install-e2e
+
+# Lancer les tests (mode visible pour debug)
+make test-e2e-headed
+
+# Test spécifique
+uv run pytest tests/e2e/test_onboarding.py::test_onboarding_wizard_complete_flow -v
+```
+
+**TODO tests** :
+- [ ] test_skills.py - Génération documents Office
+- [ ] test_images.py - Génération images
+- [ ] test_memory.py - CRUD contacts/projets
+- [ ] test_board.py - Board de décision
+
+### MVP v2.9+ - COMPLET (Tests E2E Ready)
+
+### Session 27 janvier - MCP Enrichment (Phases 5-8 du plan)
+
+**Implémentation complète de la sécurisation MCP et enrichissement presets**
+
+#### Phase 5 : MCP Security - Chiffrement clés API ✅
+- [x] **Backend chiffrement automatique**
+  - `mcp.py` - `create_server()` et `update_server()` chiffrent les env vars
+  - `mcp_service.py` - `start_server()` déchiffre les env vars au démarrage
+  - Utilisation service `encryption.py` existant (Fernet AES-128-CBC + HMAC)
+  - Détection auto valeurs chiffrées (préfixe `gAAAAA`)
+- [x] **Sécurité renforcée**
+  - Clés API MCP stockées chiffrées dans `~/.therese/mcp_servers.json`
+  - Déchiffrement transparent au démarrage serveur
+  - Gestion erreurs de déchiffrement (fallback valeur chiffrée)
+
+#### Phase 6-8 : MCP Presets - Tier 1/2/3 ✅
+- [x] **13 presets MCP disponibles** (vs 3 avant)
+  - **Tier 1 (5 presets sans clé)** : filesystem, fetch, git, time, sequential-thinking
+  - **Tier 2 (1 preset Google)** : google-workspace
+  - **Tier 3 (7 presets externes)** : github, slack, notion, airtable, zapier, make, linear
+- [x] **EnvVarModal.tsx** - Modal professionnel saisie clés API
+  - Validation préfixe en temps réel (ex: GITHUB_TOKEN → ghp_)
+  - Boutons show/hide par champ
+  - Indicateurs visuels (✓ vert si valide, ⚠️ rouge si erreur)
+  - Liens directs vers consoles providers (9 providers configurés)
+  - Bouton "Installer" disabled tant que pas toutes les clés
+- [x] **ToolsPanel.tsx** - Intégration modal
+  - Remplacement `prompt()` basique par EnvVarModal
+  - Flux UX amélioré pour installation presets
+
+**Fichiers créés** :
+- `src/frontend/src/components/settings/EnvVarModal.tsx` (258 lignes)
+- `IMPLEMENTATION_PHASE5-8.md` - Documentation complète
+
+**Fichiers modifiés** :
+- `src/backend/app/routers/mcp.py` - PRESET_SERVERS étendu à 13 presets, chiffrement
+- `src/backend/app/services/mcp_service.py` - Déchiffrement au démarrage
+- `src/frontend/src/components/settings/ToolsPanel.tsx` - Intégration EnvVarModal
+
+**Tests à effectuer** :
+```bash
+# Backend
+cd src/backend && uv run uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd src/frontend && npm run tauri dev
+
+# Checklist
+1. Settings → Tools → Presets (13 presets affichés)
+2. Installer preset Tier 1 (fetch) → Sans clé, direct
+3. Installer preset Tier 3 (notion) → Modal avec validation
+4. Vérifier chiffrement dans ~/.therese/mcp_servers.json (gAAAAA...)
+```
+
+**Prochaine étape recommandée** : Tester Phases 5-8 avant d'attaquer Phase 1 (Email Gmail - 5-7 jours)
+
+### MVP v3.0 - COMPLET (MCP Enrichment)
+
+### Session 28 janvier - CRM Sync Google Sheets
+
+**Synchronisation bidirectionnelle CRM depuis Google Sheets** (Google Sheets = source de vérité)
+
+#### Fichiers créés
+- `src/backend/app/services/sheets_service.py` - Client Google Sheets API
+- `src/backend/app/services/crm_sync.py` - Service de synchronisation CRM
+- `src/frontend/src/components/settings/CRMSyncPanel.tsx` - UI de sync
+
+#### Fichiers modifiés
+- `src/backend/app/services/oauth.py` - Ajout GSHEETS_SCOPES
+- `src/backend/app/routers/crm.py` - Endpoints sync (/api/crm/sync/*)
+- `src/backend/app/models/schemas.py` - Schemas CRM sync
+- `src/frontend/src/services/api.ts` - Fonctions API CRM sync
+- `src/frontend/src/components/settings/SettingsModal.tsx` - Integration CRMSyncPanel
+
+#### Endpoints API
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/crm/sync/config` | GET | Configuration actuelle |
+| `/api/crm/sync/config` | POST | Configurer spreadsheet ID |
+| `/api/crm/sync/connect` | POST | Lancer OAuth Google Sheets |
+| `/api/crm/sync/callback` | GET | Callback OAuth |
+| `/api/crm/sync` | POST | Lancer la synchronisation (via API Google) |
+| `/api/crm/sync/import` | POST | Import direct des données JSON (bypass OAuth) |
+
+#### Fonctionnalités
+- **Sync Clients** : ID, Nom, Entreprise, Email, Tel, Source, Stage, Score, Tags
+- **Sync Projects** : ID, ClientID, Name, Description, Status, Budget
+- **Sync Deliverables** : ID, ProjectID, Title, Description, Status, DueDate
+
+#### Authentification
+1. **OAuth Google Sheets** (prioritaire) - Nécessite credentials Google + redirect_uri autorisé
+2. **Clé API Gemini** (fallback) - Uniquement pour spreadsheets publics/partagés
+3. **Import direct** (nouveau) - Via MCP Claude Code quand OAuth non disponible
+
+#### Configuration
+- Spreadsheet ID par défaut : `1gXhiy43tvaDW0Y9FEGPmfB7BBCbUCOl_Xb6nkWtnnUk` (CRM Synoptia)
+- Redirect URI OAuth : `http://localhost:8000/api/crm/sync/callback`
+- Accessible dans Settings → Données → Synchronisation CRM
+
+#### Corrections 28/01/2026
+- Fix double prefix router (`/api/crm/crm/` → `/api/crm/`)
+- Fix AsyncSession (`session.exec()` → `await session.execute()`)
+- Fix déchiffrement credentials OAuth depuis MCP Google Workspace
+- Fix redirect_uri OAuth (port 8080 → 8000)
+- Ajout endpoint `/api/crm/sync/import` pour bypass OAuth
+
+#### Statut synchronisation (28/01/2026)
+- 50 contacts en base
+- 13 projets en base
+- Sync fonctionnel via endpoint import
+
+### MVP v3.1 - COMPLET (CRM Sync)
+
+### Session 29 janvier - Sprint 2 Architecture + Performance (COMPLET)
+
+**Objectif** : Refactoring God Classes + quick wins performance.
+
+#### Wave 1 : Quick Wins (4 tâches S)
+- [x] **PERF-2.5** : Embedding async (`asyncio.to_thread`)
+- [x] **PERF-2.8** : Reader task stderr MCP
+- [x] **PERF-2.9** : COUNT(*) listing conversations (N+1 fix)
+- [x] **PERF-2.14** : Cleanup pending requests MCP (timeout 60s)
+
+#### Wave 2 : Refactoring Medium
+- [x] **PERF-2.4** : CRM Sync vers AsyncSession
+- [x] **PERF-2.7** : Batching updates SSE frontend (debounce)
+
+#### Wave 3 : God Class api.ts
+- [x] **PERF-2.2** : Decoupage api.ts en 14 modules (`src/frontend/src/services/api/`)
+  - `core.ts`, `chat.ts`, `memory.ts`, `config.ts`, `files.ts`, `skills.ts`
+  - `voice.ts`, `images.ts`, `board.ts`, `calculators.ts`, `mcp.ts`
+  - `performance.ts`, `personalisation.ts`, `escalation.ts`, `email.ts`
+  - `index.ts` (re-exports pour backward compatibility)
+
+#### Wave 4 : God Class llm.py (-73% lignes)
+- [x] **PERF-2.1** : Decoupage llm.py (1558 -> 417 lignes) en providers
+  - `providers/base.py` - ABC BaseProvider, LLMProvider enum, StreamEvent
+  - `providers/anthropic.py` - Claude API streaming + tools
+  - `providers/openai.py` - GPT API streaming + tools
+  - `providers/gemini.py` - Gemini API + Google Search grounding
+  - `providers/mistral.py` - Mistral API streaming
+  - `providers/grok.py` - Grok API streaming (OpenAI-compatible)
+  - `providers/ollama.py` - Ollama local streaming
+  - `context.py` - ContextWindow avec format converters
+
+#### Wave 5 : HTTP Client Pool + Prompt Security
+- [x] **PERF-2.6** : Pool global `httpx.AsyncClient` (`http_client.py`)
+  - 20 keepalive connections, 100 max, 30s expiry
+  - Cleanup automatique au shutdown (`close_http_client()`)
+- [x] **PERF-2.11** : Prompt injection mitigation (`prompt_security.py`)
+  - Detection patterns OWASP LLM Top 10
+  - ThreatLevel: NONE/LOW/MEDIUM/HIGH/CRITICAL
+  - Integration dans chat.py (bloque HIGH/CRITICAL)
+
+#### Wave 6 : Keychain Protection
+- [x] **PERF-2.10** : macOS Keychain pour cle de chiffrement (`encryption.py`)
+  - `keyring` library (service: therese-app, account: encryption-key)
+  - Migration automatique fichier -> keychain
+  - Fallback fichier si keychain indisponible
+
+#### Tests Sprint 2
+- [x] 25 tests LLM (providers, ContextWindow, StreamEvent, ToolCall)
+- [x] 31 tests encryption (chiffrement, keychain, rotation cles)
+- [x] 10 tests web search (corrigés - format OpenAI function calling)
+- [x] 13/14 tests board (corrigés - noms roles)
+- [x] **Total : 118 tests services passent**
+
+#### Bugfixes Session 29 janvier
+- [x] **Fix CORS OPTIONS** : Auth middleware bloquait les preflight requests
+  - Ajout `if request.method == "OPTIONS": return await call_next(request)`
+- [x] **Fix auth race condition** : `initializeAuth()` n'etait pas await avant `checkOnboarding()`
+  - Refactoring App.tsx : sequentiel `await initializeAuth()` puis `getOnboardingStatus()`
+- [x] **Fix image download auth** : Endpoint `/api/images/download` ajouté aux exempt_paths
+- [x] **Fix health endpoint** : `/health` ajouté aux exempt_paths (en plus de `/api/health`)
+- [x] **Fix web search tests** : WEB_SEARCH_TOOL format OpenAI (nested `function`), SearchResponse `total_results`
+- [x] **Fix board tests** : Roles `devil`/`pragmatic` (pas `devils_advocate`/`pragmatist`), accent "Stratège"
+
+### MVP v3.2 - COMPLET (Sprint 2 Architecture + Performance)
+
+### Session 30 janvier - Fenetres independantes pour panels
+
+Les 5 panels (Email, Calendrier, Taches, Factures, CRM) s'ouvrent maintenant dans des fenetres macOS separees au lieu de modals overlay. La fenetre principale (chat) reste intacte.
+
+#### Approche technique
+- `WebviewWindow` de Tauri 2.0 cote JS (pas de modif Rust)
+- Chaque fenetre charge `index.html?panel=xxx` et affiche le composant en mode standalone
+- Gestion singleton : si fenetre deja ouverte, focus au lieu de recreer
+- Stores Zustand non partages entre fenetres (chaque fenetre fait ses propres appels API)
+
+#### Fichiers crees
+| Fichier | Description |
+|---------|-------------|
+| `src/frontend/src/services/windowManager.ts` | `openPanelWindow()`, singleton, cleanup via `tauri://destroyed` |
+| `src/frontend/src/components/panels/PanelWindow.tsx` | Wrapper standalone - init auth + affiche le bon panel |
+
+#### Fichiers modifies
+| Fichier | Modification |
+|---------|-------------|
+| `App.tsx` | Detecte `?panel=xxx` dans l'URL, affiche `PanelWindow` au lieu de `ChatLayout` |
+| `ChatLayout.tsx` | 5 toggle handlers -> `openPanelWindow()`, suppression rendu modal des panels |
+| `EmailPanel.tsx` | Prop `standalone`, chargement comptes en mode standalone |
+| `CalendarPanel.tsx` | Prop `standalone`, chargement comptes email si pas dispo |
+| `TasksPanel.tsx` | Prop `standalone`, `effectiveOpen` pour chargement |
+| `InvoicesPanel.tsx` | Prop `standalone`, `effectiveOpen` pour chargement |
+| `CRMPanel.tsx` | Prop `standalone`, `effectiveOpen` pour chargement |
+| `capabilities/default.json` | `"panel-*"` dans windows, `core:webview:allow-create-webview-window` |
+| `tauri.conf.json` | `http://127.0.0.1:8000` ajoute a la CSP |
+
+#### Points techniques importants
+- **NE PAS utiliser `onCloseRequested`** sur les WebviewWindow Tauri 2.0 : ca bloque la fermeture native (croix rouge macOS). Utiliser `once('tauri://destroyed')` pour le nettoyage.
+- En mode standalone, les panels chargent leurs donnees directement (pas besoin de l'etat `isOpen` du store)
+- Les raccourcis clavier ouvrent aussi les fenetres separees
+
+### MVP v3.3 - COMPLET (Fenetres independantes)
+
+### Session 30 janvier - suite - Persistance Email/Calendrier
+
+Corrections pour que les panels Email et Calendrier fonctionnent correctement
+en fenetres separees avec donnees persistantes.
+
+#### Problemes identifies et corriges
+
+1. **PanelWindow ne pre-chargeait pas les comptes email** : Pour Email/Calendrier,
+   les comptes doivent etre disponibles AVANT que le panel monte. PanelWindow
+   appelle maintenant `getEmailAuthStatus()` et peuple le `emailStore` avant
+   d'afficher le panel.
+
+2. **CalendarStore ne persistait presque rien** : Seuls `viewMode` et `showCancelled`
+   etaient persistes. Maintenant persiste aussi : `calendars`, `currentCalendarId`,
+   `events`, `lastSyncAt`.
+
+3. **EmailStore ne persistait pas labels/messages** : Ajout de `labels` et `messages`
+   dans le partialize pour un affichage instantane au reopening.
+
+4. **CalendarPanel loadEvents() utilisait new Date()** au lieu de `selectedDate` :
+   Les evenements ne se mettaient pas a jour en naviguant entre les mois.
+
+5. **CalendarPanel pas de loading state en standalone** : Ajout `loading=true` initial
+   en mode standalone + gestion erreur si pas de compte email configure.
+
+#### Fichiers modifies
+| Fichier | Modification |
+|---------|-------------|
+| `PanelWindow.tsx` | Pre-charge comptes email, gestion erreur avec bouton retry |
+| `calendarStore.ts` | Persist calendars, currentCalendarId, events, lastSyncAt |
+| `emailStore.ts` | Persist labels, messages |
+| `CalendarPanel.tsx` | loadEvents avec selectedDate, loading initial standalone, erreur si pas de compte |
+
+#### Notes techniques
+- localStorage est partage entre toutes les fenetres Tauri (meme origine)
+- Zustand `persist` hydrate depuis localStorage au mount
+- Les donnees cachees s'affichent instantanement, puis se rafraichissent via API
+- Si le backend ne repond pas, PanelWindow affiche un ecran d'erreur avec "Reessayer"
+
+### MVP v3.4 - COMPLET (Persistance Email/Calendrier)
+
+---
+
+## TODO / Backlog (mis a jour 30 janvier 2026)
+
+- [ ] **Tool `create_contact`** : Permettre a THERESE d'ajouter des contacts via tool
+- [ ] **Tool `create_project`** : Idem pour les projets
+- [ ] **Tests E2E Skills** : test_skills.py (generation DOCX/PPTX/XLSX)
+- [ ] **Tests E2E Images** : test_images.py (generation GPT/Gemini)
+- [ ] **Packaging macOS** : Icone + build .app + .dmg
+- [ ] **Fix test board streaming** : `test_deliberate_returns_sse_stream` (infra test)
+- [ ] **Email Gmail** : Reconnexion OAuth (tokens expires)
+- [ ] **Cleanup MCP config** : Supprimer `server-with-env` et doublons `test-server`

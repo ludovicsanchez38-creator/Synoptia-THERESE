@@ -1,0 +1,94 @@
+import { useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useChatStore } from '../../stores/chatStore';
+import { MessageBubble } from './MessageBubble';
+import { TypingIndicator } from './TypingIndicator';
+import { GuidedPrompts } from '../guided';
+import { EntitySuggestion } from './EntitySuggestion';
+
+interface MessageListProps {
+  onPromptSelect?: (prompt: string) => void;
+}
+
+export function MessageList({ onPromptSelect }: MessageListProps) {
+  // Subscribe to actual state to trigger re-renders when messages change
+  const conversations = useChatStore((state) => state.conversations);
+  const currentConversationId = useChatStore((state) => state.currentConversationId);
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const clearMessageEntities = useChatStore((state) => state.clearMessageEntities);
+
+  // Compute current conversation from subscribed state
+  const conversation = conversations.find((c) => c.id === currentConversationId) || null;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleEntityDismiss = useCallback((messageId: string) => {
+    clearMessageEntities(messageId);
+  }, [clearMessageEntities]);
+
+  const handleEntitySaved = useCallback(() => {
+    // Could trigger a notification or refresh here
+    console.log('Entity saved to memory');
+  }, []);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversation?.messages, isStreaming]);
+
+  // Empty state with guided prompts UI
+  if (!conversation || conversation.messages.length === 0) {
+    return (
+      <div className="h-full overflow-y-auto flex items-center justify-center py-8">
+        <GuidedPrompts onPromptSelect={onPromptSelect || (() => {})} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto px-4 py-6">
+      <div className="max-w-3xl mx-auto space-y-4">
+        <AnimatePresence initial={false}>
+          {conversation.messages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{
+                duration: 0.2,
+                delay: index * 0.03,
+              }}
+            >
+              <MessageBubble message={message} />
+
+              {/* Show entity suggestions after assistant messages */}
+              {message.role === 'assistant' && message.detectedEntities && (
+                (message.detectedEntities.contacts.length > 0 ||
+                  message.detectedEntities.projects.length > 0) && (
+                  <EntitySuggestion
+                    contacts={message.detectedEntities.contacts}
+                    projects={message.detectedEntities.projects}
+                    messageId={message.id}
+                    onDismiss={() => handleEntityDismiss(message.id)}
+                    onSaved={handleEntitySaved}
+                  />
+                )
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {isStreaming && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <TypingIndicator />
+          </motion.div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+    </div>
+  );
+}

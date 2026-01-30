@@ -1,0 +1,332 @@
+@import 'tailwindcss';
+
+/* === THÉRÈSE v2 Design System === */
+
+@theme {
+  /* Colors */
+  --color-bg: #0B1226;
+  --color-surface: #131B35;
+  --color-surface-elevated: #1A2340;
+  --color-border: #2A3550;
+
+  --color-text: #E6EDF7;
+  --color-text-muted: #B6C7DA;
+
+  --color-accent-cyan: #22D3EE;
+  --color-accent-magenta: #E11D8D;
+
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+}
+
+/* Base styles - fenêtre avec coins arrondis */
+html {
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: transparent;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Root app container avec coins arrondis */
+#root {
+  background-color: var(--color-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Disable text selection on interactive elements for native feel */
+button,
+[role="button"] {
+  user-select: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid var(--color-accent-cyan);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-accent-cyan);
+  color: var(--color-bg);
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(19, 27, 53, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Prevent drag on images and links in Tauri */
+img,
+a {
+  -webkit-user-drag: none;
+}
+
+/* Tauri window drag region */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] input {
+  -webkit-app-region: no-drag;
+}
+
+/* === PREMIUM DARK THEME ENHANCEMENTS === */
+
+/* Glow effects for accent elements */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.15),
+              0 0 40px rgba(34, 211, 238, 0.1),
+              inset 0 0 20px rgba(34, 211, 238, 0.05);
+}
+
+.glow-magenta {
+  box-shadow: 0 0 20px rgba(225, 29, 141, 0.15),
+              0 0 40px rgba(225, 29, 141, 0.1),
+              inset 0 0 20px rgba(225, 29, 141, 0.05);
+}
+
+/* Subtle ambient glow for active states */
+.glow-active {
+  box-shadow: 0 0 30px rgba(34, 211, 238, 0.2),
+              0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Surface layers with subtle gradients */
+.surface-gradient {
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-elevated) 0%,
+    var(--color-surface) 100%
+  );
+}
+
+.surface-radial {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(34, 211, 238, 0.03) 0%,
+    transparent 70%
+  ), var(--color-surface);
+}
+
+/* Premium button hover states */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-glow:hover::before {
+  opacity: 1;
+}
+
+.btn-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+              0 0 20px rgba(34, 211, 238, 0.1);
+}
+
+/* Accent border glow on focus */
+.border-glow:focus-within {
+  border-color: var(--color-accent-cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15),
+              0 0 20px rgba(34, 211, 238, 0.1);
+  transition: all 0.2s ease;
+}
+
+/* Code blocks premium styling */
+.code-block {
+  background: linear-gradient(
+    135deg,
+    rgba(11, 18, 38, 0.9) 0%,
+    rgba(19, 27, 53, 0.95) 100%
+  );
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03),
+              0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Message bubbles */
+.message-user {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 211, 238, 0.12) 0%,
+    rgba(34, 211, 238, 0.06) 100%
+  );
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+.message-assistant {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+}
+
+/* Smooth transitions for theme */
+* {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Disable transitions on non-interactive elements for performance */
+p, span, div:not(:hover), section {
+  transition: none;
+}
+
+/* Status indicator pulses */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px currentColor;
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 16px currentColor;
+  }
+}
+
+.pulse-indicator {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Streaming text cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-cursor::after {
+  content: '▋';
+  animation: blink 1s step-end infinite;
+  color: var(--color-accent-cyan);
+  margin-left: 2px;
+}
+
+/* Liquid design card hover effect */
+.liquid-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(34, 211, 238, 0.08) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.liquid-card:hover::after {
+  opacity: 1;
+}
+
+/* Input field premium styling */
+.input-premium {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.input-premium:hover {
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
+.input-premium:focus {
+  border-color: var(--color-accent-cyan);
+  background: var(--color-surface-elevated);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1),
+              inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Divider with gradient */
+.divider-gradient {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-border) 20%,
+    var(--color-border) 80%,
+    transparent 100%
+  );
+}

@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { ToolsPanel } from './ToolsPanel';
+import { CRMSyncPanel } from './CRMSyncPanel';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -184,6 +185,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     role: '',
     email: '',
     location: '',
+    address: '',
+    siren: '',
+    tva_intra: '',
     context: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
@@ -201,6 +205,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       loadSettings();
     }
   }, [isOpen]);
+
+  // Refresh stats (for CRM sync callback)
+  async function refreshStats() {
+    try {
+      const statsData = await api.getStats();
+      setStats(statsData);
+    } catch (err) {
+      console.error('Failed to refresh stats:', err);
+    }
+  }
 
   async function loadSettings() {
     setLoading(true);
@@ -243,6 +257,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           role: profileData.role || '',
           email: profileData.email || '',
           location: profileData.location || '',
+          address: profileData.address || '',
+          siren: profileData.siren || '',
+          tva_intra: profileData.tva_intra || '',
           context: profileData.context || '',
         });
       }
@@ -430,6 +447,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         role: profileForm.role,
         email: profileForm.email,
         location: profileForm.location,
+        address: profileForm.address,
+        siren: profileForm.siren,
+        tva_intra: profileForm.tva_intra,
         context: profileForm.context,
       });
       setProfile(savedProfile);
@@ -463,6 +483,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           role: importedProfile.role || '',
           email: importedProfile.email || '',
           location: importedProfile.location || '',
+          address: importedProfile.address || '',
+          siren: importedProfile.siren || '',
+          tva_intra: importedProfile.tva_intra || '',
           context: importedProfile.context || '',
         });
         setProfileSaved(true);
@@ -523,7 +546,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl z-50 max-h-[85vh] overflow-hidden flex flex-col"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-surface border border-border rounded-xl shadow-2xl z-50 max-h-[85vh] overflow-hidden flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
@@ -534,10 +557,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-border/50 shrink-0">
+            <div className="flex border-b border-border/50 shrink-0 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'profile'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -548,7 +571,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('api')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'api'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -559,7 +582,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('tools')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'tools'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -570,7 +593,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('data')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'data'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -581,7 +604,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('accessibility')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'accessibility'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -592,7 +615,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'performance'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -603,7 +626,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
               <button
                 onClick={() => setActiveTab('escalation')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'escalation'
                     ? 'text-accent-cyan border-b-2 border-accent-cyan'
                     : 'text-text-muted hover:text-text'
@@ -685,6 +708,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   stats={stats}
                   workingDir={workingDir}
                   onSelectWorkingDir={handleSelectWorkingDir}
+                  onRefreshStats={refreshStats}
                 />
               )}
             </div>
@@ -737,6 +761,9 @@ function ProfileTab({
     role: string;
     email: string;
     location: string;
+    address: string;
+    siren: string;
+    tva_intra: string;
     context: string;
   };
   setProfileForm: (form: typeof profileForm | ((prev: typeof profileForm) => typeof profileForm)) => void;
@@ -852,6 +879,41 @@ function ProfileTab({
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Manosque, France"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+            />
+          </div>
+        </div>
+
+        {/* Facturation */}
+        <div>
+          <label className="text-xs text-text-muted mb-1 block">Adresse (facturation)</label>
+          <input
+            type="text"
+            value={profileForm.address}
+            onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
+            placeholder="294 Montee des Genets, 04100 Manosque"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-text-muted mb-1 block">SIREN</label>
+            <input
+              type="text"
+              value={profileForm.siren}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
+              placeholder="991 606 781"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-text-muted mb-1 block">TVA intracommunautaire</label>
+            <input
+              type="text"
+              value={profileForm.tva_intra}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
+              placeholder="FR 08 991 606 781"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
@@ -1481,69 +1543,80 @@ function DataTab({
   stats,
   workingDir,
   onSelectWorkingDir,
+  onRefreshStats,
 }: {
   stats: api.Stats | null;
   workingDir: string | null;
   onSelectWorkingDir: () => void;
+  onRefreshStats?: () => void;
 }) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-          <Database className="w-5 h-5 text-accent-cyan" />
-        </div>
-        <div>
-          <h3 className="font-medium text-text">Stockage des données</h3>
-          <p className="text-xs text-text-muted">
-            Vos données sont stockées localement sur votre machine
-          </p>
-        </div>
-      </div>
-
-      {/* Working Directory */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-text-muted">Dossier de travail</label>
-          <Button variant="ghost" size="sm" onClick={onSelectWorkingDir}>
-            <FolderOpen className="w-4 h-4 mr-2" />
-            Parcourir
-          </Button>
-        </div>
-        <div className="p-3 bg-background/40 rounded-lg border border-border/30">
-          <p className="text-xs text-text font-mono truncate">
-            {workingDir || 'Non configuré'}
-          </p>
-        </div>
-      </div>
-
-      {stats ? (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Conversations" value={stats.entities.conversations} />
-            <StatCard label="Messages" value={stats.entities.messages} />
-            <StatCard label="Contacts" value={stats.entities.contacts} />
-            <StatCard label="Projets" value={stats.entities.projects} />
+    <div className="space-y-6">
+      {/* Local Storage Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
+            <Database className="w-5 h-5 text-accent-cyan" />
           </div>
+          <div>
+            <h3 className="font-medium text-text">Stockage des données</h3>
+            <p className="text-xs text-text-muted">
+              Vos données sont stockées localement sur votre machine
+            </p>
+          </div>
+        </div>
 
+        {/* Working Directory */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-text-muted">Dossier de travail</label>
+            <Button variant="ghost" size="sm" onClick={onSelectWorkingDir}>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Parcourir
+            </Button>
+          </div>
           <div className="p-3 bg-background/40 rounded-lg border border-border/30">
-            <p className="text-xs text-text-muted mb-1">Emplacement de la base</p>
-            <p className="text-xs text-text font-mono truncate">{stats.db_path}</p>
+            <p className="text-xs text-text font-mono truncate">
+              {workingDir || 'Non configuré'}
+            </p>
           </div>
+        </div>
 
-          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">
-                Données stockées localement - 100% privé
-              </span>
+        {stats ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard label="Conversations" value={stats.entities.conversations} />
+              <StatCard label="Messages" value={stats.entities.messages} />
+              <StatCard label="Contacts" value={stats.entities.contacts} />
+              <StatCard label="Projets" value={stats.entities.projects} />
+            </div>
+
+            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+              <p className="text-xs text-text-muted mb-1">Emplacement de la base</p>
+              <p className="text-xs text-text font-mono truncate">{stats.db_path}</p>
+            </div>
+
+            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400">
+                  Données stockées localement - 100% privé
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="p-4 bg-background/40 rounded-lg border border-border/30 text-center">
-          <p className="text-sm text-text-muted">Statistiques non disponibles</p>
-        </div>
-      )}
+        ) : (
+          <div className="p-4 bg-background/40 rounded-lg border border-border/30 text-center">
+            <p className="text-sm text-text-muted">Statistiques non disponibles</p>
+          </div>
+        )}
+      </div>
+
+      {/* Separator */}
+      <div className="border-t border-border/30" />
+
+      {/* CRM Sync Section */}
+      <CRMSyncPanel onSyncComplete={onRefreshStats} />
     </div>
   );
 }
