@@ -71,7 +71,11 @@ class GeminiProvider(BaseProvider):
                 headers={"Content-Type": "application/json"},
                 json=request_body,
             ) as response:
-                response.raise_for_status()
+                if response.status_code != 200:
+                    error_body = await response.aread()
+                    logger.error(f"Gemini API {response.status_code}: {error_body.decode()}")
+                    yield StreamEvent(type="error", content=f"API error: {response.status_code}")
+                    return
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data = line[6:]
@@ -98,7 +102,8 @@ class GeminiProvider(BaseProvider):
             yield StreamEvent(type="done", stop_reason="end_turn")
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"Gemini API error: {e.response.status_code}")
+            error_body = e.response.text if hasattr(e.response, 'text') else str(e)
+            logger.error(f"Gemini API error: {e.response.status_code} - {error_body}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Gemini streaming error: {e}")

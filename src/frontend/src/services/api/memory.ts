@@ -58,9 +58,17 @@ export interface DeleteResponse {
 // Contacts
 export async function listContacts(
   offset = 0,
-  limit = 50
+  limit = 50,
+  options?: { hasSource?: boolean }
 ): Promise<Contact[]> {
-  return request<Contact[]>(`/api/memory/contacts?offset=${offset}&limit=${limit}`);
+  const params = new URLSearchParams({
+    offset: offset.toString(),
+    limit: limit.toString(),
+  });
+  if (options?.hasSource !== undefined) {
+    params.set('has_source', options.hasSource.toString());
+  }
+  return request<Contact[]>(`/api/memory/contacts?${params.toString()}`);
 }
 
 export async function getContact(id: string): Promise<Contact> {

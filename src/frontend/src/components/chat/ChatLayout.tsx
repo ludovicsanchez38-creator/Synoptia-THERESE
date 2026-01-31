@@ -103,8 +103,18 @@ export function ChatLayout() {
     setShowContactModal(true);
   }, []);
 
+  const handleEditContact = useCallback((contact: api.Contact) => {
+    setEditingContact(contact);
+    setShowContactModal(true);
+  }, []);
+
   const handleNewProject = useCallback(() => {
     setEditingProject(null);
+    setShowProjectModal(true);
+  }, []);
+
+  const handleEditProject = useCallback((project: api.Project) => {
+    setEditingProject(project);
     setShowProjectModal(true);
   }, []);
 
@@ -177,6 +187,7 @@ export function ChatLayout() {
     onToggleMemoryPanel: handleToggleMemoryPanel,
     onNewContact: handleNewContact,
     onNewProject: handleNewProject,
+    onOpenSettings: handleOpenSettings,
     onToggleConversationSidebar: handleToggleConversationSidebar,
     onToggleBoardPanel: handleToggleBoardPanel,
     onToggleEmailPanel: handleToggleEmailPanel,
@@ -185,11 +196,9 @@ export function ChatLayout() {
     onToggleInvoicesPanel: handleToggleInvoicesPanel,
     onToggleCRMPanel: handleToggleCRMPanel,
     onSearch: () => {
-      // Open memory panel with focus on search
       setShowMemoryPanel(true);
     },
     onOpenFile: () => {
-      // TODO: Open file picker
       console.log('Open file');
     },
   });
@@ -245,6 +254,19 @@ export function ChatLayout() {
         isOpen={showCommandPalette}
         onClose={handleCloseCommandPalette}
         onShowShortcuts={handleShowShortcuts}
+        onNewContact={handleNewContact}
+        onNewProject={handleNewProject}
+        onOpenSettings={handleOpenSettings}
+        onToggleConversations={handleToggleConversationSidebar}
+        onToggleMemory={handleToggleMemoryPanel}
+        onToggleBoard={handleToggleBoardPanel}
+        onToggleEmail={handleToggleEmailPanel}
+        onToggleCalendar={handleToggleCalendarPanel}
+        onToggleTasks={handleToggleTasksPanel}
+        onToggleInvoices={handleToggleInvoicesPanel}
+        onToggleCRM={handleToggleCRMPanel}
+        onSearch={() => setShowMemoryPanel(true)}
+        onOpenFile={() => console.log('Open file')}
       />
 
       {/* Shortcuts Modal */}
@@ -259,6 +281,8 @@ export function ChatLayout() {
         onClose={handleCloseMemoryPanel}
         onNewContact={handleNewContact}
         onNewProject={handleNewProject}
+        onEditContact={handleEditContact}
+        onEditProject={handleEditProject}
       />
 
       {/* Settings Modal */}

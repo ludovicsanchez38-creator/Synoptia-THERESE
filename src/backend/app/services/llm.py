@@ -106,8 +106,8 @@ def _get_api_key_from_db(provider: str) -> str | None:
                 if encryption.is_encrypted(value):
                     try:
                         value = encryption.decrypt(value)
-                    except Exception:
-                        pass
+                    except Exception as dec_err:
+                        logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
                 return value
     except Exception as e:
         logger.debug(f"Could not load {provider} API key: {e}")

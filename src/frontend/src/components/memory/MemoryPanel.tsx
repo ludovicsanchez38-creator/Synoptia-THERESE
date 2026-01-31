@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
 import { FileBrowser } from '../files/FileBrowser';
+import { ProjectsKanban } from './ProjectsKanban';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 
@@ -12,11 +13,13 @@ interface MemoryPanelProps {
   onClose: () => void;
   onNewContact?: () => void;
   onNewProject?: () => void;
+  onEditContact?: (contact: api.Contact) => void;
+  onEditProject?: (project: api.Project) => void;
 }
 
 type Tab = 'contacts' | 'projects' | 'files';
 
-export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject }: MemoryPanelProps) {
+export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEditContact, onEditProject }: MemoryPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('contacts');
   const [contacts, setContacts] = useState<api.Contact[]>([]);
   const [projects, setProjects] = useState<api.Project[]>([]);
@@ -144,6 +147,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject }: Mem
       console.error('Failed to delete:', error);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  // E3-Kanban: Status change handler for drag & drop
+  async function handleProjectStatusChange(projectId: string, newStatus: string) {
+    try {
+      const updated = await api.updateProject(projectId, { status: newStatus });
+      setProjects(prev => prev.map(p => p.id === projectId ? updated : p));
+    } catch (error) {
+      console.error('Failed to update project status:', error);
     }
   }
 
@@ -299,7 +312,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject }: Mem
               ) : activeTab === 'contacts' ? (
                 <ContactsList
                   contacts={filteredContacts}
-                  onSelect={(c) => console.log('Selected contact:', c)}
+                  onSelect={(c) => onEditContact?.(c)}
                   onDelete={(c) => setDeleteConfirm({
                     type: 'contact',
                     id: c.id,
@@ -308,14 +321,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject }: Mem
                   onRGPDAction={(type, contact) => setRgpdAction({ type, contact })}
                 />
               ) : activeTab === 'projects' ? (
-                <ProjectsList
+                <ProjectsKanban
                   projects={filteredProjects}
-                  onSelect={(p) => console.log('Selected project:', p)}
+                  onSelect={(p) => onEditProject?.(p)}
                   onDelete={(p) => setDeleteConfirm({
                     type: 'project',
                     id: p.id,
                     name: p.name
                   })}
+                  onStatusChange={handleProjectStatusChange}
                 />
               ) : (
                 <FileBrowser
@@ -722,95 +736,6 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   );
 }
 
-// Projects list component
-function ProjectsList({
-  projects,
-  onSelect,
-  onDelete,
-}: {
-  projects: api.Project[];
-  onSelect: (project: api.Project) => void;
-  onDelete: (project: api.Project) => void;
-}) {
-  if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-32 text-text-muted">
-        <Briefcase className="w-8 h-8 mb-2 opacity-50" />
-        <p className="text-sm">Aucun projet</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="divide-y divide-border/30">
-      {projects.map((project) => (
-        <div
-          key={project.id}
-          className="w-full flex items-center gap-3 p-3 hover:bg-background/40 transition-colors text-left group"
-        >
-          {/* Icon + Info - clickable */}
-          <button
-            onClick={() => onSelect(project)}
-            className="flex items-center gap-3 flex-1 min-w-0"
-          >
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-magenta/20 to-accent-cyan/20 flex items-center justify-center flex-shrink-0">
-              <Briefcase className="w-5 h-5 text-accent-magenta" />
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text truncate">{project.name}</p>
-              {project.description && (
-                <p className="text-xs text-text-muted truncate">{project.description}</p>
-              )}
-              <div className="flex items-center gap-2 mt-1">
-                <StatusBadge status={project.status} />
-                {project.budget && (
-                  <span className="text-xs text-text-muted">
-                    {formatCurrency(project.budget)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </button>
-
-          {/* Delete button + Arrow */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(project); }}
-              className="p-1.5 rounded-md hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
-              title="Supprimer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <ChevronRight className="w-4 h-4 text-text-muted" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Status badge component
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    active: 'bg-green-500/20 text-green-400',
-    pending: 'bg-yellow-500/20 text-yellow-400',
-    completed: 'bg-blue-500/20 text-blue-400',
-    cancelled: 'bg-red-500/20 text-red-400',
-  };
-
-  return (
-    <span
-      className={`px-2 py-0.5 rounded text-xs font-medium ${
-        colors[status.toLowerCase()] || 'bg-gray-500/20 text-gray-400'
-      }`}
-    >
-      {status}
-    </span>
-  );
-}
-
 // Helper functions
 function getInitials(firstName?: string | null, lastName?: string | null): string {
   const first = firstName?.charAt(0)?.toUpperCase() || '';
@@ -818,10 +743,3 @@ function getInitials(firstName?: string | null, lastName?: string | null): strin
   return first + last || '?';
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}

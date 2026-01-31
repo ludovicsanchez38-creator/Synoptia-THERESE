@@ -14,6 +14,7 @@ interface ShortcutHandlers {
   onToggleCRMPanel?: () => void;
   onNewContact?: () => void;
   onNewProject?: () => void;
+  onOpenSettings?: () => void;
   onSearch?: () => void;
   onOpenFile?: () => void;
   onEscape?: () => void;
@@ -30,6 +31,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // Determine the correct modifier key
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? event.metaKey : event.ctrlKey;
+      const key = event.key.toLowerCase();
 
       // Don't trigger shortcuts when typing in inputs (except specific ones)
       const target = event.target as HTMLElement;
@@ -39,7 +41,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         target.isContentEditable;
 
       // Escape always works
-      if (event.key === 'Escape') {
+      if (key === 'escape') {
         handlers.onEscape?.();
         return;
       }
@@ -48,7 +50,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       if (!modKey) return;
 
       // Cmd+K - Command palette (works even in inputs)
-      if (event.key === 'k') {
+      if (key === 'k') {
         event.preventDefault();
         handlers.onCommandPalette?.();
         return;
@@ -64,85 +66,89 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // Skip other shortcuts when in inputs
       if (isInput) return;
 
+      // --- Shift combos first (before non-shift) ---
+
+      // Cmd+Shift+C - Calendar panel
+      if (key === 'c' && event.shiftKey) {
+        event.preventDefault();
+        handlers.onToggleCalendarPanel?.();
+        return;
+      }
+
+      // Cmd+Shift+F - Search memory
+      if (key === 'f' && event.shiftKey) {
+        event.preventDefault();
+        handlers.onSearch?.();
+        return;
+      }
+
+      // --- Non-shift combos ---
+
       // Cmd+N - New conversation
-      if (event.key === 'n' && !event.shiftKey) {
+      if (key === 'n' && !event.shiftKey) {
         event.preventDefault();
         handlers.onNewConversation?.();
         return;
       }
 
       // Cmd+M - Toggle memory panel
-      if (event.key === 'm') {
+      if (key === 'm') {
         event.preventDefault();
         handlers.onToggleMemoryPanel?.();
         return;
       }
 
       // Cmd+B - Toggle conversation sidebar
-      if (event.key === 'b') {
+      if (key === 'b') {
         event.preventDefault();
         handlers.onToggleConversationSidebar?.();
         return;
       }
 
       // Cmd+D - Toggle board panel
-      if (event.key === 'd' && !event.shiftKey) {
+      if (key === 'd' && !event.shiftKey) {
         event.preventDefault();
         handlers.onToggleBoardPanel?.();
         return;
       }
 
       // Cmd+E - Toggle email panel
-      if (event.key === 'e' && !event.shiftKey) {
+      if (key === 'e' && !event.shiftKey) {
         event.preventDefault();
         handlers.onToggleEmailPanel?.();
         return;
       }
 
       // Cmd+T - Toggle tasks panel
-      if (event.key === 't' && !event.shiftKey) {
+      if (key === 't' && !event.shiftKey) {
         event.preventDefault();
         handlers.onToggleTasksPanel?.();
         return;
       }
 
       // Cmd+I - Toggle invoices panel
-      if (event.key === 'i' && !event.shiftKey) {
+      if (key === 'i' && !event.shiftKey) {
         event.preventDefault();
         handlers.onToggleInvoicesPanel?.();
         return;
       }
 
       // Cmd+P - Toggle CRM pipeline
-      if (event.key === 'p' && !event.shiftKey) {
+      if (key === 'p' && !event.shiftKey) {
         event.preventDefault();
         handlers.onToggleCRMPanel?.();
         return;
       }
 
-      // Cmd+Shift+C - Calendar panel
-      if (event.key === 'c' && event.shiftKey) {
+      // Cmd+, - Settings
+      if (event.key === ',') {
         event.preventDefault();
-        handlers.onToggleCalendarPanel?.();
-        return;
-      }
-
-      // Cmd+Shift+P - New project
-      if (event.key === 'p' && event.shiftKey) {
-        event.preventDefault();
-        handlers.onNewProject?.();
-        return;
-      }
-
-      // Cmd+Shift+F - Search memory
-      if (event.key === 'f' && event.shiftKey) {
-        event.preventDefault();
-        handlers.onSearch?.();
+        handlers.onOpenSettings?.();
         return;
       }
 
       // Cmd+O - Open file
-      if (event.key === 'o' && !event.shiftKey) {
+      if (key === 'o' && !event.shiftKey) {
         event.preventDefault();
         handlers.onOpenFile?.();
         return;

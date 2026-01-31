@@ -325,9 +325,17 @@ export async function deleteConversation(id: string): Promise<void> {
 // Contacts
 export async function listContacts(
   offset = 0,
-  limit = 50
+  limit = 50,
+  options?: { hasSource?: boolean }
 ): Promise<Contact[]> {
-  return request<Contact[]>(`/api/memory/contacts?offset=${offset}&limit=${limit}`);
+  const params = new URLSearchParams({
+    offset: offset.toString(),
+    limit: limit.toString(),
+  });
+  if (options?.hasSource !== undefined) {
+    params.set('has_source', options.hasSource.toString());
+  }
+  return request<Contact[]>(`/api/memory/contacts?${params.toString()}`);
 }
 
 export async function getContact(id: string): Promise<Contact> {
@@ -2892,7 +2900,7 @@ export interface RGPDInferResponse {
  * Exporte toutes les donnees d'un contact (droit de portabilite RGPD).
  */
 export async function exportContactRGPD(contactId: string): Promise<RGPDExportResponse> {
-  const response = await apiFetch(`${API_BASE}/rgpd/export/${contactId}`);
+  const response = await apiFetch(`${API_BASE}/api/rgpd/export/${contactId}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || `RGPD export failed: ${response.statusText}`);
@@ -2904,7 +2912,7 @@ export async function exportContactRGPD(contactId: string): Promise<RGPDExportRe
  * Anonymise un contact (droit a l'oubli RGPD).
  */
 export async function anonymizeContact(contactId: string, reason: string): Promise<RGPDAnonymizeResponse> {
-  const response = await apiFetch(`${API_BASE}/rgpd/anonymize/${contactId}`, {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/anonymize/${contactId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason }),
@@ -2920,7 +2928,7 @@ export async function anonymizeContact(contactId: string, reason: string): Promi
  * Renouvelle le consentement RGPD d'un contact (+3 ans).
  */
 export async function renewContactConsent(contactId: string): Promise<RGPDRenewConsentResponse> {
-  const response = await apiFetch(`${API_BASE}/rgpd/renew-consent/${contactId}`, {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/renew-consent/${contactId}`, {
     method: 'POST',
   });
   if (!response.ok) {
@@ -2937,7 +2945,7 @@ export async function updateContactRGPD(
   contactId: string,
   data: { rgpd_base_legale?: RGPDBaseLegale; rgpd_consentement?: boolean }
 ): Promise<{ success: boolean; message: string }> {
-  const response = await apiFetch(`${API_BASE}/rgpd/${contactId}`, {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/${contactId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -2953,7 +2961,7 @@ export async function updateContactRGPD(
  * Recupere les statistiques RGPD globales.
  */
 export async function getRGPDStats(): Promise<RGPDStatsResponse> {
-  const response = await apiFetch(`${API_BASE}/rgpd/stats`);
+  const response = await apiFetch(`${API_BASE}/api/rgpd/stats`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || `RGPD stats failed: ${response.statusText}`);
@@ -2965,7 +2973,7 @@ export async function getRGPDStats(): Promise<RGPDStatsResponse> {
  * Infere automatiquement la base legale RGPD d'un contact.
  */
 export async function inferContactRGPD(contactId: string): Promise<RGPDInferResponse> {
-  const response = await apiFetch(`${API_BASE}/rgpd/infer/${contactId}`, {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/infer/${contactId}`, {
     method: 'POST',
   });
   if (!response.ok) {
