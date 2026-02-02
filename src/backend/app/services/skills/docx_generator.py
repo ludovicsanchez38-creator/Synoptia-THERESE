@@ -1,7 +1,8 @@
 """
-THÉRÈSE v2 - Word Document Generator Skill
+THERESE v2 - Word Document Generator Skill
 
-Génère des documents Word (.docx) avec le style Synoptïa.
+Génère des documents Word (.docx) avec le style Synoptia.
+Approche code-execution avec fallback parser legacy.
 """
 
 import logging
@@ -14,12 +15,13 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
-from app.services.skills.base import BaseSkill, FileFormat, SkillParams, SkillResult
+from app.services.skills.base import FileFormat, SkillParams, SkillResult
+from app.services.skills.code_executor import CodeGenSkill
 
 logger = logging.getLogger(__name__)
 
 
-# Palette Synoptïa
+# Palette Synoptia
 SYNOPTIA_COLORS = {
     "background": RGBColor(0x0B, 0x12, 0x26),
     "text": RGBColor(0xE6, 0xED, 0xF7),
@@ -33,38 +35,116 @@ SYNOPTIA_COLORS = {
 }
 
 
-class DocxSkill(BaseSkill):
+class DocxSkill(CodeGenSkill):
     """
     Skill de génération de documents Word.
 
-    Crée des documents .docx professionnels avec le style Synoptïa.
+    Crée des documents .docx professionnels avec le style Synoptia.
+    Approche code-execution : le LLM génère du code python-docx.
+    Fallback automatique vers l'ancien parser Markdown.
     """
 
     skill_id = "docx-pro"
     name = "Document Word Professionnel"
-    description = "Génère un document Word structuré avec le style Synoptïa"
+    description = "Génère un document Word structuré avec le style Synoptia"
     output_format = FileFormat.DOCX
 
     def __init__(self, output_dir: Path):
         super().__init__(output_dir)
 
-    async def execute(self, params: SkillParams) -> SkillResult:
+    def get_system_prompt_addition(self) -> str:
+        """Instructions pour le LLM : générer du code Python python-docx."""
+        return """
+## Instructions pour génération de document Word
+
+Tu dois générer un **bloc de code Python** complet utilisant la bibliothèque `python-docx`.
+Le code sera exécuté dans un environnement sandboxé avec les variables suivantes pré-injectées :
+- `output_path` (str) : chemin où sauvegarder le fichier .docx
+- `title` (str) : titre du document
+- `SYNOPTIA_COLORS` (dict) : palette de couleurs Synoptia
+
+### Imports disponibles
+docx (Document), docx.shared (Cm, Pt, Inches, RGBColor), docx.enum.text (WD_ALIGN_PARAGRAPH), docx.enum.style (WD_STYLE_TYPE), docx.enum.table, docx.oxml.ns (qn), datetime, json, re, math, Decimal
+
+### Règles impératives
+1. **Police** : Calibri 11pt pour le corps, Outfit pour les titres
+2. **Titres** : `doc.add_heading(text, level=0/1/2/3)` avec couleurs Synoptia
+   - Heading 0 : titre principal, 28pt, bold, couleur #0F1E6D
+   - Heading 1 : 24pt, bold, couleur #0F1E6D
+   - Heading 2 : 18pt, bold, couleur #1733A6
+   - Heading 3 : 14pt, bold, couleur #0F1E6D
+3. **Mise en forme** :
+   - **Gras** : `run.bold = True`
+   - *Italique* : `run.italic = True`
+   - Listes à puces : `doc.add_paragraph(text, style='List Bullet')`
+   - Listes numérotées : `doc.add_paragraph(text, style='List Number')`
+4. **Tableaux** : `doc.add_table(rows, cols, style='Table Grid')` avec style professionnel
+   - Header row en bold avec fond coloré
+   - Bordures fines
+5. **Mise en page** :
+   - Marges : 2.5 cm (ou Inches(1))
+   - Espacement : line_spacing = 1.15, space_after = Pt(10)
+6. **Footer** : "Généré par THERESE - Synoptia" centré, 9pt, italique, couleur #A9B8D8
+7. **Structure** :
+   - Introduction (contexte, objectif)
+   - Corps (sections logiques avec titres)
+   - Conclusion (résumé, prochaines étapes)
+8. **Finir par** : `doc.save(output_path)`
+
+### Structure du code
+
+```python
+from docx import Document
+from docx.shared import Pt, Cm, Inches, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+doc = Document()
+
+# Configuration styles
+style = doc.styles['Normal']
+style.font.name = 'Calibri'
+style.font.size = Pt(11)
+
+# Titre principal
+doc.add_heading(title, level=0)
+
+# ... contenu du document ...
+
+# Footer
+section = doc.sections[-1]
+footer = section.footer
+footer.is_linked_to_previous = False
+para = footer.paragraphs[0]
+para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+run = para.add_run("Généré par THERESE - Synoptia")
+run.font.size = Pt(9)
+run.font.italic = True
+run.font.color.rgb = RGBColor(0xA9, 0xB8, 0xD8)
+
+doc.save(output_path)
+```
+
+Génère UNIQUEMENT le bloc ```python``` avec le code complet. Pas d'explication avant ou après.
+"""
+
+    async def _fallback_execute(
+        self, params: SkillParams, file_id: str, output_path: Path
+    ) -> SkillResult:
         """
-        Génère un document Word à partir du contenu.
+        Fallback : ancien parser Markdown -> python-docx.
 
         Args:
-            params: Paramètres incluant titre et contenu
+            params: Paramètres de génération
+            file_id: ID du fichier pré-généré
+            output_path: Chemin de sortie pré-calculé
 
         Returns:
             Résultat avec chemin vers le fichier généré
         """
-        file_id = self.generate_file_id()
-        output_path = self.get_output_path(file_id, params.title)
-
         # Créer le document
         doc = Document()
 
-        # Appliquer les styles Synoptïa
+        # Appliquer les styles Synoptia
         self._setup_styles(doc)
 
         # Ajouter le titre principal
@@ -74,7 +154,7 @@ class DocxSkill(BaseSkill):
         # Parser et ajouter le contenu
         self._add_content(doc, params.content)
 
-        # Ajouter le footer Synoptïa
+        # Ajouter le footer Synoptia
         self._add_footer(doc)
 
         # Sauvegarder
@@ -83,7 +163,7 @@ class DocxSkill(BaseSkill):
         # Calculer la taille
         file_size = output_path.stat().st_size
 
-        logger.info(f"Generated DOCX: {output_path} ({file_size} bytes)")
+        logger.info(f"Generated DOCX (fallback): {output_path} ({file_size} bytes)")
 
         return SkillResult(
             file_id=file_id,
@@ -93,27 +173,6 @@ class DocxSkill(BaseSkill):
             mime_type=self.get_mime_type(),
             format=self.output_format,
         )
-
-    def get_system_prompt_addition(self) -> str:
-        """Instructions pour le LLM pour générer du contenu Word."""
-        return """
-## Instructions pour génération de document Word
-
-Génère le contenu du document en format Markdown structuré :
-
-1. **Titres** : Utilise les niveaux de titre Markdown (## pour h2, ### pour h3, etc.)
-2. **Paragraphes** : Sépare les paragraphes par des lignes vides
-3. **Listes** : Utilise - pour les listes à puces, 1. pour les listes numérotées
-4. **Mise en forme** : **gras** pour les mots importants, *italique* pour l'emphase
-5. **Tableaux** : Format Markdown standard si nécessaire
-
-Structure recommandée :
-- Introduction (contexte, objectif)
-- Corps (sections logiques)
-- Conclusion (résumé, prochaines étapes)
-
-Style : professionnel, concis, orienté action.
-"""
 
     def _setup_styles(self, doc: Document) -> None:
         """Configure les styles du document."""
@@ -248,7 +307,7 @@ Style : professionnel, concis, orienté action.
                 para.add_run(part)
 
     def _add_footer(self, doc: Document) -> None:
-        """Ajoute un footer Synoptïa au document."""
+        """Ajoute un footer Synoptia au document."""
         section = doc.sections[-1]
         footer = section.footer
         footer.is_linked_to_previous = False
@@ -256,7 +315,7 @@ Style : professionnel, concis, orienté action.
         para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        run = para.add_run("Généré par THÉRÈSE - Synoptïa")
+        run = para.add_run("Généré par THERESE - Synoptia")
         run.font.size = Pt(9)
         run.font.color.rgb = SYNOPTIA_COLORS["muted"]
         run.font.italic = True

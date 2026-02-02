@@ -1,7 +1,8 @@
 """
-THÉRÈSE v2 - Excel Generator Skill
+THERESE v2 - Excel Generator Skill
 
-Génère des fichiers Excel (.xlsx) avec le style Synoptïa.
+Génère des fichiers Excel (.xlsx) avec le style Synoptia.
+Approche code-execution avec fallback parser legacy.
 """
 
 import json
@@ -21,12 +22,13 @@ from openpyxl.styles import (
 )
 from openpyxl.utils import get_column_letter
 
-from app.services.skills.base import BaseSkill, FileFormat, SkillParams, SkillResult
+from app.services.skills.base import FileFormat, SkillParams, SkillResult
+from app.services.skills.code_executor import CodeGenSkill
 
 logger = logging.getLogger(__name__)
 
 
-# Palette Synoptïa pour Excel
+# Palette Synoptia pour Excel
 SYNOPTIA_COLORS = {
     "header_bg": "0F1E6D",
     "header_text": "E6EDF7",
@@ -39,34 +41,89 @@ SYNOPTIA_COLORS = {
 }
 
 
-class XlsxSkill(BaseSkill):
+class XlsxSkill(CodeGenSkill):
     """
     Skill de génération de fichiers Excel.
 
-    Crée des fichiers .xlsx professionnels avec le style Synoptïa.
+    Crée des fichiers .xlsx professionnels avec le style Synoptia.
+    Approche code-execution : le LLM génère du code openpyxl.
+    Fallback automatique vers l'ancien parser Markdown/JSON.
     """
 
     skill_id = "xlsx-pro"
     name = "Tableur Excel Professionnel"
-    description = "Génère un fichier Excel structuré avec le style Synoptïa"
+    description = "Génère un fichier Excel structuré avec le style Synoptia"
     output_format = FileFormat.XLSX
 
     def __init__(self, output_dir: Path):
         super().__init__(output_dir)
 
-    async def execute(self, params: SkillParams) -> SkillResult:
+    def get_system_prompt_addition(self) -> str:
+        """Instructions pour le LLM : générer du code Python openpyxl."""
+        return """
+## Instructions pour génération de fichier Excel
+
+Tu dois générer un **bloc de code Python** complet utilisant la bibliothèque `openpyxl`.
+Le code sera exécuté dans un environnement sandboxé avec les variables suivantes pré-injectées :
+- `output_path` (str) : chemin où sauvegarder le fichier .xlsx
+- `title` (str) : titre du document
+- `SYNOPTIA_COLORS` (dict) : palette de couleurs Synoptia
+
+### Imports disponibles
+openpyxl (Workbook, Font, PatternFill, Alignment, Border, Side, BarChart, LineChart, PieChart, Reference, get_column_letter), datetime, json, re, math, Decimal
+
+### Règles impératives
+1. **Formules Excel** : utilise des formules Excel natives (=SUM, =AVERAGE, =IF, =VLOOKUP). Ne JAMAIS calculer en Python et écrire le résultat. Excel doit pouvoir recalculer.
+2. **Multi-onglets** : crée plusieurs feuilles si le contenu le justifie (ex: Données, Résumé, Graphiques)
+3. **Graphiques** : utilise openpyxl.chart (BarChart, LineChart, PieChart) pour visualiser les données quand c'est pertinent
+4. **Formatage nombres** :
+   - Monétaire : `cell.number_format = '#,##0.00 €'`
+   - Pourcentages : `cell.number_format = '0.0%'`
+   - Négatifs entre parenthèses : `cell.number_format = '#,##0.00;(#,##0.00)'`
+5. **Couleurs financières** :
+   - Bleu (inputs utilisateur) : `Font(color="3B82F6")`
+   - Noir (formules calculées) : `Font(color="1A1A2E")`
+   - Vert (liens entre feuilles) : `Font(color="22C55E")`
+6. **Style header** : fond `PatternFill(start_color="0F1E6D", fill_type="solid")`, texte `Font(bold=True, color="E6EDF7")`
+7. **Alternance lignes** : une ligne sur deux avec fond `PatternFill(start_color="F5F7FA", fill_type="solid")`
+8. **Auto-fit colonnes** : ajuster la largeur des colonnes au contenu
+9. **Footer** : dernière ligne = "Généré par THERESE - Synoptia" en italique gris
+10. **Finir par** : `wb.save(output_path)`
+
+### Structure du code
+
+```python
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.chart import BarChart, Reference
+from openpyxl.utils import get_column_letter
+
+wb = Workbook()
+ws = wb.active
+ws.title = "Données"
+
+# ... construction du tableur ...
+
+wb.save(output_path)
+```
+
+Génère UNIQUEMENT le bloc ```python``` avec le code complet. Pas d'explication avant ou après.
+"""
+
+    async def _fallback_execute(
+        self, params: SkillParams, file_id: str, output_path: Path
+    ) -> SkillResult:
         """
-        Génère un fichier Excel à partir du contenu.
+        Fallback : ancien parser Markdown/JSON -> openpyxl.
 
         Args:
-            params: Paramètres incluant titre et contenu
+            params: Paramètres de génération
+            file_id: ID du fichier pré-généré
+            output_path: Chemin de sortie pré-calculé
 
         Returns:
             Résultat avec chemin vers le fichier généré
         """
-        file_id = self.generate_file_id()
-        output_path = self.get_output_path(file_id, params.title)
-
         # Créer le workbook
         wb = Workbook()
         ws = wb.active
@@ -87,7 +144,7 @@ class XlsxSkill(BaseSkill):
         # Calculer la taille
         file_size = output_path.stat().st_size
 
-        logger.info(f"Generated XLSX: {output_path} ({file_size} bytes)")
+        logger.info(f"Generated XLSX (fallback): {output_path} ({file_size} bytes)")
 
         return SkillResult(
             file_id=file_id,
@@ -97,43 +154,6 @@ class XlsxSkill(BaseSkill):
             mime_type=self.get_mime_type(),
             format=self.output_format,
         )
-
-    def get_system_prompt_addition(self) -> str:
-        """Instructions pour le LLM pour générer du contenu Excel."""
-        return """
-## Instructions pour génération de fichier Excel
-
-Génère les données du tableur en format structuré JSON :
-
-{
-  "title": "Titre du tableur",
-  "headers": ["Colonne1", "Colonne2", "Colonne3"],
-  "rows": [
-    ["Valeur1", "Valeur2", "Valeur3"],
-    ["Valeur4", "Valeur5", "Valeur6"]
-  ],
-  "formulas": {
-    "D2": "=SUM(B2:C2)",
-    "D3": "=SUM(B3:C3)"
-  }
-}
-
-Règles :
-1. **Headers** : Noms de colonnes clairs et concis
-2. **Rows** : Données cohérentes avec les headers
-3. **Formulas** : Utiliser la notation Excel (=SUM, =AVERAGE, etc.)
-4. **Types** : Les nombres doivent être des nombres, pas des strings
-
-Si le JSON n'est pas possible, utilise le format tableau Markdown :
-| Colonne1 | Colonne2 | Colonne3 |
-|----------|----------|----------|
-| Valeur1  | Valeur2  | Valeur3  |
-
-Conventions couleurs (appliquées automatiquement) :
-- Bleu : Cellules d'entrée (à saisir)
-- Noir : Cellules de formules (calculées)
-- Vert : Liens internes
-"""
 
     def _parse_content(self, content: str) -> dict[str, Any]:
         """
@@ -203,7 +223,7 @@ Conventions couleurs (appliquées automatiquement) :
 
     def _add_data(self, ws, data: dict[str, Any], title: str) -> None:
         """
-        Ajoute les données au worksheet avec le style Synoptïa.
+        Ajoute les données au worksheet avec le style Synoptia.
 
         Args:
             ws: Worksheet
@@ -285,9 +305,9 @@ Conventions couleurs (appliquées automatiquement) :
             except Exception as e:
                 logger.warning(f"Could not add formula to {cell_ref}: {e}")
 
-        # Footer Synoptïa
+        # Footer Synoptia
         footer_row = len(rows) + 6
-        ws.cell(row=footer_row, column=1).value = "Généré par THÉRÈSE - Synoptïa"
+        ws.cell(row=footer_row, column=1).value = "Généré par THERESE - Synoptia"
         ws.cell(row=footer_row, column=1).font = Font(name="Inter", size=8, italic=True,
                                                       color="999999")
 

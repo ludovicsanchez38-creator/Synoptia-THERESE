@@ -145,7 +145,7 @@ async def execute_skill(
 
 {system_addition}
 
-Génère maintenant le contenu structuré pour le document.
+IMPORTANT : Génère ta réponse sous forme d'un bloc de code Python (```python```) qui crée le fichier. Le code sera exécuté directement.
 """
 
         # 5. Appeler le LLM
