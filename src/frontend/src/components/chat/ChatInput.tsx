@@ -24,9 +24,10 @@ interface ChatInputProps {
   onOpenCommandPalette?: () => void;
   initialPrompt?: string;
   onInitialPromptConsumed?: () => void;
+  userCommands?: import('./SlashCommandsMenu').SlashCommand[];
 }
 
-export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPromptConsumed }: ChatInputProps) {
+export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPromptConsumed, userCommands }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
@@ -407,6 +408,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         onClose={() => setShowSlashMenu(false)}
         onIndexChange={setSlashMenuIndex}
         inputRect={inputRect}
+        userCommands={userCommands}
       />
 
       {/* Inline drop zone */}
@@ -465,7 +467,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
               ? 'THÉRÈSE réfléchit...'
               : connectionState !== 'connected'
                 ? 'En attente de connexion...'
-                : 'Écrivez votre message... (/ pour les commandes)'
+                : 'Comment puis-je vous aider ?'
           }
           disabled={isDisabled}
           rows={1}

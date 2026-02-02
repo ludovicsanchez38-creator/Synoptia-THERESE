@@ -856,13 +856,14 @@ const rice = await calculateRICE(1000, 2, 80, 2);
 - [x] Side Toggles latéraux
 - [x] Input vocal (Groq Whisper)
 
-### MCP & Tool Calling (nouveau v2.3/v2.4)
+### MCP & Tool Calling (v2.3/v2.4/v3.5)
 - [x] Service MCP avec transport stdio
 - [x] Gestion serveurs (start/stop/restart)
 - [x] Auto-discovery tools
-- [x] Presets prédéfinis (filesystem, fetch, notion, github...)
-- [x] Onglet Tools dans Settings
+- [x] 19 presets organises en 8 categories metier
+- [x] Onglet Tools dans Settings avec recherche et categories
 - [x] API complète /api/mcp/*
+- [x] Chiffrement cles API MCP (Fernet + macOS Keychain)
 - [x] **Tool Calling LLM intégré** (v2.4)
   - [x] Auto-discovery tools MCP dans le chat
   - [x] Support Claude (Anthropic) et OpenAI pour function calling
@@ -1481,9 +1482,77 @@ en fenetres separees avec donnees persistantes.
 
 ### MVP v3.4 - COMPLET (Persistance Email/Calendrier)
 
+### Session 2 fevrier - MCP Connectors Brainstorm (COMPLET)
+
+**Audit des presets MCP + ajout connecteurs solopreneurs/TPE FR**
+
+#### Audit : 5 presets supprimes
+| Preset | Raison |
+|--------|--------|
+| git | Dev-only, aucun solopreneur n'utilise |
+| linear | Issue tracking equipes dev |
+| github | Dev-only, package deprecie |
+| zapier | Package npm inexistant |
+| make | Package npm inexistant |
+
+#### Sprint 1 : 5 nouveaux presets Tier S
+| Preset | Categorie | Env vars |
+|--------|-----------|----------|
+| Brave Search | recherche | `BRAVE_API_KEY` |
+| Brevo | marketing | `BREVO_API_KEY` |
+| Stripe | finance | `STRIPE_API_KEY` |
+| HubSpot CRM | crm | `HUBSPOT_ACCESS_TOKEN` |
+| Todoist | productivite | `TODOIST_API_KEY` |
+
+#### Sprint 2 : 5 nouveaux presets Tier A
+| Preset | Categorie | Env vars |
+|--------|-----------|----------|
+| Trello | productivite | `TRELLO_API_KEY`, `TRELLO_TOKEN` |
+| Perplexity | recherche | `PERPLEXITY_API_KEY` |
+| Pipedrive | crm | `PIPEDRIVE_API_TOKEN` |
+| WhatsApp Business | communication | `WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_BUSINESS_ACCOUNT_ID` |
+| Playwright | avance | Aucune (open source) |
+
+#### Sprint 3 : UI Polish
+- [x] Presets organises par categories (8 sections avec icones)
+- [x] Composant `PresetCategory` repliable avec headers
+- [x] Section "Avance" repliee par defaut (sequential-thinking, slack, playwright)
+- [x] Barre de recherche/filtre dans le panel Presets
+- [x] Badge "Populaire" (etoile) sur 6 presets cles
+- [x] Lien externe vers le service sur chaque preset
+- [x] Compteur total presets dans le header
+
+#### Bilan presets MCP (19 total)
+| Categorie | Presets |
+|-----------|---------|
+| Essentiels | Filesystem, Fetch, Time |
+| Productivite | Google Workspace, Notion, Airtable, Todoist, Trello |
+| Recherche | Brave Search, Perplexity |
+| Marketing | Brevo |
+| CRM & Ventes | HubSpot CRM, Pipedrive |
+| Finance | Stripe |
+| Communication | WhatsApp Business |
+| Avance | Sequential Thinking, Slack, Playwright |
+
+#### Fichiers modifies
+| Fichier | Action |
+|---------|--------|
+| `src/backend/app/routers/mcp.py` | -5 presets, +10 presets, +category/popular/url |
+| `src/frontend/src/services/api.ts` | +category/popular/url sur MCPPreset |
+| `src/frontend/src/components/settings/EnvVarModal.tsx` | +12 configs env vars, -4 obsoletes |
+| `src/frontend/src/components/settings/ToolsPanel.tsx` | Categories, recherche, badges, PresetCategory |
+
+#### Tier B (a la demande, non implemente)
+Mailchimp, Dropbox, Shopify, Discord, X/Twitter, LinkedIn (API restrictive)
+
+#### Watchlist
+Pennylane (compta FR) - pas de package npm dedie, a surveiller
+
+### MVP v3.5 - COMPLET (MCP Connectors Brainstorm)
+
 ---
 
-## TODO / Backlog (mis a jour 30 janvier 2026)
+## TODO / Backlog (mis a jour 2 fevrier 2026)
 
 - [ ] **Tool `create_contact`** : Permettre a THERESE d'ajouter des contacts via tool
 - [ ] **Tool `create_project`** : Idem pour les projets

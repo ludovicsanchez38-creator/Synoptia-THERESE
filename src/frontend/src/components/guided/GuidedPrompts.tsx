@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GUIDED_ACTIONS, type GuidedAction, type SubOption, type FileFormat, type ImageProvider } from './actionData';
 import { ActionCard } from './ActionCard';
@@ -7,6 +7,7 @@ import { SkillPromptPanel } from './SkillPromptPanel';
 import { SkillExecutionPanel, type SkillExecutionStatus } from './SkillExecutionPanel';
 import { ImageGenerationPanel, type ImageGenerationStatus } from './ImageGenerationPanel';
 import { DynamicSkillForm, type SkillSchema } from './DynamicSkillForm';
+import { CreateCommandForm } from './CreateCommandForm';
 import { useChatStore } from '../../stores/chatStore';
 import {
   executeSkill,
@@ -18,6 +19,7 @@ import {
   type SkillExecuteResponse,
   type ImageResponse,
 } from '../../services/api';
+import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
 
 interface GuidedPromptsProps {
   onPromptSelect: (prompt: string) => void;
@@ -56,8 +58,57 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
   } | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
 
+  // P0-B: Error state for schema loading failures
+  const [schemaLoadError, setSchemaLoadError] = useState<string | null>(null);
+
+  // P1-A: Create command form visibility
+  const [showCreateCommand, setShowCreateCommand] = useState(false);
+
+  // P1-C: User commands for dynamic homepage
+  const [userCommands, setUserCommands] = useState<UserCommand[]>([]);
+
   // Get chat store functions to add messages to conversation
   const { addMessage } = useChatStore();
+
+  // P1-C: Fetch user commands on mount
+  useEffect(() => {
+    listUserCommands()
+      .then(setUserCommands)
+      .catch(() => {
+        // Silently ignore - user commands are optional
+      });
+  }, []);
+
+  // P1-C: Merge static actions with user commands that have show_on_home
+  const mergedActions = useMemo(() => {
+    const homeCommands = userCommands.filter((cmd) => cmd.show_on_home);
+    if (homeCommands.length === 0) return GUIDED_ACTIONS;
+
+    // Convert user commands to SubOptions and add them to Personnaliser
+    const userSubOptions: SubOption[] = homeCommands.map((cmd) => ({
+      id: `user-cmd-${cmd.name}`,
+      label: `${cmd.icon || ''} ${cmd.description || cmd.name}`.trim(),
+      prompt: cmd.content,
+    }));
+
+    return GUIDED_ACTIONS.map((action) => {
+      if (action.id === 'personnaliser') {
+        return {
+          ...action,
+          options: [...action.options, ...userSubOptions],
+        };
+      }
+      return action;
+    });
+  }, [userCommands]);
+
+  // P0-B: Auto-clear schema load error after 5s
+  useEffect(() => {
+    if (schemaLoadError) {
+      const timer = setTimeout(() => setSchemaLoadError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [schemaLoadError]);
 
   const handleActionClick = useCallback((action: GuidedAction) => {
     setSelectedAction(action);
@@ -68,13 +119,27 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
   }, []);
 
   const handleOptionSelect = useCallback(async (option: SubOption) => {
-    // Priorité 1 : Si l'option a un skillId, utiliser le système enrichi
+    // P1-A: Check behavior BEFORE skillId
+    if (option.behavior) {
+      setSelectedAction(null);
+      if (option.behavior === 'create-command') {
+        setShowCreateCommand(true);
+        return;
+      }
+      // P2 stubs: create-skill and create-automation -> guided prompt
+      if (option.behavior === 'create-skill' || option.behavior === 'create-automation') {
+        onPromptSelect(option.prompt);
+        return;
+      }
+    }
+
+    // Priorite 1 : Si l'option a un skillId, utiliser le systeme enrichi
     if (option.skillId) {
       setIsLoadingSchema(true);
       setSelectedAction(null);
 
       try {
-        // Récupérer le schéma des inputs du skill
+        // Recuperer le schema des inputs du skill
         const schema = await getSkillInputSchema(option.skillId);
 
         setPendingDynamicSkill({
@@ -82,24 +147,27 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
           schema,
         });
       } catch (error) {
-        console.error('Failed to load skill schema:', error);
-        // Fallback sur le prompt libre
-        onPromptSelect(option.prompt);
+        // P0-B: Descriptive log with skillId
+        console.error(`Failed to load skill schema for "${option.skillId}":`, error);
+        // P0-B: Show error banner
+        setSchemaLoadError(`Impossible de charger le formulaire pour "${option.label}". Prompt libre utilise.`);
+        // P0-B: Explicit fallback with label + prompt
+        onPromptSelect(`${option.label}\n${option.prompt}`);
       } finally {
         setIsLoadingSchema(false);
       }
     }
-    // Priorité 2 : Legacy - Si l'option génère un fichier, montrer le panel de prompting
+    // Priorite 2 : Legacy - Si l'option genere un fichier, montrer le panel de prompting
     else if (option.generatesFile) {
       setPendingSkillOption(option);
       setSelectedAction(null);
     }
-    // Priorité 3 : Si l'option génère une image, montrer le panel de prompting image
+    // Priorite 3 : Si l'option genere une image, montrer le panel de prompting image
     else if (option.generatesImage) {
       setPendingImageOption(option);
       setSelectedAction(null);
     }
-    // Priorité 4 : Comportement standard : remplir le prompt
+    // Priorite 4 : Comportement standard : remplir le prompt
     else {
       onPromptSelect(option.prompt);
       setSelectedAction(null);
@@ -113,12 +181,11 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     const { option, schema } = pendingDynamicSkill;
     const skillId = option.skillId!;
 
-    // Déterminer si c'est un skill TEXT ou FILE
-    // text et analysis = réponse dans le chat, file = fichier téléchargeable
+    // Determiner si c'est un skill TEXT ou FILE
     const isTextSkill = schema.output_type === 'text' || schema.output_type === 'analysis';
 
     if (isTextSkill) {
-      // Skills TEXT/ANALYSIS : construire un prompt structuré pour le chat
+      // Skills TEXT/ANALYSIS : construire un prompt structure pour le chat
       const promptParts = Object.entries(inputs)
         .filter(([, value]) => value)
         .map(([key, value]) => `- ${key}: ${value}`);
@@ -126,7 +193,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       onPromptSelect(prompt);
       setPendingDynamicSkill(null);
     } else {
-      // Skills FILE : montrer le panel d'exécution
+      // Skills FILE : montrer le panel d'execution
       const format = option.generatesFile?.format || 'docx';
 
       setSkillState({
@@ -137,13 +204,12 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       setPendingDynamicSkill(null);
 
       try {
-        // Construire un prompt à partir des inputs structurés
         const promptParts = Object.entries(inputs).map(([key, value]) => `${key}: ${value}`);
         const constructedPrompt = promptParts.join('\n');
 
         const response = await executeSkill(skillId, {
           prompt: constructedPrompt,
-          inputs, // Passer les inputs structurés
+          inputs,
           title: option.label,
         });
 
@@ -175,17 +241,15 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
 
   const handleDynamicSkillBack = useCallback(() => {
     setPendingDynamicSkill(null);
-    // Retourner à la liste des actions
     setSelectedAction(null);
   }, []);
 
-  // Quand l'utilisateur a saisi son prompt et lance la génération (legacy FILE skills)
+  // Quand l'utilisateur a saisi son prompt et lance la generation (legacy FILE skills)
   const handleSkillGenerate = useCallback(async (customPrompt: string) => {
     if (!pendingSkillOption?.generatesFile) return;
 
     const { skillId, format } = pendingSkillOption.generatesFile;
 
-    // Initialiser l'état skill
     setSkillState({
       skillId,
       format,
@@ -194,7 +258,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setPendingSkillOption(null);
 
     try {
-      // Exécuter le skill avec le prompt personnalisé
       const response = await executeSkill(skillId, {
         prompt: customPrompt,
         title: pendingSkillOption.label,
@@ -240,7 +303,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
   }, [skillState]);
 
   const handleRetry = useCallback(() => {
-    // Réinitialiser pour revenir à la sélection
     setSkillState(null);
   }, []);
 
@@ -248,28 +310,23 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setSkillState(null);
   }, []);
 
-  // Handlers pour la génération d'images
+  // Handlers pour la generation d'images
   const handleImageGenerate = useCallback(async (customPrompt: string) => {
     if (!pendingImageOption?.generatesImage) return;
 
     const { provider, defaultSize, defaultQuality } = pendingImageOption.generatesImage;
 
-    // S'assurer qu'une conversation existe AVANT d'ajouter des messages
-    // pour éviter la création de multiples conversations
     const store = useChatStore.getState();
     let conversationId = store.currentConversationId;
     if (!conversationId) {
-      // Créer une conversation explicitement
       conversationId = store.createConversation();
     }
 
-    // Ajouter le message utilisateur à la conversation
     addMessage({
       role: 'user',
-      content: `🎨 Génère une image : ${customPrompt}`,
+      content: `Genere une image : ${customPrompt}`,
     });
 
-    // Initialiser l'état image
     setImageState({
       provider,
       status: 'generating',
@@ -278,14 +335,12 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setPendingImageOption(null);
 
     try {
-      // Construire la requête selon le provider
       const request: Parameters<typeof generateImage>[0] = {
         prompt: customPrompt,
         provider,
         quality: defaultQuality,
       };
 
-      // OpenAI utilise 'size', Gemini utilise 'image_size'
       if (provider === 'gpt-image-1.5' && defaultSize) {
         request.size = defaultSize as '1024x1024' | '1536x1024' | '1024x1536';
       } else if (provider === 'nanobanan-pro' && defaultSize) {
@@ -294,11 +349,10 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
 
       const response = await generateImage(request);
 
-      // Ajouter le message assistant avec l'image (dans la même conversation)
       const imageUrl = `${API_BASE}${response.download_url}`;
       addMessage({
         role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana Pro'}*\n\n📥 [Télécharger ${response.file_name}](${imageUrl})`,
+        content: `![${customPrompt}](${imageUrl})\n\n*Image generee avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana Pro'}*\n\nTelecharger ${response.file_name}](${imageUrl})`,
       });
 
       setImageState({
@@ -308,14 +362,12 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         response,
       });
 
-      // Callback optionnel
       onImageGenerated?.(customPrompt, imageUrl, response.file_name);
     } catch (err) {
-      // Ajouter un message d'erreur
-      const errorMessage = err instanceof Error ? err.message : 'Erreur de génération';
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de generation';
       addMessage({
         role: 'assistant',
-        content: `❌ Erreur lors de la génération de l'image : ${errorMessage}`,
+        content: `Erreur lors de la generation de l'image : ${errorMessage}`,
       });
 
       setImageState({
@@ -342,7 +394,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
   }, [imageState]);
 
   const handleImageRetry = useCallback(() => {
-    // Réinitialiser pour revenir à la sélection
     setImageState(null);
   }, []);
 
@@ -350,21 +401,41 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setImageState(null);
   }, []);
 
+  // P1-C: Handle create command form submission
+  const handleCreateCommand = useCallback(async (data: {
+    name: string;
+    description: string;
+    category: string;
+    icon: string;
+    show_on_home: boolean;
+    content: string;
+  }) => {
+    await createUserCommand(data);
+    // Refresh user commands
+    const updated = await listUserCommands();
+    setUserCommands(updated);
+    setShowCreateCommand(false);
+  }, []);
+
+  const handleCreateCommandBack = useCallback(() => {
+    setShowCreateCommand(false);
+  }, []);
+
   return (
     <div className="w-full flex flex-col items-center justify-center px-4">
-      {/* THÉRÈSE Avatar and greeting */}
+      {/* THERESE Avatar and greeting */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        {/* Glowing avatar - carré avec bords arrondis */}
+        {/* Glowing avatar */}
         <div className="relative w-20 h-20 mx-auto mb-4">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
           <div className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
             <img
               src="/therese-avatar.png"
-              alt="THÉRÈSE"
+              alt="THERESE"
               className="w-full h-full object-cover"
             />
           </div>
@@ -373,13 +444,33 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
           Comment puis-je t'aider ?
         </h2>
         <p className="text-sm text-text-muted">
-          Choisis une action ou écris directement ton message
+          Choisis une action ou ecris directement ton message
         </p>
       </motion.div>
 
-      {/* Actions Grid / Sub-options / Dynamic Skill Form / Skill Prompt / Skill Execution / Image Generation */}
+      {/* P0-B: Schema load error banner */}
+      <AnimatePresence>
+        {schemaLoadError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="w-full max-w-2xl mb-4 px-4 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error"
+          >
+            {schemaLoadError}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Actions Grid / Sub-options / Dynamic Skill Form / Create Command / Skill Prompt / Skill Execution / Image Generation */}
       <AnimatePresence mode="wait">
-        {pendingDynamicSkill ? (
+        {showCreateCommand ? (
+          <CreateCommandForm
+            key="create-command-form"
+            onSubmit={handleCreateCommand}
+            onBack={handleCreateCommandBack}
+          />
+        ) : pendingDynamicSkill ? (
           <DynamicSkillForm
             key="dynamic-skill-form"
             skillName={pendingDynamicSkill.option.label}
@@ -444,9 +535,9 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl w-full"
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl w-full"
           >
-            {GUIDED_ACTIONS.map((action, index) => (
+            {mergedActions.map((action, index) => (
               <ActionCard
                 key={action.id}
                 icon={action.icon}
@@ -454,6 +545,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
                 description={action.description}
                 onClick={() => handleActionClick(action)}
                 index={index}
+                variant={action.variant}
               />
             ))}
           </motion.div>
@@ -461,25 +553,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       </AnimatePresence>
 
       {/* Keyboard hints */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="flex flex-wrap items-center justify-center gap-3 mt-8"
-      >
-        <div className="px-3 py-1.5 rounded-full bg-surface-elevated border border-border text-xs text-text-muted">
-          <kbd className="font-mono">⌘B</kbd> conversations
-        </div>
-        <div className="px-3 py-1.5 rounded-full bg-surface-elevated border border-border text-xs text-text-muted">
-          <kbd className="font-mono">⌘M</kbd> mémoire
-        </div>
-        <div className="px-3 py-1.5 rounded-full bg-surface-elevated border border-border text-xs text-text-muted">
-          <kbd className="font-mono">⌘K</kbd> commandes
-        </div>
-        <div className="px-3 py-1.5 rounded-full bg-surface-elevated border border-border text-xs text-text-muted">
-          <kbd className="font-mono">/</kbd> raccourcis
-        </div>
-      </motion.div>
     </div>
   );
 }

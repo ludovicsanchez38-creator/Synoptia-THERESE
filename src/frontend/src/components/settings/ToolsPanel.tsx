@@ -14,11 +14,149 @@ import {
   Download,
   Server,
   Zap,
+  Globe,
+  Briefcase,
+  BarChart3,
+  CreditCard,
+  Search,
+  Megaphone,
+  Settings2,
+  MessageCircle,
+  Star,
+  ExternalLink,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { EnvVarModal } from './EnvVarModal';
 import * as api from '../../services/api';
+
+// ============================================================
+// PresetCategory - Groupe de presets avec header repliable
+// ============================================================
+
+interface PresetCategoryProps {
+  category: string;
+  label: string;
+  icon: React.ReactNode;
+  presets: api.MCPPreset[];
+  servers: api.MCPServer[];
+  installingPreset: string | null;
+  onInstall: (presetId: string) => void;
+  defaultCollapsed?: boolean;
+}
+
+function PresetCategory({
+  label,
+  icon,
+  presets,
+  servers,
+  installingPreset,
+  onInstall,
+  defaultCollapsed = false,
+}: PresetCategoryProps) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  return (
+    <div>
+      {/* Category header */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-2 w-full text-left mb-2 group"
+      >
+        <span className="text-accent-cyan/70 group-hover:text-accent-cyan transition-colors">
+          {icon}
+        </span>
+        <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+          {label}
+        </span>
+        <div className="flex-1 h-px bg-border/30" />
+        {collapsed ? (
+          <ChevronRight className="w-3.5 h-3.5 text-text-muted" />
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
+        )}
+      </button>
+
+      {/* Preset cards */}
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {presets.map((preset) => {
+                const runningServer = servers.find(
+                  (s) => s.name === preset.name && s.status === 'running'
+                );
+                const isInstalled = servers.some((s) => s.name === preset.name);
+                const isInstalling = installingPreset === preset.id;
+
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => !isInstalled && !isInstalling && onInstall(preset.id)}
+                    disabled={isInstalled || isInstalling}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      runningServer
+                        ? 'bg-green-500/10 border-green-500/30 cursor-default'
+                        : isInstalled
+                        ? 'bg-background/60 border-border/50 cursor-default opacity-60'
+                        : isInstalling
+                        ? 'bg-accent-cyan/10 border-accent-cyan/30 cursor-wait'
+                        : 'bg-background/60 border-border/50 hover:border-accent-cyan/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-text">{preset.name}</span>
+                        {preset.popular && (
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {preset.url && (
+                          <a
+                            href={preset.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-0.5 hover:bg-border/30 rounded transition-colors"
+                            title={`Voir ${preset.name}`}
+                          >
+                            <ExternalLink className="w-3 h-3 text-text-muted hover:text-accent-cyan" />
+                          </a>
+                        )}
+                        {isInstalling && <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />}
+                        {!isInstalling && runningServer && <Check className="w-4 h-4 text-green-400" />}
+                        {!isInstalling && isInstalled && !runningServer && (
+                          <AlertCircle className="w-4 h-4 text-yellow-400" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-text-muted line-clamp-2">{preset.description}</p>
+                    {preset.env_required && preset.env_required.length > 0 && (
+                      <p className="text-xs text-yellow-400 mt-1">
+                        Requiert: {preset.env_required.join(', ')}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ============================================================
+// ToolsPanel - Main component
+// ============================================================
 
 interface ToolsPanelProps {
   onError: (error: string | null) => void;
@@ -35,6 +173,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
   const [installingPreset, setInstallingPreset] = useState<string | null>(null);
   const [presetToConfig, setPresetToConfig] = useState<api.MCPPreset | null>(null);
+  const [presetFilter, setPresetFilter] = useState('');
 
   // New server form
   const [newServer, setNewServer] = useState({
@@ -302,54 +441,91 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-3">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap className="w-4 h-4 text-accent-cyan" />
-                <span className="text-sm font-medium text-text">Presets disponibles</span>
+            <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-4">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-accent-cyan" />
+                  <span className="text-sm font-medium text-text">
+                    Presets disponibles
+                    <span className="text-text-muted font-normal ml-1">({presets.length})</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                {presets.map((preset) => {
-                  // Check if server is running (not just installed)
-                  const runningServer = servers.find(
-                    (s) => s.name === preset.name && s.status === 'running'
-                  );
-                  const isInstalled = servers.some((s) => s.name === preset.name);
-                  const isInstalling = installingPreset === preset.id;
+              {/* Barre de recherche */}
+              <input
+                type="text"
+                value={presetFilter}
+                onChange={(e) => setPresetFilter(e.target.value)}
+                placeholder="Rechercher un preset..."
+                className="w-full px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              />
 
+              {(() => {
+                // Filtrer par recherche
+                const filter = presetFilter.toLowerCase().trim();
+                const filteredPresets = filter
+                  ? presets.filter((p) =>
+                      p.name.toLowerCase().includes(filter) ||
+                      p.description.toLowerCase().includes(filter) ||
+                      (p.category || '').toLowerCase().includes(filter)
+                    )
+                  : presets;
+
+                // Grouper les presets par categorie
+                const CATEGORY_ORDER = ['essentiels', 'productivite', 'recherche', 'marketing', 'crm', 'finance', 'communication', 'avance'];
+                const CATEGORY_LABELS: Record<string, string> = {
+                  essentiels: 'Essentiels',
+                  productivite: 'Productivite',
+                  recherche: 'Recherche',
+                  marketing: 'Marketing',
+                  crm: 'CRM & Ventes',
+                  finance: 'Finance',
+                  communication: 'Communication',
+                  avance: 'Avance',
+                };
+                const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+                  essentiels: <Globe className="w-3.5 h-3.5" />,
+                  productivite: <Briefcase className="w-3.5 h-3.5" />,
+                  recherche: <Search className="w-3.5 h-3.5" />,
+                  marketing: <Megaphone className="w-3.5 h-3.5" />,
+                  crm: <BarChart3 className="w-3.5 h-3.5" />,
+                  finance: <CreditCard className="w-3.5 h-3.5" />,
+                  communication: <MessageCircle className="w-3.5 h-3.5" />,
+                  avance: <Settings2 className="w-3.5 h-3.5" />,
+                };
+
+                const grouped: Record<string, api.MCPPreset[]> = {};
+                for (const preset of filteredPresets) {
+                  const cat = preset.category || 'essentiels';
+                  if (!grouped[cat]) grouped[cat] = [];
+                  grouped[cat].push(preset);
+                }
+
+                const categories = CATEGORY_ORDER.filter((cat) => grouped[cat]?.length);
+
+                if (categories.length === 0 && filter) {
                   return (
-                    <button
-                      key={preset.id}
-                      onClick={() => !isInstalled && !isInstalling && handleInstallPreset(preset.id)}
-                      disabled={isInstalled || isInstalling}
-                      className={`p-3 rounded-lg border text-left transition-all ${
-                        runningServer
-                          ? 'bg-green-500/10 border-green-500/30 cursor-default'
-                          : isInstalled
-                          ? 'bg-background/60 border-border/50 cursor-default opacity-60'
-                          : isInstalling
-                          ? 'bg-accent-cyan/10 border-accent-cyan/30 cursor-wait'
-                          : 'bg-background/60 border-border/50 hover:border-accent-cyan/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-text">{preset.name}</span>
-                        {isInstalling && <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />}
-                        {!isInstalling && runningServer && <Check className="w-4 h-4 text-green-400" />}
-                        {!isInstalling && isInstalled && !runningServer && (
-                          <AlertCircle className="w-4 h-4 text-yellow-400" />
-                        )}
-                      </div>
-                      <p className="text-xs text-text-muted line-clamp-2">{preset.description}</p>
-                      {preset.env_required && preset.env_required.length > 0 && (
-                        <p className="text-xs text-yellow-400 mt-1">
-                          Requiert: {preset.env_required.join(', ')}
-                        </p>
-                      )}
-                    </button>
+                    <p className="text-sm text-text-muted text-center py-4">
+                      Aucun preset pour "{presetFilter}"
+                    </p>
                   );
-                })}
-              </div>
+                }
+
+                return categories.map((cat) => (
+                  <PresetCategory
+                    key={cat}
+                    category={cat}
+                    label={CATEGORY_LABELS[cat] || cat}
+                    icon={CATEGORY_ICONS[cat]}
+                    presets={grouped[cat]}
+                    servers={servers}
+                    installingPreset={installingPreset}
+                    onInstall={handleInstallPreset}
+                    defaultCollapsed={cat === 'avance' && !filter}
+                  />
+                ));
+              })()}
             </div>
           </motion.div>
         )}

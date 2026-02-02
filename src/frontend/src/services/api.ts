@@ -1243,6 +1243,9 @@ export interface MCPPreset {
   id: string;
   name: string;
   description: string;
+  category?: string;
+  popular?: boolean;
+  url?: string;
   command: string;
   args: string[];
   env_required?: string[];

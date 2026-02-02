@@ -331,79 +331,53 @@ async def get_status():
 
 PRESET_SERVERS = [
     # ============================================================
-    # Tier 1 - Sans API Key (Priorité max)
+    # Essentiels - Sans API Key
     # ============================================================
     {
         "id": "filesystem",
         "name": "Filesystem",
-        "description": "Write, move, copy files (complète les features natives)",
+        "description": "Lecture, ecriture, copie de fichiers locaux",
+        "category": "essentiels",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-filesystem", "{WORKING_DIRECTORY}"],
     },
     {
         "id": "fetch",
         "name": "Fetch",
-        "description": "Récupère le contenu d'URLs (HTTP GET)",
+        "description": "Recupere le contenu d'URLs (HTTP GET)",
+        "category": "essentiels",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-fetch"],
-    },
-    {
-        "id": "git",
-        "name": "Git",
-        "description": "Opérations Git locales (status, diff, log, commit, push)",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-git"],
     },
     {
         "id": "time",
         "name": "Time",
         "description": "Conversions timezone, dates, horloge mondiale",
+        "category": "essentiels",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-time"],
     },
-    {
-        "id": "sequential-thinking",
-        "name": "Sequential Thinking",
-        "description": "Raisonnement étape par étape structuré",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
-    },
 
     # ============================================================
-    # Tier 2 - Google Workspace
+    # Productivite
     # ============================================================
     {
         "id": "google-workspace",
         "name": "Google Workspace",
-        "description": "Gmail, Drive, Calendar, Docs (alternative au natif)",
+        "description": "Gmail, Drive, Calendar, Docs, Sheets",
+        "category": "productivite",
+        "url": "https://workspace.google.com",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-google-workspace"],
         "env_required": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
     },
-
-    # ============================================================
-    # Tier 3 - Providers Externes
-    # ============================================================
-    {
-        "id": "github",
-        "name": "GitHub",
-        "description": "Manage repos, PRs, issues",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-github"],
-        "env_required": ["GITHUB_TOKEN"],
-    },
-    {
-        "id": "slack",
-        "name": "Slack",
-        "description": "Send messages, read channels",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-slack"],
-        "env_required": ["SLACK_BOT_TOKEN"],
-    },
     {
         "id": "notion",
         "name": "Notion",
-        "description": "Read/write Notion databases and pages",
+        "description": "Bases de donnees, pages, knowledge management",
+        "category": "productivite",
+        "popular": True,
+        "url": "https://notion.so",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-notion"],
         "env_required": ["NOTION_API_KEY"],
@@ -411,34 +385,156 @@ PRESET_SERVERS = [
     {
         "id": "airtable",
         "name": "Airtable",
-        "description": "CRUD Airtable bases and records",
+        "description": "Bases de donnees, CRM, gestion de projets",
+        "category": "productivite",
+        "url": "https://airtable.com",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-airtable"],
         "env_required": ["AIRTABLE_API_KEY"],
     },
     {
-        "id": "zapier",
-        "name": "Zapier",
-        "description": "Trigger Zapier zaps",
+        "id": "todoist",
+        "name": "Todoist",
+        "description": "Gestion de taches, projets, deadlines",
+        "category": "productivite",
+        "popular": True,
+        "url": "https://todoist.com",
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-zapier"],
-        "env_required": ["ZAPIER_API_KEY"],
+        "args": ["-y", "todoist-mcp-server"],
+        "env_required": ["TODOIST_API_KEY"],
     },
     {
-        "id": "make",
-        "name": "Make (Integromat)",
-        "description": "Trigger Make scenarios",
+        "id": "trello",
+        "name": "Trello",
+        "description": "Tableaux Kanban, cartes, listes, checklists",
+        "category": "productivite",
+        "url": "https://trello.com",
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-make"],
-        "env_required": ["MAKE_API_KEY"],
+        "args": ["-y", "trello-mcp-server"],
+        "env_required": ["TRELLO_API_KEY", "TRELLO_TOKEN"],
+    },
+
+    # ============================================================
+    # Recherche
+    # ============================================================
+    {
+        "id": "brave-search",
+        "name": "Brave Search",
+        "description": "Recherche web avancee (web, local, images, news)",
+        "category": "recherche",
+        "popular": True,
+        "url": "https://brave.com/search/api/",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+        "env_required": ["BRAVE_API_KEY"],
     },
     {
-        "id": "linear",
-        "name": "Linear",
-        "description": "Manage Linear issues and projects",
+        "id": "perplexity",
+        "name": "Perplexity",
+        "description": "Recherche web IA-augmentee avec sources",
+        "category": "recherche",
+        "url": "https://perplexity.ai",
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-linear"],
-        "env_required": ["LINEAR_API_KEY"],
+        "args": ["-y", "@jschuller/perplexity-mcp"],
+        "env_required": ["PERPLEXITY_API_KEY"],
+    },
+
+    # ============================================================
+    # Marketing
+    # ============================================================
+    {
+        "id": "brevo",
+        "name": "Brevo",
+        "description": "Email marketing, campagnes, contacts (ex-Sendinblue)",
+        "category": "marketing",
+        "popular": True,
+        "url": "https://brevo.com",
+        "command": "npx",
+        "args": ["-y", "@richardbaxterseo/brevo-mcp-server"],
+        "env_required": ["BREVO_API_KEY"],
+    },
+
+    # ============================================================
+    # CRM & Ventes
+    # ============================================================
+    {
+        "id": "hubspot",
+        "name": "HubSpot CRM",
+        "description": "CRM gratuit - contacts, deals, taches, pipeline",
+        "category": "crm",
+        "popular": True,
+        "url": "https://hubspot.com",
+        "command": "npx",
+        "args": ["-y", "@hubspot/mcp-server"],
+        "env_required": ["HUBSPOT_ACCESS_TOKEN"],
+    },
+    {
+        "id": "pipedrive",
+        "name": "Pipedrive",
+        "description": "CRM ventes - deals, contacts, activites, pipeline",
+        "category": "crm",
+        "url": "https://pipedrive.com",
+        "command": "npx",
+        "args": ["-y", "@iamsamuelfraga/mcp-pipedrive"],
+        "env_required": ["PIPEDRIVE_API_TOKEN"],
+    },
+
+    # ============================================================
+    # Finance
+    # ============================================================
+    {
+        "id": "stripe",
+        "name": "Stripe",
+        "description": "Paiements, clients, factures, liens de paiement",
+        "category": "finance",
+        "popular": True,
+        "url": "https://stripe.com",
+        "command": "npx",
+        "args": ["-y", "@stripe/mcp", "--tools=all"],
+        "env_required": ["STRIPE_API_KEY"],
+    },
+
+    # ============================================================
+    # Communication
+    # ============================================================
+    {
+        "id": "whatsapp-business",
+        "name": "WhatsApp Business",
+        "description": "Messages, templates, contacts WhatsApp Business",
+        "category": "communication",
+        "url": "https://business.whatsapp.com",
+        "command": "npx",
+        "args": ["-y", "whatsapp-business-mcp-server"],
+        "env_required": ["WHATSAPP_API_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_BUSINESS_ACCOUNT_ID"],
+    },
+
+    # ============================================================
+    # Avance - masques par defaut
+    # ============================================================
+    {
+        "id": "sequential-thinking",
+        "name": "Sequential Thinking",
+        "description": "Raisonnement etape par etape structure",
+        "category": "avance",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+    },
+    {
+        "id": "slack",
+        "name": "Slack",
+        "description": "Envoyer des messages, lire des channels",
+        "category": "avance",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-slack"],
+        "env_required": ["SLACK_BOT_TOKEN"],
+    },
+    {
+        "id": "playwright",
+        "name": "Playwright",
+        "description": "Automatisation navigateur web (formulaires, extraction)",
+        "category": "avance",
+        "command": "npx",
+        "args": ["-y", "@playwright/mcp", "--headless"],
     },
 ]
 

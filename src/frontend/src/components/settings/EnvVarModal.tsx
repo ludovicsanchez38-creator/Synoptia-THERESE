@@ -7,6 +7,7 @@ interface PresetMCP {
   id: string;
   name: string;
   description: string;
+  category?: string;
   env_required?: string[];
 }
 
@@ -22,16 +23,16 @@ const ENV_VAR_CONFIG: Record<string, {
   consoleUrl: string;
   label: string;
 }> = {
-  GITHUB_TOKEN: {
-    prefix: 'ghp_',
-    consoleUrl: 'https://github.com/settings/tokens',
-    label: 'GitHub Personal Access Token',
+  // Google Workspace
+  GOOGLE_OAUTH_CLIENT_ID: {
+    consoleUrl: 'https://console.cloud.google.com/apis/credentials',
+    label: 'Google OAuth Client ID',
   },
-  SLACK_BOT_TOKEN: {
-    prefix: 'xoxb-',
-    consoleUrl: 'https://api.slack.com/apps',
-    label: 'Slack Bot Token',
+  GOOGLE_OAUTH_CLIENT_SECRET: {
+    consoleUrl: 'https://console.cloud.google.com/apis/credentials',
+    label: 'Google OAuth Client Secret',
   },
+  // Productivite
   NOTION_API_KEY: {
     prefix: 'secret_',
     consoleUrl: 'https://www.notion.so/my-integrations',
@@ -42,25 +43,70 @@ const ENV_VAR_CONFIG: Record<string, {
     consoleUrl: 'https://airtable.com/create/tokens',
     label: 'Airtable Personal Access Token',
   },
-  ZAPIER_API_KEY: {
-    consoleUrl: 'https://zapier.com/app/developer',
-    label: 'Zapier API Key',
+  TODOIST_API_KEY: {
+    consoleUrl: 'https://todoist.com/app/settings/integrations/developer',
+    label: 'Todoist API Key',
   },
-  MAKE_API_KEY: {
-    consoleUrl: 'https://www.make.com/en/api-documentation',
-    label: 'Make API Key',
+  // Recherche
+  BRAVE_API_KEY: {
+    consoleUrl: 'https://brave.com/search/api/',
+    label: 'Brave Search API Key',
   },
-  LINEAR_API_KEY: {
-    consoleUrl: 'https://linear.app/settings/api',
-    label: 'Linear API Key',
+  // Marketing
+  BREVO_API_KEY: {
+    prefix: 'xkeysib-',
+    consoleUrl: 'https://app.brevo.com/settings/keys/api',
+    label: 'Brevo API Key',
   },
-  GOOGLE_OAUTH_CLIENT_ID: {
-    consoleUrl: 'https://console.cloud.google.com/apis/credentials',
-    label: 'Google OAuth Client ID',
+  // CRM
+  HUBSPOT_ACCESS_TOKEN: {
+    consoleUrl: 'https://developers.hubspot.com/',
+    label: 'HubSpot Access Token',
   },
-  GOOGLE_OAUTH_CLIENT_SECRET: {
-    consoleUrl: 'https://console.cloud.google.com/apis/credentials',
-    label: 'Google OAuth Client Secret',
+  // Finance
+  STRIPE_API_KEY: {
+    prefix: 'sk_',
+    consoleUrl: 'https://dashboard.stripe.com/apikeys',
+    label: 'Stripe Secret Key',
+  },
+  // Communication
+  WHATSAPP_API_TOKEN: {
+    consoleUrl: 'https://developers.facebook.com/apps/',
+    label: 'WhatsApp API Token',
+  },
+  WHATSAPP_PHONE_NUMBER_ID: {
+    consoleUrl: 'https://developers.facebook.com/apps/',
+    label: 'WhatsApp Phone Number ID',
+  },
+  WHATSAPP_BUSINESS_ACCOUNT_ID: {
+    consoleUrl: 'https://developers.facebook.com/apps/',
+    label: 'WhatsApp Business Account ID',
+  },
+  // Recherche (Tier A)
+  PERPLEXITY_API_KEY: {
+    prefix: 'pplx-',
+    consoleUrl: 'https://www.perplexity.ai/settings/api',
+    label: 'Perplexity API Key',
+  },
+  // CRM (Tier A)
+  PIPEDRIVE_API_TOKEN: {
+    consoleUrl: 'https://app.pipedrive.com/settings/personal/api',
+    label: 'Pipedrive API Token',
+  },
+  // Productivite (Tier A)
+  TRELLO_API_KEY: {
+    consoleUrl: 'https://trello.com/power-ups/admin',
+    label: 'Trello API Key',
+  },
+  TRELLO_TOKEN: {
+    consoleUrl: 'https://trello.com/power-ups/admin',
+    label: 'Trello Token',
+  },
+  // Avance
+  SLACK_BOT_TOKEN: {
+    prefix: 'xoxb-',
+    consoleUrl: 'https://api.slack.com/apps',
+    label: 'Slack Bot Token',
   },
 };
 
