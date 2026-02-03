@@ -6,6 +6,8 @@ Pytest fixtures and configuration for all tests.
 
 import asyncio
 import os
+import sys
+from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
@@ -15,6 +17,11 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
+
+# Ensure src/backend is on sys.path so 'app' module is importable
+_backend_dir = str(Path(__file__).resolve().parent.parent / "src" / "backend")
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
 # Set test environment before importing app
 os.environ["THERESE_ENV"] = "test"
@@ -111,7 +118,7 @@ def sample_project_data():
     return {
         "name": "Projet Test",
         "description": "Description du projet test",
-        "status": "in_progress",
+        "status": "active",
         "budget": 10000.0,
         "tags": ["dev", "ia"],
     }

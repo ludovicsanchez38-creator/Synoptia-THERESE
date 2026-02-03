@@ -81,8 +81,8 @@ class TestContactsCRUD:
         create_response = await client.post("/api/memory/contacts", json=sample_contact_data)
         contact_id = create_response.json()["id"]
 
-        # Update it
-        response = await client.put(f"/api/memory/contacts/{contact_id}", json={
+        # Update it (router uses PATCH, not PUT)
+        response = await client.patch(f"/api/memory/contacts/{contact_id}", json={
             "company": "Synoptia SARL",
         })
 
@@ -136,7 +136,7 @@ class TestProjectsCRUD:
         project = response.json()
 
         assert project["name"] == "Projet Test"
-        assert project["status"] == "in_progress"
+        assert project["status"] == "active"
         assert "id" in project
 
     @pytest.mark.asyncio

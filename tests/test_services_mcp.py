@@ -7,7 +7,7 @@ Utilise pytest et pytest-asyncio avec mocking de subprocess.
 import asyncio
 import json
 import pytest
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch, call
 from uuid import uuid4
@@ -483,7 +483,7 @@ class TestMCPServiceConfiguration:
                     "args": ["@test/mcp"],
                     "env": {},
                     "enabled": True,
-                    "created_at": datetime.utcnow().isoformat(),
+                    "created_at": datetime.now(UTC).isoformat(),
                 }
             ]
         }

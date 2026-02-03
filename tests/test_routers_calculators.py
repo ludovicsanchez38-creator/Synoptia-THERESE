@@ -128,8 +128,8 @@ class TestRICECalculator:
         assert response.status_code == 200
         data = response.json()
 
-        # (1000 * 2 * 80) / 2 = 80000
-        assert data["score"] == 80000
+        # (1000 * 2 * 0.80) / 2 = 800  (confidence is divided by 100)
+        assert data["score"] == 800
         assert "interpretation" in data
 
     @pytest.mark.asyncio
@@ -144,8 +144,8 @@ class TestRICECalculator:
 
         assert response.status_code == 200
         data = response.json()
-        # (500 * 1 * 50) / 0.5 = 50000
-        assert data["score"] == 50000
+        # (500 * 1 * 0.50) / 0.5 = 500  (confidence is divided by 100)
+        assert data["score"] == 500
 
     @pytest.mark.asyncio
     async def test_rice_zero_effort_rejected(self, client: AsyncClient):
