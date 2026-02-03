@@ -71,6 +71,35 @@ INJECTION_PATTERNS = [
     # Data exfiltration
     (r"(send|post|upload|transmit)\s+(to|data|information)\s+(http|url|webhook)", ThreatLevel.HIGH, "data_exfiltration"),
     (r"curl\s+|wget\s+|fetch\s*\(", ThreatLevel.MEDIUM, "data_exfiltration"),
+
+    # French injection patterns (SEC-016)
+    # App targets French solopreneurs - must detect FR prompt injection
+
+    # Instruction override (FR)
+    (r"ignore[sz]?\s+(les?\s+)?instructions?\s+(pr[eé]c[eé]dentes?|ant[eé]rieures?|ci-dessus)", ThreatLevel.HIGH, "instruction_override"),
+    (r"oublie[sz]?\s+(tes|les|toutes\s+les)\s+(r[eè]gles?|instructions?|consignes?)", ThreatLevel.HIGH, "instruction_override"),
+    (r"ne\s+(tiens?|tenez)\s+(pas|plus)\s+compte\s+de", ThreatLevel.HIGH, "instruction_override"),
+
+    # Role manipulation (FR)
+    (r"tu\s+es\s+(maintenant|d[eé]sormais|dor[eé]navant)\s+", ThreatLevel.MEDIUM, "role_manipulation"),
+    (r"fais\s+(semblant|comme\s+si)\s+(d[' ]?[eê]tre|tu\s+[eé]tais)", ThreatLevel.MEDIUM, "role_manipulation"),
+    (r"comporte[- ]?toi\s+comme\s+(un|une|si)", ThreatLevel.MEDIUM, "role_manipulation"),
+    (r"adopte\s+(le\s+)?r[oô]le\s+d", ThreatLevel.MEDIUM, "role_manipulation"),
+
+    # Prompt extraction (FR)
+    (r"(montre|affiche|r[eé]v[eè]le|donne)[- ]?moi\s+(ton|le|ta)\s+(prompt|instruction|consigne)", ThreatLevel.HIGH, "prompt_extraction"),
+    (r"(quel|quelles?)\s+(est|sont)\s+(ton|ta|tes)\s+(prompt|instruction|consigne)", ThreatLevel.MEDIUM, "prompt_extraction"),
+    (r"r[eé]p[eè]te\s+(ton|ta|tes|le)\s+(prompt|instruction|consigne)\s+(initial|original|syst[eè]me)", ThreatLevel.HIGH, "prompt_extraction"),
+
+    # Jailbreak (FR)
+    (r"mode\s+sans\s+(restriction|filtre|limite|censure)", ThreatLevel.HIGH, "jailbreak"),
+    (r"contourne[sz]?\s+(les?\s+)?(restrictions?|filtres?|s[eé]curit[eé]s?|protections?)", ThreatLevel.CRITICAL, "jailbreak"),
+    (r"d[eé]sactive[sz]?\s+(les?\s+)?(filtres?|restrictions?|protections?|s[eé]curit[eé]s?)", ThreatLevel.CRITICAL, "jailbreak"),
+    (r"r[eé]ponds?\s+sans\s+(censure|filtre|restriction|limite)", ThreatLevel.HIGH, "jailbreak"),
+
+    # Data exfiltration (FR)
+    (r"(envoie|transmets?|transf[eè]re)[sz]?\s+(les?\s+)?(donn[eé]es?|informations?|fichiers?)\s+[aà]", ThreatLevel.HIGH, "data_exfiltration"),
+    (r"(copie|exporte)[sz]?\s+(les?\s+)?(donn[eé]es?|base|contacts?)\s+(vers|sur|[aà])", ThreatLevel.MEDIUM, "data_exfiltration"),
 ]
 
 # Characters to sanitize (potential encoding attacks)
@@ -87,12 +116,12 @@ DANGEROUS_CHARS = {
 class PromptSecurityService:
     """Service for prompt security checks."""
 
-    def __init__(self, strict_mode: bool = False):
+    def __init__(self, strict_mode: bool = True):
         """
         Initialize security service.
 
         Args:
-            strict_mode: If True, block medium threats too
+            strict_mode: If True, block medium threats too (default: True for business apps)
         """
         self.strict_mode = strict_mode
         self._compiled_patterns = [
@@ -198,10 +227,10 @@ _security_service: PromptSecurityService | None = None
 
 
 def get_prompt_security() -> PromptSecurityService:
-    """Get global prompt security service."""
+    """Get global prompt security service (strict mode for business data)."""
     global _security_service
     if _security_service is None:
-        _security_service = PromptSecurityService()
+        _security_service = PromptSecurityService(strict_mode=True)
     return _security_service
 
 

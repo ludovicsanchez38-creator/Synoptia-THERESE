@@ -19,7 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
 
-# Rate limiting optionnel (SEC-015)
+# Rate limiting (SEC-015) - slowapi est requis (dans pyproject.toml)
 try:
     from slowapi import Limiter
     from slowapi.util import get_remote_address
@@ -28,6 +28,8 @@ try:
     HAS_SLOWAPI = True
 except ImportError:
     HAS_SLOWAPI = False
+    import time as _time
+    from collections import defaultdict as _defaultdict
 from app.models.database import init_db, close_db
 from app.routers import (
     chat_router,
@@ -51,6 +53,7 @@ from app.routers import (
     crm_router,  # Phase 5 - Implemented
     email_setup_router,  # Phase 1.2 - Email Setup Wizard
     rgpd_router,  # Phase 6 - RGPD Compliance
+    commands_router,  # User Commands
 )
 from app.services import init_qdrant, close_qdrant
 from app.services.skills import init_skills, close_skills
@@ -103,6 +106,14 @@ async def lifespan(app: FastAPI):
 
     await initialize_mcp_service()
     logger.info("MCP service initialized")
+
+    # Pre-charge le modele d'embeddings (evite 5-10s de latence au premier appel)
+    from app.services.embeddings import preload_embedding_model
+    try:
+        await preload_embedding_model()
+        logger.info("Embedding model pre-loaded")
+    except Exception as e:
+        logger.warning(f"Failed to preload embedding model (will lazy-load on first use): {e}")
 
     # Load user profile into cache
     await _load_user_profile()
@@ -166,14 +177,20 @@ app = FastAPI(
 )
 
 # CORS middleware (SEC-018)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# Production: only Tauri origins. Dev: also allow Vite/Tauri dev servers.
+_cors_origins = [
+    "tauri://localhost",       # Tauri production
+    "https://tauri.localhost",  # Tauri production (HTTPS)
+]
+if settings.therese_env != "production":
+    _cors_origins += [
         "http://localhost:1420",  # Tauri dev
         "http://localhost:5173",  # Vite dev
-        "tauri://localhost",  # Tauri production
-        "https://tauri.localhost",  # Tauri production (HTTPS)
-    ],
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=[
@@ -183,7 +200,7 @@ app.add_middleware(
         "Accept",
         "Origin",
     ],
-    expose_headers=["Content-Disposition"],  # Pour le téléchargement de fichiers
+    expose_headers=["Content-Disposition"],  # Pour le telechargement de fichiers
 )
 
 # Rate limiting middleware (SEC-015)
@@ -191,10 +208,40 @@ if HAS_SLOWAPI:
     limiter = Limiter(key_func=get_remote_address)
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
-    logger.info("SlowAPI rate limiting activé")
+    logger.info("SlowAPI rate limiting active")
 else:
     limiter = None
-    logger.warning("slowapi non installé - rate limiting désactivé. Installer avec: uv add slowapi")
+    logger.error(
+        "SECURITE: slowapi non installe - rate limiting degrade actif. "
+        "Installer avec: uv add slowapi"
+    )
+
+    # Fallback in-memory rate limiter (SEC-015)
+    # Protege les endpoints critiques meme sans slowapi
+    _request_counts: dict[str, list[float]] = _defaultdict(list)
+    _FALLBACK_RATE_LIMIT = 60  # max requests per minute per IP
+    _FALLBACK_WINDOW = 60.0  # seconds
+
+    @app.middleware("http")
+    async def fallback_rate_limit_middleware(request: Request, call_next):
+        """Minimal in-memory rate limiter when slowapi is not available."""
+        client_ip = request.client.host if request.client else "unknown"
+        now = _time.time()
+        # Clean old entries
+        _request_counts[client_ip] = [
+            t for t in _request_counts[client_ip]
+            if now - t < _FALLBACK_WINDOW
+        ]
+        if len(_request_counts[client_ip]) >= _FALLBACK_RATE_LIMIT:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "code": "RATE_LIMITED",
+                    "message": "Trop de requetes. Veuillez patienter.",
+                },
+            )
+        _request_counts[client_ip].append(now)
+        return await call_next(request)
 
 
 # --- Exception handlers (ARCH-029 + SEC-015) ---
@@ -266,6 +313,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # --- Auth token bootstrap endpoint (SEC-010) ---
+# SECURITY NOTE (SEC-010): This endpoint returns the session token in plaintext.
+# Risk level: LOW for desktop app (localhost only, CORS-restricted to Tauri origins).
+# The token is ephemeral (regenerated each launch) and the endpoint is not reachable
+# from external networks. If THERESE ever serves remote clients, this must be replaced
+# by a secure handshake (e.g. file-based token exchange or IPC channel).
 
 @app.get("/api/auth/token")
 async def get_auth_token(request: Request):
@@ -286,11 +338,12 @@ async def auth_middleware(request: Request, call_next):
     if any(request.url.path.startswith(p) for p in exempt_paths):
         return await call_next(request)
 
-    # Vérifier le token (header ou query param pour les balises <img>) (SEC-010)
+    # Verifier le token (header ou query param pour les balises <img>) (SEC-010)
     token = request.headers.get("X-Therese-Token") or request.query_params.get("token")
     expected = getattr(request.app.state, "session_token", None)
 
-    if expected and token != expected:
+    # Utilise secrets.compare_digest pour eviter les timing attacks (SEC-025)
+    if expected and (not token or not secrets.compare_digest(token, expected)):
         return JSONResponse(
             status_code=401,
             content={"code": "UNAUTHORIZED", "message": "Token de session invalide ou manquant"},
@@ -340,6 +393,9 @@ app.include_router(crm_router, prefix="/api/crm", tags=["CRM"])  # Phase 5
 
 # Phase 6: RGPD Compliance
 app.include_router(rgpd_router, prefix="/api/rgpd", tags=["RGPD"])  # Phase 6
+
+# User Commands
+app.include_router(commands_router, prefix="/api/commands", tags=["Commands"])
 
 
 # Health endpoints

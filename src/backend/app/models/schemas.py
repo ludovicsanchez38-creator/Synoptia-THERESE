@@ -510,12 +510,12 @@ class CalendarResponse(BaseModel):
     """Response schema pour un calendrier."""
 
     id: str
-    account_id: str
+    account_id: str | None = None
     summary: str
     description: str | None = None
     timezone: str
     primary: bool
-    synced_at: str  # ISO datetime
+    synced_at: str | None = None  # ISO datetime
 
 
 class CalendarEventResponse(BaseModel):

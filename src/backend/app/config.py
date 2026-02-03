@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     app_name: str = "THÉRÈSE"
     app_version: str = "0.1.0"
     debug: bool = False
+    therese_env: str = "development"  # "development" or "production" (SEC-018)
 
     # Server
     host: str = "127.0.0.1"

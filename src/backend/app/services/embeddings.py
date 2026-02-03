@@ -109,3 +109,20 @@ async def embed_texts_async(texts: Sequence[str]) -> list[list[float]]:
     """
     service = get_embeddings_service()
     return await asyncio.to_thread(service.embed_texts, texts)
+
+
+async def preload_embedding_model() -> None:
+    """
+    Pre-charge le modele d'embeddings au demarrage de l'application.
+
+    Evite le blocage de 5-10s lors du premier appel utilisateur.
+    Utilise asyncio.to_thread car le chargement est CPU-bound.
+    """
+    def _load():
+        service = get_embeddings_service()
+        # Acces a la property .model pour declencher le lazy loading
+        _ = service.model
+        return service.get_dimension()
+
+    dim = await asyncio.to_thread(_load)
+    logger.info(f"Embedding model pre-loaded (dimension={dim})")

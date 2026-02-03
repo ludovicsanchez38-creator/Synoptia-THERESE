@@ -53,6 +53,9 @@ dependencies = [
     "icalendar>=5.0.0",
     "pytz>=2024.1",
     "keyring>=25.7.0",
+    "pyyaml>=6.0",
+    # Security - Rate limiting (SEC-015)
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]
