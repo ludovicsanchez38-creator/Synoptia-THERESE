@@ -89,6 +89,13 @@ ALLOWED_IMPORTS: dict[str, set[str]] = {
         "math",
         "decimal",
         "decimal.Decimal",
+        "time",
+        "random",
+        "copy",
+        "string",
+        "textwrap",
+        "itertools",
+        "collections",
     },
     "docx": {
         "docx",
@@ -113,6 +120,13 @@ ALLOWED_IMPORTS: dict[str, set[str]] = {
         "math",
         "decimal",
         "decimal.Decimal",
+        "time",
+        "random",
+        "copy",
+        "string",
+        "textwrap",
+        "itertools",
+        "collections",
     },
     "pptx": {
         "pptx",
@@ -135,6 +149,13 @@ ALLOWED_IMPORTS: dict[str, set[str]] = {
         "math",
         "decimal",
         "decimal.Decimal",
+        "time",
+        "random",
+        "copy",
+        "string",
+        "textwrap",
+        "itertools",
+        "collections",
     },
 }
 
@@ -149,13 +170,16 @@ def extract_python_code(llm_response: str) -> str | None:
     """
     Extrait le code Python d'un bloc ```python``` dans la réponse LLM.
 
+    Gère aussi les réponses tronquées où le ``` fermant est absent
+    (ex: réponses longues coupées par max_tokens).
+
     Args:
         llm_response: Réponse complète du LLM
 
     Returns:
         Code Python extrait ou None si pas de bloc trouvé
     """
-    # Chercher un bloc ```python ... ```
+    # 1. Chercher un bloc complet ```python ... ```
     pattern = r"```python\s*\n(.*?)```"
     match = re.search(pattern, llm_response, re.DOTALL)
     if match:
@@ -163,13 +187,76 @@ def extract_python_code(llm_response: str) -> str | None:
         if code:
             return code
 
-    # Essayer aussi ```py ... ```
+    # 2. Essayer aussi ```py ... ```
     pattern_py = r"```py\s*\n(.*?)```"
     match_py = re.search(pattern_py, llm_response, re.DOTALL)
     if match_py:
         code = match_py.group(1).strip()
         if code:
             return code
+
+    # 3. Fallback : bloc ouvert sans ``` fermant (réponse tronquée)
+    pattern_open = r"```python\s*\n(.*)"
+    match_open = re.search(pattern_open, llm_response, re.DOTALL)
+    if match_open:
+        code = match_open.group(1).strip()
+        if code:
+            logger.warning(
+                "Code Python extrait sans bloc fermant (réponse tronquée, %d chars)",
+                len(code),
+            )
+            return code
+
+    # 4. Idem pour ```py sans fermant
+    pattern_py_open = r"```py\s*\n(.*)"
+    match_py_open = re.search(pattern_py_open, llm_response, re.DOTALL)
+    if match_py_open:
+        code = match_py_open.group(1).strip()
+        if code:
+            logger.warning(
+                "Code Python extrait sans bloc fermant (réponse tronquée, %d chars)",
+                len(code),
+            )
+            return code
+
+    return None
+
+
+def repair_truncated_code(code: str) -> str | None:
+    """
+    Tente de réparer du code Python tronqué en retirant les lignes
+    incomplètes à la fin jusqu'à obtenir un code syntaxiquement valide.
+
+    Args:
+        code: Code Python potentiellement tronqué
+
+    Returns:
+        Code réparé ou None si impossible
+    """
+    # D'abord vérifier si le code est déjà valide
+    try:
+        ast.parse(code)
+        return code
+    except SyntaxError:
+        pass
+
+    # Retirer les lignes une par une depuis la fin
+    lines = code.split("\n")
+    for i in range(len(lines), 0, -1):
+        candidate = "\n".join(lines[:i]).rstrip()
+        if not candidate:
+            continue
+        try:
+            ast.parse(candidate)
+            removed = len(lines) - i
+            logger.info(
+                "Code tronqué réparé : %d lignes retirées sur %d",
+                removed,
+                len(lines),
+            )
+            return candidate
+        except SyntaxError:
+            continue
 
     return None
 
@@ -505,6 +592,25 @@ class CodeGenSkill(BaseSkill):
         code = extract_python_code(params.content)
 
         if code:
+            # Si le code a une erreur de syntaxe, tenter une réparation
+            try:
+                ast.parse(code)
+            except SyntaxError:
+                logger.warning(
+                    f"[{self.skill_id}] Code extrait avec erreur de syntaxe, "
+                    f"tentative de réparation..."
+                )
+                repaired = repair_truncated_code(code)
+                if repaired:
+                    code = repaired
+                else:
+                    logger.warning(
+                        f"[{self.skill_id}] Réparation impossible, "
+                        f"fallback vers parser legacy"
+                    )
+                    code = None
+
+        if code:
             try:
                 logger.info(
                     f"[{self.skill_id}] Code Python détecté, exécution sandboxée..."
@@ -554,6 +660,19 @@ class CodeGenSkill(BaseSkill):
 
         # Fallback vers l'ancien parser
         return await self._fallback_execute(params, file_id, output_path)
+
+    def get_markdown_prompt_addition(self) -> str:
+        """
+        Instructions alternatives pour les modèles incapables de générer du code Python.
+
+        Demande du Markdown structuré au lieu de code python-docx/pptx/openpyxl.
+        Peut être surchargé par chaque generator pour des instructions spécifiques.
+        """
+        return """
+Génère le contenu en Markdown bien structuré.
+Utilise : # Titre, ## Sections, ### Sous-sections, listes, **gras**, *italique*, tableaux Markdown.
+NE génère PAS de code Python. Écris directement le contenu textuel.
+"""
 
     @abstractmethod
     async def _fallback_execute(

@@ -127,6 +127,29 @@ doc.save(output_path)
 Génère UNIQUEMENT le bloc ```python``` avec le code complet. Pas d'explication avant ou après.
 """
 
+    def get_markdown_prompt_addition(self) -> str:
+        """Instructions Markdown pour modèles non code-capable."""
+        return """
+## Instructions pour génération de document Word
+
+Génère le contenu du document en Markdown bien structuré.
+Utilise :
+- # Titre principal (un seul, en début de document)
+- ## Sections principales
+- ### Sous-sections
+- Listes à puces (- item) et listes numérotées (1. item)
+- **gras** pour les termes importants
+- *italique* pour les nuances
+- Tableaux Markdown (| col1 | col2 |) pour les données tabulaires
+
+### Structure attendue
+1. Introduction (contexte, objectif)
+2. Corps (sections logiques avec titres)
+3. Conclusion (résumé, prochaines étapes)
+
+NE génère PAS de code Python. Écris directement le contenu textuel du document.
+"""
+
     async def _fallback_execute(
         self, params: SkillParams, file_id: str, output_path: Path
     ) -> SkillResult:

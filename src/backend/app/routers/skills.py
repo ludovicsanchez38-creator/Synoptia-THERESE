@@ -21,6 +21,8 @@ from app.services.skills import (
     SkillExecuteResponse,
     get_skills_registry,
 )
+from app.services.skills.base import SkillOutputType
+from app.services.skills.model_capability import get_model_capability
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +134,28 @@ async def execute_skill(
         enrichment = skill.get_enrichment_context(user_profile_dict, memory_context)
 
         # 4. Préparer le prompt enrichi pour le LLM
+        llm_service: LLMService = get_llm_service()
         system_addition = skill.get_system_prompt_addition()
 
         # Construire la section d'enrichissement
         enrichment_text = "\n".join([f"{key}: {value}" for key, value in enrichment.items() if value])
+
+        # Adapter le prompt selon la capacité du modèle (code Python vs Markdown)
+        code_instruction = ""
+        if skill.output_type == SkillOutputType.FILE:
+            capability = get_model_capability(
+                llm_service.config.provider,
+                llm_service.config.model,
+            )
+            if capability == "code":
+                code_instruction = "\nIMPORTANT : Génère ta réponse sous forme d'un bloc de code Python (```python```) qui crée le fichier. Le code sera exécuté directement."
+            else:
+                # Modèle non code-capable : demander du Markdown structuré
+                system_addition = skill.get_markdown_prompt_addition()
+                logger.info(
+                    f"Modèle {llm_service.config.model} ({llm_service.config.provider.value}) "
+                    f"→ mode markdown pour skill {skill_id}"
+                )
 
         enriched_prompt = f"""
 {request.prompt}
@@ -144,15 +164,15 @@ async def execute_skill(
 {enrichment_text}
 
 {system_addition}
-
-IMPORTANT : Génère ta réponse sous forme d'un bloc de code Python (```python```) qui crée le fichier. Le code sera exécuté directement.
+{code_instruction}
 """
 
-        # 5. Appeler le LLM
-        llm_service: LLMService = get_llm_service()
+        # 5. Appeler le LLM (max_tokens augmenté pour les skills FILE qui génèrent du code)
+        llm_max_tokens = 8192 if skill.output_type == SkillOutputType.FILE else None
         llm_content = await llm_service.generate_content(
             prompt=enriched_prompt,
             context=request.context,
+            max_tokens=llm_max_tokens,
         )
 
         # Exécuter le skill avec le contenu généré
@@ -207,6 +227,7 @@ async def download_file(file_id: str):
                 ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 ".pdf": "application/pdf",
+                ".md": "text/markdown",
             }
             mime_type = mime_types.get(ext, "application/octet-stream")
 

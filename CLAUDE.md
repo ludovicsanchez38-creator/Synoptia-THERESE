@@ -825,10 +825,11 @@ const rice = await calculateRICE(1000, 2, 80, 2);
 - [x] File Browser natif Tauri
 - [x] Support: txt, md, json, py, js, ts, html, css
 
-### Skills Office
-- [x] Génération DOCX (python-docx)
-- [x] Génération PPTX (pptxgenjs)
-- [x] Génération XLSX (openpyxl)
+### Skills Office (v2 code-execution)
+- [x] Génération DOCX (python-docx) - code-execution + fallback legacy
+- [x] Génération PPTX (python-pptx) - code-execution + fallback legacy
+- [x] Génération XLSX (openpyxl) - code-execution + fallback legacy
+- [x] Sandbox sécurisée (imports restreints, timeout 30s, patterns bloqués)
 
 ### Board de Décision (nouveau v2.0)
 - [x] 5 conseillers IA avec personnalités distinctes
@@ -1085,10 +1086,11 @@ Implémentation de 30 User Stories couvrant 7 nouveaux domaines :
 - [x] File Browser natif Tauri
 - [x] Support: txt, md, json, py, js, ts, html, css
 
-### Skills Office
-- [x] Génération DOCX (python-docx)
-- [x] Génération PPTX (pptxgenjs)
-- [x] Génération XLSX (openpyxl)
+### Skills Office (v2 code-execution)
+- [x] Génération DOCX (python-docx) - code-execution + fallback legacy
+- [x] Génération PPTX (python-pptx) - code-execution + fallback legacy
+- [x] Génération XLSX (openpyxl) - code-execution + fallback legacy
+- [x] Sandbox sécurisée (imports restreints, timeout 30s, patterns bloqués)
 
 ### Board de Décision
 - [x] 5 conseillers IA avec personnalités distinctes
@@ -1550,9 +1552,108 @@ Pennylane (compta FR) - pas de package npm dedie, a surveiller
 
 ### MVP v3.5 - COMPLET (MCP Connectors Brainstorm)
 
+### Session 2 fevrier - Skills Office v2 Code-Execution (COMPLET)
+
+Remplacement du pipeline LLM -> Markdown/JSON -> regex parser -> fichier
+par une approche code-execution : LLM -> code Python -> sandbox -> fichier.
+
+#### Architecture
+- **code_executor.py** : Module central (extraction, validation, sandbox, CodeGenSkill)
+  - `extract_python_code()` : extrait le code des blocs ```python```
+  - `validate_code()` : securite via AST + patterns bloques
+  - `execute_sandboxed()` : execution async avec timeout 30s
+  - `CodeGenSkill(BaseSkill)` : classe abstraite avec fallback automatique
+- **Sandbox securisee** :
+  - Bloques : os, sys, subprocess, shutil, socket, requests, urllib, eval, exec, compile
+  - `__import__` restreint par whitelist selon le format (xlsx/docx/pptx)
+  - Builtins limites (pas de getattr, setattr, etc.)
+  - Timeout 30 secondes via `asyncio.wait_for`
+
+#### Fichiers modifies
+| Fichier | Modification |
+|---------|-------------|
+| `code_executor.py` | NOUVEAU - Module central sandbox + CodeGenSkill |
+| `xlsx_generator.py` | Herite CodeGenSkill, prompt openpyxl (formules, multi-onglets, graphiques) |
+| `docx_generator.py` | Herite CodeGenSkill, prompt python-docx (tableaux, styles, mise en page) |
+| `pptx_generator.py` | Herite CodeGenSkill, prompt python-pptx (16:9, dark theme, variete slides) |
+| `skills.py` router | Prompt enrichi demande du code Python |
+
+#### Points cles
+- **Fallback automatique** : si le LLM genere du Markdown au lieu de code, l'ancien parser prend le relais
+- **Text/Analysis/Planning skills** : non affectes (restent des BaseSkill classiques)
+- **18 skills** enregistres et fonctionnels dans le registry
+- **Aucune nouvelle dependance** : openpyxl, python-docx, python-pptx deja installes
+
+#### Verification
+```bash
+cd src/backend && uv run uvicorn app.main:app --reload --port 8000
+# Guided Prompts -> Produire -> Tableur Excel / Document Word / Presentation PPT
+# Tester avec modele puissant (Claude, GPT) = code-execution
+# Tester avec modele faible (Ollama) = fallback legacy
+```
+
+### MVP v3.6 - COMPLET (Skills Office v2 Code-Execution)
+
+### Session 3 février - Skills FILE multi-modèle + fix Opus (COMPLET)
+
+**3 problèmes résolus** : titres génériques, docs vides Gemini Flash, pas d'adaptation au modèle.
+
+#### Étape 1 : Détection capacité modèle
+- [x] **`model_capability.py`** (NOUVEAU) - Mapping provider+modèle → "code" ou "markdown"
+  - CODE : Anthropic (*), OpenAI (*), Gemini (pro), Mistral (large, codestral), Grok (*)
+  - MARKDOWN : Gemini Flash, Mistral Small, Ollama (tous)
+
+#### Étape 2 : Prompt adaptatif dans le router
+- [x] **`skills.py`** - Branchement code vs markdown selon capacité modèle
+  - Code-capable : instructions Python (python-docx/pptx/openpyxl)
+  - Markdown-capable : instructions Markdown structuré via `get_markdown_prompt_addition()`
+  - `max_tokens=8192` pour skills FILE (était 4096, causait troncature Opus)
+
+#### Étape 3 : Prompts Markdown par generator
+- [x] **`code_executor.py`** - `get_markdown_prompt_addition()` par défaut sur `CodeGenSkill`
+- [x] **`docx_generator.py`** - Surcharge avec instructions DOCX Markdown
+- [x] **`pptx_generator.py`** - Surcharge avec instructions PPTX (slides séparées par ---)
+- [x] **`xlsx_generator.py`** - Surcharge avec instructions XLSX (tableaux Markdown par onglet)
+
+#### Étape 4 : Meilleurs titres
+- [x] **`registry.py`** - `_extract_title_from_content()` cherche dans le contenu LLM
+- [x] **`registry.py`** - `_extract_title()` amélioré avec 24 préfixes FR/EN
+- [x] Priorité prompt quand le contenu est du code Python (évite "Configuration des marges")
+
+#### Fix critique Opus - Réponses tronquées
+- [x] **`extract_python_code()`** - Fallback pour blocs ` ```python ` sans ` ``` ` fermant
+- [x] **`repair_truncated_code()`** (NOUVEAU) - Retire les lignes incomplètes en fin de code tronqué jusqu'à obtenir un AST valide
+- [x] **`CodeGenSkill.execute()`** - Intègre la réparation avant exécution sandbox
+- [x] **`generate_content()`** dans `llm.py` - Paramètre `max_tokens` optionnel
+
+#### Imports autorisés élargis
+- Ajout `time`, `random`, `copy`, `string`, `textwrap`, `itertools`, `collections` pour les 3 formats
+
+#### Tests manuels
+| Modèle | DOCX | PPTX | XLSX |
+|--------|------|------|------|
+| Opus (Anthropic) | 40 KB OK | 41 KB OK | 5 KB OK (fallback) |
+| Ollama/mistral | OK (markdown) | OK (markdown) | OK (markdown) |
+| Gemini Flash | OK (markdown) | OK (markdown) | OK (markdown) |
+| Grok | OK (code) | OK (code) | OK (fallback) |
+
+#### Fichiers modifiés (8 fichiers)
+| Fichier | Action |
+|---------|--------|
+| `app/services/skills/model_capability.py` | NOUVEAU - Détection capacité modèle |
+| `app/services/skills/code_executor.py` | Fix extraction tronquée, réparation, imports élargis |
+| `app/routers/skills.py` | Branchement code/markdown, max_tokens=8192 |
+| `app/services/llm.py` | Paramètre max_tokens sur generate_content() |
+| `app/services/skills/registry.py` | Titres améliorés, priorité prompt pour code |
+| `app/services/skills/docx_generator.py` | get_markdown_prompt_addition() |
+| `app/services/skills/pptx_generator.py` | get_markdown_prompt_addition() |
+| `app/services/skills/xlsx_generator.py` | get_markdown_prompt_addition() |
+
+### MVP v3.7 - COMPLET (Skills Multi-Modèle + Fix Opus)
+
 ---
 
-## TODO / Backlog (mis a jour 2 fevrier 2026)
+## TODO / Backlog (mis à jour 3 février 2026)
 
 - [ ] **Tool `create_contact`** : Permettre a THERESE d'ajouter des contacts via tool
 - [ ] **Tool `create_project`** : Idem pour les projets

@@ -335,9 +335,10 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
         self,
         context: ContextWindow,
         tools: list[dict] | None = None,
+        enable_grounding: bool = True,
     ) -> AsyncGenerator[str, None]:
         """Stream response (text only, backward compat)."""
-        async for event in self.stream_response_with_tools(context, tools):
+        async for event in self.stream_response_with_tools(context, tools, enable_grounding=enable_grounding):
             if event.type == "text" and event.content:
                 yield event.content
 
@@ -345,6 +346,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
         self,
         context: ContextWindow,
         tools: list[dict] | None = None,
+        enable_grounding: bool = True,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream response with tool support."""
         await self._ensure_provider()
@@ -358,8 +360,13 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
             messages = context.to_openai_format()
             system_prompt = context.system_prompt
 
-        async for event in self._provider.stream(system_prompt, messages, tools):
-            yield event
+        # Pass enable_grounding to Gemini provider
+        if self.config.provider == LLMProvider.GEMINI:
+            async for event in self._provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
+                yield event
+        else:
+            async for event in self._provider.stream(system_prompt, messages, tools):
+                yield event
 
     async def continue_with_tool_results(
         self,
@@ -390,8 +397,19 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
         prompt: str,
         context: dict | None = None,
         system_prompt: str | None = None,
+        max_tokens: int | None = None,
     ) -> str:
-        """Generate complete content (non-streaming)."""
+        """Generate complete content (non-streaming).
+
+        Grounding is disabled for content generation (skills, documents)
+        to avoid Gemini searching instead of generating structured content.
+
+        Args:
+            prompt: Le prompt utilisateur
+            context: Contexte optionnel (clé-valeur)
+            system_prompt: System prompt personnalisé
+            max_tokens: Limite de tokens en sortie (défaut: config du provider)
+        """
         messages = [Message(role="user", content=prompt)]
         effective_system = system_prompt or self._get_system_prompt_with_identity()
 
@@ -399,10 +417,27 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
             context_str = "\n".join(f"- {k}: {v}" for k, v in context.items())
             effective_system += f"\n\n## Contexte:\n{context_str}"
 
+        # Augmenter temporairement max_tokens si demandé
+        original_max_tokens = self.config.max_tokens
+        if max_tokens and max_tokens > self.config.max_tokens:
+            self.config.max_tokens = max_tokens
+
         ctx = self.prepare_context(messages=messages, system_prompt=effective_system)
         content_parts = []
-        async for chunk in self.stream_response(ctx):
-            content_parts.append(chunk)
+        errors = []
+        try:
+            async for event in self.stream_response_with_tools(ctx, enable_grounding=False):
+                if event.type == "text" and event.content:
+                    content_parts.append(event.content)
+                elif event.type == "error":
+                    errors.append(event.content or "Unknown error")
+        finally:
+            # Restaurer max_tokens original
+            self.config.max_tokens = original_max_tokens
+
+        if not content_parts and errors:
+            raise RuntimeError(f"Erreur LLM lors de la génération : {'; '.join(errors)}")
+
         return "".join(content_parts)
 
     async def close(self):

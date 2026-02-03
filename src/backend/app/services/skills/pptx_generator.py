@@ -146,6 +146,35 @@ prs.save(output_path)
 Génère UNIQUEMENT le bloc ```python``` avec le code complet. Pas d'explication avant ou après.
 """
 
+    def get_markdown_prompt_addition(self) -> str:
+        """Instructions Markdown pour modèles non code-capable."""
+        return """
+## Instructions pour génération de présentation PowerPoint
+
+Génère le contenu de la présentation, slide par slide.
+Sépare chaque slide par --- (trois tirets sur une ligne seule).
+Chaque slide commence par ## Titre de la slide, suivi de 3-5 points clés.
+
+### Structure attendue
+1. Slide titre : ## Titre de la présentation (+ sous-titre en italique)
+2. Slides de contenu : ## Titre + liste de points clés (- point)
+3. Slide de fin : ## Merci
+
+### Exemple de format
+## Introduction au sujet
+- Premier point important
+- Deuxième point avec **élément clé**
+- Troisième point
+
+---
+
+## Analyse détaillée
+- Point d'analyse 1
+- Point d'analyse 2
+
+NE génère PAS de code Python. Écris directement le contenu textuel des slides.
+"""
+
     async def _fallback_execute(
         self, params: SkillParams, file_id: str, output_path: Path
     ) -> SkillResult:

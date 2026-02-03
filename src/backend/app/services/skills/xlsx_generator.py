@@ -110,6 +110,33 @@ wb.save(output_path)
 Génère UNIQUEMENT le bloc ```python``` avec le code complet. Pas d'explication avant ou après.
 """
 
+    def get_markdown_prompt_addition(self) -> str:
+        """Instructions Markdown pour modèles non code-capable."""
+        return """
+## Instructions pour génération de fichier Excel
+
+Génère les données du tableur sous forme de tableaux Markdown.
+Chaque tableau sera converti en un onglet Excel.
+Commence chaque tableau par ## Nom de l'onglet.
+
+### Format attendu
+Utilise le format tableau Markdown standard :
+
+## Données principales
+| Header1 | Header2 | Header3 |
+|---------|---------|---------|
+| valeur1 | valeur2 | valeur3 |
+| valeur4 | valeur5 | valeur6 |
+
+### Règles
+- Utilise des données réalistes et cohérentes
+- Les nombres doivent être écrits sans formatage (ex: 1500, pas 1 500 €)
+- Tu peux créer plusieurs tableaux (= plusieurs onglets)
+- Ajoute un tableau de résumé si pertinent
+
+NE génère PAS de code Python. Écris directement les tableaux de données.
+"""
+
     async def _fallback_execute(
         self, params: SkillParams, file_id: str, output_path: Path
     ) -> SkillResult:

@@ -5,6 +5,7 @@ Gestionnaire de skills avec découverte automatique et exécution.
 """
 
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -102,7 +103,20 @@ class SkillsRegistry:
 
         try:
             # Préparer les paramètres
-            title = request.title or self._extract_title(request.prompt)
+            # Si le contenu est du code Python, le prompt est plus fiable pour le titre
+            is_code = llm_content.lstrip().startswith("```python") or llm_content.lstrip().startswith("from ") or llm_content.lstrip().startswith("import ")
+            if is_code:
+                title = (
+                    request.title
+                    or self._extract_title(request.prompt)
+                    or self._extract_title_from_content(llm_content)
+                )
+            else:
+                title = (
+                    request.title
+                    or self._extract_title_from_content(llm_content)
+                    or self._extract_title(request.prompt)
+                )
             params = SkillParams(
                 title=title,
                 content=llm_content,
@@ -148,29 +162,97 @@ class SkillsRegistry:
         """
         return self._file_cache.get(file_id)
 
+    def _extract_title_from_content(self, llm_content: str) -> str | None:
+        """
+        Extrait un titre depuis le contenu généré par le LLM.
+
+        Cherche dans l'ordre :
+        1. Un heading Markdown (# Titre)
+        2. Un doc.add_heading("...", level=0) dans le code Python
+        3. Une variable title = "..." dans le code Python
+
+        Args:
+            llm_content: Contenu généré par le LLM
+
+        Returns:
+            Titre extrait ou None
+        """
+        if not llm_content:
+            return None
+
+        # 1. Chercher le premier heading Markdown (# Titre)
+        heading_match = re.search(r'^#\s+(.+)$', llm_content, re.MULTILINE)
+        if heading_match:
+            title = heading_match.group(1).strip()
+            if title and title.lower() not in ("document", "titre"):
+                return title[:50]
+
+        # 2. Chercher doc.add_heading("...", level=0) dans le code Python
+        heading_code = re.search(
+            r'add_heading\(\s*["\'](.+?)["\']\s*,\s*level\s*=\s*0\s*\)',
+            llm_content,
+        )
+        if heading_code:
+            title = heading_code.group(1).strip()
+            # Ignorer si c'est juste la variable `title`
+            if title and title != "title" and not title.startswith("{"):
+                return title[:50]
+
+        # 3. Chercher title = "..." dans le code Python
+        # Ignorer les titres qui sont des instructions de mise en page/configuration
+        generic_titles = {
+            "document", "titre", "données", "configuration",
+            "couleurs", "couleurs synoptia", "mise en page",
+            "configuration des marges", "styles", "template",
+        }
+        title_var = re.search(
+            r'\btitle\s*=\s*["\'](.+?)["\']',
+            llm_content,
+        )
+        if title_var:
+            title = title_var.group(1).strip()
+            if title and title.lower() not in generic_titles:
+                return title[:50]
+
+        return None
+
     def _extract_title(self, prompt: str) -> str:
         """
-        Extrait un titre du prompt.
+        Extrait un titre du prompt utilisateur.
 
         Args:
             prompt: Prompt utilisateur
 
         Returns:
-            Titre extrait ou générique
+            Titre extrait ou première ligne tronquée
         """
-        # Chercher des patterns courants
         lines = prompt.strip().split('\n')
         first_line = lines[0] if lines else prompt
 
-        # Si c'est une commande comme "Crée...", "Rédige...", extraire le sujet
-        for prefix in ["Crée ", "Rédige ", "Génère ", "Conçois "]:
-            if first_line.startswith(prefix):
+        # Préfixes français courants
+        prefixes_fr = [
+            "Crée ", "Rédige ", "Génère ", "Conçois ",
+            "Fais ", "Prépare ", "Produis ", "Écris ",
+            "Compose ", "Élabore ", "Construis ", "Développe ",
+            "Planifie ", "Organise ", "Analyse ",
+        ]
+        # Préfixes anglais courants
+        prefixes_en = [
+            "Create ", "Write ", "Generate ", "Make ", "Build ",
+            "Prepare ", "Produce ", "Draft ", "Design ",
+        ]
+
+        for prefix in prefixes_fr + prefixes_en:
+            if first_line.lower().startswith(prefix.lower()):
                 subject = first_line[len(prefix):].strip()
                 # Prendre jusqu'au premier point ou les 50 premiers caractères
                 subject = subject.split('.')[0][:50]
-                return subject or "Document"
+                if subject:
+                    return subject
 
-        return "Document"
+        # Fallback : première ligne du prompt tronquée à 50 caractères
+        fallback = first_line.strip()[:50]
+        return fallback if fallback else "Document"
 
     @property
     def _file_cache(self) -> dict[str, SkillResult]:
@@ -226,11 +308,7 @@ async def init_skills() -> None:
         PlanProjectSkill,
         PlanWeekSkill,
         PlanGoalsSkill,
-        WorkflowN8nSkill,
-        AppsScriptGeneratorSkill,
-        WorkflowMakeSkill,
-        WorkflowZapierSkill,
-        DocumentProcessSkill,
+        WorkflowSkill,
     )
 
     registry = get_skills_registry()
@@ -259,11 +337,7 @@ async def init_skills() -> None:
     registry.register(PlanProjectSkill(registry.output_dir))
     registry.register(PlanWeekSkill(registry.output_dir))
     registry.register(PlanGoalsSkill(registry.output_dir))
-    registry.register(WorkflowN8nSkill(registry.output_dir))
-    registry.register(AppsScriptGeneratorSkill(registry.output_dir))
-    registry.register(WorkflowMakeSkill(registry.output_dir))
-    registry.register(WorkflowZapierSkill(registry.output_dir))
-    registry.register(DocumentProcessSkill(registry.output_dir))
+    registry.register(WorkflowSkill(registry.output_dir))
 
     logger.info(f"Initialized {len(registry.list_skills())} skills")
 
