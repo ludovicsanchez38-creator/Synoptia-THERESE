@@ -10,7 +10,7 @@ import io
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal, Optional
 
 from openpyxl import load_workbook
@@ -284,13 +284,62 @@ def _parse_json(content: bytes) -> list[dict]:
     return data
 
 
+# Field length limits (SEC-017)
+FIELD_MAX_LENGTHS: dict[str, int] = {
+    "first_name": 200,
+    "last_name": 200,
+    "company": 300,
+    "email": 320,
+    "phone": 50,
+    "stage": 50,
+    "source": 200,
+    "tags": 1000,
+    "notes": 5000,
+    "name": 500,
+    "title": 500,
+    "description": 5000,
+    "status": 50,
+}
+
+# Characters that trigger formula injection in spreadsheets (SEC-017)
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n")
+
+
+def _sanitize_field(value: Any, field_name: str | None = None) -> Any:
+    """
+    Sanitize a field value for safe storage (SEC-017).
+
+    - Strip whitespace
+    - Enforce length limits
+    - Neutralize formula injection prefixes (CSV injection defense)
+    - Remove null bytes
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return value
+    # Strip and remove null bytes
+    value = value.strip().replace("\x00", "")
+    if not value:
+        return None
+    # Neutralize formula injection - prefix with single quote if dangerous
+    if value and value[0] in FORMULA_PREFIXES:
+        value = "'" + value
+    # Enforce length limit
+    if field_name and field_name in FIELD_MAX_LENGTHS:
+        max_len = FIELD_MAX_LENGTHS[field_name]
+        if len(value) > max_len:
+            value = value[:max_len]
+    return value
+
+
 def _map_columns(row: dict, mapping: dict[str, str]) -> dict[str, Any]:
-    """Map source columns to internal column names."""
+    """Map source columns to internal column names and sanitize values (SEC-017)."""
     result = {}
     for source_col, value in row.items():
         internal_col = mapping.get(source_col, source_col)
         if internal_col in mapping.values():
-            result[internal_col] = value
+            result[internal_col] = _sanitize_field(value, internal_col)
     return result
 
 
@@ -552,7 +601,7 @@ class CRMImportService:
                     if mapped.get("notes"):
                         existing.notes = mapped["notes"]
 
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     result.updated += 1
 
@@ -693,7 +742,7 @@ class CRMImportService:
                     if mapped.get("tags"):
                         existing.tags = _parse_value(mapped["tags"], "tags")
 
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     result.updated += 1
 
@@ -831,7 +880,7 @@ class CRMImportService:
                     if mapped.get("due_date"):
                         existing.due_date = _parse_value(mapped["due_date"], "datetime")
 
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     result.updated += 1
 

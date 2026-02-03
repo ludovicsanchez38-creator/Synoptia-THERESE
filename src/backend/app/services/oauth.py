@@ -104,6 +104,9 @@ class OAuthPKCEService:
     OAuth flow for desktop/mobile apps as it doesn't require client secrets.
     """
 
+    # Maximum number of concurrent pending OAuth flows to prevent memory exhaustion
+    MAX_PENDING_FLOWS = 10
+
     def __init__(self):
         """Initialize OAuth service."""
         self._pending_flows: dict[str, dict] = {}  # state -> flow data
@@ -125,6 +128,17 @@ class OAuthPKCEService:
         Returns:
             dict with auth_url, state, code_verifier
         """
+        # Cleanup expired flows before creating a new one
+        self.cleanup_expired_flows()
+
+        # Limit pending flows to prevent memory exhaustion (SEC-019)
+        if len(self._pending_flows) >= self.MAX_PENDING_FLOWS:
+            logger.warning("Too many pending OAuth flows, rejecting new request")
+            raise HTTPException(
+                status_code=429,
+                detail="Trop de flux OAuth en attente. Veuillez patienter."
+            )
+
         # Generate PKCE parameters
         state = secrets.token_urlsafe(32)
         code_verifier = generate_code_verifier()
@@ -187,18 +201,29 @@ class OAuthPKCEService:
             logger.error(f"OAuth error: {error}")
             raise HTTPException(status_code=400, detail=f"OAuth error: {error}")
 
-        if state not in self._pending_flows:
+        # Validate state with constant-time comparison to prevent timing attacks (SEC-020)
+        matched_state = None
+        for pending_state in self._pending_flows:
+            if secrets.compare_digest(pending_state, state):
+                matched_state = pending_state
+                break
+
+        if matched_state is None:
             logger.error(f"Unknown OAuth state: {state[:8]}...")
             raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
 
-        flow_data = self._pending_flows.pop(state)
-        config = flow_data['config']
-        code_verifier = flow_data['code_verifier']
-
-        # Check timeout (10 minutes)
+        # Check timeout BEFORE popping to avoid losing flow data on edge cases
+        flow_data = self._pending_flows[matched_state]
         if time.time() - flow_data['timestamp'] > 600:
+            # Remove expired flow
+            del self._pending_flows[matched_state]
             logger.error(f"OAuth flow expired for state {state[:8]}...")
             raise HTTPException(status_code=400, detail="OAuth flow expired")
+
+        # Pop the flow now that it is validated and not expired
+        flow_data = self._pending_flows.pop(matched_state)
+        config = flow_data['config']
+        code_verifier = flow_data['code_verifier']
 
         if not code:
             raise HTTPException(status_code=400, detail="No authorization code received")

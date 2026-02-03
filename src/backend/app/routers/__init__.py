@@ -33,6 +33,9 @@ from app.routers.rgpd import router as rgpd_router
 # Email Setup Wizard (Phase 1.2)
 from app.routers.email_setup import router as email_setup_router
 
+# User Commands
+from app.routers.commands import router as commands_router
+
 __all__ = [
     "chat_router",
     "memory_router",
@@ -55,4 +58,5 @@ __all__ = [
     "crm_router",  # Phase 5 - Implemented
     "rgpd_router",  # Phase 6 - RGPD Compliance
     "email_setup_router",  # Phase 1.2 - Email Setup Wizard
+    "commands_router",  # User Commands
 ]

@@ -6,10 +6,11 @@ Phase 5 - CRM Features + Local First Export/Import
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
@@ -42,9 +43,17 @@ from app.services.oauth import (
     GSHEETS_SCOPES,
 )
 from app.services.crm_export import CRMExportService, ExportFormat
-from app.services.crm_import import CRMImportService
+from app.services.crm_import import CRMImportService, _sanitize_field
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_row(row: dict) -> dict:
+    """Sanitize all string values in an import row (SEC-017)."""
+    sanitized = {}
+    for key, value in row.items():
+        sanitized[key] = _sanitize_field(value, key.lower()) if isinstance(value, str) else value
+    return sanitized
 
 
 def _parse_dt(value: str) -> datetime | None:
@@ -109,7 +118,8 @@ async def list_activities(
     # Pagination
     statement = statement.offset(skip).limit(limit)
 
-    activities = session.exec(statement).all()
+    result = await session.execute(statement)
+    activities = result.scalars().all()
 
     return [_activity_to_response(activity) for activity in activities]
 
@@ -123,7 +133,7 @@ async def create_activity(
     Crée une nouvelle activité dans la timeline.
     """
     # Vérifier que le contact existe
-    contact = session.get(Contact, request.contact_id)
+    contact = await session.get(Contact, request.contact_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
@@ -139,16 +149,16 @@ async def create_activity(
     session.add(activity)
 
     # Mettre à jour last_interaction du contact
-    contact.last_interaction = datetime.utcnow()
-    contact.updated_at = datetime.utcnow()
+    contact.last_interaction = datetime.now(UTC)
+    contact.updated_at = datetime.now(UTC)
     session.add(contact)
 
     # Recalculer le score (interaction = points)
     if request.type in ["email", "call", "meeting"]:
         update_contact_score(session, contact, reason=f"interaction_{request.type}")
 
-    session.commit()
-    session.refresh(activity)
+    await session.commit()
+    await session.refresh(activity)
 
     logger.info(f"Activity created: {activity.id} for contact {contact.id}")
 
@@ -163,13 +173,13 @@ async def delete_activity(
     """
     Supprime une activité.
     """
-    activity = session.get(Activity, activity_id)
+    activity = await session.get(Activity, activity_id)
 
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    session.delete(activity)
-    session.commit()
+    await session.delete(activity)
+    await session.commit()
 
     logger.info(f"Activity deleted: {activity_id}")
 
@@ -216,7 +226,8 @@ async def list_deliverables(
     # Ordre par création
     statement = statement.order_by(Deliverable.created_at.desc())
 
-    deliverables = session.exec(statement).all()
+    result = await session.execute(statement)
+    deliverables = result.scalars().all()
 
     return [_deliverable_to_response(d) for d in deliverables]
 
@@ -230,7 +241,7 @@ async def create_deliverable(
     Crée un nouveau livrable.
     """
     # Vérifier que le projet existe
-    project = session.get(Project, request.project_id)
+    project = await session.get(Project, request.project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -249,8 +260,8 @@ async def create_deliverable(
     )
 
     session.add(deliverable)
-    session.commit()
-    session.refresh(deliverable)
+    await session.commit()
+    await session.refresh(deliverable)
 
     logger.info(f"Deliverable created: {deliverable.id} for project {project.id}")
 
@@ -266,7 +277,7 @@ async def update_deliverable(
     """
     Met à jour un livrable.
     """
-    deliverable = session.get(Deliverable, deliverable_id)
+    deliverable = await session.get(Deliverable, deliverable_id)
 
     if not deliverable:
         raise HTTPException(status_code=404, detail="Deliverable not found")
@@ -283,16 +294,16 @@ async def update_deliverable(
 
         # Auto-remplir completed_at si validé
         if request.status == "valide" and deliverable.completed_at is None:
-            deliverable.completed_at = datetime.utcnow()
+            deliverable.completed_at = datetime.now(UTC)
 
     if request.due_date is not None:
         deliverable.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
 
-    deliverable.updated_at = datetime.utcnow()
+    deliverable.updated_at = datetime.now(UTC)
 
     session.add(deliverable)
-    session.commit()
-    session.refresh(deliverable)
+    await session.commit()
+    await session.refresh(deliverable)
 
     logger.info(f"Deliverable updated: {deliverable_id}")
 
@@ -307,17 +318,113 @@ async def delete_deliverable(
     """
     Supprime un livrable.
     """
-    deliverable = session.get(Deliverable, deliverable_id)
+    deliverable = await session.get(Deliverable, deliverable_id)
 
     if not deliverable:
         raise HTTPException(status_code=404, detail="Deliverable not found")
 
-    session.delete(deliverable)
-    session.commit()
+    await session.delete(deliverable)
+    await session.commit()
 
     logger.info(f"Deliverable deleted: {deliverable_id}")
 
     return {"message": "Deliverable deleted successfully"}
+
+
+# =============================================================================
+# CRM CONTACTS (Create with GSheets sync)
+# =============================================================================
+
+
+class CreateCRMContactRequest(BaseModel):
+    """Request body for creating a CRM contact."""
+    first_name: str
+    last_name: Optional[str] = None
+    company: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    source: Optional[str] = None
+    stage: str = "contact"
+
+
+@router.post("/contacts", response_model=ContactResponse)
+async def create_crm_contact(
+    request: CreateCRMContactRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Cree un contact dans le CRM local et tente de l'ajouter au Google Sheets.
+
+    Le contact est cree avec source='THERESE' s'il n'a pas de source explicite.
+    Si la sync CRM est configuree (spreadsheet_id + OAuth token), une ligne est
+    ajoutee dans la feuille "Clients" du Google Sheets.
+    """
+    import json
+    import uuid
+
+    source = request.source.strip() if request.source else "THERESE"
+
+    contact = Contact(
+        id=str(uuid.uuid4()),
+        first_name=request.first_name.strip(),
+        last_name=request.last_name.strip() if request.last_name else None,
+        company=request.company.strip() if request.company else None,
+        email=request.email.strip() if request.email else None,
+        phone=request.phone.strip() if request.phone else None,
+        source=source,
+        stage=request.stage,
+        score=50,
+        scope="global",
+    )
+    session.add(contact)
+    await session.commit()
+    await session.refresh(contact)
+
+    logger.info(f"CRM contact created: {contact.id} ({contact.first_name} {contact.last_name})")
+
+    # Try to push to Google Sheets
+    try:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "crm_spreadsheet_id")
+        )
+        spreadsheet_pref = result.scalar_one_or_none()
+
+        result = await session.execute(
+            select(Preference).where(Preference.key == "crm_sheets_access_token")
+        )
+        token_pref = result.scalar_one_or_none()
+
+        if spreadsheet_pref and spreadsheet_pref.value and token_pref and token_pref.value:
+            from app.services.sheets_service import GoogleSheetsService
+            from app.services.encryption import decrypt_value
+
+            access_token = decrypt_value(token_pref.value)
+            sheets = GoogleSheetsService(access_token=access_token)
+
+            full_name = f"{contact.first_name or ''} {contact.last_name or ''}".strip()
+            row_values = [
+                contact.id,
+                full_name,
+                contact.company or "",
+                contact.email or "",
+                contact.phone or "",
+                source,
+                contact.stage,
+                str(contact.score),
+                "",  # Tags
+            ]
+
+            await sheets.append_row(spreadsheet_pref.value, "Clients", row_values)
+            logger.info(f"Contact {contact.id} pushed to Google Sheets")
+        else:
+            logger.debug("CRM sync not configured, contact created locally only")
+
+    except Exception as e:
+        # Ne pas bloquer la creation si le push GSheets echoue
+        logger.warning(f"Failed to push contact to Google Sheets: {e}")
+
+    from app.routers.memory import _contact_to_response
+    return _contact_to_response(contact)
 
 
 # =============================================================================
@@ -336,7 +443,7 @@ async def update_contact_stage(
 
     Crée automatiquement une activité et recalcule le score.
     """
-    contact = session.get(Contact, contact_id)
+    contact = await session.get(Contact, contact_id)
 
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
@@ -346,15 +453,15 @@ async def update_contact_stage(
 
     # Mettre à jour le stage
     contact.stage = new_stage
-    contact.updated_at = datetime.utcnow()
-    contact.last_interaction = datetime.utcnow()
+    contact.updated_at = datetime.now(UTC)
+    contact.last_interaction = datetime.now(UTC)
     session.add(contact)
 
     # Créer une activité
     activity = Activity(
         contact_id=contact.id,
         type="stage_change",
-        title=f"Stage: {old_stage} → {new_stage}",
+        title=f"Stage: {old_stage} -> {new_stage}",
         description=f"Changement de stage dans le pipeline commercial",
         extra_data=f'{{"old_stage": "{old_stage}", "new_stage": "{new_stage}"}}',
     )
@@ -363,8 +470,8 @@ async def update_contact_stage(
     # Recalculer le score
     update_contact_score(session, contact, reason=f"stage_change_{new_stage}")
 
-    session.commit()
-    session.refresh(contact)
+    await session.commit()
+    await session.refresh(contact)
 
     logger.info(f"Contact {contact_id} stage updated: {old_stage} → {new_stage}")
 
@@ -381,14 +488,14 @@ async def recalculate_contact_score(
     """
     Recalcule manuellement le score d'un contact.
     """
-    contact = session.get(Contact, contact_id)
+    contact = await session.get(Contact, contact_id)
 
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
     result = update_contact_score(session, contact, reason="manual_recalculation")
 
-    session.commit()
+    await session.commit()
 
     return ContactScoreUpdate(**result)
 
@@ -409,17 +516,20 @@ async def get_pipeline_stats(
         select(Contact.stage, func.count(Contact.id))
         .group_by(Contact.stage)
     )
-    stages_count = session.exec(stages_count_statement).all()
+    result = await session.execute(stages_count_statement)
+    stages_count = result.all()
 
     # Score moyen par stage
     stages_avg_score_statement = (
         select(Contact.stage, func.avg(Contact.score))
         .group_by(Contact.stage)
     )
-    stages_avg_score = session.exec(stages_avg_score_statement).all()
+    result = await session.execute(stages_avg_score_statement)
+    stages_avg_score = result.all()
 
     # Total contacts
-    total_contacts = session.exec(select(func.count(Contact.id))).one()
+    result = await session.execute(select(func.count(Contact.id)))
+    total_contacts = result.scalar_one()
 
     # Construire la réponse
     stages_data = {}
@@ -769,7 +879,7 @@ async def set_sync_config(
 
     if pref:
         pref.value = spreadsheet_id
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="crm_spreadsheet_id",
@@ -995,8 +1105,9 @@ async def sync_crm(
             clients_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Clients")
             logger.info(f"Found {len(clients_data)} clients in Google Sheets")
 
-            for row in clients_data:
+            for raw_row in clients_data:
                 try:
+                    row = _sanitize_row(raw_row)
                     crm_id = row.get("ID", "").strip()
                     if not crm_id:
                         continue
@@ -1035,7 +1146,7 @@ async def sync_crm(
                         existing.stage = row.get("Stage", "contact").strip() or "contact"
                         existing.score = score
                         existing.tags = tags_json
-                        existing.updated_at = datetime.utcnow()
+                        existing.updated_at = datetime.now(UTC)
                         stats["contacts_updated"] += 1
                     else:
                         contact = Contact(
@@ -1074,8 +1185,9 @@ async def sync_crm(
                 "annule": "cancelled",
             }
 
-            for row in projects_data:
+            for raw_row in projects_data:
                 try:
+                    row = _sanitize_row(raw_row)
                     project_id = row.get("ID", "").strip()
                     if not project_id:
                         continue
@@ -1104,7 +1216,7 @@ async def sync_crm(
                         existing.status = status
                         existing.budget = budget
                         existing.notes = row.get("Notes", "").strip() or None
-                        existing.updated_at = datetime.utcnow()
+                        existing.updated_at = datetime.now(UTC)
                         stats["projects_updated"] += 1
                     else:
                         project = Project(
@@ -1138,8 +1250,9 @@ async def sync_crm(
                 "low": "low", "high": "high", "medium": "medium",
             }
 
-            for row in tasks_data:
+            for raw_row in tasks_data:
                 try:
+                    row = _sanitize_row(raw_row)
                     task_id = row.get("ID", "").strip()
                     if not task_id:
                         continue
@@ -1165,7 +1278,7 @@ async def sync_crm(
                         existing.status = raw_status
                         existing.due_date = due_date
                         existing.completed_at = completed_at
-                        existing.updated_at = datetime.utcnow()
+                        existing.updated_at = datetime.now(UTC)
                         stats["tasks_updated"] += 1
                     else:
                         task = Task(
@@ -1176,7 +1289,7 @@ async def sync_crm(
                             status=raw_status,
                             due_date=due_date,
                             completed_at=completed_at,
-                            created_at=created_at or datetime.utcnow(),
+                            created_at=created_at or datetime.now(UTC),
                         )
                         session.add(task)
                         stats["tasks_created"] += 1
@@ -1196,11 +1309,11 @@ async def sync_crm(
             select(Preference).where(Preference.key == "crm_last_sync")
         )
         last_sync_pref = result.scalar_one_or_none()
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
 
         if last_sync_pref:
             last_sync_pref.value = now
-            last_sync_pref.updated_at = datetime.utcnow()
+            last_sync_pref.updated_at = datetime.now(UTC)
         else:
             last_sync_pref = Preference(key="crm_last_sync", value=now, category="crm")
             session.add(last_sync_pref)
@@ -1270,8 +1383,9 @@ async def import_crm_data(
     # Import Clients
     if clients:
         logger.info(f"Importing {len(clients)} clients")
-        for row in clients:
+        for raw_row in clients:
             try:
+                row = _sanitize_row(raw_row)
                 crm_id = row.get("ID", "").strip()
                 if not crm_id:
                     continue
@@ -1312,7 +1426,7 @@ async def import_crm_data(
                     existing.stage = (row.get("Stage", "contact") or "contact").strip()
                     existing.score = score
                     existing.tags = tags_json
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     stats["contacts_updated"] += 1
                 else:
                     contact = Contact(
@@ -1348,8 +1462,9 @@ async def import_crm_data(
             "planifie": "active",
         }
 
-        for row in projects:
+        for raw_row in projects:
             try:
+                row = _sanitize_row(raw_row)
                 project_id = row.get("ID", "").strip()
                 if not project_id:
                     continue
@@ -1380,7 +1495,7 @@ async def import_crm_data(
                     existing.status = status
                     existing.budget = budget
                     existing.notes = (row.get("Notes", "") or "").strip() or None
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     stats["projects_updated"] += 1
                 else:
                     project = Project(
@@ -1403,8 +1518,9 @@ async def import_crm_data(
     # Import Deliverables
     if deliverables:
         logger.info(f"Importing {len(deliverables)} deliverables")
-        for row in deliverables:
+        for raw_row in deliverables:
             try:
+                row = _sanitize_row(raw_row)
                 deliv_id = row.get("ID", "").strip()
                 if not deliv_id:
                     continue
@@ -1423,7 +1539,7 @@ async def import_crm_data(
                     existing.description = (row.get("Description", "") or "").strip() or None
                     existing.project_id = project_id
                     existing.status = status
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     stats["deliverables_updated"] += 1
                 else:
                     deliverable = Deliverable(
@@ -1451,8 +1567,9 @@ async def import_crm_data(
             "medium": "medium",
         }
 
-        for row in tasks:
+        for raw_row in tasks:
             try:
+                row = _sanitize_row(raw_row)
                 task_id = (row.get("ID", "") or "").strip()
                 if not task_id:
                     continue
@@ -1507,7 +1624,7 @@ async def import_crm_data(
                     existing.status = raw_status
                     existing.due_date = due_date
                     existing.completed_at = completed_at
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     stats["tasks_updated"] += 1
                 else:
                     task = Task(
@@ -1518,7 +1635,7 @@ async def import_crm_data(
                         status=raw_status,
                         due_date=due_date,
                         completed_at=completed_at,
-                        created_at=created_at or datetime.utcnow(),
+                        created_at=created_at or datetime.now(UTC),
                     )
                     session.add(task)
                     stats["tasks_created"] += 1
@@ -1534,11 +1651,11 @@ async def import_crm_data(
         select(Preference).where(Preference.key == "crm_last_sync")
     )
     last_sync_pref = result.scalar_one_or_none()
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(UTC).isoformat()
 
     if last_sync_pref:
         last_sync_pref.value = now
-        last_sync_pref.updated_at = datetime.utcnow()
+        last_sync_pref.updated_at = datetime.now(UTC)
     else:
         last_sync_pref = Preference(key="crm_last_sync", value=now, category="crm")
         session.add(last_sync_pref)

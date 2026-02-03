@@ -60,6 +60,7 @@ class GoogleSheetsService:
         method: str,
         endpoint: str,
         params: Optional[dict] = None,
+        json_body: Optional[dict] = None,
     ) -> dict:
         """Make authenticated request to Sheets API."""
         url = f"{SHEETS_API_BASE}/{endpoint}"
@@ -72,13 +73,15 @@ class GoogleSheetsService:
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.request(
-                    method,
-                    url,
-                    headers=self.headers,
-                    params=params,
-                    timeout=30.0,
-                )
+                kwargs: dict = {
+                    "headers": self.headers,
+                    "params": params,
+                    "timeout": 30.0,
+                }
+                if json_body is not None:
+                    kwargs["json"] = json_body
+
+                response = await client.request(method, url, **kwargs)
 
                 if response.status_code == 401:
                     logger.error("Sheets API: Access token expired or invalid")
@@ -101,7 +104,7 @@ class GoogleSheetsService:
                         detail="Spreadsheet not found. Check the spreadsheet ID."
                     )
 
-                if response.status_code != 200:
+                if response.status_code not in (200, 201):
                     logger.error(f"Sheets API error: {response.status_code} {response.text}")
                     raise HTTPException(
                         status_code=response.status_code,
@@ -185,3 +188,31 @@ class GoogleSheetsService:
             data.append(row_dict)
 
         return data
+
+    async def append_row(
+        self,
+        spreadsheet_id: str,
+        sheet_name: str,
+        values: list[str],
+    ) -> dict:
+        """
+        Append a row to a sheet.
+
+        Args:
+            spreadsheet_id: The spreadsheet ID
+            sheet_name: Name of the sheet (tab)
+            values: List of cell values for the new row
+
+        Returns:
+            API response with updated range info
+        """
+        endpoint = f"{spreadsheet_id}/values/{sheet_name}:append"
+        body = {
+            "values": [values],
+        }
+        return await self._request(
+            "POST",
+            endpoint,
+            params={"valueInputOption": "USER_ENTERED", "insertDataOption": "INSERT_ROWS"},
+            json_body=body,
+        )
