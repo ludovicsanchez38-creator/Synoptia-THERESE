@@ -4,20 +4,18 @@ THÉRÈSE v2 - Analysis Skills
 Skills d'analyse et de compréhension.
 """
 
-from pathlib import Path
 from typing import Any
 
-from .base import BaseSkill, InputField, SkillParams, SkillResult, SkillOutputType, FileFormat
+from .base import MarkdownSkill, InputField, SkillOutputType
 
 
-class AnalyzeXlsxSkill(BaseSkill):
+class AnalyzeXlsxSkill(MarkdownSkill):
     """Analyse de fichiers Excel."""
 
     skill_id = "analyze-xlsx"
     name = "Analyser Fichier Excel"
     description = "Analyse un fichier Excel et identifie les tendances"
     output_type = SkillOutputType.ANALYSIS
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -48,26 +46,13 @@ Analyse le fichier Excel et fournis :
 4. **Recommandations** : Actions suggérées
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class AnalyzePdfSkill(BaseSkill):
+class AnalyzePdfSkill(MarkdownSkill):
     """Analyse de documents PDF."""
 
     skill_id = "analyze-pdf"
     name = "Analyser Document PDF"
     description = "Résume et extrait les informations d'un PDF"
     output_type = SkillOutputType.ANALYSIS
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -97,26 +82,13 @@ Fournis une analyse structurée :
 4. **Évaluation** : Qualité, pertinence, limites
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class AnalyzeWebsiteSkill(BaseSkill):
+class AnalyzeWebsiteSkill(MarkdownSkill):
     """Analyse de sites web."""
 
     skill_id = "analyze-website"
     name = "Analyser Site Web"
     description = "Analyse la structure et le contenu d'un site"
     output_type = SkillOutputType.ANALYSIS
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -147,26 +119,13 @@ Analyse le site web et fournis :
 5. **Axes d'amélioration** : Recommandations concrètes
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class MarketResearchSkill(BaseSkill):
+class MarketResearchSkill(MarkdownSkill):
     """Recherche et analyse de marché."""
 
     skill_id = "market-research"
     name = "Recherche Marché"
     description = "Analyse de marché complète"
     output_type = SkillOutputType.ANALYSIS
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -204,26 +163,13 @@ Fournis une analyse structurée :
 5. **Recommandations** : Stratégies d'entrée/développement
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class AnalyzeAIToolSkill(BaseSkill):
+class AnalyzeAIToolSkill(MarkdownSkill):
     """Analyse d'outils IA."""
 
     skill_id = "analyze-ai-tool"
     name = "Analyser Outil IA"
     description = "Explique un outil IA et ses cas d'usage"
     output_type = SkillOutputType.ANALYSIS
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -254,26 +200,13 @@ Explique l'outil de manière claire et pratique :
 6. **Alternatives** : Outils similaires
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class ExplainConceptSkill(BaseSkill):
+class ExplainConceptSkill(MarkdownSkill):
     """Explication de concepts."""
 
     skill_id = "explain-concept"
     name = "Expliquer Concept"
     description = "Explique un concept de manière claire"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -305,26 +238,13 @@ Explique le concept de manière pédagogique :
 6. **Pour aller plus loin** : Ressources
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class BestPracticesSkill(BaseSkill):
+class BestPracticesSkill(MarkdownSkill):
     """Best practices."""
 
     skill_id = "best-practices"
     name = "Best Practices"
     description = "Fournis les meilleures pratiques pour un domaine"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -355,13 +275,3 @@ Fournis un guide pratique et actionnable :
 6. **Ressources** : Pour approfondir
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )

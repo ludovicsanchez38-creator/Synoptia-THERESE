@@ -265,7 +265,11 @@ class BoardService:
 
         async def monitor_tasks():
             """Signal when all tasks are done."""
-            await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Log les erreurs individuelles sans crasher la deliberation
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(f"Advisor task {i} failed: {result}")
             await chunk_queue.put(None)  # Sentinel to stop the loop
 
         monitor = asyncio.create_task(monitor_tasks())

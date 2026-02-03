@@ -6,12 +6,13 @@ Phase 4 - Invoicing
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.database import get_session
 from app.models.entities import Invoice, InvoiceLine, Contact
@@ -30,12 +31,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["invoices"])
 
 
+async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Invoice | None:
+    """Load an invoice with its lines eagerly loaded (async-safe)."""
+    statement = (
+        select(Invoice)
+        .where(Invoice.id == invoice_id)
+        .options(selectinload(Invoice.lines))
+    )
+    result = await session.execute(statement)
+    return result.scalar_one_or_none()
+
+
 async def _generate_invoice_number(session: AsyncSession) -> str:
     """
     Génère le prochain numéro de facture.
     Format: FACT-YYYY-NNN (ex: FACT-2026-001)
     """
-    current_year = datetime.utcnow().year
+    current_year = datetime.now(UTC).year
 
     # Trouver la dernière facture de l'année
     statement = (
@@ -116,7 +128,7 @@ async def list_invoices(
     """
     Liste les factures avec pagination et filtres.
     """
-    statement = select(Invoice)
+    statement = select(Invoice).options(selectinload(Invoice.lines))
 
     # Filtres
     if status:
@@ -144,7 +156,7 @@ async def get_invoice(
     """
     Récupère une facture par ID.
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -173,7 +185,7 @@ async def create_invoice(
     invoice_number = await _generate_invoice_number(session)
 
     # Dates par défaut
-    issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.utcnow()
+    issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.now(UTC)
     due_date = datetime.fromisoformat(request.due_date.replace("Z", "")) if request.due_date else issue_date + timedelta(days=30)
 
     # Créer la facture
@@ -187,9 +199,10 @@ async def create_invoice(
     )
 
     session.add(invoice)
-    session.flush()  # Pour avoir l'ID de la facture
+    await session.flush()  # Pour avoir l'ID de la facture
 
     # Créer les lignes
+    db_lines = []
     for line_req in request.lines:
         total_ht = line_req.quantity * line_req.unit_price_ht
         total_ttc = total_ht * (1 + line_req.tva_rate / 100)
@@ -204,20 +217,20 @@ async def create_invoice(
             total_ttc=total_ttc,
         )
         session.add(line)
+        db_lines.append(line)
 
-    await session.commit()
-    await session.refresh(invoice)
-
-    # Calculer et mettre à jour les totaux
-    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(invoice.lines)
+    # Calculer les totaux a partir des lignes en memoire (evite lazy load)
+    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
     invoice.subtotal_ht = subtotal_ht
     invoice.total_tax = total_tax
     invoice.total_ttc = total_ttc
-    invoice.updated_at = datetime.utcnow()
+    invoice.updated_at = datetime.now(UTC)
 
     session.add(invoice)
     await session.commit()
-    await session.refresh(invoice)
+
+    # Recharger avec eager loading
+    invoice = await _get_invoice_with_lines(session, invoice.id)
 
     logger.info(f"Invoice created: {invoice_number}")
 
@@ -235,7 +248,7 @@ async def update_invoice(
 
     - Si les lignes sont modifiées, recalcule les totaux
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -243,7 +256,7 @@ async def update_invoice(
     # Mise à jour des champs
     if request.contact_id is not None:
         # Vérifier que le nouveau contact existe
-        contact = await session.get(Contact,request.contact_id)
+        contact = await session.get(Contact, request.contact_id)
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         invoice.contact_id = request.contact_id
@@ -265,9 +278,10 @@ async def update_invoice(
         # Supprimer les anciennes lignes
         for line in invoice.lines:
             await session.delete(line)
-        session.flush()
+        await session.flush()
 
         # Créer les nouvelles lignes
+        db_lines = []
         for line_req in request.lines:
             total_ht = line_req.quantity * line_req.unit_price_ht
             total_ttc = total_ht * (1 + line_req.tva_rate / 100)
@@ -282,21 +296,21 @@ async def update_invoice(
                 total_ttc=total_ttc,
             )
             session.add(line)
+            db_lines.append(line)
 
-        session.flush()
-        await session.refresh(invoice)
-
-        # Recalculer les totaux
-        subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(invoice.lines)
+        # Recalculer les totaux a partir des lignes en memoire
+        subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
         invoice.subtotal_ht = subtotal_ht
         invoice.total_tax = total_tax
         invoice.total_ttc = total_ttc
 
-    invoice.updated_at = datetime.utcnow()
+    invoice.updated_at = datetime.now(UTC)
 
     session.add(invoice)
     await session.commit()
-    await session.refresh(invoice)
+
+    # Recharger avec eager loading
+    invoice = await _get_invoice_with_lines(session, invoice.id)
 
     logger.info(f"Invoice updated: {invoice.invoice_number}")
 
@@ -311,7 +325,7 @@ async def delete_invoice(
     """
     Supprime une facture et son PDF associé.
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -340,21 +354,23 @@ async def mark_invoice_paid(
     """
     Marque une facture comme payée.
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
     # Date de paiement
-    payment_date = datetime.fromisoformat(request.payment_date.replace("Z", "")) if request.payment_date else datetime.utcnow()
+    payment_date = datetime.fromisoformat(request.payment_date.replace("Z", "")) if request.payment_date else datetime.now(UTC)
 
     invoice.status = "paid"
     invoice.payment_date = payment_date
-    invoice.updated_at = datetime.utcnow()
+    invoice.updated_at = datetime.now(UTC)
 
     session.add(invoice)
     await session.commit()
-    await session.refresh(invoice)
+
+    # Recharger avec eager loading
+    invoice = await _get_invoice_with_lines(session, invoice.id)
 
     logger.info(f"Invoice marked as paid: {invoice.invoice_number}")
 
@@ -373,7 +389,7 @@ async def generate_invoice_pdf(
     - Récupère les données du contact pour le destinataire
     - Génère un PDF conforme à la réglementation française
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -449,7 +465,7 @@ async def send_invoice_by_email(
     - Un compte email configuré (Phase 1 - Email)
     - Une facture avec un contact ayant un email
     """
-    invoice = await session.get(Invoice, invoice_id)
+    invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -475,7 +491,7 @@ async def send_invoice_by_email(
     # Pour l'instant, on marque juste comme "sent"
     if invoice.status == "draft":
         invoice.status = "sent"
-        invoice.updated_at = datetime.utcnow()
+        invoice.updated_at = datetime.now(UTC)
         session.add(invoice)
         await session.commit()
 

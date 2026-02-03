@@ -6,7 +6,7 @@ Endpoints for file management and indexing.
 
 import logging
 import mimetypes
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -96,7 +96,7 @@ async def index_file(
         # Update existing entry
         existing.size = metadata["size"]
         existing.mime_type = metadata["mime_type"]
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = datetime.now(UTC)
         file_meta = existing
     else:
         # Create new entry
@@ -143,7 +143,7 @@ async def index_file(
         file_meta.chunk_count = 0
         logger.warning(f"No text extracted from {file_path}")
 
-    file_meta.indexed_at = datetime.utcnow()
+    file_meta.indexed_at = datetime.now(UTC)
 
     await session.commit()
     await session.refresh(file_meta)

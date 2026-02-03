@@ -7,7 +7,7 @@ US-SEC-05: Logs d'activite
 """
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional, List
 from enum import Enum
 
@@ -67,7 +67,7 @@ class ActivityLog(SQLModel, table=True):
     __tablename__ = "activity_logs"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     action: str = Field(index=True)  # AuditAction value
     resource_type: Optional[str] = None  # contact, project, conversation, etc.
     resource_id: Optional[str] = None
@@ -215,7 +215,7 @@ class AuditService:
         from sqlalchemy import delete
         from datetime import timedelta
 
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
         query = delete(ActivityLog).where(ActivityLog.timestamp < cutoff_date)
         result = await self.session.execute(query)

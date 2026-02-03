@@ -9,7 +9,7 @@ Phase 1 - Core Native Email (Gmail)
 
 import base64
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -447,5 +447,5 @@ def format_message_for_storage(gmail_message: dict) -> dict:
         'body_plain': body_plain,
         'body_html': body_html,
         'size_bytes': gmail_message.get('sizeEstimate', 0),
-        'synced_at': datetime.utcnow(),
+        'synced_at': datetime.now(UTC),
     }

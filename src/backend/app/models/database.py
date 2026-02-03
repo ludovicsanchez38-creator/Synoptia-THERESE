@@ -99,13 +99,19 @@ async def init_db() -> None:
 
     SQLModel.metadata.create_all(sync_engine)
 
-    # Phase 3: Creer les index manquants pour les DB existantes
+    # Phase 3 + PERF audit: Creer les index manquants pour les DB existantes
     with sync_engine.connect() as conn:
         index_statements = [
             "CREATE INDEX IF NOT EXISTS ix_contacts_email ON contacts (email)",
             "CREATE INDEX IF NOT EXISTS ix_contacts_last_interaction ON contacts (last_interaction)",
             "CREATE INDEX IF NOT EXISTS ix_conversations_created_at ON conversations (created_at)",
             "CREATE INDEX IF NOT EXISTS ix_board_decisions_created_at ON board_decisions (created_at)",
+            # PERF audit - index sur les FK frequemment filtrees
+            "CREATE INDEX IF NOT EXISTS ix_tasks_project_id ON tasks (project_id)",
+            "CREATE INDEX IF NOT EXISTS ix_invoice_lines_invoice_id ON invoice_lines (invoice_id)",
+            "CREATE INDEX IF NOT EXISTS ix_activities_contact_id ON activities (contact_id)",
+            "CREATE INDEX IF NOT EXISTS ix_deliverables_project_id ON deliverables (project_id)",
+            "CREATE INDEX IF NOT EXISTS ix_calendar_events_calendar_id ON calendar_events (calendar_id)",
         ]
         for stmt in index_statements:
             try:

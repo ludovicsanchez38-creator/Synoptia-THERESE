@@ -10,7 +10,7 @@ US-SEC-05: Logs d'activite
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -106,7 +106,7 @@ async def export_all_data(
     logs = logs_result.scalars().all()
 
     export_data = {
-        "exported_at": datetime.utcnow().isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
         "data_format_version": "1.0",
         "contacts": [
@@ -220,7 +220,7 @@ async def export_all_data(
     return JSONResponse(
         content=export_data,
         headers={
-            "Content-Disposition": f'attachment; filename="therese-export-{datetime.utcnow().strftime("%Y%m%d-%H%M%S")}.json"'
+            "Content-Disposition": f'attachment; filename="therese-export-{datetime.now(UTC).strftime("%Y%m%d-%H%M%S")}.json"'
         },
     )
 
@@ -245,7 +245,7 @@ async def export_conversations(
     if format == "markdown":
         # Export Markdown
         content = "# Export Conversations THERESE\n\n"
-        content += f"*Exporte le {datetime.utcnow().strftime('%d/%m/%Y a %H:%M')}*\n\n"
+        content += f"*Exporte le {datetime.now(UTC).strftime('%d/%m/%Y a %H:%M')}*\n\n"
         content += "---\n\n"
 
         for conv in conversations:
@@ -264,13 +264,13 @@ async def export_conversations(
         return JSONResponse(
             content={"format": "markdown", "content": content},
             headers={
-                "Content-Disposition": f'attachment; filename="therese-conversations-{datetime.utcnow().strftime("%Y%m%d")}.md"'
+                "Content-Disposition": f'attachment; filename="therese-conversations-{datetime.now(UTC).strftime("%Y%m%d")}.md"'
             },
         )
     else:
         # Export JSON
         data = {
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "conversations": [
                 {
                     "id": conv.id,
@@ -479,7 +479,7 @@ async def create_backup(
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     # Create timestamped backup
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_name = f"therese_backup_{timestamp}"
 
     # Copy database file
@@ -489,7 +489,7 @@ async def create_backup(
 
     # Create backup metadata
     metadata = {
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
         "db_path": str(backup_db_path),
         "backup_name": backup_name,
@@ -593,7 +593,7 @@ async def restore_backup(
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouve")
 
     # Create a backup of current state before restore
-    current_backup_name = f"pre_restore_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+    current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
     current_backup_path = backup_dir / f"{current_backup_name}.db"
     shutil.copy2(settings.db_path, current_backup_path)
 
@@ -617,7 +617,7 @@ async def restore_backup(
     return {
         "success": True,
         "restored_from": backup_name,
-        "restored_at": datetime.utcnow().isoformat(),
+        "restored_at": datetime.now(UTC).isoformat(),
         "backup_metadata": metadata,
         "safety_backup": current_backup_name,
         "note": "Redemarrez l'application pour appliquer les changements",
@@ -780,7 +780,9 @@ async def get_backup_status():
         }
 
     # Check if backup is recent
-    age_days = (datetime.utcnow() - latest_time).days
+    if latest_time.tzinfo is None:
+        latest_time = latest_time.replace(tzinfo=UTC)
+    age_days = (datetime.now(UTC) - latest_time).days
     recommendation = None
 
     if age_days > 7:

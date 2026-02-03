@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import re
+import time
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -41,6 +42,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
     extraction_result_to_dict,
 )
+from app.config import settings
 from app.services.file_parser import extract_text, chunk_text, get_file_metadata
 from app.services.mcp_service import get_mcp_service
 from app.services.web_search import WEB_SEARCH_TOOL, execute_web_search
@@ -61,11 +63,18 @@ router = APIRouter()
 
 # Track active generations for cancellation
 _active_generations: dict[str, bool] = {}
+# Timestamps pour detecter les entrees orphelines (client deconnecte)
+_generation_timestamps: dict[str, float] = {}
+# Duree max avant nettoyage automatique (5 minutes)
+_GENERATION_TIMEOUT_S = 300
 
 
 def _register_generation(conversation_id: str) -> None:
     """Register an active generation."""
     _active_generations[conversation_id] = False
+    _generation_timestamps[conversation_id] = time.monotonic()
+    # Nettoyage opportuniste des entrees orphelines
+    _cleanup_stale_generations()
 
 
 def _cancel_generation(conversation_id: str) -> bool:
@@ -84,6 +93,26 @@ def _is_cancelled(conversation_id: str) -> bool:
 def _unregister_generation(conversation_id: str) -> None:
     """Remove a generation from tracking."""
     _active_generations.pop(conversation_id, None)
+    _generation_timestamps.pop(conversation_id, None)
+
+
+def _cleanup_stale_generations() -> None:
+    """
+    Supprime les entrees plus vieilles que _GENERATION_TIMEOUT_S.
+
+    Appele de maniere opportuniste a chaque nouvelle generation
+    pour eviter les fuites memoire si un client se deconnecte
+    sans que le stream ne se termine proprement.
+    """
+    now = time.monotonic()
+    stale_ids = [
+        cid for cid, ts in _generation_timestamps.items()
+        if now - ts > _GENERATION_TIMEOUT_S
+    ]
+    for cid in stale_ids:
+        logger.warning(f"Cleanup generation orpheline: {cid} (age > {_GENERATION_TIMEOUT_S}s)")
+        _active_generations.pop(cid, None)
+        _generation_timestamps.pop(cid, None)
 
 
 # ============================================================
@@ -157,7 +186,7 @@ async def _get_file_context(
 
         # Index if not already done
         if not existing:
-            from datetime import datetime
+            from datetime import UTC, datetime
             metadata = get_file_metadata(path)
 
             file_meta = FileMetadata(
@@ -170,7 +199,7 @@ async def _get_file_context(
             session.add(file_meta)
 
             # Chunk and store in Qdrant
-            chunks = list(chunk_text(text_content, chunk_size=1000, overlap=200))
+            chunks = list(chunk_text(text_content, chunk_size=settings.chunk_size, overlap=settings.chunk_overlap))
             qdrant = get_qdrant_service()
             items = []
 
@@ -192,7 +221,7 @@ async def _get_file_context(
                 logger.info(f"Indexed {len(chunks)} chunks for file {path.name}")
 
             file_meta.chunk_count = len(chunks)
-            file_meta.indexed_at = datetime.utcnow()
+            file_meta.indexed_at = datetime.now(UTC)
             await session.commit()
 
         # Build context string

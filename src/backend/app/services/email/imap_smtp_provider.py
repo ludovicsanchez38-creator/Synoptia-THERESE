@@ -8,7 +8,7 @@ Supports any standard IMAP/SMTP server (Gmail, Outlook, Fastmail, etc.)
 import asyncio
 import email
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from email.header import decode_header
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -204,7 +204,7 @@ class ImapSmtpProvider(EmailProvider):
         )
 
         # Return a generated ID (SMTP doesn't return one)
-        return f"sent_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        return f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
     async def create_draft(self, request: SendEmailRequest) -> str:
         """Create a draft in IMAP Drafts folder."""
@@ -238,7 +238,7 @@ class ImapSmtpProvider(EmailProvider):
                 # Append to Drafts
                 mailbox.append(msg.as_bytes(), drafts_folder, dt=datetime.now())
 
-            return f"draft_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+            return f"draft_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _sync_create)

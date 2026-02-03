@@ -6,7 +6,7 @@ Classes abstraites et modèles de base pour le système de skills.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
@@ -21,6 +21,7 @@ class FileFormat(str, Enum):
     PPTX = "pptx"
     XLSX = "xlsx"
     PDF = "pdf"
+    MD = "md"
 
 
 class SkillOutputType(str, Enum):
@@ -62,7 +63,7 @@ class SkillResult(BaseModel):
     file_size: int = Field(..., description="Taille en octets")
     mime_type: str = Field(..., description="Type MIME du fichier")
     format: FileFormat = Field(..., description="Format du fichier")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Config:
         arbitrary_types_allowed = True
@@ -234,5 +235,30 @@ class BaseSkill(ABC):
             FileFormat.PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             FileFormat.XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             FileFormat.PDF: "application/pdf",
+            FileFormat.MD: "text/markdown",
         }
         return mime_types.get(self.output_format, "application/octet-stream")
+
+
+class MarkdownSkill(BaseSkill):
+    """Classe de base pour les skills TEXT/ANALYSIS/PLANNING.
+
+    Sauvegarde la réponse du LLM en fichier .md téléchargeable.
+    """
+    output_format = FileFormat.MD
+
+    async def execute(self, params: SkillParams) -> SkillResult:
+        file_id = self.generate_file_id()
+        output_path = self.get_output_path(file_id, params.title)
+
+        content = params.content or ""
+        output_path.write_text(content, encoding="utf-8")
+
+        return SkillResult(
+            file_id=file_id,
+            file_path=output_path,
+            file_name=output_path.name,
+            file_size=output_path.stat().st_size,
+            mime_type="text/markdown",
+            format=FileFormat.MD,
+        )

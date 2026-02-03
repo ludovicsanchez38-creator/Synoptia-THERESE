@@ -7,7 +7,7 @@ US-PERS-01 to US-PERS-05.
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -185,7 +185,7 @@ async def update_prompt_template(
     if request.icon is not None:
         template.icon = request.icon
 
-    template.updated_at = datetime.utcnow()
+    template.updated_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(template)
 
@@ -260,7 +260,7 @@ async def set_llm_behavior(
 
     if pref:
         pref.value = value
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="llm_behavior",
@@ -313,7 +313,7 @@ async def set_feature_visibility(
 
     if pref:
         pref.value = value
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="feature_visibility",

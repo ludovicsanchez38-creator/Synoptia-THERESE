@@ -11,6 +11,7 @@ Sprint 2 - PERF-2.10: Keychain support pour la cle de chiffrement
 import os
 import base64
 import logging
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -45,17 +46,25 @@ def _try_keyring_available() -> bool:
 
 
 class EncryptionService:
-    """Service de chiffrement pour les donnees sensibles."""
+    """Service de chiffrement pour les donnees sensibles.
+
+    Thread-safe singleton: le verrou (_lock) protege la creation de l'instance
+    pour eviter une double initialisation en contexte multi-thread (ex: uvicorn workers).
+    """
 
     _instance: Optional["EncryptionService"] = None
     _fernet: Optional[Fernet] = None
     _using_keychain: bool = False
+    _lock: threading.Lock = threading.Lock()
 
     def __new__(cls) -> "EncryptionService":
-        """Singleton pattern."""
+        """Singleton pattern (thread-safe via double-checked locking)."""
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialize()
+            with cls._lock:
+                # Double-check apres acquisition du verrou
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialize()
         return cls._instance
 
     def _initialize(self) -> None:

@@ -7,7 +7,7 @@ Part of the "Local First" architecture.
 """
 
 import logging
-from datetime import datetime, date
+from datetime import UTC, datetime, date
 from typing import Optional
 import pytz
 
@@ -137,7 +137,7 @@ class LocalCalendarProvider(CalendarProvider):
             except pytz.UnknownTimeZoneError:
                 pass  # Keep existing timezone
 
-        calendar.updated_at = datetime.utcnow()
+        calendar.updated_at = datetime.now(UTC)
 
         self._session.add(calendar)
         await self._session.commit()
@@ -314,7 +314,7 @@ class LocalCalendarProvider(CalendarProvider):
             import json
             event.attendees = json.dumps(request.attendees) if request.attendees else None
 
-        event.synced_at = datetime.utcnow()
+        event.synced_at = datetime.now(UTC)
 
         self._session.add(event)
         await self._session.commit()

@@ -7,7 +7,7 @@ Endpoints for application configuration.
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Track startup time
-_startup_time = datetime.utcnow()
+_startup_time = datetime.now(UTC)
 
 
 @router.get("/", response_model=ConfigResponse)
@@ -207,7 +207,7 @@ async def set_api_key(
     is_update = pref is not None
     if pref:
         pref.value = encrypted_key
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key=key_name,
@@ -345,7 +345,7 @@ async def set_preference(
     if pref:
         pref.value = value_str
         pref.category = category
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key=key,
@@ -396,7 +396,7 @@ async def set_web_search_status(
 
     if pref:
         pref.value = str(enabled).lower()
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="web_search_enabled",
@@ -453,7 +453,7 @@ async def export_data(
     messages = messages_result.scalars().all()
 
     export_data = {
-        "exported_at": datetime.utcnow().isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
         "contacts": [
             {
@@ -534,7 +534,7 @@ async def get_stats(
     ).scalar()
 
     # Uptime
-    uptime = (datetime.utcnow() - _startup_time).total_seconds()
+    uptime = (datetime.now(UTC) - _startup_time).total_seconds()
 
     return {
         "entities": {
@@ -742,7 +742,7 @@ async def set_working_directory(
 
     if pref:
         pref.value = str(path.resolve())
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="working_directory",
@@ -909,7 +909,7 @@ async def set_llm_config(
     pref = result.scalar_one_or_none()
     if pref:
         pref.value = request.provider
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(key="llm_provider", value=request.provider, category="llm")
         session.add(pref)
@@ -920,7 +920,7 @@ async def set_llm_config(
     pref = result.scalar_one_or_none()
     if pref:
         pref.value = request.model
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(key="llm_model", value=request.model, category="llm")
         session.add(pref)
@@ -1027,7 +1027,7 @@ async def set_onboarding_complete(session: AsyncSession = Depends(get_session)):
 
     if pref:
         pref.value = "true"
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key="onboarding_completed",
@@ -1040,5 +1040,5 @@ async def set_onboarding_complete(session: AsyncSession = Depends(get_session)):
 
     return {
         "completed": True,
-        "completed_at": pref.updated_at.isoformat() if pref.updated_at else datetime.utcnow().isoformat(),
+        "completed_at": pref.updated_at.isoformat() if pref.updated_at else datetime.now(UTC).isoformat(),
     }

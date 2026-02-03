@@ -6,7 +6,7 @@ Phase 5 - CRM Features
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from sqlmodel import Session
 
 from app.models.entities import Contact, Activity
@@ -75,7 +75,10 @@ def calculate_base_score(contact: Contact) -> int:
 
     # Decay si inactif
     if contact.last_interaction:
-        days_inactive = (datetime.utcnow() - contact.last_interaction).days
+        last = contact.last_interaction
+        if last.tzinfo is None:
+            last = last.replace(tzinfo=UTC)
+        days_inactive = (datetime.now(UTC) - last).days
         if days_inactive >= 30:
             # -5 points tous les 30 jours
             decay_count = days_inactive // 30
@@ -101,7 +104,7 @@ def update_contact_score(session: Session, contact: Contact, reason: str = "reca
 
     if old_score != new_score:
         contact.score = new_score
-        contact.updated_at = datetime.utcnow()
+        contact.updated_at = datetime.now(UTC)
         session.add(contact)
 
         # Créer une activité
@@ -110,7 +113,7 @@ def update_contact_score(session: Session, contact: Contact, reason: str = "reca
             type="score_change",
             title=f"Score: {old_score} → {new_score}",
             description=f"Raison: {reason}",
-            metadata=f'{{"old_score": {old_score}, "new_score": {new_score}, "reason": "{reason}"}}',
+            extra_data=f'{{"old_score": {old_score}, "new_score": {new_score}, "reason": "{reason}"}}',
         )
         session.add(activity)
 

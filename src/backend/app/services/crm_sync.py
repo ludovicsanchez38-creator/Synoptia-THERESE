@@ -10,7 +10,7 @@ Sprint 2 - PERF-2.4: Migrated to AsyncSession for proper async DB operations.
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -207,7 +207,7 @@ class CRMSyncService:
                     existing.score = score
                     existing.tags = tags_json
                     existing.last_interaction = last_interaction
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     stats.contacts_updated += 1
                 else:
@@ -293,7 +293,7 @@ class CRMSyncService:
                     existing.status = status
                     existing.budget = budget
                     existing.notes = row.get("Notes", "").strip() or None
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     stats.projects_updated += 1
                 else:
@@ -376,7 +376,7 @@ class CRMSyncService:
                     existing.status = status
                     existing.due_date = due_date
                     existing.completed_at = completed_at
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     stats.deliverables_updated += 1
                 else:
@@ -449,7 +449,7 @@ class CRMSyncService:
                     existing.status = raw_status
                     existing.due_date = due_date
                     existing.completed_at = completed_at
-                    existing.updated_at = datetime.utcnow()
+                    existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
                     stats.tasks_updated += 1
                 else:
@@ -461,7 +461,7 @@ class CRMSyncService:
                         status=raw_status,
                         due_date=due_date,
                         completed_at=completed_at,
-                        created_at=created_at or datetime.utcnow(),
+                        created_at=created_at or datetime.now(UTC),
                     )
                     self.session.add(task)
                     stats.tasks_created += 1
@@ -551,7 +551,7 @@ async def set_crm_spreadsheet_id(session: AsyncSession, spreadsheet_id: str):
 
     if pref:
         pref.value = spreadsheet_id
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key=CRM_SPREADSHEET_ID_KEY,
@@ -577,7 +577,7 @@ async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token
 
     if pref:
         pref.value = encrypted_token
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key=CRM_SHEETS_TOKEN_KEY,
@@ -597,7 +597,7 @@ async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token
 
         if pref:
             pref.value = encrypted_refresh
-            pref.updated_at = datetime.utcnow()
+            pref.updated_at = datetime.now(UTC)
         else:
             pref = Preference(
                 key=CRM_SHEETS_REFRESH_TOKEN_KEY,
@@ -635,11 +635,11 @@ async def update_last_sync(session: AsyncSession):
     )
     pref = result.scalar_one_or_none()
 
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(UTC).isoformat()
 
     if pref:
         pref.value = now
-        pref.updated_at = datetime.utcnow()
+        pref.updated_at = datetime.now(UTC)
     else:
         pref = Preference(
             key=CRM_LAST_SYNC_KEY,

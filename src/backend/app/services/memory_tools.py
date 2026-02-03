@@ -7,7 +7,7 @@ to directly add entities to the memory system during conversation.
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -138,7 +138,7 @@ async def execute_create_contact(
             phone=arguments.get("phone"),
             role=arguments.get("role"),
             notes=arguments.get("notes"),
-            last_interaction=datetime.utcnow(),
+            last_interaction=datetime.now(UTC),
         )
         session.add(contact)
         await session.flush()

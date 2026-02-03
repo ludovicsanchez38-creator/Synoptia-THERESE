@@ -321,10 +321,17 @@ async def list_contacts(
     scope: Literal["global", "project", "conversation"] | None = Query(default=None),
     scope_id: str | None = Query(default=None),
     include_global: bool = Query(default=True),
+    has_source: bool | None = Query(default=None),
     session: AsyncSession = Depends(get_session),
 ):
-    """List all contacts with optional scope filter (E3-05)."""
+    """List all contacts with optional scope and source filter."""
     query = select(Contact).order_by(Contact.updated_at.desc())
+
+    # Filter by source presence (CRM doublons fix)
+    if has_source is True:
+        query = query.where(Contact.source.isnot(None))
+    elif has_source is False:
+        query = query.where(Contact.source.is_(None))
 
     # Apply scope filter (E3-05)
     if scope:
@@ -370,8 +377,8 @@ async def create_contact(
     await _embed_contact(contact)
 
     # Calculate initial score (Phase 5 CRM)
-    from datetime import datetime
-    contact.last_interaction = datetime.utcnow()
+    from datetime import UTC, datetime
+    contact.last_interaction = datetime.now(UTC)
     update_contact_score(session, contact, reason="initial_creation")
     await session.commit()
     await session.refresh(contact)
@@ -426,10 +433,10 @@ async def update_contact(
     for key, value in update_data.items():
         setattr(contact, key, value)
 
-    from datetime import datetime
+    from datetime import UTC, datetime
 
-    contact.updated_at = datetime.utcnow()
-    contact.last_interaction = datetime.utcnow()
+    contact.updated_at = datetime.now(UTC)
+    contact.last_interaction = datetime.now(UTC)
 
     await session.commit()
     await session.refresh(contact)
@@ -681,9 +688,9 @@ async def update_project(
     for key, value in update_data.items():
         setattr(project, key, value)
 
-    from datetime import datetime
+    from datetime import UTC, datetime
 
-    project.updated_at = datetime.utcnow()
+    project.updated_at = datetime.now(UTC)
 
     await session.commit()
     await session.refresh(project)

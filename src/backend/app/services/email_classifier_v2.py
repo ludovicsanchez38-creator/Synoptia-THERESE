@@ -13,7 +13,7 @@ Sources :
 """
 
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 from dataclasses import dataclass
 
@@ -269,9 +269,11 @@ class EmailClassifierV2:
             signals['time_sensitive'] = time_matches[:2]
 
         # Email récent (<24h)
-        if date and (datetime.utcnow() - date) < timedelta(hours=24):
-            score += 5
-            signals['recent'] = True
+        if date:
+            _date = date if date.tzinfo else date.replace(tzinfo=UTC)
+            if (datetime.now(UTC) - _date) < timedelta(hours=24):
+                score += 5
+                signals['recent'] = True
 
         # ============================================================
         # 3. SIGNAUX CONTEXTUELS

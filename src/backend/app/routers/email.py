@@ -10,7 +10,7 @@ Local First - IMAP/SMTP Provider
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -35,6 +35,12 @@ from app.services.email.provider_factory import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _utcnow() -> datetime:
+    """UTC now as naive datetime (compatible SQLite)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 router = APIRouter()
 
@@ -163,7 +169,7 @@ async def ensure_valid_access_token(
     access_token = decrypt_value(account.access_token)
 
     # Check if token expired
-    if account.token_expiry and datetime.utcnow() >= account.token_expiry:
+    if account.token_expiry and _utcnow() >= account.token_expiry:
         logger.info(f"Access token expired for {account.email}, refreshing...")
         refresh_token = decrypt_value(account.refresh_token)
 
@@ -216,8 +222,8 @@ async def ensure_valid_access_token(
 
             # Update account with new tokens
             account.access_token = encrypt_value(new_tokens['access_token'])
-            account.token_expiry = datetime.utcnow() + timedelta(seconds=new_tokens['expires_in'])
-            account.updated_at = datetime.utcnow()
+            account.token_expiry = _utcnow() + timedelta(seconds=new_tokens['expires_in'])
+            account.updated_at = _utcnow()
             session.add(account)
             await session.commit()
 
@@ -320,14 +326,14 @@ async def handle_oauth_callback(
         # Update existing account
         existing.access_token = encrypt_value(tokens['access_token'])
         existing.refresh_token = encrypt_value(tokens['refresh_token'])
-        existing.token_expiry = datetime.utcnow() + timedelta(seconds=tokens['expires_in'])
+        existing.token_expiry = _utcnow() + timedelta(seconds=tokens['expires_in'])
         existing.scopes = json.dumps(tokens['scopes'])
         # Store OAuth credentials for token refresh
         if tokens.get('client_id'):
             existing.client_id = encrypt_value(tokens['client_id'])
         if tokens.get('client_secret'):
             existing.client_secret = encrypt_value(tokens['client_secret'])
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = _utcnow()
         session.add(existing)
         await session.commit()
         await session.refresh(existing)
@@ -338,7 +344,7 @@ async def handle_oauth_callback(
             email=email_address,
             access_token=encrypt_value(tokens['access_token']),
             refresh_token=encrypt_value(tokens['refresh_token']),
-            token_expiry=datetime.utcnow() + timedelta(seconds=tokens['expires_in']),
+            token_expiry=_utcnow() + timedelta(seconds=tokens['expires_in']),
             scopes=json.dumps(tokens['scopes']),
             client_id=encrypt_value(tokens['client_id']) if tokens.get('client_id') else None,
             client_secret=encrypt_value(tokens['client_secret']) if tokens.get('client_secret') else None,
@@ -405,7 +411,7 @@ async def update_oauth_credentials(
     # Store credentials
     account.client_id = encrypt_value(request.client_id)
     account.client_secret = encrypt_value(request.client_secret)
-    account.updated_at = datetime.utcnow()
+    account.updated_at = _utcnow()
     session.add(account)
     await session.commit()
 
@@ -509,7 +515,7 @@ async def setup_imap_account(
         existing.smtp_host = request.smtp_host
         existing.smtp_port = request.smtp_port
         existing.smtp_use_tls = request.smtp_use_tls
-        existing.updated_at = datetime.utcnow()
+        existing.updated_at = _utcnow()
         session.add(existing)
         await session.commit()
         await session.refresh(existing)
@@ -706,6 +712,67 @@ async def _list_messages_imap(
     }
 
 
+@router.get("/messages/stats")
+async def get_email_stats(
+    account_id: str = Query(...),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Recupere les statistiques d'emails par priorite.
+
+    US-EMAIL-12: Dashboard priorites
+
+    NOTE: This route MUST be defined before /messages/{message_id}
+    to avoid FastAPI matching 'stats' as a message_id parameter.
+    """
+    from sqlalchemy import func
+
+    # High priority (unread)
+    statement_high = select(func.count(EmailMessage.id)).where(
+        EmailMessage.account_id == account_id,
+        EmailMessage.priority == 'high',
+        EmailMessage.is_read == False,
+    )
+    result_high = await session.execute(statement_high)
+    high_count = result_high.scalar_one()
+
+    # Medium priority (unread)
+    statement_medium = select(func.count(EmailMessage.id)).where(
+        EmailMessage.account_id == account_id,
+        EmailMessage.priority == 'medium',
+        EmailMessage.is_read == False,
+    )
+    result_medium = await session.execute(statement_medium)
+    medium_count = result_medium.scalar_one()
+
+    # Low priority (unread)
+    statement_low = select(func.count(EmailMessage.id)).where(
+        EmailMessage.account_id == account_id,
+        EmailMessage.priority == 'low',
+        EmailMessage.is_read == False,
+    )
+    result_low = await session.execute(statement_low)
+    low_count = result_low.scalar_one()
+
+    # Total unread
+    total_unread = high_count + medium_count + low_count
+
+    # Total messages
+    statement_total = select(func.count(EmailMessage.id)).where(
+        EmailMessage.account_id == account_id,
+    )
+    result_total = await session.execute(statement_total)
+    total_count = result_total.scalar_one()
+
+    return {
+        'high': high_count,
+        'medium': medium_count,
+        'low': low_count,
+        'total_unread': total_unread,
+        'total': total_count,
+    }
+
+
 @router.get("/messages/{message_id}")
 async def get_message(
     message_id: str,
@@ -781,9 +848,9 @@ async def send_email(
             to=request.to,
             subject=request.subject,
             body=request.body,
-            cc=request.cc,
-            bcc=request.bcc,
-            html=request.html,
+            cc=request.cc or [],
+            bcc=request.bcc or [],
+            is_html=request.html,
         )
         message_id = await provider.send_message(send_req)
         return {"id": message_id, "labelIds": ["SENT"]}
@@ -1222,60 +1289,6 @@ async def update_message_priority(
     }
 
 
-@router.get("/messages/stats")
-async def get_email_stats(
-    account_id: str = Query(...),
-    session: AsyncSession = Depends(get_session),
-) -> dict:
-    """
-    Récupère les statistiques d'emails par priorité.
 
-    US-EMAIL-12: Dashboard priorités
-    """
-    # Count by priority
-    from sqlalchemy import func
-
-    # High priority (unread)
-    statement_high = select(func.count(EmailMessage.id)).where(
-        EmailMessage.account_id == account_id,
-        EmailMessage.priority == 'high',
-        EmailMessage.is_read == False,
-    )
-    result_high = await session.execute(statement_high)
-    high_count = result_high.scalar_one()
-
-    # Medium priority (unread)
-    statement_medium = select(func.count(EmailMessage.id)).where(
-        EmailMessage.account_id == account_id,
-        EmailMessage.priority == 'medium',
-        EmailMessage.is_read == False,
-    )
-    result_medium = await session.execute(statement_medium)
-    medium_count = result_medium.scalar_one()
-
-    # Low priority (unread)
-    statement_low = select(func.count(EmailMessage.id)).where(
-        EmailMessage.account_id == account_id,
-        EmailMessage.priority == 'low',
-        EmailMessage.is_read == False,
-    )
-    result_low = await session.execute(statement_low)
-    low_count = result_low.scalar_one()
-
-    # Total unread
-    total_unread = high_count + medium_count + low_count
-
-    # Total messages
-    statement_total = select(func.count(EmailMessage.id)).where(
-        EmailMessage.account_id == account_id,
-    )
-    result_total = await session.execute(statement_total)
-    total_count = result_total.scalar_one()
-
-    return {
-        'high': high_count,
-        'medium': medium_count,
-        'low': low_count,
-        'total_unread': total_unread,
-        'total': total_count,
-    }
+# NOTE: get_email_stats (GET /messages/stats) has been moved above
+# get_message (GET /messages/{message_id}) to avoid FastAPI route shadowing.

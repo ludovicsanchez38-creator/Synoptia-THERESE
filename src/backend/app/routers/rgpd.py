@@ -9,7 +9,7 @@ Endpoints pour la conformité RGPD :
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -144,7 +144,7 @@ async def export_contact_data(
         activities=activities_data,
         projects=projects_data,
         tasks=tasks_data,
-        exported_at=datetime.utcnow(),
+        exported_at=datetime.now(UTC),
     )
 
 
@@ -188,7 +188,7 @@ async def anonymize_contact(
     contact.company = "[ANONYMISÉ]"
     contact.stage = "archive"
     contact.extra_data = None
-    contact.updated_at = datetime.utcnow()
+    contact.updated_at = datetime.now(UTC)
 
     # Delete activities
     result = await session.execute(
@@ -267,7 +267,7 @@ async def renew_consent(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     new_expiration = now + timedelta(days=3 * 365)  # 3 ans
 
     contact.rgpd_base_legale = "consentement"
@@ -336,13 +336,13 @@ async def update_rgpd_fields(
 
     # Auto-set dates if not set
     if contact.rgpd_date_collecte is None:
-        contact.rgpd_date_collecte = contact.created_at or datetime.utcnow()
+        contact.rgpd_date_collecte = contact.created_at or datetime.now(UTC)
 
     if contact.rgpd_date_expiration is None:
-        base_date = contact.rgpd_date_collecte or datetime.utcnow()
+        base_date = contact.rgpd_date_collecte or datetime.now(UTC)
         contact.rgpd_date_expiration = base_date + timedelta(days=3 * 365)
 
-    contact.updated_at = datetime.utcnow()
+    contact.updated_at = datetime.now(UTC)
 
     await session.commit()
 
@@ -384,7 +384,7 @@ async def get_rgpd_stats(
     expires_ou_bientot = 0
     avec_consentement = 0
 
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     seuil_30j = now + timedelta(days=30)
 
     for contact in contacts:
@@ -401,7 +401,10 @@ async def get_rgpd_stats(
 
         # Expirés ou bientôt
         if contact.rgpd_date_expiration:
-            if contact.rgpd_date_expiration <= seuil_30j:
+            exp = contact.rgpd_date_expiration
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=UTC)
+            if exp <= seuil_30j:
                 expires_ou_bientot += 1
 
         # Avec consentement
@@ -452,7 +455,7 @@ async def infer_rgpd_base_legale(
         base_legale = "interet_legitime"
 
     # Set dates if not set
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     if not contact.rgpd_date_collecte:
         contact.rgpd_date_collecte = contact.created_at or now
 

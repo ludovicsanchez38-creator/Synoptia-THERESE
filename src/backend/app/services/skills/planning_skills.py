@@ -4,20 +4,18 @@ THÉRÈSE v2 - Planning Skills
 Skills de planification et d'organisation.
 """
 
-from pathlib import Path
 from typing import Any
 
-from .base import BaseSkill, InputField, SkillParams, SkillResult, SkillOutputType, FileFormat
+from .base import MarkdownSkill, InputField, SkillOutputType
 
 
-class PlanMeetingSkill(BaseSkill):
+class PlanMeetingSkill(MarkdownSkill):
     """Planification de réunion."""
 
     skill_id = "plan-meeting"
     name = "Planifier Réunion"
     description = "Crée un plan de réunion structuré"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -60,26 +58,13 @@ Crée un plan de réunion structuré :
 5. **Actions attendues** : Décisions à prendre
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class PlanProjectSkill(BaseSkill):
+class PlanProjectSkill(MarkdownSkill):
     """Planification de projet."""
 
     skill_id = "plan-project"
     name = "Planifier Projet"
     description = "Crée un plan de projet structuré"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -122,26 +107,13 @@ Crée un plan de projet actionnable :
 6. **Actions immédiates** : 3-5 prochaines actions
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class PlanWeekSkill(BaseSkill):
+class PlanWeekSkill(MarkdownSkill):
     """Planification de semaine."""
 
     skill_id = "plan-week"
     name = "Planifier Semaine"
     description = "Organise ta semaine de manière optimale"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -178,26 +150,13 @@ Crée un planning hebdomadaire réaliste :
 5. **Rituals** : Routines (début/fin de journée, pauses)
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class PlanGoalsSkill(BaseSkill):
+class PlanGoalsSkill(MarkdownSkill):
     """Planification d'objectifs."""
 
     skill_id = "plan-goals"
     name = "Planifier Objectifs"
     description = "Décompose un objectif en plan d'action"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
@@ -235,284 +194,64 @@ Transforme l'objectif en plan d'action SMART :
 6. **Quick wins** : Premiers résultats rapides
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
+class WorkflowSkill(MarkdownSkill):
+    """Generateur de workflow d'automatisation (agnostique plateforme)."""
 
-
-class WorkflowN8nSkill(BaseSkill):
-    """Générateur de workflow n8n."""
-
-    skill_id = "workflow-n8n"
-    name = "Workflow n8n"
-    description = "Génère un workflow n8n pour automatiser une tâche"
+    skill_id = "workflow-automation"
+    name = "Workflow Automatisation"
+    description = "Génère un workflow d'automatisation pour n'importe quelle plateforme"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
 
     def get_input_schema(self) -> dict[str, InputField]:
         return {
             'task': InputField(
                 type='textarea',
-                label='Tâche à automatiser',
+                label='Tache a automatiser',
                 placeholder='Ex: Envoyer un email quand un formulaire est rempli',
                 required=True,
             ),
+            'platform': InputField(
+                type='select',
+                label='Plateforme',
+                options=[
+                    'Non decide',
+                    'n8n',
+                    'Make',
+                    'Zapier',
+                    'Apps Script',
+                    'Power Automate',
+                    'Autre',
+                ],
+                default='Non decide',
+                required=False,
+            ),
             'trigger': InputField(
                 type='text',
-                label='Déclencheur',
+                label='Declencheur',
                 placeholder='Ex: Webhook, Schedule, Form submission',
                 required=False,
             ),
             'tools': InputField(
                 type='textarea',
-                label='Outils connectés',
-                placeholder='Ex: Google Sheets, Gmail, Notion',
+                label='Outils connectes',
+                placeholder='Ex: Google Sheets, Gmail, Notion, Slack',
                 required=False,
             ),
         }
 
     def get_system_prompt_addition(self) -> str:
         return """
-## Instructions pour workflow n8n
+## Instructions pour workflow d'automatisation
 
-Génère un workflow n8n détaillé :
-1. **Vue d'ensemble** : Schéma du workflow (ASCII ou description)
-2. **Nodes** : Liste des nodes avec configuration
-3. **Trigger** : Configuration du déclencheur
-4. **Data mapping** : Transformations et mappings
-5. **Error handling** : Gestion des erreurs
-6. **Setup** : Steps pour configurer dans n8n
+Genere un workflow detaille adapte a la plateforme choisie :
+1. **Vue d'ensemble** : Schema du workflow (ASCII ou description)
+2. **Etapes** : Liste des etapes/nodes avec configuration
+3. **Declencheur** : Configuration du trigger
+4. **Data mapping** : Transformations et mappings de donnees
+5. **Gestion d'erreurs** : Error handling et fallbacks
+6. **Guide de mise en place** : Steps pour configurer sur la plateforme
+
+Si la plateforme est "Non decide", recommande la plus adaptee au cas d'usage
+et explique pourquoi.
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class AppsScriptGeneratorSkill(BaseSkill):
-    """Générateur Apps Script."""
-
-    skill_id = "apps-script-generator"
-    name = "Apps Script"
-    description = "Génère du code Google Apps Script"
-    output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
-
-    def get_input_schema(self) -> dict[str, InputField]:
-        return {
-            'task': InputField(
-                type='textarea',
-                label='Tâche à automatiser',
-                placeholder='Ex: Copier données d\'un Sheet à un autre chaque jour',
-                required=True,
-            ),
-            'google_service': InputField(
-                type='select',
-                label='Service Google',
-                options=['Sheets', 'Docs', 'Gmail', 'Calendar', 'Drive', 'Multiple'],
-                default='Sheets',
-                required=False,
-            ),
-        }
-
-    def get_system_prompt_addition(self) -> str:
-        return """
-## Instructions pour Apps Script
-
-Génère du code Google Apps Script fonctionnel :
-1. **Code complet** : Avec commentaires explicatifs
-2. **Setup** : Comment l'installer et le configurer
-3. **Triggers** : Configuration des déclencheurs (time-driven, event-driven)
-4. **Permissions** : Autorisations nécessaires
-5. **Testing** : Comment tester le script
-6. **Best practices** : Optimisations et bonnes pratiques
-"""
-
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class WorkflowMakeSkill(BaseSkill):
-    """Générateur de scénario Make."""
-
-    skill_id = "workflow-make"
-    name = "Scénario Make"
-    description = "Génère un scénario Make (ex-Integromat)"
-    output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
-
-    def get_input_schema(self) -> dict[str, InputField]:
-        return {
-            'task': InputField(
-                type='textarea',
-                label='Tâche à automatiser',
-                placeholder='Ex: Synchroniser contacts CRM avec newsletter',
-                required=True,
-            ),
-            'apps': InputField(
-                type='textarea',
-                label='Applications',
-                placeholder='Ex: Airtable, Mailchimp, Slack',
-                required=False,
-            ),
-        }
-
-    def get_system_prompt_addition(self) -> str:
-        return """
-## Instructions pour scénario Make
-
-Génère un scénario Make détaillé :
-1. **Vue d'ensemble** : Flow du scénario
-2. **Modules** : Configuration de chaque module
-3. **Data mapping** : Mapping des champs
-4. **Filters & routers** : Logique conditionnelle
-5. **Error handling** : Gestion des erreurs
-6. **Setup guide** : Steps pour créer dans Make
-"""
-
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class WorkflowZapierSkill(BaseSkill):
-    """Générateur de Zap."""
-
-    skill_id = "workflow-zapier"
-    name = "Zap Zapier"
-    description = "Génère un Zap Zapier"
-    output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
-
-    def get_input_schema(self) -> dict[str, InputField]:
-        return {
-            'task': InputField(
-                type='textarea',
-                label='Tâche à automatiser',
-                placeholder='Ex: Créer tâche Trello depuis email Gmail',
-                required=True,
-            ),
-            'trigger_app': InputField(
-                type='text',
-                label='App déclencheur',
-                placeholder='Ex: Gmail, Google Forms, Typeform',
-                required=False,
-            ),
-            'action_app': InputField(
-                type='text',
-                label='App action',
-                placeholder='Ex: Trello, Notion, Slack',
-                required=False,
-            ),
-        }
-
-    def get_system_prompt_addition(self) -> str:
-        return """
-## Instructions pour Zap Zapier
-
-Génère un Zap complet :
-1. **Trigger** : Configuration du déclencheur
-2. **Actions** : Étapes et configurations
-3. **Filters** : Conditions et filtres
-4. **Field mapping** : Mapping des données
-5. **Testing** : Comment tester le Zap
-6. **Setup guide** : Steps pour créer dans Zapier
-"""
-
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class DocumentProcessSkill(BaseSkill):
-    """Documentation de processus."""
-
-    skill_id = "document-process"
-    name = "Documenter Processus"
-    description = "Documente un processus métier"
-    output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX
-
-    def get_input_schema(self) -> dict[str, InputField]:
-        return {
-            'process_name': InputField(
-                type='text',
-                label='Nom du processus',
-                placeholder='Ex: Onboarding client',
-                required=True,
-            ),
-            'steps': InputField(
-                type='textarea',
-                label='Étapes',
-                placeholder='Liste les grandes étapes (optionnel)',
-                required=False,
-            ),
-            'format': InputField(
-                type='select',
-                label='Format',
-                options=['Standard', 'SOP (procédure)', 'Flowchart description', 'Checklist'],
-                default='Standard',
-                required=False,
-            ),
-        }
-
-    def get_system_prompt_addition(self) -> str:
-        return """
-## Instructions pour documenter un processus
-
-Crée une documentation claire et actionnable :
-1. **Overview** : Objectif et scope du processus
-2. **Prérequis** : Ce qu'il faut avant de commencer
-3. **Steps détaillés** : Chaque étape avec actions et responsables
-4. **Decision points** : Conditions et alternatives
-5. **Templates/outils** : Documents et outils nécessaires
-6. **KPIs** : Comment mesurer le succès
-7. **FAQ** : Questions fréquentes
-"""
-
-    async def execute(self, params: SkillParams) -> SkillResult:
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )

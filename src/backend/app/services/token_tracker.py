@@ -6,7 +6,7 @@ US-ESC-01 to US-ESC-05: Token tracking, cost estimation, and limits.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from collections import deque
 from typing import Optional
 
@@ -158,13 +158,13 @@ class TokenTracker:
         self._today_input: int = 0
         self._today_output: int = 0
         self._today_cost: float = 0.0
-        self._today_date: str = datetime.utcnow().strftime("%Y-%m-%d")
+        self._today_date: str = datetime.now(UTC).strftime("%Y-%m-%d")
 
         # Monthly counters
         self._month_input: int = 0
         self._month_output: int = 0
         self._month_cost: float = 0.0
-        self._current_month: str = datetime.utcnow().strftime("%Y-%m")
+        self._current_month: str = datetime.now(UTC).strftime("%Y-%m")
 
         # Limits
         self._limits = TokenLimits()
@@ -180,7 +180,7 @@ class TokenTracker:
 
     def _reset_daily_if_needed(self) -> None:
         """Reset daily counters if date has changed."""
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         if today != self._today_date:
             self._today_input = 0
             self._today_output = 0
@@ -189,7 +189,7 @@ class TokenTracker:
 
     def _reset_monthly_if_needed(self) -> None:
         """Reset monthly counters if month has changed."""
-        month = datetime.utcnow().strftime("%Y-%m")
+        month = datetime.now(UTC).strftime("%Y-%m")
         if month != self._current_month:
             self._month_input = 0
             self._month_output = 0
@@ -231,7 +231,7 @@ class TokenTracker:
         cost = self.estimate_cost(model, input_tokens, output_tokens)
 
         record = TokenUsageRecord(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(UTC),
             conversation_id=conversation_id,
             model=model,
             provider=provider,

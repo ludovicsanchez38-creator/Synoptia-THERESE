@@ -4,13 +4,12 @@ THÉRÈSE v2 - Text Skills
 Skills de génération de contenu textuel (emails, posts, propositions).
 """
 
-from pathlib import Path
 from typing import Any
 
-from .base import BaseSkill, InputField, SkillParams, SkillResult, SkillOutputType, FileFormat
+from .base import MarkdownSkill, InputField, SkillOutputType
 
 
-class EmailProSkill(BaseSkill):
+class EmailProSkill(MarkdownSkill):
     """
     Skill de génération d'emails professionnels personnalisés.
 
@@ -21,7 +20,6 @@ class EmailProSkill(BaseSkill):
     name = "Email Professionnel"
     description = "Rédige un email professionnel personnalisé"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX  # Dummy value (pas utilisé pour TEXT)
 
     def get_input_schema(self) -> dict[str, InputField]:
         """Schéma des champs pour l'email professionnel."""
@@ -94,29 +92,7 @@ Tu es un assistant de rédaction d'emails professionnels.
 Génère uniquement le corps de l'email, sans signature.
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        """
-        Génère l'email.
-
-        Note: Pour les skills TEXT, SkillResult est réutilisé mais seuls
-        certains champs sont pertinents (content dans metadata).
-        """
-        # Pour l'instant, on simule - le vrai contenu viendra du LLM
-        # via le router qui appellera le LLM avant d'appeler execute()
-
-        # On retourne un SkillResult fictif (sera adapté dans le router)
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),  # Pas de fichier pour TEXT
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,  # Dummy
-        )
-
-
-class LinkedInPostSkill(BaseSkill):
+class LinkedInPostSkill(MarkdownSkill):
     """
     Skill de génération de posts LinkedIn engageants.
 
@@ -127,7 +103,6 @@ class LinkedInPostSkill(BaseSkill):
     name = "Post LinkedIn"
     description = "Génère un post LinkedIn engageant"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX  # Dummy
 
     def get_input_schema(self) -> dict[str, InputField]:
         """Schéma des champs pour le post LinkedIn."""
@@ -189,20 +164,7 @@ Tu es un expert en création de contenu LinkedIn engageant.
 - Pas de hashtags à la fin (sauf si explicitement demandé)
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        """Génère le post LinkedIn."""
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )
-
-
-class ProposalSkill(BaseSkill):
+class ProposalSkill(MarkdownSkill):
     """
     Skill de génération de propositions commerciales.
 
@@ -213,7 +175,6 @@ class ProposalSkill(BaseSkill):
     name = "Proposition Commerciale"
     description = "Génère une proposition commerciale structurée"
     output_type = SkillOutputType.TEXT
-    output_format = FileFormat.DOCX  # Dummy
 
     def get_input_schema(self) -> dict[str, InputField]:
         """Schéma des champs pour la proposition commerciale."""
@@ -320,14 +281,3 @@ Tu es un expert en rédaction de propositions commerciales pour Synoptïa.
 - RAYONNER : 2 990 EUR HT - Journée présentiel
 """
 
-    async def execute(self, params: SkillParams) -> SkillResult:
-        """Génère la proposition commerciale."""
-        file_id = self.generate_file_id()
-        return SkillResult(
-            file_id=file_id,
-            file_path=Path(""),
-            file_name="",
-            file_size=0,
-            mime_type="text/plain",
-            format=FileFormat.DOCX,
-        )

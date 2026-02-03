@@ -7,7 +7,7 @@ Part of the "Local First" architecture.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, date, timedelta
+from datetime import UTC, datetime, date, timedelta
 from typing import Literal, Optional
 
 
@@ -344,7 +344,7 @@ class CalendarProvider(ABC):
         Returns:
             List of upcoming events
         """
-        time_min = datetime.utcnow()
+        time_min = datetime.now(UTC)
         time_max = time_min + timedelta(days=days)
 
         events, _ = await self.list_events(

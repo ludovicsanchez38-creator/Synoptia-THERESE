@@ -7,7 +7,7 @@ Phase 3 - Tasks/Todos
 
 import logging
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlmodel import select
@@ -126,8 +126,8 @@ async def create_task(
         due_date=due_date,
         project_id=request.project_id,
         tags=json.dumps(request.tags or []),
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
 
     session.add(task)
@@ -169,7 +169,7 @@ async def update_task(
         task.status = request.status
         # Auto-set completed_at when status becomes "done"
         if request.status == "done" and not task.completed_at:
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(UTC)
         elif request.status != "done":
             task.completed_at = None
     if request.priority is not None:
@@ -184,7 +184,7 @@ async def update_task(
     if request.tags is not None:
         task.tags = json.dumps(request.tags)
 
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(UTC)
 
     session.add(task)
     await session.commit()
@@ -237,8 +237,8 @@ async def complete_task(
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.status = "done"
-    task.completed_at = datetime.utcnow()
-    task.updated_at = datetime.utcnow()
+    task.completed_at = datetime.now(UTC)
+    task.updated_at = datetime.now(UTC)
 
     session.add(task)
     await session.commit()
@@ -271,7 +271,7 @@ async def uncomplete_task(
 
     task.status = "todo"
     task.completed_at = None
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(UTC)
 
     session.add(task)
     await session.commit()

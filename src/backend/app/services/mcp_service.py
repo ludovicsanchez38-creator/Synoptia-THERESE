@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -95,7 +95,7 @@ class MCPServer:
     tools: list[MCPTool] = field(default_factory=list)
     error: str | None = None
     process: subprocess.Popen | None = field(default=None, repr=False)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization."""
@@ -177,7 +177,7 @@ class MCPService:
                     args=server_data.get("args", []),
                     env=server_data.get("env", {}),
                     enabled=server_data.get("enabled", True),
-                    created_at=datetime.fromisoformat(server_data.get("created_at", datetime.utcnow().isoformat())),
+                    created_at=datetime.fromisoformat(server_data.get("created_at", datetime.now(UTC).isoformat())),
                 )
                 self.servers[server.id] = server
                 logger.info(f"Loaded MCP server config: {server.name}")
