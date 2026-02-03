@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -14,8 +15,11 @@ import { DropZone } from '../files/DropZone';
 import { SideToggle } from '../ui/SideToggle';
 import { useKeyboardShortcuts, useConversationSync, useFileDrop } from '../../hooks';
 import { useChatStore } from '../../stores/chatStore';
+import { useDemoStore } from '../../stores/demoStore';
 import { openPanelWindow } from '../../services/windowManager';
 import * as api from '../../services/api';
+import { listUserCommands, type UserCommand } from '../../services/api/commands';
+import type { SlashCommand } from './SlashCommandsMenu';
 
 export function ChatLayout() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -29,8 +33,28 @@ export function ChatLayout() {
   const [editingContact, setEditingContact] = useState<api.Contact | null>(null);
   const [editingProject, setEditingProject] = useState<api.Project | null>(null);
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
+  const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
 
   const { createConversation } = useChatStore();
+  const toggleDemo = useDemoStore((s) => s.toggle);
+
+  // Fetch user commands for slash menu integration
+  useEffect(() => {
+    listUserCommands()
+      .then((commands: UserCommand[]) => {
+        const slashCmds: SlashCommand[] = commands.map((cmd) => ({
+          id: `user-${cmd.name}`,
+          name: cmd.name,
+          description: cmd.description || cmd.name,
+          icon: <Sparkles className="w-4 h-4" />,
+          prefix: cmd.content,
+        }));
+        setUserSlashCommands(slashCmds);
+      })
+      .catch(() => {
+        // Silently ignore - user commands are optional
+      });
+  }, []);
 
   // Sync conversations with backend on mount
   useConversationSync();
@@ -157,6 +181,10 @@ export function ChatLayout() {
     setShowBoardPanel(false);
   }, []);
 
+  const handleToggleDemoMode = useCallback(() => {
+    toggleDemo();
+  }, [toggleDemo]);
+
   // Panels ouverts dans des fenetres separees
   const handleToggleEmailPanel = useCallback(() => {
     openPanelWindow('email');
@@ -195,6 +223,7 @@ export function ChatLayout() {
     onToggleTasksPanel: handleToggleTasksPanel,
     onToggleInvoicesPanel: handleToggleInvoicesPanel,
     onToggleCRMPanel: handleToggleCRMPanel,
+    onToggleDemoMode: handleToggleDemoMode,
     onSearch: () => {
       setShowMemoryPanel(true);
     },
@@ -246,6 +275,7 @@ export function ChatLayout() {
           onOpenCommandPalette={handleOpenCommandPalette}
           initialPrompt={guidedPrompt}
           onInitialPromptConsumed={handleGuidedPromptConsumed}
+          userCommands={userSlashCommands}
         />
       </div>
 

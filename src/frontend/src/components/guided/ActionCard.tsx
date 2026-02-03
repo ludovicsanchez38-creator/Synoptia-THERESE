@@ -8,9 +8,12 @@ interface ActionCardProps {
   description: string;
   onClick: () => void;
   index: number;
+  variant?: 'default' | 'personnaliser';
 }
 
-export function ActionCard({ icon: Icon, title, description, onClick, index }: ActionCardProps) {
+export function ActionCard({ icon: Icon, title, description, onClick, index, variant = 'default' }: ActionCardProps) {
+  const isPersonnaliser = variant === 'personnaliser';
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 20 }}
@@ -26,10 +29,11 @@ export function ActionCard({ icon: Icon, title, description, onClick, index }: A
       className={cn(
         'group relative flex flex-col items-start p-4 rounded-xl',
         'bg-surface-elevated/60 backdrop-blur-sm',
-        'border border-border hover:border-accent-cyan/50',
         'transition-all duration-200 text-left',
-        'hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]',
-        'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30'
+        'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
+        isPersonnaliser
+          ? 'border-2 border-dashed border-accent-cyan/30 hover:border-accent-cyan/60 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]'
+          : 'border border-border hover:border-accent-cyan/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]'
       )}
     >
       {/* Gradient glow on hover */}

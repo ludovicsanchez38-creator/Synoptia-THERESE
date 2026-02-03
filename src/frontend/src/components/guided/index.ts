@@ -5,6 +5,7 @@ export { SkillPromptPanel } from './SkillPromptPanel';
 export { SkillExecutionPanel } from './SkillExecutionPanel';
 export { ImageGenerationPanel } from './ImageGenerationPanel';
 export { DynamicSkillForm } from './DynamicSkillForm';
+export { CreateCommandForm } from './CreateCommandForm';
 export { GUIDED_ACTIONS } from './actionData';
 export type { GuidedAction, SubOption, FileFormat, GeneratesFile, ImageProvider, GeneratesImage } from './actionData';
 export type { SkillExecutionStatus } from './SkillExecutionPanel';

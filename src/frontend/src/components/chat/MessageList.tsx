@@ -1,10 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../stores/chatStore';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
 import { GuidedPrompts } from '../guided';
 import { EntitySuggestion } from './EntitySuggestion';
+import { useDemoMask } from '../../hooks';
 
 interface MessageListProps {
   onPromptSelect?: (prompt: string) => void;
@@ -16,6 +17,7 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
   const currentConversationId = useChatStore((state) => state.currentConversationId);
   const isStreaming = useChatStore((state) => state.isStreaming);
   const clearMessageEntities = useChatStore((state) => state.clearMessageEntities);
+  const { enabled: demoEnabled, maskText } = useDemoMask();
 
   // Compute current conversation from subscribed state
   const conversation = conversations.find((c) => c.id === currentConversationId) || null;
@@ -35,6 +37,16 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversation?.messages, isStreaming]);
 
+  // Mode démo : masquer le contenu des messages avant rendu
+  const displayMessages = useMemo(() => {
+    if (!conversation) return [];
+    if (!demoEnabled) return conversation.messages;
+    return conversation.messages.map((msg) => ({
+      ...msg,
+      content: maskText(msg.content),
+    }));
+  }, [demoEnabled, conversation, maskText]);
+
   // Empty state with guided prompts UI
   if (!conversation || conversation.messages.length === 0) {
     return (
@@ -48,7 +60,7 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
     <div className="h-full overflow-y-auto px-4 py-6">
       <div className="max-w-3xl mx-auto space-y-4">
         <AnimatePresence initial={false}>
-          {conversation.messages.map((message, index) => (
+          {displayMessages.map((message, index) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 10 }}

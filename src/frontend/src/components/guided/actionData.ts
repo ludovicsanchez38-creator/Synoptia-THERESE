@@ -2,6 +2,7 @@ import {
   Sparkles,
   Brain,
   GitBranch,
+  Plus,
   FileText,
   FileSpreadsheet,
   Presentation,
@@ -9,17 +10,17 @@ import {
 } from 'lucide-react';
 
 /**
- * Format de fichier généré par un skill
+ * Format de fichier genere par un skill
  */
 export type FileFormat = 'docx' | 'pptx' | 'xlsx' | 'pdf';
 
 /**
- * Provider de génération d'images
+ * Provider de generation d'images
  */
 export type ImageProvider = 'gpt-image-1.5' | 'nanobanan-pro';
 
 /**
- * Configuration de génération de fichier pour une sous-option
+ * Configuration de generation de fichier pour une sous-option
  */
 export interface GeneratesFile {
   skillId: string;  // 'docx-pro', 'pptx-pro', 'xlsx-pro'
@@ -28,7 +29,7 @@ export interface GeneratesFile {
 }
 
 /**
- * Configuration de génération d'image pour une sous-option
+ * Configuration de generation d'image pour une sous-option
  */
 export interface GeneratesImage {
   provider: ImageProvider;
@@ -40,12 +41,14 @@ export interface SubOption {
   id: string;
   label: string;
   prompt: string;
-  /** ID du skill backend à utiliser (obligatoire pour skills enrichis) */
+  /** ID du skill backend a utiliser (obligatoire pour skills enrichis) */
   skillId?: string;
-  /** Si défini, cette option génère un fichier via un skill */
+  /** Si defini, cette option genere un fichier via un skill */
   generatesFile?: GeneratesFile;
-  /** Si défini, cette option génère une image */
+  /** Si defini, cette option genere une image */
   generatesImage?: GeneratesImage;
+  /** Comportement special (P1-A) */
+  behavior?: 'create-command' | 'create-skill' | 'create-automation';
 }
 
 export interface GuidedAction {
@@ -55,41 +58,43 @@ export interface GuidedAction {
   description: string;
   question: string;
   options: SubOption[];
+  /** Variante visuelle (P1-A) */
+  variant?: 'default' | 'personnaliser';
 }
 
 export const GUIDED_ACTIONS: GuidedAction[] = [
   // ============================================
-  // PRODUIRE - Créer du contenu nouveau (8 options)
+  // PRODUIRE - Creer du contenu nouveau (8 options)
   // ============================================
   {
     id: 'produire',
     icon: Sparkles,
     title: 'Produire',
-    description: 'Créer du contenu nouveau',
+    description: 'Creer du contenu nouveau',
     question: 'Que veux-tu produire ?',
     options: [
       {
         id: 'email',
         label: 'Email pro',
-        prompt: 'Rédige un email professionnel à propos de [sujet]. Contexte : [destinataire, ton souhaité].',
+        prompt: 'Redige un email professionnel a propos de [sujet]. Contexte : [destinataire, ton souhaite].',
         skillId: 'email-pro',
       },
       {
         id: 'linkedin',
         label: 'Post LinkedIn',
-        prompt: 'Rédige un post LinkedIn engageant sur [sujet]. Style : informatif et personnel.',
+        prompt: 'Redige un post LinkedIn engageant sur [sujet]. Style : informatif et personnel.',
         skillId: 'linkedin-post',
       },
       {
         id: 'proposal',
         label: 'Proposition commerciale',
-        prompt: 'Aide-moi à rédiger une proposition commerciale pour [client/projet]. Budget estimé : [montant].',
+        prompt: 'Aide-moi a rediger une proposition commerciale pour [client/projet]. Budget estime : [montant].',
         skillId: 'proposal-pro',
       },
       {
         id: 'document',
         label: 'Document Word',
-        prompt: 'Crée un document structuré sur [sujet]. Format souhaité : [rapport, guide, procédure].',
+        prompt: 'Cree un document structure sur [sujet]. Format souhaite : [rapport, guide, procedure].',
         skillId: 'docx-pro',
         generatesFile: {
           skillId: 'docx-pro',
@@ -99,8 +104,8 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
       },
       {
         id: 'presentation',
-        label: 'Présentation PPT',
-        prompt: 'Crée une présentation PowerPoint sur [sujet]. [X] slides. Public cible : [audience].',
+        label: 'Presentation PPT',
+        prompt: 'Cree une presentation PowerPoint sur [sujet]. [X] slides. Public cible : [audience].',
         skillId: 'pptx-pro',
         generatesFile: {
           skillId: 'pptx-pro',
@@ -111,7 +116,7 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
       {
         id: 'dashboard',
         label: 'Tableur Excel',
-        prompt: 'Crée un tableau de bord Excel pour suivre [KPIs]. Sources de données : [liste].',
+        prompt: 'Cree un tableau de bord Excel pour suivre [KPIs]. Sources de donnees : [liste].',
         skillId: 'xlsx-pro',
         generatesFile: {
           skillId: 'xlsx-pro',
@@ -122,7 +127,7 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
       {
         id: 'image-openai',
         label: 'Image IA (GPT)',
-        prompt: 'Génère une image de [description détaillée]. Style : [réaliste, illustration, artistique].',
+        prompt: 'Genere une image de [description detaillee]. Style : [realiste, illustration, artistique].',
         generatesImage: {
           provider: 'gpt-image-1.5',
           defaultSize: '1024x1024',
@@ -132,7 +137,7 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
       {
         id: 'image-gemini',
         label: 'Image IA (Gemini)',
-        prompt: 'Génère une image de [description détaillée]. Style : [réaliste, illustration, artistique].',
+        prompt: 'Genere une image de [description detaillee]. Style : [realiste, illustration, artistique].',
         generatesImage: {
           provider: 'nanobanan-pro',
           defaultSize: '2K',
@@ -155,37 +160,37 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
       {
         id: 'excel',
         label: 'Fichier Excel',
-        prompt: 'Analyse ce fichier Excel et identifie les tendances clés, anomalies et insights.',
+        prompt: 'Analyse ce fichier Excel et identifie les tendances cles, anomalies et insights.',
         skillId: 'analyze-xlsx',
       },
       {
         id: 'pdf',
         label: 'Document PDF',
-        prompt: 'Résume les points essentiels de ce PDF et extrais les informations importantes.',
+        prompt: 'Resume les points essentiels de ce PDF et extrais les informations importantes.',
         skillId: 'analyze-pdf',
       },
       {
         id: 'website',
         label: 'Site web',
-        prompt: 'Analyse le site [URL] : structure, contenu, points forts et axes d\'amélioration.',
+        prompt: 'Analyse le site [URL] : structure, contenu, points forts et axes d\'amelioration.',
         skillId: 'analyze-website',
       },
       {
         id: 'market',
-        label: 'Marché',
-        prompt: 'Fais une analyse de marché pour [secteur/produit] : tendances, concurrence, opportunités.',
+        label: 'Marche',
+        prompt: 'Fais une analyse de marche pour [secteur/produit] : tendances, concurrence, opportunites.',
         skillId: 'market-research',
       },
       {
         id: 'ai-tool',
         label: 'Outil IA',
-        prompt: 'Explique-moi [outil IA] : fonctionnalités clés, cas d\'usage, bonnes pratiques pour débuter.',
+        prompt: 'Explique-moi [outil IA] : fonctionnalites cles, cas d\'usage, bonnes pratiques pour debuter.',
         skillId: 'analyze-ai-tool',
       },
       {
         id: 'concept',
         label: 'Concept',
-        prompt: 'Explique-moi [concept] de manière simple. Exemples concrets et applications pratiques.',
+        prompt: 'Explique-moi [concept] de maniere simple. Exemples concrets et applications pratiques.',
         skillId: 'explain-concept',
       },
       {
@@ -198,7 +203,7 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
   },
 
   // ============================================
-  // ORGANISER - Planifier et automatiser (9 options)
+  // ORGANISER - Planifier et automatiser (5 options)
   // ============================================
   {
     id: 'organiser',
@@ -209,57 +214,65 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
     options: [
       {
         id: 'meeting',
-        label: 'Réunion',
-        prompt: 'Prépare une réunion sur [sujet]. Participants : [liste]. Durée : [temps]. Objectifs à atteindre.',
+        label: 'Reunion',
+        prompt: 'Prepare une reunion sur [sujet]. Participants : [liste]. Duree : [temps]. Objectifs a atteindre.',
         skillId: 'plan-meeting',
       },
       {
         id: 'project',
         label: 'Projet',
-        prompt: 'Crée un plan de projet pour [nom]. Phases, jalons, livrables et estimation des ressources.',
+        prompt: 'Cree un plan de projet pour [nom]. Phases, jalons, livrables et estimation des ressources.',
         skillId: 'plan-project',
       },
       {
         id: 'week',
         label: 'Semaine',
-        prompt: 'Organise ma semaine. Priorités : [tâches urgentes]. Objectifs : [ce que je veux accomplir].',
+        prompt: 'Organise ma semaine. Priorites : [taches urgentes]. Objectifs : [ce que je veux accomplir].',
         skillId: 'plan-week',
       },
       {
         id: 'goals',
         label: 'Objectifs',
-        prompt: 'Définis des objectifs SMART pour [domaine]. Horizon : [trimestre/année]. Métriques de suivi.',
+        prompt: 'Definis des objectifs SMART pour [domaine]. Horizon : [trimestre/annee]. Metriques de suivi.',
         skillId: 'plan-goals',
       },
       {
-        id: 'n8n',
-        label: 'Workflow n8n',
-        prompt: 'Crée un workflow n8n pour automatiser [tâche]. Déclencheur : [trigger]. Actions : [étapes].',
-        skillId: 'workflow-n8n',
+        id: 'workflow',
+        label: 'Workflow',
+        prompt: 'Cree un workflow d\'automatisation pour [tache]. Plateforme : [n8n/Make/Zapier/autre].',
+        skillId: 'workflow-automation',
+      },
+    ],
+  },
+
+  // ============================================
+  // PERSONNALISER - Creer ses propres commandes (3 options)
+  // ============================================
+  {
+    id: 'personnaliser',
+    icon: Plus,
+    title: 'Personnaliser',
+    description: 'Creer tes propres outils',
+    question: 'Que veux-tu creer ?',
+    variant: 'personnaliser',
+    options: [
+      {
+        id: 'create-command',
+        label: 'Creer une commande',
+        prompt: '',
+        behavior: 'create-command',
       },
       {
-        id: 'apps-script',
-        label: 'Apps Script',
-        prompt: 'Écris un script Google Apps Script pour [fonctionnalité]. Feuille source : [nom].',
-        skillId: 'apps-script-generator',
+        id: 'create-skill',
+        label: 'Creer une skill',
+        prompt: 'Je veux creer une nouvelle skill pour THERESE. Aide-moi a definir : le nom, la description, les inputs necessaires et le prompt systeme.',
+        behavior: 'create-skill',
       },
       {
-        id: 'make',
-        label: 'Scénario Make',
-        prompt: 'Conçois un scénario Make pour connecter [app1] à [app2]. Cas d\'usage : [description].',
-        skillId: 'workflow-make',
-      },
-      {
-        id: 'zapier',
-        label: 'Zap Zapier',
-        prompt: 'Crée un Zap Zapier pour [automatisation]. Trigger : [événement]. Action : [résultat attendu].',
-        skillId: 'workflow-zapier',
-      },
-      {
-        id: 'process',
-        label: 'Processus',
-        prompt: 'Détaille le processus pour [tâche]. Étapes, outils recommandés, pièges à éviter.',
-        skillId: 'document-process',
+        id: 'create-automation',
+        label: 'Creer une automatisation',
+        prompt: 'Je veux creer une automatisation personnalisee. Aide-moi a definir : le declencheur, les etapes et les outils a connecter.',
+        behavior: 'create-automation',
       },
     ],
   },

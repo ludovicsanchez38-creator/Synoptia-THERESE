@@ -86,6 +86,7 @@ interface SlashCommandsMenuProps {
   onClose: () => void;
   onIndexChange: (index: number) => void;
   inputRect?: DOMRect | null;
+  userCommands?: SlashCommand[];
 }
 
 export function SlashCommandsMenu({
@@ -96,20 +97,27 @@ export function SlashCommandsMenu({
   onClose,
   onIndexChange,
   inputRect,
+  userCommands,
 }: SlashCommandsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Merge built-in and user commands
+  const allCommands = useMemo(() => {
+    if (!userCommands || userCommands.length === 0) return SLASH_COMMANDS;
+    return [...SLASH_COMMANDS, ...userCommands];
+  }, [userCommands]);
 
   // Filter commands based on query
   const filteredCommands = useMemo(() => {
     // Remove the leading slash from query
     const searchTerm = query.startsWith('/') ? query.slice(1).toLowerCase() : '';
-    if (!searchTerm) return SLASH_COMMANDS;
-    return SLASH_COMMANDS.filter(
+    if (!searchTerm) return allCommands;
+    return allCommands.filter(
       (cmd) =>
         cmd.name.toLowerCase().startsWith(searchTerm) ||
         cmd.description.toLowerCase().includes(searchTerm)
     );
-  }, [query]);
+  }, [query, allCommands]);
 
   // Clamp selected index
   useEffect(() => {

@@ -13,6 +13,7 @@ import { Button } from '../ui/Button';
 import { useChatStore, Conversation } from '../../stores/chatStore';
 import { staggerContainer, staggerItem, sidebarLeftVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
+import { useDemoMask } from '../../hooks';
 
 interface ConversationSidebarProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
     createConversation,
     deleteConversation,
   } = useChatStore();
+  const { maskText } = useDemoMask();
 
   // Filter conversations
   const filteredConversations = conversations.filter((c) =>
@@ -232,6 +234,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
                             }}
                             onDelete={() => handleDelete(conversation.id)}
                             onCloseContextMenu={() => setContextMenuId(null)}
+                            maskTextFn={maskText}
                           />
                         </motion.div>
                       ))}
@@ -269,6 +272,7 @@ interface ConversationItemProps {
   onContextMenu: (e: React.MouseEvent) => void;
   onDelete: () => void;
   onCloseContextMenu: () => void;
+  maskTextFn?: (text: string) => string;
 }
 
 function ConversationItem({
@@ -280,10 +284,13 @@ function ConversationItem({
   onContextMenu,
   onDelete,
   onCloseContextMenu: _onCloseContextMenu,
+  maskTextFn,
 }: ConversationItemProps) {
   const messageCount = conversation.messages?.length || conversation.messageCount || 0;
   const lastMessage = conversation.messages?.[conversation.messages.length - 1];
-  const preview = lastMessage?.content?.slice(0, 60) || 'Pas de messages';
+  const rawPreview = lastMessage?.content?.slice(0, 60) || 'Pas de messages';
+  const displayTitle = maskTextFn ? maskTextFn(conversation.title) : conversation.title;
+  const preview = maskTextFn ? maskTextFn(rawPreview) : rawPreview;
 
   return (
     <div className="relative px-2">
@@ -312,7 +319,7 @@ function ConversationItem({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text truncate">{conversation.title}</p>
+          <p className="text-sm font-medium text-text truncate">{displayTitle}</p>
           <p className="text-xs text-text-muted truncate mt-0.5">{preview}</p>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-text-muted/60">

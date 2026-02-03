@@ -18,6 +18,7 @@ interface ShortcutHandlers {
   onSearch?: () => void;
   onOpenFile?: () => void;
   onEscape?: () => void;
+  onToggleDemoMode?: () => void;
 }
 
 /**
@@ -67,6 +68,13 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       if (isInput) return;
 
       // --- Shift combos first (before non-shift) ---
+
+      // Cmd+Shift+D - Toggle demo mode
+      if (key === 'd' && event.shiftKey) {
+        event.preventDefault();
+        handlers.onToggleDemoMode?.();
+        return;
+      }
 
       // Cmd+Shift+C - Calendar panel
       if (key === 'c' && event.shiftKey) {

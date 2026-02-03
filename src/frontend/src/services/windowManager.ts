@@ -9,6 +9,16 @@ import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 export type PanelType = 'email' | 'calendar' | 'tasks' | 'invoices' | 'crm';
 
+// Runtime whitelist for panel names (SEC-018)
+// TypeScript types are erased at runtime - this ensures validation at runtime too
+const VALID_PANELS: ReadonlySet<string> = new Set<PanelType>([
+  'email', 'calendar', 'tasks', 'invoices', 'crm',
+]);
+
+export function isValidPanel(value: string): value is PanelType {
+  return VALID_PANELS.has(value);
+}
+
 interface PanelConfig {
   title: string;
   width: number;
@@ -63,6 +73,12 @@ const openWindows = new Map<PanelType, WebviewWindow>();
  * Si la fenetre existe deja, elle prend le focus.
  */
 export async function openPanelWindow(panel: PanelType): Promise<void> {
+  // Runtime whitelist check (SEC-018) - defense against dynamic values
+  if (!isValidPanel(panel)) {
+    console.error(`[Security] Invalid panel name rejected: ${panel}`);
+    return;
+  }
+
   // Verifier si la fenetre existe deja
   const existing = openWindows.get(panel);
   if (existing) {

@@ -2,14 +2,17 @@
  * THÉRÈSE v2 - CRM Panel (Phase 5)
  *
  * Panel principal CRM avec Pipeline, Activities et Dashboard.
+ * Filtre par source pour eviter les doublons.
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutDashboard, Users, Activity } from 'lucide-react';
+import { X, LayoutDashboard, Users, Activity, UserPlus } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { listContacts, updateContactStage, type ContactResponse } from '../../services/api';
+import { createCRMContact, type CreateCRMContactRequest } from '../../services/api/crm';
+import { useDemoMask } from '../../hooks';
 
 interface CRMPanelProps {
   isOpen?: boolean;
@@ -24,6 +27,8 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const [contacts, setContacts] = useState<ContactResponse[]>([]);
   const [selectedContact, setSelectedContact] = useState<ContactResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   const effectiveOpen = standalone || isOpen;
 
@@ -36,8 +41,11 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const loadContacts = async () => {
     try {
       setLoading(true);
-      const data = await listContacts(0, 200);
+      // Filtrer par has_source=true pour n'afficher que les contacts avec source (GSheets + THERESE)
+      const data = await listContacts(0, 200, { hasSource: true });
       setContacts(data as ContactResponse[]);
+      // Peupler la map de remplacement pour le mode démo
+      populateMap(data, []);
     } catch (error) {
       console.error('Failed to load contacts:', error);
     } finally {
@@ -59,9 +67,22 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     setActiveTab('activities');
   };
 
+  const handleCreateContact = async (data: CreateCRMContactRequest) => {
+    try {
+      const newContact = await createCRMContact(data);
+      setContacts(prev => [newContact, ...prev]);
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error('Failed to create contact:', error);
+    }
+  };
+
+  // Contacts masqués pour le mode démo
+  const displayContacts = demoEnabled ? contacts.map(c => maskContact(c)) : contacts;
+
   const tabs = [
     { id: 'pipeline' as Tab, label: 'Pipeline', icon: LayoutDashboard },
-    { id: 'activities' as Tab, label: 'Activités', icon: Activity },
+    { id: 'activities' as Tab, label: 'Activites', icon: Activity },
     { id: 'dashboard' as Tab, label: 'Dashboard', icon: Users },
   ];
 
@@ -72,14 +93,24 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
         <p className="text-sm text-text-muted">Gestion du pipeline commercial</p>
       </div>
 
-      {!standalone && (
+      <div className="flex items-center gap-2">
         <button
-          onClick={onClose}
-          className="p-2 hover:bg-surface rounded-lg transition-colors"
+          onClick={() => setShowCreateForm(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-lg transition-colors text-sm font-medium"
         >
-          <X className="w-5 h-5 text-text-muted" />
+          <UserPlus className="w-4 h-4" />
+          Ajouter un contact
         </button>
-      )}
+
+        {!standalone && (
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-surface rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-text-muted" />
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -133,14 +164,16 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
               exit={{ opacity: 0, x: 20 }}
             >
               <PipelineView
-                contacts={contacts}
+                contacts={displayContacts}
                 onContactClick={handleContactClick}
                 onStageChange={handleStageChange}
               />
             </motion.div>
           )}
 
-          {activeTab === 'activities' && selectedContact && (
+          {activeTab === 'activities' && selectedContact && (() => {
+            const displayContact = demoEnabled ? maskContact(selectedContact) : selectedContact;
+            return (
             <motion.div
               key="activities"
               initial={{ opacity: 0, x: -20 }}
@@ -149,16 +182,17 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             >
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {selectedContact.first_name} {selectedContact.last_name}
+                  {displayContact.first_name} {displayContact.last_name}
                 </h3>
-                {selectedContact.company && (
-                  <p className="text-sm text-text-muted">{selectedContact.company}</p>
+                {displayContact.company && (
+                  <p className="text-sm text-text-muted">{displayContact.company}</p>
                 )}
               </div>
 
               <ActivityTimeline contactId={selectedContact.id} />
             </motion.div>
-          )}
+            );
+          })()}
 
           {activeTab === 'activities' && !selectedContact && (
             <motion.div
@@ -170,7 +204,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             >
               <div className="text-center">
                 <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Sélectionnez un contact pour voir son activité</p>
+                <p>Selectionnez un contact pour voir son activite</p>
               </div>
             </motion.div>
           )}
@@ -185,7 +219,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             >
               <div className="text-center">
                 <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Dashboard en cours de développement</p>
+                <p>Dashboard en cours de developpement</p>
               </div>
             </motion.div>
           )}
@@ -201,6 +235,13 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
         {crmHeader}
         {crmTabs}
         {crmContent}
+
+        {showCreateForm && (
+          <CreateContactModal
+            onClose={() => setShowCreateForm(false)}
+            onCreate={handleCreateContact}
+          />
+        )}
       </div>
     );
   }
@@ -227,9 +268,175 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             {crmHeader}
             {crmTabs}
             {crmContent}
+
+            {showCreateForm && (
+              <CreateContactModal
+                onClose={() => setShowCreateForm(false)}
+                onCreate={handleCreateContact}
+              />
+            )}
           </motion.div>
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+// =============================================================================
+// CREATE CONTACT MODAL
+// =============================================================================
+
+interface CreateContactModalProps {
+  onClose: () => void;
+  onCreate: (data: CreateCRMContactRequest) => void;
+}
+
+const STAGES = [
+  { id: 'contact', label: 'Contact' },
+  { id: 'discovery', label: 'Decouverte' },
+  { id: 'proposition', label: 'Proposition' },
+  { id: 'signature', label: 'Signature' },
+  { id: 'delivery', label: 'Livraison' },
+  { id: 'active', label: 'Actif' },
+];
+
+function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
+  const [form, setForm] = useState<CreateCRMContactRequest>({
+    first_name: '',
+    last_name: '',
+    company: '',
+    email: '',
+    phone: '',
+    source: '',
+    stage: 'contact',
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.first_name.trim()) return;
+
+    setSubmitting(true);
+    try {
+      await onCreate(form);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-[60]">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative bg-surface border border-border rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-text-primary">Nouveau contact</h3>
+          <button onClick={onClose} className="p-1 hover:bg-background rounded-lg transition-colors">
+            <X className="w-5 h-5 text-text-muted" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Prenom *</label>
+              <input
+                type="text"
+                value={form.first_name}
+                onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Nom</label>
+              <input
+                type="text"
+                value={form.last_name || ''}
+                onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Entreprise</label>
+            <input
+              type="text"
+              value={form.company || ''}
+              onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Email</label>
+              <input
+                type="email"
+                value={form.email || ''}
+                onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Telephone</label>
+              <input
+                type="tel"
+                value={form.phone || ''}
+                onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Source</label>
+              <input
+                type="text"
+                value={form.source || ''}
+                onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))}
+                placeholder="LinkedIn, Site web..."
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1">Stage</label>
+              <select
+                value={form.stage}
+                onChange={(e) => setForm(prev => ({ ...prev, stage: e.target.value }))}
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              >
+                {STAGES.map(s => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-lg transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={!form.first_name.trim() || submitting}
+              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Creation...' : 'Creer le contact'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
   );
 }

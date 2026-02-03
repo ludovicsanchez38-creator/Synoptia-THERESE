@@ -7,6 +7,7 @@ import { FileBrowser } from '../files/FileBrowser';
 import { ProjectsKanban } from './ProjectsKanban';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
+import { useDemoMask } from '../../hooks';
 
 interface MemoryPanelProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
   } | null>(null);
   const [rgpdActionLoading, setRgpdActionLoading] = useState(false);
   const [anonymizeReason, setAnonymizeReason] = useState('');
+  const { enabled: demoEnabled, maskContact, maskProject, populateMap } = useDemoMask();
 
   // Load data when panel opens or scope changes
   useEffect(() => {
@@ -66,6 +68,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
       setProjects(projectsData);
       setIndexedFiles(filesData);
       setRgpdStats(rgpdStatsData);
+      // Peupler la map de remplacement pour le mode démo
+      populateMap(contactsData, projectsData);
     } catch (error) {
       console.error('Failed to load memory data:', error);
     } finally {
@@ -178,6 +182,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
       p.description?.toLowerCase().includes(searchLower)
     );
   });
+
+  // Mode démo : masquer les contacts et projets affichés
+  const displayContacts = demoEnabled ? filteredContacts.map(c => maskContact(c)) : filteredContacts;
+  const displayProjects = demoEnabled ? filteredProjects.map(p => maskProject(p)) : filteredProjects;
 
   // Handle file indexed from browser
   const handleFileIndexed = (metadata: api.FileMetadata) => {
@@ -311,7 +319,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
                 </div>
               ) : activeTab === 'contacts' ? (
                 <ContactsList
-                  contacts={filteredContacts}
+                  contacts={displayContacts}
                   onSelect={(c) => onEditContact?.(c)}
                   onDelete={(c) => setDeleteConfirm({
                     type: 'contact',
@@ -322,7 +330,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
                 />
               ) : activeTab === 'projects' ? (
                 <ProjectsKanban
-                  projects={filteredProjects}
+                  projects={displayProjects}
                   onSelect={(p) => onEditProject?.(p)}
                   onDelete={(p) => setDeleteConfirm({
                     type: 'project',

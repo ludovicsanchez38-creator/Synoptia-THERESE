@@ -13,6 +13,7 @@ import { TaskKanban } from './TaskKanban';
 import { TaskList } from './TaskList';
 import { TaskForm } from './TaskForm';
 import { Button } from '../ui/Button';
+import { useDemoMask } from '../../hooks';
 import * as api from '../../services/api';
 
 interface TasksPanelProps {
@@ -38,6 +39,8 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     setFilterProjectId,
   } = useTaskStore();
 
+  const { enabled: demoEnabled, populateMap } = useDemoMask();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -50,6 +53,19 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       loadTasks();
     }
   }, [effectiveOpen, filterStatus, filterPriority, filterProjectId]);
+
+  // Populate demo replacement map when demo mode is enabled
+  useEffect(() => {
+    if (!effectiveOpen || !demoEnabled) return;
+
+    Promise.all([api.listContacts(), api.listProjects()])
+      .then(([contacts, projects]) => {
+        populateMap(contacts, projects);
+      })
+      .catch((err) => {
+        console.error('Failed to load contacts/projects for demo mask:', err);
+      });
+  }, [effectiveOpen, demoEnabled, populateMap]);
 
   async function loadTasks() {
     setLoading(true);

@@ -2,6 +2,7 @@ import { Plus, Settings, Command, Mail, Calendar, CheckSquare, FileText, Users }
 import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { Button } from '../ui/Button';
 import { useChatStore } from '../../stores/chatStore';
+import { useDemoStore } from '../../stores/demoStore';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface ChatHeaderProps {
@@ -24,6 +25,7 @@ export function ChatHeader({
   onToggleCRMPanel,
 }: ChatHeaderProps) {
   const { createConversation, currentConversation, isCurrentConversationEmpty } = useChatStore();
+  const demoEnabled = useDemoStore((s) => s.enabled);
   const conversation = currentConversation();
   const isEmpty = isCurrentConversationEmpty();
 
@@ -79,6 +81,11 @@ export function ChatHeader({
             <div className="w-2 h-2 rounded-full bg-accent-cyan shadow-[0_0_8px_rgba(34,211,238,0.5)] animate-pulse" />
             <h1 className="text-lg font-bold gradient-text tracking-tight">THÉRÈSE</h1>
           </div>
+          {demoEnabled && (
+            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 rounded-full animate-pulse">
+              Mode Démo
+            </span>
+          )}
           {conversation && (
             <>
               <span className="text-border/60">/</span>

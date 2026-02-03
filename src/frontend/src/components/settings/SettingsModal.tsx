@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Key, Check, AlertCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, User, FolderOpen, Upload, Mic, Image, Wrench, Globe, Accessibility, Gauge, AlertTriangle } from 'lucide-react';
+import { X, Key, Check, AlertCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, User, FolderOpen, Upload, Mic, Image as ImageIcon, Wrench, Globe, Accessibility, Gauge, AlertTriangle } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -8,6 +8,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { ToolsPanel } from './ToolsPanel';
 import { CRMSyncPanel } from './CRMSyncPanel';
+import { useDemoStore } from '../../stores/demoStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -1384,7 +1385,7 @@ function LLMConfigTab({
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-            <Image className="w-5 h-5 text-accent-cyan" />
+            <ImageIcon className="w-5 h-5 text-accent-cyan" />
           </div>
           <div>
             <h3 className="font-medium text-text">Génération d'images</h3>
@@ -1615,8 +1616,71 @@ function DataTab({
       {/* Separator */}
       <div className="border-t border-border/30" />
 
+      {/* Demo Mode Section */}
+      <DemoModeSection />
+
+      {/* Separator */}
+      <div className="border-t border-border/30" />
+
       {/* CRM Sync Section */}
       <CRMSyncPanel onSyncComplete={onRefreshStats} />
+    </div>
+  );
+}
+
+// Demo Mode Section
+function DemoModeSection() {
+  const demoEnabled = useDemoStore((s) => s.enabled);
+  const toggleDemo = useDemoStore((s) => s.toggle);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+          demoEnabled
+            ? 'bg-accent-cyan/20'
+            : 'bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20'
+        }`}>
+          <Eye className="w-5 h-5 text-accent-cyan" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-medium text-text">Mode Démo</h3>
+          <p className="text-xs text-text-muted">
+            Masque les noms et données clients par des personas fictifs
+          </p>
+        </div>
+        <button
+          onClick={toggleDemo}
+          className={`relative w-11 h-6 rounded-full transition-colors ${
+            demoEnabled ? 'bg-accent-cyan' : 'bg-border'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+              demoEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
+      {demoEnabled && (
+        <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-accent-cyan flex-shrink-0" />
+            <span className="text-sm text-accent-cyan">
+              Mode démo actif - les données réelles sont masquées
+            </span>
+          </div>
+          <p className="text-xs text-text-muted mt-1.5">
+            Raccourci : ⌘⇧D pour activer/désactiver
+          </p>
+        </div>
+      )}
+
+      <p className="text-xs text-text-muted/60">
+        Idéal pour les vidéos de présentation et les démos en direct.
+        Aucune donnée n'est modifiée en base.
+      </p>
     </div>
   );
 }

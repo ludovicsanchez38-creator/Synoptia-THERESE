@@ -11,10 +11,12 @@ import { CheckCircle2, Circle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
+import { useDemoMask } from '../../hooks';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
     useTaskStore();
+  const { maskText } = useDemoMask();
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -115,7 +117,7 @@ export function TaskList() {
                         isDone ? 'line-through text-text-muted' : 'text-text'
                       }`}
                     >
-                      {task.title}
+                      {maskText(task.title)}
                     </h4>
 
                     {/* Priority & Status */}
@@ -140,7 +142,7 @@ export function TaskList() {
                   {/* Description */}
                   {task.description && (
                     <p className="text-xs text-text-muted line-clamp-1 mb-2">
-                      {task.description}
+                      {maskText(task.description)}
                     </p>
                   )}
 
