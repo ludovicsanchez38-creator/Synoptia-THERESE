@@ -30,23 +30,36 @@ function App() {
   // SEC-010: Initialize auth token at startup then check onboarding
   useEffect(() => {
     async function initAndCheckOnboarding() {
-      // First, initialize auth token
-      await api.initializeAuth();
+      // Retry loop : le backend peut mettre un instant à démarrer
+      const maxRetries = 5;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // Récupérer le token de session
+          await api.initializeAuth();
 
-      // Small delay to ensure backend is ready
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Then check onboarding status
-      try {
-        const status = await api.getOnboardingStatus();
-        setShowOnboarding(!status.completed);
-      } catch (err) {
-        // If API fails, assume onboarding needed
-        console.error('Failed to check onboarding status:', err);
-        setShowOnboarding(true);
-      } finally {
-        setCheckingOnboarding(false);
+          // Vérifier le statut onboarding
+          const status = await api.getOnboardingStatus();
+          setShowOnboarding(!status.completed);
+          setCheckingOnboarding(false);
+          return;
+        } catch (err) {
+          console.warn(`Tentative ${attempt}/${maxRetries} échouée:`, err);
+          if (attempt < maxRetries) {
+            // Attendre un peu plus à chaque tentative
+            await new Promise(resolve => setTimeout(resolve, attempt * 500));
+          }
+        }
       }
+
+      // Si toutes les tentatives échouent, vérifier le cache localStorage
+      // avant de forcer l'onboarding
+      const cached = localStorage.getItem('therese-onboarding-done');
+      if (cached === 'true') {
+        setShowOnboarding(false);
+      } else {
+        setShowOnboarding(true);
+      }
+      setCheckingOnboarding(false);
     }
 
     initAndCheckOnboarding();
@@ -61,6 +74,7 @@ function App() {
 
   function handleOnboardingComplete() {
     setShowOnboarding(false);
+    localStorage.setItem('therese-onboarding-done', 'true');
   }
 
   // Si on est dans une fenetre panel, afficher directement le panel

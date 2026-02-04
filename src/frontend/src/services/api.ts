@@ -1937,10 +1937,23 @@ export async function generateEmailSetupGuide(
 
 // OAuth
 export async function initiateEmailOAuth(clientId: string, clientSecret: string): Promise<OAuthFlowData> {
-  const response = await apiFetch(`${API_BASE}/api/email/auth/initiate?client_id=${clientId}&client_secret=${clientSecret}`, {
+  const response = await apiFetch(`${API_BASE}/api/email/auth/initiate`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
   });
   if (!response.ok) throw new Error('Failed to initiate OAuth');
+  return response.json();
+}
+
+export async function reauthorizeEmail(accountId: string): Promise<OAuthFlowData> {
+  const response = await apiFetch(`${API_BASE}/api/email/auth/reauthorize/${accountId}`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ detail: 'Échec de la réautorisation' }));
+    throw new Error(data.detail || 'Échec de la réautorisation');
+  }
   return response.json();
 }
 
@@ -1984,7 +1997,10 @@ export async function listEmailMessages(
   if (params?.labelIds) searchParams.set('label_ids', params.labelIds.join(','));
 
   const response = await apiFetch(`${API_BASE}/api/email/messages?${searchParams}`);
-  if (!response.ok) throw new Error('Failed to list messages');
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
@@ -2027,7 +2043,10 @@ export async function modifyEmailMessage(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  if (!response.ok) throw new Error('Failed to modify message');
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
@@ -2040,7 +2059,10 @@ export async function deleteEmailMessage(
     `${API_BASE}/api/email/messages/${messageId}?account_id=${accountId}&permanent=${permanent}`,
     { method: 'DELETE' }
   );
-  if (!response.ok) throw new Error('Failed to delete message');
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
 }
 
 // Labels

@@ -13,7 +13,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -151,6 +152,7 @@ def get_gmail_oauth_config(
         auth_url=GOOGLE_AUTH_URL,
         token_url=GOOGLE_TOKEN_URL,
         scopes=GOOGLE_ALL_SCOPES,
+        redirect_uri="http://localhost:8000/api/email/auth/callback-redirect",
     )
 
 
@@ -363,6 +365,173 @@ async def handle_oauth_callback(
         created_at=account.created_at,
         last_sync=account.last_sync,
     )
+
+
+@router.get("/auth/callback-redirect", response_class=HTMLResponse)
+async def handle_oauth_redirect(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Handle Google's OAuth GET redirect.
+
+    Google redirects here with ?code=xxx&state=xxx after user authorizes.
+    Exchanges the code for tokens, creates/updates the account,
+    then shows a success HTML page.
+    """
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
+    error = request.query_params.get("error")
+
+    if error:
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html><head><title>THERESE - Erreur OAuth</title>
+        <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
+        .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
+        h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}</style></head>
+        <body><div class="card"><h1>Erreur d'autorisation</h1><p>{error}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
+        """, status_code=400)
+
+    if not code or not state:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html><head><title>THERESE - Erreur</title>
+        <style>body{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+        .card{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}
+        h1{color:#E11D8D;font-size:1.5rem}p{color:#B6C7DA}</style></head>
+        <body><div class="card"><h1>Paramètres manquants</h1><p>Code ou state manquant dans la réponse Google.</p></div></body></html>
+        """, status_code=400)
+
+    try:
+        oauth_service = get_oauth_service()
+        tokens = await oauth_service.handle_callback(state, code, None)
+
+        if not tokens.get('refresh_token'):
+            return HTMLResponse(content="""
+            <!DOCTYPE html>
+            <html><head><title>THERESE - Erreur</title>
+            <style>body{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+            .card{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}
+            h1{color:#E11D8D;font-size:1.5rem}p{color:#B6C7DA}</style></head>
+            <body><div class="card"><h1>Pas de refresh token</h1><p>Révoque l'accès THÉRÈSE dans tes paramètres Google et réessaye.</p></div></body></html>
+            """, status_code=400)
+
+        # Get user email
+        gmail = GmailService(tokens['access_token'])
+        profile = await gmail.get_profile()
+        email_address = profile['emailAddress']
+
+        # Create or update account
+        statement = select(EmailAccount).where(EmailAccount.email == email_address)
+        result = await session.execute(statement)
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            existing.access_token = encrypt_value(tokens['access_token'])
+            existing.refresh_token = encrypt_value(tokens['refresh_token'])
+            existing.token_expiry = _utcnow() + timedelta(seconds=tokens['expires_in'])
+            existing.scopes = json.dumps(tokens['scopes'])
+            if tokens.get('client_id'):
+                existing.client_id = encrypt_value(tokens['client_id'])
+            if tokens.get('client_secret'):
+                existing.client_secret = encrypt_value(tokens['client_secret'])
+            existing.updated_at = _utcnow()
+            session.add(existing)
+            await session.commit()
+            logger.info(f"Email account updated via redirect: {email_address}")
+        else:
+            account = EmailAccount(
+                email=email_address,
+                access_token=encrypt_value(tokens['access_token']),
+                refresh_token=encrypt_value(tokens['refresh_token']),
+                token_expiry=_utcnow() + timedelta(seconds=tokens['expires_in']),
+                scopes=json.dumps(tokens['scopes']),
+                client_id=encrypt_value(tokens['client_id']) if tokens.get('client_id') else None,
+                client_secret=encrypt_value(tokens['client_secret']) if tokens.get('client_secret') else None,
+            )
+            session.add(account)
+            await session.commit()
+            logger.info(f"Email account created via redirect: {email_address}")
+
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html><head><title>THERESE - Connexion réussie</title>
+        <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
+        .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
+        h1{{color:#22D3EE;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}
+        .email{{color:#22D3EE;font-weight:600}}</style></head>
+        <body><div class="card"><h1>Connexion réussie !</h1><p>Le compte <span class="email">{email_address}</span> est connecté à THERESE.</p><p>Tu peux fermer cette fenêtre.</p></div></body></html>
+        """)
+    except Exception as e:
+        logger.error(f"OAuth redirect callback failed: {e}")
+        return HTMLResponse(content=f"""
+        <!DOCTYPE html>
+        <html><head><title>THERESE - Erreur</title>
+        <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
+        .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
+        h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA}}</style></head>
+        <body><div class="card"><h1>Erreur</h1><p>{str(e)}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
+        """, status_code=500)
+
+
+@router.post("/auth/reauthorize/{account_id}")
+async def reauthorize_account(
+    account_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> OAuthInitiateResponse:
+    """
+    Re-authorize an existing account with expired/revoked token.
+
+    Uses stored client_id/client_secret to initiate a new OAuth flow.
+    Falls back to MCP Google Workspace credentials if needed.
+    """
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    client_id = None
+    client_secret = None
+
+    # 1. Try stored credentials on the account
+    if account.client_id and account.client_secret:
+        client_id = decrypt_value(account.client_id)
+        client_secret = decrypt_value(account.client_secret)
+
+    # 2. Fallback: MCP Google Workspace
+    if not client_id or not client_secret:
+        try:
+            from app.services.mcp_service import get_mcp_service
+            mcp_service = get_mcp_service()
+            for server_id, server in mcp_service.servers.items():
+                if 'google' in server.name.lower() and 'workspace' in server.name.lower():
+                    env = server.env or {}
+                    cid = env.get('GOOGLE_OAUTH_CLIENT_ID', '')
+                    csecret = env.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
+                    if is_value_encrypted(cid):
+                        cid = decrypt_value(cid)
+                    if is_value_encrypted(csecret):
+                        csecret = decrypt_value(csecret)
+                    if cid and csecret:
+                        client_id = cid
+                        client_secret = csecret
+                        break
+        except Exception as e:
+            logger.warning(f"Failed to get MCP credentials: {e}")
+
+    if not client_id or not client_secret:
+        raise HTTPException(
+            status_code=400,
+            detail="Aucun identifiant OAuth trouvé. Reconfigure le compte via le wizard."
+        )
+
+    oauth_service = get_oauth_service()
+    config = get_gmail_oauth_config(client_id, client_secret)
+    flow_data = oauth_service.initiate_flow('gmail', config)
+
+    logger.info(f"Re-authorization initiated for {account.email}")
+
+    return OAuthInitiateResponse(**flow_data)
 
 
 @router.get("/auth/status")

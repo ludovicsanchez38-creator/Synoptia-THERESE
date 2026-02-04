@@ -51,6 +51,10 @@ interface EmailStore {
   setDraftIsHtml: (isHtml: boolean) => void;
   clearDraft: () => void;
 
+  // Auth
+  needsReauth: boolean;
+  setNeedsReauth: (needsReauth: boolean) => void;
+
   // Filters & Search
   searchQuery: string;
   selectedLabels: string[];
@@ -133,6 +137,10 @@ export const useEmailStore = create<EmailStore>()(
           draftIsHtml: false,
           isComposing: false,
         }),
+
+      // Auth
+      needsReauth: false,
+      setNeedsReauth: (needsReauth) => set({ needsReauth }),
 
       // Filters & Search
       searchQuery: '',

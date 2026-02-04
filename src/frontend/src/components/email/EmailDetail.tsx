@@ -6,15 +6,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
   Reply,
   ReplyAll,
   Forward,
   Star,
   Trash2,
-  Archive,
-  MailOpen,
   Mail,
   ChevronLeft,
   Loader2,
@@ -26,15 +23,26 @@ import * as api from '../../services/api';
 import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 
+/**
+ * Supprime les balises <style> et <link stylesheet> du HTML d'un email
+ * pour empêcher le CSS de l'email de fuiter dans l'app.
+ */
+function sanitizeEmailHtml(html: string): string {
+  let sanitized = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  sanitized = sanitized.replace(/<link[^>]*rel=["']stylesheet["'][^>]*\/?>/gi, '');
+  return sanitized;
+}
+
 interface EmailDetailProps {
   accountId: string;
   messageId: string;
 }
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
-  const { messages, setCurrentMessage, updateMessage, setIsComposing, setDraftRecipients, setDraftSubject, setDraftBody } = useEmailStore();
+  const { messages, setCurrentMessage, updateMessage, removeMessage, setIsComposing, setDraftRecipients, setDraftSubject, setDraftBody, setNeedsReauth } = useEmailStore();
   const [loading, setLoading] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
+  const [trashError, setTrashError] = useState<string | null>(null);
 
   const message = messages.find((m) => m.id === messageId);
 
@@ -78,12 +86,21 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
   async function handleTrash() {
     if (!message) return;
+    setTrashError(null);
 
     try {
       await api.deleteEmailMessage(accountId, messageId, false);
+      removeMessage(messageId);
       setCurrentMessage(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to trash message:', err);
+      const msg = err?.message || '';
+      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('Token')) {
+        setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
+        setNeedsReauth(true);
+      } else {
+        setTrashError('Impossible de supprimer ce message.');
+      }
     }
   }
 
@@ -137,37 +154,23 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        className="flex-1 flex items-center justify-center"
-      >
+      <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
-      </motion.div>
+      </div>
     );
   }
 
   if (!message) {
     return (
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        className="flex-1 flex items-center justify-center"
-      >
+      <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
         <p className="text-text-muted">Message introuvable</p>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className="flex-1 flex flex-col bg-background/20"
-    >
+    <div className="flex-1 min-w-0 overflow-hidden flex flex-col bg-background/20">
+
       {/* Header */}
       <div className="px-6 py-4 border-b border-border/30">
         <div className="flex items-center justify-between mb-4">
@@ -230,12 +233,19 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         {message.body_html ? (
           <div
             className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan [&_a]:hover:!text-accent-cyan/80 [&_*]:!bg-transparent"
-            dangerouslySetInnerHTML={{ __html: message.body_html }}
+            dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(message.body_html) }}
           />
         ) : (
           <pre className="whitespace-pre-wrap text-sm text-text font-sans">{message.body_plain}</pre>
         )}
       </div>
+
+      {/* Erreur suppression */}
+      {trashError && (
+        <div className="mx-6 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-xs text-red-300">{trashError}</p>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30 flex items-center gap-2">
@@ -265,6 +275,6 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         accountId={accountId}
         onUseResponse={handleUseResponse}
       />
-    </motion.div>
+    </div>
   );
 }

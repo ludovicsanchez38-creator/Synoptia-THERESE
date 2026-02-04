@@ -334,7 +334,7 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
 
     # Endpoints exemptés
-    exempt_paths = ["/api/health", "/api/auth/token", "/docs", "/redoc", "/openapi.json", "/health"]
+    exempt_paths = ["/api/health", "/api/auth/token", "/api/email/auth/callback-redirect", "/docs", "/redoc", "/openapi.json", "/health"]
     if any(request.url.path.startswith(p) for p in exempt_paths):
         return await call_next(request)
 

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Star, Paperclip, Loader2, Search } from 'lucide-react';
+import { Star, Paperclip, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import * as api from '../../services/api';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
@@ -19,14 +19,19 @@ export function EmailList({ accountId }: EmailListProps) {
   const {
     messages,
     setMessages,
+    removeMessage,
     currentMessageId,
     setCurrentMessage,
     currentLabelId,
     searchQuery,
     setSearchQuery,
+    setNeedsReauth,
   } = useEmailStore();
 
+  // Cache-first : si le store a des messages en cache, pas de spinner initial
+  const hasCachedMessages = messages.length > 0;
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load messages when label or account changes
@@ -35,7 +40,12 @@ export function EmailList({ accountId }: EmailListProps) {
   }, [accountId, currentLabelId]);
 
   async function loadMessages() {
-    setLoading(true);
+    // Si pas de cache, afficher le spinner. Sinon, rafraîchir en arrière-plan.
+    if (!hasCachedMessages) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
     setError(null);
 
     try {
@@ -46,7 +56,7 @@ export function EmailList({ accountId }: EmailListProps) {
         query: searchQuery || undefined,
       });
 
-      // Fetch full details for each message (in production, use batch or pagination)
+      // Fetch full details for each message
       const messagesWithDetails = await Promise.all(
         result.messages.map(async (msg) => {
           try {
@@ -60,12 +70,15 @@ export function EmailList({ accountId }: EmailListProps) {
 
       const validMessages = messagesWithDetails.filter((m): m is api.EmailMessage => m !== null);
 
-      // Auto-classify messages (force V2 pour appliquer nouvelles règles)
+      // Classifier uniquement les messages qui n'ont pas encore de classification
       const classifiedMessages = await Promise.all(
         validMessages.map(async (msg) => {
+          // Si déjà classifié, garder la classification existante
+          if (msg.priority) {
+            return msg;
+          }
           try {
-            // Force reclassification pour appliquer V2 (cal.com business, etc.)
-            const classification = await api.classifyEmail(msg.id, accountId, true);
+            const classification = await api.classifyEmail(msg.id, accountId, false);
             return {
               ...msg,
               priority: classification.priority,
@@ -83,9 +96,35 @@ export function EmailList({ accountId }: EmailListProps) {
       setMessages(classifiedMessages);
     } catch (err) {
       console.error('Failed to load messages:', err);
-      setError('Impossible de charger les messages');
+      // Si on a du cache, ne pas afficher d'erreur bloquante
+      if (!hasCachedMessages) {
+        setError('Impossible de charger les messages');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  async function handleTrash(e: React.MouseEvent, messageId: string) {
+    e.stopPropagation();
+    try {
+      await api.deleteEmailMessage(accountId, messageId, false);
+      removeMessage(messageId);
+      if (currentMessageId === messageId) {
+        setCurrentMessage(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to trash message:', err);
+      const msg = err?.message || '';
+      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
+        setError('Connexion Gmail expirée - reconnecte-toi.');
+        setNeedsReauth(true);
+      } else {
+        setError('Impossible de supprimer ce message.');
+      }
+      // Effacer le message d'erreur après 5 secondes
+      setTimeout(() => setError(null), 5000);
     }
   }
 
@@ -107,7 +146,7 @@ export function EmailList({ accountId }: EmailListProps) {
   }
 
   return (
-    <div className="w-96 border-r border-border/30 flex flex-col">
+    <div className="w-96 shrink-0 min-w-0 border-r border-border/30 flex flex-col">
       {/* Search */}
       <div className="p-4 border-b border-border/30">
         <div className="relative">
@@ -128,7 +167,14 @@ export function EmailList({ accountId }: EmailListProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto relative">
+        {/* Indicateur de rafraîchissement discret (overlay, ne pousse pas le contenu) */}
+        {refreshing && (
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-1 bg-accent-cyan/5 backdrop-blur-sm border-b border-border/20">
+            <Loader2 className="w-3 h-3 animate-spin text-accent-cyan mr-2" />
+            <span className="text-xs text-text-muted">Mise à jour...</span>
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
@@ -151,35 +197,49 @@ export function EmailList({ accountId }: EmailListProps) {
                 <button
                   key={message.id}
                   onClick={() => setCurrentMessage(message.id)}
-                  className={`w-full text-left px-4 py-3 hover:bg-border/10 transition-colors ${
+                  className={`group w-full text-left px-4 py-3 hover:bg-border/10 transition-colors ${
                     isActive ? 'bg-accent-cyan/5' : ''
                   } ${isUnread ? 'bg-background/40' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {message.is_starred && <Star className="w-3 h-3 text-yellow-400 shrink-0" />}
-                      {message.priority && (
-                        <EmailPriorityBadge
-                          priority={message.priority}
-                          score={message.priority_score || undefined}
-                          className="shrink-0"
-                        />
-                      )}
+                      <div className="w-8 shrink-0 flex items-center justify-center">
+                        {message.priority && (
+                          <EmailPriorityBadge
+                            priority={message.priority}
+                            score={message.priority_score || undefined}
+                          />
+                        )}
+                      </div>
                       <span
-                        className={`text-sm truncate ${
-                          isUnread ? 'font-semibold text-text' : 'text-text-muted'
+                        className={`text-sm font-medium truncate ${
+                          isUnread ? 'text-text' : 'text-text-muted'
                         }`}
                       >
                         {message.from_name || message.from_email}
                       </span>
                     </div>
-                    <span className="text-xs text-text-muted shrink-0">{formatDate(message.date)}</span>
+                    {/* Bouton supprimer (visible au hover, remplace la date) */}
+                    <span
+                      className="text-xs text-text-muted shrink-0 group-hover:hidden"
+                    >
+                      {formatDate(message.date)}
+                    </span>
+                    <span
+                      className="shrink-0 hidden group-hover:inline-flex"
+                      onClick={(e) => handleTrash(e, message.id)}
+                      role="button"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-red-400 transition-colors" />
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2 mb-1">
                     <p
-                      className={`text-sm truncate flex-1 ${
-                        isUnread ? 'font-medium text-text' : 'text-text-muted'
+                      className={`text-sm font-medium truncate flex-1 ${
+                        isUnread ? 'text-text' : 'text-text-muted'
                       }`}
                     >
                       {message.subject || '(Sans objet)'}

@@ -21,9 +21,14 @@ interface PanelWindowProps {
 }
 
 export function PanelWindow({ panel }: PanelWindowProps) {
-  const [ready, setReady] = useState(false);
+  // Si le store a déjà des données en cache (localStorage), on affiche immédiatement
+  const { accounts, setAccounts, setCurrentAccount, currentAccountId } = useEmailStore();
+  const hasCachedData = panel === 'email' || panel === 'calendar'
+    ? accounts.length > 0 && !!currentAccountId
+    : true;
+
+  const [ready, setReady] = useState(hasCachedData);
   const [error, setError] = useState<string | null>(null);
-  const { setAccounts, setCurrentAccount, currentAccountId } = useEmailStore();
 
   useEffect(() => {
     async function init() {
@@ -31,7 +36,7 @@ export function PanelWindow({ panel }: PanelWindowProps) {
         // 1. Initialiser le token d'auth
         await initializeAuth();
 
-        // 2. Pour email et calendrier, pre-charger les comptes email
+        // 2. Pour email et calendrier, rafraîchir les comptes en arrière-plan
         if (panel === 'email' || panel === 'calendar') {
           try {
             const status = await getEmailAuthStatus();
@@ -42,14 +47,17 @@ export function PanelWindow({ panel }: PanelWindowProps) {
               }
             }
           } catch (e) {
-            console.warn('Could not pre-load email accounts:', e);
+            console.warn('Could not refresh email accounts:', e);
           }
         }
 
         setReady(true);
       } catch (e) {
         console.error('PanelWindow init failed:', e);
-        setError('Erreur de connexion au backend');
+        // Si on a des données en cache, on continue malgré l'erreur
+        if (!hasCachedData) {
+          setError('Erreur de connexion au backend');
+        }
       }
     }
     init();

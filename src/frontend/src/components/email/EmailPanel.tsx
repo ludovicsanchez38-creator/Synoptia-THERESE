@@ -5,8 +5,8 @@
  * Phase 1 Frontend - Email
  */
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import {
   Mail,
   X,
@@ -19,7 +19,12 @@ import {
   Plus,
   Settings,
   Loader2,
+  UserPlus,
+  ChevronDown,
+  AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-shell';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
 import { EmailList } from './EmailList';
@@ -47,11 +52,19 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     setLabels,
     currentLabelId,
     setCurrentLabel,
+    needsReauth,
+    setNeedsReauth,
   } = useEmailStore();
 
-  const [loading, setLoading] = useState(true);
+  // Cache-first : si le store a déjà des données (localStorage), pas de spinner
+  const hasCachedAccounts = accounts.length > 0 && !!currentAccountId;
+  const [loading, setLoading] = useState(!hasCachedAccounts);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [reauthing, setReauthing] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load accounts on mount (standalone ou modal)
   useEffect(() => {
@@ -61,10 +74,13 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   }, [standalone, isEmailPanelOpen]);
 
   async function loadAccounts() {
-    setLoading(true);
+    // Si on a des données en cache, ne pas bloquer l'affichage
+    if (!hasCachedAccounts) {
+      setLoading(true);
+    }
     setError(null);
 
-    // Tenter de rafraichir les comptes depuis l'API
+    // Tenter de rafraîchir les comptes depuis l'API
     try {
       const status = await api.getEmailAuthStatus();
       setAccounts(status.accounts);
@@ -77,15 +93,10 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     } catch (err) {
       console.error('Failed to load accounts from API:', err);
 
-      // Fallback : utiliser les comptes deja dans le store (cache localStorage)
+      // Fallback : utiliser les comptes déjà dans le store (cache localStorage)
       if (accounts.length > 0 && currentAccountId) {
-        console.log('Using cached accounts, loading labels...');
-        try {
-          await loadLabels(currentAccountId);
-        } catch {
-          // Labels aussi en cache via le store persist
-          console.warn('Failed to load labels, using cached data');
-        }
+        console.log('Using cached accounts and labels');
+        // Labels et messages sont aussi en cache via le store persist
       } else {
         setError('Impossible de charger les comptes email');
       }
@@ -98,8 +109,13 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     try {
       const labelsData = await api.listEmailLabels(accountId);
       setLabels(labelsData);
-    } catch (err) {
+      setNeedsReauth(false);
+    } catch (err: any) {
       console.error('Failed to load labels:', err);
+      // Détecter si c'est un problème de token expiré
+      if (err?.message?.includes('401') || err?.message?.includes('token') || err?.message?.includes('expired')) {
+        setNeedsReauth(true);
+      }
     }
   }
 
@@ -120,6 +136,66 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   function handleCompose() {
     setIsComposing(true);
   }
+
+  function handleAddAccountComplete() {
+    setShowAddAccount(false);
+    loadAccounts();
+  }
+
+  function switchAccount(accountId: string) {
+    setCurrentAccount(accountId);
+    setShowAccountMenu(false);
+    loadLabels(accountId);
+  }
+
+  async function handleReauthorize() {
+    if (!currentAccountId || reauthing) return;
+    setReauthing(true);
+
+    try {
+      const flow = await api.reauthorizeEmail(currentAccountId);
+
+      // Ouvrir le navigateur
+      try {
+        await open(flow.auth_url);
+      } catch {
+        window.open(flow.auth_url, '_blank');
+      }
+
+      // Poller le status pour détecter quand le token est renouvelé
+      let attempts = 0;
+      const maxAttempts = 100; // ~5 min à 3s d'intervalle
+      pollRef.current = setInterval(async () => {
+        attempts++;
+        if (attempts > maxAttempts) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setReauthing(false);
+          return;
+        }
+        try {
+          // Tester si les labels se chargent (= token valide)
+          await api.listEmailLabels(currentAccountId);
+          if (pollRef.current) clearInterval(pollRef.current);
+          setNeedsReauth(false);
+          setReauthing(false);
+          // Recharger les données
+          loadAccounts();
+        } catch {
+          // Pas encore réautorisé
+        }
+      }, 3000);
+    } catch (err) {
+      console.error('Reauthorize failed:', err);
+      setReauthing(false);
+    }
+  }
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   // En mode standalone, le panel est toujours visible
   if (!standalone && !isEmailPanelOpen) return null;
@@ -147,9 +223,43 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-text">Email</h2>
-              {currentAccount && (
+              {/* Sélecteur de compte */}
+              {accounts.length > 1 ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAccountMenu(!showAccountMenu)}
+                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan transition-colors"
+                  >
+                    {currentAccount?.email || 'Sélectionner'}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showAccountMenu && (
+                    <div className="absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 z-20 min-w-[250px]">
+                      {accounts.map((acc) => (
+                        <button
+                          key={acc.id}
+                          onClick={() => switchAccount(acc.id)}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
+                            acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                          }`}
+                        >
+                          {acc.email}
+                        </button>
+                      ))}
+                      <div className="h-px bg-border/30 my-1" />
+                      <button
+                        onClick={() => { setShowAccountMenu(false); setShowAddAccount(true); }}
+                        className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-border/20 transition-colors flex items-center gap-2"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Ajouter un compte
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : currentAccount ? (
                 <p className="text-xs text-text-muted">{currentAccount.email}</p>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -160,6 +270,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   <Plus className="w-4 h-4 mr-2" />
                   Nouveau
                 </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
+                  <UserPlus className="w-4 h-4" />
+                </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
                 </Button>
@@ -167,6 +280,35 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             )}
           </div>
         </div>
+
+        {/* Bannière réautorisation */}
+        {needsReauth && (
+          <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+            <p className="text-sm text-yellow-200 flex-1">
+              Connexion Gmail expirée. Reconnecte-toi pour continuer.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReauthorize}
+              disabled={reauthing}
+              className="text-yellow-300 hover:text-yellow-100 shrink-0"
+            >
+              {reauthing ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  En attente...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-3 h-3 mr-2" />
+                  Reconnecter
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
@@ -181,16 +323,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 Réessayer
               </Button>
             </div>
-          ) : !isConnected ? (
+          ) : !isConnected || showAddAccount ? (
             <div className="flex-1">
-              <EmailSetupWizard onComplete={loadAccounts} onCancel={() => {}} />
+              <EmailSetupWizard onComplete={handleAddAccountComplete} onCancel={() => setShowAddAccount(false)} />
             </div>
           ) : isComposing ? (
             <EmailCompose />
           ) : (
             <>
               {/* Sidebar - Labels */}
-              <div className="w-64 border-r border-border/30 flex flex-col">
+              <div className="w-64 shrink-0 border-r border-border/30 flex flex-col">
                 <div className="flex-1 overflow-y-auto p-4 space-y-1">
                   {systemLabels.map((label) => {
                     const LabelIcon = label.icon;
@@ -242,11 +384,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               {currentAccountId && <EmailList accountId={currentAccountId} />}
 
               {/* Message Detail */}
-              <AnimatePresence>
-                {currentMessageId && currentAccountId && (
-                  <EmailDetail accountId={currentAccountId} messageId={currentMessageId} />
-                )}
-              </AnimatePresence>
+              {currentMessageId && currentAccountId && (
+                <EmailDetail accountId={currentAccountId} messageId={currentMessageId} />
+              )}
             </>
           )}
         </div>
@@ -281,9 +421,43 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-text">Email</h2>
-              {currentAccount && (
+              {/* Sélecteur de compte */}
+              {accounts.length > 1 ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAccountMenu(!showAccountMenu)}
+                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan transition-colors"
+                  >
+                    {currentAccount?.email || 'Sélectionner'}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showAccountMenu && (
+                    <div className="absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 z-20 min-w-[250px]">
+                      {accounts.map((acc) => (
+                        <button
+                          key={acc.id}
+                          onClick={() => switchAccount(acc.id)}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
+                            acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                          }`}
+                        >
+                          {acc.email}
+                        </button>
+                      ))}
+                      <div className="h-px bg-border/30 my-1" />
+                      <button
+                        onClick={() => { setShowAccountMenu(false); setShowAddAccount(true); }}
+                        className="w-full text-left px-3 py-2 text-sm text-text-muted hover:bg-border/20 transition-colors flex items-center gap-2"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Ajouter un compte
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : currentAccount ? (
                 <p className="text-xs text-text-muted">{currentAccount.email}</p>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -293,6 +467,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <Button variant="ghost" size="sm" onClick={handleCompose}>
                   <Plus className="w-4 h-4 mr-2" />
                   Nouveau
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
+                  <UserPlus className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
@@ -308,6 +485,35 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
           </div>
         </div>
 
+        {/* Bannière réautorisation */}
+        {needsReauth && (
+          <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+            <p className="text-sm text-yellow-200 flex-1">
+              Connexion Gmail expirée. Reconnecte-toi pour continuer.
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReauthorize}
+              disabled={reauthing}
+              className="text-yellow-300 hover:text-yellow-100 shrink-0"
+            >
+              {reauthing ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  En attente...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-3 h-3 mr-2" />
+                  Reconnecter
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 flex overflow-hidden">
           {loading ? (
@@ -321,16 +527,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 Réessayer
               </Button>
             </div>
-          ) : !isConnected ? (
+          ) : !isConnected || showAddAccount ? (
             <div className="flex-1">
-              <EmailSetupWizard onComplete={loadAccounts} onCancel={toggleEmailPanel} />
+              <EmailSetupWizard onComplete={handleAddAccountComplete} onCancel={() => showAddAccount ? setShowAddAccount(false) : toggleEmailPanel()} />
             </div>
           ) : isComposing ? (
             <EmailCompose />
           ) : (
             <>
               {/* Sidebar - Labels */}
-              <div className="w-64 border-r border-border/30 flex flex-col">
+              <div className="w-64 shrink-0 border-r border-border/30 flex flex-col">
                 <div className="flex-1 overflow-y-auto p-4 space-y-1">
                   {/* System labels */}
                   {systemLabels.map((label) => {
@@ -384,11 +590,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               {currentAccountId && <EmailList accountId={currentAccountId} />}
 
               {/* Message Detail */}
-              <AnimatePresence>
-                {currentMessageId && currentAccountId && (
-                  <EmailDetail accountId={currentAccountId} messageId={currentMessageId} />
-                )}
-              </AnimatePresence>
+              {currentMessageId && currentAccountId && (
+                <EmailDetail accountId={currentAccountId} messageId={currentMessageId} />
+              )}
             </>
           )}
         </div>
