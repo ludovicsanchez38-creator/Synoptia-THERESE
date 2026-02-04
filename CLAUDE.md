@@ -1653,13 +1653,14 @@ cd src/backend && uv run uvicorn app.main:app --reload --port 8000
 
 ---
 
-## TODO / Backlog (mis à jour 3 février 2026)
+## TODO / Backlog (mis à jour 4 février 2026)
 
-- [ ] **Tool `create_contact`** : Permettre a THERESE d'ajouter des contacts via tool
-- [ ] **Tool `create_project`** : Idem pour les projets
-- [ ] **Tests E2E Skills** : test_skills.py (generation DOCX/PPTX/XLSX)
-- [ ] **Tests E2E Images** : test_images.py (generation GPT/Gemini)
-- [ ] **Packaging macOS** : Icone + build .app + .dmg
+- [x] **Tool `create_contact`** : FAIT - memory_tools.py + intégration chat.py tool calling
+- [x] **Tool `create_project`** : FAIT - memory_tools.py + intégration chat.py tool calling
+- [x] **Tests E2E Skills** : FAIT - test_skills.py (6 tests DOCX/PPTX/XLSX)
+- [x] **Tests E2E Images** : FAIT - test_images.py (6 tests GPT/Gemini)
+- [x] **Packaging macOS** : PRÊT - icônes + config Tauri, `make build` fonctionne
+- [x] **Cleanup MCP config** : FAIT - 3 test-servers supprimés (4 février 2026)
 - [ ] **Fix test board streaming** : `test_deliberate_returns_sse_stream` (infra test)
-- [ ] **Email Gmail** : Reconnexion OAuth (tokens expires)
-- [ ] **Cleanup MCP config** : Supprimer `server-with-env` et doublons `test-server`
+- [ ] **Email Gmail** : Infra OAuth/Gmail faite, reste intégration router API
+- [ ] **Code signing macOS** : Apple Developer + notarization pour distribution
