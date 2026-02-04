@@ -129,6 +129,7 @@ export const useTaskStore = create<TaskStore>()(
     {
       name: 'task-storage',
       partialize: (state) => ({
+        tasks: state.tasks,
         viewMode: state.viewMode,
         filterStatus: state.filterStatus,
         filterPriority: state.filterPriority,

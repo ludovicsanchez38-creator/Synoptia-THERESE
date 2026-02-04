@@ -215,6 +215,8 @@ async def _list_google_calendars(
             for cal in calendars
         ]
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to list Google calendars: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -569,11 +571,7 @@ async def _list_events_google(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    access_token = (
-        decrypt_value(account.access_token)
-        if account.access_token and is_value_encrypted(account.access_token)
-        else account.access_token
-    )
+    access_token = await ensure_valid_access_token(account, session)
 
     try:
         calendar_service = CalendarService(access_token)
@@ -670,6 +668,8 @@ async def _list_events_google(
             for event in events
         ]
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to list events: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1202,6 +1202,8 @@ async def sync_calendar(
             synced_at=datetime.now(UTC).isoformat(),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to sync calendar: {e}")
         raise HTTPException(status_code=500, detail=str(e))

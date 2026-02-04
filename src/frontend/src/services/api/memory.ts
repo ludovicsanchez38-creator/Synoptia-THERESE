@@ -17,6 +17,10 @@ export interface Contact {
   phone: string | null;
   notes: string | null;
   tags: string | null;
+  stage: string;
+  score: number;
+  source: string | null;
+  last_interaction: string | null;
   created_at: string;
   updated_at: string;
   // RGPD fields (Phase 6)

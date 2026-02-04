@@ -24,11 +24,8 @@
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DESKTOP/**" }
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     {
@@ -42,11 +39,8 @@
     {
       "identifier": "fs:allow-read-file",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DESKTOP/**" }
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     {
@@ -60,11 +54,8 @@
     {
       "identifier": "fs:allow-exists",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DESKTOP/**" }
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     {
@@ -99,21 +90,17 @@
     {
       "identifier": "fs:allow-read-dir",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DESKTOP/**" }
+        { "path": "$HOME" },
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     {
       "identifier": "fs:allow-stat",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DESKTOP/**" }
+        { "path": "$HOME" },
+        { "path": "$HOME/**" },
+        { "path": "$APPDATA/**" }
       ]
     },
     "dialog:default",

@@ -49,17 +49,24 @@ export async function request<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const response = await apiFetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await apiFetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+  } catch (e: any) {
+    // Erreur réseau (Load failed / Failed to fetch)
+    throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
+  }
 
   if (!response.ok) {
-    const message = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, message || undefined);
+    const data = await response.json().catch(() => null);
+    const message = data?.detail || data?.message || `Erreur ${response.status}`;
+    throw new ApiError(response.status, response.statusText, message);
   }
 
   return response.json();

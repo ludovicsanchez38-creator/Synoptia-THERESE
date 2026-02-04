@@ -156,6 +156,12 @@ class ContactUpdate(BaseModel):
     stage: str | None = None
     source: str | None = None
 
+    # RGPD fields (Phase 6)
+    rgpd_base_legale: str | None = None
+    rgpd_date_collecte: datetime | None = None
+    rgpd_date_expiration: datetime | None = None
+    rgpd_consentement: bool | None = None
+
 
 class ContactResponse(BaseModel):
     """Contact response."""

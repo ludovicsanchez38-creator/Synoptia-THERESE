@@ -3,14 +3,16 @@
  *
  * Panel principal CRM avec Pipeline, Activities et Dashboard.
  * Filtre par source pour eviter les doublons.
+ * Utilise crmStore avec persistance pour affichage instantané.
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutDashboard, Users, Activity, UserPlus } from 'lucide-react';
+import { X, LayoutDashboard, Users, Activity, UserPlus, FolderKanban, Calendar, DollarSign } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
-import { listContacts, updateContactStage, type ContactResponse } from '../../services/api';
+import { useCRMStore } from '../../stores/crmStore';
+import { listContacts, listProjects, updateContactStage, type ContactResponse } from '../../services/api';
 import { createCRMContact, type CreateCRMContactRequest } from '../../services/api/crm';
 import { useDemoMask } from '../../hooks';
 
@@ -20,17 +22,30 @@ interface CRMPanelProps {
   standalone?: boolean;
 }
 
-type Tab = 'pipeline' | 'activities' | 'dashboard';
-
 export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('pipeline');
-  const [contacts, setContacts] = useState<ContactResponse[]>([]);
-  const [selectedContact, setSelectedContact] = useState<ContactResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    contacts,
+    projects,
+    selectedContactId,
+    activeTab,
+    setContacts,
+    setProjects,
+    setSelectedContact,
+    updateContact,
+    addContact,
+    setActiveTab,
+  } = useCRMStore();
+
+  const hasCachedContacts = contacts.length > 0;
+
+  const [loading, setLoading] = useState(!hasCachedContacts);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   const effectiveOpen = standalone || isOpen;
+
+  const selectedContact = contacts.find((c) => c.id === selectedContactId) || null;
 
   useEffect(() => {
     if (effectiveOpen) {
@@ -40,14 +55,22 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
   const loadContacts = async () => {
     try {
-      setLoading(true);
-      // Filtrer par has_source=true pour n'afficher que les contacts avec source (GSheets + THERESE)
-      const data = await listContacts(0, 200, { hasSource: true });
-      setContacts(data as ContactResponse[]);
+      if (!hasCachedContacts) setLoading(true);
+      setError(null);
+      // Charger contacts et projets en parallèle
+      const [contactsData, projectsData] = await Promise.all([
+        listContacts(0, 200, { hasSource: true }),
+        listProjects(0, 200),
+      ]);
+      setContacts(contactsData as ContactResponse[]);
+      setProjects(projectsData);
       // Peupler la map de remplacement pour le mode démo
-      populateMap(data, []);
-    } catch (error) {
-      console.error('Failed to load contacts:', error);
+      populateMap(contactsData, projectsData);
+    } catch (err: any) {
+      console.error('Failed to load CRM data:', err);
+      if (!hasCachedContacts) {
+        setError(err?.message || 'Impossible de charger les données CRM');
+      }
     } finally {
       setLoading(false);
     }
@@ -55,42 +78,53 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
   const handleStageChange = async (contactId: string, newStage: string) => {
     try {
+      setError(null);
       const updated = await updateContactStage(contactId, newStage);
-      setContacts(prev => prev.map(c => (c.id === contactId ? updated : c)));
-    } catch (error) {
-      console.error('Failed to update stage:', error);
+      updateContact(contactId, updated);
+    } catch (err: any) {
+      console.error('Failed to update stage:', err);
+      setError(err?.message || 'Impossible de mettre à jour le stage');
     }
   };
 
   const handleContactClick = (contact: ContactResponse) => {
-    setSelectedContact(contact);
+    setSelectedContact(contact.id);
     setActiveTab('activities');
   };
 
   const handleCreateContact = async (data: CreateCRMContactRequest) => {
     try {
+      setError(null);
       const newContact = await createCRMContact(data);
-      setContacts(prev => [newContact, ...prev]);
+      addContact(newContact);
       setShowCreateForm(false);
-    } catch (error) {
-      console.error('Failed to create contact:', error);
+    } catch (err: any) {
+      console.error('Failed to create contact:', err);
+      setError(err?.message || 'Impossible de créer le contact');
     }
   };
 
   // Contacts masqués pour le mode démo
   const displayContacts = demoEnabled ? contacts.map(c => maskContact(c)) : contacts;
+  const displaySelectedContact = selectedContact
+    ? (demoEnabled ? maskContact(selectedContact) : selectedContact)
+    : null;
 
   const tabs = [
-    { id: 'pipeline' as Tab, label: 'Pipeline', icon: LayoutDashboard },
-    { id: 'activities' as Tab, label: 'Activites', icon: Activity },
-    { id: 'dashboard' as Tab, label: 'Dashboard', icon: Users },
+    { id: 'pipeline' as const, label: 'Pipeline', icon: LayoutDashboard },
+    { id: 'activities' as const, label: 'Activités', icon: Activity },
+    { id: 'dashboard' as const, label: 'Projets', icon: FolderKanban },
   ];
+
+  if (!effectiveOpen) return null;
 
   const crmHeader = (
     <div className="flex items-center justify-between p-6 border-b border-surface">
       <div>
         <h2 className="text-2xl font-bold text-text-primary">CRM Pipeline</h2>
-        <p className="text-sm text-text-muted">Gestion du pipeline commercial</p>
+        <p className="text-sm text-text-muted">
+          {contacts.length} contact{contacts.length > 1 ? 's' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
+        </p>
       </div>
 
       <div className="flex items-center gap-2">
@@ -150,6 +184,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
   const crmContent = (
     <div className="flex-1 overflow-auto p-6">
+      {error && (
+        <div className="mb-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-cyan"></div>
@@ -171,9 +211,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             </motion.div>
           )}
 
-          {activeTab === 'activities' && selectedContact && (() => {
-            const displayContact = demoEnabled ? maskContact(selectedContact) : selectedContact;
-            return (
+          {activeTab === 'activities' && displaySelectedContact && (
             <motion.div
               key="activities"
               initial={{ opacity: 0, x: -20 }}
@@ -182,17 +220,16 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             >
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {displayContact.first_name} {displayContact.last_name}
+                  {displaySelectedContact.first_name} {displaySelectedContact.last_name}
                 </h3>
-                {displayContact.company && (
-                  <p className="text-sm text-text-muted">{displayContact.company}</p>
+                {displaySelectedContact.company && (
+                  <p className="text-sm text-text-muted">{displaySelectedContact.company}</p>
                 )}
               </div>
 
-              <ActivityTimeline contactId={selectedContact.id} />
+              <ActivityTimeline contactId={selectedContact!.id} />
             </motion.div>
-            );
-          })()}
+          )}
 
           {activeTab === 'activities' && !selectedContact && (
             <motion.div
@@ -204,23 +241,80 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             >
               <div className="text-center">
                 <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Selectionnez un contact pour voir son activite</p>
+                <p>Sélectionnez un contact pour voir son activité</p>
               </div>
             </motion.div>
           )}
 
           {activeTab === 'dashboard' && (
             <motion.div
-              key="dashboard"
+              key="projects"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="flex items-center justify-center h-full text-text-muted"
             >
-              <div className="text-center">
-                <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Dashboard en cours de developpement</p>
-              </div>
+              {projects.length === 0 ? (
+                <div className="flex items-center justify-center h-64 text-text-muted">
+                  <div className="text-center">
+                    <FolderKanban className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p>Aucun projet</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project) => {
+                    const linkedContact = contacts.find((c) => c.id === project.contact_id);
+                    return (
+                      <div
+                        key={project.id}
+                        className="bg-background border border-surface hover:border-accent-cyan/50 rounded-lg p-4 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-semibold text-text-primary text-sm">{project.name}</h4>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            project.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                            project.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+                            project.status === 'on_hold' ? 'bg-yellow-500/20 text-yellow-400' :
+                            project.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {project.status === 'active' ? 'Actif' :
+                             project.status === 'completed' ? 'Terminé' :
+                             project.status === 'on_hold' ? 'En pause' :
+                             project.status === 'cancelled' ? 'Annulé' :
+                             project.status}
+                          </span>
+                        </div>
+
+                        {project.description && (
+                          <p className="text-xs text-text-muted mb-3 line-clamp-2">{project.description}</p>
+                        )}
+
+                        <div className="space-y-1.5">
+                          {linkedContact && (
+                            <div className="flex items-center gap-2 text-xs text-text-muted">
+                              <Users className="w-3 h-3" />
+                              <span>{linkedContact.first_name} {linkedContact.last_name}</span>
+                            </div>
+                          )}
+
+                          {project.budget != null && project.budget > 0 && (
+                            <div className="flex items-center gap-2 text-xs text-text-muted">
+                              <DollarSign className="w-3 h-3" />
+                              <span>{project.budget.toLocaleString('fr-FR')} €</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 text-xs text-text-muted">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -293,7 +387,7 @@ interface CreateContactModalProps {
 
 const STAGES = [
   { id: 'contact', label: 'Contact' },
-  { id: 'discovery', label: 'Decouverte' },
+  { id: 'discovery', label: 'Découverte' },
   { id: 'proposition', label: 'Proposition' },
   { id: 'signature', label: 'Signature' },
   { id: 'delivery', label: 'Livraison' },
@@ -343,7 +437,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Prenom *</label>
+              <label className="block text-xs text-text-muted mb-1">Prénom *</label>
               <input
                 type="text"
                 value={form.first_name}
@@ -384,7 +478,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               />
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Telephone</label>
+              <label className="block text-xs text-text-muted mb-1">Téléphone</label>
               <input
                 type="tel"
                 value={form.phone || ''}
@@ -432,7 +526,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               disabled={!form.first_name.trim() || submitting}
               className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Creation...' : 'Creer le contact'}
+              {submitting ? 'Création...' : 'Créer le contact'}
             </button>
           </div>
         </form>

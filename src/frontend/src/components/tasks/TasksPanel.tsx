@@ -41,7 +41,8 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
   const { enabled: demoEnabled, populateMap } = useDemoMask();
 
-  const [loading, setLoading] = useState(false);
+  const hasCachedTasks = tasks.length > 0;
+  const [loading, setLoading] = useState(!hasCachedTasks);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -68,7 +69,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   }, [effectiveOpen, demoEnabled, populateMap]);
 
   async function loadTasks() {
-    setLoading(true);
+    if (!hasCachedTasks) setLoading(true);
     setError(null);
 
     try {
@@ -79,9 +80,11 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
       const result = await api.listTasks(params);
       setTasks(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load tasks:', err);
-      setError('Impossible de charger les tâches');
+      if (!hasCachedTasks) {
+        setError(err?.message || 'Impossible de charger les tâches');
+      }
     } finally {
       setLoading(false);
     }

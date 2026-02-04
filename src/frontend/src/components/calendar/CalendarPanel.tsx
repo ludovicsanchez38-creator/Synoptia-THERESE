@@ -15,6 +15,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
@@ -49,10 +52,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setLastSyncAt,
   } = useCalendarStore();
 
-  const { accounts, currentAccountId, setAccounts, setCurrentAccount } = useEmailStore();
+  const { accounts, currentAccountId, setAccounts, setCurrentAccount, needsReauth, setNeedsReauth } = useEmailStore();
   const [loading, setLoading] = useState(standalone);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reauthing, setReauthing] = useState(false);
 
   const currentAccount = accounts.find((acc) => acc.id === currentAccountId);
 
@@ -77,24 +81,28 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     }
   }, [standalone, currentAccountId]);
 
-  // Load calendars on mount
+  const hasCachedCalendars = calendars.length > 0;
+  const hasCachedEvents = events.length > 0;
+  const [calendarsReady, setCalendarsReady] = useState(hasCachedCalendars);
+
+  // Load calendars on mount (séquentiel : events se chargent APRÈS)
   useEffect(() => {
     if (effectiveOpen && currentAccountId) {
       loadCalendars();
     }
   }, [effectiveOpen, currentAccountId]);
 
-  // Load events when calendar or selected month changes
+  // Load events APRÈS les calendriers, ou quand le mois/calendrier change
   useEffect(() => {
-    if (currentCalendarId && currentAccountId) {
+    if (calendarsReady && currentCalendarId && currentAccountId) {
       loadEvents();
     }
-  }, [currentCalendarId, currentAccountId, selectedDate]);
+  }, [calendarsReady, currentCalendarId, currentAccountId, selectedDate]);
 
   async function loadCalendars() {
     if (!currentAccountId) return;
 
-    setLoading(true);
+    if (!hasCachedCalendars) setLoading(true);
     setError(null);
 
     try {
@@ -106,9 +114,19 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       if (primary && !currentCalendarId) {
         setCurrentCalendar(primary.id);
       }
-    } catch (err) {
+
+      setCalendarsReady(true);
+    } catch (err: any) {
       console.error('Failed to load calendars:', err);
-      setError('Impossible de charger les calendriers');
+      const msg = err?.message || '';
+      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
+        setError('Connexion Google expirée.');
+        setNeedsReauth(true);
+      } else {
+        setError('Impossible de charger les calendriers');
+      }
+      // Si on a du cache, laisser les events se charger quand même
+      if (hasCachedCalendars) setCalendarsReady(true);
     } finally {
       setLoading(false);
     }
@@ -117,7 +135,6 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   async function loadEvents() {
     if (!currentAccountId || !currentCalendarId) return;
 
-    setLoading(true);
     setError(null);
 
     try {
@@ -132,11 +149,16 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       });
 
       setEvents(evts);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load events:', err);
-      setError('Impossible de charger les événements');
-    } finally {
-      setLoading(false);
+      const msg = err?.message || '';
+      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
+        setError('Connexion Google expirée.');
+        setNeedsReauth(true);
+      } else if (!hasCachedEvents) {
+        // Afficher l'erreur uniquement si pas de cache
+        setError('Impossible de charger les événements');
+      }
     }
   }
 
@@ -155,9 +177,15 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       if (currentCalendarId) {
         await loadEvents();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to sync calendar:', err);
-      setError('Échec de la synchronisation');
+      const msg = err?.message || '';
+      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
+        setError('Connexion Google expirée.');
+        setNeedsReauth(true);
+      } else {
+        setError('Échec de la synchronisation');
+      }
     } finally {
       setSyncing(false);
     }
@@ -182,6 +210,45 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
   function handleToday() {
     setSelectedDate(new Date());
+  }
+
+  async function handleReauthorize() {
+    if (!currentAccountId || reauthing) return;
+    setReauthing(true);
+
+    try {
+      const flow = await api.reauthorizeEmail(currentAccountId);
+      const { open } = await import('@tauri-apps/plugin-shell');
+      try {
+        await open(flow.auth_url);
+      } catch {
+        window.open(flow.auth_url, '_blank');
+      }
+
+      // Poller le status pour détecter quand le token est renouvelé
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        if (attempts > 100) {
+          clearInterval(poll);
+          setReauthing(false);
+          return;
+        }
+        try {
+          await api.listCalendars(currentAccountId);
+          clearInterval(poll);
+          setNeedsReauth(false);
+          setReauthing(false);
+          setError(null);
+          loadCalendars();
+        } catch {
+          // Pas encore réautorisé
+        }
+      }, 3000);
+    } catch (err) {
+      console.error('Reauthorize failed:', err);
+      setReauthing(false);
+    }
   }
 
   if (!effectiveOpen) return null;
@@ -276,10 +343,38 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     </div>
   );
 
+  const reauthBanner = needsReauth ? (
+    <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+      <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
+      <p className="text-sm text-yellow-200 flex-1">
+        Connexion Google expirée. Reconnecte-toi pour synchroniser le calendrier.
+      </p>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleReauthorize}
+        disabled={reauthing}
+        className="text-yellow-300 hover:text-yellow-100 shrink-0"
+      >
+        {reauthing ? (
+          <>
+            <Loader2 className="w-3 h-3 animate-spin mr-2" />
+            En attente...
+          </>
+        ) : (
+          <>
+            <ExternalLink className="w-3 h-3 mr-2" />
+            Reconnecter
+          </>
+        )}
+      </Button>
+    </div>
+  ) : null;
+
   const calendarContent = (
     <>
       {/* Error */}
-      {error && (
+      {error && !needsReauth && (
         <div className="mx-6 mt-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
           <p className="text-sm text-red-400">{error}</p>
         </div>
@@ -307,6 +402,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     return (
       <div className="h-full flex flex-col bg-bg">
         {calendarHeader}
+        {reauthBanner}
         {calendarNav}
         {calendarContent}
       </div>
@@ -335,6 +431,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           onClick={(e) => e.stopPropagation()}
         >
           {calendarHeader}
+          {reauthBanner}
           {calendarNav}
           {calendarContent}
         </motion.div>

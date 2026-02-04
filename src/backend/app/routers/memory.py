@@ -309,6 +309,11 @@ def _contact_to_response(contact: Contact) -> ContactResponse:
         score=contact.score,
         source=contact.source,
         last_interaction=contact.last_interaction,
+        # RGPD fields (Phase 6)
+        rgpd_base_legale=contact.rgpd_base_legale,
+        rgpd_date_collecte=contact.rgpd_date_collecte,
+        rgpd_date_expiration=contact.rgpd_date_expiration,
+        rgpd_consentement=contact.rgpd_consentement,
         created_at=contact.created_at,
         updated_at=contact.updated_at,
     )

@@ -1,9 +1,9 @@
 /**
- * THERESE v2 - Panel Window
+ * THÉRÈSE v2 - Panel Window
  *
- * Wrapper standalone pour les panels ouverts dans une fenetre separee.
- * Initialise l'auth API, pre-charge les comptes email (pour Email/Calendrier),
- * puis affiche le bon composant.
+ * Wrapper standalone pour les panels ouverts dans une fenêtre séparée.
+ * Initialise l'auth API AVANT de rendre le panel, puis pré-charge
+ * les comptes email si nécessaire (Email/Calendrier).
  */
 
 import { useEffect, useState } from 'react';
@@ -21,22 +21,19 @@ interface PanelWindowProps {
 }
 
 export function PanelWindow({ panel }: PanelWindowProps) {
-  // Si le store a déjà des données en cache (localStorage), on affiche immédiatement
-  const { accounts, setAccounts, setCurrentAccount, currentAccountId } = useEmailStore();
-  const hasCachedData = panel === 'email' || panel === 'calendar'
-    ? accounts.length > 0 && !!currentAccountId
-    : true;
+  const { setAccounts, setCurrentAccount, currentAccountId } = useEmailStore();
 
-  const [ready, setReady] = useState(hasCachedData);
+  // Toujours attendre l'init auth avant de rendre le panel
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
       try {
-        // 1. Initialiser le token d'auth
+        // 1. Initialiser le token d'auth (obligatoire avant tout appel API)
         await initializeAuth();
 
-        // 2. Pour email et calendrier, rafraîchir les comptes en arrière-plan
+        // 2. Pour email et calendrier, pré-charger les comptes
         if (panel === 'email' || panel === 'calendar') {
           try {
             const status = await getEmailAuthStatus();
@@ -54,10 +51,7 @@ export function PanelWindow({ panel }: PanelWindowProps) {
         setReady(true);
       } catch (e) {
         console.error('PanelWindow init failed:', e);
-        // Si on a des données en cache, on continue malgré l'erreur
-        if (!hasCachedData) {
-          setError('Erreur de connexion au backend');
-        }
+        setError('Erreur de connexion au backend');
       }
     }
     init();
@@ -68,7 +62,7 @@ export function PanelWindow({ panel }: PanelWindowProps) {
       <div className="h-screen w-screen bg-bg flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
-            THERESE
+            THÉRÈSE
           </h1>
           <p className="text-red-400 mt-2 text-sm">{error}</p>
           <button
@@ -87,7 +81,7 @@ export function PanelWindow({ panel }: PanelWindowProps) {
       <div className="h-screen w-screen bg-bg flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
-            THERESE
+            THÉRÈSE
           </h1>
           <p className="text-text-muted mt-2 text-sm">Chargement...</p>
         </div>

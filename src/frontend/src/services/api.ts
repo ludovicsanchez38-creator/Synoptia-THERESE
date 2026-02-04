@@ -40,10 +40,14 @@ export interface Contact {
   phone: string | null;
   notes: string | null;
   tags: string | null;
+  stage: string;
+  score: number;
+  source: string | null;
+  last_interaction: string | null;
   created_at: string;
   updated_at: string;
   // RGPD fields (Phase 6)
-  rgpd_base_legale?: string | null; // consentement, contrat, interet_legitime, obligation_legale
+  rgpd_base_legale?: string | null;
   rgpd_date_collecte?: string | null;
   rgpd_date_expiration?: string | null;
   rgpd_consentement?: boolean;
@@ -180,17 +184,24 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const response = await apiFetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await apiFetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+  } catch (e: any) {
+    // Erreur réseau (Load failed / Failed to fetch)
+    throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
+  }
 
   if (!response.ok) {
-    const message = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, message || undefined);
+    const data = await response.json().catch(() => null);
+    const message = data?.detail || data?.message || `Erreur ${response.status}`;
+    throw new ApiError(response.status, response.statusText, message);
   }
 
   return response.json();
@@ -2166,13 +2177,16 @@ export interface CalendarSyncResponse {
 
 export async function listCalendars(accountId: string): Promise<Calendar[]> {
   const response = await apiFetch(`${API_BASE}/api/calendar/calendars?account_id=${accountId}`);
-  if (!response.ok) throw new Error(`Failed to list calendars: ${response.statusText}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
 export async function getCalendar(calendarId: string, accountId: string): Promise<Calendar> {
   const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${calendarId}?account_id=${accountId}`);
-  if (!response.ok) throw new Error(`Failed to get calendar: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2187,7 +2201,7 @@ export async function createCalendar(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ account_id: accountId, summary, description, timezone }),
   });
-  if (!response.ok) throw new Error(`Failed to create calendar: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2195,7 +2209,7 @@ export async function deleteCalendar(calendarId: string, accountId: string): Pro
   const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${calendarId}?account_id=${accountId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete calendar: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2219,13 +2233,16 @@ export async function listEvents(
   });
 
   const response = await apiFetch(`${API_BASE}/api/calendar/events?${queryParams}`);
-  if (!response.ok) throw new Error(`Failed to list events: ${response.statusText}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
 export async function getEvent(eventId: string, calendarId: string, accountId: string): Promise<CalendarEvent> {
   const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?calendar_id=${calendarId}&account_id=${accountId}`);
-  if (!response.ok) throw new Error(`Failed to get event: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2235,7 +2252,7 @@ export async function createEvent(request: CreateEventRequest, accountId: string
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to create event: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2250,7 +2267,7 @@ export async function updateEvent(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to update event: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2258,7 +2275,7 @@ export async function deleteEvent(eventId: string, calendarId: string, accountId
   const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?calendar_id=${calendarId}&account_id=${accountId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete event: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2268,7 +2285,7 @@ export async function quickAddEvent(text: string, calendarId: string, accountId:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ calendar_id: calendarId, text }),
   });
-  if (!response.ok) throw new Error(`Failed to quick add event: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2278,13 +2295,16 @@ export async function syncCalendar(accountId: string): Promise<CalendarSyncRespo
   const response = await apiFetch(`${API_BASE}/api/calendar/sync?account_id=${accountId}`, {
     method: 'POST',
   });
-  if (!response.ok) throw new Error(`Failed to sync calendar: ${response.statusText}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
 export async function getCalendarSyncStatus(accountId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/calendar/sync/status?account_id=${accountId}`);
-  if (!response.ok) throw new Error(`Failed to get sync status: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2338,13 +2358,16 @@ export async function listTasks(params?: {
   if (params?.project_id) queryParams.set('project_id', params.project_id);
 
   const response = await apiFetch(`${API_BASE}/api/tasks?${queryParams}`);
-  if (!response.ok) throw new Error(`Failed to list tasks: ${response.statusText}`);
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || `Erreur ${response.status}`);
+  }
   return response.json();
 }
 
 export async function getTask(taskId: string): Promise<Task> {
   const response = await apiFetch(`${API_BASE}/api/tasks/${taskId}`);
-  if (!response.ok) throw new Error(`Failed to get task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2354,7 +2377,7 @@ export async function createTask(request: CreateTaskRequest): Promise<Task> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to create task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2364,7 +2387,7 @@ export async function updateTask(taskId: string, request: UpdateTaskRequest): Pr
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to update task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2372,7 +2395,7 @@ export async function deleteTask(taskId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/tasks/${taskId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2380,7 +2403,7 @@ export async function completeTask(taskId: string): Promise<Task> {
   const response = await apiFetch(`${API_BASE}/api/tasks/${taskId}/complete`, {
     method: 'PATCH',
   });
-  if (!response.ok) throw new Error(`Failed to complete task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2388,7 +2411,7 @@ export async function uncompleteTask(taskId: string): Promise<Task> {
   const response = await apiFetch(`${API_BASE}/api/tasks/${taskId}/uncomplete`, {
     method: 'PATCH',
   });
-  if (!response.ok) throw new Error(`Failed to uncomplete task: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2458,13 +2481,13 @@ export async function listInvoices(params?: {
   if (params?.contact_id) queryParams.set('contact_id', params.contact_id);
 
   const response = await apiFetch(`${API_BASE}/api/invoices?${queryParams}`);
-  if (!response.ok) throw new Error(`Failed to list invoices: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
 export async function getInvoice(invoiceId: string): Promise<Invoice> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}`);
-  if (!response.ok) throw new Error(`Failed to get invoice: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2474,7 +2497,7 @@ export async function createInvoice(request: CreateInvoiceRequest): Promise<Invo
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to create invoice: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2484,7 +2507,7 @@ export async function updateInvoice(invoiceId: string, request: UpdateInvoiceReq
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-  if (!response.ok) throw new Error(`Failed to update invoice: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2492,7 +2515,7 @@ export async function deleteInvoice(invoiceId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete invoice: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2502,13 +2525,13 @@ export async function markInvoicePaid(invoiceId: string, paymentDate?: string): 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ payment_date: paymentDate }),
   });
-  if (!response.ok) throw new Error(`Failed to mark invoice paid: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
 export async function generateInvoicePDF(invoiceId: string): Promise<{ pdf_path: string; invoice_number: string }> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/pdf`);
-  if (!response.ok) throw new Error(`Failed to generate PDF: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2516,7 +2539,7 @@ export async function sendInvoiceByEmail(invoiceId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/send`, {
     method: 'POST',
   });
-  if (!response.ok) throw new Error(`Failed to send invoice: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2525,12 +2548,8 @@ export async function sendInvoiceByEmail(invoiceId: string): Promise<any> {
 // =============================================================================
 
 // Types CRM
-export interface ContactResponse extends Contact {
-  stage: string;
-  score: number;
-  source: string | null;
-  last_interaction: string | null;
-}
+// ContactResponse = Contact (les champs CRM sont maintenant dans Contact)
+export type ContactResponse = Contact;
 
 export interface ActivityResponse {
   id: string;
@@ -2573,7 +2592,7 @@ export async function listActivities(params: {
   if (params.limit) query.append('limit', params.limit.toString());
 
   const response = await apiFetch(`${API_BASE}/crm/activities?${query}`);
-  if (!response.ok) throw new Error(`Failed to list activities: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2589,7 +2608,7 @@ export async function createActivity(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error(`Failed to create activity: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2597,7 +2616,7 @@ export async function deleteActivity(activityId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/crm/activities/${activityId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete activity: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
 }
 
 // Deliverables API
@@ -2610,7 +2629,7 @@ export async function listDeliverables(params: {
   if (params.status) query.append('status', params.status);
 
   const response = await apiFetch(`${API_BASE}/crm/deliverables?${query}`);
-  if (!response.ok) throw new Error(`Failed to list deliverables: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2626,7 +2645,7 @@ export async function createDeliverable(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error(`Failed to create deliverable: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2644,7 +2663,7 @@ export async function updateDeliverable(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error(`Failed to update deliverable: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2652,7 +2671,7 @@ export async function deleteDeliverable(deliverableId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/crm/deliverables/${deliverableId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error(`Failed to delete deliverable: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
 }
 
 // Pipeline API
@@ -2665,7 +2684,7 @@ export async function updateContactStage(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stage }),
   });
-  if (!response.ok) throw new Error(`Failed to update contact stage: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2678,13 +2697,13 @@ export async function recalculateContactScore(contactId: string): Promise<{
   const response = await apiFetch(`${API_BASE}/crm/contacts/${contactId}/recalculate-score`, {
     method: 'POST',
   });
-  if (!response.ok) throw new Error(`Failed to recalculate score: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
 export async function getPipelineStats(): Promise<PipelineStats> {
   const response = await apiFetch(`${API_BASE}/crm/pipeline/stats`);
-  if (!response.ok) throw new Error(`Failed to get pipeline stats: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2717,7 +2736,7 @@ export async function classifyEmail(
       body: JSON.stringify({ force_reclassify: forceReclassify }),
     }
   );
-  if (!response.ok) throw new Error(`Failed to classify email: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2744,7 +2763,7 @@ export async function generateEmailResponse(
       body: JSON.stringify({ tone, length }),
     }
   );
-  if (!response.ok) throw new Error(`Failed to generate response: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2770,7 +2789,7 @@ export async function updateEmailPriority(
       body: JSON.stringify({ priority }),
     }
   );
-  if (!response.ok) throw new Error(`Failed to update priority: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2786,7 +2805,7 @@ export async function getEmailStats(accountId: string): Promise<{
   total: number;
 }> {
   const response = await apiFetch(`${API_BASE}/api/email/messages/stats?account_id=${accountId}`);
-  if (!response.ok) throw new Error(`Failed to get email stats: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2822,7 +2841,7 @@ export interface CRMSyncResponse {
 
 export async function getCRMSyncConfig(): Promise<CRMSyncConfig> {
   const response = await apiFetch(`${API_BASE}/api/crm/sync/config`);
-  if (!response.ok) throw new Error(`Failed to get CRM sync config: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
@@ -2832,7 +2851,7 @@ export async function setCRMSpreadsheetId(spreadsheetId: string): Promise<CRMSyn
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ spreadsheet_id: spreadsheetId }),
   });
-  if (!response.ok) throw new Error(`Failed to set spreadsheet ID: ${response.statusText}`);
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
 
