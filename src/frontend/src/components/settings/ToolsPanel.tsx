@@ -24,6 +24,7 @@ import {
   MessageCircle,
   Star,
   ExternalLink,
+  ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
@@ -115,6 +116,18 @@ function PresetCategory({
                         <span className="text-sm font-medium text-text">{preset.name}</span>
                         {preset.popular && (
                           <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        )}
+                        {preset.risk_level === 'high' && (
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400" title={preset.risk_warning}>
+                            <ShieldAlert className="w-2.5 h-2.5" />
+                            Élevé
+                          </span>
+                        )}
+                        {preset.risk_level === 'medium' && (
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-400" title={preset.risk_warning}>
+                            <ShieldAlert className="w-2.5 h-2.5" />
+                            Moyen
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-1">

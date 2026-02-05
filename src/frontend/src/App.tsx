@@ -4,6 +4,7 @@ import { PanelWindow } from './components/panels/PanelWindow';
 import { Notifications } from './components/ui/Notifications';
 import { OnboardingWizard } from './components/onboarding';
 import { useHealthCheck } from './hooks/useHealthCheck';
+import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
 import * as api from './services/api';
 import type { PanelType } from './services/windowManager';
 
@@ -23,6 +24,10 @@ function App() {
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  // Accessibilité : taille de police et contraste élevé
+  const fontSize = useFontSize();
+  const highContrast = useAccessibilityStore((state) => state.highContrast);
 
   // Health check du backend
   useHealthCheck();
@@ -96,7 +101,11 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-bg text-text overflow-hidden">
+    <div
+      className="h-screen w-screen bg-bg text-text overflow-hidden"
+      style={{ fontSize }}
+      data-high-contrast={highContrast ? 'true' : undefined}
+    >
       <ChatLayout />
       <Notifications />
       <OnboardingWizard

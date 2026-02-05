@@ -169,20 +169,23 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         <ExternalLink className="w-4 h-4" />
       </a>
 
-      {/* Acknowledgment checkbox */}
+      {/* Acknowledgment checkbox - RGPD consent */}
       <label className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
         <input
           type="checkbox"
+          id="security-consent"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
           className="mt-1 w-5 h-5 rounded border-border bg-transparent text-accent-cyan focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
         />
         <div className="text-sm">
           <p className="text-text font-medium">
-            Je comprends que THERESE est un outil puissant avec des risques inherents
+            Je consens au transfert de mes données vers les providers LLM cloud
           </p>
           <p className="text-text-muted mt-1">
-            Je m'engage a ne pas partager de donnees sensibles et a configurer les permissions avec prudence.
+            J'accepte que mes messages soient envoyés aux serveurs des providers (Anthropic, OpenAI, Google, etc.)
+            pour traitement. Je comprends les risques et m'engage à ne pas partager de données sensibles
+            (mots de passe, données clients, informations confidentielles).
           </p>
         </div>
       </label>

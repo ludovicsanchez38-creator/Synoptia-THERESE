@@ -330,3 +330,39 @@ p, span, div:not(:hover), section {
     transparent 100%
   );
 }
+
+/* ============================================
+   HIGH CONTRAST MODE - WCAG AAA (ratio > 10:1)
+   ============================================ */
+[data-high-contrast="true"] {
+  --color-bg: #000000;
+  --color-surface: #0A0A0A;
+  --color-surface-elevated: #141414;
+  --color-border: #FFFFFF;
+
+  --color-text: #FFFFFF;
+  --color-text-muted: #E0E0E0;
+
+  --color-accent-cyan: #00FFFF;
+  --color-accent-magenta: #FF00FF;
+
+  --color-success: #00FF00;
+  --color-warning: #FFFF00;
+  --color-error: #FF0000;
+  --color-info: #00BFFF;
+}
+
+[data-high-contrast="true"] .glass {
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #FFFFFF;
+}
+
+[data-high-contrast="true"] button,
+[data-high-contrast="true"] a {
+  border: 1px solid currentColor;
+}
+
+[data-high-contrast="true"] :focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 3px;
+}

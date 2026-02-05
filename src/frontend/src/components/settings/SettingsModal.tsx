@@ -815,8 +815,9 @@ function ProfileTab({
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Nom complet *</label>
+            <label htmlFor="settings-profile-name" className="text-xs text-text-muted mb-1 block">Nom complet *</label>
             <input
+              id="settings-profile-name"
               type="text"
               value={profileForm.name}
               onChange={(e) => {
@@ -824,93 +825,101 @@ function ProfileTab({
                 setError(null);
               }}
               placeholder="Ludovic Sanchez"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Surnom</label>
+            <label htmlFor="settings-profile-nickname" className="text-xs text-text-muted mb-1 block">Surnom</label>
             <input
+              id="settings-profile-nickname"
               type="text"
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ludo"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Entreprise</label>
+            <label htmlFor="settings-profile-company" className="text-xs text-text-muted mb-1 block">Entreprise</label>
             <input
+              id="settings-profile-company"
               type="text"
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Synoptïa"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Rôle</label>
+            <label htmlFor="settings-profile-role" className="text-xs text-text-muted mb-1 block">Rôle</label>
             <input
+              id="settings-profile-role"
               type="text"
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Entrepreneur IA"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Email</label>
+            <label htmlFor="settings-profile-email" className="text-xs text-text-muted mb-1 block">Email</label>
             <input
+              id="settings-profile-email"
               type="email"
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ludo@synoptia.fr"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Localisation</label>
+            <label htmlFor="settings-profile-location" className="text-xs text-text-muted mb-1 block">Localisation</label>
             <input
+              id="settings-profile-location"
               type="text"
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Manosque, France"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
 
         {/* Facturation */}
         <div>
-          <label className="text-xs text-text-muted mb-1 block">Adresse (facturation)</label>
+          <label htmlFor="settings-profile-address" className="text-xs text-text-muted mb-1 block">Adresse (facturation)</label>
           <input
+            id="settings-profile-address"
             type="text"
             value={profileForm.address}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
-            placeholder="294 Montee des Genets, 04100 Manosque"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+            placeholder="294 Montée des Genêts, 04100 Manosque"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-text-muted mb-1 block">SIREN</label>
+            <label htmlFor="settings-profile-siren" className="text-xs text-text-muted mb-1 block">SIREN</label>
             <input
+              id="settings-profile-siren"
               type="text"
               value={profileForm.siren}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
               placeholder="991 606 781"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
-            <label className="text-xs text-text-muted mb-1 block">TVA intracommunautaire</label>
+            <label htmlFor="settings-profile-tva" className="text-xs text-text-muted mb-1 block">TVA intracommunautaire</label>
             <input
+              id="settings-profile-tva"
               type="text"
               value={profileForm.tva_intra}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
@@ -921,13 +930,14 @@ function ProfileTab({
         </div>
 
         <div>
-          <label className="text-xs text-text-muted mb-1 block">Contexte additionnel</label>
+          <label htmlFor="settings-profile-context" className="text-xs text-text-muted mb-1 block">Contexte additionnel</label>
           <textarea
+            id="settings-profile-context"
             value={profileForm.context}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Infos supplémentaires sur ton activité, tes projets en cours..."
             rows={3}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 resize-none"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
           />
         </div>
       </div>
@@ -1145,7 +1155,9 @@ function LLMConfigTab({
           <div className="space-y-2">
             <div className="flex gap-2">
               <div className="relative flex-1">
+                <label htmlFor="settings-api-key" className="sr-only">Clé API</label>
                 <input
+                  id="settings-api-key"
                   type={showApiKey ? 'text' : 'password'}
                   value={apiKeyInput}
                   onChange={(e) => {
@@ -1158,7 +1170,7 @@ function LLMConfigTab({
                     }
                   }}
                   placeholder={currentProviderConfig?.keyPlaceholder || '...'}
-                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors font-mono"
+                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                 />
                 <button
                   type="button"
@@ -1293,7 +1305,9 @@ function LLMConfigTab({
         <div className="space-y-2">
           <div className="flex gap-2">
             <div className="relative flex-1">
+              <label htmlFor="settings-groq-key" className="sr-only">Clé API Groq</label>
               <input
+                id="settings-groq-key"
                 type={showApiKey ? 'text' : 'password'}
                 value={groqKeyInput}
                 onChange={(e) => {
@@ -1306,7 +1320,7 @@ function LLMConfigTab({
                   }
                 }}
                 placeholder="gsk_..."
-                className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors font-mono"
+                className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
               />
               <button
                 type="button"
@@ -1445,7 +1459,9 @@ function LLMConfigTab({
                 <div className="pl-7 space-y-2">
                   <div className="flex gap-2">
                     <div className="relative flex-1">
+                      <label htmlFor={`settings-image-key-${provider.apiKeyId}`} className="sr-only">Clé API {provider.keyName}</label>
                       <input
+                        id={`settings-image-key-${provider.apiKeyId}`}
                         type={showApiKey ? 'text' : 'password'}
                         value={keyInput}
                         onChange={(e) => {
@@ -1458,7 +1474,7 @@ function LLMConfigTab({
                           }
                         }}
                         placeholder={provider.keyPlaceholder}
-                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 transition-colors font-mono"
+                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                       />
                       <button
                         type="button"
@@ -2215,52 +2231,57 @@ function EscalationTab() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Max tokens/requête (entrée)</label>
+              <label htmlFor="settings-limit-max-input" className="text-xs text-text-muted mb-1 block">Max tokens/requête (entrée)</label>
               <input
+                id="settings-limit-max-input"
                 type="number"
                 value={limits.max_input_tokens}
                 onChange={(e) => setLimits({ ...limits, max_input_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Max tokens/requête (sortie)</label>
+              <label htmlFor="settings-limit-max-output" className="text-xs text-text-muted mb-1 block">Max tokens/requête (sortie)</label>
               <input
+                id="settings-limit-max-output"
                 type="number"
                 value={limits.max_output_tokens}
                 onChange={(e) => setLimits({ ...limits, max_output_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Limite quotidienne (tokens)</label>
+              <label htmlFor="settings-limit-daily" className="text-xs text-text-muted mb-1 block">Limite quotidienne (tokens)</label>
               <input
+                id="settings-limit-daily"
                 type="number"
                 value={limits.daily_input_limit}
                 onChange={(e) => setLimits({ ...limits, daily_input_limit: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Budget mensuel (€)</label>
+              <label htmlFor="settings-limit-budget" className="text-xs text-text-muted mb-1 block">Budget mensuel (€)</label>
               <input
+                id="settings-limit-budget"
                 type="number"
                 step="0.01"
                 value={limits.monthly_budget_eur}
                 onChange={(e) => setLimits({ ...limits, monthly_budget_eur: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
           </div>
           <div>
-            <label className="text-xs text-text-muted mb-1 block">Alerter à (% du budget)</label>
+            <label htmlFor="settings-limit-warn" className="text-xs text-text-muted mb-1 block">Alerter à (% du budget)</label>
             <input
+              id="settings-limit-warn"
               type="number"
               min="0"
               max="100"
               value={limits.warn_at_percentage}
               onChange={(e) => setLimits({ ...limits, warn_at_percentage: parseInt(e.target.value) || 80 })}
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>

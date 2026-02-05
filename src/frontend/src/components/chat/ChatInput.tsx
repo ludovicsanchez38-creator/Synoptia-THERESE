@@ -443,7 +443,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         </Button>
 
         {/* Textarea */}
+        <label htmlFor="chat-input" className="sr-only">Message à THÉRÈSE</label>
         <textarea
+          id="chat-input"
           ref={textareaRef}
           value={input}
           onChange={handleInput}

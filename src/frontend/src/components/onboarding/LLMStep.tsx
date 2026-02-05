@@ -308,7 +308,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             <>
               <div className="flex gap-2">
                 <div className="relative flex-1">
+                  <label htmlFor="llm-api-key" className="sr-only">Clé API {currentProviderConfig?.name}</label>
                   <input
+                    id="llm-api-key"
                     type={showApiKey ? 'text' : 'password'}
                     value={apiKeyInput}
                     onChange={(e) => {

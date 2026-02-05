@@ -1257,6 +1257,8 @@ export interface MCPPreset {
   category?: string;
   popular?: boolean;
   url?: string;
+  risk_level?: 'low' | 'medium' | 'high';
+  risk_warning?: string;
   command: string;
   args: string[];
   env_required?: string[];

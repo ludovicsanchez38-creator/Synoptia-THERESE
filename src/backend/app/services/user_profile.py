@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entities import Preference
 from app.services.qdrant import get_qdrant_service
+from app.services.encryption import encrypt_value, decrypt_value, is_value_encrypted
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,7 @@ async def get_user_profile(session: AsyncSession) -> Optional[UserProfile]:
     Retrieve user profile from database.
 
     Returns None if no profile is configured.
+    The profile is decrypted automatically if stored encrypted (RGPD compliance).
     """
     try:
         result = await session.execute(
@@ -118,7 +120,16 @@ async def get_user_profile(session: AsyncSession) -> Optional[UserProfile]:
         if not pref or not pref.value:
             return None
 
-        data = json.loads(pref.value)
+        # Déchiffrer si le profil est chiffré (migration transparente)
+        value = pref.value
+        if is_value_encrypted(value):
+            try:
+                value = decrypt_value(value)
+            except Exception as e:
+                logger.error(f"Failed to decrypt user profile: {e}")
+                return None
+
+        data = json.loads(value)
         return UserProfile.from_dict(data)
 
     except Exception as e:
@@ -151,16 +162,18 @@ async def set_user_profile(
         )
         pref = result.scalar_one_or_none()
 
+        # Chiffrer le profil avant stockage (RGPD - données personnelles)
         value_json = json.dumps(profile.to_dict(), ensure_ascii=False)
+        encrypted_value = encrypt_value(value_json)
 
         if pref:
-            pref.value = value_json
+            pref.value = encrypted_value
             pref.category = PROFILE_CATEGORY
             pref.updated_at = datetime.now(UTC)
         else:
             pref = Preference(
                 key=PROFILE_KEY,
-                value=value_json,
+                value=encrypted_value,
                 category=PROFILE_CATEGORY,
             )
             session.add(pref)
