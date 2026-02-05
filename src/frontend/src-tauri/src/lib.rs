@@ -13,6 +13,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_mic_recorder::init())
         .setup(|app| {
             // Get main window
             if let Some(window) = app.get_webview_window("main") {

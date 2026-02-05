@@ -66,7 +66,7 @@ class XlsxSkill(CodeGenSkill):
 Tu dois générer un **bloc de code Python** complet utilisant la bibliothèque `openpyxl`.
 Le code sera exécuté dans un environnement sandboxé avec les variables suivantes pré-injectées :
 - `output_path` (str) : chemin où sauvegarder le fichier .xlsx
-- `title` (str) : titre du document
+- `title` (str) : sujet demandé par l'utilisateur (utilise-le comme inspiration, mais génère un titre professionnel et pertinent, PAS le prompt brut)
 - `SYNOPTIA_COLORS` (dict) : palette de couleurs Synoptia
 
 ### Imports disponibles

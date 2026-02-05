@@ -58,7 +58,7 @@ class PptxSkill(CodeGenSkill):
 Tu dois générer un **bloc de code Python** complet utilisant la bibliothèque `python-pptx`.
 Le code sera exécuté dans un environnement sandboxé avec les variables suivantes pré-injectées :
 - `output_path` (str) : chemin où sauvegarder le fichier .pptx
-- `title` (str) : titre de la présentation
+- `title` (str) : sujet demandé par l'utilisateur (utilise-le comme inspiration, mais génère un titre professionnel et pertinent pour la slide de titre, PAS le prompt brut)
 - `SYNOPTIA_COLORS` (dict) : palette de couleurs Synoptia
 
 ### Imports disponibles

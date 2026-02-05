@@ -69,8 +69,11 @@ class ContextWindow:
     def to_gemini_format(self) -> tuple[str | None, list[dict]]:
         """Convert to Google Gemini API format."""
         # Gemini uses "contents" with "parts" and separate systemInstruction
+        # Filter out empty messages (Gemini rejects empty parts)
         contents = []
         for msg in self.messages:
+            if not msg.content or not msg.content.strip():
+                continue
             role = "user" if msg.role == "user" else "model"
             contents.append({
                 "role": role,

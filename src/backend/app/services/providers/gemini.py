@@ -46,8 +46,19 @@ class GeminiProvider(BaseProvider):
         url = f"{GEMINI_API_BASE}/{model}:streamGenerateContent"
 
         try:
+            # Filter out empty messages (Gemini rejects empty parts)
+            filtered_messages = [
+                msg for msg in messages
+                if msg.get("parts") and msg["parts"][0].get("text", "").strip()
+            ]
+
+            if not filtered_messages:
+                logger.error("Gemini: No valid messages to send")
+                yield StreamEvent(type="error", content="Aucun message valide à envoyer")
+                return
+
             request_body: dict[str, Any] = {
-                "contents": messages,
+                "contents": filtered_messages,
                 "generationConfig": {
                     "maxOutputTokens": self.config.max_tokens,
                     "temperature": self.config.temperature,
@@ -60,9 +71,13 @@ class GeminiProvider(BaseProvider):
                     "parts": [{"text": system_prompt}]
                 }
 
-            # Add Google Search grounding tool (new format for Gemini 3)
-            if enable_grounding:
+            # Add Google Search grounding tool (Gemini 2.5+ and 3.x support)
+            # Only enable for models that support it
+            grounding_models = ["gemini-3", "gemini-2.5", "gemini-2.0"]
+            if enable_grounding and any(model.startswith(m) for m in grounding_models):
                 request_body["tools"] = [{"google_search": {}}]
+
+            logger.debug(f"Gemini request to {model}: {len(filtered_messages)} messages")
 
             async with self.client.stream(
                 "POST",
@@ -73,8 +88,15 @@ class GeminiProvider(BaseProvider):
             ) as response:
                 if response.status_code != 200:
                     error_body = await response.aread()
-                    logger.error(f"Gemini API {response.status_code}: {error_body.decode()}")
-                    yield StreamEvent(type="error", content=f"API error: {response.status_code}")
+                    error_text = error_body.decode()
+                    logger.error(f"Gemini API {response.status_code}: {error_text}")
+                    # Parse error message for user-friendly display
+                    try:
+                        error_json = json.loads(error_text)
+                        error_msg = error_json.get("error", {}).get("message", error_text)
+                    except json.JSONDecodeError:
+                        error_msg = error_text[:200]
+                    yield StreamEvent(type="error", content=f"Gemini: {error_msg}")
                     return
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):

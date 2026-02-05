@@ -91,22 +91,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
   }, []);
 
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  const [voiceSupported, setVoiceSupported] = useState(true);
-
-  // Check voice support on mount
-  useEffect(() => {
-    const checkVoiceSupport = () => {
-      // Check if we're in Tauri and if MediaRecorder is available
-      const isTauri = '__TAURI__' in window || '__TAURI_INTERNALS__' in window;
-      const hasMediaDevices = !!(navigator.mediaDevices?.getUserMedia);
-      const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
-
-      if (isTauri && (!hasMediaDevices || !hasMediaRecorder)) {
-        setVoiceSupported(false);
-      }
-    };
-    checkVoiceSupport();
-  }, []);
+  // Voice is always supported now (Tauri plugin or Web API fallback)
+  const voiceSupported = true;
 
   const handleVoiceError = useCallback((error: string) => {
     console.error('Voice recording error:', error);

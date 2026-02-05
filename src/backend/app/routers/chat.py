@@ -624,6 +624,19 @@ async def _do_stream_response(
     if tools:
         logger.info(f"Providing {len(tools)} tools to LLM")
 
+        # Injecter dynamiquement les capacités dans le system prompt
+        # uniquement quand des tools sont disponibles (pas pour les petits modèles sans tools)
+        tool_names = [t.get("function", {}).get("name", "") for t in tools if t.get("type") == "function"]
+        capabilities = "\n\n## Tes capacités (outils)\nTu disposes d'outils que tu DOIS utiliser quand c'est pertinent. Ne dis JAMAIS que tu ne peux pas accéder à internet ou que tu ne peux pas faire quelque chose si un outil le permet.\n"
+        if "web_search" in tool_names:
+            capabilities += "- **web_search** : Recherche sur internet. Utilise-le pour toute question sur l'actualité, analyser un site web, ou trouver des informations récentes.\n"
+        if "create_contact" in tool_names:
+            capabilities += "- **create_contact** / **create_project** : Créer des contacts et projets en mémoire.\n"
+        mcp_tools = [n for n in tool_names if n not in ("web_search", "create_contact", "create_project")]
+        if mcp_tools:
+            capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
+        context.system_prompt += capabilities
+
     full_content = ""
     tool_calls_collected: list[ToolCall] = []
     max_tool_iterations = 5  # Prevent infinite tool loops
@@ -651,7 +664,7 @@ async def _do_stream_response(
 
             elif event.type == "done":
                 # Check if we have tool calls to execute
-                if tool_calls_collected and event.stop_reason == "tool_calls":
+                if tool_calls_collected and event.stop_reason in ("tool_calls", "tool_use"):
                     # Execute tools and continue
                     async for continued_event in _execute_tools_and_continue(
                         llm_service,
@@ -902,7 +915,7 @@ async def _execute_tools_and_continue(
 
         elif event.type == "done":
             # Check if more tools need to be called
-            if new_tool_calls and event.stop_reason == "tool_calls":
+            if new_tool_calls and event.stop_reason in ("tool_calls", "tool_use"):
                 # Recursive call for chained tools
                 async for nested_event in _execute_tools_and_continue(
                     llm_service,

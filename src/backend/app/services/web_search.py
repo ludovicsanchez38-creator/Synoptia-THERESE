@@ -186,7 +186,7 @@ WEB_SEARCH_TOOL = {
     "type": "function",
     "function": {
         "name": "web_search",
-        "description": "Recherche sur le web pour trouver des informations actuelles. Utilise cette fonction quand l'utilisateur demande des informations récentes, des actualités, ou des données que tu ne connais pas.",
+        "description": "Recherche sur le web pour trouver des informations actuelles. Utilise cette fonction quand l'utilisateur demande des informations récentes, des actualités, des données que tu ne connais pas, ou quand il te demande d'analyser un site web, une entreprise, un produit ou un service. Pour analyser un site, recherche son URL ou son nom.",
         "parameters": {
             "type": "object",
             "properties": {

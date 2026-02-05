@@ -147,12 +147,14 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
           schema,
         });
       } catch (error) {
-        // P0-B: Descriptive log with skillId
         console.error(`Failed to load skill schema for "${option.skillId}":`, error);
-        // P0-B: Show error banner
-        setSchemaLoadError(`Impossible de charger le formulaire pour "${option.label}". Prompt libre utilise.`);
-        // P0-B: Explicit fallback with label + prompt
-        onPromptSelect(`${option.label}\n${option.prompt}`);
+        // Fallback : si l'option a generatesFile, utiliser le legacy flow
+        if (option.generatesFile) {
+          setPendingSkillOption(option);
+        } else {
+          setSchemaLoadError(`Impossible de charger le formulaire pour "${option.label}". Prompt libre utilisé.`);
+          onPromptSelect(`${option.label}\n${option.prompt}`);
+        }
       } finally {
         setIsLoadingSchema(false);
       }
@@ -210,7 +212,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         const response = await executeSkill(skillId, {
           prompt: constructedPrompt,
           inputs,
-          title: option.label,
         });
 
         if (response.success) {
@@ -260,7 +261,6 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     try {
       const response = await executeSkill(skillId, {
         prompt: customPrompt,
-        title: pendingSkillOption.label,
       });
 
       if (response.success) {

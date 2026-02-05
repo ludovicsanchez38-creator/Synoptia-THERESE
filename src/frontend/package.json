@@ -32,6 +32,7 @@
     "react-markdown": "^9.0.0",
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^2.2.0",
+    "tauri-plugin-mic-recorder-api": "^2.0.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

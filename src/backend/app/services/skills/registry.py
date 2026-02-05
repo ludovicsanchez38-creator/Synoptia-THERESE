@@ -103,20 +103,12 @@ class SkillsRegistry:
 
         try:
             # Préparer les paramètres
-            # Si le contenu est du code Python, le prompt est plus fiable pour le titre
-            is_code = llm_content.lstrip().startswith("```python") or llm_content.lstrip().startswith("from ") or llm_content.lstrip().startswith("import ")
-            if is_code:
-                title = (
-                    request.title
-                    or self._extract_title(request.prompt)
-                    or self._extract_title_from_content(llm_content)
-                )
-            else:
-                title = (
-                    request.title
-                    or self._extract_title_from_content(llm_content)
-                    or self._extract_title(request.prompt)
-                )
+            # Priorité : titre explicite > titre dans le contenu LLM > titre du prompt
+            title = (
+                request.title
+                or self._extract_title_from_content(llm_content)
+                or self._extract_title(request.prompt)
+            )
             params = SkillParams(
                 title=title,
                 content=llm_content,
@@ -180,39 +172,43 @@ class SkillsRegistry:
         if not llm_content:
             return None
 
-        # 1. Chercher le premier heading Markdown (# Titre)
-        heading_match = re.search(r'^#\s+(.+)$', llm_content, re.MULTILINE)
-        if heading_match:
-            title = heading_match.group(1).strip()
-            if title and title.lower() not in ("document", "titre"):
-                return title[:50]
-
-        # 2. Chercher doc.add_heading("...", level=0) dans le code Python
-        heading_code = re.search(
-            r'add_heading\(\s*["\'](.+?)["\']\s*,\s*level\s*=\s*0\s*\)',
-            llm_content,
-        )
-        if heading_code:
-            title = heading_code.group(1).strip()
-            # Ignorer si c'est juste la variable `title`
-            if title and title != "title" and not title.startswith("{"):
-                return title[:50]
-
-        # 3. Chercher title = "..." dans le code Python
-        # Ignorer les titres qui sont des instructions de mise en page/configuration
+        # Titres génériques à ignorer
         generic_titles = {
-            "document", "titre", "données", "configuration",
+            "document", "titre", "title", "données", "configuration",
             "couleurs", "couleurs synoptia", "mise en page",
             "configuration des marges", "styles", "template",
+            "document word", "présentation", "tableur",
         }
+
+        def _is_good_title(t: str) -> bool:
+            """Vérifie qu'un titre est exploitable (pas générique, pas une variable)."""
+            if not t or t.lower() in generic_titles:
+                return False
+            if t.startswith("{") or t.startswith("f\"") or t == "title":
+                return False
+            return True
+
+        # 1. Chercher doc.add_heading("...", level=0 ou 1) dans le code Python
+        # C'est la source la plus fiable pour le titre du document
+        heading_code = re.search(
+            r'add_heading\(\s*["\'](.+?)["\']\s*,\s*level\s*=\s*[01]\s*\)',
+            llm_content,
+        )
+        if heading_code and _is_good_title(heading_code.group(1).strip()):
+            return heading_code.group(1).strip()[:50]
+
+        # 2. Chercher le premier heading Markdown (# Titre)
+        heading_match = re.search(r'^#\s+(.+)$', llm_content, re.MULTILINE)
+        if heading_match and _is_good_title(heading_match.group(1).strip()):
+            return heading_match.group(1).strip()[:50]
+
+        # 3. Chercher title = "..." dans le code Python
         title_var = re.search(
             r'\btitle\s*=\s*["\'](.+?)["\']',
             llm_content,
         )
-        if title_var:
-            title = title_var.group(1).strip()
-            if title and title.lower() not in generic_titles:
-                return title[:50]
+        if title_var and _is_good_title(title_var.group(1).strip()):
+            return title_var.group(1).strip()[:50]
 
         return None
 
@@ -249,6 +245,15 @@ class SkillsRegistry:
                 subject = subject.split('.')[0][:50]
                 if subject:
                     return subject
+
+        # Chercher un pattern "champ: valeur" (inputs dynamiques)
+        # Ex: "sujet: Proposition commerciale" → "Proposition commerciale"
+        # Ex: "prompt: Parle moi de X" → "Parle moi de X"
+        field_match = re.match(r'^[\w]+\s*:\s*(.+)', first_line, re.IGNORECASE)
+        if field_match:
+            value = field_match.group(1).strip()[:50]
+            if value:
+                return value
 
         # Fallback : première ligne du prompt tronquée à 50 caractères
         fallback = first_line.strip()[:50]

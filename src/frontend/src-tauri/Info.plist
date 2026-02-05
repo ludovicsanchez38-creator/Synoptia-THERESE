@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>THÉRÈSE utilise le microphone pour la dictée vocale et la transcription de vos messages.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>THÉRÈSE utilise la reconnaissance vocale pour transcrire vos messages audio.</string>
+</dict>
+</plist>
