@@ -1,0 +1,103 @@
+name: Release THÉRÈSE
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de version (ex: v0.1.0-alpha)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macOS ARM64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            binary-ext: ""
+          - name: Windows x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary-ext: ".exe"
+
+    runs-on: ${{ matrix.platform.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- Python + PyInstaller ----
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Installer UV et dépendances Python
+        run: pip install uv && uv sync --dev
+
+      - name: Build sidecar (PyInstaller)
+        shell: bash
+        run: |
+          cd src/backend
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/pyinstaller backend.spec --noconfirm --clean
+          else
+            ../../.venv/bin/pyinstaller backend.spec --noconfirm --clean
+          fi
+
+      - name: Copier le sidecar dans Tauri
+        shell: bash
+        run: |
+          mkdir -p src/frontend/src-tauri/binaries
+          SRC="src/backend/dist/backend${{ matrix.platform.binary-ext }}"
+          DEST="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}${{ matrix.platform.binary-ext }}"
+          cp "$SRC" "$DEST"
+          chmod +x "$DEST" 2>/dev/null || true
+          echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
+
+      # ---- Node.js ----
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Installer dépendances frontend
+        working-directory: src/frontend
+        run: npm ci
+
+      # ---- Rust ----
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/frontend/src-tauri
+
+      # ---- Build Tauri ----
+      - name: Build THÉRÈSE (Tauri)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: src/frontend
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseBody: |
+            ## THÉRÈSE ${{ github.event.inputs.tag || github.ref_name }}
+
+            Installeurs disponibles ci-dessous.
+
+            ### Notes
+            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée)
+            - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
+          releaseDraft: true
+          prerelease: true

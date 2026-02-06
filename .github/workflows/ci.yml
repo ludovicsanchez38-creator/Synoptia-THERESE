@@ -1,0 +1,54 @@
+name: CI THÉRÈSE V2
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      - name: Lint (Ruff)
+        run: uv run ruff check src/backend/
+
+      - name: Tests unitaires (pytest)
+        run: uv run pytest tests/ --ignore=tests/e2e -q
+
+  frontend:
+    name: Frontend (Node.js)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Installer dépendances
+        run: npm ci
+
+      - name: Tests (Vitest)
+        run: npm run test -- --run
+
+      - name: Build
+        run: npm run build
