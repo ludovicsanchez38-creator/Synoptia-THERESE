@@ -106,10 +106,6 @@ class WebSearchService:
         """Parse search results from DuckDuckGo HTML response."""
         results = []
 
-        # Find result blocks - DuckDuckGo uses class="result"
-        result_pattern = r'<div class="result[^"]*"[^>]*>.*?</div>\s*</div>'
-        matches = re.findall(result_pattern, html, re.DOTALL)
-
         # Alternative pattern for result links
         link_pattern = r'<a[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([^<]*)</a>'
         snippet_pattern = r'<a[^>]*class="result__snippet"[^>]*>([^<]*(?:<[^>]*>[^<]*</[^>]*>)*[^<]*)</a>'

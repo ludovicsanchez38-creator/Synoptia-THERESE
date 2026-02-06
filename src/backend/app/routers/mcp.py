@@ -539,7 +539,7 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
             return os.path.join(home_dir, "Documents")
 
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # We are inside an async context, use await
             working_directory = await _get_working_dir()
         except RuntimeError:

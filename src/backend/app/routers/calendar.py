@@ -243,8 +243,8 @@ async def create_calendar(
             description=description,
             timezone=timezone,
         )
-        # The local provider already saved to DB, fetch the entity
-        calendar = await session.get(Calendar, cal_dto.id)
+        # The local provider already saved to DB
+        await session.get(Calendar, cal_dto.id)
         return CalendarResponse(
             id=cal_dto.id,
             account_id=None,

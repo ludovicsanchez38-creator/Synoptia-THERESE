@@ -217,8 +217,6 @@ async def set_api_key(
     await session.commit()
 
     # Audit log (US-SEC-05)
-    client_ip = http_request.client.host if http_request.client else None
-    user_agent = http_request.headers.get("user-agent")
     await log_activity(
         session,
         AuditAction.API_KEY_SET,
@@ -233,9 +231,8 @@ async def set_api_key(
     invalidate_api_key_cache()
 
     # Reset LLM service to pick up new config
-    from app.services.llm import _llm_service
-    global _llm_service
-    _llm_service = None
+    import app.services.llm as _llm_mod
+    _llm_mod._llm_service = None
 
     return {"success": True, "provider": request.provider}
 

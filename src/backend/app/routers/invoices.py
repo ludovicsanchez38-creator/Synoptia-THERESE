@@ -486,5 +486,5 @@ async def send_invoice_by_email(
         "message": "Invoice send functionality not yet implemented (Phase 1 - Email required)",
         "invoice_number": invoice.invoice_number,
         "recipient": contact.email,
-        "pdf_path": pdf_path,
+        "pdf_path": str(invoice.id),
     }

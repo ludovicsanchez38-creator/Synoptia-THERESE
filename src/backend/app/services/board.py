@@ -260,7 +260,6 @@ class BoardService:
 
         # Yield chunks as they arrive
         completed = 0
-        total = len(advisors)
 
         async def monitor_tasks():
             """Signal when all tasks are done."""

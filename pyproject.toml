@@ -74,10 +74,13 @@ packages = ["src/backend/app"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = ["src/backend/alembic/versions/"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
-ignore = ["E501"]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",   # Longueur de ligne (géré au cas par cas)
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

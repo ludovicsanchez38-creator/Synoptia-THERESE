@@ -415,9 +415,8 @@ def format_message_for_storage(gmail_message: dict) -> dict:
 
     # Parse date
     internal_date = datetime.fromtimestamp(int(gmail_message['internalDate']) / 1000)
-    date_str = headers.get('date')
-    # Simplified date parsing (production would use email.utils.parsedate_to_datetime)
-    date = internal_date  # Fallback to internal date
+    # Use internal date (simpler than parsing RFC 2822 date header)
+    date = internal_date
 
     import json
 

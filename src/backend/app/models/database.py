@@ -5,15 +5,14 @@ SQLite database setup with SQLModel.
 """
 
 import logging
-from pathlib import Path
 from typing import AsyncGenerator
 
-from sqlmodel import SQLModel, create_engine, Session
-from sqlalchemy import event, text as sqlalchemy_text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-
 from app.config import settings
+from sqlalchemy import event
+from sqlalchemy import text as sqlalchemy_text
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import Session, SQLModel, create_engine
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +159,7 @@ def get_sync_session() -> Session:
     return Session(sync_engine)
 
 
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager  # noqa: E402
 
 
 @asynccontextmanager

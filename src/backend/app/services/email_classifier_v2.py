@@ -191,7 +191,6 @@ class EmailClassifierV2:
         # Texte complet pour analyse
         full_text = f"{subject} {snippet} {from_name}".lower()
         from_email_lower = from_email.lower()
-        from_name_lower = from_name.lower() if from_name else ""
 
         # ============================================================
         # 1. DÉTECTION CATÉGORIE

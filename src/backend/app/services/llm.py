@@ -118,7 +118,7 @@ def _get_api_key_from_db(provider: str) -> str | None:
         # Si on est déjà dans un event loop, utiliser to_thread.
         # Sinon (appel sync), exécuter directement.
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # On ne peut pas await dans une fonction sync, donc on exécute en sync
             # Ce fallback est rarement appelé (le cache est normalement chargé)
             return _sync_read_key()

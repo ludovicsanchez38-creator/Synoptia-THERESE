@@ -509,7 +509,7 @@ async def update_oauth_credentials(
 
     # Try to refresh token immediately
     try:
-        access_token = await ensure_valid_access_token(account, session)
+        await ensure_valid_access_token(account, session)
         return {
             "status": "ok",
             "message": "Credentials updated and token refreshed",
@@ -823,7 +823,7 @@ async def get_email_stats(
     statement_high = select(func.count(EmailMessage.id)).where(
         EmailMessage.account_id == account_id,
         EmailMessage.priority == 'high',
-        EmailMessage.is_read == False,
+        EmailMessage.is_read == False,  # noqa: E712 (SQLAlchemy column comparison)
     )
     result_high = await session.execute(statement_high)
     high_count = result_high.scalar_one()
@@ -832,7 +832,7 @@ async def get_email_stats(
     statement_medium = select(func.count(EmailMessage.id)).where(
         EmailMessage.account_id == account_id,
         EmailMessage.priority == 'medium',
-        EmailMessage.is_read == False,
+        EmailMessage.is_read == False,  # noqa: E712 (SQLAlchemy column comparison)
     )
     result_medium = await session.execute(statement_medium)
     medium_count = result_medium.scalar_one()
@@ -841,7 +841,7 @@ async def get_email_stats(
     statement_low = select(func.count(EmailMessage.id)).where(
         EmailMessage.account_id == account_id,
         EmailMessage.priority == 'low',
-        EmailMessage.is_read == False,
+        EmailMessage.is_read == False,  # noqa: E712 (SQLAlchemy column comparison)
     )
     result_low = await session.execute(statement_low)
     low_count = result_low.scalar_one()
@@ -1011,7 +1011,7 @@ async def modify_message(
         if request.add_label_ids:
             labels.extend(request.add_label_ids)
         if request.remove_label_ids:
-            labels = [l for l in labels if l not in request.remove_label_ids]
+            labels = [lbl for lbl in labels if lbl not in request.remove_label_ids]
         cached.labels = json.dumps(list(set(labels)))
         cached.is_read = 'UNREAD' not in labels
         cached.is_starred = 'STARRED' in labels

@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  backend:
-    name: Backend (Python)
+  lint:
+    name: Lint (Python)
     runs-on: ubuntu-latest
 
     steps:
@@ -18,11 +18,28 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Installer UV et dépendances
-        run: pip install uv && uv sync --dev
+      - name: Installer Ruff
+        run: pip install ruff
 
       - name: Lint (Ruff)
-        run: uv run ruff check src/backend/
+        run: ruff check src/backend/
+
+  backend-tests:
+    name: Tests Backend (Python)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Installer dépendances système
+        run: sudo apt-get update && sudo apt-get install -y libmagic1
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
 
       - name: Tests unitaires (pytest)
         run: uv run pytest tests/ --ignore=tests/e2e -q

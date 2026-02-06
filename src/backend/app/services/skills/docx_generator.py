@@ -9,14 +9,11 @@ import logging
 import re
 from pathlib import Path
 
-from docx import Document
-from docx.enum.style import WD_STYLE_TYPE
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml.ns import qn
-from docx.shared import Cm, Pt, RGBColor
-
 from app.services.skills.base import FileFormat, SkillParams, SkillResult
 from app.services.skills.code_executor import CodeGenSkill
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt, RGBColor
 
 logger = logging.getLogger(__name__)
 
@@ -256,38 +253,31 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
             content: Contenu en format Markdown
         """
         lines = content.split('\n')
-        current_list_type = None  # 'bullet' ou 'numbered'
         list_number = 0
 
         for line in lines:
             line = line.strip()
             if not line:
-                current_list_type = None
                 list_number = 0
                 continue
 
             # Headings
             if line.startswith('### '):
                 doc.add_heading(line[4:], level=3)
-                current_list_type = None
             elif line.startswith('## '):
                 doc.add_heading(line[3:], level=2)
-                current_list_type = None
             elif line.startswith('# '):
                 doc.add_heading(line[2:], level=1)
-                current_list_type = None
             # Listes à puces
             elif line.startswith('- ') or line.startswith('* '):
                 text = line[2:]
                 para = doc.add_paragraph(style='List Bullet')
                 self._add_formatted_text(para, text)
-                current_list_type = 'bullet'
             # Listes numérotées
             elif re.match(r'^\d+\.\s', line):
                 text = re.sub(r'^\d+\.\s', '', line)
                 para = doc.add_paragraph(style='List Number')
                 self._add_formatted_text(para, text)
-                current_list_type = 'numbered'
                 list_number += 1
             # Tableaux (simplifié)
             elif line.startswith('|'):
@@ -301,7 +291,6 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
             else:
                 para = doc.add_paragraph()
                 self._add_formatted_text(para, line)
-                current_list_type = None
 
     def _add_formatted_text(self, para, text: str) -> None:
         """
