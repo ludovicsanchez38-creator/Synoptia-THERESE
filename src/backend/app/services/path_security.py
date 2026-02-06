@@ -5,9 +5,8 @@ Validation des chemins de fichiers pour empecher le path traversal
 et l'acces aux fichiers sensibles.
 """
 
-import os
-from pathlib import Path
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +25,13 @@ DENIED_PATTERNS = [
     "*.key",
     "*.p12",
     "*.pfx",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
     ".env",
     ".env.*",
     ".encryption_key",
+    ".session_token",
     "id_rsa",
     "id_ed25519",
     "id_ecdsa",
@@ -75,7 +78,7 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     for denied in DENIED_ABSOLUTE_PATHS:
         if path_str.startswith(denied + "/") or path_str == denied:
             logger.warning(f"Acces refuse (repertoire systeme) : {path}")
-            raise PermissionError(f"Acces interdit : les fichiers systeme ne sont pas accessibles")
+            raise PermissionError("Acces interdit : les fichiers systeme ne sont pas accessibles")
 
     # Verifier les repertoires sensibles dans le home
     try:
@@ -84,7 +87,7 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
         for denied in DENIED_DIRECTORIES:
             if rel_str.startswith(denied) or rel_str == denied:
                 logger.warning(f"Acces refuse (repertoire sensible) : {path}")
-                raise PermissionError(f"Acces interdit : ce fichier contient des donnees sensibles")
+                raise PermissionError("Acces interdit : ce fichier contient des donnees sensibles")
     except ValueError:
         # Le fichier n'est pas sous le home directory - verifier qu'il n'est pas dans un chemin systeme
         pass
@@ -93,7 +96,7 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     for pattern in DENIED_PATTERNS:
         if path.match(pattern):
             logger.warning(f"Acces refuse (fichier sensible) : {path}")
-            raise PermissionError(f"Acces interdit : ce type de fichier est protege")
+            raise PermissionError("Acces interdit : ce type de fichier est protege")
 
     # Si un repertoire de base est specifie, verifier que le fichier est dedans
     if allowed_base is not None:
@@ -143,10 +146,23 @@ def validate_indexable_file(file_path: str | Path, allowed_base: Path | None = N
         FileNotFoundError: Si le fichier n'existe pas
         ValueError: Si le type de fichier n'est pas autorise pour l'indexation
     """
-    # D'abord valider la securite du chemin
+    # D'abord valider la sécurité du chemin
     path = validate_file_path(file_path, allowed_base)
 
-    # Verifier l'extension
+    # Vérifier la taille (max 50 Mo)
+    MAX_INDEXABLE_SIZE = 50 * 1024 * 1024
+    file_size = path.stat().st_size
+    if file_size > MAX_INDEXABLE_SIZE:
+        logger.warning(
+            "Fichier trop volumineux pour l'indexation : %s (%d Mo)",
+            path.name, file_size // (1024 * 1024),
+        )
+        raise ValueError(
+            f"Fichier trop volumineux ({file_size // (1024 * 1024)} Mo). "
+            f"Limite : {MAX_INDEXABLE_SIZE // (1024 * 1024)} Mo."
+        )
+
+    # Vérifier l'extension
     ext = path.suffix.lower()
     if ext not in INDEXABLE_EXTENSIONS:
         logger.warning(f"Type de fichier non indexable : {ext} ({path.name})")

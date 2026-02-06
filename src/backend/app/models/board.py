@@ -6,7 +6,7 @@ Modèles Pydantic pour le board de décision stratégique.
 
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -156,8 +156,8 @@ class AdvisorOpinion(BaseModel):
 class BoardRequest(BaseModel):
     """Requête pour convoquer le board."""
     question: str = Field(..., min_length=10, description="La question stratégique à soumettre")
-    context: Optional[str] = Field(None, description="Contexte additionnel")
-    advisors: Optional[list[AdvisorRole]] = Field(
+    context: str | None = Field(None, description="Contexte additionnel")
+    advisors: list[AdvisorRole] | None = Field(
         None,
         description="Conseillers à convoquer (tous si non spécifié)"
     )
@@ -166,10 +166,10 @@ class BoardRequest(BaseModel):
 class BoardDeliberationChunk(BaseModel):
     """Chunk de délibération en streaming."""
     type: str  # "advisor_start", "advisor_chunk", "advisor_done", "synthesis_start", "synthesis_chunk", "done"
-    role: Optional[AdvisorRole] = None
-    name: Optional[str] = None
-    emoji: Optional[str] = None
-    provider: Optional[str] = None  # LLM provider used (anthropic, openai, etc.)
+    role: AdvisorRole | None = None
+    name: str | None = None
+    emoji: str | None = None
+    provider: str | None = None  # LLM provider used (anthropic, openai, etc.)
     content: str = ""
 
 
@@ -186,7 +186,7 @@ class BoardDecision(BaseModel):
     """Décision complète du board (pour historique)."""
     id: str
     question: str
-    context: Optional[str] = None
+    context: str | None = None
     opinions: list[AdvisorOpinion]
     synthesis: BoardSynthesis
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -195,7 +195,7 @@ class BoardDecision(BaseModel):
 class BoardDecisionCreate(BaseModel):
     """Données pour créer une décision."""
     question: str
-    context: Optional[str] = None
+    context: str | None = None
     opinions: list[AdvisorOpinion]
     synthesis: BoardSynthesis
 
@@ -204,7 +204,7 @@ class BoardDecisionResponse(BaseModel):
     """Réponse pour une décision."""
     id: str
     question: str
-    context: Optional[str] = None
+    context: str | None = None
     recommendation: str
     confidence: str
     created_at: datetime

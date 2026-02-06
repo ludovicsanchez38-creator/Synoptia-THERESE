@@ -9,17 +9,11 @@ import json
 import logging
 import re
 import time
-from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func
-from sqlmodel import select
-
+from app.config import settings
 from app.models.database import get_session
-from app.models.entities import Conversation, Message, FileMetadata
+from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
 from app.models.schemas import (
     ChatRequest,
     ChatResponse,
@@ -28,29 +22,32 @@ from app.models.schemas import (
     MessageResponse,
     StreamChunk,
 )
-from app.services.llm import (
-    LLMService,
-    ContextWindow,
-    Message as LLMMessage,
-    get_llm_service,
-    StreamEvent,
-    ToolCall,
-    ToolResult,
-)
-from app.services.qdrant import get_qdrant_service
 from app.services.entity_extractor import (
     get_entity_extractor,
-    extraction_result_to_dict,
 )
-from app.config import settings
-from app.services.file_parser import extract_text, chunk_text, get_file_metadata
+from app.services.file_parser import chunk_text, extract_text, get_file_metadata
+from app.services.llm import (
+    ContextWindow,
+    LLMService,
+    ToolCall,
+    ToolResult,
+    get_llm_service,
+)
+from app.services.llm import (
+    Message as LLMMessage,
+)
 from app.services.mcp_service import get_mcp_service
-from app.services.web_search import WEB_SEARCH_TOOL, execute_web_search
-from app.services.memory_tools import MEMORY_TOOLS, MEMORY_TOOL_NAMES, execute_memory_tool
-from app.services.performance import get_performance_monitor, get_search_index
-from app.services.token_tracker import get_token_tracker, detect_uncertainty
+from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
-from app.models.entities import Contact, Project
+from app.services.performance import get_performance_monitor, get_search_index
+from app.services.qdrant import get_qdrant_service
+from app.services.token_tracker import detect_uncertainty, get_token_tracker
+from app.services.web_search import WEB_SEARCH_TOOL, execute_web_search
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -343,17 +340,22 @@ async def _extract_entities_background(
     user_message: str,
     conversation_id: str,
     message_id: str,
-    session: AsyncSession,
 ) -> None:
     """
-    Extrait les entites en arriere-plan (PERF-001).
+    Extrait les entités en arrière-plan (PERF-001).
 
-    Les resultats ne sont plus envoyes via SSE (le stream est deja ferme).
-    A terme, ils pourront etre envoyes via WebSocket ou polling endpoint.
+    Les résultats ne sont plus envoyés via SSE (le stream est déjà fermé).
+    À terme, ils pourront être envoyés via WebSocket ou polling endpoint.
+
+    NOTE: Cette coroutine crée sa propre session DB car la session FastAPI
+    est fermée après la réponse HTTP.
     """
     try:
-        extractor = get_entity_extractor()
-        contact_names, project_names = await _get_existing_entity_names(session)
+        from app.models.database import get_session_context
+
+        async with get_session_context() as session:
+            extractor = get_entity_extractor()
+            contact_names, project_names = await _get_existing_entity_names(session)
 
         extraction_result = await extractor.extract_entities(
             user_message=user_message,
@@ -535,7 +537,7 @@ async def _do_stream_response(
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Sprint 2 - PERF-2.11: Check for prompt injection
-    from app.services.prompt_security import check_prompt_safety, ThreatLevel
+    from app.services.prompt_security import check_prompt_safety
     security_check = check_prompt_safety(user_message)
     if not security_check.is_safe:
         logger.warning(
@@ -755,13 +757,14 @@ async def _do_stream_response(
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)
-    # L'extraction continue en arriere-plan sans bloquer le stream SSE
+    # L'extraction continue en arrière-plan sans bloquer le stream SSE
+    # NOTE: On ne passe PAS la session FastAPI car elle sera fermée après la requête.
+    # La background task crée sa propre session via get_session_context().
     asyncio.create_task(
         _extract_entities_background(
             user_message=user_message,
             conversation_id=conversation_id,
             message_id=assistant_message.id,
-            session=session,
         )
     )
 
@@ -1026,10 +1029,10 @@ async def get_conversation(
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     # Count messages
-    msg_result = await session.execute(
-        select(Message).where(Message.conversation_id == conversation.id)
+    count_result = await session.execute(
+        select(func.count()).select_from(Message).where(Message.conversation_id == conversation.id)
     )
-    message_count = len(msg_result.scalars().all())
+    message_count = count_result.scalar() or 0
 
     return ConversationResponse(
         id=conversation.id,

@@ -5,8 +5,6 @@ Classifie les emails par priorité (Rouge/Orange/Vert).
 US-EMAIL-08, US-EMAIL-10
 """
 
-import re
-from typing import Optional
 from dataclasses import dataclass
 
 
@@ -52,7 +50,7 @@ class EmailClassifier:
         from_email: str,
         snippet: str,
         labels: list[str],
-        contact_score: Optional[int] = None,
+        contact_score: int | None = None,
     ) -> ClassificationResult:
         """
         Classifie un email.
@@ -87,7 +85,7 @@ class EmailClassifier:
         # Expéditeurs prioritaires
         if any(sender in from_email_lower for sender in EmailClassifier.PRIORITY_SENDERS):
             score += 40
-            reasons.append(f"Expéditeur prioritaire")
+            reasons.append("Expéditeur prioritaire")
 
         # Label IMPORTANT Gmail
         if 'IMPORTANT' in labels:

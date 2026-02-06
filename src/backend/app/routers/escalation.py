@@ -7,51 +7,26 @@ US-ESC-01 to US-ESC-05.
 
 import json
 import logging
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.models.database import get_session
 from app.models.entities import Preference
+from app.models.schemas_escalation import (
+    CostEstimateRequest,
+    TokenLimitsRequest,
+    UncertaintyCheckRequest,
+)
 from app.services.token_tracker import (
-    get_token_tracker,
     TokenLimits,
     detect_uncertainty,
+    get_token_tracker,
 )
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# ============================================================
-# Schemas
-# ============================================================
-
-
-class TokenLimitsRequest(BaseModel):
-    """Token limits configuration request."""
-    max_input_tokens: int = 8000
-    max_output_tokens: int = 4000
-    daily_input_limit: int = 500000
-    daily_output_limit: int = 100000
-    monthly_budget_eur: float = 50.0
-    warn_at_percentage: int = 80
-
-
-class CostEstimateRequest(BaseModel):
-    """Cost estimation request."""
-    model: str
-    input_tokens: int
-    output_tokens: int
-
-
-class UncertaintyCheckRequest(BaseModel):
-    """Uncertainty check request."""
-    response: str
 
 
 # ============================================================
@@ -177,7 +152,7 @@ async def set_token_limits(
 @router.post("/check-limits")
 async def check_limits(
     input_tokens: int = Query(..., description="Number of input tokens"),
-    output_tokens: Optional[int] = Query(None, description="Estimated output tokens"),
+    output_tokens: int | None = Query(None, description="Estimated output tokens"),
 ):
     """
     Check if a request would exceed limits.
@@ -211,7 +186,7 @@ async def get_monthly_usage():
 @router.get("/usage/history")
 async def get_usage_history(
     limit: int = Query(50, ge=1, le=500),
-    conversation_id: Optional[str] = None,
+    conversation_id: str | None = None,
 ):
     """
     Get token usage history.
@@ -265,7 +240,7 @@ async def get_context_info():
         # Anthropic
         "claude-sonnet-4-5-20250929": 200000,
         "claude-haiku-4-5-20251001": 200000,
-        "claude-opus-4-5-20251101": 200000,
+        "claude-opus-4-6": 200000,
         # OpenAI
         "gpt-4o": 128000,
         "gpt-4-turbo": 128000,

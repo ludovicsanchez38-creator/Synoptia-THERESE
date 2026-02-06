@@ -6,23 +6,20 @@ US-PERF-01 to US-PERF-05.
 """
 
 import logging
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func
 
 from app.models.database import get_session
 from app.models.entities import Conversation, Message
 from app.services.performance import (
-    get_performance_monitor,
-    get_memory_manager,
-    get_search_index,
-    get_power_settings,
-    set_power_settings,
     PowerSettings,
-    PaginatedResult,
+    get_memory_manager,
+    get_performance_monitor,
+    get_power_settings,
+    get_search_index,
+    set_power_settings,
 )
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import func, select
 
 logger = logging.getLogger(__name__)
 
@@ -214,10 +211,10 @@ async def get_power_config():
 
 @router.post("/power")
 async def set_power_config(
-    health_check_interval: Optional[int] = None,
-    conversation_sync_interval: Optional[int] = None,
-    battery_saver_mode: Optional[bool] = None,
-    reduce_animations: Optional[bool] = None,
+    health_check_interval: int | None = None,
+    conversation_sync_interval: int | None = None,
+    battery_saver_mode: bool | None = None,
+    reduce_animations: bool | None = None,
 ):
     """
     Update power/battery settings.

@@ -7,21 +7,19 @@ Part of the "Local First" architecture.
 """
 
 import logging
-from datetime import UTC, datetime, date
-from typing import Optional
+from datetime import UTC, date, datetime
+
 import pytz
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.models.entities import Calendar, CalendarEvent, generate_uuid
 from app.services.calendar.base_provider import (
-    CalendarProvider,
     CalendarDTO,
     CalendarEventDTO,
+    CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +78,9 @@ class LocalCalendarProvider(CalendarProvider):
     async def create_calendar(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         timezone: str = "Europe/Paris",
-        color: Optional[str] = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Create a new local calendar."""
         # Validate timezone
@@ -116,10 +114,10 @@ class LocalCalendarProvider(CalendarProvider):
     async def update_calendar(
         self,
         calendar_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        timezone: Optional[str] = None,
-        color: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        timezone: str | None = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Update a local calendar."""
         calendar = await self._session.get(Calendar, calendar_id)
@@ -170,11 +168,11 @@ class LocalCalendarProvider(CalendarProvider):
     async def list_events(
         self,
         calendar_id: str,
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None,
+        time_min: datetime | None = None,
+        time_max: datetime | None = None,
         max_results: int = 100,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[CalendarEventDTO], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[CalendarEventDTO], str | None]:
         """List events from a local calendar."""
         statement = select(CalendarEvent).where(CalendarEvent.calendar_id == calendar_id)
 

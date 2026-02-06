@@ -9,14 +9,12 @@ Phase 1 - Core Native Email (Gmail)
 
 import base64
 import logging
-from datetime import UTC, datetime, timedelta
-from email.mime.text import MIMEText
+from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
-from typing import Optional
+from email.mime.text import MIMEText
 
 import httpx
+from app.services.http_client import get_http_client
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
 
@@ -36,7 +34,7 @@ GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1"
 # ============================================================
 
 
-def parse_email_body(payload: dict) -> tuple[Optional[str], Optional[str]]:
+def parse_email_body(payload: dict) -> tuple[str | None, str | None]:
     """
     Extract plain and HTML body from Gmail message payload.
 
@@ -88,7 +86,7 @@ def parse_email_body(payload: dict) -> tuple[Optional[str], Optional[str]]:
     return body_plain, body_html
 
 
-def parse_email_address(header_value: str) -> tuple[str, Optional[str]]:
+def parse_email_address(header_value: str) -> tuple[str, str | None]:
     """
     Parse email address from header value.
 
@@ -138,39 +136,39 @@ class GmailService:
         self,
         method: str,
         endpoint: str,
-        params: Optional[dict] = None,
-        json_data: Optional[dict] = None,
+        params: dict | None = None,
+        json_data: dict | None = None,
     ) -> dict:
         """Make authenticated request to Gmail API."""
         url = f"{GMAIL_API_BASE}/{endpoint}"
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.request(
-                    method,
-                    url,
-                    headers=self.headers,
-                    params=params,
-                    json=json_data,
-                    timeout=30.0,
+        client = await get_http_client()
+        try:
+            response = await client.request(
+                method,
+                url,
+                headers=self.headers,
+                params=params,
+                json=json_data,
+                timeout=30.0,
+            )
+
+            if response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Access token expired or invalid")
+
+            if response.status_code >= 400:
+                error_data = response.json() if response.content else {}
+                logger.error(f"Gmail API error: {response.status_code} {error_data}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=error_data.get('error', {}).get('message', 'Gmail API error')
                 )
 
-                if response.status_code == 401:
-                    raise HTTPException(status_code=401, detail="Access token expired or invalid")
+            return response.json() if response.content else {}
 
-                if response.status_code >= 400:
-                    error_data = response.json() if response.content else {}
-                    logger.error(f"Gmail API error: {response.status_code} {error_data}")
-                    raise HTTPException(
-                        status_code=response.status_code,
-                        detail=error_data.get('error', {}).get('message', 'Gmail API error')
-                    )
-
-                return response.json() if response.content else {}
-
-            except httpx.HTTPError as e:
-                logger.error(f"HTTP error: {e}")
-                raise HTTPException(status_code=500, detail=f"Gmail API request failed: {str(e)}")
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error: {e}")
+            raise HTTPException(status_code=500, detail=f"Gmail API request failed: {str(e)}")
 
     # ============================================================
     # Messages
@@ -179,9 +177,9 @@ class GmailService:
     async def list_messages(
         self,
         max_results: int = 50,
-        page_token: Optional[str] = None,
-        query: Optional[str] = None,
-        label_ids: Optional[list[str]] = None,
+        page_token: str | None = None,
+        query: str | None = None,
+        label_ids: list[str] | None = None,
     ) -> dict:
         """
         List messages.
@@ -226,8 +224,8 @@ class GmailService:
         to: list[str],
         subject: str,
         body: str,
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
         html: bool = False,
     ) -> dict:
         """
@@ -267,8 +265,8 @@ class GmailService:
         to: list[str],
         subject: str,
         body: str,
-        cc: Optional[list[str]] = None,
-        bcc: Optional[list[str]] = None,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
         html: bool = False,
     ) -> dict:
         """Create a draft email."""
@@ -296,8 +294,8 @@ class GmailService:
     async def modify_message(
         self,
         message_id: str,
-        add_label_ids: Optional[list[str]] = None,
-        remove_label_ids: Optional[list[str]] = None,
+        add_label_ids: list[str] | None = None,
+        remove_label_ids: list[str] | None = None,
     ) -> dict:
         """
         Modify message labels.
@@ -372,8 +370,8 @@ class GmailService:
     async def batch_modify_messages(
         self,
         message_ids: list[str],
-        add_label_ids: Optional[list[str]] = None,
-        remove_label_ids: Optional[list[str]] = None,
+        add_label_ids: list[str] | None = None,
+        remove_label_ids: list[str] | None = None,
     ) -> dict:
         """Batch modify multiple messages."""
         data = {

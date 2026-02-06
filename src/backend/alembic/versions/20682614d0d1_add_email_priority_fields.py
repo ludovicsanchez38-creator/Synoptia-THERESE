@@ -7,9 +7,8 @@ Create Date: 2026-01-28 13:47:06.409977
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '20682614d0d1'
@@ -26,7 +25,10 @@ def upgrade() -> None:
     op.add_column('email_messages', sa.Column('priority_reason', sa.String(), nullable=True))
 
     # Add index on priority for fast filtering
-    op.create_index(op.f('ix_email_messages_priority'), 'email_messages', ['priority'], unique=False)
+    op.create_index(
+        op.f('ix_email_messages_priority'), 'email_messages',
+        ['priority'], unique=False,
+    )
 
 
 def downgrade() -> None:

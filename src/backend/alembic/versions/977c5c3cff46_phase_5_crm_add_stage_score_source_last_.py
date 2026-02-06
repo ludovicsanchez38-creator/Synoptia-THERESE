@@ -1,4 +1,5 @@
-"""Phase 5 CRM: Add stage, score, source, last_interaction to contacts; Add Activity and Deliverable tables
+"""Phase 5 CRM: Add stage, score, source, last_interaction to contacts;
+Add Activity and Deliverable tables
 
 Revision ID: 977c5c3cff46
 Revises: 21b429e036ef
@@ -7,10 +8,9 @@ Create Date: 2026-01-27 16:30:34.575669
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 import sqlmodel
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '977c5c3cff46'
@@ -34,7 +34,10 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('activities', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_activities_contact_id'), ['contact_id'], unique=False)
+        batch_op.create_index(
+            batch_op.f('ix_activities_contact_id'),
+            ['contact_id'], unique=False,
+        )
 
     op.create_table('calendars',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -69,7 +72,10 @@ def upgrade() -> None:
     )
     with op.batch_alter_table('invoices', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_invoices_contact_id'), ['contact_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_invoices_invoice_number'), ['invoice_number'], unique=True)
+        batch_op.create_index(
+            batch_op.f('ix_invoices_invoice_number'),
+            ['invoice_number'], unique=True,
+        )
 
     op.create_table('calendar_events',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -90,7 +96,10 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('calendar_events', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_calendar_events_calendar_id'), ['calendar_id'], unique=False)
+        batch_op.create_index(
+            batch_op.f('ix_calendar_events_calendar_id'),
+            ['calendar_id'], unique=False,
+        )
 
     op.create_table('deliverables',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -106,7 +115,10 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('deliverables', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_deliverables_project_id'), ['project_id'], unique=False)
+        batch_op.create_index(
+            batch_op.f('ix_deliverables_project_id'),
+            ['project_id'], unique=False,
+        )
 
     op.create_table('invoice_lines',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -121,7 +133,10 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('invoice_lines', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_invoice_lines_invoice_id'), ['invoice_id'], unique=False)
+        batch_op.create_index(
+            batch_op.f('ix_invoice_lines_invoice_id'),
+            ['invoice_id'], unique=False,
+        )
 
     op.create_table('tasks',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -145,7 +160,10 @@ def upgrade() -> None:
     #
     # op.drop_table('activity_logs')
     with op.batch_alter_table('contacts', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('stage', sqlmodel.sql.sqltypes.AutoString(), nullable=False, server_default='contact'))
+        batch_op.add_column(sa.Column(
+            'stage', sqlmodel.sql.sqltypes.AutoString(),
+            nullable=False, server_default='contact',
+        ))
         batch_op.add_column(sa.Column('score', sa.Integer(), nullable=False, server_default='50'))
         batch_op.add_column(sa.Column('source', sqlmodel.sql.sqltypes.AutoString(), nullable=True))
         batch_op.add_column(sa.Column('last_interaction', sa.DateTime(), nullable=True))

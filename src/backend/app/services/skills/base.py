@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -43,8 +43,8 @@ class InputField:
     placeholder: str = ""
     required: bool = True
     options: list[str] = field(default_factory=list)  # Pour type='select'
-    default: Optional[str] = None
-    help_text: Optional[str] = None  # Texte d'aide affiché sous le champ
+    default: str | None = None
+    help_text: str | None = None  # Texte d'aide affiché sous le champ
 
 
 class SkillParams(BaseModel):
@@ -72,7 +72,7 @@ class SkillResult(BaseModel):
 class SkillExecuteRequest(BaseModel):
     """Requête d'exécution d'un skill depuis l'API."""
     prompt: str = Field(..., description="Prompt utilisateur pour générer le contenu")
-    title: Optional[str] = Field(None, description="Titre du document (si non fourni, sera extrait du prompt)")
+    title: str | None = Field(None, description="Titre du document (si non fourni, sera extrait du prompt)")
     template: str = Field(default="synoptia-dark", description="Style/template")
     context: dict[str, Any] = Field(default_factory=dict, description="Contexte additionnel")
 
@@ -80,12 +80,12 @@ class SkillExecuteRequest(BaseModel):
 class SkillExecuteResponse(BaseModel):
     """Réponse après exécution d'un skill."""
     success: bool
-    file_id: Optional[str] = None
-    file_name: Optional[str] = None
-    file_size: Optional[int] = None
+    file_id: str | None = None
+    file_name: str | None = None
+    file_size: int | None = None
     download_url: str = Field(..., description="URL de téléchargement")
-    preview: Optional[str] = Field(None, description="Aperçu textuel du contenu généré")
-    error: Optional[str] = None
+    preview: str | None = Field(None, description="Aperçu textuel du contenu généré")
+    error: str | None = None
 
 
 class BaseSkill(ABC):

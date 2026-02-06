@@ -7,24 +7,22 @@ Phase 4 - Invoicing
 
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import select, func, or_
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.database import get_session
-from app.models.entities import Invoice, InvoiceLine, Contact
+from app.models.entities import Contact, Invoice, InvoiceLine
 from app.models.schemas import (
-    InvoiceResponse,
-    InvoiceLineResponse,
     CreateInvoiceRequest,
-    UpdateInvoiceRequest,
+    InvoiceLineResponse,
+    InvoiceResponse,
     MarkPaidRequest,
+    UpdateInvoiceRequest,
 )
 from app.services.invoice_pdf import InvoicePDFGenerator
 from app.services.user_profile import get_cached_profile
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -119,8 +117,8 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
 
 @router.get("/", response_model=list[InvoiceResponse])
 async def list_invoices(
-    status: Optional[str] = Query(None, description="Filtrer par status (draft, sent, paid, overdue, cancelled)"),
-    contact_id: Optional[str] = Query(None, description="Filtrer par contact"),
+    status: str | None = Query(None, description="Filtrer par status (draft, sent, paid, overdue, cancelled)"),
+    contact_id: str | None = Query(None, description="Filtrer par contact"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
@@ -476,26 +474,13 @@ async def send_invoice_by_email(
         raise HTTPException(status_code=400, detail="Contact has no email address")
 
     # TODO: Intégration avec le service email (Phase 1)
-    # Pour l'instant, on retourne juste un message
-
-    # Générer le PDF d'abord
-    pdf_response = await generate_invoice_pdf(invoice_id, session)
-    pdf_path = pdf_response["pdf_path"]
-
-    # TODO: Utiliser gmail_service.send_message() avec attachment
-    # subject = f"Facture {invoice.invoice_number}"
-    # body = f"Bonjour,\n\nVeuillez trouver ci-joint la facture {invoice.invoice_number}.\n\nCordialement"
-    # to = contact.email
-    # attachment = pdf_path
-
-    # Pour l'instant, on marque juste comme "sent"
-    if invoice.status == "draft":
-        invoice.status = "sent"
-        invoice.updated_at = datetime.now(UTC)
-        session.add(invoice)
-        await session.commit()
-
-    logger.info(f"Invoice send requested: {invoice.invoice_number} to {contact.email}")
+    # L'envoi par email n'est pas encore implémenté.
+    # Ne PAS changer le statut de la facture tant que l'email n'est pas réellement envoyé.
+    raise HTTPException(
+        status_code=501,
+        detail="L'envoi de factures par email n'est pas encore disponible. "
+        "Veuillez télécharger le PDF et l'envoyer manuellement.",
+    )
 
     return {
         "message": "Invoice send functionality not yet implemented (Phase 1 - Email required)",

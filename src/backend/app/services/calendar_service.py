@@ -9,8 +9,9 @@ Phase 2 - Calendar
 
 import logging
 from datetime import datetime
-from typing import List, Dict, Any, Optional
-import httpx
+from typing import Any
+
+from app.services.http_client import get_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class CalendarService:
     # CALENDARS MANAGEMENT
     # =============================================================================
 
-    async def list_calendars(self) -> List[Dict[str, Any]]:
+    async def list_calendars(self) -> list[dict[str, Any]]:
         """
         Liste tous les calendriers de l'utilisateur.
 
@@ -47,17 +48,17 @@ class CalendarService:
         Raises:
             HTTPException: Si l'API Calendar échoue
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/users/me/calendarList",
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data.get("items", [])
+        client = await get_http_client()
+        response = await client.get(
+            f"{self.BASE_URL}/users/me/calendarList",
+            headers=self.headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get("items", [])
 
-    async def get_calendar(self, calendar_id: str) -> Dict[str, Any]:
+    async def get_calendar(self, calendar_id: str) -> dict[str, Any]:
         """
         Récupère un calendrier spécifique.
 
@@ -67,18 +68,18 @@ class CalendarService:
         Returns:
             Détails du calendrier
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/calendars/{calendar_id}",
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.get(
+            f"{self.BASE_URL}/calendars/{calendar_id}",
+            headers=self.headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def create_calendar(
-        self, summary: str, description: Optional[str] = None, timezone: str = "UTC"
-    ) -> Dict[str, Any]:
+        self, summary: str, description: str | None = None, timezone: str = "UTC"
+    ) -> dict[str, Any]:
         """
         Crée un nouveau calendrier.
 
@@ -94,15 +95,15 @@ class CalendarService:
         if description:
             payload["description"] = description
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.BASE_URL}/calendars",
-                headers=self.headers,
-                json=payload,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.post(
+            f"{self.BASE_URL}/calendars",
+            headers=self.headers,
+            json=payload,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def delete_calendar(self, calendar_id: str) -> None:
         """
@@ -111,13 +112,13 @@ class CalendarService:
         Args:
             calendar_id: ID du calendrier à supprimer
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(
-                f"{self.BASE_URL}/calendars/{calendar_id}",
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
+        client = await get_http_client()
+        response = await client.delete(
+            f"{self.BASE_URL}/calendars/{calendar_id}",
+            headers=self.headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
 
     # =============================================================================
     # EVENTS MANAGEMENT
@@ -126,11 +127,11 @@ class CalendarService:
     async def list_events(
         self,
         calendar_id: str = "primary",
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None,
+        time_min: datetime | None = None,
+        time_max: datetime | None = None,
         max_results: int = 50,
-        page_token: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        page_token: str | None = None,
+    ) -> dict[str, Any]:
         """
         Liste les événements d'un calendrier.
 
@@ -144,7 +145,7 @@ class CalendarService:
         Returns:
             Dict avec 'items' (événements) et 'nextPageToken'
         """
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "maxResults": min(max_results, 250),
             "singleEvents": True,  # Expand recurring events
             "orderBy": "startTime",
@@ -157,17 +158,17 @@ class CalendarService:
         if page_token:
             params["pageToken"] = page_token
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events",
-                headers=self.headers,
-                params=params,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.get(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events",
+            headers=self.headers,
+            params=params,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
-    async def get_event(self, calendar_id: str, event_id: str) -> Dict[str, Any]:
+    async def get_event(self, calendar_id: str, event_id: str) -> dict[str, Any]:
         """
         Récupère un événement spécifique.
 
@@ -178,26 +179,26 @@ class CalendarService:
         Returns:
             Détails de l'événement
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.get(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            headers=self.headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def create_event(
         self,
         calendar_id: str,
         summary: str,
-        start: Dict[str, Any],
-        end: Dict[str, Any],
-        description: Optional[str] = None,
-        location: Optional[str] = None,
-        attendees: Optional[List[str]] = None,
-        recurrence: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        start: dict[str, Any],
+        end: dict[str, Any],
+        description: str | None = None,
+        location: str | None = None,
+        attendees: list[str] | None = None,
+        recurrence: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Crée un nouvel événement.
 
@@ -214,7 +215,7 @@ class CalendarService:
         Returns:
             Événement créé avec ID
         """
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "summary": summary,
             "start": start,
             "end": end,
@@ -229,28 +230,28 @@ class CalendarService:
         if recurrence:
             payload["recurrence"] = recurrence
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events",
-                headers=self.headers,
-                json=payload,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.post(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events",
+            headers=self.headers,
+            json=payload,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def update_event(
         self,
         calendar_id: str,
         event_id: str,
-        summary: Optional[str] = None,
-        start: Optional[Dict[str, Any]] = None,
-        end: Optional[Dict[str, Any]] = None,
-        description: Optional[str] = None,
-        location: Optional[str] = None,
-        attendees: Optional[List[str]] = None,
-        recurrence: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        summary: str | None = None,
+        start: dict[str, Any] | None = None,
+        end: dict[str, Any] | None = None,
+        description: str | None = None,
+        location: str | None = None,
+        attendees: list[str] | None = None,
+        recurrence: list[str] | None = None,
+    ) -> dict[str, Any]:
         """
         Met à jour un événement existant.
 
@@ -287,15 +288,15 @@ class CalendarService:
         if recurrence is not None:
             current_event["recurrence"] = recurrence
 
-        async with httpx.AsyncClient() as client:
-            response = await client.put(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
-                headers=self.headers,
-                json=current_event,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.put(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            headers=self.headers,
+            json=current_event,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def delete_event(self, calendar_id: str, event_id: str) -> None:
         """
@@ -305,15 +306,15 @@ class CalendarService:
             calendar_id: ID du calendrier
             event_id: ID de l'événement à supprimer
         """
-        async with httpx.AsyncClient() as client:
-            response = await client.delete(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
-                headers=self.headers,
-                timeout=30.0,
-            )
-            response.raise_for_status()
+        client = await get_http_client()
+        response = await client.delete(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            headers=self.headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
 
-    async def quick_add_event(self, calendar_id: str, text: str) -> Dict[str, Any]:
+    async def quick_add_event(self, calendar_id: str, text: str) -> dict[str, Any]:
         """
         Ajoute un événement via parsing texte naturel.
         Ex: "Déjeuner avec Pierre demain à 12h30"
@@ -327,12 +328,12 @@ class CalendarService:
         """
         params = {"text": text}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.BASE_URL}/calendars/{calendar_id}/events/quickAdd",
-                headers=self.headers,
-                params=params,
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = await get_http_client()
+        response = await client.post(
+            f"{self.BASE_URL}/calendars/{calendar_id}/events/quickAdd",
+            headers=self.headers,
+            params=params,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+        return response.json()

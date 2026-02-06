@@ -40,7 +40,7 @@ interface EmailDetailProps {
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const { messages, setCurrentMessage, updateMessage, removeMessage, setIsComposing, setDraftRecipients, setDraftSubject, setDraftBody, setNeedsReauth } = useEmailStore();
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
 
@@ -152,7 +152,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     });
   }
 
-  if (loading) {
+  if (_loading) {
     return (
       <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />

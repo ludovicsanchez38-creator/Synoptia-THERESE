@@ -17,14 +17,17 @@ describe('useKeyboardShortcuts', () => {
     vi.restoreAllMocks();
   });
 
+  // Dans jsdom, navigator.platform n'est pas "MacIntel", donc le hook
+  // utilise ctrlKey comme modificateur. On envoie les deux pour être sûr.
   const createKeyEvent = (
     key: string,
     modifiers: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}
   ): KeyboardEvent => {
+    const useMod = modifiers.meta || modifiers.ctrl;
     return new KeyboardEvent('keydown', {
       key,
       metaKey: modifiers.meta ?? false,
-      ctrlKey: modifiers.ctrl ?? false,
+      ctrlKey: useMod ?? false,
       shiftKey: modifiers.shift ?? false,
       altKey: modifiers.alt ?? false,
       bubbles: true,
@@ -43,7 +46,7 @@ describe('useKeyboardShortcuts', () => {
 
       // Dispatch event directly on document
       act(() => {
-        document.dispatchEvent(createKeyEvent('Escape'));
+        window.dispatchEvent(createKeyEvent('Escape'));
       });
 
       expect(onEscape).toHaveBeenCalled();
@@ -61,7 +64,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('k', { meta: true }));
+        window.dispatchEvent(createKeyEvent('k', { meta: true }));
       });
 
       expect(onCommandPalette).toHaveBeenCalled();
@@ -79,7 +82,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('n', { meta: true }));
+        window.dispatchEvent(createKeyEvent('n', { meta: true }));
       });
 
       expect(onNewConversation).toHaveBeenCalled();
@@ -97,7 +100,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('b', { meta: true }));
+        window.dispatchEvent(createKeyEvent('b', { meta: true }));
       });
 
       expect(onToggleConversationSidebar).toHaveBeenCalled();
@@ -115,7 +118,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('m', { meta: true }));
+        window.dispatchEvent(createKeyEvent('m', { meta: true }));
       });
 
       expect(onToggleMemoryPanel).toHaveBeenCalled();
@@ -133,7 +136,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('d', { meta: true }));
+        window.dispatchEvent(createKeyEvent('d', { meta: true }));
       });
 
       expect(onToggleBoardPanel).toHaveBeenCalled();
@@ -151,7 +154,7 @@ describe('useKeyboardShortcuts', () => {
       );
 
       act(() => {
-        document.dispatchEvent(createKeyEvent('/', { meta: true }));
+        window.dispatchEvent(createKeyEvent('/', { meta: true }));
       });
 
       expect(onShowShortcuts).toHaveBeenCalled();
@@ -160,7 +163,7 @@ describe('useKeyboardShortcuts', () => {
 
   describe('Event cleanup', () => {
     it('should remove event listeners on unmount', () => {
-      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
+      const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
       const { unmount } = renderHook(() =>
         useKeyboardShortcuts({

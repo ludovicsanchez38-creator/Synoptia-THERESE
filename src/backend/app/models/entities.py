@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import Optional
 from uuid import uuid4
 
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 
 def generate_uuid() -> str:
@@ -85,7 +85,7 @@ class Project(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships
-    contact: Optional[Contact] = Relationship(back_populates="projects")
+    contact: Contact | None = Relationship(back_populates="projects")
     tasks: list["Task"] = Relationship(back_populates="project", cascade_delete=True)
     deliverables: list["Deliverable"] = Relationship(back_populates="project", cascade_delete=True)
 
@@ -124,7 +124,7 @@ class Message(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 
     # Relationships
-    conversation: Optional[Conversation] = Relationship(back_populates="messages")
+    conversation: Conversation | None = Relationship(back_populates="messages")
 
 
 class FileMetadata(SQLModel, table=True):

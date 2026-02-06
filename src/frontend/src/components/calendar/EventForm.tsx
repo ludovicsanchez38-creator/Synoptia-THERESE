@@ -18,18 +18,10 @@ export function EventForm() {
     events,
     currentCalendarId,
     currentEventId,
-    draftEvent,
     setIsEventFormOpen,
     setCurrentEvent,
     addEvent,
     updateEvent: updateEventInStore,
-    setDraftSummary,
-    setDraftDescription,
-    setDraftLocation,
-    setDraftStart,
-    setDraftEnd,
-    setDraftAllDay,
-    setDraftAttendees,
     clearDraft,
   } = useCalendarStore();
 

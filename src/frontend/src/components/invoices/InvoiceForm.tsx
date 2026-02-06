@@ -228,7 +228,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 <option value="">Sélectionner un contact</option>
                 {contacts.map((contact) => (
                   <option key={contact.id} value={contact.id}>
-                    {contact.display_name}
+                    {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || contact.id}
                   </option>
                 ))}
               </select>
@@ -241,7 +241,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <select
                 id="status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as typeof status)}
                 className={cn(
                   'w-full px-3 py-2 rounded-lg',
                   'bg-bg border border-border/50',
@@ -314,7 +314,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div className="space-y-2">
               {lines.map((line, index) => {
-                const { totalHT, totalTTC } = calculateLineTotals(line);
+                const { totalHT } = calculateLineTotals(line);
 
                 return (
                   <div key={index} className="p-4 rounded-lg bg-bg border border-border/50 space-y-3">

@@ -11,30 +11,28 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.config import settings
 from app.models.database import get_session
 from app.models.entities import (
-    Contact,
-    Project,
-    Conversation,
-    Message,
-    FileMetadata,
-    Preference,
     BoardDecisionDB,
+    Contact,
+    Conversation,
+    FileMetadata,
+    Message,
+    Preference,
+    Project,
 )
 from app.services.audit import (
-    AuditService,
-    AuditAction,
     ActivityLog,
+    AuditAction,
+    AuditService,
     log_activity,
 )
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -359,8 +357,8 @@ async def delete_all_data(
 
 @router.get("/logs")
 async def get_activity_logs(
-    action: Optional[str] = None,
-    resource_type: Optional[str] = None,
+    action: str | None = None,
+    resource_type: str | None = None,
     limit: int = 100,
     offset: int = 0,
     session: AsyncSession = Depends(get_session),

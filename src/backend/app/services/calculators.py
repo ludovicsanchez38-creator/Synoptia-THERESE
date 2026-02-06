@@ -11,7 +11,6 @@ Outils de calcul pour les entrepreneurs :
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +246,7 @@ class CalculatorService:
         if npv > 0:
             interpretation = f"✅ NPV positive ({npv:,.2f}€). L'investissement crée de la valeur."
         elif npv == 0:
-            interpretation = f"⚠️ NPV nulle. L'investissement atteint juste le seuil de rentabilité."
+            interpretation = "⚠️ NPV nulle. L'investissement atteint juste le seuil de rentabilité."
         else:
             interpretation = f"❌ NPV négative ({npv:,.2f}€). L'investissement détruit de la valeur."
 
@@ -304,7 +303,7 @@ class CalculatorService:
 
 
 # Singleton instance
-_calculator_service: Optional[CalculatorService] = None
+_calculator_service: CalculatorService | None = None
 
 
 def get_calculator_service() -> CalculatorService:

@@ -11,13 +11,12 @@ import json
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
+from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-
-from app.models.entities import Contact, Project, Deliverable, generate_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +28,9 @@ ImportFormat = Literal["csv", "xlsx", "json"]
 class ImportError:
     """Error encountered during import."""
     row: int
-    column: Optional[str]
+    column: str | None
     message: str
-    data: Optional[dict] = None
+    data: dict | None = None
 
 
 @dataclass
@@ -203,7 +202,7 @@ DELIVERABLE_COLUMN_MAPPING = {
 # ============================================================
 
 
-def _detect_format(content: bytes, filename: Optional[str] = None) -> ImportFormat:
+def _detect_format(content: bytes, filename: str | None = None) -> ImportFormat:
     """Detect file format from content or filename."""
     if filename:
         if filename.endswith(".csv"):
@@ -241,7 +240,7 @@ def _parse_csv(content: bytes) -> list[dict]:
     return list(reader)
 
 
-def _parse_xlsx(content: bytes, sheet_name: Optional[str] = None) -> list[dict]:
+def _parse_xlsx(content: bytes, sheet_name: str | None = None) -> list[dict]:
     """Parse Excel content to list of dicts."""
     wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
 
@@ -445,8 +444,8 @@ class CRMImportService:
     async def preview_contacts(
         self,
         content: bytes,
-        filename: Optional[str] = None,
-        custom_mapping: Optional[dict[str, str]] = None,
+        filename: str | None = None,
+        custom_mapping: dict[str, str] | None = None,
     ) -> ImportPreview:
         """
         Preview contact import without executing.
@@ -519,8 +518,8 @@ class CRMImportService:
     async def import_contacts(
         self,
         content: bytes,
-        filename: Optional[str] = None,
-        custom_mapping: Optional[dict[str, str]] = None,
+        filename: str | None = None,
+        custom_mapping: dict[str, str] | None = None,
         update_existing: bool = True,
     ) -> ImportResult:
         """
@@ -642,8 +641,8 @@ class CRMImportService:
     async def import_projects(
         self,
         content: bytes,
-        filename: Optional[str] = None,
-        custom_mapping: Optional[dict[str, str]] = None,
+        filename: str | None = None,
+        custom_mapping: dict[str, str] | None = None,
         update_existing: bool = True,
     ) -> ImportResult:
         """
@@ -779,8 +778,8 @@ class CRMImportService:
     async def import_deliverables(
         self,
         content: bytes,
-        filename: Optional[str] = None,
-        custom_mapping: Optional[dict[str, str]] = None,
+        filename: str | None = None,
+        custom_mapping: dict[str, str] | None = None,
         update_existing: bool = True,
     ) -> ImportResult:
         """

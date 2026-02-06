@@ -13,9 +13,8 @@ Sources :
 """
 
 import re
-from datetime import UTC, datetime, timedelta
-from typing import Optional
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 
 @dataclass
@@ -166,8 +165,8 @@ class EmailClassifierV2:
         snippet: str,
         labels: list[str],
         has_attachments: bool = False,
-        date: Optional[datetime] = None,
-        contact_score: Optional[int] = None,
+        date: datetime | None = None,
+        contact_score: int | None = None,
     ) -> ClassificationResult:
         """
         Classifie un email avec algorithme sophistiqué.
@@ -358,7 +357,7 @@ class EmailClassifierV2:
         if 'urgent' in signals:
             reasons.append(f"Urgent : {', '.join(signals['urgent'][:2])}")
         if 'time_sensitive' in signals:
-            reasons.append(f"Time-sensitive")
+            reasons.append("Time-sensitive")
         if 'crm_vip' in signals:
             reasons.append(f"Client VIP (score {signals['crm_vip']})")
         elif 'crm_active' in signals:

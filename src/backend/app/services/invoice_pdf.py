@@ -8,13 +8,13 @@ Phase 4 - Invoicing
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +43,9 @@ class InvoicePDFGenerator:
 
     def generate_invoice_pdf(
         self,
-        invoice_data: Dict[str, Any],
-        contact_data: Dict[str, Any],
-        user_profile: Dict[str, Any],
+        invoice_data: dict[str, Any],
+        contact_data: dict[str, Any],
+        user_profile: dict[str, Any],
     ) -> str:
         """
         Génère une facture PDF.
@@ -271,15 +271,20 @@ class InvoicePDFGenerator:
             story.append(Spacer(1, 5 * mm))
 
         # Conditions de paiement (mentions obligatoires France)
-        conditions = """
+        tva_applicable = invoice_data.get("tva_applicable", True)
+        if tva_applicable:
+            tva_mention = "TVA incluse selon les taux en vigueur."
+        else:
+            tva_mention = "TVA non applicable, art. 293 B du CGI."
+
+        conditions = f"""
         <b>Conditions de paiement :</b><br/>
         Paiement à réception de facture, net à 30 jours.<br/>
         En cas de retard de paiement, application d'intérêts de retard au taux légal.<br/>
         Indemnité forfaitaire pour frais de recouvrement : 40 €.<br/>
         <br/>
-        <b>Mentions légales obligatoires :</b><br/>
-        TVA non applicable, art. 293 B du CGI (si micro-entreprise).<br/>
-        Pas de TVA facturée (art. 293 B du CGI).<br/>
+        <b>Mentions légales :</b><br/>
+        {tva_mention}<br/>
         """
         story.append(Paragraph(conditions, normal_style))
 

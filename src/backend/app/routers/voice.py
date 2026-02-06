@@ -9,25 +9,17 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.models.database import get_session
 from app.models.entities import Preference
+from app.models.schemas_voice import TranscriptionResponse
+from app.services.http_client import get_http_client
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-class TranscriptionResponse(BaseModel):
-    """Transcription response."""
-
-    text: str
-    duration_seconds: float | None = None
-    language: str | None = None
 
 
 async def _get_groq_api_key(session: AsyncSession) -> str | None:
@@ -86,22 +78,23 @@ async def transcribe_audio(
 
     try:
         # Call Groq Whisper API
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            with open(tmp_path, "rb") as f:
-                response = await client.post(
-                    "https://api.groq.com/openai/v1/audio/transcriptions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                    },
-                    files={
-                        "file": (filename, f, audio.content_type or "audio/webm"),
-                    },
-                    data={
-                        "model": "whisper-large-v3-turbo",
-                        "language": "fr",  # Default to French
-                        "response_format": "verbose_json",
-                    },
-                )
+        client = await get_http_client()
+        with open(tmp_path, "rb") as f:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                },
+                files={
+                    "file": (filename, f, audio.content_type or "audio/webm"),
+                },
+                data={
+                    "model": "whisper-large-v3-turbo",
+                    "language": "fr",  # Default to French
+                    "response_format": "verbose_json",
+                },
+                timeout=60.0,
+            )
 
         if response.status_code != 200:
             error_msg = response.text

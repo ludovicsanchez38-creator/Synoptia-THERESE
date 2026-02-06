@@ -94,29 +94,3 @@ async def http_client_lifespan() -> AsyncGenerator[None, None]:
         await close_http_client()
 
 
-async def get_short_timeout_client() -> httpx.AsyncClient:
-    """
-    Get a client reference with short timeout for quick checks.
-
-    Note: This returns the same client but callers should use
-    timeout parameter in their requests for short operations.
-    """
-    return await get_http_client()
-
-
-# Convenience function for one-off requests that need custom timeout
-@asynccontextmanager
-async def http_request_context(
-    timeout: float = DEFAULT_TIMEOUT,
-) -> AsyncGenerator[httpx.AsyncClient, None]:
-    """
-    Context manager for HTTP requests with custom timeout.
-
-    This reuses the global client but allows timeout override per-request.
-
-    Usage:
-        async with http_request_context(timeout=5.0) as client:
-            response = await client.get(url, timeout=5.0)
-    """
-    client = await get_http_client()
-    yield client

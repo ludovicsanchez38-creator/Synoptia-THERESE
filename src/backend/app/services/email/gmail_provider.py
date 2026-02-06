@@ -7,20 +7,17 @@ Wraps the existing GmailService.
 
 import json
 import logging
-from datetime import datetime
-from typing import Optional
 
 from app.services.email.base_provider import (
-    EmailProvider,
-    EmailMessageDTO,
-    EmailFolderDTO,
     EmailAttachmentDTO,
+    EmailFolderDTO,
+    EmailMessageDTO,
+    EmailProvider,
     SendEmailRequest,
 )
 from app.services.gmail_service import (
     GmailService,
     format_message_for_storage,
-    parse_email_body,
 )
 
 logger = logging.getLogger(__name__)
@@ -65,12 +62,12 @@ class GmailProvider(EmailProvider):
 
     async def list_messages(
         self,
-        folder: Optional[str] = None,
+        folder: str | None = None,
         max_results: int = 50,
-        page_token: Optional[str] = None,
-        query: Optional[str] = None,
+        page_token: str | None = None,
+        query: str | None = None,
         unread_only: bool = False,
-    ) -> tuple[list[EmailMessageDTO], Optional[str]]:
+    ) -> tuple[list[EmailMessageDTO], str | None]:
         """List messages from Gmail."""
         label_ids = None
         if folder:
@@ -141,10 +138,10 @@ class GmailProvider(EmailProvider):
     async def modify_message(
         self,
         message_id: str,
-        add_labels: Optional[list[str]] = None,
-        remove_labels: Optional[list[str]] = None,
-        mark_read: Optional[bool] = None,
-        mark_starred: Optional[bool] = None,
+        add_labels: list[str] | None = None,
+        remove_labels: list[str] | None = None,
+        mark_read: bool | None = None,
+        mark_starred: bool | None = None,
     ) -> EmailMessageDTO:
         """Modify message labels/flags in Gmail."""
         add_label_ids = list(add_labels) if add_labels else []
@@ -196,7 +193,7 @@ class GmailProvider(EmailProvider):
         labels = await self._service.list_labels()
         return [self._label_to_dto(label) for label in labels]
 
-    async def create_folder(self, name: str, parent: Optional[str] = None) -> EmailFolderDTO:
+    async def create_folder(self, name: str, parent: str | None = None) -> EmailFolderDTO:
         """Create a new Gmail label."""
         label_name = f"{parent}/{name}" if parent else name
         result = await self._service.create_label(label_name)
@@ -217,15 +214,16 @@ class GmailProvider(EmailProvider):
     ) -> EmailAttachmentDTO:
         """Get attachment content from Gmail."""
         import base64
-        import httpx
+
+        from app.services.http_client import get_http_client
 
         url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}/attachments/{attachment_id}"
         headers = {"Authorization": f"Bearer {self._access_token}"}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, headers=headers, timeout=30.0)
-            response.raise_for_status()
-            data = response.json()
+        client = await get_http_client()
+        response = await client.get(url, headers=headers, timeout=30.0)
+        response.raise_for_status()
+        data = response.json()
 
         content = base64.urlsafe_b64decode(data.get("data", ""))
 

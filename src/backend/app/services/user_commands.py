@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
-
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,8 +28,8 @@ class UserCommand:
         icon: str = "",
         show_on_home: bool = False,
         content: str = "",
-        created_at: Optional[str] = None,
-        updated_at: Optional[str] = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
     ):
         self.name = name
         self.description = description
@@ -134,7 +133,7 @@ class UserCommandsService:
 
         return commands
 
-    def get_command(self, name: str) -> Optional[UserCommand]:
+    def get_command(self, name: str) -> UserCommand | None:
         """Recupere une commande par son nom."""
         filepath = self._command_path(name)
         if not filepath.exists():
@@ -173,12 +172,12 @@ class UserCommandsService:
     def update_command(
         self,
         name: str,
-        description: Optional[str] = None,
-        category: Optional[str] = None,
-        icon: Optional[str] = None,
-        show_on_home: Optional[bool] = None,
-        content: Optional[str] = None,
-    ) -> Optional[UserCommand]:
+        description: str | None = None,
+        category: str | None = None,
+        icon: str | None = None,
+        show_on_home: bool | None = None,
+        content: str | None = None,
+    ) -> UserCommand | None:
         """Met a jour une commande existante."""
         cmd = self.get_command(name)
         if not cmd:

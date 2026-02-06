@@ -8,11 +8,11 @@ US-ERR-02: Retry automatique en cas de timeout
 US-ERR-03: Mode degrade si Qdrant indisponible
 """
 
-import logging
 import asyncio
-from typing import Optional, Callable, TypeVar, Any
-from functools import wraps
+import logging
 from enum import Enum
+from functools import wraps
+from typing import Any, Callable, TypeVar
 
 import httpx
 
@@ -89,8 +89,8 @@ class TheresError(Exception):
         self,
         code: ErrorCode,
         technical_message: str,
-        user_message: Optional[str] = None,
-        context: Optional[dict] = None,
+        user_message: str | None = None,
+        context: dict | None = None,
         recoverable: bool = True,
     ):
         self.code = code
@@ -245,7 +245,7 @@ def get_service_status() -> ServiceStatus:
 
 async def with_graceful_degradation(
     primary_func: Callable[..., T],
-    fallback_func: Optional[Callable[..., T]] = None,
+    fallback_func: Callable[..., T] | None = None,
     service_name: str = "unknown",
     default_value: Any = None,
 ) -> T:

@@ -5,17 +5,11 @@ API endpoints pour la génération de documents via skills.
 """
 
 import logging
-from typing import Optional
-
-from fastapi import APIRouter, HTTPException, Query, Depends
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models.database import get_session
 from app.models.entities import Contact, Project
+from app.models.schemas_skills import ExecuteSkillRequest, SkillInfo
 from app.services.llm import LLMService, get_llm_service
-from app.services.user_profile import get_cached_profile
 from app.services.skills import (
     SkillExecuteRequest,
     SkillExecuteResponse,
@@ -23,26 +17,14 @@ from app.services.skills import (
 )
 from app.services.skills.base import SkillOutputType
 from app.services.skills.model_capability import get_model_capability
+from app.services.user_profile import get_cached_profile
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-class ExecuteSkillRequest(BaseModel):
-    """Requête pour exécuter un skill."""
-    prompt: str = Field(..., description="Prompt utilisateur décrivant le document à générer")
-    title: Optional[str] = Field(None, description="Titre du document (optionnel)")
-    template: str = Field(default="synoptia-dark", description="Style/template")
-    context: dict = Field(default_factory=dict, description="Contexte additionnel")
-
-
-class SkillInfo(BaseModel):
-    """Informations sur un skill."""
-    skill_id: str
-    name: str
-    description: str
-    format: str
 
 
 @router.get("/list", response_model=list[SkillInfo])
@@ -211,7 +193,6 @@ async def download_file(file_id: str):
 
     # Si pas en cache, chercher le fichier sur disque par son ID
     if not result:
-        from pathlib import Path
         output_dir = registry.output_dir
 
         # Chercher un fichier dont le nom contient le file_id (format: Title_fileId[:8].ext)
@@ -245,7 +226,7 @@ async def download_file(file_id: str):
     if not result.file_path.exists():
         raise HTTPException(
             status_code=404,
-            detail=f"File not found on disk"
+            detail="File not found on disk"
         )
 
     return FileResponse(

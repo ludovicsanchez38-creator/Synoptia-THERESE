@@ -11,7 +11,6 @@ import logging
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +29,9 @@ class SecurityCheck:
     """Result of a security check."""
     is_safe: bool
     threat_level: ThreatLevel
-    threat_type: Optional[str] = None
-    details: Optional[str] = None
-    sanitized_input: Optional[str] = None
+    threat_type: str | None = None
+    details: str | None = None
+    sanitized_input: str | None = None
 
 
 # Patterns indicating potential prompt injection

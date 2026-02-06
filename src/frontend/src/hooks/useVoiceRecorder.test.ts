@@ -7,14 +7,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+// Mock api module (le hook utilise api.transcribeAudio)
+vi.mock('../services/api', () => ({
+  transcribeAudio: vi.fn().mockResolvedValue('transcribed text'),
+}));
+
 // Mock MediaRecorder
 class MockMediaRecorder {
   state: 'inactive' | 'recording' | 'paused' = 'inactive';
+  mimeType = 'audio/webm';
   ondataavailable: ((e: { data: Blob }) => void) | null = null;
   onstop: (() => void) | null = null;
   onerror: ((e: Error) => void) | null = null;
 
-  start() {
+  static isTypeSupported(_mimeType: string): boolean {
+    return true;
+  }
+
+  start(_timeslice?: number) {
     this.state = 'recording';
   }
 
@@ -88,7 +98,14 @@ describe('useVoiceRecorder', () => {
         await result.current.startRecording();
       });
 
-      expect(mockGetUserMedia).toHaveBeenCalledWith({ audio: true });
+      expect(mockGetUserMedia).toHaveBeenCalledWith({
+        audio: {
+          channelCount: 1,
+          sampleRate: 16000,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
     });
 
     it('should change state to recording', async () => {

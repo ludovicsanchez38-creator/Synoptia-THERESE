@@ -36,7 +36,7 @@ const PROVIDERS: ProviderConfig[] = [
     models: [
       { id: 'claude-sonnet-4-5-20250929', name: 'Claude 4.5 Sonnet', badge: 'Recommandé' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude 4.5 Haiku', badge: 'Rapide' },
-      { id: 'claude-opus-4-5-20251101', name: 'Claude 4.5 Opus', badge: 'Premium' },
+      { id: 'claude-opus-4-6', name: 'Claude 4.6 Opus', badge: 'Premium' },
     ],
   },
   {

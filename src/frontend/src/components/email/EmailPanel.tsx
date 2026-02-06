@@ -17,7 +17,6 @@ import {
   Star,
   RefreshCw,
   Plus,
-  Settings,
   Loader2,
   UserPlus,
   ChevronDown,

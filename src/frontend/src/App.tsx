@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { PanelWindow } from './components/panels/PanelWindow';
 import { Notifications } from './components/ui/Notifications';
 import { OnboardingWizard } from './components/onboarding';
+import { SplashScreen } from './components/SplashScreen';
 import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
 import * as api from './services/api';
 import type { PanelType } from './services/windowManager';
+
+// Mode production Tauri (sidecar actif) : on attend que le backend soit prêt
+const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 
 // Detecter si on est dans une fenetre panel
 function getPanelFromUrl(): PanelType | null {
@@ -21,6 +25,7 @@ function getPanelFromUrl(): PanelType | null {
 const activePanel = getPanelFromUrl();
 
 function App() {
+  const [backendReady, setBackendReady] = useState(!IS_TAURI_PRODUCTION);
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -32,8 +37,16 @@ function App() {
   // Health check du backend
   useHealthCheck();
 
+  // Callback quand le SplashScreen détecte le backend prêt
+  const handleBackendReady = useCallback(() => {
+    setBackendReady(true);
+  }, []);
+
   // SEC-010: Initialize auth token at startup then check onboarding
+  // (seulement quand le backend est prêt)
   useEffect(() => {
+    if (!backendReady) return;
+
     async function initAndCheckOnboarding() {
       // Retry loop : le backend peut mettre un instant à démarrer
       const maxRetries = 5;
@@ -68,7 +81,7 @@ function App() {
     }
 
     initAndCheckOnboarding();
-  }, []);
+  }, [backendReady]);
 
   useEffect(() => {
     // Ready once onboarding check is complete
@@ -85,6 +98,11 @@ function App() {
   // Si on est dans une fenetre panel, afficher directement le panel
   if (activePanel) {
     return <PanelWindow panel={activePanel} />;
+  }
+
+  // En production Tauri : SplashScreen pendant le démarrage du sidecar
+  if (!backendReady) {
+    return <SplashScreen onReady={handleBackendReady} />;
   }
 
   if (!isReady) {

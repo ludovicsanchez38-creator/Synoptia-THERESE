@@ -6,9 +6,9 @@ Used for CRM sync from Google Sheets.
 """
 
 import logging
-from typing import Optional
 
 import httpx
+from app.services.http_client import get_http_client
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class GoogleSheetsService:
     Supports both OAuth tokens and API keys.
     """
 
-    def __init__(self, access_token: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, access_token: str | None = None, api_key: str | None = None):
         """
         Initialize Sheets service.
 
@@ -59,8 +59,8 @@ class GoogleSheetsService:
         self,
         method: str,
         endpoint: str,
-        params: Optional[dict] = None,
-        json_body: Optional[dict] = None,
+        params: dict | None = None,
+        json_body: dict | None = None,
     ) -> dict:
         """Make authenticated request to Sheets API."""
         url = f"{SHEETS_API_BASE}/{endpoint}"
@@ -71,51 +71,51 @@ class GoogleSheetsService:
         if self.api_key and not self.access_token:
             params['key'] = self.api_key
 
-        async with httpx.AsyncClient() as client:
-            try:
-                kwargs: dict = {
-                    "headers": self.headers,
-                    "params": params,
-                    "timeout": 30.0,
-                }
-                if json_body is not None:
-                    kwargs["json"] = json_body
+        client = await get_http_client()
+        try:
+            kwargs: dict = {
+                "headers": self.headers,
+                "params": params,
+                "timeout": 30.0,
+            }
+            if json_body is not None:
+                kwargs["json"] = json_body
 
-                response = await client.request(method, url, **kwargs)
+            response = await client.request(method, url, **kwargs)
 
-                if response.status_code == 401:
-                    logger.error("Sheets API: Access token expired or invalid")
-                    raise HTTPException(
-                        status_code=401,
-                        detail="Google Sheets access token expired. Please reconnect."
-                    )
+            if response.status_code == 401:
+                logger.error("Sheets API: Access token expired or invalid")
+                raise HTTPException(
+                    status_code=401,
+                    detail="Google Sheets access token expired. Please reconnect."
+                )
 
-                if response.status_code == 403:
-                    logger.error("Sheets API: Permission denied")
-                    raise HTTPException(
-                        status_code=403,
-                        detail="Permission denied. Make sure the spreadsheet is shared with your Google account."
-                    )
+            if response.status_code == 403:
+                logger.error("Sheets API: Permission denied")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Permission denied. Make sure the spreadsheet is shared with your Google account."
+                )
 
-                if response.status_code == 404:
-                    logger.error("Sheets API: Spreadsheet not found")
-                    raise HTTPException(
-                        status_code=404,
-                        detail="Spreadsheet not found. Check the spreadsheet ID."
-                    )
+            if response.status_code == 404:
+                logger.error("Sheets API: Spreadsheet not found")
+                raise HTTPException(
+                    status_code=404,
+                    detail="Spreadsheet not found. Check the spreadsheet ID."
+                )
 
-                if response.status_code not in (200, 201):
-                    logger.error(f"Sheets API error: {response.status_code} {response.text}")
-                    raise HTTPException(
-                        status_code=response.status_code,
-                        detail=f"Google Sheets API error: {response.text}"
-                    )
+            if response.status_code not in (200, 201):
+                logger.error(f"Sheets API error: {response.status_code} {response.text}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Google Sheets API error: {response.text}"
+                )
 
-                return response.json()
+            return response.json()
 
-            except httpx.HTTPError as e:
-                logger.error(f"HTTP error calling Sheets API: {e}")
-                raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error calling Sheets API: {e}")
+            raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
 
     async def get_spreadsheet_info(self, spreadsheet_id: str) -> dict:
         """
@@ -133,7 +133,7 @@ class GoogleSheetsService:
         self,
         spreadsheet_id: str,
         sheet_name: str,
-        range_notation: Optional[str] = None,
+        range_notation: str | None = None,
     ) -> list[list[str]]:
         """
         Get data from a specific sheet.

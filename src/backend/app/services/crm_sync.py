@@ -1,23 +1,27 @@
 """
-THÉRÈSE v2 - CRM Sync Service
+THERESE v2 - CRM Sync Service
 
 Synchronizes data from Google Sheets CRM to local SQLite database.
 Google Sheets is the source of truth.
 
 Sprint 2 - PERF-2.4: Migrated to AsyncSession for proper async DB operations.
+Refactored: utilise crm_utils pour les upserts partages.
 """
 
-import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Optional
 
+from app.models.entities import Contact, Deliverable, Preference, Project
+from app.services.crm_utils import (
+    parse_datetime,
+    upsert_contact,
+    upsert_project,
+    upsert_task,
+)
+from app.services.sheets_service import GoogleSheetsService
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-
-from app.models.entities import Contact, Project, Deliverable, Task, Preference
-from app.services.sheets_service import GoogleSheetsService
 
 logger = logging.getLogger(__name__)
 
@@ -77,12 +81,13 @@ class SyncStats:
 
 class CRMSyncService:
     """
-    Synchronizes CRM data from Google Sheets to THÉRÈSE.
+    Synchronizes CRM data from Google Sheets to THERESE.
 
     Google Sheets is the master data source.
-    Sync is unidirectional: Sheets -> THÉRÈSE.
+    Sync is unidirectional: Sheets -> THERESE.
 
     Sprint 2 - PERF-2.4: Uses AsyncSession for non-blocking DB operations.
+    Refactored: delegue les upserts a crm_utils.
     """
 
     def __init__(self, session: AsyncSession, sheets_service: GoogleSheetsService):
@@ -100,7 +105,7 @@ class CRMSyncService:
         """
         Sync all CRM data from Google Sheets.
 
-        Syncs: Clients -> Projects -> Deliverables
+        Syncs: Clients -> Projects -> Deliverables -> Tasks
 
         Args:
             spreadsheet_id: Google Sheets spreadsheet ID
@@ -156,79 +161,20 @@ class CRMSyncService:
         """
         Sync clients from Sheets to Contact entities.
 
-        Mapping:
-            Sheets.ID -> Contact.id
-            Sheets.Nom -> Contact.first_name + last_name (split)
-            Sheets.Entreprise -> Contact.company
-            Sheets.Email -> Contact.email
-            Sheets.Tel -> Contact.phone
-            Sheets.Source -> Contact.source
-            Sheets.Stage -> Contact.stage
-            Sheets.Score -> Contact.score
-            Sheets.Tags -> Contact.tags (JSON)
-            Sheets.LastInteraction -> Contact.last_interaction
+        Utilise upsert_contact() de crm_utils + gestion last_interaction specifique.
         """
         for row in clients_data:
             try:
-                crm_id = row.get("ID", "").strip()
-                if not crm_id:
-                    continue
-
-                # Check if contact exists (Sprint 2 - PERF-2.4: async get)
-                existing = await self.session.get(Contact, crm_id)
-
-                # Parse name (split on first space)
-                full_name = row.get("Nom", "").strip()
-                first_name, last_name = self._split_name(full_name)
-
-                # Parse score
-                score_str = row.get("Score", "50").strip()
-                try:
-                    score = int(float(score_str)) if score_str else 50
-                except ValueError:
-                    score = 50
-
-                # Parse tags
-                tags_str = row.get("Tags", "").strip()
-                tags_json = json.dumps(tags_str.split(",")) if tags_str else None
-
-                # Parse last interaction
-                last_interaction = self._parse_datetime(row.get("LastInteraction", ""))
-
-                if existing:
-                    # Update existing contact
-                    existing.first_name = first_name
-                    existing.last_name = last_name
-                    existing.company = row.get("Entreprise", "").strip() or None
-                    existing.email = row.get("Email", "").strip() or None
-                    existing.phone = row.get("Tel", "").strip() or None
-                    existing.source = row.get("Source", "").strip() or None
-                    existing.stage = row.get("Stage", "contact").strip() or "contact"
-                    existing.score = score
-                    existing.tags = tags_json
-                    existing.last_interaction = last_interaction
-                    existing.updated_at = datetime.now(UTC)
-                    self.session.add(existing)
-                    stats.contacts_updated += 1
-                else:
-                    # Create new contact
-                    contact = Contact(
-                        id=crm_id,
-                        first_name=first_name,
-                        last_name=last_name,
-                        company=row.get("Entreprise", "").strip() or None,
-                        email=row.get("Email", "").strip() or None,
-                        phone=row.get("Tel", "").strip() or None,
-                        source=row.get("Source", "").strip() or None,
-                        stage=row.get("Stage", "contact").strip() or "contact",
-                        score=score,
-                        tags=tags_json,
-                        last_interaction=last_interaction,
-                        scope="global",
-                    )
-                    self.session.add(contact)
+                contact, created = await upsert_contact(self.session, row)
+                # Champ specifique au sync service : last_interaction
+                last_interaction = parse_datetime(row.get("LastInteraction", ""))
+                contact.last_interaction = last_interaction
+                if created:
                     stats.contacts_created += 1
-
+                else:
+                    stats.contacts_updated += 1
+            except ValueError:
+                continue  # ID manquant
             except Exception as e:
                 logger.error(f"Error syncing contact {row.get('ID', 'unknown')}: {e}")
                 stats.errors.append(f"Contact {row.get('ID', 'unknown')}: {str(e)}")
@@ -237,80 +183,22 @@ class CRMSyncService:
         """
         Sync projects from Sheets to Project entities.
 
-        Mapping:
-            Sheets.ID -> Project.id
-            Sheets.ClientID -> Project.contact_id
-            Sheets.Name -> Project.name
-            Sheets.Description -> Project.description
-            Sheets.Status -> Project.status
-            Sheets.Budget -> Project.budget
-            Sheets.Notes -> Project.notes
+        Utilise upsert_project() de crm_utils + verification contact existant.
         """
-        # Map status values
-        status_map = {
-            "en_cours": "active",
-            "en_pause": "on_hold",
-            "termine": "completed",
-            "annule": "cancelled",
-        }
-
         for row in projects_data:
             try:
-                project_id = row.get("ID", "").strip()
-                if not project_id:
-                    continue
-
-                # Check if project exists (Sprint 2 - PERF-2.4: async get)
-                existing = await self.session.get(Project, project_id)
-
-                # Get contact ID
-                client_id = row.get("ClientID", "").strip() or None
-
-                # Verify contact exists if client_id provided (Sprint 2 - PERF-2.4: async get)
-                if client_id:
-                    contact = await self.session.get(Contact, client_id)
+                project, created = await upsert_project(self.session, row)
+                # Verification specifique : le contact lie existe-t-il ?
+                if project.contact_id:
+                    contact = await self.session.get(Contact, project.contact_id)
                     if not contact:
-                        client_id = None  # Don't link to non-existent contact
-
-                # Parse status
-                raw_status = row.get("Status", "active").strip().lower()
-                status = status_map.get(raw_status, raw_status)
-                if status not in ["active", "completed", "on_hold", "cancelled"]:
-                    status = "active"
-
-                # Parse budget
-                budget_str = row.get("Budget", "").strip()
-                try:
-                    budget = float(budget_str) if budget_str else None
-                except ValueError:
-                    budget = None
-
-                if existing:
-                    # Update existing project
-                    existing.name = row.get("Name", "Sans nom").strip()
-                    existing.description = row.get("Description", "").strip() or None
-                    existing.contact_id = client_id
-                    existing.status = status
-                    existing.budget = budget
-                    existing.notes = row.get("Notes", "").strip() or None
-                    existing.updated_at = datetime.now(UTC)
-                    self.session.add(existing)
-                    stats.projects_updated += 1
-                else:
-                    # Create new project
-                    project = Project(
-                        id=project_id,
-                        name=row.get("Name", "Sans nom").strip(),
-                        description=row.get("Description", "").strip() or None,
-                        contact_id=client_id,
-                        status=status,
-                        budget=budget,
-                        notes=row.get("Notes", "").strip() or None,
-                        scope="global",
-                    )
-                    self.session.add(project)
+                        project.contact_id = None  # Ne pas lier a un contact inexistant
+                if created:
                     stats.projects_created += 1
-
+                else:
+                    stats.projects_updated += 1
+            except ValueError:
+                continue
             except Exception as e:
                 logger.error(f"Error syncing project {row.get('ID', 'unknown')}: {e}")
                 stats.errors.append(f"Project {row.get('ID', 'unknown')}: {str(e)}")
@@ -319,14 +207,7 @@ class CRMSyncService:
         """
         Sync deliverables from Sheets to Deliverable entities.
 
-        Mapping:
-            Sheets.ID -> Deliverable.id
-            Sheets.ProjectID -> Deliverable.project_id
-            Sheets.Title -> Deliverable.title
-            Sheets.Description -> Deliverable.description
-            Sheets.Status -> Deliverable.status
-            Sheets.DueDate -> Deliverable.due_date
-            Sheets.DeliveredDate -> Deliverable.completed_at
+        Ce mapping est specifique au service sync (statuts en francais, verification projet).
         """
         # Map status values
         status_map = {
@@ -346,7 +227,6 @@ class CRMSyncService:
                 if not deliverable_id:
                     continue
 
-                # Check if deliverable exists (Sprint 2 - PERF-2.4: async get)
                 existing = await self.session.get(Deliverable, deliverable_id)
 
                 # Get project ID
@@ -354,7 +234,7 @@ class CRMSyncService:
                 if not project_id:
                     continue  # Skip deliverables without project
 
-                # Verify project exists (Sprint 2 - PERF-2.4: async get)
+                # Verify project exists
                 project = await self.session.get(Project, project_id)
                 if not project:
                     logger.warning(f"Deliverable {deliverable_id} references unknown project {project_id}")
@@ -365,11 +245,10 @@ class CRMSyncService:
                 status = status_map.get(raw_status, "a_faire")
 
                 # Parse dates
-                due_date = self._parse_datetime(row.get("DueDate", ""))
-                completed_at = self._parse_datetime(row.get("DeliveredDate", ""))
+                due_date = parse_datetime(row.get("DueDate", ""))
+                completed_at = parse_datetime(row.get("DeliveredDate", ""))
 
                 if existing:
-                    # Update existing deliverable
                     existing.title = row.get("Title", "Sans titre").strip()
                     existing.description = row.get("Description", "").strip() or None
                     existing.project_id = project_id
@@ -380,7 +259,6 @@ class CRMSyncService:
                     self.session.add(existing)
                     stats.deliverables_updated += 1
                 else:
-                    # Create new deliverable
                     deliverable = Deliverable(
                         id=deliverable_id,
                         title=row.get("Title", "Sans titre").strip(),
@@ -401,103 +279,20 @@ class CRMSyncService:
         """
         Sync tasks from Sheets to Task entities.
 
-        Mapping:
-            Sheets.ID -> Task.id
-            Sheets.ClientID -> (ignored, no direct field)
-            Sheets.Title -> Task.title
-            Sheets.Description -> Task.description
-            Sheets.DueDate -> Task.due_date
-            Sheets.Priority -> Task.priority (normal->medium, urgent->urgent)
-            Sheets.Status -> Task.status (todo/done)
-            Sheets.CreatedAt -> Task.created_at
-            Sheets.CompletedAt -> Task.completed_at
+        Utilise upsert_task() de crm_utils.
         """
-        priority_map = {
-            "normal": "medium",
-            "urgent": "urgent",
-            "low": "low",
-            "high": "high",
-            "medium": "medium",
-        }
-
         for row in tasks_data:
             try:
-                task_id = row.get("ID", "").strip()
-                if not task_id:
-                    continue
-
-                existing = await self.session.get(Task, task_id)
-
-                # Parse priority
-                raw_priority = row.get("Priority", "medium").strip().lower()
-                priority = priority_map.get(raw_priority, "medium")
-
-                # Parse status
-                raw_status = row.get("Status", "todo").strip().lower()
-                if raw_status not in ("todo", "in_progress", "done", "cancelled"):
-                    raw_status = "todo"
-
-                # Parse dates
-                due_date = self._parse_datetime(row.get("DueDate", ""))
-                created_at = self._parse_datetime(row.get("CreatedAt", ""))
-                completed_at = self._parse_datetime(row.get("CompletedAt", ""))
-
-                if existing:
-                    existing.title = row.get("Title", "Sans titre").strip()
-                    existing.description = row.get("Description", "").strip() or None
-                    existing.priority = priority
-                    existing.status = raw_status
-                    existing.due_date = due_date
-                    existing.completed_at = completed_at
-                    existing.updated_at = datetime.now(UTC)
-                    self.session.add(existing)
-                    stats.tasks_updated += 1
-                else:
-                    task = Task(
-                        id=task_id,
-                        title=row.get("Title", "Sans titre").strip(),
-                        description=row.get("Description", "").strip() or None,
-                        priority=priority,
-                        status=raw_status,
-                        due_date=due_date,
-                        completed_at=completed_at,
-                        created_at=created_at or datetime.now(UTC),
-                    )
-                    self.session.add(task)
+                _, created = await upsert_task(self.session, row)
+                if created:
                     stats.tasks_created += 1
-
+                else:
+                    stats.tasks_updated += 1
+            except ValueError:
+                continue
             except Exception as e:
                 logger.error(f"Error syncing task {row.get('ID', 'unknown')}: {e}")
                 stats.errors.append(f"Task {row.get('ID', 'unknown')}: {str(e)}")
-
-    def _split_name(self, full_name: str) -> tuple[str, Optional[str]]:
-        """Split full name into first and last name."""
-        parts = full_name.split(" ", 1)
-        first_name = parts[0] if parts else ""
-        last_name = parts[1] if len(parts) > 1 else None
-        return first_name, last_name
-
-    def _parse_datetime(self, value: str) -> Optional[datetime]:
-        """Parse datetime from various formats."""
-        if not value or not value.strip():
-            return None
-
-        value = value.strip()
-
-        # Try ISO format
-        for fmt in [
-            "%Y-%m-%dT%H:%M:%S.%fZ",
-            "%Y-%m-%dT%H:%M:%SZ",
-            "%Y-%m-%dT%H:%M:%S",
-            "%Y-%m-%d",
-            "%d/%m/%Y",
-        ]:
-            try:
-                return datetime.strptime(value, fmt)
-            except ValueError:
-                continue
-
-        return None
 
 
 # ============================================================
@@ -563,7 +358,7 @@ async def set_crm_spreadsheet_id(session: AsyncSession, spreadsheet_id: str):
     await session.commit()
 
 
-async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token: Optional[str] = None):
+async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token: str | None = None):
     """Store CRM Sheets tokens in preferences."""
     from app.services.encryption import encrypt_value
 
@@ -609,7 +404,7 @@ async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token
     await session.commit()
 
 
-async def get_crm_access_token(session: AsyncSession) -> Optional[str]:
+async def get_crm_access_token(session: AsyncSession) -> str | None:
     """Get decrypted CRM Sheets access token."""
     from app.services.encryption import decrypt_value
 

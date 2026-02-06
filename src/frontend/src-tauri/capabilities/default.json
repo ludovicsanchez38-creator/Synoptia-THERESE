@@ -20,6 +20,10 @@
     "core:webview:default",
     "core:webview:allow-create-webview-window",
     "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [{ "name": "backend", "sidecar": true }]
+    },
     "fs:default",
     {
       "identifier": "fs:allow-read-text-file",

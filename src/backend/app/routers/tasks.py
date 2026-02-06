@@ -5,17 +5,16 @@ API endpoints pour la gestion des tâches locales.
 Phase 3 - Tasks/Todos
 """
 
-import logging
 import json
+import logging
 from datetime import UTC, datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.entities import Task
-from app.models.schemas import TaskResponse, CreateTaskRequest, UpdateTaskRequest
 from app.models.database import get_session
+from app.models.entities import Task
+from app.models.schemas import CreateTaskRequest, TaskResponse, UpdateTaskRequest
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,11 +27,11 @@ logger = logging.getLogger(__name__)
 
 @router.get("/")
 async def list_tasks(
-    status: Optional[str] = Query(None, description="Filter by status"),
-    priority: Optional[str] = Query(None, description="Filter by priority"),
-    project_id: Optional[str] = Query(None, description="Filter by project"),
+    status: str | None = Query(None, description="Filter by status"),
+    priority: str | None = Query(None, description="Filter by priority"),
+    project_id: str | None = Query(None, description="Filter by project"),
     session: AsyncSession = Depends(get_session),
-) -> List[TaskResponse]:
+) -> list[TaskResponse]:
     """
     Liste toutes les tâches avec filtres optionnels.
 

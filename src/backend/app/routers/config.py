@@ -9,28 +9,28 @@ import logging
 import os
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.config import settings
 from app.models.database import get_session
 from app.models.entities import Preference
-from app.services.encryption import encrypt_value, decrypt_value, is_value_encrypted
-from app.services.audit import AuditAction, log_activity
 from app.models.schemas import (
     ApiKeyUpdate,
     ConfigResponse,
-    UserProfileUpdate,
-    UserProfileResponse,
     ImportClaudeMdRequest,
-    WorkingDirectoryUpdate,
-    WorkingDirectoryResponse,
-    LLMConfigUpdate,
     LLMConfigResponse,
+    LLMConfigUpdate,
     OllamaModelInfo,
     OllamaStatusResponse,
+    UserProfileResponse,
+    UserProfileUpdate,
+    WorkingDirectoryResponse,
+    WorkingDirectoryUpdate,
 )
+from app.services.audit import AuditAction, log_activity
+from app.services.encryption import encrypt_value
+from app.services.http_client import get_http_client
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +46,9 @@ async def get_config(session: AsyncSession = Depends(get_session)):
     # Check Ollama availability
     ollama_available = False
     try:
-        import httpx
-
-        async with httpx.AsyncClient(timeout=2.0) as client:
-            response = await client.get(f"{settings.ollama_base_url}/api/tags")
-            ollama_available = response.status_code == 200
+        client = await get_http_client()
+        response = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=2.0)
+        ollama_available = response.status_code == 200
     except Exception:
         pass
 
@@ -437,7 +435,7 @@ async def export_data(
 
     Returns a JSON file with all contacts, projects, conversations, etc.
     """
-    from app.models.entities import Contact, Project, Conversation, Message
+    from app.models.entities import Contact, Conversation, Message, Project
 
     # Get all data
     contacts_result = await session.execute(select(Contact))
@@ -512,9 +510,8 @@ async def get_stats(
     session: AsyncSession = Depends(get_session),
 ):
     """Get usage statistics."""
+    from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
     from sqlmodel import func
-
-    from app.models.entities import Contact, Project, Conversation, Message, FileMetadata
 
     # Count entities
     contacts_count = (
@@ -614,8 +611,8 @@ async def set_profile(
     """
     from app.services.user_profile import (
         UserProfile,
-        set_user_profile,
         set_cached_profile,
+        set_user_profile,
     )
 
     profile = UserProfile(
@@ -775,9 +772,9 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     # Get available models for the provider
     available_models = []
     if config.provider.value == "anthropic":
-        # Claude 4.5 series (janvier 2026)
+        # Claude 4.5/4.6 series (février 2026)
         available_models = [
-            "claude-opus-4-5-20251101",      # Flagship, best overall
+            "claude-opus-4-6",               # Flagship, best overall
             "claude-sonnet-4-5-20250929",    # Best coding model
             "claude-haiku-4-5-20251001",     # Fast & cost-efficient
         ]
@@ -832,8 +829,8 @@ async def set_llm_config(
 
     This updates the current LLM configuration for the session.
     """
-    from app.services.llm import LLMService, LLMConfig, LLMProvider, _llm_service
     import app.services.llm as llm_module
+    from app.services.llm import LLMConfig, LLMProvider, LLMService
 
     # Validate provider
     try:
@@ -945,32 +942,32 @@ async def get_ollama_status():
     import httpx
 
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(f"{settings.ollama_base_url}/api/tags")
+        client = await get_http_client()
+        response = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
 
-            if response.status_code != 200:
-                return OllamaStatusResponse(
-                    available=False,
-                    base_url=settings.ollama_base_url,
-                    error=f"Ollama returned status {response.status_code}",
-                )
-
-            data = response.json()
-            models = [
-                OllamaModelInfo(
-                    name=m.get("name", ""),
-                    size=m.get("size"),
-                    modified_at=m.get("modified_at"),
-                    digest=m.get("digest"),
-                )
-                for m in data.get("models", [])
-            ]
-
+        if response.status_code != 200:
             return OllamaStatusResponse(
-                available=True,
+                available=False,
                 base_url=settings.ollama_base_url,
-                models=models,
+                error=f"Ollama returned status {response.status_code}",
             )
+
+        data = response.json()
+        models = [
+            OllamaModelInfo(
+                name=m.get("name", ""),
+                size=m.get("size"),
+                modified_at=m.get("modified_at"),
+                digest=m.get("digest"),
+            )
+            for m in data.get("models", [])
+        ]
+
+        return OllamaStatusResponse(
+            available=True,
+            base_url=settings.ollama_base_url,
+            models=models,
+        )
 
     except httpx.ConnectError:
         return OllamaStatusResponse(

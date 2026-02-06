@@ -8,9 +8,9 @@ US-SEC-01: Chiffrement des cles API
 Sprint 2 - PERF-2.10: Keychain support pour la cle de chiffrement
 """
 
-import os
 import base64
 import logging
+import os
 import threading
 from pathlib import Path
 from typing import Optional
@@ -53,7 +53,7 @@ class EncryptionService:
     """
 
     _instance: Optional["EncryptionService"] = None
-    _fernet: Optional[Fernet] = None
+    _fernet: Fernet | None = None
     _using_keychain: bool = False
     _lock: threading.Lock = threading.Lock()
 
@@ -103,7 +103,7 @@ class EncryptionService:
         # 2. Fallback: stockage fichier
         return self._get_or_create_key_file()
 
-    def _get_key_from_keychain(self) -> Optional[bytes]:
+    def _get_key_from_keychain(self) -> bytes | None:
         """Recupere la cle depuis le keychain systeme."""
         try:
             import keyring
@@ -115,7 +115,7 @@ class EncryptionService:
             logger.debug(f"Keychain non disponible: {e}")
         return None
 
-    def _create_key_in_keychain(self) -> Optional[bytes]:
+    def _create_key_in_keychain(self) -> bytes | None:
         """Genere et stocke une nouvelle cle dans le keychain."""
         try:
             import keyring
@@ -127,7 +127,7 @@ class EncryptionService:
             logger.warning(f"Impossible de stocker dans le keychain: {e}")
         return None
 
-    def _migrate_key_to_keychain(self) -> Optional[bytes]:
+    def _migrate_key_to_keychain(self) -> bytes | None:
         """Migre la cle du fichier vers le keychain."""
         try:
             import keyring
@@ -162,15 +162,15 @@ class EncryptionService:
             with open(KEY_FILE, "rb") as f:
                 return f.read()
         else:
-            # Generer une nouvelle cle
+            # Générer une nouvelle clé
             key = Fernet.generate_key()
 
-            # Sauvegarder avec permissions restrictives
-            with open(KEY_FILE, "wb") as f:
-                f.write(key)
-
-            # Permissions 600 (lecture/ecriture owner seulement)
-            os.chmod(KEY_FILE, 0o600)
+            # Sauvegarder avec permissions restrictives (atomique)
+            fd = os.open(KEY_FILE, os.O_CREAT | os.O_WRONLY, 0o600)
+            try:
+                os.write(fd, key)
+            finally:
+                os.close(fd)
 
             logger.info("Nouvelle cle de chiffrement generee (fichier)")
             return key
@@ -263,7 +263,7 @@ class EncryptionService:
         except Exception:
             return False
 
-    def rotate_key(self) -> Optional[bytes]:
+    def rotate_key(self) -> bytes | None:
         """
         Rotation de la cle de chiffrement.
 
@@ -314,7 +314,7 @@ class EncryptionService:
 
 
 # Singleton global
-_encryption_service: Optional[EncryptionService] = None
+_encryption_service: EncryptionService | None = None
 
 
 def get_encryption_service() -> EncryptionService:

@@ -12,7 +12,6 @@ import {
   Calendar as CalendarIcon,
   Plus,
   RefreshCw,
-  Settings,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,

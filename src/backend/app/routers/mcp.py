@@ -5,78 +5,21 @@ API endpoints for managing MCP servers and tools.
 """
 
 import logging
-from typing import Any
 
+from app.models.schemas_mcp import (
+    MCPServerCreate,
+    MCPServerResponse,
+    MCPServerUpdate,
+    MCPToolCall,
+    MCPToolResponse,
+    ToolCallResultResponse,
+)
+from app.services.mcp_service import MCPServerStatus, get_mcp_service
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-
-from app.services.mcp_service import get_mcp_service, MCPServerStatus
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# ============================================================
-# Schemas
-# ============================================================
-
-
-class MCPServerCreate(BaseModel):
-    """Create MCP server request."""
-    name: str
-    command: str
-    args: list[str] = []
-    env: dict[str, str] = {}
-    enabled: bool = True
-
-
-class MCPServerUpdate(BaseModel):
-    """Update MCP server request."""
-    name: str | None = None
-    command: str | None = None
-    args: list[str] | None = None
-    env: dict[str, str] | None = None
-    enabled: bool | None = None
-
-
-class MCPToolCall(BaseModel):
-    """Tool call request."""
-    tool_name: str
-    arguments: dict[str, Any] = {}
-
-
-class MCPServerResponse(BaseModel):
-    """MCP server response."""
-    id: str
-    name: str
-    command: str
-    args: list[str]
-    env: dict[str, str]
-    enabled: bool
-    status: str
-    tools: list[dict]
-    error: str | None
-    created_at: str
-
-
-class MCPToolResponse(BaseModel):
-    """MCP tool response."""
-    name: str
-    description: str
-    input_schema: dict
-    server_id: str
-    server_name: str
-
-
-class ToolCallResultResponse(BaseModel):
-    """Tool call result response."""
-    tool_name: str
-    server_id: str
-    success: bool
-    result: Any = None
-    error: str | None = None
-    execution_time_ms: float
 
 
 # ============================================================
@@ -579,10 +522,10 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
     # Resolve WORKING_DIRECTORY from DB preference, fallback to HOME/Documents
     working_directory = os.path.join(home_dir, "Documents")
     try:
-        from sqlmodel import select as sql_select
-        from app.models.entities import Preference
-        from app.models.database import get_session as _get_session
         import asyncio
+
+        from app.models.entities import Preference
+        from sqlmodel import select as sql_select
 
         async def _get_working_dir():
             from app.models.database import AsyncSessionLocal

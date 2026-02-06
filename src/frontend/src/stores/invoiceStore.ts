@@ -50,13 +50,6 @@ interface InvoiceStore {
   getFilteredInvoices: () => Invoice[];
 }
 
-const useTodayDate = () => new Date().toISOString().split('T')[0];
-const useDefaultDueDate = () => {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date.toISOString().split('T')[0];
-};
-
 export const useInvoiceStore = create<InvoiceStore>()(
   persist(
     (set, get) => ({

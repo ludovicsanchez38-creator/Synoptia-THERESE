@@ -11,53 +11,52 @@ import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
 
+from app.config import settings
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.config import settings
-
 # Rate limiting (SEC-015) - slowapi est requis (dans pyproject.toml)
 try:
     from slowapi import Limiter
-    from slowapi.util import get_remote_address
     from slowapi.errors import RateLimitExceeded
     from slowapi.middleware import SlowAPIMiddleware
+    from slowapi.util import get_remote_address
     HAS_SLOWAPI = True
 except ImportError:
     HAS_SLOWAPI = False
     import time as _time
     from collections import defaultdict as _defaultdict
-from app.models.database import init_db, close_db
+from app.models.database import close_db, init_db
 from app.routers import (
-    chat_router,
-    memory_router,
-    files_router,
-    config_router,
-    skills_router,
-    voice_router,
-    images_router,
     board_router,
     calc_router,
-    mcp_router,
+    calendar_router,  # Phase 2 - ACTIVATED
+    chat_router,
+    commands_router,  # User Commands
+    config_router,
+    crm_router,  # Phase 5 - Implemented
     data_router,
+    email_router,  # Phase 1 - ACTIVATED
+    email_setup_router,  # Phase 1.2 - Email Setup Wizard
+    escalation_router,
+    files_router,
+    images_router,
+    invoices_router,  # Phase 4 - ACTIVATED
+    mcp_router,
+    memory_router,
     perf_router,
     personalisation_router,
-    escalation_router,
-    email_router,  # Phase 1 - ACTIVATED
-    calendar_router,  # Phase 2 - ACTIVATED
-    tasks_router,  # Phase 3 - ACTIVATED
-    invoices_router,  # Phase 4 - ACTIVATED
-    crm_router,  # Phase 5 - Implemented
-    email_setup_router,  # Phase 1.2 - Email Setup Wizard
     rgpd_router,  # Phase 6 - RGPD Compliance
-    commands_router,  # User Commands
+    skills_router,
+    tasks_router,  # Phase 3 - ACTIVATED
+    voice_router,
 )
-from app.services import init_qdrant, close_qdrant
-from app.services.skills import init_skills, close_skills
-from app.services.mcp_service import initialize_mcp_service, get_mcp_service
+from app.services import close_qdrant, init_qdrant
+from app.services.mcp_service import get_mcp_service, initialize_mcp_service
+from app.services.skills import close_skills, init_skills
 
 # Configure logging
 logging.basicConfig(
@@ -118,13 +117,19 @@ async def lifespan(app: FastAPI):
     # Load user profile into cache
     await _load_user_profile()
 
+    # Start OAuth cleanup background task
+    import asyncio
+
+    from app.services.oauth import cleanup_expired_flows_periodically
+    oauth_cleanup_task = asyncio.create_task(cleanup_expired_flows_periodically())
+
     # Register memory cleanup callbacks (US-PERF-03)
     from app.services.performance import get_memory_manager
     memory_manager = get_memory_manager()
 
     # Register MCP service cleanup
     async def cleanup_mcp():
-        mcp = get_mcp_service()
+        get_mcp_service()
         # Clear any stale connections
         return {"mcp": "cleaned"}
 
@@ -145,6 +150,13 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
+
+    # Cancel OAuth cleanup background task
+    oauth_cleanup_task.cancel()
+    try:
+        await oauth_cleanup_task
+    except asyncio.CancelledError:
+        pass
 
     # Cleanup session token
     try:
@@ -232,6 +244,10 @@ else:
             t for t in _request_counts[client_ip]
             if now - t < _FALLBACK_WINDOW
         ]
+        # Purger les clés vides pour éviter une fuite mémoire
+        if not _request_counts[client_ip]:
+            del _request_counts[client_ip]
+            return await call_next(request)
         if len(_request_counts[client_ip]) >= _FALLBACK_RATE_LIMIT:
             return JSONResponse(
                 status_code=429,
@@ -289,7 +305,7 @@ if HAS_SLOWAPI:
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Handle TheresError et fallback pour les erreurs non gérées."""
-    from app.services.error_handler import TheresError, ErrorCode
+    from app.services.error_handler import ErrorCode, TheresError
 
     if isinstance(exc, TheresError):
         return JSONResponse(
@@ -334,7 +350,11 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
 
     # Endpoints exemptés
-    exempt_paths = ["/api/health", "/api/auth/token", "/api/email/auth/callback-redirect", "/docs", "/redoc", "/openapi.json", "/health"]
+    exempt_paths = [
+        "/api/health", "/api/auth/token",
+        "/api/email/auth/callback-redirect",
+        "/docs", "/redoc", "/openapi.json", "/health",
+    ]
     if any(request.url.path.startswith(p) for p in exempt_paths):
         return await call_next(request)
 
@@ -383,7 +403,10 @@ app.include_router(escalation_router, prefix="/api/escalation", tags=["Escalatio
 
 # Phase 1-4: Core Native Features (ACTIVATED)
 app.include_router(email_router, prefix="/api/email", tags=["Email"])  # Phase 1
-app.include_router(email_setup_router, prefix="/api/email/setup", tags=["Email Setup"])  # Phase 1.2 - Setup Wizard
+app.include_router(
+    email_setup_router, prefix="/api/email/setup",
+    tags=["Email Setup"],
+)  # Phase 1.2 - Setup Wizard
 app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])  # Phase 2
 app.include_router(tasks_router, prefix="/api/tasks", tags=["Tasks"])  # Phase 3
 app.include_router(invoices_router, prefix="/api/invoices", tags=["Invoices"])  # Phase 4

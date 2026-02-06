@@ -5,20 +5,18 @@ Endpoints for file management and indexing.
 """
 
 import logging
-import mimetypes
 from datetime import UTC, datetime
 from pathlib import Path
-
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.models.database import get_session
 from app.models.entities import FileMetadata
 from app.models.schemas import FileIndexRequest, FileResponse
-from app.services.file_parser import extract_text, chunk_text, get_file_metadata
-from app.services.path_security import validate_file_path, validate_indexable_file
+from app.services.file_parser import chunk_text, extract_text, get_file_metadata
+from app.services.path_security import validate_indexable_file
 from app.services.qdrant import get_qdrant_service
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 

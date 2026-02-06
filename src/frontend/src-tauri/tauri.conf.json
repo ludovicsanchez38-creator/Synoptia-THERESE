@@ -41,6 +41,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "externalBin": [
+      "binaries/backend"
+    ],
     "macOS": {
       "minimumSystemVersion": "10.15",
       "frameworks": [],

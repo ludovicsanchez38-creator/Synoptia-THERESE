@@ -228,7 +228,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         {/* Connect button if no auth */}
         {!hasAuthMethod && (
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={handleConnect}
             disabled={connecting}

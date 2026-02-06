@@ -8,32 +8,45 @@ Phase 1 - Core Native Email (Gmail)
 Local First - IMAP/SMTP Provider
 """
 
+import html
 import json
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
-
-from fastapi import APIRouter, HTTPException, Query, Depends, Request
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.database import get_session
-from app.models.entities import EmailAccount, EmailMessage, EmailLabel
-from app.services.oauth import (
-    get_oauth_service,
-    OAuthConfig,
-    GOOGLE_AUTH_URL,
-    GOOGLE_TOKEN_URL,
-    GOOGLE_ALL_SCOPES,
+from app.models.entities import EmailAccount, EmailMessage
+from app.models.schemas_email import (
+    ClassifyEmailRequest,
+    EmailAccountResponse,
+    GenerateResponseRequest,
+    ImapSetupRequest,
+    ImapTestRequest,
+    LabelCreateRequest,
+    ModifyMessageRequest,
+    OAuthCallbackRequest,
+    OAuthInitiateRequest,
+    OAuthInitiateResponse,
+    SendEmailRequest,
+    UpdatePriorityRequest,
 )
-from app.services.gmail_service import GmailService, format_message_for_storage
-from app.services.encryption import encrypt_value, decrypt_value, is_value_encrypted
 from app.services.email.provider_factory import (
     get_email_provider,
     list_common_providers,
 )
+from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
+from app.services.gmail_service import GmailService, format_message_for_storage
+from app.services.http_client import get_http_client
+from app.services.oauth import (
+    GOOGLE_ALL_SCOPES,
+    GOOGLE_AUTH_URL,
+    GOOGLE_TOKEN_URL,
+    OAuthConfig,
+    get_oauth_service,
+)
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -44,96 +57,6 @@ def _utcnow() -> datetime:
 
 
 router = APIRouter()
-
-
-# ============================================================
-# Schemas
-# ============================================================
-
-
-class OAuthInitiateRequest(BaseModel):
-    """OAuth flow initiation request (POST body).
-
-    SEC-008: Les credentials OAuth sont transmis dans le body POST,
-    pas en query parameters (visibles dans les logs serveur et l'historique navigateur).
-    """
-    client_id: str
-    client_secret: str
-
-
-class OAuthInitiateResponse(BaseModel):
-    """OAuth flow initiation response."""
-    auth_url: str
-    state: str
-    redirect_uri: str
-
-
-class OAuthCallbackRequest(BaseModel):
-    """OAuth callback request."""
-    state: str
-    code: Optional[str] = None
-    error: Optional[str] = None
-
-
-class EmailAccountResponse(BaseModel):
-    """Email account response."""
-    id: str
-    email: str
-    provider: str
-    scopes: list[str] = []
-    created_at: datetime
-    last_sync: Optional[datetime] = None
-
-
-class ImapSetupRequest(BaseModel):
-    """IMAP/SMTP account setup request."""
-    email: str
-    password: str  # App password
-    imap_host: str
-    imap_port: int = 993
-    smtp_host: str
-    smtp_port: int = 587
-    smtp_use_tls: bool = True
-
-
-class ImapTestRequest(BaseModel):
-    """Test IMAP/SMTP connection request."""
-    email: str
-    password: str
-    imap_host: str
-    imap_port: int = 993
-    smtp_host: str
-    smtp_port: int = 587
-    smtp_use_tls: bool = True
-
-
-class MessageListRequest(BaseModel):
-    """List messages request."""
-    max_results: int = 50
-    page_token: Optional[str] = None
-    query: Optional[str] = None
-    label_ids: Optional[list[str]] = None
-
-
-class SendEmailRequest(BaseModel):
-    """Send email request."""
-    to: list[str]
-    subject: str
-    body: str
-    cc: Optional[list[str]] = None
-    bcc: Optional[list[str]] = None
-    html: bool = False
-
-
-class ModifyMessageRequest(BaseModel):
-    """Modify message request."""
-    add_label_ids: Optional[list[str]] = None
-    remove_label_ids: Optional[list[str]] = None
-
-
-class LabelCreateRequest(BaseModel):
-    """Create label request."""
-    name: str
 
 
 # ============================================================
@@ -390,7 +313,7 @@ async def handle_oauth_redirect(
         <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
         .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
         h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}</style></head>
-        <body><div class="card"><h1>Erreur d'autorisation</h1><p>{error}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
+        <body><div class="card"><h1>Erreur d'autorisation</h1><p>{html.escape(error)}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
         """, status_code=400)
 
     if not code or not state:
@@ -619,21 +542,21 @@ async def disconnect_account(
     # SEC-008: Revoquer le token OAuth Google avant suppression
     if account.provider == "gmail" and account.access_token:
         try:
-            import httpx
             access_token = decrypt_value(account.access_token)
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                revoke_response = await client.post(
-                    "https://oauth2.googleapis.com/revoke",
-                    params={"token": access_token},
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+            client = await get_http_client()
+            revoke_response = await client.post(
+                "https://oauth2.googleapis.com/revoke",
+                params={"token": access_token},
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                timeout=10.0,
+            )
+            if revoke_response.status_code == 200:
+                logger.info(f"OAuth token revoked for {account.email}")
+            else:
+                logger.warning(
+                    f"OAuth revocation returned {revoke_response.status_code} for {account.email}. "
+                    f"Continuing with account deletion."
                 )
-                if revoke_response.status_code == 200:
-                    logger.info(f"OAuth token revoked for {account.email}")
-                else:
-                    logger.warning(
-                        f"OAuth revocation returned {revoke_response.status_code} for {account.email}. "
-                        f"Continuing with account deletion."
-                    )
         except Exception as e:
             # Ne pas bloquer la deconnexion si la revocation echoue
             logger.warning(f"Failed to revoke OAuth token for {account.email}: {e}. Continuing with deletion.")
@@ -767,9 +690,9 @@ async def list_email_providers() -> list[dict]:
 async def list_messages(
     account_id: str = Query(...),
     max_results: int = Query(50, ge=1, le=500),
-    page_token: Optional[str] = Query(None),
-    query: Optional[str] = Query(None),
-    label_ids: Optional[str] = Query(None),  # Comma-separated
+    page_token: str | None = Query(None),
+    query: str | None = Query(None),
+    label_ids: str | None = Query(None),  # Comma-separated
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """
@@ -792,9 +715,9 @@ async def _list_messages_gmail(
     account_id: str,
     session: AsyncSession,
     max_results: int,
-    page_token: Optional[str],
-    query: Optional[str],
-    label_ids: Optional[str],
+    page_token: str | None,
+    query: str | None,
+    label_ids: str | None,
 ) -> dict:
     """List messages via Gmail API."""
     gmail = await get_gmail_service_for_account(account_id, session)
@@ -842,7 +765,7 @@ async def _list_messages_gmail(
 async def _list_messages_imap(
     account: EmailAccount,
     max_results: int,
-    query: Optional[str],
+    query: str | None,
 ) -> dict:
     """List messages via IMAP provider."""
     provider = get_email_provider(
@@ -1225,22 +1148,6 @@ async def delete_label(
 # ============================================================
 # Smart Email Features Endpoints
 # ============================================================
-
-
-class ClassifyEmailRequest(BaseModel):
-    """Classify email request."""
-    force_reclassify: bool = False  # Force re-classification même si déjà classé
-
-
-class GenerateResponseRequest(BaseModel):
-    """Generate email response request."""
-    tone: str = 'formal'  # formal | friendly | neutral
-    length: str = 'medium'  # short | medium | detailed
-
-
-class UpdatePriorityRequest(BaseModel):
-    """Update email priority request."""
-    priority: str  # 'high' | 'medium' | 'low'
 
 
 @router.post("/messages/{message_id}/classify")

@@ -8,7 +8,7 @@ THÉRÈSE V2 est l'assistante souveraine des entrepreneurs français. Ce guide d
 
 ### Environnement requis
 
-- **macOS** 10.15+ (Catalina ou supérieur)
+- **macOS** 10.15+ (Catalina ou supérieur) ou **Windows** 10+
 - **Python** 3.11+ (via pyenv ou homebrew)
 - **Node.js** 20+ (via nvm)
 - **Rust** (pour Tauri, installé via rustup)
@@ -19,8 +19,8 @@ THÉRÈSE V2 est l'assistante souveraine des entrepreneurs français. Ce guide d
 
 ```bash
 # Cloner le projet
-git clone https://github.com/ludovicsanchez38-creator/THERESE-v2.git
-cd THERESE-v2
+git clone https://github.com/ludovicsanchez38-creator/Synoptia-THERESE.git
+cd Synoptia-THERESE
 
 # Installation automatique
 make install

@@ -5,12 +5,10 @@ Agent intelligent pour guider l'utilisateur dans la configuration email.
 """
 
 import re
-from pathlib import Path
-from typing import Optional
 from dataclasses import dataclass
 
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 
 @dataclass
@@ -34,10 +32,10 @@ class SetupStatus:
     """Status de la configuration email."""
     has_gmail: bool
     has_smtp: bool
-    gmail_email: Optional[str] = None
-    smtp_email: Optional[str] = None
+    gmail_email: str | None = None
+    smtp_email: str | None = None
     # Credentials Google depuis MCP
-    google_credentials: Optional[GoogleCredentials] = None
+    google_credentials: GoogleCredentials | None = None
 
 
 class EmailSetupAssistant:
@@ -98,7 +96,7 @@ class EmailSetupAssistant:
                             source='mcp'
                         )
                         break
-        except Exception as e:
+        except Exception:
             # MCP service not available or no Google server configured
             pass
 
@@ -111,7 +109,7 @@ class EmailSetupAssistant:
         )
 
     @staticmethod
-    def suggest_provider(email: str) -> Optional[str]:
+    def suggest_provider(email: str) -> str | None:
         """Détecte le provider SMTP depuis l'email."""
         if not email or '@' not in email:
             return None

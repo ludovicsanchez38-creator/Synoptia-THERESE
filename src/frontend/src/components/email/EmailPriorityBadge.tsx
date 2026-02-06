@@ -5,7 +5,6 @@
  * US-EMAIL-08: Priorisation visuelle
  */
 
-import React from 'react';
 
 interface EmailPriorityBadgeProps {
   priority: 'high' | 'medium' | 'low' | null;

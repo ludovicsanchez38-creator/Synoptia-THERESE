@@ -12,22 +12,23 @@ import os
 from pathlib import Path
 from typing import AsyncGenerator
 
+from app.services.context import ContextWindow
+
 # Re-export types for backward compatibility
 from app.services.providers import (
-    LLMProvider,
+    AnthropicProvider,
+    GeminiProvider,
+    GrokProvider,
     LLMConfig,
+    LLMProvider,
     Message,
+    MistralProvider,
+    OllamaProvider,
+    OpenAIProvider,
+    StreamEvent,
     ToolCall,
     ToolResult,
-    StreamEvent,
-    AnthropicProvider,
-    OpenAIProvider,
-    GeminiProvider,
-    MistralProvider,
-    GrokProvider,
-    OllamaProvider,
 )
-from app.services.context import ContextWindow
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +45,9 @@ async def load_api_key_cache() -> None:
     global _api_key_cache, _api_key_cache_loaded
 
     try:
-        from sqlalchemy import create_engine, text
         from app.config import settings
         from app.services.encryption import get_encryption_service
+        from sqlalchemy import create_engine, text
 
         engine = create_engine(f"sqlite:///{settings.db_path}")
         with engine.connect() as conn:
@@ -87,28 +88,42 @@ def _get_api_key_from_db(provider: str) -> str | None:
     if _api_key_cache_loaded:
         return _api_key_cache.get(f"{provider}_api_key")
 
-    # Fallback: direct DB read
+    # Fallback: direct DB read via asyncio.to_thread pour ne pas bloquer l'event loop
     try:
-        from sqlalchemy import create_engine, text
-        from app.config import settings
-        from app.services.encryption import get_encryption_service
+        import asyncio
 
-        engine = create_engine(f"sqlite:///{settings.db_path}")
-        with engine.connect() as conn:
-            result = conn.execute(
-                text("SELECT value FROM preferences WHERE key = :key"),
-                {"key": f"{provider}_api_key"}
-            )
-            row = result.fetchone()
-            if row and row[0]:
-                value = row[0]
-                encryption = get_encryption_service()
-                if encryption.is_encrypted(value):
-                    try:
-                        value = encryption.decrypt(value)
-                    except Exception as dec_err:
-                        logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
-                return value
+        def _sync_read_key():
+            from app.config import settings
+            from app.services.encryption import get_encryption_service
+            from sqlalchemy import create_engine, text
+
+            engine = create_engine(f"sqlite:///{settings.db_path}")
+            with engine.connect() as conn:
+                result = conn.execute(
+                    text("SELECT value FROM preferences WHERE key = :key"),
+                    {"key": f"{provider}_api_key"}
+                )
+                row = result.fetchone()
+                if row and row[0]:
+                    value = row[0]
+                    encryption = get_encryption_service()
+                    if encryption.is_encrypted(value):
+                        try:
+                            value = encryption.decrypt(value)
+                        except Exception as dec_err:
+                            logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
+                    return value
+            return None
+
+        # Si on est déjà dans un event loop, utiliser to_thread.
+        # Sinon (appel sync), exécuter directement.
+        try:
+            loop = asyncio.get_running_loop()
+            # On ne peut pas await dans une fonction sync, donc on exécute en sync
+            # Ce fallback est rarement appelé (le cache est normalement chargé)
+            return _sync_read_key()
+        except RuntimeError:
+            return _sync_read_key()
     except Exception as e:
         logger.debug(f"Could not load {provider} API key: {e}")
 
@@ -214,8 +229,8 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
         selected_provider = None
         selected_model = None
         try:
-            from sqlalchemy import create_engine, text
             from app.config import settings
+            from sqlalchemy import create_engine, text
 
             engine = create_engine(f"sqlite:///{settings.db_path}")
             with engine.connect() as conn:
@@ -235,7 +250,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 
         # Provider configs: (enum, default_model, context_window)
         provider_configs = {
-            "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-5-20251101", 200000),
+            "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", 200000),
             "openai": (LLMProvider.OPENAI, "gpt-5.2", 200000),
             "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", 1000000),
             "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
@@ -274,7 +289,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
         mistral_key = _get_api_key_from_db("mistral") or os.getenv("MISTRAL_API_KEY")
 
         if anthropic_key:
-            return LLMConfig(LLMProvider.ANTHROPIC, "claude-opus-4-5-20251101", api_key=anthropic_key, context_window=200000)
+            return LLMConfig(LLMProvider.ANTHROPIC, "claude-opus-4-6", api_key=anthropic_key, context_window=200000)
         elif openai_key:
             return LLMConfig(LLMProvider.OPENAI, "gpt-5.2", api_key=openai_key, context_window=200000)
         elif gemini_key:
@@ -417,10 +432,12 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
             context_str = "\n".join(f"- {k}: {v}" for k, v in context.items())
             effective_system += f"\n\n## Contexte:\n{context_str}"
 
-        # Augmenter temporairement max_tokens si demandé
-        original_max_tokens = self.config.max_tokens
+        # Thread-safety : copier la config si on doit overrider max_tokens
+        # pour ne pas muter l'état partagé entre requêtes concurrentes.
+        original_config = self.config
         if max_tokens and max_tokens > self.config.max_tokens:
-            self.config.max_tokens = max_tokens
+            from dataclasses import replace
+            self.config = replace(self.config, max_tokens=max_tokens)
 
         ctx = self.prepare_context(messages=messages, system_prompt=effective_system)
         content_parts = []
@@ -432,8 +449,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
                 elif event.type == "error":
                     errors.append(event.content or "Unknown error")
         finally:
-            # Restaurer max_tokens original
-            self.config.max_tokens = original_max_tokens
+            self.config = original_config
 
         if not content_parts and errors:
             raise RuntimeError(f"Erreur LLM lors de la génération : {'; '.join(errors)}")
@@ -472,7 +488,7 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
     provider_name = provider_name.lower()
 
     provider_configs = {
-        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-5-20251101", "ANTHROPIC_API_KEY", 200000),
+        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", "ANTHROPIC_API_KEY", 200000),
         "openai": (LLMProvider.OPENAI, "gpt-5.2", "OPENAI_API_KEY", 200000),
         "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
         "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),

@@ -6,7 +6,7 @@ Part of the "Local First" architecture.
 """
 
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from app.services.email.base_provider import EmailProvider
 from app.services.email.gmail_provider import GmailProvider
@@ -21,13 +21,13 @@ EmailProviderType = Literal["gmail", "imap"]
 def get_email_provider(
     provider_type: EmailProviderType,
     # Gmail OAuth
-    access_token: Optional[str] = None,
+    access_token: str | None = None,
     # IMAP/SMTP config
-    email_address: Optional[str] = None,
-    password: Optional[str] = None,
-    imap_host: Optional[str] = None,
+    email_address: str | None = None,
+    password: str | None = None,
+    imap_host: str | None = None,
     imap_port: int = 993,
-    smtp_host: Optional[str] = None,
+    smtp_host: str | None = None,
     smtp_port: int = 587,
     use_ssl: bool = True,
     smtp_use_tls: bool = True,

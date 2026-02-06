@@ -9,7 +9,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # ============================================================
 # Chat Schemas
 # ============================================================
@@ -870,3 +869,15 @@ class CRMImportPreviewSchema(BaseModel):
     column_mapping: dict[str, str]
     validation_errors: list[CRMImportErrorSchema]
     can_import: bool
+
+
+class CreateCRMContactRequest(BaseModel):
+    """Request body for creating a CRM contact."""
+
+    first_name: str
+    last_name: str | None = None
+    company: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    source: str | None = None
+    stage: str = "contact"

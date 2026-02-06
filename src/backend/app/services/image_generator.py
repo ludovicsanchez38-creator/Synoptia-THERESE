@@ -24,8 +24,8 @@ def _get_api_key_from_db(provider: str) -> str | None:
     """
     try:
         # Import here to avoid circular imports
-        from sqlalchemy import create_engine, text
         from app.config import settings
+        from sqlalchemy import create_engine, text
 
         engine = create_engine(f"sqlite:///{settings.db_path}")
         with engine.connect() as conn:
@@ -165,11 +165,11 @@ class ImageGeneratorService:
                 image_bytes = base64.b64decode(result.data[0].b64_json)
             elif hasattr(result.data[0], "url") and result.data[0].url:
                 # Download from URL if b64 not available
-                import httpx
+                from app.services.http_client import get_http_client
 
-                async with httpx.AsyncClient() as http_client:
-                    resp = await http_client.get(result.data[0].url)
-                    image_bytes = resp.content
+                http_client = await get_http_client()
+                resp = await http_client.get(result.data[0].url)
+                image_bytes = resp.content
             else:
                 raise ValueError("No image data in response")
 

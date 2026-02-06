@@ -8,16 +8,14 @@ Fixes the bug where THÉRÈSE calls the user "Pierre" instead of their real name
 import json
 import logging
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional
-
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.entities import Preference
+from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.qdrant import get_qdrant_service
-from app.services.encryption import encrypt_value, decrypt_value, is_value_encrypted
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +99,7 @@ PROFILE_KEY = "user_profile"
 PROFILE_CATEGORY = "identity"
 
 
-async def get_user_profile(session: AsyncSession) -> Optional[UserProfile]:
+async def get_user_profile(session: AsyncSession) -> UserProfile | None:
     """
     Retrieve user profile from database.
 
@@ -229,10 +227,16 @@ async def _embed_profile(profile: UserProfile) -> None:
         text = "\n".join(text_parts)
 
         # Use special ID for owner profile
-        qdrant.index_entity(
-            entity_id="owner_profile",
-            entity_type="owner",
+        # Supprimer l'ancien embedding si existant
+        try:
+            qdrant.delete_by_entity("owner_profile")
+        except Exception:
+            pass  # Pas grave si rien à supprimer
+
+        qdrant.add_memory(
             text=text,
+            memory_type="owner",
+            entity_id="owner_profile",
             metadata={
                 "name": profile.name,
                 "nickname": profile.nickname,
@@ -270,7 +274,7 @@ async def delete_user_profile(session: AsyncSession) -> bool:
         # Remove from Qdrant
         try:
             qdrant = get_qdrant_service()
-            qdrant.delete_entity("owner_profile")
+            qdrant.delete_by_entity("owner_profile")
         except Exception:
             pass  # Non-critical
 
@@ -405,15 +409,15 @@ async def import_from_claude_md(
 
 
 # Cached profile for performance (refreshed on update)
-_cached_profile: Optional[UserProfile] = None
+_cached_profile: UserProfile | None = None
 
 
-def get_cached_profile() -> Optional[UserProfile]:
+def get_cached_profile() -> UserProfile | None:
     """Get cached profile without async call."""
     return _cached_profile
 
 
-def set_cached_profile(profile: Optional[UserProfile]) -> None:
+def set_cached_profile(profile: UserProfile | None) -> None:
     """Update cached profile."""
     global _cached_profile
     _cached_profile = profile

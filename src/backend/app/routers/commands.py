@@ -5,45 +5,17 @@ Endpoints CRUD pour les commandes utilisateur personnalisees.
 """
 
 import logging
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
+from app.models.schemas_commands import (
+    CommandResponse,
+    CreateCommandRequest,
+    UpdateCommandRequest,
+)
 from app.services.user_commands import UserCommandsService
+from fastapi import APIRouter, HTTPException
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-# --- Schemas ---
-
-class CreateCommandRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=50, description="Slug de la commande")
-    description: str = Field("", max_length=200)
-    category: str = Field("general", max_length=50)
-    icon: str = Field("", max_length=10)
-    show_on_home: bool = False
-    content: str = Field("", description="Contenu/prompt de la commande")
-
-
-class UpdateCommandRequest(BaseModel):
-    description: Optional[str] = None
-    category: Optional[str] = None
-    icon: Optional[str] = None
-    show_on_home: Optional[bool] = None
-    content: Optional[str] = None
-
-
-class CommandResponse(BaseModel):
-    name: str
-    description: str
-    category: str
-    icon: str
-    show_on_home: bool
-    content: str
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
 
 
 # --- Endpoints ---

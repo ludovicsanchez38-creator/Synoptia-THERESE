@@ -1,49 +1,56 @@
 """
-THÉRÈSE v2 - CRM Router
+THERESE v2 - CRM Router
 
-REST API pour les features CRM (pipeline, scoring, activités, livrables, sync Google Sheets).
+REST API pour les features CRM (pipeline, scoring, activites, livrables, sync Google Sheets).
 Phase 5 - CRM Features + Local First Export/Import
 """
 
 import logging
 from datetime import UTC, datetime
-from typing import Literal, Optional
-
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from pydantic import BaseModel
-from fastapi.responses import Response
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func
 
 from app.models.database import get_session
-from app.models.entities import Contact, Activity, Deliverable, Project, Task, Preference
+from app.models.entities import Activity, Contact, Deliverable, Preference, Project
 from app.models.schemas import (
     ActivityResponse,
-    CreateActivityRequest,
-    DeliverableResponse,
-    CreateDeliverableRequest,
-    UpdateDeliverableRequest,
-    UpdateContactStageRequest,
-    ContactScoreUpdate,
     ContactResponse,
-    CRMSyncConfigResponse,
-    CRMSyncConfigRequest,
-    CRMSyncStatsResponse,
-    CRMSyncResponse,
-    CRMImportResultSchema,
-    CRMImportPreviewSchema,
+    ContactScoreUpdate,
+    CreateActivityRequest,
+    CreateCRMContactRequest,
+    CreateDeliverableRequest,
     CRMImportErrorSchema,
-)
-from app.services.scoring import update_contact_score
-from app.services.oauth import (
-    get_oauth_service,
-    OAuthConfig,
-    GOOGLE_AUTH_URL,
-    GOOGLE_TOKEN_URL,
-    GSHEETS_SCOPES,
+    CRMImportPreviewSchema,
+    CRMImportResultSchema,
+    CRMSyncConfigRequest,
+    CRMSyncConfigResponse,
+    CRMSyncResponse,
+    CRMSyncStatsResponse,
+    DeliverableResponse,
+    UpdateContactStageRequest,
+    UpdateDeliverableRequest,
 )
 from app.services.crm_export import CRMExportService, ExportFormat
 from app.services.crm_import import CRMImportService, _sanitize_field
+from app.services.crm_utils import (
+    compute_total_synced,
+    new_sync_stats,
+    update_last_sync_time,
+    upsert_contact,
+    upsert_deliverable_from_import,
+    upsert_project,
+    upsert_task,
+)
+from app.services.oauth import (
+    GOOGLE_AUTH_URL,
+    GOOGLE_TOKEN_URL,
+    GSHEETS_SCOPES,
+    OAuthConfig,
+    get_oauth_service,
+)
+from app.services.scoring import update_contact_score
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import func, select
 
 logger = logging.getLogger(__name__)
 
@@ -54,22 +61,6 @@ def _sanitize_row(row: dict) -> dict:
     for key, value in row.items():
         sanitized[key] = _sanitize_field(value, key.lower()) if isinstance(value, str) else value
     return sanitized
-
-
-def _parse_dt(value: str) -> datetime | None:
-    """Parse datetime from various formats."""
-    if not value or not isinstance(value, str) or not value.strip():
-        return None
-    value = value.strip()
-    for fmt in [
-        "%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
-        "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%d/%m/%Y",
-    ]:
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    return None
 
 
 router = APIRouter(tags=["crm"])
@@ -95,8 +86,8 @@ def _activity_to_response(activity: Activity) -> ActivityResponse:
 
 @router.get("/activities", response_model=list[ActivityResponse])
 async def list_activities(
-    contact_id: Optional[str] = Query(None, description="Filtrer par contact"),
-    type: Optional[str] = Query(None, description="Filtrer par type"),
+    contact_id: str | None = Query(None, description="Filtrer par contact"),
+    type: str | None = Query(None, description="Filtrer par type"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
@@ -155,7 +146,7 @@ async def create_activity(
 
     # Recalculer le score (interaction = points)
     if request.type in ["email", "call", "meeting"]:
-        update_contact_score(session, contact, reason=f"interaction_{request.type}")
+        await update_contact_score(session, contact, reason=f"interaction_{request.type}")
 
     await session.commit()
     await session.refresh(activity)
@@ -208,8 +199,8 @@ def _deliverable_to_response(deliverable: Deliverable) -> DeliverableResponse:
 
 @router.get("/deliverables", response_model=list[DeliverableResponse])
 async def list_deliverables(
-    project_id: Optional[str] = Query(None, description="Filtrer par projet"),
-    status: Optional[str] = Query(None, description="Filtrer par status"),
+    project_id: str | None = Query(None, description="Filtrer par projet"),
+    status: str | None = Query(None, description="Filtrer par status"),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -336,17 +327,6 @@ async def delete_deliverable(
 # =============================================================================
 
 
-class CreateCRMContactRequest(BaseModel):
-    """Request body for creating a CRM contact."""
-    first_name: str
-    last_name: Optional[str] = None
-    company: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    source: Optional[str] = None
-    stage: str = "contact"
-
-
 @router.post("/contacts", response_model=ContactResponse)
 async def create_crm_contact(
     request: CreateCRMContactRequest,
@@ -359,7 +339,6 @@ async def create_crm_contact(
     Si la sync CRM est configuree (spreadsheet_id + OAuth token), une ligne est
     ajoutee dans la feuille "Clients" du Google Sheets.
     """
-    import json
     import uuid
 
     source = request.source.strip() if request.source else "THERESE"
@@ -395,8 +374,8 @@ async def create_crm_contact(
         token_pref = result.scalar_one_or_none()
 
         if spreadsheet_pref and spreadsheet_pref.value and token_pref and token_pref.value:
-            from app.services.sheets_service import GoogleSheetsService
             from app.services.encryption import decrypt_value
+            from app.services.sheets_service import GoogleSheetsService
 
             access_token = decrypt_value(token_pref.value)
             sheets = GoogleSheetsService(access_token=access_token)
@@ -462,13 +441,13 @@ async def update_contact_stage(
         contact_id=contact.id,
         type="stage_change",
         title=f"Stage: {old_stage} -> {new_stage}",
-        description=f"Changement de stage dans le pipeline commercial",
+        description="Changement de stage dans le pipeline commercial",
         extra_data=f'{{"old_stage": "{old_stage}", "new_stage": "{new_stage}"}}',
     )
     session.add(activity)
 
     # Recalculer le score
-    update_contact_score(session, contact, reason=f"stage_change_{new_stage}")
+    await update_contact_score(session, contact, reason=f"stage_change_{new_stage}")
 
     await session.commit()
     await session.refresh(contact)
@@ -493,7 +472,7 @@ async def recalculate_contact_score(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
-    result = update_contact_score(session, contact, reason="manual_recalculation")
+    result = await update_contact_score(session, contact, reason="manual_recalculation")
 
     await session.commit()
 
@@ -555,8 +534,8 @@ async def get_pipeline_stats(
 @router.post("/export/contacts")
 async def export_contacts(
     format: ExportFormat = Query("csv", description="Format d'export (csv, xlsx, json)"),
-    stage: Optional[str] = Query(None, description="Filtrer par stage"),
-    source: Optional[str] = Query(None, description="Filtrer par source"),
+    stage: str | None = Query(None, description="Filtrer par stage"),
+    source: str | None = Query(None, description="Filtrer par source"),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -582,8 +561,8 @@ async def export_contacts(
 @router.post("/export/projects")
 async def export_projects(
     format: ExportFormat = Query("csv", description="Format d'export (csv, xlsx, json)"),
-    status: Optional[str] = Query(None, description="Filtrer par statut"),
-    contact_id: Optional[str] = Query(None, description="Filtrer par contact"),
+    status: str | None = Query(None, description="Filtrer par statut"),
+    contact_id: str | None = Query(None, description="Filtrer par contact"),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -609,8 +588,8 @@ async def export_projects(
 @router.post("/export/deliverables")
 async def export_deliverables(
     format: ExportFormat = Query("csv", description="Format d'export (csv, xlsx, json)"),
-    status: Optional[str] = Query(None, description="Filtrer par statut"),
-    project_id: Optional[str] = Query(None, description="Filtrer par projet"),
+    status: str | None = Query(None, description="Filtrer par statut"),
+    project_id: str | None = Query(None, description="Filtrer par projet"),
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -908,8 +887,8 @@ async def initiate_sheets_oauth(
     1. Serveur MCP Google Workspace configuré
     2. Préférences stockées
     """
-    from app.services.mcp_service import get_mcp_service
     from app.services.encryption import decrypt_value
+    from app.services.mcp_service import get_mcp_service
 
     client_id = None
     client_secret = None
@@ -991,8 +970,8 @@ async def initiate_sheets_oauth(
 @router.get("/sync/callback")
 async def handle_sheets_oauth_callback(
     state: str,
-    code: Optional[str] = None,
-    error: Optional[str] = None,
+    code: str | None = None,
+    error: str | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -1029,8 +1008,8 @@ async def sync_crm(
     1. Token OAuth CRM dédié
     2. Clé API Gemini (fallback pour spreadsheets accessibles)
     """
-    from app.services.sheets_service import GoogleSheetsService
     from app.services.encryption import decrypt_value
+    from app.services.sheets_service import GoogleSheetsService
 
     # Get spreadsheet ID
     result = await session.execute(
@@ -1087,17 +1066,7 @@ async def sync_crm(
         raise HTTPException(status_code=400, detail=str(e))
 
     # Run sync
-    stats = {
-        "contacts_created": 0,
-        "contacts_updated": 0,
-        "projects_created": 0,
-        "projects_updated": 0,
-        "deliverables_created": 0,
-        "deliverables_updated": 0,
-        "tasks_created": 0,
-        "tasks_updated": 0,
-        "errors": [],
-    }
+    stats = new_sync_stats()
 
     try:
         # Sync Clients
@@ -1108,63 +1077,13 @@ async def sync_crm(
             for raw_row in clients_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    crm_id = row.get("ID", "").strip()
-                    if not crm_id:
-                        continue
-
-                    # Check if contact exists
-                    result = await session.execute(
-                        select(Contact).where(Contact.id == crm_id)
-                    )
-                    existing = result.scalar_one_or_none()
-
-                    # Parse name
-                    full_name = row.get("Nom", "").strip()
-                    parts = full_name.split(" ", 1)
-                    first_name = parts[0] if parts else ""
-                    last_name = parts[1] if len(parts) > 1 else None
-
-                    # Parse score
-                    score_str = row.get("Score", "50").strip()
-                    try:
-                        score = int(float(score_str)) if score_str else 50
-                    except ValueError:
-                        score = 50
-
-                    # Parse tags
-                    tags_str = row.get("Tags", "").strip()
-                    import json
-                    tags_json = json.dumps(tags_str.split(",")) if tags_str else None
-
-                    if existing:
-                        existing.first_name = first_name
-                        existing.last_name = last_name
-                        existing.company = row.get("Entreprise", "").strip() or None
-                        existing.email = row.get("Email", "").strip() or None
-                        existing.phone = row.get("Tel", "").strip() or None
-                        existing.source = row.get("Source", "").strip() or None
-                        existing.stage = row.get("Stage", "contact").strip() or "contact"
-                        existing.score = score
-                        existing.tags = tags_json
-                        existing.updated_at = datetime.now(UTC)
-                        stats["contacts_updated"] += 1
-                    else:
-                        contact = Contact(
-                            id=crm_id,
-                            first_name=first_name,
-                            last_name=last_name,
-                            company=row.get("Entreprise", "").strip() or None,
-                            email=row.get("Email", "").strip() or None,
-                            phone=row.get("Tel", "").strip() or None,
-                            source=row.get("Source", "").strip() or None,
-                            stage=row.get("Stage", "contact").strip() or "contact",
-                            score=score,
-                            tags=tags_json,
-                            scope="global",
-                        )
-                        session.add(contact)
+                    _, created = await upsert_contact(session, row)
+                    if created:
                         stats["contacts_created"] += 1
-
+                    else:
+                        stats["contacts_updated"] += 1
+                except ValueError:
+                    continue  # ID manquant, on saute
                 except Exception as e:
                     logger.error(f"Error syncing contact {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Contact {row.get('ID', 'unknown')}: {str(e)}")
@@ -1178,60 +1097,16 @@ async def sync_crm(
             projects_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Projects")
             logger.info(f"Found {len(projects_data)} projects in Google Sheets")
 
-            status_map = {
-                "en_cours": "active",
-                "en_pause": "on_hold",
-                "termine": "completed",
-                "annule": "cancelled",
-            }
-
             for raw_row in projects_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    project_id = row.get("ID", "").strip()
-                    if not project_id:
-                        continue
-
-                    result = await session.execute(
-                        select(Project).where(Project.id == project_id)
-                    )
-                    existing = result.scalar_one_or_none()
-
-                    client_id = row.get("ClientID", "").strip() or None
-                    raw_status = row.get("Status", "active").strip().lower()
-                    status = status_map.get(raw_status, raw_status)
-                    if status not in ["active", "completed", "on_hold", "cancelled"]:
-                        status = "active"
-
-                    budget_str = row.get("Budget", "").strip()
-                    try:
-                        budget = float(budget_str) if budget_str else None
-                    except ValueError:
-                        budget = None
-
-                    if existing:
-                        existing.name = row.get("Name", "Sans nom").strip()
-                        existing.description = row.get("Description", "").strip() or None
-                        existing.contact_id = client_id
-                        existing.status = status
-                        existing.budget = budget
-                        existing.notes = row.get("Notes", "").strip() or None
-                        existing.updated_at = datetime.now(UTC)
-                        stats["projects_updated"] += 1
-                    else:
-                        project = Project(
-                            id=project_id,
-                            name=row.get("Name", "Sans nom").strip(),
-                            description=row.get("Description", "").strip() or None,
-                            contact_id=client_id,
-                            status=status,
-                            budget=budget,
-                            notes=row.get("Notes", "").strip() or None,
-                            scope="global",
-                        )
-                        session.add(project)
+                    _, created = await upsert_project(session, row)
+                    if created:
                         stats["projects_created"] += 1
-
+                    else:
+                        stats["projects_updated"] += 1
+                except ValueError:
+                    continue
                 except Exception as e:
                     logger.error(f"Error syncing project {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Project {row.get('ID', 'unknown')}: {str(e)}")
@@ -1245,55 +1120,16 @@ async def sync_crm(
             tasks_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Tasks")
             logger.info(f"Found {len(tasks_data)} tasks in Google Sheets")
 
-            priority_map = {
-                "normal": "medium", "urgent": "urgent",
-                "low": "low", "high": "high", "medium": "medium",
-            }
-
             for raw_row in tasks_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    task_id = row.get("ID", "").strip()
-                    if not task_id:
-                        continue
-
-                    existing = await session.get(Task, task_id)
-
-                    raw_priority = row.get("Priority", "medium").strip().lower()
-                    priority = priority_map.get(raw_priority, "medium")
-
-                    raw_status = row.get("Status", "todo").strip().lower()
-                    if raw_status not in ("todo", "in_progress", "done", "cancelled"):
-                        raw_status = "todo"
-
-                    # Parse dates
-                    due_date = _parse_dt(row.get("DueDate", ""))
-                    created_at = _parse_dt(row.get("CreatedAt", ""))
-                    completed_at = _parse_dt(row.get("CompletedAt", ""))
-
-                    if existing:
-                        existing.title = row.get("Title", "Sans titre").strip()
-                        existing.description = row.get("Description", "").strip() or None
-                        existing.priority = priority
-                        existing.status = raw_status
-                        existing.due_date = due_date
-                        existing.completed_at = completed_at
-                        existing.updated_at = datetime.now(UTC)
-                        stats["tasks_updated"] += 1
-                    else:
-                        task = Task(
-                            id=task_id,
-                            title=row.get("Title", "Sans titre").strip(),
-                            description=row.get("Description", "").strip() or None,
-                            priority=priority,
-                            status=raw_status,
-                            due_date=due_date,
-                            completed_at=completed_at,
-                            created_at=created_at or datetime.now(UTC),
-                        )
-                        session.add(task)
+                    _, created = await upsert_task(session, row)
+                    if created:
                         stats["tasks_created"] += 1
-
+                    else:
+                        stats["tasks_updated"] += 1
+                except ValueError:
+                    continue
                 except Exception as e:
                     logger.error(f"Error syncing task {row.get('ID', 'unknown')}: {e}")
                     stats["errors"].append(f"Task {row.get('ID', 'unknown')}: {str(e)}")
@@ -1304,32 +1140,14 @@ async def sync_crm(
 
         await session.commit()
 
-        # Update last sync time
-        result = await session.execute(
-            select(Preference).where(Preference.key == "crm_last_sync")
-        )
-        last_sync_pref = result.scalar_one_or_none()
-        now = datetime.now(UTC).isoformat()
+        # Mettre a jour le timestamp de derniere synchronisation
+        now = await update_last_sync_time(session)
 
-        if last_sync_pref:
-            last_sync_pref.value = now
-            last_sync_pref.updated_at = datetime.now(UTC)
-        else:
-            last_sync_pref = Preference(key="crm_last_sync", value=now, category="crm")
-            session.add(last_sync_pref)
-
-        await session.commit()
-
-        total_synced = (
-            stats["contacts_created"] + stats["contacts_updated"] +
-            stats["projects_created"] + stats["projects_updated"] +
-            stats["deliverables_created"] + stats["deliverables_updated"] +
-            stats["tasks_created"] + stats["tasks_updated"]
-        )
+        total_synced = compute_total_synced(stats)
 
         return CRMSyncResponse(
             success=len(stats["errors"]) == 0,
-            message=f"Synchronisation terminée: {total_synced} éléments",
+            message=f"Synchronisation terminee: {total_synced} elements",
             stats=CRMSyncStatsResponse(**stats, total_synced=total_synced),
             sync_time=now,
         )
@@ -1353,9 +1171,9 @@ async def import_crm_data(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Importe les données CRM directement (sans passer par Google Sheets API).
+    Importe les donnees CRM directement (sans passer par Google Sheets API).
 
-    Utilisé quand l'accès OAuth/API n'est pas disponible mais qu'on a les données
+    Utilise quand l'acces OAuth/API n'est pas disponible mais qu'on a les donnees
     via d'autres moyens (ex: MCP Claude Code).
 
     Body JSON:
@@ -1366,19 +1184,7 @@ async def import_crm_data(
         "tasks": [{"ID": "...", "Title": "...", ...}]
     }
     """
-    import json
-
-    stats = {
-        "contacts_created": 0,
-        "contacts_updated": 0,
-        "projects_created": 0,
-        "projects_updated": 0,
-        "deliverables_created": 0,
-        "deliverables_updated": 0,
-        "tasks_created": 0,
-        "tasks_updated": 0,
-        "errors": [],
-    }
+    stats = new_sync_stats()
 
     # Import Clients
     if clients:
@@ -1386,134 +1192,33 @@ async def import_crm_data(
         for raw_row in clients:
             try:
                 row = _sanitize_row(raw_row)
-                crm_id = row.get("ID", "").strip()
-                if not crm_id:
-                    continue
-
-                result = await session.execute(
-                    select(Contact).where(Contact.id == crm_id)
-                )
-                existing = result.scalar_one_or_none()
-
-                # Parse name
-                full_name = row.get("Nom", "").strip()
-                parts = full_name.split(" ", 1)
-                first_name = parts[0] if parts else ""
-                last_name = parts[1] if len(parts) > 1 else None
-
-                # Parse score
-                score_str = row.get("Score", "50")
-                if isinstance(score_str, str):
-                    score_str = score_str.strip()
-                try:
-                    score = int(float(score_str)) if score_str else 50
-                except (ValueError, TypeError):
-                    score = 50
-
-                # Parse tags
-                tags_str = row.get("Tags", "")
-                if isinstance(tags_str, str):
-                    tags_str = tags_str.strip()
-                tags_json = json.dumps(tags_str.split(",")) if tags_str else None
-
-                if existing:
-                    existing.first_name = first_name
-                    existing.last_name = last_name
-                    existing.company = (row.get("Entreprise", "") or "").strip() or None
-                    existing.email = (row.get("Email", "") or "").strip() or None
-                    existing.phone = (row.get("Tel", "") or "").strip() or None
-                    existing.source = (row.get("Source", "") or "").strip() or None
-                    existing.stage = (row.get("Stage", "contact") or "contact").strip()
-                    existing.score = score
-                    existing.tags = tags_json
-                    existing.updated_at = datetime.now(UTC)
-                    stats["contacts_updated"] += 1
-                else:
-                    contact = Contact(
-                        id=crm_id,
-                        first_name=first_name,
-                        last_name=last_name,
-                        company=(row.get("Entreprise", "") or "").strip() or None,
-                        email=(row.get("Email", "") or "").strip() or None,
-                        phone=(row.get("Tel", "") or "").strip() or None,
-                        source=(row.get("Source", "") or "").strip() or None,
-                        stage=(row.get("Stage", "contact") or "contact").strip(),
-                        score=score,
-                        tags=tags_json,
-                        scope="global",
-                    )
-                    session.add(contact)
+                _, created = await upsert_contact(session, row, safe_get=True)
+                if created:
                     stats["contacts_created"] += 1
-
+                else:
+                    stats["contacts_updated"] += 1
+            except ValueError:
+                continue
             except Exception as e:
-                logger.error(f"Error importing contact {row.get('ID', 'unknown')}: {e}")
-                stats["errors"].append(f"Contact {row.get('ID', 'unknown')}: {str(e)}")
+                logger.error(f"Error importing contact {raw_row.get('ID', 'unknown')}: {e}")
+                stats["errors"].append(f"Contact {raw_row.get('ID', 'unknown')}: {str(e)}")
 
     # Import Projects
     if projects:
         logger.info(f"Importing {len(projects)} projects")
-        status_map = {
-            "en_cours": "active",
-            "en_pause": "on_hold",
-            "termine": "completed",
-            "annule": "cancelled",
-            "en_attente": "on_hold",
-            "livre": "completed",
-            "planifie": "active",
-        }
-
         for raw_row in projects:
             try:
                 row = _sanitize_row(raw_row)
-                project_id = row.get("ID", "").strip()
-                if not project_id:
-                    continue
-
-                result = await session.execute(
-                    select(Project).where(Project.id == project_id)
-                )
-                existing = result.scalar_one_or_none()
-
-                client_id = (row.get("ClientID", "") or "").strip() or None
-                raw_status = (row.get("Status", "active") or "active").strip().lower()
-                status = status_map.get(raw_status, raw_status)
-                if status not in ["active", "completed", "on_hold", "cancelled"]:
-                    status = "active"
-
-                budget_str = row.get("Budget", "")
-                if isinstance(budget_str, str):
-                    budget_str = budget_str.strip()
-                try:
-                    budget = float(budget_str) if budget_str else None
-                except (ValueError, TypeError):
-                    budget = None
-
-                if existing:
-                    existing.name = (row.get("Name", "Sans nom") or "Sans nom").strip()
-                    existing.description = (row.get("Description", "") or "").strip() or None
-                    existing.contact_id = client_id
-                    existing.status = status
-                    existing.budget = budget
-                    existing.notes = (row.get("Notes", "") or "").strip() or None
-                    existing.updated_at = datetime.now(UTC)
-                    stats["projects_updated"] += 1
-                else:
-                    project = Project(
-                        id=project_id,
-                        name=(row.get("Name", "Sans nom") or "Sans nom").strip(),
-                        description=(row.get("Description", "") or "").strip() or None,
-                        contact_id=client_id,
-                        status=status,
-                        budget=budget,
-                        notes=(row.get("Notes", "") or "").strip() or None,
-                        scope="global",
-                    )
-                    session.add(project)
+                _, created = await upsert_project(session, row, safe_get=True)
+                if created:
                     stats["projects_created"] += 1
-
+                else:
+                    stats["projects_updated"] += 1
+            except ValueError:
+                continue
             except Exception as e:
-                logger.error(f"Error importing project {row.get('ID', 'unknown')}: {e}")
-                stats["errors"].append(f"Project {row.get('ID', 'unknown')}: {str(e)}")
+                logger.error(f"Error importing project {raw_row.get('ID', 'unknown')}: {e}")
+                stats["errors"].append(f"Project {raw_row.get('ID', 'unknown')}: {str(e)}")
 
     # Import Deliverables
     if deliverables:
@@ -1521,157 +1226,44 @@ async def import_crm_data(
         for raw_row in deliverables:
             try:
                 row = _sanitize_row(raw_row)
-                deliv_id = row.get("ID", "").strip()
-                if not deliv_id:
-                    continue
-
-                result = await session.execute(
-                    select(Deliverable).where(Deliverable.id == deliv_id)
-                )
-                existing = result.scalar_one_or_none()
-
-                project_id = (row.get("ProjectID", "") or "").strip() or None
-                raw_status = (row.get("Status", "pending") or "pending").strip().lower()
-                status = raw_status if raw_status in ["pending", "in_progress", "completed", "blocked"] else "pending"
-
-                if existing:
-                    existing.title = (row.get("Title", "Sans titre") or "Sans titre").strip()
-                    existing.description = (row.get("Description", "") or "").strip() or None
-                    existing.project_id = project_id
-                    existing.status = status
-                    existing.updated_at = datetime.now(UTC)
-                    stats["deliverables_updated"] += 1
-                else:
-                    deliverable = Deliverable(
-                        id=deliv_id,
-                        title=(row.get("Title", "Sans titre") or "Sans titre").strip(),
-                        description=(row.get("Description", "") or "").strip() or None,
-                        project_id=project_id,
-                        status=status,
-                    )
-                    session.add(deliverable)
+                _, created = await upsert_deliverable_from_import(session, row, safe_get=True)
+                if created:
                     stats["deliverables_created"] += 1
-
+                else:
+                    stats["deliverables_updated"] += 1
+            except ValueError:
+                continue
             except Exception as e:
-                logger.error(f"Error importing deliverable {row.get('ID', 'unknown')}: {e}")
-                stats["errors"].append(f"Deliverable {row.get('ID', 'unknown')}: {str(e)}")
+                logger.error(f"Error importing deliverable {raw_row.get('ID', 'unknown')}: {e}")
+                stats["errors"].append(f"Deliverable {raw_row.get('ID', 'unknown')}: {str(e)}")
 
     # Import Tasks
     if tasks:
         logger.info(f"Importing {len(tasks)} tasks")
-        priority_map = {
-            "normal": "medium",
-            "urgent": "urgent",
-            "low": "low",
-            "high": "high",
-            "medium": "medium",
-        }
-
         for raw_row in tasks:
             try:
                 row = _sanitize_row(raw_row)
-                task_id = (row.get("ID", "") or "").strip()
-                if not task_id:
-                    continue
-
-                result = await session.execute(
-                    select(Task).where(Task.id == task_id)
-                )
-                existing = result.scalar_one_or_none()
-
-                raw_priority = (row.get("Priority", "medium") or "medium").strip().lower()
-                priority = priority_map.get(raw_priority, "medium")
-
-                raw_status = (row.get("Status", "todo") or "todo").strip().lower()
-                if raw_status not in ("todo", "in_progress", "done", "cancelled"):
-                    raw_status = "todo"
-
-                # Parse dates
-                due_date = None
-                due_str = (row.get("DueDate", "") or "").strip()
-                if due_str:
-                    for fmt in ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%d/%m/%Y"]:
-                        try:
-                            due_date = datetime.strptime(due_str, fmt)
-                            break
-                        except ValueError:
-                            continue
-
-                completed_at = None
-                comp_str = (row.get("CompletedAt", "") or "").strip()
-                if comp_str:
-                    for fmt in ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"]:
-                        try:
-                            completed_at = datetime.strptime(comp_str, fmt)
-                            break
-                        except ValueError:
-                            continue
-
-                created_at = None
-                created_str = (row.get("CreatedAt", "") or "").strip()
-                if created_str:
-                    for fmt in ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"]:
-                        try:
-                            created_at = datetime.strptime(created_str, fmt)
-                            break
-                        except ValueError:
-                            continue
-
-                if existing:
-                    existing.title = (row.get("Title", "Sans titre") or "Sans titre").strip()
-                    existing.description = (row.get("Description", "") or "").strip() or None
-                    existing.priority = priority
-                    existing.status = raw_status
-                    existing.due_date = due_date
-                    existing.completed_at = completed_at
-                    existing.updated_at = datetime.now(UTC)
-                    stats["tasks_updated"] += 1
-                else:
-                    task = Task(
-                        id=task_id,
-                        title=(row.get("Title", "Sans titre") or "Sans titre").strip(),
-                        description=(row.get("Description", "") or "").strip() or None,
-                        priority=priority,
-                        status=raw_status,
-                        due_date=due_date,
-                        completed_at=completed_at,
-                        created_at=created_at or datetime.now(UTC),
-                    )
-                    session.add(task)
+                _, created = await upsert_task(session, row, safe_get=True)
+                if created:
                     stats["tasks_created"] += 1
-
+                else:
+                    stats["tasks_updated"] += 1
+            except ValueError:
+                continue
             except Exception as e:
-                logger.error(f"Error importing task {row.get('ID', 'unknown')}: {e}")
-                stats["errors"].append(f"Task {row.get('ID', 'unknown')}: {str(e)}")
+                logger.error(f"Error importing task {raw_row.get('ID', 'unknown')}: {e}")
+                stats["errors"].append(f"Task {raw_row.get('ID', 'unknown')}: {str(e)}")
 
     await session.commit()
 
-    # Update last sync time
-    result = await session.execute(
-        select(Preference).where(Preference.key == "crm_last_sync")
-    )
-    last_sync_pref = result.scalar_one_or_none()
-    now = datetime.now(UTC).isoformat()
+    # Mettre a jour le timestamp de derniere synchronisation
+    now = await update_last_sync_time(session)
 
-    if last_sync_pref:
-        last_sync_pref.value = now
-        last_sync_pref.updated_at = datetime.now(UTC)
-    else:
-        last_sync_pref = Preference(key="crm_last_sync", value=now, category="crm")
-        session.add(last_sync_pref)
-
-    await session.commit()
-
-    total_synced = (
-        stats["contacts_created"] + stats["contacts_updated"] +
-        stats["projects_created"] + stats["projects_updated"] +
-        stats["deliverables_created"] + stats["deliverables_updated"] +
-        stats["tasks_created"] + stats["tasks_updated"]
-    )
+    total_synced = compute_total_synced(stats)
 
     return CRMSyncResponse(
         success=len(stats["errors"]) == 0,
-        message=f"Import terminé: {total_synced} éléments",
+        message=f"Import termine: {total_synced} elements",
         stats=CRMSyncStatsResponse(**stats, total_synced=total_synced),
         sync_time=now,
     )

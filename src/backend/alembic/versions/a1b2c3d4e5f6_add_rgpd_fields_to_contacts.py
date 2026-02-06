@@ -7,10 +7,8 @@ Create Date: 2026-01-28 16:30:00.000000
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-import sqlmodel
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'a1b2c3d4e5f6'
@@ -24,7 +22,10 @@ def upgrade() -> None:
     op.add_column('contacts', sa.Column('rgpd_base_legale', sa.String(), nullable=True))
     op.add_column('contacts', sa.Column('rgpd_date_collecte', sa.DateTime(), nullable=True))
     op.add_column('contacts', sa.Column('rgpd_date_expiration', sa.DateTime(), nullable=True))
-    op.add_column('contacts', sa.Column('rgpd_consentement', sa.Boolean(), nullable=False, server_default='0'))
+    op.add_column('contacts', sa.Column(
+        'rgpd_consentement', sa.Boolean(),
+        nullable=False, server_default='0',
+    ))
 
 
 def downgrade() -> None:

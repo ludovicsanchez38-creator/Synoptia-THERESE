@@ -8,63 +8,38 @@ Phase 2 - Calendar
 Local First - Multi-Provider
 """
 
-import logging
 import json
+import logging
 from datetime import UTC, datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query
-from pydantic import BaseModel
-from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.calendar_service import CalendarService
-from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
-from app.models.entities import EmailAccount, Calendar, CalendarEvent, generate_uuid
-from app.models.schemas import (
-    CalendarResponse,
-    CalendarEventResponse,
-    CreateEventRequest,
-    UpdateEventRequest,
-    ListEventsRequest,
-    QuickAddEventRequest,
-    CalendarSyncResponse,
-)
 from app.models.database import get_session
+from app.models.entities import Calendar, CalendarEvent, EmailAccount, generate_uuid
+from app.models.schemas import (
+    CalendarEventResponse,
+    CalendarResponse,
+    CalendarSyncResponse,
+    CreateEventRequest,
+    QuickAddEventRequest,
+    UpdateEventRequest,
+)
+from app.models.schemas_calendar import (
+    CalDAVSetupRequest,
+    CalDAVTestRequest,
+)
+from app.routers.email import ensure_valid_access_token
 from app.services.calendar.provider_factory import (
     get_calendar_provider,
     list_caldav_presets,
     test_caldav_connection,
 )
-from app.routers.email import ensure_valid_access_token
+from app.services.calendar_service import CalendarService
+from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-# ============================================================
-# Local First Schemas
-# ============================================================
-
-
-class LocalCalendarCreateRequest(BaseModel):
-    """Create a local calendar (no external account needed)."""
-    summary: str
-    description: Optional[str] = None
-    timezone: str = "Europe/Paris"
-
-
-class CalDAVSetupRequest(BaseModel):
-    """Setup a CalDAV calendar connection."""
-    url: str
-    username: str
-    password: str
-
-
-class CalDAVTestRequest(BaseModel):
-    """Test CalDAV connection."""
-    url: str
-    username: str
-    password: str
 
 
 # ============================================================
@@ -118,10 +93,10 @@ async def _get_provider_for_calendar(
 
 @router.get("/calendars")
 async def list_calendars(
-    account_id: Optional[str] = Query(None, description="Email account ID (optional for local calendars)"),
-    provider: Optional[str] = Query(None, description="Filter by provider: local, google, caldav"),
+    account_id: str | None = Query(None, description="Email account ID (optional for local calendars)"),
+    provider: str | None = Query(None, description="Filter by provider: local, google, caldav"),
     session: AsyncSession = Depends(get_session),
-) -> List[CalendarResponse]:
+) -> list[CalendarResponse]:
     """
     Liste tous les calendriers.
 
@@ -163,7 +138,7 @@ async def _list_google_calendars(
     account_id: str,
     account: EmailAccount,
     session: AsyncSession,
-) -> List[CalendarResponse]:
+) -> list[CalendarResponse]:
     """Sync and list Google Calendar calendars."""
     access_token = await ensure_valid_access_token(account, session)
 
@@ -246,9 +221,9 @@ async def get_calendar(
 
 @router.post("/calendars")
 async def create_calendar(
-    account_id: Optional[str] = None,
+    account_id: str | None = None,
     summary: str = "Mon calendrier",
-    description: Optional[str] = None,
+    description: str | None = None,
     timezone: str = "Europe/Paris",
     provider_type: str = Query("local", description="Provider: local, google, caldav"),
     session: AsyncSession = Depends(get_session),
@@ -328,7 +303,7 @@ async def create_calendar(
             raise HTTPException(status_code=500, detail=str(e))
 
     else:
-        raise HTTPException(status_code=400, detail=f"Pour CalDAV, utilisez POST /calendars/caldav-setup")
+        raise HTTPException(status_code=400, detail="Pour CalDAV, utilisez POST /calendars/caldav-setup")
 
 
 @router.delete("/calendars/{calendar_id}")
@@ -376,7 +351,7 @@ async def delete_calendar(
 async def setup_caldav_calendar(
     request: CalDAVSetupRequest,
     session: AsyncSession = Depends(get_session),
-) -> List[CalendarResponse]:
+) -> list[CalendarResponse]:
     """
     Configure un serveur CalDAV et importe les calendriers decouverts.
 
@@ -480,12 +455,12 @@ async def get_caldav_presets() -> list[dict]:
 @router.get("/events")
 async def list_events(
     calendar_id: str = Query(default="primary"),
-    account_id: Optional[str] = Query(None),
-    time_min: Optional[str] = None,
-    time_max: Optional[str] = None,
+    account_id: str | None = Query(None),
+    time_min: str | None = None,
+    time_max: str | None = None,
     max_results: int = Query(default=50, le=250),
     session: AsyncSession = Depends(get_session),
-) -> List[CalendarEventResponse]:
+) -> list[CalendarEventResponse]:
     """
     Liste les evenements d'un calendrier (local, Google ou CalDAV).
 
@@ -510,10 +485,10 @@ async def list_events(
 async def _list_events_provider(
     calendar: Calendar,
     session: AsyncSession,
-    time_min: Optional[str],
-    time_max: Optional[str],
+    time_min: str | None,
+    time_max: str | None,
     max_results: int,
-) -> List[CalendarEventResponse]:
+) -> list[CalendarEventResponse]:
     """List events via abstract CalendarProvider (local or CalDAV)."""
     provider = await _get_provider_for_calendar(calendar, session)
 
@@ -562,10 +537,10 @@ async def _list_events_google(
     account_id: str,
     calendar_id: str,
     session: AsyncSession,
-    time_min: Optional[str],
-    time_max: Optional[str],
+    time_min: str | None,
+    time_max: str | None,
     max_results: int,
-) -> List[CalendarEventResponse]:
+) -> list[CalendarEventResponse]:
     """List events via Google Calendar API (legacy flow)."""
     account = await session.get(EmailAccount, account_id)
     if not account:
@@ -708,7 +683,7 @@ async def get_event(
 @router.post("/events")
 async def create_event(
     request: CreateEventRequest,
-    account_id: Optional[str] = Query(None),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarEventResponse:
     """
@@ -777,7 +752,7 @@ async def _create_event_provider(
 
 
 async def _create_event_google(
-    account_id: Optional[str],
+    account_id: str | None,
     request: CreateEventRequest,
     session: AsyncSession,
 ) -> CalendarEventResponse:
@@ -882,7 +857,7 @@ async def update_event(
     event_id: str,
     request: UpdateEventRequest,
     calendar_id: str = Query(default="primary"),
-    account_id: Optional[str] = Query(None),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarEventResponse:
     """Met a jour un evenement (local, Google ou CalDAV)."""
@@ -1039,7 +1014,7 @@ async def update_event(
 async def delete_event(
     event_id: str,
     calendar_id: str = Query(default="primary"),
-    account_id: Optional[str] = Query(None),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """Supprime un evenement (local, Google ou CalDAV)."""
@@ -1169,7 +1144,7 @@ async def quick_add_event(
 
 @router.post("/sync")
 async def sync_calendar(
-    account_id: Optional[str] = Query(None),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarSyncResponse:
     """
@@ -1211,7 +1186,7 @@ async def sync_calendar(
 
 @router.get("/sync/status")
 async def get_sync_status(
-    account_id: Optional[str] = Query(None),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """Recupere le status de synchronisation."""

@@ -6,14 +6,13 @@ Part of the "Local First" architecture.
 """
 
 import logging
-from typing import Literal, Optional
-
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Literal
 
 from app.services.calendar.base_provider import CalendarProvider
-from app.services.calendar.local_provider import LocalCalendarProvider
-from app.services.calendar.google_provider import GoogleCalendarProvider
 from app.services.calendar.caldav_provider import CalDAVProvider
+from app.services.calendar.google_provider import GoogleCalendarProvider
+from app.services.calendar.local_provider import LocalCalendarProvider
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +23,13 @@ CalendarProviderType = Literal["local", "google", "caldav"]
 def get_calendar_provider(
     provider_type: CalendarProviderType,
     # Local provider
-    session: Optional[AsyncSession] = None,
+    session: AsyncSession | None = None,
     # Google OAuth
-    access_token: Optional[str] = None,
+    access_token: str | None = None,
     # CalDAV config
-    caldav_url: Optional[str] = None,
-    caldav_username: Optional[str] = None,
-    caldav_password: Optional[str] = None,
+    caldav_url: str | None = None,
+    caldav_username: str | None = None,
+    caldav_password: str | None = None,
 ) -> CalendarProvider:
     """
     Create a calendar provider based on configuration.

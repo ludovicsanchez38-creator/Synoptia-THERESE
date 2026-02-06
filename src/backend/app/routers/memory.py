@@ -9,12 +9,8 @@ import logging
 import time
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.models.database import get_session
-from app.models.entities import Contact, Project, FileMetadata
+from app.models.entities import Contact, FileMetadata, Project
 from app.models.schemas import (
     ContactCreate,
     ContactResponse,
@@ -26,9 +22,12 @@ from app.models.schemas import (
     ProjectResponse,
     ProjectUpdate,
 )
-from app.services.qdrant import get_qdrant_service
 from app.services.audit import AuditAction, log_activity
+from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -221,9 +220,17 @@ async def search_memory(
     # Phase 2: Keyword Search (fallback/complement)
     # ============================================================
 
-    # Search contacts
+    # Search contacts - filtrage SQL ILIKE au lieu de charger tout en mémoire
     if not request.entity_types or "contact" in request.entity_types:
-        contact_results = await session.execute(select(Contact))
+        like_pattern = f"%{request.query}%"
+        contact_stmt = select(Contact).where(
+            (Contact.first_name.ilike(like_pattern))
+            | (Contact.last_name.ilike(like_pattern))
+            | (Contact.company.ilike(like_pattern))
+            | (Contact.email.ilike(like_pattern))
+            | (Contact.notes.ilike(like_pattern))
+        )
+        contact_results = await session.execute(contact_stmt)
         for contact in contact_results.scalars().all():
             if contact.id in results_map:
                 continue  # Already found via semantic
@@ -241,20 +248,25 @@ async def search_memory(
                 )
             ).lower()
 
-            if query_lower in searchable:
-                score = searchable.count(query_lower) / max(len(searchable.split()), 1)
-                results_map[contact.id] = MemorySearchResult(
-                    id=contact.id,
-                    entity_type="contact",
-                    title=contact.display_name,
-                    content=contact.notes or "",
-                    score=min(score * 0.8, 0.8),  # Cap keyword results below semantic
-                    metadata={"company": contact.company, "email": contact.email},
-                )
+            score = searchable.count(query_lower) / max(len(searchable.split()), 1)
+            results_map[contact.id] = MemorySearchResult(
+                id=contact.id,
+                entity_type="contact",
+                title=contact.display_name,
+                content=contact.notes or "",
+                score=min(score * 0.8, 0.8),  # Cap keyword results below semantic
+                metadata={"company": contact.company, "email": contact.email},
+            )
 
-    # Search projects
+    # Search projects - filtrage SQL ILIKE au lieu de charger tout en mémoire
     if not request.entity_types or "project" in request.entity_types:
-        project_results = await session.execute(select(Project))
+        like_pattern = f"%{request.query}%"
+        project_stmt = select(Project).where(
+            (Project.name.ilike(like_pattern))
+            | (Project.description.ilike(like_pattern))
+            | (Project.notes.ilike(like_pattern))
+        )
+        project_results = await session.execute(project_stmt)
         for project in project_results.scalars().all():
             if project.id in results_map:
                 continue  # Already found via semantic
@@ -384,7 +396,7 @@ async def create_contact(
     # Calculate initial score (Phase 5 CRM)
     from datetime import UTC, datetime
     contact.last_interaction = datetime.now(UTC)
-    update_contact_score(session, contact, reason="initial_creation")
+    await update_contact_score(session, contact, reason="initial_creation")
     await session.commit()
     await session.refresh(contact)
 
@@ -452,7 +464,7 @@ async def update_contact(
     # Recalculate score if relevant fields changed (Phase 5 CRM)
     scoring_fields = {"email", "phone", "company", "stage", "source"}
     if scoring_fields.intersection(update_data.keys()):
-        update_contact_score(session, contact, reason=f"update_{','.join(update_data.keys())}")
+        await update_contact_score(session, contact, reason=f"update_{','.join(update_data.keys())}")
         await session.commit()
         await session.refresh(contact)
         logger.info(f"Contact {contact_id} score recalculated after update: {contact.score}")

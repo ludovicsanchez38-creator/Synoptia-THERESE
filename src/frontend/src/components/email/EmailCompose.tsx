@@ -18,7 +18,6 @@ export function EmailCompose() {
     draftSubject,
     draftBody,
     draftIsHtml,
-    setDraftRecipients,
     setDraftSubject,
     setDraftBody,
     clearDraft,

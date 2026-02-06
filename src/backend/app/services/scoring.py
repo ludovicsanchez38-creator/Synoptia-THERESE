@@ -6,10 +6,11 @@ Phase 5 - CRM Features
 """
 
 import logging
-from datetime import UTC, datetime, timedelta
-from sqlmodel import Session
+from datetime import UTC, datetime
 
-from app.models.entities import Contact, Activity
+from app.models.entities import Activity, Contact
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +88,12 @@ def calculate_base_score(contact: Contact) -> int:
     return max(0, score)  # Minimum 0
 
 
-def update_contact_score(session: Session, contact: Contact, reason: str = "recalculation") -> dict:
+async def update_contact_score(session: AsyncSession, contact: Contact, reason: str = "recalculation") -> dict:
     """
     Met à jour le score d'un contact et crée une activité.
 
     Args:
-        session: SQLModel session
+        session: AsyncSession
         contact: Contact entity
         reason: Raison de la mise à jour
 
@@ -127,31 +128,30 @@ def update_contact_score(session: Session, contact: Contact, reason: str = "reca
     }
 
 
-def recalculate_all_scores(session: Session) -> int:
+async def recalculate_all_scores(session: AsyncSession) -> int:
     """
     Recalcule tous les scores de tous les contacts.
 
     Utile pour migration ou correction.
 
     Args:
-        session: SQLModel session
+        session: AsyncSession
 
     Returns:
         Nombre de contacts mis à jour
     """
-    from sqlmodel import select
-
     statement = select(Contact)
-    contacts = session.exec(statement).all()
+    result = await session.execute(statement)
+    contacts = result.scalars().all()
 
     updated_count = 0
 
     for contact in contacts:
-        result = update_contact_score(session, contact, reason="batch_recalculation")
-        if result["old_score"] != result["new_score"]:
+        score_result = await update_contact_score(session, contact, reason="batch_recalculation")
+        if score_result["old_score"] != score_result["new_score"]:
             updated_count += 1
 
-    session.commit()
+    await session.commit()
 
     logger.info(f"Recalculated scores for {updated_count}/{len(contacts)} contacts")
 

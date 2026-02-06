@@ -8,26 +8,25 @@ Persistance SQLite pour les décisions.
 import asyncio
 import json
 import logging
-from datetime import datetime
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 from uuid import uuid4
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.models.board import (
-    AdvisorRole,
-    AdvisorOpinion,
-    BoardRequest,
-    BoardDeliberationChunk,
-    BoardSynthesis,
-    BoardDecision,
     ADVISOR_CONFIG,
+    AdvisorOpinion,
+    AdvisorRole,
+    BoardDecision,
+    BoardDeliberationChunk,
+    BoardRequest,
+    BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
-from app.services.llm import get_llm_service, get_llm_service_for_provider, Message as LLMMessage, load_therese_md
+from app.services.llm import Message as LLMMessage
+from app.services.llm import get_llm_service, get_llm_service_for_provider, load_therese_md
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import WebSearchService
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -409,7 +408,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
                 next_steps=["Reformuler la question", "Consulter le board à nouveau"],
             )
 
-    async def get_decision(self, decision_id: str) -> Optional[BoardDecision]:
+    async def get_decision(self, decision_id: str) -> BoardDecision | None:
         """Récupère une décision par son ID depuis SQLite."""
         if not self._session:
             return None

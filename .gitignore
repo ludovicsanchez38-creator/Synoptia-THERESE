@@ -18,6 +18,7 @@ node_modules/
 # Tauri
 src-tauri/target/
 src/frontend/src-tauri/target/
+src/frontend/src-tauri/binaries/
 
 # IDE
 .idea/

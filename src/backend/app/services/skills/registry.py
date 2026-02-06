@@ -7,12 +7,10 @@ Gestionnaire de skills avec découverte automatique et exécution.
 import logging
 import re
 from pathlib import Path
-from typing import Optional
 
 from app.config import settings
 from app.services.skills.base import (
     BaseSkill,
-    FileFormat,
     SkillExecuteRequest,
     SkillExecuteResponse,
     SkillParams,
@@ -47,7 +45,7 @@ class SkillsRegistry:
         self._skills[skill.skill_id] = skill
         logger.info(f"Registered skill: {skill.skill_id} ({skill.name})")
 
-    def get(self, skill_id: str) -> Optional[BaseSkill]:
+    def get(self, skill_id: str) -> BaseSkill | None:
         """
         Récupère un skill par son ID.
 
@@ -142,7 +140,7 @@ class SkillsRegistry:
                 error=str(e),
             )
 
-    def get_file(self, file_id: str) -> Optional[SkillResult]:
+    def get_file(self, file_id: str) -> SkillResult | None:
         """
         Récupère les informations d'un fichier généré.
 
@@ -273,7 +271,7 @@ class SkillsRegistry:
 
 
 # Singleton registry
-_registry: Optional[SkillsRegistry] = None
+_registry: SkillsRegistry | None = None
 
 
 def get_skills_registry() -> SkillsRegistry:
@@ -295,26 +293,26 @@ async def init_skills() -> None:
 
     Charge et enregistre tous les skills disponibles.
     """
-    from app.services.skills.docx_generator import DocxSkill
-    from app.services.skills.pptx_generator import PptxSkill
-    from app.services.skills.xlsx_generator import XlsxSkill
-    from app.services.skills.text_skills import EmailProSkill, LinkedInPostSkill, ProposalSkill
     from app.services.skills.analysis_skills import (
-        AnalyzeXlsxSkill,
+        AnalyzeAIToolSkill,
         AnalyzePdfSkill,
         AnalyzeWebsiteSkill,
-        MarketResearchSkill,
-        AnalyzeAIToolSkill,
-        ExplainConceptSkill,
+        AnalyzeXlsxSkill,
         BestPracticesSkill,
+        ExplainConceptSkill,
+        MarketResearchSkill,
     )
+    from app.services.skills.docx_generator import DocxSkill
     from app.services.skills.planning_skills import (
+        PlanGoalsSkill,
         PlanMeetingSkill,
         PlanProjectSkill,
         PlanWeekSkill,
-        PlanGoalsSkill,
         WorkflowSkill,
     )
+    from app.services.skills.pptx_generator import PptxSkill
+    from app.services.skills.text_skills import EmailProSkill, LinkedInPostSkill, ProposalSkill
+    from app.services.skills.xlsx_generator import XlsxSkill
 
     registry = get_skills_registry()
 

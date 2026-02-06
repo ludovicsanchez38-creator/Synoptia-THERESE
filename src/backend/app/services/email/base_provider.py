@@ -8,7 +8,7 @@ Part of the "Local First" architecture.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 
 @dataclass
@@ -17,21 +17,21 @@ class EmailAttachmentDTO:
     filename: str
     content_type: str
     size: int
-    content: Optional[bytes] = None  # Only populated when explicitly requested
-    attachment_id: Optional[str] = None  # Provider-specific ID
+    content: bytes | None = None  # Only populated when explicitly requested
+    attachment_id: str | None = None  # Provider-specific ID
 
 
 @dataclass
 class EmailMessageDTO:
     """Data Transfer Object for email messages."""
     id: str
-    thread_id: Optional[str] = None
-    subject: Optional[str] = None
-    snippet: Optional[str] = None
+    thread_id: str | None = None
+    subject: str | None = None
+    snippet: str | None = None
 
     # Sender
     from_email: str = ""
-    from_name: Optional[str] = None
+    from_name: str | None = None
 
     # Recipients
     to_emails: list[str] = field(default_factory=list)
@@ -39,7 +39,7 @@ class EmailMessageDTO:
     bcc_emails: list[str] = field(default_factory=list)
 
     # Timestamps
-    date: Optional[datetime] = None
+    date: datetime | None = None
 
     # Flags
     is_read: bool = False
@@ -48,8 +48,8 @@ class EmailMessageDTO:
     is_draft: bool = False
 
     # Content
-    body_plain: Optional[str] = None
-    body_html: Optional[str] = None
+    body_plain: str | None = None
+    body_html: str | None = None
 
     # Attachments
     has_attachments: bool = False
@@ -71,11 +71,11 @@ class EmailFolderDTO:
     type: Literal["system", "user"] = "user"
     message_count: int = 0
     unread_count: int = 0
-    color: Optional[str] = None
+    color: str | None = None
 
     # IMAP-specific
-    path: Optional[str] = None  # Full IMAP folder path
-    delimiter: Optional[str] = None  # IMAP hierarchy delimiter
+    path: str | None = None  # Full IMAP folder path
+    delimiter: str | None = None  # IMAP hierarchy delimiter
 
 
 @dataclass
@@ -88,9 +88,9 @@ class SendEmailRequest:
     bcc: list[str] = field(default_factory=list)
     is_html: bool = False
     attachments: list[tuple[str, bytes, str]] = field(default_factory=list)  # (filename, content, content_type)
-    reply_to_message_id: Optional[str] = None
-    in_reply_to: Optional[str] = None
-    references: Optional[str] = None
+    reply_to_message_id: str | None = None
+    in_reply_to: str | None = None
+    references: str | None = None
 
 
 class EmailProvider(ABC):
@@ -128,12 +128,12 @@ class EmailProvider(ABC):
     @abstractmethod
     async def list_messages(
         self,
-        folder: Optional[str] = None,
+        folder: str | None = None,
         max_results: int = 50,
-        page_token: Optional[str] = None,
-        query: Optional[str] = None,
+        page_token: str | None = None,
+        query: str | None = None,
         unread_only: bool = False,
-    ) -> tuple[list[EmailMessageDTO], Optional[str]]:
+    ) -> tuple[list[EmailMessageDTO], str | None]:
         """
         List messages from a folder.
 
@@ -199,10 +199,10 @@ class EmailProvider(ABC):
     async def modify_message(
         self,
         message_id: str,
-        add_labels: Optional[list[str]] = None,
-        remove_labels: Optional[list[str]] = None,
-        mark_read: Optional[bool] = None,
-        mark_starred: Optional[bool] = None,
+        add_labels: list[str] | None = None,
+        remove_labels: list[str] | None = None,
+        mark_read: bool | None = None,
+        mark_starred: bool | None = None,
     ) -> EmailMessageDTO:
         """
         Modify message labels/flags.
@@ -258,7 +258,7 @@ class EmailProvider(ABC):
         """
         pass
 
-    async def create_folder(self, name: str, parent: Optional[str] = None) -> EmailFolderDTO:
+    async def create_folder(self, name: str, parent: str | None = None) -> EmailFolderDTO:
         """
         Create a new folder/label.
 

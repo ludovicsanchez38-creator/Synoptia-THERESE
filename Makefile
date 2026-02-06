@@ -1,4 +1,4 @@
-.PHONY: dev install test lint clean build db-migrate tauri
+.PHONY: dev install test lint clean build build-sidecar build-release db-migrate tauri
 
 # Variables
 BACKEND_DIR = src/backend
@@ -98,6 +98,13 @@ build:
 	@echo "🏗️  Build de production..."
 	@cd $(FRONTEND_DIR) && npm run tauri build
 
+build-sidecar:
+	@echo "📦 Build du sidecar backend (PyInstaller)..."
+	@bash scripts/build-sidecar.sh
+
+build-release: build-sidecar build
+	@echo "✅ Build release complète (sidecar + Tauri)"
+
 build-web:
 	@echo "🏗️  Build frontend web..."
 	@cd $(FRONTEND_DIR) && npm run build
@@ -148,6 +155,8 @@ help:
 	@echo "  make lint-fix         - Corriger le code"
 	@echo "  make typecheck        - Vérifier les types TypeScript"
 	@echo "  make build            - Build de production (Tauri)"
+	@echo "  make build-sidecar    - Build du sidecar backend (PyInstaller)"
+	@echo "  make build-release    - Build complète (sidecar + Tauri)"
 	@echo "  make clean            - Nettoyer les fichiers générés"
 	@echo "  make clean-all        - Nettoyage complet (node_modules, venv)"
 	@echo "  make reset-sandbox    - Reset environnement test E2E"

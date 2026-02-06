@@ -6,64 +6,24 @@ API endpoints for image generation with GPT Image 1.5 and Nano Banana Pro.
 
 import logging
 import os
-from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
-
+from app.models.schemas_images import (
+    ImageGenerateRequest,
+    ImageListResponse,
+    ImageProviderStatus,
+    ImageResponse,
+)
 from app.services.image_generator import (
-    ImageGeneratorService,
-    ImageProvider,
     ImageConfig,
+    ImageProvider,
     get_image_service,
 )
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-# Request/Response schemas
-class ImageGenerateRequest(BaseModel):
-    """Request to generate an image."""
-
-    prompt: str
-    provider: Literal["gpt-image-1.5", "nanobanan-pro"] = "gpt-image-1.5"
-    # OpenAI options
-    size: Literal["1024x1024", "1536x1024", "1024x1536"] = "1024x1024"
-    quality: Literal["low", "medium", "high"] = "high"
-    # Gemini options
-    aspect_ratio: str = "1:1"
-    image_size: Literal["1K", "2K", "4K"] = "2K"
-
-
-class ImageResponse(BaseModel):
-    """Response with generated image info."""
-
-    id: str
-    provider: str
-    file_name: str
-    file_size: int
-    mime_type: str
-    created_at: str
-    prompt: str
-    download_url: str
-
-
-class ImageListResponse(BaseModel):
-    """Response with list of images."""
-
-    images: list[ImageResponse]
-    total: int
-
-
-class ImageProviderStatus(BaseModel):
-    """Status of image generation providers."""
-
-    openai_available: bool
-    gemini_available: bool
-    active_provider: str | None
 
 
 @router.get("/status")

@@ -7,7 +7,7 @@ Part of the "Local First" architecture.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal, Optional
 
 
@@ -16,12 +16,12 @@ class CalendarDTO:
     """Data Transfer Object for calendars."""
     id: str
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     timezone: str = "Europe/Paris"
     is_primary: bool = False
-    color: Optional[str] = None
+    color: str | None = None
     provider: str = "local"  # local, google, caldav
-    remote_id: Optional[str] = None  # External provider ID
+    remote_id: str | None = None  # External provider ID
 
 
 @dataclass
@@ -30,8 +30,8 @@ class CalendarEventDTO:
     id: str
     calendar_id: str
     summary: str
-    description: Optional[str] = None
-    location: Optional[str] = None
+    description: str | None = None
+    location: str | None = None
 
     # Timing
     start: datetime | date | None = None  # datetime for timed events, date for all-day
@@ -40,12 +40,12 @@ class CalendarEventDTO:
     timezone: str = "Europe/Paris"
 
     # Recurrence
-    recurrence: Optional[list[str]] = None  # RRULE strings
-    recurring_event_id: Optional[str] = None  # Parent event for instances
+    recurrence: list[str] | None = None  # RRULE strings
+    recurring_event_id: str | None = None  # Parent event for instances
 
     # Attendees
     attendees: list[str] = field(default_factory=list)  # Email addresses
-    organizer: Optional[str] = None
+    organizer: str | None = None
 
     # Status
     status: Literal["confirmed", "tentative", "cancelled"] = "confirmed"
@@ -54,11 +54,11 @@ class CalendarEventDTO:
     reminders: list[int] = field(default_factory=list)  # Minutes before event
 
     # Metadata
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     # External reference
-    remote_id: Optional[str] = None  # External provider event ID
+    remote_id: str | None = None  # External provider event ID
 
 
 @dataclass
@@ -68,29 +68,29 @@ class CreateEventRequest:
     summary: str
     start: datetime | date
     end: datetime | date
-    description: Optional[str] = None
-    location: Optional[str] = None
+    description: str | None = None
+    location: str | None = None
     all_day: bool = False
     timezone: str = "Europe/Paris"
     attendees: list[str] = field(default_factory=list)
-    recurrence: Optional[list[str]] = None
+    recurrence: list[str] | None = None
     reminders: list[int] = field(default_factory=lambda: [30])  # Default 30 min reminder
 
 
 @dataclass
 class UpdateEventRequest:
     """Request to update a calendar event."""
-    summary: Optional[str] = None
+    summary: str | None = None
     start: Optional[datetime | date] = None
     end: Optional[datetime | date] = None
-    description: Optional[str] = None
-    location: Optional[str] = None
-    all_day: Optional[bool] = None
-    timezone: Optional[str] = None
-    attendees: Optional[list[str]] = None
-    recurrence: Optional[list[str]] = None
-    status: Optional[Literal["confirmed", "tentative", "cancelled"]] = None
-    reminders: Optional[list[int]] = None
+    description: str | None = None
+    location: str | None = None
+    all_day: bool | None = None
+    timezone: str | None = None
+    attendees: list[str] | None = None
+    recurrence: list[str] | None = None
+    status: Literal["confirmed", "tentative", "cancelled"] | None = None
+    reminders: list[int] | None = None
 
 
 class CalendarProvider(ABC):
@@ -152,9 +152,9 @@ class CalendarProvider(ABC):
     async def create_calendar(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         timezone: str = "Europe/Paris",
-        color: Optional[str] = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """
         Create a new calendar.
@@ -174,10 +174,10 @@ class CalendarProvider(ABC):
     async def update_calendar(
         self,
         calendar_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        timezone: Optional[str] = None,
-        color: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        timezone: str | None = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """
         Update a calendar.
@@ -212,11 +212,11 @@ class CalendarProvider(ABC):
     async def list_events(
         self,
         calendar_id: str,
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None,
+        time_min: datetime | None = None,
+        time_max: datetime | None = None,
         max_results: int = 100,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[CalendarEventDTO], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[CalendarEventDTO], str | None]:
         """
         List events from a calendar.
 

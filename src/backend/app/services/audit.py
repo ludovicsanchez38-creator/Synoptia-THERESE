@@ -8,11 +8,10 @@ US-SEC-05: Logs d'activite
 
 import logging
 from datetime import UTC, datetime
-from typing import Optional, List
 from enum import Enum
 
-from sqlmodel import Field, SQLModel, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import Field, SQLModel, select
 
 logger = logging.getLogger(__name__)
 
@@ -66,14 +65,14 @@ class ActivityLog(SQLModel, table=True):
 
     __tablename__ = "activity_logs"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     action: str = Field(index=True)  # AuditAction value
-    resource_type: Optional[str] = None  # contact, project, conversation, etc.
-    resource_id: Optional[str] = None
-    details: Optional[str] = None  # JSON serialized details
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
+    resource_type: str | None = None  # contact, project, conversation, etc.
+    resource_id: str | None = None
+    details: str | None = None  # JSON serialized details
+    ip_address: str | None = None
+    user_agent: str | None = None
 
     class Config:
         """Pydantic config."""
@@ -91,11 +90,11 @@ class AuditService:
     async def log(
         self,
         action: AuditAction,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        details: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        details: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
     ) -> ActivityLog:
         """
         Enregistre une action dans les logs.
@@ -130,14 +129,14 @@ class AuditService:
 
     async def get_logs(
         self,
-        action: Optional[AuditAction] = None,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        action: AuditAction | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[ActivityLog]:
+    ) -> list[ActivityLog]:
         """
         Recupere les logs d'activite avec filtres.
 
@@ -177,10 +176,10 @@ class AuditService:
 
     async def get_logs_count(
         self,
-        action: Optional[AuditAction] = None,
-        resource_type: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        action: AuditAction | None = None,
+        resource_type: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> int:
         """Compte le nombre de logs correspondant aux filtres."""
         from sqlalchemy import func
@@ -212,8 +211,9 @@ class AuditService:
         Returns:
             Nombre de logs supprimes
         """
-        from sqlalchemy import delete
         from datetime import timedelta
+
+        from sqlalchemy import delete
 
         cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
@@ -231,9 +231,9 @@ class AuditService:
 async def log_activity(
     session: AsyncSession,
     action: AuditAction,
-    resource_type: Optional[str] = None,
-    resource_id: Optional[str] = None,
-    details: Optional[str] = None,
+    resource_type: str | None = None,
+    resource_id: str | None = None,
+    details: str | None = None,
 ) -> ActivityLog:
     """Helper pour logger une activite."""
     service = AuditService(session)

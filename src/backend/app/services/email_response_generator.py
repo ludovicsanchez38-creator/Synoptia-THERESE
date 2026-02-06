@@ -5,7 +5,6 @@ Génère des brouillons de réponse intelligents via LLM.
 US-EMAIL-09
 """
 
-from typing import Optional
 from app.services.llm import get_llm_service
 from app.services.user_profile import get_cached_profile
 
@@ -21,8 +20,8 @@ class EmailResponseGenerator:
         body: str,
         tone: str = 'formal',  # formal | friendly | neutral
         length: str = 'medium',  # short | medium | detailed
-        contact_context: Optional[str] = None,
-        thread_context: Optional[str] = None,
+        contact_context: str | None = None,
+        thread_context: str | None = None,
     ) -> str:
         """
         Génère un brouillon de réponse.
@@ -110,7 +109,7 @@ Rédige une réponse appropriée en français."""
 
             return response_text
 
-        except Exception as e:
+        except Exception:
             # Fallback si erreur LLM
             return f"""Bonjour {from_name},
 

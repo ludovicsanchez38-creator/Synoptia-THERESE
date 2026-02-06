@@ -8,73 +8,23 @@ US-PERS-01 to US-PERS-05.
 import json
 import logging
 from datetime import UTC, datetime
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from app.models.database import get_session
 from app.models.entities import Preference, PromptTemplate
+from app.models.schemas_personalisation import (
+    FeatureVisibilitySettings,
+    LLMBehaviorSettings,
+    PromptTemplateCreate,
+    PromptTemplateResponse,
+    PromptTemplateUpdate,
+)
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# ============================================================
-# Schemas
-# ============================================================
-
-
-class PromptTemplateCreate(BaseModel):
-    """Create prompt template request."""
-    name: str
-    prompt: str
-    category: str = "general"
-    icon: Optional[str] = None
-
-
-class PromptTemplateUpdate(BaseModel):
-    """Update prompt template request."""
-    name: Optional[str] = None
-    prompt: Optional[str] = None
-    category: Optional[str] = None
-    icon: Optional[str] = None
-
-
-class PromptTemplateResponse(BaseModel):
-    """Prompt template response."""
-    id: str
-    name: str
-    prompt: str
-    category: str
-    icon: Optional[str]
-    created_at: datetime
-    updated_at: datetime
-
-
-class LLMBehaviorSettings(BaseModel):
-    """LLM behavior configuration (US-PERS-04)."""
-    custom_system_prompt: str = ""
-    use_custom_system_prompt: bool = False
-    response_style: str = "detailed"  # concise, detailed, creative
-    language: str = "french"  # french, english, auto
-    include_memory_context: bool = True
-    max_history_messages: int = 50
-
-
-class FeatureVisibilitySettings(BaseModel):
-    """Feature visibility configuration (US-PERS-05)."""
-    show_board: bool = True
-    show_calculators: bool = True
-    show_image_generation: bool = True
-    show_voice_input: bool = True
-    show_file_browser: bool = True
-    show_mcp_tools: bool = True
-    show_guided_prompts: bool = True
-    show_entity_suggestions: bool = True
 
 
 # ============================================================
@@ -84,7 +34,7 @@ class FeatureVisibilitySettings(BaseModel):
 
 @router.get("/templates", response_model=list[PromptTemplateResponse])
 async def list_prompt_templates(
-    category: Optional[str] = None,
+    category: str | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     """List all prompt templates, optionally filtered by category."""

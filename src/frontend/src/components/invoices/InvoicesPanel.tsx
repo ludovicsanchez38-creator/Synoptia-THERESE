@@ -15,7 +15,6 @@ import {
   Mail,
   CheckCircle2,
   AlertCircle,
-  Clock,
   Ban,
   Filter,
 } from 'lucide-react';
@@ -40,12 +39,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const {
     isInvoicePanelOpen,
     setIsInvoicePanelOpen,
-    invoices,
     setInvoices,
     getFilteredInvoices,
     filters,
     setFilters,
-    setCurrentInvoiceId,
     removeInvoice,
     updateInvoiceInStore,
   } = useInvoiceStore();

@@ -11,15 +11,14 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
+from app.models.entities import Contact, Deliverable, Project
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-
-from app.models.entities import Contact, Project, Deliverable
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +101,7 @@ def _format_value(value: Any) -> str:
     return str(value)
 
 
-def _parse_tags(tags_json: Optional[str]) -> str:
+def _parse_tags(tags_json: str | None) -> str:
     """Parse JSON tags to comma-separated string."""
     if not tags_json:
         return ""
@@ -292,8 +291,8 @@ class CRMExportService:
     async def export_contacts(
         self,
         format: ExportFormat = "csv",
-        stage: Optional[str] = None,
-        source: Optional[str] = None,
+        stage: str | None = None,
+        source: str | None = None,
     ) -> ExportResult:
         """
         Export contacts to specified format.
@@ -347,8 +346,8 @@ class CRMExportService:
     async def export_projects(
         self,
         format: ExportFormat = "csv",
-        status: Optional[str] = None,
-        contact_id: Optional[str] = None,
+        status: str | None = None,
+        contact_id: str | None = None,
     ) -> ExportResult:
         """
         Export projects to specified format.
@@ -401,8 +400,8 @@ class CRMExportService:
     async def export_deliverables(
         self,
         format: ExportFormat = "csv",
-        status: Optional[str] = None,
-        project_id: Optional[str] = None,
+        status: str | None = None,
+        project_id: str | None = None,
     ) -> ExportResult:
         """
         Export deliverables to specified format.

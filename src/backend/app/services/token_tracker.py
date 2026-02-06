@@ -5,10 +5,9 @@ US-ESC-01 to US-ESC-05: Token tracking, cost estimation, and limits.
 """
 
 import logging
-from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
 from collections import deque
-from typing import Optional
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +19,8 @@ logger = logging.getLogger(__name__)
 TOKEN_PRICES = {
     # Anthropic (février 2026)
     "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
-    "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.00},
-    "claude-opus-4-5-20251101": {"input": 15.00, "output": 75.00},
+    "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
+    "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     # OpenAI (février 2026)
     "gpt-4o": {"input": 2.50, "output": 10.00},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
@@ -357,7 +356,7 @@ class TokenTracker:
     def get_usage_history(
         self,
         limit: int = 50,
-        conversation_id: Optional[str] = None,
+        conversation_id: str | None = None,
     ) -> list[dict]:
         """
         Get usage history (US-ESC-04).

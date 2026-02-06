@@ -6,13 +6,12 @@ Wraps the existing CalendarService.
 """
 
 import logging
-from datetime import datetime, date
-from typing import Optional
+from datetime import date, datetime
 
 from app.services.calendar.base_provider import (
-    CalendarProvider,
     CalendarDTO,
     CalendarEventDTO,
+    CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
 )
@@ -70,9 +69,9 @@ class GoogleCalendarProvider(CalendarProvider):
     async def create_calendar(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         timezone: str = "Europe/Paris",
-        color: Optional[str] = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Create a new Google calendar."""
         calendar = await self._service.create_calendar(
@@ -85,17 +84,18 @@ class GoogleCalendarProvider(CalendarProvider):
     async def update_calendar(
         self,
         calendar_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        timezone: Optional[str] = None,
-        color: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        timezone: str | None = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Update a Google calendar."""
         # Google Calendar API requires fetching first, then updating
         current = await self._service.get_calendar(calendar_id)
 
         # Build update payload
-        import httpx
+        from app.services.http_client import get_http_client
+
         url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}"
         headers = {
             "Authorization": f"Bearer {self._service.access_token}",
@@ -108,10 +108,10 @@ class GoogleCalendarProvider(CalendarProvider):
             "timeZone": timezone or current.get("timeZone", "Europe/Paris"),
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.put(url, headers=headers, json=payload, timeout=30.0)
-            response.raise_for_status()
-            updated = response.json()
+        client = await get_http_client()
+        response = await client.put(url, headers=headers, json=payload, timeout=30.0)
+        response.raise_for_status()
+        updated = response.json()
 
         return self._gcal_to_dto(updated)
 
@@ -126,11 +126,11 @@ class GoogleCalendarProvider(CalendarProvider):
     async def list_events(
         self,
         calendar_id: str,
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None,
+        time_min: datetime | None = None,
+        time_max: datetime | None = None,
         max_results: int = 100,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[CalendarEventDTO], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[CalendarEventDTO], str | None]:
         """List events from a Google calendar."""
         result = await self._service.list_events(
             calendar_id=calendar_id,

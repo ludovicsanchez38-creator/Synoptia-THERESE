@@ -10,9 +10,8 @@ Create Date: 2026-01-28 18:00:00.000000
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'b2c3d4e5f6a7'
@@ -34,12 +33,21 @@ def upgrade() -> None:
     # IMAP config
     with op.batch_alter_table("email_accounts") as batch_op:
         batch_op.add_column(sa.Column("imap_host", sa.String(), nullable=True))
-        batch_op.add_column(sa.Column("imap_port", sa.Integer(), nullable=False, server_default="993"))
+        batch_op.add_column(sa.Column(
+            "imap_port", sa.Integer(),
+            nullable=False, server_default="993",
+        ))
         batch_op.add_column(sa.Column("imap_username", sa.String(), nullable=True))
         batch_op.add_column(sa.Column("imap_password", sa.String(), nullable=True))
         batch_op.add_column(sa.Column("smtp_host", sa.String(), nullable=True))
-        batch_op.add_column(sa.Column("smtp_port", sa.Integer(), nullable=False, server_default="587"))
-        batch_op.add_column(sa.Column("smtp_use_tls", sa.Boolean(), nullable=False, server_default="1"))
+        batch_op.add_column(sa.Column(
+            "smtp_port", sa.Integer(),
+            nullable=False, server_default="587",
+        ))
+        batch_op.add_column(sa.Column(
+            "smtp_use_tls", sa.Boolean(),
+            nullable=False, server_default="1",
+        ))
 
     # =============================================
     # CALENDARS - Provider/CalDAV fields
@@ -47,7 +55,10 @@ def upgrade() -> None:
 
     with op.batch_alter_table("calendars") as batch_op:
         # Provider config
-        batch_op.add_column(sa.Column("provider", sa.String(), nullable=False, server_default="google"))
+        batch_op.add_column(sa.Column(
+            "provider", sa.String(),
+            nullable=False, server_default="google",
+        ))
         batch_op.add_column(sa.Column("remote_id", sa.String(), nullable=True))
 
         # CalDAV config
@@ -56,7 +67,10 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column("caldav_password", sa.String(), nullable=True))
 
         # Sync status
-        batch_op.add_column(sa.Column("sync_status", sa.String(), nullable=False, server_default="idle"))
+        batch_op.add_column(sa.Column(
+            "sync_status", sa.String(),
+            nullable=False, server_default="idle",
+        ))
         batch_op.add_column(sa.Column("last_sync_error", sa.String(), nullable=True))
 
         # Timestamps

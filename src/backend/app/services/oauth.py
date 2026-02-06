@@ -14,10 +14,10 @@ import logging
 import secrets
 import time
 from dataclasses import dataclass
-from typing import Optional
-from urllib.parse import urlencode, parse_qs, urlparse
+from urllib.parse import urlencode
 
 import httpx
+from app.services.http_client import get_http_client
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,12 @@ class OAuthConfig:
 # Google OAuth endpoints
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+
+# Whitelist des redirect URIs autorisées (SEC-030)
+ALLOWED_REDIRECT_URIS = {
+    "http://localhost:8000/api/email/auth/callback-redirect",
+    "http://127.0.0.1:8000/api/email/auth/callback-redirect",
+}
 
 
 # Gmail scopes
@@ -128,6 +134,17 @@ class OAuthPKCEService:
         Returns:
             dict with auth_url, state, code_verifier
         """
+        # Validate redirect URI against whitelist (SEC-030)
+        if config.redirect_uri not in ALLOWED_REDIRECT_URIS:
+            logger.warning(
+                "Rejected OAuth flow with unauthorized redirect_uri: %s",
+                config.redirect_uri,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Redirect URI non autorisée.",
+            )
+
         # Cleanup expired flows before creating a new one
         self.cleanup_expired_flows()
 
@@ -178,8 +195,8 @@ class OAuthPKCEService:
     async def handle_callback(
         self,
         state: str,
-        code: Optional[str],
-        error: Optional[str] = None,
+        code: str | None,
+        error: str | None = None,
     ) -> dict:
         """
         Handle OAuth callback with authorization code.
@@ -229,45 +246,45 @@ class OAuthPKCEService:
             raise HTTPException(status_code=400, detail="No authorization code received")
 
         # Exchange code for tokens
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    config.token_url,
-                    data={
-                        'client_id': config.client_id,
-                        'client_secret': config.client_secret,
-                        'code': code,
-                        'code_verifier': code_verifier,
-                        'grant_type': 'authorization_code',
-                        'redirect_uri': config.redirect_uri,
-                    },
-                    timeout=30.0,
-                )
-
-                if response.status_code != 200:
-                    error_data = response.json() if response.content else {}
-                    logger.error(f"Token exchange failed: {response.status_code} {error_data}")
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Token exchange failed: {error_data.get('error_description', 'Unknown error')}"
-                    )
-
-                tokens = response.json()
-                logger.info(f"OAuth flow completed for {flow_data['provider']}")
-
-                return {
-                    'access_token': tokens['access_token'],
-                    'refresh_token': tokens.get('refresh_token'),
-                    'expires_in': tokens.get('expires_in', 3600),
-                    'scopes': tokens.get('scope', ' '.join(config.scopes)).split(),
-                    'token_type': tokens.get('token_type', 'Bearer'),
+        client = await get_http_client()
+        try:
+            response = await client.post(
+                config.token_url,
+                data={
                     'client_id': config.client_id,
                     'client_secret': config.client_secret,
-                }
+                    'code': code,
+                    'code_verifier': code_verifier,
+                    'grant_type': 'authorization_code',
+                    'redirect_uri': config.redirect_uri,
+                },
+                timeout=30.0,
+            )
 
-            except httpx.HTTPError as e:
-                logger.error(f"HTTP error during token exchange: {e}")
-                raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
+            if response.status_code != 200:
+                error_data = response.json() if response.content else {}
+                logger.error(f"Token exchange failed: {response.status_code} {error_data}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Token exchange failed: {error_data.get('error_description', 'Unknown error')}"
+                )
+
+            tokens = response.json()
+            logger.info(f"OAuth flow completed for {flow_data['provider']}")
+
+            return {
+                'access_token': tokens['access_token'],
+                'refresh_token': tokens.get('refresh_token'),
+                'expires_in': tokens.get('expires_in', 3600),
+                'scopes': tokens.get('scope', ' '.join(config.scopes)).split(),
+                'token_type': tokens.get('token_type', 'Bearer'),
+                'client_id': config.client_id,
+                'client_secret': config.client_secret,
+            }
+
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error during token exchange: {e}")
+            raise HTTPException(status_code=500, detail=f"Token exchange failed: {str(e)}")
 
     async def refresh_access_token(
         self,
@@ -287,39 +304,39 @@ class OAuthPKCEService:
         Raises:
             HTTPException: If refresh fails
         """
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    config.token_url,
-                    data={
-                        'client_id': config.client_id,
-                        'client_secret': config.client_secret,
-                        'refresh_token': refresh_token,
-                        'grant_type': 'refresh_token',
-                    },
-                    timeout=30.0,
+        client = await get_http_client()
+        try:
+            response = await client.post(
+                config.token_url,
+                data={
+                    'client_id': config.client_id,
+                    'client_secret': config.client_secret,
+                    'refresh_token': refresh_token,
+                    'grant_type': 'refresh_token',
+                },
+                timeout=30.0,
+            )
+
+            if response.status_code != 200:
+                error_data = response.json() if response.content else {}
+                logger.error(f"Token refresh failed: {response.status_code} {error_data}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Token refresh failed: {error_data.get('error_description', 'Unknown error')}"
                 )
 
-                if response.status_code != 200:
-                    error_data = response.json() if response.content else {}
-                    logger.error(f"Token refresh failed: {response.status_code} {error_data}")
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Token refresh failed: {error_data.get('error_description', 'Unknown error')}"
-                    )
+            tokens = response.json()
+            logger.info("Access token refreshed successfully")
 
-                tokens = response.json()
-                logger.info("Access token refreshed successfully")
+            return {
+                'access_token': tokens['access_token'],
+                'expires_in': tokens.get('expires_in', 3600),
+                'token_type': tokens.get('token_type', 'Bearer'),
+            }
 
-                return {
-                    'access_token': tokens['access_token'],
-                    'expires_in': tokens.get('expires_in', 3600),
-                    'token_type': tokens.get('token_type', 'Bearer'),
-                }
-
-            except httpx.HTTPError as e:
-                logger.error(f"HTTP error during token refresh: {e}")
-                raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error during token refresh: {e}")
+            raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
 
     def cleanup_expired_flows(self):
         """Clean up expired OAuth flows (older than 10 minutes)."""
@@ -339,7 +356,7 @@ class OAuthPKCEService:
 # ============================================================
 
 
-_oauth_service: Optional[OAuthPKCEService] = None
+_oauth_service: OAuthPKCEService | None = None
 
 
 def get_oauth_service() -> OAuthPKCEService:

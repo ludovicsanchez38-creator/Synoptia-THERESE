@@ -7,21 +7,21 @@ Supports Nextcloud, iCloud, Fastmail, cal.com, Radicale, etc.
 
 import asyncio
 import logging
-from datetime import UTC, datetime, date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Optional
 
 import caldav
-from caldav.elements import dav, cdav
-from icalendar import Calendar as ICalendar, Event as IEvent, vDatetime, vDate
 import pytz
-
 from app.services.calendar.base_provider import (
-    CalendarProvider,
     CalendarDTO,
     CalendarEventDTO,
+    CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
 )
+from icalendar import Calendar as ICalendar
+from icalendar import Event as IEvent
+from icalendar import vDate, vDatetime
 
 logger = logging.getLogger(__name__)
 
@@ -123,9 +123,9 @@ class CalDAVProvider(CalendarProvider):
     async def create_calendar(
         self,
         name: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         timezone: str = "Europe/Paris",
-        color: Optional[str] = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Create a new CalDAV calendar."""
 
@@ -145,10 +145,10 @@ class CalDAVProvider(CalendarProvider):
     async def update_calendar(
         self,
         calendar_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        timezone: Optional[str] = None,
-        color: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        timezone: str | None = None,
+        color: str | None = None,
     ) -> CalendarDTO:
         """Update a CalDAV calendar."""
         # Most CalDAV servers don't support updating calendar properties
@@ -176,11 +176,11 @@ class CalDAVProvider(CalendarProvider):
     async def list_events(
         self,
         calendar_id: str,
-        time_min: Optional[datetime] = None,
-        time_max: Optional[datetime] = None,
+        time_min: datetime | None = None,
+        time_max: datetime | None = None,
         max_results: int = 100,
-        page_token: Optional[str] = None,
-    ) -> tuple[list[CalendarEventDTO], Optional[str]]:
+        page_token: str | None = None,
+    ) -> tuple[list[CalendarEventDTO], str | None]:
         """List events from a CalDAV calendar."""
 
         def _sync_list():

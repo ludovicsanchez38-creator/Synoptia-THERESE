@@ -167,24 +167,8 @@ describe('Error Handling', () => {
   });
 
   describe('US-ERR-05: Crash recovery', () => {
-    // Use a real Map to simulate localStorage
-    let storage: Map<string, string>;
-
-    beforeEach(() => {
-      storage = new Map();
-      vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-        storage.set(key, value);
-      });
-      vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
-        return storage.get(key) ?? null;
-      });
-      vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key) => {
-        storage.delete(key);
-      });
-    });
-
+    // localStorage est mocké dans setup.ts, on configure les retours via mockReturnValue
     it('should persist conversation state', () => {
-      // Simulate localStorage persistence
       const conversation = {
         id: 'test-123',
         messages: [
@@ -193,7 +177,14 @@ describe('Error Handling', () => {
         ],
       };
 
-      localStorage.setItem('therese-conversations', JSON.stringify([conversation]));
+      const serialized = JSON.stringify([conversation]);
+
+      // Simuler setItem puis getItem
+      localStorage.setItem('therese-conversations', serialized);
+      expect(localStorage.setItem).toHaveBeenCalledWith('therese-conversations', serialized);
+
+      // Configurer le retour de getItem
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValueOnce(serialized);
 
       const recovered = JSON.parse(localStorage.getItem('therese-conversations') || '[]');
 
@@ -203,7 +194,8 @@ describe('Error Handling', () => {
     });
 
     it('should recover from corrupted localStorage', () => {
-      localStorage.setItem('therese-conversations', 'invalid json');
+      // getItem retourne du JSON invalide
+      (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValueOnce('invalid json');
 
       const recover = () => {
         try {
@@ -217,9 +209,7 @@ describe('Error Handling', () => {
       const result = recover();
 
       expect(result).toEqual([]);
-      // After removal, getItem returns null (or undefined in mocked env)
-      const afterRemove = localStorage.getItem('therese-conversations');
-      expect(afterRemove === null || afterRemove === undefined).toBe(true);
+      expect(localStorage.removeItem).toHaveBeenCalledWith('therese-conversations');
     });
   });
 

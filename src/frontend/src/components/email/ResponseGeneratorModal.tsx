@@ -60,10 +60,6 @@ export function ResponseGeneratorModal({
     }
   };
 
-  const handleGenerate = () => {
-    generateResponse();
-  };
-
   const handleRegenerate = () => {
     generateResponse();
   };

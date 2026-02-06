@@ -4,36 +4,18 @@ THÉRÈSE v2 - Email Setup Router
 API endpoints pour le wizard de configuration email.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from app.models.database import get_session
+from app.models.schemas_email import (
+    GenerateGuideRequest,
+    GenerateGuideResponse,
+    ValidateCredentialsRequest,
+    ValidateCredentialsResponse,
+)
+from app.services.email_setup_assistant import EmailSetupAssistant, SetupStatus
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.database import get_session
-from app.services.email_setup_assistant import EmailSetupAssistant, SetupStatus, ValidationResult, GoogleCredentials
-
-
 router = APIRouter()
-
-
-# Schemas
-class ValidateCredentialsRequest(BaseModel):
-    client_id: str
-    client_secret: str
-
-
-class ValidateCredentialsResponse(BaseModel):
-    client_id: ValidationResult
-    client_secret: ValidationResult
-    all_valid: bool
-
-
-class GenerateGuideRequest(BaseModel):
-    provider: str
-    has_project: bool
-
-
-class GenerateGuideResponse(BaseModel):
-    message: str
 
 
 # Endpoints
@@ -55,9 +37,11 @@ async def validate_credentials(request: ValidateCredentialsRequest) -> ValidateC
 
     all_valid = all(r.valid for r in results.values())
 
+    # Convertir les dataclasses ValidationResult en dicts pour Pydantic
+    from dataclasses import asdict
     return ValidateCredentialsResponse(
-        client_id=results['client_id'],
-        client_secret=results['client_secret'],
+        client_id=asdict(results['client_id']),
+        client_secret=asdict(results['client_secret']),
         all_valid=all_valid
     )
 
