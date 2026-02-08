@@ -5,7 +5,7 @@
  */
 
 import { request } from './core';
-import type { ContactResponse } from '../api';
+import type { ContactResponse } from './crm-extended';
 
 export interface CreateCRMContactRequest {
   first_name: string;

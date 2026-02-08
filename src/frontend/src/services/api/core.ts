@@ -23,6 +23,10 @@ export async function initializeAuth(): Promise<void> {
   }
 }
 
+export function getSessionToken(): string | null {
+  return _sessionToken;
+}
+
 export function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);
   if (_sessionToken) {
