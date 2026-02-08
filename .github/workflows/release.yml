@@ -85,6 +85,13 @@ jobs:
           chmod +x "$DEST" 2>/dev/null || true
           echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
 
+      - name: Libérer espace après PyInstaller
+        if: runner.os == 'Linux'
+        run: |
+          rm -rf src/backend/dist src/backend/build
+          rm -rf .venv
+          df -h /
+
       # ---- Node.js ----
       - uses: actions/setup-node@v4
         with:
