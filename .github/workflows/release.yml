@@ -38,12 +38,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Libérer espace disque (Linux)
+      - name: Libérer espace disque et ajouter swap (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/swift
           sudo docker image prune --all --force || true
-          df -h /
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          echo "Swap activé :" && swapon --show
+          df -h / && free -h
 
       - name: Installer dépendances Linux (Tauri)
         if: runner.os == 'Linux'
@@ -104,6 +109,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_BUILD_JOBS: ${{ runner.os == 'Linux' && '2' || '' }}
         with:
           projectPath: src/frontend
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
