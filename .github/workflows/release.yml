@@ -43,12 +43,13 @@ jobs:
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/swift /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force || true
-          df -h /
-          sudo fallocate -l 4G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          echo "Swap activé :" && swapon --show && free -h
+          sudo swapoff -a || true
+          sudo rm -f /swapfile /mnt/swapfile || true
+          sudo fallocate -l 4G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+          echo "Swap activé :" && swapon --show && free -h && df -h /
 
       - name: Installer dépendances Linux (Tauri)
         if: runner.os == 'Linux'
