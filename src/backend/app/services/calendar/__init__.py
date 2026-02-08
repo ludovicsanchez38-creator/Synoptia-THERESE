@@ -6,15 +6,15 @@ Part of the "Local First" architecture.
 """
 
 from app.services.calendar.base_provider import (
-    CalendarProvider,
     CalendarDTO,
     CalendarEventDTO,
+    CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
 )
 from app.services.calendar.provider_factory import (
-    get_calendar_provider,
     CalendarProviderType,
+    get_calendar_provider,
 )
 
 __all__ = [

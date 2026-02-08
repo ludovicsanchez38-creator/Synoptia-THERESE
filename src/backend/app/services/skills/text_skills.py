@@ -6,7 +6,7 @@ Skills de génération de contenu textuel (emails, posts, propositions).
 
 from typing import Any
 
-from .base import MarkdownSkill, InputField, SkillOutputType
+from .base import InputField, MarkdownSkill, SkillOutputType
 
 
 class EmailProSkill(MarkdownSkill):

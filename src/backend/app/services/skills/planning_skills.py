@@ -4,9 +4,8 @@ THÉRÈSE v2 - Planning Skills
 Skills de planification et d'organisation.
 """
 
-from typing import Any
 
-from .base import MarkdownSkill, InputField, SkillOutputType
+from .base import InputField, MarkdownSkill, SkillOutputType
 
 
 class PlanMeetingSkill(MarkdownSkill):

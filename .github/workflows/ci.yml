@@ -34,6 +34,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
 
       - name: Installer dépendances système
         run: sudo apt-get update && sudo apt-get install -y libmagic1
@@ -66,6 +67,12 @@ jobs:
 
       - name: Tests (Vitest)
         run: npm run test -- --run
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Typecheck (TypeScript)
+        run: npx tsc --noEmit
 
       - name: Build
         run: npm run build

@@ -4,12 +4,10 @@ THERESE v2 - Tests E2E CRM Pipeline
 Test des fonctionnalites CRM : pipeline, contacts, activites, export/import.
 """
 
-import io
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
 
 from .conftest import take_screenshot
-
 
 # ============================================================
 # P0 - Tests critiques pipeline CRM

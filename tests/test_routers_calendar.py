@@ -6,15 +6,13 @@ Focus on local provider (SQLite) to avoid external mocks where possible.
 Google Calendar and CalDAV endpoints are tested with mocks.
 """
 
-import json
-import pytest
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
+import pytest
 from httpx import AsyncClient
 
-from tests.conftest import assert_response_ok, assert_contains_keys
-
+from tests.conftest import assert_response_ok
 
 # ============================================================
 # Fixtures

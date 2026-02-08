@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E MCP (Model Context Protocol)
 Test de la gestion des serveurs MCP et de l'exécution de tools.
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

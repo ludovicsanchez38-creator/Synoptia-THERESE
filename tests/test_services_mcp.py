@@ -6,22 +6,21 @@ Utilise pytest et pytest-asyncio avec mocking de subprocess.
 
 import asyncio
 import json
-import pytest
 from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from app.services.mcp_service import (
-    MCPService,
-    MCPServer,
-    MCPTool,
-    MCPServerStatus,
-    ToolCallResult,
     ALLOWED_MCP_COMMANDS,
     BLOCKED_COMMANDS,
-    validate_mcp_command,
+    MCPServer,
+    MCPServerStatus,
+    MCPService,
+    MCPTool,
+    ToolCallResult,
     get_mcp_service,
+    validate_mcp_command,
 )
 
 

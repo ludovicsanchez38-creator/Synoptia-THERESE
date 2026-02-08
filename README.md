@@ -29,14 +29,16 @@
 - 📊 **CRM et Facturation** - Local ou sync Google Sheets, PDF conforme (mentions légales FR)
 - 🎯 **Board de Décision IA** - 5 conseillers virtuels pour t'aider à trancher
 - 📝 **Skills Office** - Génération Word, Excel, PowerPoint en un prompt
-- 🔌 **Outils MCP** - 19 presets pour connecter services externes
-- 🔒 **Local-first** - 100+ endpoints API, données chiffrées, rien dans le cloud
+- 🔌 **Connexions externes** - 19 services préconfigurés (Google, Notion, Airtable...)
+- 🔒 **Local-first** - Données chiffrées, rien dans le cloud
 
 ## 📥 Télécharger (alpha fermée)
 
 > THÉRÈSE est en **alpha fermée** avec 20 testeurs (6 semaines).
 
 Les installeurs sont disponibles dans les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
+
+> Une page de téléchargement simplifiée sera bientôt disponible sur synoptia.fr/therese
 
 | Plateforme | Fichier |
 |------------|---------|
@@ -46,12 +48,12 @@ Les installeurs sont disponibles dans les [GitHub Releases](https://github.com/l
 > **macOS** : Clic droit sur l'app > Ouvrir > Confirmer (Gatekeeper, app non signée pour l'instant).
 > **Windows** : SmartScreen peut afficher un avertissement, clique sur "Informations complémentaires" > "Exécuter quand même".
 
-Tu as besoin d'une **clé API LLM** pour utiliser THÉRÈSE (Anthropic recommandé : [console.anthropic.com](https://console.anthropic.com)).
+Tu as besoin d'un **code d'accès au service IA** (appelé "clé API") pour utiliser THÉRÈSE. Anthropic est recommandé : [console.anthropic.com](https://console.anthropic.com). C'est un code unique que tu obtiens en créant un compte chez le fournisseur IA de ton choix.
 
 ## 🚀 Premiers pas
 
 1. **Télécharge et installe** la dernière build depuis les [Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases)
-2. **Suis le wizard d'onboarding** qui te guide étape par étape
+2. **Suis l'assistant de configuration** qui te guide étape par étape
 3. **Commence à discuter** avec THÉRÈSE !
 
 👉 Guide complet pour les testeurs : [docs/USER_GUIDE_ALPHA.md](docs/USER_GUIDE_ALPHA.md)
@@ -67,7 +69,7 @@ Tu as besoin d'une **clé API LLM** pour utiliser THÉRÈSE (Anthropic recommand
 ### Prérequis
 
 - Python 3.11+ (via [UV](https://docs.astral.sh/uv/))
-- Node.js 22+
+- Node.js 20+
 - Rust stable (pour [Tauri 2.0](https://v2.tauri.app/))
 
 ### Installation et lancement

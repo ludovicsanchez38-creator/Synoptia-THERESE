@@ -4,12 +4,12 @@ Tests E2E - Panel Calendrier.
 Utilise des calendriers locaux (pas Google/CalDAV).
 """
 
-import pytest
 from datetime import UTC, datetime, timedelta
-from playwright.sync_api import Page, expect
 
-from .conftest import BACKEND_URL, take_screenshot
+import pytest
+from playwright.sync_api import expect
 
+from .conftest import take_screenshot
 
 # ============================================================
 # P0 - Tests critiques

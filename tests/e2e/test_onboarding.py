@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E Onboarding
 Test du wizard d'onboarding complet (6 étapes).
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

@@ -5,7 +5,6 @@ Tests CRUD pour les commandes personnalisees via l'API REST.
 Utilise le fixture api_client (httpx) sans navigateur.
 """
 
-import pytest
 
 
 def test_commands_list_empty(api_client):

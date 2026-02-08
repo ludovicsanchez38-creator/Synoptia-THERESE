@@ -14,7 +14,6 @@ from typing import Generator
 import pytest
 from playwright.sync_api import Browser, Page, sync_playwright
 
-
 # Configuration
 FRONTEND_URL = "http://localhost:1420"
 BACKEND_URL = "http://localhost:8000"

@@ -5,8 +5,6 @@ Test des fonctionnalites d'export, backup et restauration de donnees.
 Principalement des tests API (pas d'UI).
 """
 
-import json
-import pytest
 
 
 # ============================================================

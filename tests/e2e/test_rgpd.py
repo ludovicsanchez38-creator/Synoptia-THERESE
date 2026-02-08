@@ -6,9 +6,9 @@ consentement, statistiques, base legale.
 Principalement des tests API (pas d'UI).
 """
 
-import pytest
 from datetime import UTC, datetime, timedelta
 
+import pytest
 
 # ============================================================
 # RGPD Export (Droit de portabilite - Art. 20)

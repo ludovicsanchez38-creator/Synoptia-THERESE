@@ -4,8 +4,8 @@ THÉRÈSE v2 - Configuration
 Settings with pydantic-settings for type-safe configuration.
 """
 
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

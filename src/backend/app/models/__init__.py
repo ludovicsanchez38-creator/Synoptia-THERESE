@@ -6,11 +6,11 @@ SQLModel entities and Pydantic schemas.
 
 from app.models.entities import (
     Contact,
-    Project,
     Conversation,
-    Message,
     FileMetadata,
+    Message,
     Preference,
+    Project,
 )
 from app.models.schemas import (
     ChatRequest,

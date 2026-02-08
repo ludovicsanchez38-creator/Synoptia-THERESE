@@ -5,15 +5,13 @@ Tests for email endpoints (Gmail OAuth, IMAP/SMTP, messages, labels, smart featu
 All external services (Gmail API, IMAP, SMTP, LLM) are mocked.
 """
 
-import json
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from httpx import AsyncClient
 
-from tests.conftest import assert_response_ok, assert_contains_keys
-
+from tests.conftest import assert_response_ok
 
 # ============================================================
 # Fixtures

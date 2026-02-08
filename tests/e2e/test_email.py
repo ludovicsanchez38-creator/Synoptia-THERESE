@@ -5,11 +5,9 @@ Note: OAuth Gmail non testable en E2E.
 On teste l'UI et les endpoints IMAP/local.
 """
 
-import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
 
-from .conftest import BACKEND_URL, take_screenshot
-
+from .conftest import take_screenshot
 
 # ============================================================
 # P0 - Tests critiques

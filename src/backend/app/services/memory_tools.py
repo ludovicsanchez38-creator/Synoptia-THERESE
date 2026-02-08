@@ -10,10 +10,9 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.models.entities import Contact, Project
 from app.services.qdrant import get_qdrant_service
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 

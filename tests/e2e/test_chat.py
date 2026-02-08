@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E Chat
 Test des fonctionnalités de chat avec le LLM.
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

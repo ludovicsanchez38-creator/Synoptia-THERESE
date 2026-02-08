@@ -11,20 +11,19 @@ Endpoints pour la conformité RGPD :
 import logging
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
 from app.models.database import get_session
-from app.models.entities import Contact, Activity, Project, Task, Deliverable
+from app.models.entities import Activity, Contact, Deliverable, Project, Task
 from app.models.schemas import (
-    RGPDExportResponse,
     RGPDAnonymizeRequest,
     RGPDAnonymizeResponse,
+    RGPDExportResponse,
     RGPDRenewConsentResponse,
     RGPDStatsResponse,
     RGPDUpdateRequest,
 )
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 

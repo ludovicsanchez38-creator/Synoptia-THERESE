@@ -4,11 +4,9 @@ THERESE v2 - Security Services Tests
 Tests for US-SEC-01 to US-SEC-05.
 """
 
-import pytest
 import json
-from datetime import datetime, timedelta
-from unittest.mock import patch, MagicMock
 
+import pytest
 from httpx import AsyncClient
 
 
@@ -17,7 +15,7 @@ class TestEncryptionService:
 
     def test_encrypt_decrypt_roundtrip(self):
         """Test that encryption and decryption work correctly."""
-        from app.services.encryption import encrypt_value, decrypt_value
+        from app.services.encryption import decrypt_value, encrypt_value
 
         original = "sk-ant-api03-test-key-12345"
         encrypted = encrypt_value(original)
@@ -76,7 +74,7 @@ class TestAuditService:
     @pytest.mark.asyncio
     async def test_log_activity(self, async_client: AsyncClient, db_session):
         """Test logging an activity."""
-        from app.services.audit import AuditService, AuditAction
+        from app.services.audit import AuditAction, AuditService
 
         audit = AuditService(db_session)
 
@@ -95,7 +93,7 @@ class TestAuditService:
     @pytest.mark.asyncio
     async def test_get_logs_with_filter(self, async_client: AsyncClient, db_session):
         """Test retrieving logs with filters."""
-        from app.services.audit import AuditService, AuditAction
+        from app.services.audit import AuditAction, AuditService
 
         audit = AuditService(db_session)
 
@@ -117,7 +115,7 @@ class TestAuditService:
     @pytest.mark.asyncio
     async def test_logs_count(self, async_client: AsyncClient, db_session):
         """Test counting logs."""
-        from app.services.audit import AuditService, AuditAction
+        from app.services.audit import AuditAction, AuditService
 
         audit = AuditService(db_session)
 

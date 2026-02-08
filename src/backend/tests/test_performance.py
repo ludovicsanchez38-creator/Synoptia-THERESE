@@ -4,8 +4,9 @@ THERESE v2 - Performance Tests
 Tests for US-PERF-01 to US-PERF-05.
 """
 
-import pytest
 import time
+
+import pytest
 from httpx import AsyncClient
 
 

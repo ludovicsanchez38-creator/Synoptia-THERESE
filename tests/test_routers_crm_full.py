@@ -6,16 +6,13 @@ Contacts are created via /api/memory/contacts (memory router) or /api/crm/contac
 External services (Google Sheets, LLM) are mocked.
 """
 
-import io
 import json
-import pytest
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
+import pytest
 from httpx import AsyncClient
 
-from tests.conftest import assert_response_ok, assert_contains_keys
-
+from tests.conftest import assert_contains_keys, assert_response_ok
 
 # ============================================================
 # Fixtures

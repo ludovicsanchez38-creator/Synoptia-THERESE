@@ -9,10 +9,10 @@ Tests pour la conformite RGPD (Phase 6) :
 - Mise a jour des champs RGPD
 """
 
-import pytest
-from datetime import UTC, datetime, timedelta
-from httpx import AsyncClient
+from datetime import UTC, datetime
 
+import pytest
+from httpx import AsyncClient
 
 # ============================================================
 # Helpers

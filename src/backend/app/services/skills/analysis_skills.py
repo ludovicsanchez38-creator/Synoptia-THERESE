@@ -4,9 +4,8 @@ THÉRÈSE v2 - Analysis Skills
 Skills d'analyse et de compréhension.
 """
 
-from typing import Any
 
-from .base import MarkdownSkill, InputField, SkillOutputType
+from .base import InputField, MarkdownSkill, SkillOutputType
 
 
 class AnalyzeXlsxSkill(MarkdownSkill):

@@ -9,9 +9,8 @@ import logging
 from functools import lru_cache
 from typing import Sequence
 
-from sentence_transformers import SentenceTransformer
-
 from app.config import settings
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 

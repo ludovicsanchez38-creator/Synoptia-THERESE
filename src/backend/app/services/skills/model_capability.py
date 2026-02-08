@@ -7,7 +7,6 @@ Détermine si un modèle LLM est capable de générer du code Python fiable
 
 from app.services.providers.base import LLMProvider
 
-
 # Modèles capables de générer du code Python fiable pour les skills FILE.
 # "*" = tous les modèles du provider sont capables.
 # Sinon, on vérifie si un des patterns est contenu dans le nom du modèle.

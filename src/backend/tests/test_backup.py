@@ -4,10 +4,8 @@ THERESE v2 - Backup & Data Tests
 Tests for US-BAK-01 to US-BAK-05.
 """
 
-import pytest
-import json
-from datetime import datetime
 
+import pytest
 from httpx import AsyncClient
 
 

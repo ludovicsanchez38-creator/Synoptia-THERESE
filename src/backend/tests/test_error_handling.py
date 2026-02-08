@@ -4,10 +4,8 @@ THERESE v2 - Error Handling Tests
 Tests for US-ERR-01 to US-ERR-05.
 """
 
-import pytest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
 
+import pytest
 from httpx import AsyncClient
 
 
@@ -24,7 +22,7 @@ class TestErrorMessages:
 
     def test_theres_error_creation(self):
         """Test TheresError with user-friendly message."""
-        from app.services.error_handler import TheresError, ErrorCode
+        from app.services.error_handler import ErrorCode, TheresError
 
         error = TheresError(
             code=ErrorCode.API_AUTH_FAILED,
@@ -38,7 +36,7 @@ class TestErrorMessages:
 
     def test_theres_error_to_dict(self):
         """Test TheresError serialization."""
-        from app.services.error_handler import TheresError, ErrorCode
+        from app.services.error_handler import ErrorCode, TheresError
 
         error = TheresError(
             code=ErrorCode.QDRANT_UNAVAILABLE,
@@ -53,7 +51,7 @@ class TestErrorMessages:
 
     def test_classify_http_error(self):
         """Test HTTP error classification."""
-        from app.services.error_handler import classify_http_error, ErrorCode
+        from app.services.error_handler import ErrorCode, classify_http_error
 
         # 401 -> Auth failed
         err_401 = classify_http_error(401, "Anthropic")
@@ -74,8 +72,8 @@ class TestRetryLogic:
     @pytest.mark.asyncio
     async def test_retry_success_after_failures(self):
         """Test retry succeeds after initial failures."""
-        from app.services.error_handler import retry_with_backoff
         import httpx
+        from app.services.error_handler import retry_with_backoff
 
         attempt_count = 0
 
@@ -98,8 +96,8 @@ class TestRetryLogic:
     @pytest.mark.asyncio
     async def test_retry_exhausted(self):
         """Test all retries exhausted raises error."""
-        from app.services.error_handler import retry_with_backoff, TheresError
         import httpx
+        from app.services.error_handler import TheresError, retry_with_backoff
 
         async def always_fails():
             raise httpx.TimeoutException("Timeout")
@@ -210,9 +208,9 @@ class TestCancelGeneration:
     def test_generation_tracking(self):
         """Test generation registration and cancellation."""
         from app.routers.chat import (
-            _register_generation,
             _cancel_generation,
             _is_cancelled,
+            _register_generation,
             _unregister_generation,
         )
 
@@ -263,7 +261,7 @@ class TestLLMErrorClassification:
 
     def test_classify_context_too_long(self):
         """Test context too long error classification."""
-        from app.services.error_handler import classify_llm_error, ErrorCode
+        from app.services.error_handler import ErrorCode, classify_llm_error
 
         error = Exception("context length exceeded maximum of 100000 tokens")
         result = classify_llm_error(error, "anthropic")
@@ -272,7 +270,7 @@ class TestLLMErrorClassification:
 
     def test_classify_rate_limit(self):
         """Test rate limit error classification."""
-        from app.services.error_handler import classify_llm_error, ErrorCode
+        from app.services.error_handler import ErrorCode, classify_llm_error
 
         error = Exception("rate limit exceeded")
         result = classify_llm_error(error, "openai")
@@ -281,7 +279,7 @@ class TestLLMErrorClassification:
 
     def test_classify_auth_error(self):
         """Test auth error classification."""
-        from app.services.error_handler import classify_llm_error, ErrorCode
+        from app.services.error_handler import ErrorCode, classify_llm_error
 
         error = Exception("Invalid API key provided")
         result = classify_llm_error(error, "mistral")

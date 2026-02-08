@@ -5,7 +5,6 @@ Tests for multi-provider LLM functionality.
 Sprint 2 - PERF-2.1: Updated for modular provider architecture.
 """
 
-import pytest
 
 
 class TestLLMServiceImport:
@@ -18,7 +17,7 @@ class TestLLMServiceImport:
 
     def test_import_tool_structures(self):
         """Test tool-related structures exist."""
-        from app.services.llm import ToolCall, ToolResult, StreamEvent
+        from app.services.llm import StreamEvent, ToolCall, ToolResult
 
         assert ToolCall is not None
         assert ToolResult is not None
@@ -28,11 +27,11 @@ class TestLLMServiceImport:
         """Test provider classes can be imported."""
         from app.services.providers import (
             AnthropicProvider,
-            OpenAIProvider,
             GeminiProvider,
-            MistralProvider,
             GrokProvider,
+            MistralProvider,
             OllamaProvider,
+            OpenAIProvider,
         )
 
         assert AnthropicProvider is not None
@@ -48,7 +47,7 @@ class TestLLMProviderSupport:
 
     def test_anthropic_provider(self):
         """Test Anthropic provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.ANTHROPIC,
@@ -60,7 +59,7 @@ class TestLLMProviderSupport:
 
     def test_openai_provider(self):
         """Test OpenAI provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.OPENAI,
@@ -72,7 +71,7 @@ class TestLLMProviderSupport:
 
     def test_gemini_provider(self):
         """Test Gemini provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.GEMINI,
@@ -84,7 +83,7 @@ class TestLLMProviderSupport:
 
     def test_mistral_provider(self):
         """Test Mistral provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.MISTRAL,
@@ -96,7 +95,7 @@ class TestLLMProviderSupport:
 
     def test_grok_provider(self):
         """Test Grok provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.GROK,
@@ -108,7 +107,7 @@ class TestLLMProviderSupport:
 
     def test_ollama_provider(self):
         """Test Ollama provider is supported."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.OLLAMA,
@@ -133,7 +132,7 @@ class TestLLMServiceConfiguration:
 
     def test_custom_model(self):
         """Test setting custom model."""
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(
             provider=LLMProvider.ANTHROPIC,
@@ -149,8 +148,9 @@ class TestLLMHelperFunctions:
 
     def test_get_llm_service_for_provider_returns_none_without_key(self):
         """Test helper returns None when no API key configured."""
-        from app.services.llm import get_llm_service_for_provider
         import os
+
+        from app.services.llm import get_llm_service_for_provider
 
         # Temporarily clear env vars
         old_key = os.environ.pop("ANTHROPIC_API_KEY", None)

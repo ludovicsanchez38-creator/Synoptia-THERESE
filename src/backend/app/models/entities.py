@@ -27,6 +27,7 @@ class Contact(SQLModel, table=True):
     company: str | None = None
     email: str | None = Field(default=None, index=True)
     phone: str | None = None
+    address: str | None = None  # Adresse postale du contact
     notes: str | None = None
     tags: str | None = None  # JSON array stored as string
     extra_data: str | None = None  # JSON object stored as string
@@ -421,8 +422,10 @@ class Invoice(SQLModel, table=True):
     __tablename__ = "invoices"
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
-    invoice_number: str = Field(unique=True, index=True)  # FACT-2026-001
+    invoice_number: str = Field(unique=True, index=True)  # FACT-2026-001, DEV-2026-001, AV-2026-001
     contact_id: str = Field(foreign_key="contacts.id", index=True)
+    document_type: str = Field(default="facture", index=True)  # devis, facture, avoir
+    tva_applicable: bool = Field(default=True)  # Si False: "TVA non applicable, art. 293 B du CGI"
     issue_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
     due_date: datetime
     status: str = "draft"  # draft, sent, paid, overdue, cancelled

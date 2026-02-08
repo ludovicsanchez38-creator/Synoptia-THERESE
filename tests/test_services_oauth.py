@@ -11,27 +11,24 @@ Tests couvrant :
 - Singleton du service
 """
 
-import asyncio
 import base64
 import hashlib
 import logging
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
-from fastapi import HTTPException
-
 from app.services.oauth import (
-    OAuthConfig,
-    OAuthPKCEService,
-    generate_code_verifier,
-    generate_code_challenge,
-    get_oauth_service,
     GMAIL_SCOPES,
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
+    OAuthConfig,
+    OAuthPKCEService,
+    generate_code_challenge,
+    generate_code_verifier,
+    get_oauth_service,
 )
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 

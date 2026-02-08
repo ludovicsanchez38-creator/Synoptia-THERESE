@@ -8,15 +8,15 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
+from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
-
-from alembic import context
 
 # Add app to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import all models to ensure they're registered with SQLModel.metadata
+from app.config import settings  # noqa: E402
 from app.models.entities import (  # noqa: F401, E402
     Contact,
     Conversation,
@@ -25,7 +25,6 @@ from app.models.entities import (  # noqa: F401, E402
     Preference,
     Project,
 )
-from app.config import settings  # noqa: E402
 
 # Alembic Config object
 config = context.config

@@ -13,7 +13,7 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
@@ -29,7 +29,6 @@ os.environ["THERESE_DB_PATH"] = ":memory:"
 
 from app.main import app
 from app.models.database import get_session
-
 
 # Test database setup
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

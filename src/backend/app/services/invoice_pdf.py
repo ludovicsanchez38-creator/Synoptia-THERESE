@@ -99,9 +99,45 @@ class InvoicePDFGenerator:
         # HEADER: Émetteur et Destinataire
         # =====================================================================
 
-        # Title
-        story.append(Paragraph("FACTURE", title_style))
+        # Titre dynamique selon le type de document
+        document_type = invoice_data.get("document_type", "facture")
+        title_map = {
+            "devis": "DEVIS",
+            "facture": "FACTURE",
+            "avoir": "AVOIR",
+        }
+        doc_title = title_map.get(document_type, "FACTURE")
+        story.append(Paragraph(doc_title, title_style))
         story.append(Spacer(1, 10 * mm))
+
+        # Mentions légales émetteur : SIRET complet + code APE si disponible
+        emetteur_parts = [
+            f"<b>{user_profile.get('company', user_profile.get('name', ''))}</b>",
+            user_profile.get('name', ''),
+            user_profile.get('address', ''),
+        ]
+        siret = user_profile.get('siret', '') or user_profile.get('siren', '')
+        if siret:
+            emetteur_parts.append(f"SIRET: {siret}")
+        code_ape = user_profile.get('code_ape', '')
+        if code_ape:
+            emetteur_parts.append(f"Code APE: {code_ape}")
+        tva_intra = user_profile.get('tva_intra', '')
+        if tva_intra:
+            emetteur_parts.append(f"TVA: {tva_intra}")
+
+        # Bloc destinataire avec adresse si renseignée
+        destinataire_parts = [
+            f"<b>{contact_data.get('company', contact_data.get('name', ''))}</b>",
+            contact_data.get('name', ''),
+        ]
+        contact_address = contact_data.get('address', '')
+        if contact_address:
+            destinataire_parts.append(contact_address)
+        if contact_data.get('email', ''):
+            destinataire_parts.append(contact_data['email'])
+        if contact_data.get('phone', ''):
+            destinataire_parts.append(contact_data['phone'])
 
         # Émetteur (left) et Destinataire (right)
         header_data = [
@@ -110,21 +146,8 @@ class InvoicePDFGenerator:
                 Paragraph("<b>Destinataire</b>", heading_style),
             ],
             [
-                Paragraph(
-                    f"<b>{user_profile.get('company', user_profile.get('name', ''))}</b><br/>"
-                    f"{user_profile.get('name', '')}<br/>"
-                    f"{user_profile.get('address', '')}<br/>"
-                    f"SIREN: {user_profile.get('siren', 'N/A')}<br/>"
-                    f"TVA: {user_profile.get('tva_intra', 'N/A')}",
-                    normal_style,
-                ),
-                Paragraph(
-                    f"<b>{contact_data.get('company', contact_data.get('name', ''))}</b><br/>"
-                    f"{contact_data.get('name', '')}<br/>"
-                    f"{contact_data.get('email', '')}<br/>"
-                    f"{contact_data.get('phone', '')}",
-                    normal_style,
-                ),
+                Paragraph("<br/>".join(emetteur_parts), normal_style),
+                Paragraph("<br/>".join(destinataire_parts), normal_style),
             ],
         ]
 
@@ -144,8 +167,16 @@ class InvoicePDFGenerator:
         # INFO FACTURE
         # =====================================================================
 
+        # Label dynamique pour le numéro selon le type
+        numero_label_map = {
+            "devis": "Devis N°",
+            "facture": "Facture N°",
+            "avoir": "Avoir N°",
+        }
+        numero_label = numero_label_map.get(document_type, "Facture N°")
+
         info_data = [
-            ["Facture N°", invoice_number],
+            [numero_label, invoice_number],
             [
                 "Date d'émission",
                 datetime.fromisoformat(invoice_data["issue_date"].replace("Z", "")).strftime(
@@ -190,16 +221,26 @@ class InvoicePDFGenerator:
             ["Description", "Qté", "Prix HT", "TVA", "Total HT", "Total TTC"]
         ]
 
+        # Si TVA non applicable, forcer 0% sur toutes les lignes
+        tva_applicable = invoice_data.get("tva_applicable", True)
+
         # Lines
         for line in invoice_data["lines"]:
+            if tva_applicable:
+                tva_display = f"{line['tva_rate']:.1f}%"
+                ttc_display = f"{line['total_ttc']:.2f} €"
+            else:
+                tva_display = "0,0%"
+                ttc_display = f"{line['total_ht']:.2f} €"
+
             lines_data.append(
                 [
                     line["description"],
                     str(line["quantity"]),
                     f"{line['unit_price_ht']:.2f} €",
-                    f"{line['tva_rate']:.1f}%",
+                    tva_display,
                     f"{line['total_ht']:.2f} €",
-                    f"{line['total_ttc']:.2f} €",
+                    ttc_display,
                 ]
             )
 
@@ -235,11 +276,18 @@ class InvoicePDFGenerator:
         # TOTAUX
         # =====================================================================
 
-        totals_data = [
-            ["Total HT", f"{invoice_data['subtotal_ht']:.2f} €"],
-            ["Total TVA", f"{invoice_data['total_tax']:.2f} €"],
-            ["Total TTC", f"{invoice_data['total_ttc']:.2f} €"],
-        ]
+        if tva_applicable:
+            totals_data = [
+                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} €"],
+                ["Total TVA", f"{invoice_data['total_tax']:.2f} €"],
+                ["Total TTC", f"{invoice_data['total_ttc']:.2f} €"],
+            ]
+        else:
+            totals_data = [
+                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} €"],
+                ["Total TVA", "0,00 €"],
+                ["Total TTC", f"{invoice_data['subtotal_ht']:.2f} €"],
+            ]
 
         totals_table = Table(totals_data, colWidths=[140 * mm, 30 * mm])
         totals_table.setStyle(
@@ -271,7 +319,6 @@ class InvoicePDFGenerator:
             story.append(Spacer(1, 5 * mm))
 
         # Conditions de paiement (mentions obligatoires France)
-        tva_applicable = invoice_data.get("tva_applicable", True)
         if tva_applicable:
             tva_mention = "TVA incluse selon les taux en vigueur."
         else:

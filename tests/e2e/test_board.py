@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E Board de Décision
 Test du board de conseil avec 5 advisors IA.
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

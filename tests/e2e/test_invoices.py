@@ -7,10 +7,9 @@ THERESE v2 - Tests E2E - Panel Factures (Invoices).
 """
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
 
-from .conftest import take_screenshot, BACKEND_URL
-
+from .conftest import take_screenshot
 
 # ============================================================
 # P0 - Tests critiques

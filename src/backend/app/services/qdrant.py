@@ -10,18 +10,17 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from app.config import settings
+from app.services.embeddings import embed_text, embed_texts
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
     PointStruct,
     VectorParams,
-    Filter,
-    FieldCondition,
-    MatchValue,
 )
-
-from app.config import settings
-from app.services.embeddings import embed_text, embed_texts
 
 logger = logging.getLogger(__name__)
 

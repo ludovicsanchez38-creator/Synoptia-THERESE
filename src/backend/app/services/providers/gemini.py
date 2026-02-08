@@ -7,7 +7,7 @@ Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 
 import json
 import logging
-from typing import AsyncGenerator, Any
+from typing import Any, AsyncGenerator
 
 import httpx
 

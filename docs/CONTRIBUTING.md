@@ -26,8 +26,8 @@ cd Synoptia-THERESE
 make install
 
 # Ou manuellement :
-# Backend
-cd src/backend && uv sync && cd ../..
+# Backend (depuis la racine du projet)
+uv sync
 
 # Frontend
 cd src/frontend && npm install && cd ../..

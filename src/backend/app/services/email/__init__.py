@@ -6,13 +6,13 @@ Part of the "Local First" architecture.
 """
 
 from app.services.email.base_provider import (
-    EmailProvider,
-    EmailMessageDTO,
-    EmailFolderDTO,
     EmailAttachmentDTO,
+    EmailFolderDTO,
+    EmailMessageDTO,
+    EmailProvider,
     SendEmailRequest,
 )
-from app.services.email.provider_factory import get_email_provider, EmailProviderType
+from app.services.email.provider_factory import EmailProviderType, get_email_provider
 
 __all__ = [
     "EmailProvider",

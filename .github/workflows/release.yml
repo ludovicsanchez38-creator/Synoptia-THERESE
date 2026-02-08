@@ -28,11 +28,21 @@ jobs:
             runner: windows-latest
             target: x86_64-pc-windows-msvc
             binary-ext: ".exe"
+          - name: Linux x64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            binary-ext: ""
 
     runs-on: ${{ matrix.platform.runner }}
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Installer dépendances Linux (Tauri)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       # ---- Python + PyInstaller ----
       - uses: actions/setup-python@v5
@@ -47,7 +57,7 @@ jobs:
         run: |
           cd src/backend
           if [ "${{ runner.os }}" = "Windows" ]; then
-            .venv/Scripts/pyinstaller backend.spec --noconfirm --clean
+            ../../.venv/Scripts/pyinstaller backend.spec --noconfirm --clean
           else
             ../../.venv/bin/pyinstaller backend.spec --noconfirm --clean
           fi

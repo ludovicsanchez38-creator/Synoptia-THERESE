@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E Mémoire
 Test du CRUD contacts et projets dans l'Espace de travail.
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

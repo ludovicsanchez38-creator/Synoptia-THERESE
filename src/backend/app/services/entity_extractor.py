@@ -10,7 +10,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from app.services.llm import get_llm_service, Message, ContextWindow
+from app.services.llm import ContextWindow, Message, get_llm_service
 
 logger = logging.getLogger(__name__)
 

@@ -59,6 +59,7 @@ docker --version     # Docker 2x+
 
 ### Services externes
 
+- **Docker** (obligatoire) - nécessaire pour faire tourner Qdrant
 - **Qdrant** (base de données vectorielle) - lancé via Docker (voir section Lancement)
 
 ---
@@ -89,12 +90,10 @@ Si vous préférez installer les dépendances séparément :
 **Backend** (Python/FastAPI) :
 
 ```bash
-cd src/backend
 uv sync
-cd ../..
 ```
 
-> `uv sync` installe toutes les dépendances Python déclarées dans `pyproject.toml` et crée l'environnement virtuel `.venv`.
+> `uv sync` installe toutes les dépendances Python déclarées dans `pyproject.toml` (à la racine du projet) et crée l'environnement virtuel `.venv`.
 
 **Frontend** (React/Tauri) :
 
@@ -110,9 +109,9 @@ cd ../..
 
 ## 3. Configuration initiale
 
-### Wizard d'onboarding
+### Assistant de configuration
 
-Au premier lancement de THERESE, un **wizard d'onboarding en 6 étapes** vous guide automatiquement :
+Au premier lancement de THERESE, un **assistant de configuration en 6 étapes** vous guide automatiquement :
 
 1. **Bienvenue** - Présentation de THERESE
 2. **Profil** - Votre nom, entreprise, rôle (optionnel : import depuis un fichier CLAUDE.md)
@@ -341,9 +340,9 @@ Si `npm run tauri dev` échoue :
    ```
 3. Relancez la compilation.
 
-### Réinitialiser l'onboarding
+### Réinitialiser la configuration initiale
 
-Pour relancer le wizard d'onboarding (utile pour les tests) :
+Pour relancer l'assistant de configuration (utile pour les tests) :
 
 ```bash
 make reset-onboarding

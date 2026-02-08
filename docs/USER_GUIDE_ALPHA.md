@@ -20,6 +20,16 @@ Tu as entre les mains une version **alpha**. Cela signifie :
 - Certaines fonctionnalités sont encore en cours de finition
 - Tes retours sont **précieux** pour améliorer le produit
 
+---
+
+## Combien ça coûte ?
+
+**THÉRÈSE est 100% gratuite**, open source, et le restera.
+
+En revanche, le **service d'intelligence artificielle** qui fait tourner les réponses (Anthropic, OpenAI, Google, Mistral...) est payant à l'usage. Concrètement, cela représente environ **3 à 15 euros par mois** selon ton utilisation (nombre de messages, longueur des conversations, génération de documents...).
+
+Si tu veux un usage **100% gratuit et sans connexion internet**, tu peux utiliser **Ollama** : un logiciel qui fait tourner l'IA directement sur ton ordinateur, sans rien envoyer à l'extérieur. La qualité des réponses dépend alors de la puissance de ta machine.
+
 ### Comment remonter un problème
 
 Tu as trois options (la première est recommandée) :
@@ -55,13 +65,13 @@ Tu as trois options (la première est recommandée) :
 
 Si tu souhaites compiler le projet toi-même, consulte le guide technique : [docs/GETTING_STARTED.md](GETTING_STARTED.md).
 
-### Onboarding
+### Configuration initiale
 
-Au premier lancement, un **wizard de configuration** te guide en 6 étapes :
+Au premier lancement, un **assistant de configuration** te guide en 6 étapes :
 
 1. **Bienvenue** - Présentation de THÉRÈSE
 2. **Profil** - Ton nom, entreprise, rôle (import possible depuis un fichier CLAUDE.md)
-3. **LLM** - Choix du provider IA et clé API
+3. **LLM** - Choix du service IA (provider) et code d'accès (clé API)
 4. **Sécurité** - Information sur les connexions cloud et les risques associés
 5. **Dossier de travail** - Répertoire local pour tes fichiers
 6. **Terminé** - Résumé de ta configuration
@@ -70,23 +80,23 @@ Au premier lancement, un **wizard de configuration** te guide en 6 étapes :
 
 ## Fonctionnalités testables
 
-### 1. Chat IA (multi-provider LLM)
+### 1. Chat IA (multi-service IA)
 
 Le coeur de THÉRÈSE : une conversation fluide avec un LLM de ton choix.
 
-**Providers supportés** :
+**Services IA (providers) supportés** :
 
-| Provider | Modèles | Clé API requise |
+| Service IA (provider) | Modèles | Code d'accès (clé API) requis |
 |----------|---------|-----------------|
 | **Anthropic** | Claude Opus 4.5, Sonnet 4.5, Haiku 4.5 | `sk-ant-...` |
 | **OpenAI** | GPT-5.2, GPT-4o, o3 | `sk-...` |
 | **Gemini** | Gemini 3 Pro, 3 Flash, 2.5 Pro, 2.5 Flash | `AIza...` |
-| **Mistral** | Mistral Large, Codestral, Mistral Small | Clé Mistral |
+| **Mistral** | Mistral Large, Codestral, Mistral Small | Code Mistral |
 | **Grok** | Grok 3, Grok 3 Fast | `xai-...` |
-| **Ollama** | Tous les modèles locaux installés | Aucune (100% local) |
+| **Ollama** | Tous les modèles locaux installés | Aucun (100% local et gratuit) |
 
 **Ce que tu peux tester** :
-- Envoyer des messages et observer le **streaming** (réponse mot par mot)
+- Envoyer des messages et observer l'**affichage progressif** (réponse mot par mot)
 - Changer de provider/modèle dans **Paramètres** (icône engrenage)
 - Les **commandes slash** : tape `/` dans le champ de saisie pour voir la liste
   - `/contact` - Mentionner ou créer un contact
@@ -109,7 +119,7 @@ THÉRÈSE retient tes contacts, tes projets et les informations importantes.
 - **Ajouter un projet** : onglet Projets, bouton "+"
 - **Extraction automatique d'entités** : parle d'une personne ou d'un projet dans le chat, THÉRÈSE détecte les entités et te propose de les sauvegarder (bandeau sous le message)
 - **Injection automatique du contexte** : quand tu poses une question sur un contact ou un projet connu, THÉRÈSE injecte les informations pertinentes dans sa réponse
-- **Recherche hybride** : la recherche combine recherche sémantique (embeddings Qdrant) et recherche par mots-clés
+- **Recherche intelligente** : la recherche combine recherche par sens (comprend le contexte, pas seulement les mots exacts) et recherche par mots-clés
 - **Portée (scope)** : les entités peuvent être globales, liées à un projet, ou liées à une conversation
 
 ---
@@ -168,10 +178,10 @@ Pour tes décisions stratégiques, convoque un **board de 5 conseillers IA**. Ch
 2. Pose ta question stratégique (ex: "Dois-je lancer une formation en ligne à 490 euros ?")
 3. Ajoute un contexte optionnel
 4. Lance la délibération
-5. Observe chaque conseiller répondre en streaming
+5. Observe chaque conseiller répondre progressivement
 6. Lis la **synthèse** avec les points de consensus, divergences et recommandation finale
 
-**Note** : si un provider n'est pas configuré (pas de clé API), le conseiller utilise automatiquement ton provider par défaut.
+**Note** : si un service IA n'est pas configuré (pas de code d'accès), le conseiller utilise automatiquement ton service IA par défaut.
 
 L'historique des décisions est sauvegardé et consultable.
 
@@ -212,8 +222,8 @@ THÉRÈSE peut chercher des informations actuelles sur le web pour répondre à 
 Dicte tes messages au lieu de les taper. THÉRÈSE utilise **Groq Whisper** (modèle whisper-large-v3-turbo) pour transcrire l'audio en texte français.
 
 **Configuration requise** :
-- Clé API Groq (gratuite sur [console.groq.com](https://console.groq.com))
-- À configurer dans Paramètres -> LLM -> Transcription vocale (préfixe `gsk_`)
+- Code d'accès Groq (clé API, gratuite sur [console.groq.com](https://console.groq.com))
+- À configurer dans Paramètres -> LLM -> Transcription vocale (le code commence par `gsk_`)
 
 **Comment tester** :
 1. Clique sur le bouton **micro** à droite du champ de saisie
@@ -221,7 +231,7 @@ Dicte tes messages au lieu de les taper. THÉRÈSE utilise **Groq Whisper** (mod
 3. Clique à nouveau pour arrêter
 4. Le texte transcrit apparaît dans le champ de saisie
 
-**Limitation** : la dictée vocale n'est **pas disponible** dans l'application desktop Tauri (restriction WebView). Elle fonctionne en mode web (`http://localhost:1420` dans un navigateur).
+**Limitation** : la dictée vocale n'est **pas disponible** dans l'application desktop (limitation technique de l'application). Elle fonctionne en mode web (`http://localhost:1420` dans un navigateur).
 
 ---
 
@@ -239,13 +249,13 @@ THÉRÈSE génère des images via deux providers :
 2. Décris l'image souhaitée
 3. Télécharge le résultat
 
-**Configuration** : Paramètres -> section "Génération d'images" - les clés API pour les images sont séparées de celles du chat LLM.
+**Configuration** : Paramètres -> section "Génération d'images" - les codes d'accès (clés API) pour les images sont séparés de ceux du chat IA.
 
 ---
 
-### 10. MCP Tools (connexion à des services externes)
+### 10. Connexions externes (MCP)
 
-Le **Model Context Protocol** (MCP) permet à THÉRÈSE de se connecter à des services tiers. Le LLM peut appeler ces tools automatiquement pendant la conversation.
+Les **connexions externes** (protocole MCP) permettent à THÉRÈSE de se connecter à des services tiers. L'IA peut utiliser ces services automatiquement pendant la conversation.
 
 **19 presets disponibles** organisés en 8 catégories :
 
@@ -262,11 +272,11 @@ Le **Model Context Protocol** (MCP) permet à THÉRÈSE de se connecter à des s
 
 **Comment tester** :
 1. Paramètres -> onglet **Tools**
-2. Installe un preset (ex: Filesystem pour la gestion de fichiers, aucune clé requise)
-3. Démarre le serveur MCP
-4. Dans le chat, le LLM peut maintenant utiliser ces tools automatiquement
+2. Installe un service (ex: Filesystem pour la gestion de fichiers, aucun code d'accès requis)
+3. Démarre la connexion
+4. Dans le chat, l'IA peut maintenant utiliser ces services automatiquement
 
-**Sécurité** : les clés API des serveurs MCP sont chiffrées (Fernet AES-128-CBC + HMAC) et stockées dans `~/.therese/mcp_servers.json`. Sur macOS, la clé de chiffrement est protégée par le Keychain.
+**Sécurité** : les codes d'accès (clés API) des connexions externes sont protégés par un chiffrement avancé et stockés localement sur ta machine. Sur macOS, la protection est renforcée par le trousseau de sécurité macOS (Keychain).
 
 ---
 
@@ -295,7 +305,7 @@ THÉRÈSE ouvre certains panneaux dans des **fenêtres indépendantes** (la fen�
 | **Factures** | `Cmd+I` | `Ctrl+I` | Gestion de factures |
 | **CRM Pipeline** | `Cmd+P` | `Ctrl+P` | Vue pipeline CRM |
 
-**Note** : ces panneaux sont fonctionnels en mode standalone. Les données sont persistées via localStorage et se rechargent instantanément à la réouverture.
+**Note** : ces panneaux sont fonctionnels de manière indépendante. Les données sont sauvegardées dans la mémoire locale de l'application et se rechargent instantanément à la réouverture.
 
 ---
 
@@ -352,57 +362,66 @@ THÉRÈSE ouvre certains panneaux dans des **fenêtres indépendantes** (la fen�
 
 ### Application desktop
 
-- **Dictée vocale non disponible dans l'app Tauri** : c'est une limitation du WebView macOS. La dictée fonctionne en mode web via un navigateur (`http://localhost:1420`).
+- **Dictée vocale non disponible dans l'application desktop** : c'est une limitation technique de l'application. La dictée fonctionne en mode web via un navigateur (`http://localhost:1420`).
 - **Pas de code signing macOS** : au premier lancement du `.app`, macOS affiche un avertissement Gatekeeper ("application non vérifiée"). Pour l'ouvrir : clic droit -> Ouvrir, puis confirmer.
 - **Pas de notifications push** : les notifications ne sont pas encore implémentées.
-- **Le build Tauri nécessite Xcode CLI tools (macOS)** : installe-les avec `xcode-select --install` avant de compiler. Sur Windows, il faut Visual Studio Build Tools.
+- **La compilation nécessite Xcode CLI tools (macOS)** : installe-les avec `xcode-select --install` avant de compiler. Sur Windows, il faut Visual Studio Build Tools.
 
 ### Fonctionnalités
 
 - **Email Gmail** : nécessite une configuration OAuth Google (voir Paramètres > Email).
 - **Panneaux Email et Calendrier** : nécessitent une configuration OAuth Google fonctionnelle.
 - **Ollama** : nécessite qu'Ollama soit installé et lancé localement (`ollama serve`).
-- **MCP Servers** : certains presets nécessitent des packages npm globaux. En cas d'erreur au démarrage, vérifie que `npx` est dans ton PATH.
+- **Connexions externes (MCP)** : certains services nécessitent des packages npm globaux. En cas d'erreur au démarrage, vérifie que `npx` est dans ton PATH.
 
 ### Performance
 
-- **Premier embedding** : le chargement initial du modèle d'embeddings (nomic-embed-text) prend quelques secondes.
+- **Première recherche intelligente** : le chargement initial du moteur de recherche prend quelques secondes.
 - **Gros fichiers** : l'indexation de fichiers volumineux peut prendre du temps (chunking par blocs de 1000 caractères).
 
 ---
 
 ## Comment remonter un bug
 
-Pour nous aider à corriger rapidement, merci de fournir les informations suivantes :
+Pour nous aider à corriger rapidement, réponds simplement à ces 3 questions :
 
-### 1. Étapes pour reproduire
+### 1. Que faisiez-vous ?
 
-Décris précisément ce que tu as fait, étape par étape. Par exemple :
+Décris ce que tu étais en train de faire, étape par étape. Par exemple :
 > 1. J'ai ouvert l'application
 > 2. J'ai tapé "Crée un document Word sur le marketing digital"
 > 3. J'ai cliqué sur Envoyer
-> 4. Le spinner tourne indéfiniment sans résultat
 
-### 2. Comportement attendu vs comportement observé
+### 2. Que s'est-il passé ?
 
-> **Attendu** : un fichier .docx est généré et téléchargeable
-> **Observé** : erreur 500 dans la console, aucun fichier créé
+Décris ce qui s'est passé (au lieu de ce que tu attendais). Par exemple :
+> Le cercle de chargement tourne sans fin, aucun fichier n'apparaît.
 
-### 3. Environnement technique
+### 3. Capture d'écran
 
-Merci de préciser :
-- **Provider LLM** utilisé (ex: Anthropic Claude Opus 4.5)
-- **Modèle** exact (ex: `claude-opus-4-5-20251101`)
-- **Version OS** (ex: macOS 15.3 ou Windows 11 24H2)
-- **Mode** : app Tauri ou navigateur web ?
+Si possible, fais une capture d'écran de l'erreur (sur Mac : `Cmd+Shift+4`, sur Windows : `Win+Shift+S`).
 
-### 4. Captures d'écran et logs
+> **Note pour les développeurs** : les informations techniques (service IA utilisé, version OS, mode d'exécution, logs) sont les bienvenues si tu sais les récupérer, mais elles ne sont pas indispensables pour signaler un bug.
 
-- Une **capture d'écran** de l'erreur (si visible à l'écran)
-- Les **logs backend** si possibles (dans le terminal où tourne uvicorn)
-- Les **logs console navigateur** (clic droit -> Inspecter -> Console)
+### Modèle simplifié de rapport de bug
 
-### Modèle de rapport de bug
+```
+## Bug : [titre court]
+
+**Que faisiez-vous ?**
+1. ...
+2. ...
+3. ...
+
+**Que s'est-il passé ?**
+...
+
+**Capture d'écran** :
+[joindre si possible]
+```
+
+<details>
+<summary>Modèle détaillé (pour les profils techniques)</summary>
 
 ```
 ## Bug : [titre court]
@@ -415,9 +434,9 @@ Merci de préciser :
 **Attendu** : ...
 **Observé** : ...
 
-**Provider LLM** : [provider] / [modèle]
+**Service IA (provider)** : [provider] / [modèle]
 **OS** : [ex: macOS 15.3 ou Windows 11 24H2]
-**Mode** : Tauri / Web
+**Mode** : Application desktop / Navigateur web
 
 **Logs** :
 [copier-coller les erreurs ici]
@@ -425,6 +444,8 @@ Merci de préciser :
 **Capture** :
 [joindre si possible]
 ```
+
+</details>
 
 ---
 
@@ -434,16 +455,16 @@ Merci de préciser :
 R : Tout est local dans `~/.therese/` (base SQLite, embeddings Qdrant, images générées, backups).
 
 **Q : Mes conversations sont-elles envoyées quelque part ?**
-R : Uniquement au provider LLM que tu as choisi (Anthropic, OpenAI, etc.) pour obtenir les réponses. Si tu utilises Ollama, tout reste 100% local.
+R : Uniquement au service IA (provider) que tu as choisi (Anthropic, OpenAI, etc.) pour obtenir les réponses. Si tu utilises Ollama, tout reste 100% local.
 
-**Q : Comment changer de provider LLM ?**
-R : Paramètres (icône engrenage) -> onglet LLM -> sélectionne un autre provider et renseigne ta clé API.
+**Q : Comment changer de service IA ?**
+R : Paramètres (icône engrenage) -> onglet LLM -> sélectionne un autre service et renseigne ton code d'accès (clé API).
 
 **Q : Comment exporter mes données ?**
 R : Paramètres -> onglet Données. Tu peux exporter tes conversations (JSON ou Markdown) ou toutes tes données (export RGPD).
 
 **Q : Le board de décision utilise plusieurs LLMs en même temps ?**
-R : Oui ! Chaque conseiller a un provider préféré. Si le provider n'est pas configuré, il utilise ton provider par défaut. Plus tu configures de providers, plus les avis seront diversifiés.
+R : Oui ! Chaque conseiller a un service IA préféré. Si le service n'est pas configuré, il utilise ton service IA par défaut. Plus tu configures de services, plus les avis seront diversifiés.
 
 **Q : THÉRÈSE fonctionne sur Windows ?**
 R : Oui ! Télécharge le `.exe` depuis les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases). Les raccourcis utilisent `Ctrl` au lieu de `Cmd`.

@@ -5,11 +5,9 @@ Couverture du modal Parametres : ouverture, profil, cles API, LLM,
 recherche web, dossier de travail, presets MCP, accessibilite, performance.
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot
-
 
 # ============================================================
 # P0 - Critiques

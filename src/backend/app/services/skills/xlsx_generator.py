@@ -11,8 +11,9 @@ import re
 from pathlib import Path
 from typing import Any
 
+from app.services.skills.base import FileFormat, SkillParams, SkillResult
+from app.services.skills.code_executor import CodeGenSkill
 from openpyxl import Workbook
-from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.styles import (
     Alignment,
     Border,
@@ -21,9 +22,6 @@ from openpyxl.styles import (
     Side,
 )
 from openpyxl.utils import get_column_letter
-
-from app.services.skills.base import FileFormat, SkillParams, SkillResult
-from app.services.skills.code_executor import CodeGenSkill
 
 logger = logging.getLogger(__name__)
 

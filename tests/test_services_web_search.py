@@ -100,7 +100,7 @@ class TestWebSearchFormatting:
 
     def test_search_response_structure(self):
         """Test search response structure."""
-        from app.services.web_search import SearchResult, SearchResponse
+        from app.services.web_search import SearchResponse, SearchResult
 
         results = [
             SearchResult(title="Result 1", url="https://a.com", snippet="A"),

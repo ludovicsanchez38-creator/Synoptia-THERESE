@@ -148,7 +148,7 @@ def _extract_pdf(file_path: Path) -> str:
         from pypdf import PdfReader
     except ImportError:
         logger.warning("pypdf not installed, cannot extract PDF")
-        return f"[PDF extraction unavailable - install pypdf]"
+        return "[PDF extraction unavailable - install pypdf]"
 
     reader = PdfReader(file_path)
     total_pages = len(reader.pages)
@@ -178,7 +178,7 @@ def _extract_docx(file_path: Path) -> str:
         from docx import Document
     except ImportError:
         logger.warning("python-docx not installed, cannot extract DOCX")
-        return f"[DOCX extraction unavailable - install python-docx]"
+        return "[DOCX extraction unavailable - install python-docx]"
 
     doc = Document(file_path)
     text_parts = []

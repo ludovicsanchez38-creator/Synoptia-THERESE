@@ -132,6 +132,7 @@ class ContactCreate(BaseModel):
     company: str | None = None
     email: str | None = None
     phone: str | None = None
+    address: str | None = None
     notes: str | None = None
     tags: list[str] | None = None
 
@@ -148,6 +149,7 @@ class ContactUpdate(BaseModel):
     company: str | None = None
     email: str | None = None
     phone: str | None = None
+    address: str | None = None
     notes: str | None = None
     tags: list[str] | None = None
 
@@ -171,6 +173,7 @@ class ContactResponse(BaseModel):
     company: str | None
     email: str | None
     phone: str | None
+    address: str | None
     notes: str | None
     tags: list[str] | None
 
@@ -666,6 +669,8 @@ class InvoiceResponse(BaseModel):
     id: str
     invoice_number: str
     contact_id: str
+    document_type: str = "facture"  # devis, facture, avoir
+    tva_applicable: bool = True
     issue_date: str  # ISO datetime
     due_date: str  # ISO datetime
     status: str  # draft, sent, paid, overdue, cancelled
@@ -692,6 +697,8 @@ class CreateInvoiceRequest(BaseModel):
     """Request pour créer une facture."""
 
     contact_id: str
+    document_type: str = "facture"  # devis, facture, avoir
+    tva_applicable: bool = True
     issue_date: str | None = None  # ISO datetime, default today
     due_date: str | None = None  # ISO datetime, default +30 days
     lines: list[InvoiceLineRequest]

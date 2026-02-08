@@ -4,7 +4,6 @@ THÉRÈSE v2 - Tests E2E Skills
 Test de la génération de documents Office (DOCX, PPTX, XLSX).
 """
 
-import pytest
 from playwright.sync_api import Page, expect
 
 from .conftest import take_screenshot

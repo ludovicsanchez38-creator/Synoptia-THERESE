@@ -4,20 +4,17 @@ THERESE v2 - Tests Service Encryption
 Teste le service de chiffrement Fernet (AES-128-CBC + HMAC) pour les donnees sensibles.
 """
 
-import pytest
-import os
 import stat
-from pathlib import Path
-from unittest.mock import patch, MagicMock, PropertyMock
-from cryptography.fernet import InvalidToken, Fernet
 
+import pytest
 from app.services.encryption import (
     EncryptionService,
-    get_encryption_service,
-    encrypt_value,
     decrypt_value,
+    encrypt_value,
+    get_encryption_service,
     is_value_encrypted,
 )
+from cryptography.fernet import InvalidToken
 
 
 @pytest.fixture

@@ -40,17 +40,27 @@ async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Inv
     return result.scalar_one_or_none()
 
 
-async def _generate_invoice_number(session: AsyncSession) -> str:
+async def _generate_invoice_number(session: AsyncSession, document_type: str = "facture") -> str:
     """
-    Génère le prochain numéro de facture.
-    Format: FACT-YYYY-NNN (ex: FACT-2026-001)
+    Génère le prochain numéro de document.
+
+    Format selon le type :
+    - devis : DEV-YYYY-NNN
+    - facture : FACT-YYYY-NNN
+    - avoir : AV-YYYY-NNN
     """
+    prefix_map = {
+        "devis": "DEV",
+        "facture": "FACT",
+        "avoir": "AV",
+    }
+    prefix = prefix_map.get(document_type, "FACT")
     current_year = datetime.now(UTC).year
 
-    # Trouver la dernière facture de l'année
+    # Trouver le dernier document de ce type pour l'année
     statement = (
         select(Invoice)
-        .where(Invoice.invoice_number.startswith(f"FACT-{current_year}-"))
+        .where(Invoice.invoice_number.startswith(f"{prefix}-{current_year}-"))
         .order_by(Invoice.created_at.desc())
     )
     result = await session.execute(statement)
@@ -61,10 +71,10 @@ async def _generate_invoice_number(session: AsyncSession) -> str:
         last_number = int(last_invoice.invoice_number.split("-")[-1])
         next_number = last_number + 1
     else:
-        # Première facture de l'année
+        # Premier document de ce type pour l'année
         next_number = 1
 
-    return f"FACT-{current_year}-{next_number:03d}"
+    return f"{prefix}-{current_year}-{next_number:03d}"
 
 
 def _calculate_invoice_totals(lines: list[InvoiceLine]) -> tuple[float, float, float]:
@@ -101,6 +111,8 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         id=invoice.id,
         invoice_number=invoice.invoice_number,
         contact_id=invoice.contact_id,
+        document_type=invoice.document_type,
+        tva_applicable=invoice.tva_applicable,
         issue_date=invoice.issue_date.isoformat(),
         due_date=invoice.due_date.isoformat(),
         status=invoice.status,
@@ -119,6 +131,7 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
 async def list_invoices(
     status: str | None = Query(None, description="Filtrer par status (draft, sent, paid, overdue, cancelled)"),
     contact_id: str | None = Query(None, description="Filtrer par contact"),
+    document_type: str | None = Query(None, description="Filtrer par type (devis, facture, avoir)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
@@ -133,6 +146,8 @@ async def list_invoices(
         statement = statement.where(Invoice.status == status)
     if contact_id:
         statement = statement.where(Invoice.contact_id == contact_id)
+    if document_type:
+        statement = statement.where(Invoice.document_type == document_type)
 
     # Ordre anti-chronologique
     statement = statement.order_by(Invoice.created_at.desc())
@@ -179,8 +194,13 @@ async def create_invoice(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
-    # Générer le numéro de facture
-    invoice_number = await _generate_invoice_number(session)
+    # Valider le type de document
+    document_type = request.document_type
+    if document_type not in ("devis", "facture", "avoir"):
+        raise HTTPException(status_code=400, detail="document_type doit être : devis, facture ou avoir")
+
+    # Générer le numéro selon le type de document
+    invoice_number = await _generate_invoice_number(session, document_type)
 
     # Dates par défaut
     issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.now(UTC)
@@ -190,6 +210,8 @@ async def create_invoice(
     invoice = Invoice(
         invoice_number=invoice_number,
         contact_id=request.contact_id,
+        document_type=document_type,
+        tva_applicable=request.tva_applicable,
         issue_date=issue_date,
         due_date=due_date,
         status="draft",
@@ -403,6 +425,8 @@ async def generate_invoice_pdf(
     # Préparer les données pour le PDF
     invoice_data = {
         "invoice_number": invoice.invoice_number,
+        "document_type": invoice.document_type,
+        "tva_applicable": invoice.tva_applicable,
         "issue_date": invoice.issue_date.isoformat(),
         "due_date": invoice.due_date.isoformat(),
         "status": invoice.status,
@@ -428,6 +452,7 @@ async def generate_invoice_pdf(
         "company": contact.company or "",
         "email": contact.email or "",
         "phone": contact.phone or "",
+        "address": contact.address or "",
     }
 
     user_profile_data = {
@@ -435,6 +460,8 @@ async def generate_invoice_pdf(
         "company": user_profile.get("company", ""),
         "address": user_profile.get("address", ""),
         "siren": user_profile.get("siren", ""),
+        "siret": user_profile.get("siret", ""),
+        "code_ape": user_profile.get("code_ape", ""),
         "tva_intra": user_profile.get("tva_intra", ""),
     }
 
