@@ -104,7 +104,8 @@ pub fn run() {
         if let RunEvent::Exit = event {
             // Kill propre du sidecar à la fermeture
             let state = app_handle.state::<SidecarState>();
-            if let Some(child) = state.child.lock().unwrap().take() {
+            let mut guard = state.child.lock().unwrap();
+            if let Some(child) = guard.take() {
                 println!("[THÉRÈSE] Arrêt du sidecar backend...");
                 let _ = child.kill();
             }
