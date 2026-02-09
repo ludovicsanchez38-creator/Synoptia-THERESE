@@ -111,13 +111,17 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src/frontend/src-tauri
+          save-if: "true"
+
+      - name: Limiter jobs Rust (Linux)
+        if: runner.os == 'Linux'
+        run: echo "CARGO_BUILD_JOBS=3" >> $GITHUB_ENV
 
       # ---- Build Tauri ----
       - name: Build THÉRÈSE (Tauri)
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CARGO_BUILD_JOBS: "2"
         with:
           projectPath: src/frontend
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
