@@ -112,6 +112,7 @@ def _get_api_key_from_db(provider: str) -> str | None:
                             value = encryption.decrypt(value)
                         except Exception as dec_err:
                             logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
+                            return None
                     return value
             return None
 

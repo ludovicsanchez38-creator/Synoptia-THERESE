@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 def _get_api_key_from_db(provider: str) -> str | None:
     """
-    Load API key from database (Preferences table).
+    Load API key from database (Preferences table) et la déchiffrer.
     Falls back to environment variable if DB not available.
     """
     try:
-        # Import here to avoid circular imports
         from app.config import settings
+        from app.services.encryption import get_encryption_service
         from sqlalchemy import create_engine, text
 
         engine = create_engine(f"sqlite:///{settings.db_path}")
@@ -34,8 +34,16 @@ def _get_api_key_from_db(provider: str) -> str | None:
                 {"key": f"{provider}_api_key"}
             )
             row = result.fetchone()
-            if row:
-                return row[0]
+            if row and row[0]:
+                value = row[0]
+                encryption = get_encryption_service()
+                if encryption.is_encrypted(value):
+                    try:
+                        value = encryption.decrypt(value)
+                    except Exception as dec_err:
+                        logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
+                        return None
+                return value
     except Exception as e:
         logger.debug(f"Could not load {provider} API key from DB: {e}")
 

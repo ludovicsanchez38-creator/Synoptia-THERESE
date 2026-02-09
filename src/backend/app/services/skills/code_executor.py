@@ -611,6 +611,20 @@ class CodeGenSkill(BaseSkill):
                     code = None
 
         if code:
+            # Patcher les appels .save() pour utiliser output_path
+            # Le LLM écrit souvent doc.save("fichier.docx") au lieu de doc.save(output_path)
+            code = re.sub(
+                r'\.save\s*\(\s*["\'].*?["\']\s*\)',
+                '.save(output_path)',
+                code,
+            )
+            # Aussi patcher wb.save(...) pour xlsx
+            code = re.sub(
+                r'\.save\s*\(\s*(?:f["\'].*?["\']|["\'].*?["\'])\s*\)',
+                '.save(output_path)',
+                code,
+            )
+
             try:
                 logger.info(
                     f"[{self.skill_id}] Code Python détecté, exécution sandboxée..."
@@ -656,6 +670,27 @@ class CodeGenSkill(BaseSkill):
             logger.info(
                 f"[{self.skill_id}] Pas de bloc Python détecté, "
                 f"fallback vers parser legacy"
+            )
+
+        # Nettoyer les blocs de code du contenu avant le fallback
+        # pour éviter que le parser Markdown ne les rende comme du texte brut
+        # On ne supprime que les blocs complets (avec ``` fermant)
+        # pour ne pas perdre le contenu quand le bloc est tronqué
+        cleaned_content = re.sub(
+            r"```(?:python|py|javascript|js|bash|json)?\s*\n.*?```",
+            "",
+            params.content,
+            flags=re.DOTALL,
+        ).strip()
+        # Si le contenu nettoyé est vide (tout était dans un bloc code),
+        # on garde le contenu original - le parser docx_generator
+        # filtrera les lignes de code via sa propre détection
+        if cleaned_content and len(cleaned_content) > 50:
+            params = SkillParams(
+                title=params.title,
+                content=cleaned_content,
+                template=params.template,
+                metadata=params.metadata,
             )
 
         # Fallback vers l'ancien parser

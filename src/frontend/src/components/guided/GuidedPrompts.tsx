@@ -14,8 +14,8 @@ import {
   downloadSkillFile,
   generateImage,
   downloadGeneratedImage,
+  getImageDownloadUrl,
   getSkillInputSchema,
-  API_BASE,
   type SkillExecuteResponse,
   type ImageResponse,
 } from '../../services/api';
@@ -349,10 +349,10 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
 
       const response = await generateImage(request);
 
-      const imageUrl = `${API_BASE}${response.download_url}`;
+      const imageUrl = getImageDownloadUrl(response.id);
       addMessage({
         role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image generee avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana Pro'}*\n\nTelecharger ${response.file_name}](${imageUrl})`,
+        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana Pro'}*\n\n[Télécharger ${response.file_name}](${imageUrl})`,
       });
 
       setImageState({
@@ -485,7 +485,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
             provider={imageState.provider}
             status={imageState.status}
             prompt={imageState.prompt}
-            imageUrl={imageState.response?.download_url ? `${API_BASE}${imageState.response.download_url}` : undefined}
+            imageUrl={imageState.response?.id ? getImageDownloadUrl(imageState.response.id) : undefined}
             fileName={imageState.response?.file_name}
             fileSize={imageState.response?.file_size}
             error={imageState.error}

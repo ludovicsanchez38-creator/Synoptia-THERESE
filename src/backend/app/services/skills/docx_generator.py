@@ -252,13 +252,29 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
             doc: Document Word
             content: Contenu en format Markdown
         """
+        # Supprimer les blocs de code résiduels (```python...```)
+        content = re.sub(
+            r"```(?:python|py|javascript|js|bash|sh|json|xml|html|css|sql|yaml|yml)?\s*\n.*?(?:```|$)",
+            "",
+            content,
+            flags=re.DOTALL,
+        )
+
         lines = content.split('\n')
         list_number = 0
+        in_code_block = False
 
         for line in lines:
             line = line.strip()
             if not line:
                 list_number = 0
+                continue
+
+            # Ignorer les lignes résiduelles de clôture de code
+            if line.startswith('```'):
+                in_code_block = not in_code_block
+                continue
+            if in_code_block:
                 continue
 
             # Headings
