@@ -24,9 +24,9 @@ const STEPS = [
   { id: 'welcome', title: 'Bienvenue' },
   { id: 'profile', title: 'Profil' },
   { id: 'llm', title: 'LLM' },
-  { id: 'security', title: 'Securite' },
+  { id: 'security', title: 'Sécurité' },
   { id: 'workingDir', title: 'Dossier' },
-  { id: 'complete', title: 'Termine' },
+  { id: 'complete', title: 'Terminé' },
 ];
 
 export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) {

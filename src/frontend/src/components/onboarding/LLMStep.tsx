@@ -47,10 +47,10 @@ const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
     models: [
-      { id: 'gpt-4o', name: 'GPT-4o', badge: 'Recommandé' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+      { id: 'gpt-5.2', name: 'GPT-5.2', badge: 'Recommandé' },
+      { id: 'gpt-5', name: 'GPT-5' },
       { id: 'o3', name: 'o3', badge: 'Reasoning' },
-      { id: 'o4-mini', name: 'o4-mini', badge: 'Fast reasoning' },
+      { id: 'o3-mini', name: 'o3 Mini', badge: 'Économique' },
     ],
   },
   {
@@ -86,8 +86,9 @@ const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'xai-...',
     consoleUrl: 'https://console.x.ai',
     models: [
-      { id: 'grok-3', name: 'Grok 3', badge: 'Flagship' },
-      { id: 'grok-3-fast', name: 'Grok 3 Fast', badge: 'Rapide' },
+      { id: 'grok-4', name: 'Grok 4', badge: 'Flagship' },
+      { id: 'grok-4-1-fast-non-reasoning', name: 'Grok 4.1 Fast', badge: 'Rapide' },
+      { id: 'grok-3-beta', name: 'Grok 3', badge: 'Économique' },
     ],
   },
   {

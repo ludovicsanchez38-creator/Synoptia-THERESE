@@ -40,11 +40,13 @@ hidden_imports = [
     "openai",
     # Qdrant
     "qdrant_client",
-    # Embeddings (sentence-transformers + torch)
+    # Embeddings (sentence-transformers + torch + sklearn/scipy)
     "sentence_transformers",
     "torch",
     "numpy",
     "einops",
+    "sklearn",
+    "scipy",
     # Sécurité
     "cryptography",
     "keyring",
@@ -110,7 +112,6 @@ a = Analysis(
     excludes=[
         "tkinter",
         "matplotlib",
-        "scipy",
         "IPython",
         "jupyter",
         "notebook",

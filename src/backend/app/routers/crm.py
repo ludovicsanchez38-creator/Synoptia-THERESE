@@ -9,7 +9,7 @@ import logging
 from datetime import UTC, datetime
 
 from app.models.database import get_session
-from app.models.entities import Activity, Contact, Deliverable, Preference, Project
+from app.models.entities import Activity, Contact, Deliverable, EmailAccount, Preference, Project
 from app.models.schemas import (
     ActivityResponse,
     ContactResponse,
@@ -886,6 +886,7 @@ async def initiate_sheets_oauth(
     Recherche les credentials Google dans :
     1. Serveur MCP Google Workspace configuré
     2. Préférences stockées
+    3. EmailAccount Gmail existant (réutilisation des credentials)
     """
     from app.services.encryption import decrypt_value
     from app.services.mcp_service import get_mcp_service
@@ -942,10 +943,30 @@ async def initiate_sheets_oauth(
             except Exception:
                 pass
 
+    # Fallback 3: réutiliser les credentials d'un EmailAccount Google existant
+    if not client_id or not client_secret:
+        try:
+            from app.services.encryption import is_value_encrypted
+
+            email_result = await session.execute(
+                select(EmailAccount).where(
+                    EmailAccount.provider == "gmail",
+                    EmailAccount.client_id.isnot(None),
+                    EmailAccount.client_secret.isnot(None),
+                )
+            )
+            email_account = email_result.scalar_one_or_none()
+            if email_account and email_account.client_id and email_account.client_secret:
+                client_id = decrypt_value(email_account.client_id)
+                client_secret = decrypt_value(email_account.client_secret)
+                logger.info("Using Google credentials from EmailAccount")
+        except Exception as e:
+            logger.warning(f"Could not get credentials from EmailAccount: {e}")
+
     if not client_id or not client_secret:
         raise HTTPException(
             status_code=400,
-            detail="Google OAuth credentials not found. Please configure the Google Workspace MCP server or add credentials in Settings."
+            detail="Credentials Google OAuth introuvables. Configure d'abord ton email Gmail dans THÉRÈSE, ou ajoute un serveur MCP Google Workspace.",
         )
 
     config = OAuthConfig(

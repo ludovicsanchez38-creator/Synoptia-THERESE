@@ -34,8 +34,13 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
       const flow = await api.initiateEmailOAuth(clientId, clientSecret);
       setAuthUrl(flow.auth_url);
 
-      // Open in external browser
-      window.open(flow.auth_url, '_blank');
+      // Open in external browser (Tauri shell)
+      try {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        await open(flow.auth_url);
+      } catch {
+        window.open(flow.auth_url, '_blank');
+      }
 
       // TODO: Handle callback (需要実装 OAuth callback handler)
       // For now, just show success message

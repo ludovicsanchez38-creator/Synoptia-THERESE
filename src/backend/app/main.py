@@ -353,6 +353,7 @@ async def auth_middleware(request: Request, call_next):
     exempt_paths = [
         "/api/health", "/api/auth/token",
         "/api/email/auth/callback-redirect",
+        "/api/crm/sync/callback",
         "/docs", "/redoc", "/openapi.json", "/health",
     ]
     if any(request.url.path.startswith(p) for p in exempt_paths):

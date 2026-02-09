@@ -29,31 +29,31 @@ const RISKS: RiskItem[] = [
   {
     icon: Cloud,
     title: 'LLMs Cloud',
-    description: 'Tes messages sont envoyes aux serveurs des providers (Anthropic, OpenAI, Gemini...). Ne partage jamais de donnees sensibles (mots de passe, secrets, donnees clients).',
+    description: 'Tes messages sont envoyés aux serveurs des providers (Anthropic, OpenAI, Gemini...). Ne partage jamais de données sensibles (mots de passe, secrets, données clients).',
     severity: 'high',
   },
   {
     icon: Terminal,
     title: 'Serveurs MCP',
-    description: 'Les tools MCP peuvent executer des commandes, lire et ecrire des fichiers sur ta machine. Active uniquement les serveurs de confiance.',
+    description: 'Les tools MCP peuvent exécuter des commandes, lire et écrire des fichiers sur ta machine. Active uniquement les serveurs de confiance.',
     severity: 'high',
   },
   {
     icon: FolderOpen,
-    title: 'Acces fichiers',
-    description: 'THERESE peut lire tes fichiers locaux pour le contexte. Les fichiers indexes sont stockes localement dans Qdrant.',
+    title: 'Accès fichiers',
+    description: 'THÉRÈSE peut lire tes fichiers locaux pour le contexte. Les fichiers indexés sont stockés localement dans Qdrant.',
     severity: 'medium',
   },
   {
     icon: Globe,
     title: 'Recherche Web',
-    description: 'Les recherches sont envoyees a DuckDuckGo ou Google (selon le provider). Tes requetes peuvent etre tracees.',
+    description: 'Les recherches sont envoyées à DuckDuckGo ou Google (selon le provider). Tes requêtes peuvent être tracées.',
     severity: 'low',
   },
   {
     icon: Mic,
     title: 'Transcription vocale',
-    description: 'L\'audio est envoye a Groq pour transcription. Ne dicte pas d\'informations confidentielles.',
+    description: 'L\'audio est envoyé à Groq pour transcription. Ne dicte pas d\'informations confidentielles.',
     severity: 'medium',
   },
 ];
@@ -65,8 +65,8 @@ const severityColors = {
 };
 
 const severityLabels = {
-  high: 'Risque eleve',
-  medium: 'Risque modere',
+  high: 'Risque élevé',
+  medium: 'Risque modéré',
   low: 'Risque faible',
 };
 
@@ -86,9 +86,9 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30">
           <Shield className="w-8 h-8 text-amber-400" />
         </div>
-        <h2 className="text-2xl font-bold text-text">Securite et confidentialite</h2>
+        <h2 className="text-2xl font-bold text-text">Sécurité et confidentialité</h2>
         <p className="text-text-muted max-w-md mx-auto">
-          THERESE est un outil puissant qui se connecte a plusieurs services.
+          THÉRÈSE est un outil puissant qui se connecte à plusieurs services.
           Comprends les risques avant de continuer.
         </p>
       </div>
@@ -99,8 +99,8 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         <div className="text-sm">
           <p className="text-amber-200 font-medium">Important</p>
           <p className="text-amber-200/80 mt-1">
-            Les agents IA peuvent executer des commandes et agir via les tools que tu actives.
-            Commence avec le minimum de permissions necessaires.
+            Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives.
+            Commence avec le minimum de permissions nécessaires.
           </p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         rel="noopener noreferrer"
         className="flex items-center justify-center gap-2 text-sm text-accent-cyan hover:text-accent-cyan/80 transition-colors"
       >
-        <span>En savoir plus sur la securite</span>
+        <span>En savoir plus sur la sécurité</span>
         <ExternalLink className="w-4 h-4" />
       </a>
 

@@ -776,14 +776,13 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "claude-haiku-4-5-20251001",     # Fast & cost-efficient
         ]
     elif config.provider.value == "openai":
-        # GPT-5 series + GPT-4 legacy (janvier 2026)
+        # GPT-5 series (février 2026)
         available_models = [
             "gpt-5.2",           # Latest flagship
             "gpt-5",             # Previous flagship
             "gpt-4.1",           # Coding specialist
-            "gpt-4o",            # Fast multimodal
             "o3",                # Reasoning model
-            "o4-mini",           # Fast reasoning
+            "o3-mini",           # Fast reasoning
         ]
     elif config.provider.value == "gemini":
         # Gemini 3 + 2.5 series (janvier 2026)
@@ -802,11 +801,11 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "mistral-small-latest",   # Fast & efficient
         ]
     elif config.provider.value == "grok":
-        # Grok 4 series (janvier 2026)
+        # Grok 4 series (février 2026)
         available_models = [
-            "grok-4",            # Flagship
-            "grok-4.1-fast",     # Fast variant
-            "grok-3",            # Previous gen
+            "grok-4",                       # Flagship
+            "grok-4-1-fast-non-reasoning",  # Fast variant
+            "grok-3-beta",                  # Previous gen
         ]
 
     return LLMConfigResponse(

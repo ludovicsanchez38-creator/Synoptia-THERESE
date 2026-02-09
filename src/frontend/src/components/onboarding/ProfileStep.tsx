@@ -109,7 +109,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         </div>
         <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading}>
           <Upload className="w-4 h-4 mr-2" />
-          Importer THERESE.md
+          Importer THÉRÈSE.md
         </Button>
       </div>
 

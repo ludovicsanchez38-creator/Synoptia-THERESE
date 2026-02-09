@@ -47,7 +47,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       >
         <img
           src="/therese-avatar.png"
-          alt="THERESE"
+          alt="THÉRÈSE"
           className="w-24 h-24 rounded-2xl mb-6 mx-auto border border-border/30"
         />
         <h1 className="text-4xl font-bold text-text mb-3">

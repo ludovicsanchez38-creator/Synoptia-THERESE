@@ -242,10 +242,11 @@ async def get_context_info():
         "claude-haiku-4-5-20251001": 200000,
         "claude-opus-4-6": 200000,
         # OpenAI
-        "gpt-4o": 128000,
-        "gpt-4-turbo": 128000,
-        "o3": 128000,
-        "o4-mini": 128000,
+        "gpt-5.2": 128000,
+        "gpt-5": 128000,
+        "gpt-4.1": 1000000,
+        "o3": 200000,
+        "o3-mini": 200000,
         # Gemini
         "gemini-3-pro-preview": 1000000,
         "gemini-3-flash-preview": 1000000,
@@ -256,13 +257,14 @@ async def get_context_info():
         "codestral-latest": 32000,
         "mistral-small-latest": 32000,
         # Grok
-        "grok-3": 131072,
-        "grok-3-fast": 131072,
+        "grok-4": 131072,
+        "grok-4-1-fast-non-reasoning": 2000000,
+        "grok-3-beta": 131072,
     }
 
     truncation_policy = {
         "strategy": "oldest_first",
-        "description": "Les messages les plus anciens sont supprimes en premier",
+        "description": "Les messages les plus anciens sont supprimés en premier",
         "keep_system_prompt": True,
         "keep_last_n_messages": 4,
         "warning_threshold_pct": 90,

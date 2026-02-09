@@ -5,7 +5,7 @@
  * Phase 1 Frontend - Email
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Star, Paperclip, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import * as api from '../../services/api';
@@ -34,8 +34,10 @@ export function EmailList({ accountId }: EmailListProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load messages when label or account changes
+  // Load messages when label or account changes (avec retry automatique)
+  const retryCountRef = useRef(0);
   useEffect(() => {
+    retryCountRef.current = 0;
     loadMessages();
   }, [accountId, currentLabelId]);
 
@@ -96,6 +98,14 @@ export function EmailList({ accountId }: EmailListProps) {
       setMessages(classifiedMessages);
     } catch (err) {
       console.error('Failed to load messages:', err);
+      // Retry automatique (max 3 tentatives, délai croissant)
+      if (retryCountRef.current < 3) {
+        retryCountRef.current++;
+        const delay = retryCountRef.current * 1500; // 1.5s, 3s, 4.5s
+        console.log(`Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
+        setTimeout(() => loadMessages(), delay);
+        return;
+      }
       // Si on a du cache, ne pas afficher d'erreur bloquante
       if (!hasCachedMessages) {
         setError('Impossible de charger les messages');

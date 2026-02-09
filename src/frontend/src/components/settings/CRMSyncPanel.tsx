@@ -77,8 +77,13 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       setError(null);
       const result = await api.initiateCRMOAuth();
 
-      // Open auth URL in browser
-      window.open(result.auth_url, '_blank');
+      // Open auth URL in browser (Tauri shell pour ouvrir le navigateur externe)
+      try {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        await open(result.auth_url);
+      } catch {
+        window.open(result.auth_url, '_blank');
+      }
 
       setSuccess('Autorisez l\'accès dans le navigateur puis revenez ici');
     } catch (err: any) {

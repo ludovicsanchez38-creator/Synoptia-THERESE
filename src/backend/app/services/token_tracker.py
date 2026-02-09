@@ -22,11 +22,11 @@ TOKEN_PRICES = {
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     # OpenAI (février 2026)
-    "gpt-4o": {"input": 2.50, "output": 10.00},
-    "gpt-4o-mini": {"input": 0.15, "output": 0.60},
-    "gpt-4-turbo": {"input": 10.00, "output": 30.00},
+    "gpt-5.2": {"input": 1.75, "output": 14.00},
+    "gpt-5": {"input": 2.00, "output": 8.00},
+    "gpt-4.1": {"input": 2.00, "output": 8.00},
     "o3": {"input": 15.00, "output": 60.00},
-    "o1-mini": {"input": 3.00, "output": 12.00},
+    "o3-mini": {"input": 1.10, "output": 4.40},
     # Gemini (février 2026)
     "gemini-3-pro-preview": {"input": 1.25, "output": 5.00},
     "gemini-3-flash-preview": {"input": 0.075, "output": 0.30},
@@ -36,9 +36,10 @@ TOKEN_PRICES = {
     "mistral-large-latest": {"input": 2.00, "output": 6.00},
     "codestral-latest": {"input": 0.30, "output": 0.90},
     "mistral-small-latest": {"input": 0.20, "output": 0.60},
-    # Grok (février 2026 - tarifs corrigés)
-    "grok-3": {"input": 5.00, "output": 15.00},
-    "grok-3-fast": {"input": 5.00, "output": 25.00},
+    # Grok (février 2026)
+    "grok-4": {"input": 3.00, "output": 9.00},
+    "grok-4-1-fast-non-reasoning": {"input": 1.50, "output": 4.50},
+    "grok-3-beta": {"input": 5.00, "output": 15.00},
     # Ollama (local, no cost)
     "default": {"input": 0.0, "output": 0.0},
 }

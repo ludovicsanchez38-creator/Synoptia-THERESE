@@ -47,6 +47,8 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 ALLOWED_REDIRECT_URIS = {
     "http://localhost:8000/api/email/auth/callback-redirect",
     "http://127.0.0.1:8000/api/email/auth/callback-redirect",
+    "http://localhost:8000/api/crm/sync/callback",
+    "http://127.0.0.1:8000/api/crm/sync/callback",
 }
 
 
