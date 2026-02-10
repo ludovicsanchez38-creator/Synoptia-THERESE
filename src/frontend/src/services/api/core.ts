@@ -26,6 +26,11 @@ export function getApiBase(): string {
   return API_BASE;
 }
 
+/** Force l'URL de base (utilisé par le fallback SplashScreen) */
+export function setApiBase(url: string): void {
+  API_BASE = url;
+}
+
 // Auth token de session (SEC-010)
 let _sessionToken: string | null = null;
 

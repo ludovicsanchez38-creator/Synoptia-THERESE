@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { initApiBase, getApiBase } from '../services/api/core';
+import { initApiBase, getApiBase, setApiBase } from '../services/api/core';
 
 interface SplashScreenProps {
   onReady: () => void;
@@ -7,6 +7,7 @@ interface SplashScreenProps {
 
 const POLL_INTERVAL = 500;
 const TIMEOUT_MS = 60_000;
+const FALLBACK_AFTER_MS = 10_000;
 
 const MESSAGES = [
   'Démarrage du moteur...',
@@ -16,24 +17,29 @@ const MESSAGES = [
   'Presque prêt...',
 ];
 
+/** Teste si un backend répond sur une URL donnée */
+async function probeHealth(baseUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      const data = await res.json();
+      return data.status === 'healthy';
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function SplashScreen({ onReady }: SplashScreenProps) {
   const [message, setMessage] = useState(MESSAGES[0]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const apiBaseReady = useRef(false);
+  const triedFallback = useRef(false);
 
   const checkHealth = useCallback(async (): Promise<boolean> => {
-    try {
-      const healthUrl = `${getApiBase()}/health`;
-      const res = await fetch(healthUrl, { signal: AbortSignal.timeout(2000) });
-      if (res.ok) {
-        const data = await res.json();
-        return data.status === 'healthy';
-      }
-      return false;
-    } catch {
-      return false;
-    }
+    return probeHealth(getApiBase());
   }, []);
 
   useEffect(() => {
@@ -56,6 +62,19 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             'Le backend ne répond pas. Relancez THÉRÈSE.'
           );
           return;
+        }
+
+        // Après 10s sans réponse du port dynamique, essayer le port 8000
+        if (!triedFallback.current && elapsed > FALLBACK_AFTER_MS) {
+          triedFallback.current = true;
+          const fallbackUrl = 'http://127.0.0.1:8000';
+          if (getApiBase() !== fallbackUrl) {
+            const fallbackOk = await probeHealth(fallbackUrl);
+            if (fallbackOk) {
+              console.log('[SplashScreen] Fallback sur port 8000');
+              setApiBase(fallbackUrl);
+            }
+          }
         }
 
         // Progression et messages
