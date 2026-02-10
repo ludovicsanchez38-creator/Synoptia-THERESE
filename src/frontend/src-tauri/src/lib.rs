@@ -5,6 +5,7 @@
 
 use std::net::TcpListener;
 use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::RunEvent;
 
