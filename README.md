@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-blue.svg" alt="MIT License" /></a>
   <a href="https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions"><img src="https://img.shields.io/github/actions/workflow/status/ludovicsanchez38-creator/Synoptia-THERESE/ci.yml?branch=main&label=CI" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.1.0--alpha-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.1.2--alpha-orange" alt="Version" />
 </p>
 
 <p align="center">
