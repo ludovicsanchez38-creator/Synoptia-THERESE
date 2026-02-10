@@ -134,8 +134,8 @@ exe = EXE(
     name="backend",
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
-    upx=True,
+    strip=sys.platform != "win32",  # strip corrompt les DLL Windows
+    upx=False,                      # UPX corrompt python3xx.dll et vcruntime140.dll sur Windows
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,
