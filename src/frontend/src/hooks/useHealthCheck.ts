@@ -12,7 +12,7 @@ const HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 const RETRY_DELAY = 2000; // 2 seconds on error
 const MAX_RETRIES = 5;
 
-export function useHealthCheck() {
+export function useHealthCheck(enabled: boolean = true) {
   const { connectionState, setConnectionState, updatePing, addNotification } =
     useStatusStore();
 
@@ -74,8 +74,13 @@ export function useHealthCheck() {
     }
   }, [performCheck, addNotification]);
 
-  // Initial check and polling
+  // Initial check and polling (seulement quand enabled = true)
   useEffect(() => {
+    if (!enabled) return;
+
+    // Reset retries quand on (re)démarre
+    retriesRef.current = 0;
+
     // Initial check
     performCheck().then((success) => {
       if (!success) {
@@ -106,7 +111,7 @@ export function useHealthCheck() {
         timeoutRef.current = null;
       }
     };
-  }, [performCheck, scheduleRetry]);
+  }, [enabled, performCheck, scheduleRetry]);
 
   return {
     refresh: performCheck,

@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { initApiBase, getApiBase, setApiBase } from '../services/api/core';
 
+type UnlistenFn = () => void;
+
 interface SplashScreenProps {
   onReady: () => void;
 }
 
 const POLL_INTERVAL = 500;
 const TIMEOUT_MS = 60_000;
-const FALLBACK_AFTER_MS = 10_000;
+const FALLBACK_AFTER_MS = 5_000;
 
 const MESSAGES = [
   'Démarrage du moteur...',
@@ -17,13 +19,15 @@ const MESSAGES = [
   'Presque prêt...',
 ];
 
-/** Teste si un backend répond sur une URL donnée */
+/** Teste si un backend THÉRÈSE répond sur une URL donnée */
 async function probeHealth(baseUrl: string): Promise<boolean> {
   try {
     const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) });
     if (res.ok) {
       const data = await res.json();
-      return data.status === 'healthy';
+      // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
+      // (évite de se connecter à un autre service sur le même port)
+      return data.status === 'healthy' && typeof data.version === 'string';
     }
     return false;
   } catch {
@@ -36,10 +40,32 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const apiBaseReady = useRef(false);
-  const triedFallback = useRef(false);
 
   const checkHealth = useCallback(async (): Promise<boolean> => {
     return probeHealth(getApiBase());
+  }, []);
+
+  // Écouter les erreurs sidecar émises par le Rust
+  useEffect(() => {
+    let unlisten: UnlistenFn | null = null;
+
+    import('@tauri-apps/api/event')
+      .then(({ listen }) => {
+        listen<string>('sidecar-error', (event) => {
+          setError(
+            `Le moteur n'a pas pu démarrer :\n${event.payload}\n\nDans le Terminal :\nxattr -cr /Applications/THÉRÈSE.app\npuis relancez l'app.`
+          );
+        }).then((fn) => {
+          unlisten = fn;
+        });
+      })
+      .catch(() => {
+        // Pas en contexte Tauri (mode dev)
+      });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   useEffect(() => {
@@ -64,9 +90,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           return;
         }
 
-        // Après 10s sans réponse du port dynamique, essayer le port 8000
-        if (!triedFallback.current && elapsed > FALLBACK_AFTER_MS) {
-          triedFallback.current = true;
+        // Après 5s sans réponse du port dynamique, essayer aussi le port 8000
+        // (retente à chaque poll au cas où le backend est lancé manuellement)
+        if (elapsed > FALLBACK_AFTER_MS) {
           const fallbackUrl = 'http://127.0.0.1:8000';
           if (getApiBase() !== fallbackUrl) {
             const fallbackOk = await probeHealth(fallbackUrl);

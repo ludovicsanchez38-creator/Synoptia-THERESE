@@ -34,8 +34,8 @@ function App() {
   const fontSize = useFontSize();
   const highContrast = useAccessibilityStore((state) => state.highContrast);
 
-  // Health check du backend
-  useHealthCheck();
+  // Health check du backend (seulement quand le backend est confirmé prêt)
+  useHealthCheck(backendReady);
 
   // Callback quand le SplashScreen détecte le backend prêt
   const handleBackendReady = useCallback(() => {

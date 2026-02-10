@@ -24,6 +24,10 @@
       "identifier": "shell:allow-execute",
       "allow": [{ "name": "backend", "sidecar": true }]
     },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [{ "name": "backend", "sidecar": true }]
+    },
     "fs:default",
     {
       "identifier": "fs:allow-read-text-file",

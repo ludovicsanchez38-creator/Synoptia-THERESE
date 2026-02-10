@@ -20,6 +20,23 @@ fn find_free_port() -> u16 {
     port
 }
 
+/// Écrit dans ~/.therese/logs/sidecar.log
+fn log_sidecar(msg: &str) {
+    if let Some(home) = dirs::home_dir() {
+        let log_dir = home.join(".therese").join("logs");
+        let _ = std::fs::create_dir_all(&log_dir);
+        let log_file = log_dir.join("sidecar.log");
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file)
+        {
+            use std::io::Write;
+            let _ = writeln!(f, "{}", msg);
+        }
+    }
+}
+
 /// Port du backend, accessible depuis le frontend via IPC
 pub struct BackendPort(pub Mutex<u16>);
 
@@ -66,49 +83,91 @@ pub fn run() {
                 let backend_port = app.state::<BackendPort>();
                 *backend_port.0.lock().unwrap() = port;
 
-                let sidecar = app.shell().sidecar("backend").unwrap()
-                    .args(["--host", "127.0.0.1", "--port", &port_str])
-                    .env("THERESE_PORT", &port_str)
-                    .env("SENTENCE_TRANSFORMERS_HOME",
-                        dirs::home_dir()
-                            .unwrap_or_default()
-                            .join(".therese/models")
-                            .to_string_lossy()
-                            .to_string()
-                    );
+                let models_path = dirs::home_dir()
+                    .unwrap_or_default()
+                    .join(".therese/models")
+                    .to_string_lossy()
+                    .to_string();
 
-                match sidecar.spawn() {
-                    Ok((mut rx, child)) => {
-                        println!("[THÉRÈSE] Sidecar backend démarré (PID: {}, port: {})", child.pid(), port);
+                log_sidecar(&format!("Démarrage sidecar sur port {}", port));
 
-                        // Stocker le child pour le kill propre à la fermeture
-                        let state = app.state::<SidecarState>();
-                        *state.child.lock().unwrap() = Some(child);
+                // macOS : supprimer la quarantaine préventivement (ciblé, pas tous les xattr)
+                #[cfg(target_os = "macos")]
+                {
+                    if let Ok(exe) = std::env::current_exe() {
+                        if let Some(macos_dir) = exe.parent() {
+                            log_sidecar(&format!("Suppression quarantaine : {}", macos_dir.display()));
+                            let _ = std::process::Command::new("xattr")
+                                .args(["-dr", "com.apple.quarantine", &macos_dir.to_string_lossy()])
+                                .output();
+                        }
+                    }
+                }
 
-                        // Logger stdout/stderr du sidecar
-                        tauri::async_runtime::spawn(async move {
-                            while let Some(event) = rx.recv().await {
-                                match event {
-                                    CommandEvent::Stdout(line) => {
-                                        print!("[backend] {}", String::from_utf8_lossy(&line));
+                // Créer la commande sidecar (peut échouer si binaire introuvable)
+                match app.shell().sidecar("backend") {
+                    Ok(cmd) => {
+                        let cmd = cmd
+                            .args(["--host", "127.0.0.1", "--port", &port_str])
+                            .env("THERESE_PORT", &port_str)
+                            .env("THERESE_ENV", "production")
+                            .env("SENTENCE_TRANSFORMERS_HOME", &models_path);
+
+                        match cmd.spawn() {
+                            Ok((mut rx, child)) => {
+                                let msg = format!("Sidecar démarré (PID: {}, port: {})", child.pid(), port);
+                                println!("[THÉRÈSE] {}", msg);
+                                log_sidecar(&msg);
+
+                                // Stocker le child pour le kill propre à la fermeture
+                                let state = app.state::<SidecarState>();
+                                *state.child.lock().unwrap() = Some(child);
+
+                                // Logger stdout/stderr du sidecar dans le fichier de log
+                                tauri::async_runtime::spawn(async move {
+                                    while let Some(event) = rx.recv().await {
+                                        match event {
+                                            CommandEvent::Stdout(line) => {
+                                                let text = String::from_utf8_lossy(&line);
+                                                print!("[backend] {}", text);
+                                                log_sidecar(&format!("[stdout] {}", text.trim()));
+                                            }
+                                            CommandEvent::Stderr(line) => {
+                                                let text = String::from_utf8_lossy(&line);
+                                                eprint!("[backend] {}", text);
+                                                log_sidecar(&format!("[stderr] {}", text.trim()));
+                                            }
+                                            CommandEvent::Terminated(payload) => {
+                                                let msg = format!(
+                                                    "Sidecar terminé (code: {:?}, signal: {:?})",
+                                                    payload.code, payload.signal
+                                                );
+                                                println!("[THÉRÈSE] {}", msg);
+                                                log_sidecar(&msg);
+                                                break;
+                                            }
+                                            _ => {}
+                                        }
                                     }
-                                    CommandEvent::Stderr(line) => {
-                                        eprint!("[backend] {}", String::from_utf8_lossy(&line));
-                                    }
-                                    CommandEvent::Terminated(payload) => {
-                                        println!(
-                                            "[THÉRÈSE] Sidecar terminé (code: {:?}, signal: {:?})",
-                                            payload.code, payload.signal
-                                        );
-                                        break;
-                                    }
-                                    _ => {}
+                                });
+                            }
+                            Err(e) => {
+                                let msg = format!("Erreur lancement sidecar : {}", e);
+                                eprintln!("[THÉRÈSE] {}", msg);
+                                log_sidecar(&msg);
+                                if let Some(window) = app.get_webview_window("main") {
+                                    let _ = window.emit("sidecar-error", &msg);
                                 }
                             }
-                        });
+                        }
                     }
                     Err(e) => {
-                        eprintln!("[THÉRÈSE] Erreur lancement sidecar : {}", e);
+                        let msg = format!("Binaire sidecar introuvable : {}", e);
+                        eprintln!("[THÉRÈSE] {}", msg);
+                        log_sidecar(&msg);
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.emit("sidecar-error", &msg);
+                        }
                     }
                 }
             }
