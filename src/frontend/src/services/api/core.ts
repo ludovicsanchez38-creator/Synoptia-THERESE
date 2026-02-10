@@ -62,7 +62,7 @@ export async function request<T>(
         ...options.headers,
       },
     });
-  } catch (e: any) {
+  } catch (_e: any) {
     // Erreur réseau (Load failed / Failed to fetch)
     throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
   }

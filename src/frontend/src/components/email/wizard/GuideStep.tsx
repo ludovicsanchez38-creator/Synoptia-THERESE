@@ -99,7 +99,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
               <div className="prose prose-invert prose-sm max-w-none">
                 <ReactMarkdown
                   components={{
-                    a: ({ node, ...props }) => (
+                    a: ({ ...props }) => (
                       <a
                         {...props}
                         target="_blank"
