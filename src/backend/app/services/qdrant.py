@@ -52,10 +52,23 @@ class QdrantService:
             qdrant_path = settings.data_dir / "qdrant"
 
         # Ensure directory exists
-        Path(qdrant_path).mkdir(parents=True, exist_ok=True)
+        qdrant_dir = Path(qdrant_path)
+        qdrant_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Initializing Qdrant at {qdrant_path}")
-        self._client = QdrantClient(path=str(qdrant_path))
+        try:
+            self._client = QdrantClient(path=str(qdrant_path))
+        except RuntimeError as e:
+            if "already accessed" in str(e):
+                # Lock stale laissé par un ancien process non tué proprement
+                lock_file = qdrant_dir / ".lock"
+                if lock_file.exists():
+                    logger.warning("Qdrant verrouillé par un ancien process, suppression du lock stale")
+                    lock_file.unlink()
+                # Réessayer après nettoyage
+                self._client = QdrantClient(path=str(qdrant_path))
+            else:
+                raise
         self._ensure_collection()
         self._initialized = True
         logger.info("Qdrant initialized successfully")
