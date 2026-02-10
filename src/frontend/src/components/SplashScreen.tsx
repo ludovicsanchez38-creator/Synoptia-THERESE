@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { initApiBase, getApiBase } from '../services/api/core';
 
 interface SplashScreenProps {
   onReady: () => void;
 }
 
-const HEALTH_URL = 'http://127.0.0.1:8000/health';
 const POLL_INTERVAL = 500;
 const TIMEOUT_MS = 60_000;
 
@@ -20,10 +20,12 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [message, setMessage] = useState(MESSAGES[0]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const apiBaseReady = useRef(false);
 
   const checkHealth = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(2000) });
+      const healthUrl = `${getApiBase()}/health`;
+      const res = await fetch(healthUrl, { signal: AbortSignal.timeout(2000) });
       if (res.ok) {
         const data = await res.json();
         return data.status === 'healthy';
@@ -39,13 +41,19 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     const startTime = Date.now();
 
     async function poll() {
+      // Résoudre le port backend avant de commencer le polling
+      if (!apiBaseReady.current) {
+        await initApiBase();
+        apiBaseReady.current = true;
+      }
+
       while (!cancelled) {
         const elapsed = Date.now() - startTime;
 
         // Timeout
         if (elapsed > TIMEOUT_MS) {
           setError(
-            'Le backend ne répond pas. Vérifiez que le port 8000 est libre et relancez THÉRÈSE.'
+            'Le backend ne répond pas. Relancez THÉRÈSE.'
           );
           return;
         }

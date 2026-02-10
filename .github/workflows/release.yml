@@ -85,6 +85,12 @@ jobs:
           chmod +x "$DEST" 2>/dev/null || true
           echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
 
+      - name: Signer le sidecar (macOS ad-hoc)
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --deep -s - src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}
+          echo "Sidecar signé (ad-hoc) pour macOS"
+
       - name: Libérer espace après PyInstaller
         if: runner.os == 'Linux'
         run: |
@@ -154,7 +160,7 @@ jobs:
             Installeurs disponibles ci-dessous.
 
             ### Notes
-            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée)
+            - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THÉRÈSE.app` puis relance l'app.
             - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
           releaseDraft: true
           prerelease: true

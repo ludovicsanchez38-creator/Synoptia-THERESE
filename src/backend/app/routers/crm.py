@@ -44,6 +44,7 @@ from app.services.oauth import (
     GOOGLE_TOKEN_URL,
     GSHEETS_SCOPES,
     OAuthConfig,
+    RUNTIME_PORT,
     get_oauth_service,
 )
 from app.services.scoring import update_contact_score
@@ -975,7 +976,7 @@ async def initiate_sheets_oauth(
         auth_url=GOOGLE_AUTH_URL,
         token_url=GOOGLE_TOKEN_URL,
         scopes=GSHEETS_SCOPES,
-        redirect_uri="http://localhost:8000/api/crm/sync/callback",
+        redirect_uri=f"http://localhost:{RUNTIME_PORT}/api/crm/sync/callback",
     )
 
     oauth_service = get_oauth_service()

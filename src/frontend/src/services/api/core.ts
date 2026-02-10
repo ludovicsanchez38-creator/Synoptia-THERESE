@@ -5,7 +5,26 @@
  * Sprint 2 - PERF-2.2: Extracted from monolithic api.ts
  */
 
-export const API_BASE = 'http://127.0.0.1:8000';
+/** URL de base du backend (port dynamique en release, 8000 en dev) */
+export let API_BASE = 'http://127.0.0.1:8000';
+
+/** Initialise API_BASE avec le port dynamique du sidecar (via Tauri IPC) */
+export async function initApiBase(): Promise<void> {
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const port: number = await invoke('get_backend_port');
+    API_BASE = `http://127.0.0.1:${port}`;
+    console.log(`[API] Port backend : ${port}`);
+  } catch {
+    // En dev (pas de sidecar), on garde le fallback 8000
+    console.log('[API] Fallback port 8000 (mode dev)');
+  }
+}
+
+/** Retourne l'URL de base courante */
+export function getApiBase(): string {
+  return API_BASE;
+}
 
 // Auth token de session (SEC-010)
 let _sessionToken: string | null = null;

@@ -11,6 +11,7 @@ import asyncio
 import base64
 import hashlib
 import logging
+import os
 import secrets
 import time
 from dataclasses import dataclass
@@ -21,6 +22,9 @@ from app.services.http_client import get_http_client
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
+
+# Port runtime du backend (passé par le sidecar Tauri via --port ou THERESE_PORT)
+RUNTIME_PORT = os.environ.get("THERESE_PORT", "8000")
 
 
 # ============================================================
@@ -44,11 +48,12 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 # Whitelist des redirect URIs autorisées (SEC-030)
+# Construite dynamiquement avec le port runtime (port dynamique en release)
 ALLOWED_REDIRECT_URIS = {
-    "http://localhost:8000/api/email/auth/callback-redirect",
-    "http://127.0.0.1:8000/api/email/auth/callback-redirect",
-    "http://localhost:8000/api/crm/sync/callback",
-    "http://127.0.0.1:8000/api/crm/sync/callback",
+    f"http://localhost:{RUNTIME_PORT}/api/email/auth/callback-redirect",
+    f"http://127.0.0.1:{RUNTIME_PORT}/api/email/auth/callback-redirect",
+    f"http://localhost:{RUNTIME_PORT}/api/crm/sync/callback",
+    f"http://127.0.0.1:{RUNTIME_PORT}/api/crm/sync/callback",
 }
 
 

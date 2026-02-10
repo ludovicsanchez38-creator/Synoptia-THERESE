@@ -41,6 +41,7 @@ from app.services.oauth import (
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
     OAuthConfig,
+    RUNTIME_PORT,
     get_oauth_service,
 )
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -75,7 +76,7 @@ def get_gmail_oauth_config(
         auth_url=GOOGLE_AUTH_URL,
         token_url=GOOGLE_TOKEN_URL,
         scopes=GOOGLE_ALL_SCOPES,
-        redirect_uri="http://localhost:8000/api/email/auth/callback-redirect",
+        redirect_uri=f"http://localhost:{RUNTIME_PORT}/api/email/auth/callback-redirect",
     )
 
 

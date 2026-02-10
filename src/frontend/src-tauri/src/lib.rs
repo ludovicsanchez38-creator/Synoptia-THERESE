@@ -3,12 +3,25 @@
 //! L'assistante souveraine des entrepreneurs français.
 //! Gère le sidecar backend Python en mode release.
 
+use std::net::TcpListener;
 use std::sync::Mutex;
 use tauri::Manager;
 use tauri::RunEvent;
 
 /// IPC Commands module
 mod commands;
+
+/// Trouve un port TCP libre en laissant l'OS en assigner un.
+fn find_free_port() -> u16 {
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .expect("Impossible de trouver un port libre");
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+    port
+}
+
+/// Port du backend, accessible depuis le frontend via IPC
+pub struct BackendPort(pub Mutex<u16>);
 
 /// État du sidecar backend (release uniquement)
 struct SidecarState {
@@ -25,6 +38,7 @@ pub fn run() {
         .manage(SidecarState {
             child: Mutex::new(None),
         })
+        .manage(BackendPort(Mutex::new(8000)))
         .setup(|app| {
             // Get main window
             if let Some(window) = app.get_webview_window("main") {
@@ -45,8 +59,16 @@ pub fn run() {
                 use tauri_plugin_shell::ShellExt;
                 use tauri_plugin_shell::process::CommandEvent;
 
+                let port = find_free_port();
+                let port_str = port.to_string();
+
+                // Stocker le port pour le frontend
+                let backend_port = app.state::<BackendPort>();
+                *backend_port.0.lock().unwrap() = port;
+
                 let sidecar = app.shell().sidecar("backend").unwrap()
-                    .args(["--host", "127.0.0.1", "--port", "8000"])
+                    .args(["--host", "127.0.0.1", "--port", &port_str])
+                    .env("THERESE_PORT", &port_str)
                     .env("SENTENCE_TRANSFORMERS_HOME",
                         dirs::home_dir()
                             .unwrap_or_default()
@@ -57,7 +79,7 @@ pub fn run() {
 
                 match sidecar.spawn() {
                     Ok((mut rx, child)) => {
-                        println!("[THÉRÈSE] Sidecar backend démarré (PID: {})", child.pid());
+                        println!("[THÉRÈSE] Sidecar backend démarré (PID: {}, port: {})", child.pid(), port);
 
                         // Stocker le child pour le kill propre à la fermeture
                         let state = app.state::<SidecarState>();
@@ -96,6 +118,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::greet,
             commands::get_system_info,
+            commands::get_backend_port,
         ])
         .build(tauri::generate_context!())
         .expect("error while building THÉRÈSE");

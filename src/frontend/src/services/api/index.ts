@@ -15,6 +15,8 @@
 // Core - Base types, helpers, auth
 export {
   API_BASE,
+  initApiBase,
+  getApiBase,
   initializeAuth,
   apiFetch,
   request,

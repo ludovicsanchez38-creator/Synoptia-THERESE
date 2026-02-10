@@ -26,3 +26,9 @@ pub fn get_system_info() -> SystemInfo {
         version: env!("CARGO_PKG_VERSION").to_string(),
     }
 }
+
+/// Retourne le port du backend (dynamique en release, 8000 en dev)
+#[tauri::command]
+pub fn get_backend_port(state: tauri::State<'_, crate::BackendPort>) -> u16 {
+    *state.0.lock().unwrap()
+}
