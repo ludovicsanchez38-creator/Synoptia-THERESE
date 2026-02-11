@@ -3124,7 +3124,7 @@ wheels = [
 
 [[package]]
 name = "therese-backend"
-version = "0.1.2"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -3231,7 +3231,7 @@ provides-extras = ["e2e"]
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1.8.0" },
-    { name = "pyinstaller", specifier = ">=6.0.0" },
+    { name = "pyinstaller", specifier = ">=6.11.0,<7.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
     { name = "pytest-cov", specifier = ">=4.1.0" },

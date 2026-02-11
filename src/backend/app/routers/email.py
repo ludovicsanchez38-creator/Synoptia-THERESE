@@ -40,8 +40,8 @@ from app.services.oauth import (
     GOOGLE_ALL_SCOPES,
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
-    OAuthConfig,
     RUNTIME_PORT,
+    OAuthConfig,
     get_oauth_service,
 )
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

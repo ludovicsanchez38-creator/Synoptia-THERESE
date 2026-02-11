@@ -43,8 +43,8 @@ from app.services.oauth import (
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
     GSHEETS_SCOPES,
-    OAuthConfig,
     RUNTIME_PORT,
+    OAuthConfig,
     get_oauth_service,
 )
 from app.services.scoring import update_contact_score
@@ -947,7 +947,6 @@ async def initiate_sheets_oauth(
     # Fallback 3: réutiliser les credentials d'un EmailAccount Google existant
     if not client_id or not client_secret:
         try:
-            from app.services.encryption import is_value_encrypted
 
             email_result = await session.execute(
                 select(EmailAccount).where(

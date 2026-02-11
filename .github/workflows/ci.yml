@@ -10,6 +10,7 @@ jobs:
   lint:
     name: Lint (Python)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +28,11 @@ jobs:
   backend-tests:
     name: Tests Backend (Python)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -43,11 +49,13 @@ jobs:
         run: pip install uv && uv sync --dev
 
       - name: Tests unitaires (pytest)
-        run: uv run pytest tests/ --ignore=tests/e2e -q
+        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=30
+        timeout-minutes: 10
 
   frontend:
     name: Frontend (Node.js)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:
