@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { initializeAuth, getEmailAuthStatus } from '../../services/api';
+import { initApiBase, initializeAuth, getEmailAuthStatus } from '../../services/api';
 import { useEmailStore } from '../../stores/emailStore';
 import { EmailPanel } from '../email';
 import { CalendarPanel } from '../calendar';
@@ -30,10 +30,15 @@ export function PanelWindow({ panel }: PanelWindowProps) {
   useEffect(() => {
     async function init() {
       try {
-        // 1. Initialiser le token d'auth (obligatoire avant tout appel API)
+        // 1. Résoudre le port dynamique du backend (BUG-006)
+        // Chaque fenêtre Tauri a son propre contexte JS avec API_BASE = :8000 par défaut.
+        // Sans cet appel, les panels tapent sur le port 8000 au lieu du port dynamique.
+        await initApiBase();
+
+        // 2. Initialiser le token d'auth (obligatoire avant tout appel API)
         await initializeAuth();
 
-        // 2. Pour email et calendrier, pré-charger les comptes
+        // 3. Pour email et calendrier, pré-charger les comptes
         if (panel === 'email' || panel === 'calendar') {
           try {
             const status = await getEmailAuthStatus();

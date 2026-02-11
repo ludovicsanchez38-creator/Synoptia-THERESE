@@ -38,6 +38,107 @@ fn log_sidecar(msg: &str) {
     }
 }
 
+/// Tue les anciens process backend THÉRÈSE zombies restés actifs.
+/// Nécessaire lors des mises à jour (ex: v0.1.4 → v0.1.5+).
+fn kill_zombie_backends() {
+    log_sidecar("Recherche de process backend zombies...");
+
+    #[cfg(unix)]
+    {
+        let output = std::process::Command::new("pgrep")
+            .args(["-f", "backend.*--host.*127\\.0\\.0\\.1"])
+            .output();
+
+        if let Ok(output) = output {
+            let pids_str = String::from_utf8_lossy(&output.stdout);
+            let current_pid = std::process::id();
+
+            let mut found = false;
+            for line in pids_str.lines() {
+                if let Ok(pid) = line.trim().parse::<u32>() {
+                    if pid == current_pid {
+                        continue;
+                    }
+                    found = true;
+                    log_sidecar(&format!("Zombie détecté (PID: {}), envoi SIGTERM...", pid));
+                    let _ = std::process::Command::new("kill")
+                        .args(["-15", &pid.to_string()])
+                        .output();
+                }
+            }
+
+            if found {
+                std::thread::sleep(std::time::Duration::from_secs(2));
+
+                // Force kill les survivants
+                let output = std::process::Command::new("pgrep")
+                    .args(["-f", "backend.*--host.*127\\.0\\.0\\.1"])
+                    .output();
+
+                if let Ok(output) = output {
+                    let remaining = String::from_utf8_lossy(&output.stdout);
+                    let current_pid = std::process::id();
+                    for line in remaining.lines() {
+                        if let Ok(pid) = line.trim().parse::<u32>() {
+                            if pid == current_pid {
+                                continue;
+                            }
+                            log_sidecar(&format!("Zombie résistant (PID: {}), SIGKILL...", pid));
+                            let _ = std::process::Command::new("kill")
+                                .args(["-9", &pid.to_string()])
+                                .output();
+                            let _ = std::process::Command::new("pkill")
+                                .args(["-9", "-P", &pid.to_string()])
+                                .output();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        let output = std::process::Command::new("wmic")
+            .args([
+                "process", "where",
+                "name='backend.exe' and commandline like '%--host%127.0.0.1%'",
+                "get", "processid", "/format:list",
+            ])
+            .output();
+
+        if let Ok(output) = output {
+            let text = String::from_utf8_lossy(&output.stdout);
+            let current_pid = std::process::id();
+
+            for line in text.lines() {
+                if let Some(pid_str) = line.strip_prefix("ProcessId=") {
+                    if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                        if pid == current_pid {
+                            continue;
+                        }
+                        log_sidecar(&format!("Zombie Windows (PID: {}), taskkill...", pid));
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/T", "/F", "/PID", &pid.to_string()])
+                            .output();
+                    }
+                }
+            }
+        }
+    }
+
+    // Nettoyer le fichier .lock Qdrant
+    if let Some(home) = dirs::home_dir() {
+        let lock_file = home.join(".therese").join("qdrant").join(".lock");
+        if lock_file.exists() {
+            log_sidecar("Nettoyage du fichier .lock Qdrant...");
+            let _ = std::fs::remove_file(&lock_file);
+        }
+    }
+
+    log_sidecar("Nettoyage des zombies terminé");
+}
+
 /// Port du backend, accessible depuis le frontend via IPC
 pub struct BackendPort(pub Mutex<u16>);
 
@@ -76,6 +177,9 @@ pub fn run() {
             {
                 use tauri_plugin_shell::ShellExt;
                 use tauri_plugin_shell::process::CommandEvent;
+
+                // Tuer les anciens process backend zombies AVANT le lancement
+                kill_zombie_backends();
 
                 let port = find_free_port();
                 let port_str = port.to_string();
@@ -194,10 +298,12 @@ pub fn run() {
                 log_sidecar(&format!("Arrêt du sidecar (PID: {}, port: {})", pid, port));
 
                 // Étape 1 : Shutdown graceful via HTTP POST /api/shutdown
-                // Le backend reçoit la requête, renvoie 200, puis s'envoie SIGTERM
-                // uvicorn intercepte SIGTERM → lifespan shutdown → cleanup DB, Qdrant, MCP
-                if let Ok(mut stream) = std::net::TcpStream::connect(
-                    format!("127.0.0.1:{}", port)
+                let addr: std::net::SocketAddr = format!("127.0.0.1:{}", port)
+                    .parse()
+                    .unwrap();
+                if let Ok(mut stream) = std::net::TcpStream::connect_timeout(
+                    &addr,
+                    std::time::Duration::from_secs(2),
                 ) {
                     use std::io::Write;
                     let request = format!(
@@ -212,7 +318,7 @@ pub fn run() {
                     let _ = std::io::Read::read(&mut stream, &mut buf);
                     log_sidecar("Shutdown HTTP envoyé, attente du shutdown graceful...");
                 } else {
-                    log_sidecar("Backend injoignable, passage au force kill");
+                    log_sidecar("Backend injoignable (timeout 2s), passage au force kill");
                 }
 
                 // Étape 2 : Attendre le shutdown graceful (uvicorn + lifespan cleanup)
@@ -227,14 +333,12 @@ pub fn run() {
                 // child.kill() ne tue que le process direct, les enfants survivent
                 #[cfg(unix)]
                 {
-                    // pkill -P <pid> tue les enfants directs du processus
                     let _ = std::process::Command::new("pkill")
                         .args(["-9", "-P", &pid.to_string()])
                         .output();
                 }
                 #[cfg(windows)]
                 {
-                    // taskkill /T tue l'arbre de processus entier
                     let _ = std::process::Command::new("taskkill")
                         .args(["/T", "/F", "/PID", &pid.to_string()])
                         .output();

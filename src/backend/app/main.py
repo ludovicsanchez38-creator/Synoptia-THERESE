@@ -438,18 +438,28 @@ async def root():
 async def shutdown_backend():
     """Arrêt graceful du backend (appelé par Tauri à la fermeture de l'app).
 
-    Envoie SIGTERM à uvicorn après un court délai pour laisser la réponse HTTP partir.
+    Envoie un signal d'arrêt à uvicorn après un court délai pour laisser la réponse HTTP partir.
+    Sur Windows : SIGINT (SIGTERM = TerminateProcess brutal, pas de cleanup).
+    Sur Unix : SIGTERM (intercepté proprement par uvicorn).
     Exempté de l'auth middleware (pas de token Tauri à la fermeture).
     """
     import asyncio
     import os
     import signal
+    import sys
+
+    _shutdown_task: asyncio.Task | None = None  # Éviter le GC de la task
 
     async def _delayed_shutdown():
         await asyncio.sleep(0.5)
-        os.kill(os.getpid(), signal.SIGTERM)
+        if sys.platform == "win32":
+            # Windows : SIGTERM appelle TerminateProcess (brutal, pas de cleanup)
+            # SIGINT déclenche KeyboardInterrupt → uvicorn shutdown graceful
+            os.kill(os.getpid(), signal.SIGINT)
+        else:
+            os.kill(os.getpid(), signal.SIGTERM)
 
-    asyncio.create_task(_delayed_shutdown())
+    _shutdown_task = asyncio.create_task(_delayed_shutdown())  # noqa: F841
     logger.info("Shutdown demandé via /api/shutdown")
     return {"status": "shutting_down"}
 
