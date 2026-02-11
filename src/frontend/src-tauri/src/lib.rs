@@ -185,12 +185,62 @@ pub fn run() {
 
     app.run(|app_handle, event| {
         if let RunEvent::Exit = event {
-            // Kill propre du sidecar à la fermeture
             let state = app_handle.state::<SidecarState>();
             let mut guard = state.child.lock().unwrap();
             if let Some(child) = guard.take() {
-                println!("[THÉRÈSE] Arrêt du sidecar backend...");
+                let pid = child.pid();
+                let port = *app_handle.state::<BackendPort>().0.lock().unwrap();
+                println!("[THÉRÈSE] Arrêt du sidecar backend (PID: {}, port: {})...", pid, port);
+                log_sidecar(&format!("Arrêt du sidecar (PID: {}, port: {})", pid, port));
+
+                // Étape 1 : Shutdown graceful via HTTP POST /api/shutdown
+                // Le backend reçoit la requête, renvoie 200, puis s'envoie SIGTERM
+                // uvicorn intercepte SIGTERM → lifespan shutdown → cleanup DB, Qdrant, MCP
+                if let Ok(mut stream) = std::net::TcpStream::connect(
+                    format!("127.0.0.1:{}", port)
+                ) {
+                    use std::io::Write;
+                    let request = format!(
+                        "POST /api/shutdown HTTP/1.1\r\nHost: 127.0.0.1:{}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                        port
+                    );
+                    let _ = stream.write_all(request.as_bytes());
+                    let _ = stream.set_read_timeout(
+                        Some(std::time::Duration::from_secs(2))
+                    );
+                    let mut buf = [0u8; 256];
+                    let _ = std::io::Read::read(&mut stream, &mut buf);
+                    log_sidecar("Shutdown HTTP envoyé, attente du shutdown graceful...");
+                } else {
+                    log_sidecar("Backend injoignable, passage au force kill");
+                }
+
+                // Étape 2 : Attendre le shutdown graceful (uvicorn + lifespan cleanup)
+                std::thread::sleep(std::time::Duration::from_secs(3));
+
+                // Étape 3 : Force kill si toujours vivant
                 let _ = child.kill();
+                log_sidecar("Force kill envoyé");
+
+                // Étape 4 : Nettoyer les processus enfants orphelins
+                // PyInstaller onefile = 2 process (bootloader + Python child)
+                // child.kill() ne tue que le process direct, les enfants survivent
+                #[cfg(unix)]
+                {
+                    // pkill -P <pid> tue les enfants directs du processus
+                    let _ = std::process::Command::new("pkill")
+                        .args(["-9", "-P", &pid.to_string()])
+                        .output();
+                }
+                #[cfg(windows)]
+                {
+                    // taskkill /T tue l'arbre de processus entier
+                    let _ = std::process::Command::new("taskkill")
+                        .args(["/T", "/F", "/PID", &pid.to_string()])
+                        .output();
+                }
+
+                log_sidecar("Nettoyage terminé");
             }
         }
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { initApiBase, getApiBase, setApiBase } from '../services/api/core';
+import { initApiBase, getApiBase } from '../services/api/core';
 
 type UnlistenFn = () => void;
 
@@ -9,7 +9,6 @@ interface SplashScreenProps {
 
 const POLL_INTERVAL = 500;
 const TIMEOUT_MS = 60_000;
-const FALLBACK_AFTER_MS = 5_000;
 
 const MESSAGES = [
   'Démarrage du moteur...',
@@ -90,18 +89,11 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           return;
         }
 
-        // Après 5s sans réponse du port dynamique, essayer aussi le port 8000
-        // (retente à chaque poll au cas où le backend est lancé manuellement)
-        if (elapsed > FALLBACK_AFTER_MS) {
-          const fallbackUrl = 'http://127.0.0.1:8000';
-          if (getApiBase() !== fallbackUrl) {
-            const fallbackOk = await probeHealth(fallbackUrl);
-            if (fallbackOk) {
-              console.log('[SplashScreen] Fallback sur port 8000');
-              setApiBase(fallbackUrl);
-            }
-          }
-        }
+        // NOTE (BUG-008) : Le fallback port 8000 a été supprimé.
+        // En production, le port est toujours dynamique (IPC Tauri).
+        // Le fallback pouvait connecter le frontend à un backend zombie
+        // d'une session précédente, causant des erreurs d'auth silencieuses.
+        // En dev, API_BASE est déjà 8000 par défaut (initApiBase fallback).
 
         // Progression et messages
         const pct = Math.min(95, (elapsed / TIMEOUT_MS) * 100);

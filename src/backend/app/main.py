@@ -351,7 +351,7 @@ async def auth_middleware(request: Request, call_next):
 
     # Endpoints exemptés
     exempt_paths = [
-        "/api/health", "/api/auth/token",
+        "/api/health", "/api/auth/token", "/api/shutdown",
         "/api/email/auth/callback-redirect",
         "/api/crm/sync/callback",
         "/docs", "/redoc", "/openapi.json", "/health",
@@ -432,6 +432,26 @@ async def root():
         "status": "running",
         "tagline": "L'assistante souveraine des entrepreneurs français",
     }
+
+
+@app.post("/api/shutdown")
+async def shutdown_backend():
+    """Arrêt graceful du backend (appelé par Tauri à la fermeture de l'app).
+
+    Envoie SIGTERM à uvicorn après un court délai pour laisser la réponse HTTP partir.
+    Exempté de l'auth middleware (pas de token Tauri à la fermeture).
+    """
+    import asyncio
+    import os
+    import signal
+
+    async def _delayed_shutdown():
+        await asyncio.sleep(0.5)
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    asyncio.create_task(_delayed_shutdown())
+    logger.info("Shutdown demandé via /api/shutdown")
+    return {"status": "shutting_down"}
 
 
 @app.get("/health")

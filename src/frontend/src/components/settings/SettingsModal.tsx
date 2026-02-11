@@ -2,7 +2,7 @@
 // Les onglets sont extraits dans des composants séparés pour la maintenabilité
 
 import { useState, useEffect } from 'react';
-import { X, Cpu, Database, User, Wrench, Accessibility, Gauge, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Cpu, Database, User, Wrench, Accessibility, Gauge, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -17,13 +17,14 @@ import { AccessibilityTab } from './AccessibilityTab';
 import { PerformanceTab } from './PerformanceTab';
 import { LimitsTab } from './LimitsTab';
 import { ToolsPanel } from './ToolsPanel';
+import { AboutTab } from './AboutTab';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Tab = 'profile' | 'api' | 'tools' | 'data' | 'accessibility' | 'performance' | 'personalisation' | 'escalation';
+type Tab = 'profile' | 'api' | 'tools' | 'data' | 'accessibility' | 'performance' | 'personalisation' | 'escalation' | 'about';
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
@@ -519,6 +520,17 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <AlertTriangle className="w-4 h-4" />
                 Limites
               </button>
+              <button
+                onClick={() => setActiveTab('about')}
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'about'
+                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
+                    : 'text-text-muted hover:text-text'
+                }`}
+              >
+                <Info className="w-4 h-4" />
+                À propos
+              </button>
             </div>
 
             {/* Contenu */}
@@ -587,6 +599,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <PerformanceTab />
               ) : activeTab === 'escalation' ? (
                 <LimitsTab />
+              ) : activeTab === 'about' ? (
+                <AboutTab />
               ) : (
                 <DataTab
                   stats={stats}
