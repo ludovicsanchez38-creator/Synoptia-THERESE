@@ -8,27 +8,33 @@
 /** URL de base du backend (port dynamique en release, 8000 en dev) */
 export let API_BASE = 'http://127.0.0.1:8000';
 
+/**
+ * Singleton : une seule promesse d'init partagée entre toutes les fenêtres/appels.
+ * Évite la race condition quand SplashScreen et PanelWindow appellent initApiBase()
+ * en parallèle (chaque fenêtre Tauri a son propre contexte JS).
+ */
+let _initPromise: Promise<void> | null = null;
+
 /** Initialise API_BASE avec le port dynamique du sidecar (via Tauri IPC) */
-export async function initApiBase(): Promise<void> {
-  try {
-    const { invoke } = await import('@tauri-apps/api/core');
-    const port: number = await invoke('get_backend_port');
-    API_BASE = `http://127.0.0.1:${port}`;
-    console.log(`[API] Port backend : ${port}`);
-  } catch {
-    // En dev (pas de sidecar), on garde le fallback 8000
-    console.log('[API] Fallback port 8000 (mode dev)');
-  }
+export function initApiBase(): Promise<void> {
+  if (_initPromise) return _initPromise;
+  _initPromise = (async () => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const port: number = await invoke('get_backend_port');
+      API_BASE = `http://127.0.0.1:${port}`;
+      console.log(`[API] Port backend : ${port}`);
+    } catch {
+      // En dev (pas de sidecar), on garde le fallback 8000
+      console.log('[API] Fallback port 8000 (mode dev)');
+    }
+  })();
+  return _initPromise;
 }
 
 /** Retourne l'URL de base courante */
 export function getApiBase(): string {
   return API_BASE;
-}
-
-/** Force l'URL de base (utilisé par le fallback SplashScreen) */
-export function setApiBase(url: string): void {
-  API_BASE = url;
 }
 
 // Auth token de session (SEC-010)
