@@ -1002,12 +1002,14 @@ async def handle_sheets_oauth_callback(
 
     tokens = await oauth_service.handle_callback(state, code, error)
 
-    # Store tokens (Sprint 2 - PERF-2.4: await async function)
+    # Store tokens + credentials pour le refresh automatique
     from app.services.crm_sync import set_crm_tokens
     await set_crm_tokens(
         session,
         tokens["access_token"],
         tokens.get("refresh_token"),
+        client_id=tokens.get("client_id"),
+        client_secret=tokens.get("client_secret"),
     )
 
     return {
@@ -1049,17 +1051,11 @@ async def sync_crm(
     access_token = None
     api_key = None
 
-    # Try OAuth token first
-    result = await session.execute(
-        select(Preference).where(Preference.key == "crm_sheets_access_token")
-    )
-    token_pref = result.scalar_one_or_none()
-    if token_pref and token_pref.value:
-        try:
-            access_token = decrypt_value(token_pref.value)
-            logger.info("Using OAuth token for CRM sync")
-        except Exception:
-            pass
+    # Try OAuth token first (avec refresh automatique si expiré)
+    from app.services.crm_sync import ensure_valid_crm_token
+    access_token = await ensure_valid_crm_token(session)
+    if access_token:
+        logger.info("Using OAuth token for CRM sync (auto-refreshed if needed)")
 
     # Try Gemini API key as fallback
     if not access_token:

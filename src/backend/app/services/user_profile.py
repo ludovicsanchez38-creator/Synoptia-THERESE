@@ -99,7 +99,11 @@ PROFILE_KEY = "user_profile"
 PROFILE_CATEGORY = "identity"
 
 
-async def get_user_profile(session: AsyncSession) -> UserProfile | None:
+async def get_user_profile(
+    session: AsyncSession,
+    *,
+    allow_decrypt: bool = True,
+) -> UserProfile | None:
     """
     Retrieve user profile from database.
 
@@ -121,6 +125,10 @@ async def get_user_profile(session: AsyncSession) -> UserProfile | None:
         # Déchiffrer si le profil est chiffré (migration transparente)
         value = pref.value
         if is_value_encrypted(value):
+            if not allow_decrypt:
+                # Evite de déclencher un prompt trousseau bloquant pendant le startup.
+                logger.info("User profile preload skipped: encrypted profile requires keychain access")
+                return None
             try:
                 value = decrypt_value(value)
             except Exception as e:

@@ -230,23 +230,21 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           </div>
         </div>
 
-        {/* Connect button if no auth */}
-        {!hasAuthMethod && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleConnect}
-            disabled={connecting}
-            className="w-full mt-2"
-          >
-            {connecting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <ExternalLink className="w-4 h-4 mr-2" />
-            )}
-            Connecter Google Sheets
-          </Button>
-        )}
+        {/* Connect/Reconnect button */}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleConnect}
+          disabled={connecting}
+          className="w-full mt-2"
+        >
+          {connecting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <ExternalLink className="w-4 h-4 mr-2" />
+          )}
+          {config?.has_token ? 'Reconnecter Google Sheets' : 'Connecter Google Sheets'}
+        </Button>
       </div>
 
       {/* Last sync info */}

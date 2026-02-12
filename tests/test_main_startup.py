@@ -163,3 +163,34 @@ class TestZombieCleanup:
 
         assert "atexit.register(_cleanup_children)" in content
         assert "multiprocessing.active_children()" in content
+
+
+# ============================================================
+# Startup keychain safety
+# ============================================================
+
+
+class TestStartupKeychainSafety:
+    """Vérifier que le startup n'est pas bloqué par un prompt trousseau."""
+
+    def test_startup_profile_preload_skips_decrypt(self):
+        """Le preload profil au démarrage doit passer allow_decrypt=False."""
+        main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "app" / "main.py"
+        content = main_path.read_text(encoding="utf-8")
+
+        assert "get_user_profile(session, allow_decrypt=False)" in content
+
+    def test_get_user_profile_supports_allow_decrypt_flag(self):
+        """Le service profil doit accepter allow_decrypt pour éviter le keychain au boot."""
+        service_path = (
+            Path(__file__).resolve().parent.parent
+            / "src"
+            / "backend"
+            / "app"
+            / "services"
+            / "user_profile.py"
+        )
+        content = service_path.read_text(encoding="utf-8")
+
+        assert "allow_decrypt: bool = True" in content
+        assert "if not allow_decrypt:" in content

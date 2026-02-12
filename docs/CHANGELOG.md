@@ -7,6 +7,37 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.1.9-alpha] - 12 février 2026 - Fix CRM Sync + Keychain startup
+
+### Fixed
+- **CRM Google Sheets 401** : ajout du refresh automatique du token OAuth avant chaque sync (le refresh token était stocké mais jamais utilisé)
+- **Keychain au démarrage** : le chargement du profil utilisateur ne déclenche plus de prompt trousseau macOS au boot (`allow_decrypt=False` au preload)
+- **Bouton Reconnecter** : le bouton "Connecter Google Sheets" est désormais toujours visible (renommé "Reconnecter" quand un token existe), même si le token est expiré
+
+### Changed
+- Le callback OAuth CRM stocke maintenant les `client_id`/`client_secret` pour permettre le refresh automatique
+- `set_crm_tokens()` accepte les credentials client en paramètres optionnels
+- `ensure_valid_crm_token()` : nouvelle fonction qui refresh le token via refresh_token + credentials (EmailAccount Gmail ou stockés)
+
+### Added
+- Tests startup keychain safety (`test_main_startup.py`)
+
+---
+
+## [v0.1.8-alpha] - 12 février 2026 - Fix torch excludes PyInstaller
+
+### Fixed
+- **BUG-010 torch excludes** : retrait de tous les excludes torch du bundle PyInstaller (`torch.cuda`, `torch.distributed`, `torch.testing`, `torch.utils.tensorboard`). torch les importe à l'init et crash si ils manquent.
+- torch CPU-only skip sur macOS (PyPI torch macOS est déjà CPU-only)
+
+---
+
+## [v0.1.7-alpha] - 12 février 2026 - CASSÉE
+
+> Version cassée - le sidecar crash au démarrage sur toutes les plateformes (torch excludes ajoutés par erreur dans l'audit). Utiliser v0.1.8+.
+
+---
+
 ## [v3.7] - 3 février 2026 - Skills Multi-Modèle + Fix Opus
 
 ### Added

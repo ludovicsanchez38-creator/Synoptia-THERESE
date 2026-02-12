@@ -73,12 +73,13 @@ async def _load_user_profile():
 
     try:
         async with get_session_context() as session:
-            profile = await get_user_profile(session)
+            # Ne pas déclencher d'accès trousseau au boot: le déchiffrement se fera à la demande.
+            profile = await get_user_profile(session, allow_decrypt=False)
             if profile:
                 set_cached_profile(profile)
                 logger.info(f"User profile loaded: {profile.display_name()}")
             else:
-                logger.info("No user profile configured")
+                logger.info("No user profile configured (or preload deferred)")
     except Exception as e:
         logger.warning(f"Failed to load user profile: {e}")
 

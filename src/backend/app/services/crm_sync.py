@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 CRM_SPREADSHEET_ID_KEY = "crm_spreadsheet_id"
 CRM_SHEETS_TOKEN_KEY = "crm_sheets_access_token"
 CRM_SHEETS_REFRESH_TOKEN_KEY = "crm_sheets_refresh_token"
+CRM_SHEETS_CLIENT_ID_KEY = "crm_sheets_client_id"
+CRM_SHEETS_CLIENT_SECRET_KEY = "crm_sheets_client_secret"
 CRM_LAST_SYNC_KEY = "crm_last_sync"
 
 
@@ -358,8 +360,14 @@ async def set_crm_spreadsheet_id(session: AsyncSession, spreadsheet_id: str):
     await session.commit()
 
 
-async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token: str | None = None):
-    """Store CRM Sheets tokens in preferences."""
+async def set_crm_tokens(
+    session: AsyncSession,
+    access_token: str,
+    refresh_token: str | None = None,
+    client_id: str | None = None,
+    client_secret: str | None = None,
+):
+    """Store CRM Sheets tokens and credentials in preferences."""
     from app.services.encryption import encrypt_value
 
     # Store access token (encrypted)
@@ -401,6 +409,24 @@ async def set_crm_tokens(session: AsyncSession, access_token: str, refresh_token
             )
         session.add(pref)
 
+    # Store client credentials for token refresh
+    for key, value in [
+        (CRM_SHEETS_CLIENT_ID_KEY, client_id),
+        (CRM_SHEETS_CLIENT_SECRET_KEY, client_secret),
+    ]:
+        if value:
+            result = await session.execute(
+                select(Preference).where(Preference.key == key)
+            )
+            pref = result.scalar_one_or_none()
+            encrypted = encrypt_value(value)
+            if pref:
+                pref.value = encrypted
+                pref.updated_at = datetime.now(UTC)
+            else:
+                pref = Preference(key=key, value=encrypted, category="crm")
+            session.add(pref)
+
     await session.commit()
 
 
@@ -421,6 +447,126 @@ async def get_crm_access_token(session: AsyncSession) -> str | None:
     except Exception as e:
         logger.error(f"Failed to decrypt CRM token: {e}")
         return None
+
+
+async def ensure_valid_crm_token(session: AsyncSession) -> str | None:
+    """
+    Ensure the CRM Sheets access token is valid, refreshing if needed.
+
+    Tente de refresh le token via le refresh_token stocké.
+    Si pas de refresh_token ou échec du refresh, retourne le token actuel
+    (qui sera peut-être expiré - le 401 sera géré par l'appelant).
+
+    Returns:
+        Access token valide (ou None si aucun token).
+    """
+    from app.services.encryption import decrypt_value, encrypt_value
+    from app.services.oauth import (
+        GOOGLE_TOKEN_URL,
+        GSHEETS_SCOPES,
+        RUNTIME_PORT,
+        OAuthConfig,
+        get_oauth_service,
+    )
+
+    # Get current access token
+    access_token = await get_crm_access_token(session)
+    if not access_token:
+        return None
+
+    # Get refresh token
+    result = await session.execute(
+        select(Preference).where(Preference.key == CRM_SHEETS_REFRESH_TOKEN_KEY)
+    )
+    refresh_pref = result.scalar_one_or_none()
+    if not refresh_pref or not refresh_pref.value:
+        logger.warning("Pas de refresh token CRM, impossible de rafraîchir")
+        return access_token
+
+    try:
+        refresh_token = decrypt_value(refresh_pref.value)
+    except Exception:
+        logger.error("Impossible de déchiffrer le refresh token CRM")
+        return access_token
+
+    # Get client credentials (stored or from EmailAccount/MCP)
+    client_id = None
+    client_secret = None
+
+    # 1. Try stored CRM credentials
+    for key, attr in [
+        (CRM_SHEETS_CLIENT_ID_KEY, "client_id"),
+        (CRM_SHEETS_CLIENT_SECRET_KEY, "client_secret"),
+    ]:
+        result = await session.execute(
+            select(Preference).where(Preference.key == key)
+        )
+        pref = result.scalar_one_or_none()
+        if pref and pref.value:
+            try:
+                val = decrypt_value(pref.value)
+                if attr == "client_id":
+                    client_id = val
+                else:
+                    client_secret = val
+            except Exception:
+                pass
+
+    # 2. Fallback: EmailAccount Gmail credentials
+    if not client_id or not client_secret:
+        from app.models.entities import EmailAccount
+
+        email_result = await session.execute(
+            select(EmailAccount).where(
+                EmailAccount.provider == "gmail",
+                EmailAccount.client_id.isnot(None),
+                EmailAccount.client_secret.isnot(None),
+            )
+        )
+        email_account = email_result.scalar_one_or_none()
+        if email_account and email_account.client_id and email_account.client_secret:
+            try:
+                client_id = decrypt_value(email_account.client_id)
+                client_secret = decrypt_value(email_account.client_secret)
+            except Exception:
+                pass
+
+    if not client_id or not client_secret:
+        logger.warning("Pas de credentials OAuth pour refresh CRM token")
+        return access_token
+
+    # Refresh the token
+    try:
+        oauth_service = get_oauth_service()
+        config = OAuthConfig(
+            client_id=client_id,
+            client_secret=client_secret,
+            auth_url="",  # Non utilisé pour le refresh
+            token_url=GOOGLE_TOKEN_URL,
+            scopes=GSHEETS_SCOPES,
+            redirect_uri=f"http://localhost:{RUNTIME_PORT}/api/crm/sync/callback",
+        )
+
+        new_tokens = await oauth_service.refresh_access_token(refresh_token, config)
+        new_access_token = new_tokens["access_token"]
+
+        # Update stored access token
+        result = await session.execute(
+            select(Preference).where(Preference.key == CRM_SHEETS_TOKEN_KEY)
+        )
+        pref = result.scalar_one_or_none()
+        if pref:
+            pref.value = encrypt_value(new_access_token)
+            pref.updated_at = datetime.now(UTC)
+            session.add(pref)
+            await session.commit()
+
+        logger.info("CRM Sheets access token rafraîchi avec succès")
+        return new_access_token
+
+    except Exception as e:
+        logger.warning(f"Échec du refresh CRM token: {e} - utilisation du token actuel")
+        return access_token
 
 
 async def update_last_sync(session: AsyncSession):
