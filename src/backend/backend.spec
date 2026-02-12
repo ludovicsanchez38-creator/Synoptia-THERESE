@@ -118,11 +118,8 @@ a = Analysis(
         "pytest",
         "mypy",
         "ruff",
-        # Exclure modules torch inutiles (embeddings CPU uniquement)
-        # NOTE : NE PAS exclure torch.cuda - requis par torch/__init__.py à l'init
-        "torch.distributed",
-        "torch.testing",
-        "torch.utils.tensorboard",
+        # NOTE : NE PAS exclure les sous-modules torch (torch.cuda, torch.distributed, etc.)
+        # torch les importe à l'init et PyInstaller crash si ils manquent
         "triton",
         "caffe2",
     ],
