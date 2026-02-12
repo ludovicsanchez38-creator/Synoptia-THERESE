@@ -121,6 +121,32 @@ class TestZombieCleanup:
         assert "current_pid = os.getpid()" in content
         assert "pid != current_pid" in content
 
+    def test_kill_zombie_skips_parent_pid(self):
+        """Le cleanup ne doit PAS tuer le parent PyInstaller (bootloader) sur Windows."""
+        main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "main.py"
+        content = main_path.read_text(encoding="utf-8")
+
+        assert "parent_pid = os.getppid()" in content
+        assert "pid != current_pid and pid != parent_pid" in content
+
+    def test_kill_zombie_does_not_inherit_broken_stdin(self):
+        """Les subprocess du cleanup ne doivent pas hériter d'un stdin potentiellement cassé."""
+        main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "main.py"
+        content = main_path.read_text(encoding="utf-8")
+
+        assert "stdin=subprocess.DEVNULL" in content
+
+    def test_stdio_guard_detects_invalid_handles(self):
+        """La protection stdio doit valider les handles (pas seulement None)."""
+        main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "main.py"
+        content = main_path.read_text(encoding="utf-8")
+
+        assert "def _is_stream_valid(" in content
+        assert "os.fstat(" in content
+        assert "not _is_stream_valid(sys.stdout, readable=False)" in content
+        assert "not _is_stream_valid(sys.stderr, readable=False)" in content
+        assert "not _is_stream_valid(sys.stdin, readable=True)" in content
+
     def test_qdrant_lock_cleanup(self):
         """Le cleanup doit supprimer le fichier .lock Qdrant."""
         main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "main.py"

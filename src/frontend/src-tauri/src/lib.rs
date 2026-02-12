@@ -105,6 +105,7 @@ fn kill_zombie_backends() {
                 "name='backend.exe' and commandline like '%--host%127.0.0.1%'",
                 "get", "processid", "/format:list",
             ])
+            .stdin(std::process::Stdio::null())
             .output();
 
         if let Ok(output) = output {
@@ -120,6 +121,7 @@ fn kill_zombie_backends() {
                         log_sidecar(&format!("Zombie Windows (PID: {}), taskkill...", pid));
                         let _ = std::process::Command::new("taskkill")
                             .args(["/T", "/F", "/PID", &pid.to_string()])
+                            .stdin(std::process::Stdio::null())
                             .output();
                     }
                 }

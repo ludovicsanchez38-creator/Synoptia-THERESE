@@ -7,8 +7,66 @@ Use 'uvicorn app.main:app' to run the server.
 En mode sidecar (PyInstaller), accepte --host et --port en arguments.
 """
 
-import multiprocessing
+import os
 import sys
+
+
+def _is_stream_valid(stream, *, readable: bool) -> bool:
+    """Vérifie qu'un flux stdio est utilisable (pas seulement non-None)."""
+    if stream is None:
+        return False
+    try:
+        if getattr(stream, "closed", False):
+            return False
+        fileno = stream.fileno()
+        if fileno < 0:
+            return False
+        os.fstat(fileno)
+        if readable:
+            return not hasattr(stream, "readable") or stream.readable()
+        return not hasattr(stream, "writable") or stream.writable()
+    except Exception:
+        return False
+
+
+# ── BUG-009 : Protection stdio pour Windows sidecar ──────────────────
+# Quand Tauri (app GUI, windows_subsystem="windows") lance le sidecar,
+# les handles stdin/stdout/stderr peuvent être None ou invalides.
+# Cela crashe uvicorn, torch, ou tout code appelant sys.stdout.write().
+# On redirige vers devnull AVANT tout autre import.
+# Réf : https://github.com/pyinstaller/pyinstaller/issues/3692
+if getattr(sys, "frozen", False) and sys.platform == "win32":
+    if not _is_stream_valid(sys.stdout, readable=False):
+        sys.stdout = open(os.devnull, "w")  # noqa: SIM115
+    if not _is_stream_valid(sys.stderr, readable=False):
+        sys.stderr = open(os.devnull, "w")  # noqa: SIM115
+    if not _is_stream_valid(sys.stdin, readable=True):
+        sys.stdin = open(os.devnull, "r")  # noqa: SIM115
+
+# ── BUG-009 : Diagnostic de démarrage sidecar ────────────────────────
+# Écrit dans un fichier AVANT tout import lourd pour savoir si Python démarre.
+# Supprimable une fois le bug confirmé corrigé.
+if getattr(sys, "frozen", False):
+    try:
+        _diag_dir = os.path.join(os.path.expanduser("~"), ".therese", "logs")
+        os.makedirs(_diag_dir, exist_ok=True)
+        with open(os.path.join(_diag_dir, "diag-startup.txt"), "w") as _df:
+            _df.write(f"pid={os.getpid()}\n")
+            _df.write(f"ppid={os.getppid()}\n")
+            _df.write(f"argv={sys.argv}\n")
+            _df.write(f"platform={sys.platform}\n")
+            _df.write(f"stdout={sys.stdout}\n")
+            _df.write(f"stderr={sys.stderr}\n")
+            _df.write(f"stdin={sys.stdin}\n")
+            _df.write(f"stdout_valid={_is_stream_valid(sys.stdout, readable=False)}\n")
+            _df.write(f"stderr_valid={_is_stream_valid(sys.stderr, readable=False)}\n")
+            _df.write(f"stdin_valid={_is_stream_valid(sys.stdin, readable=True)}\n")
+            _df.write(f"frozen={getattr(sys, 'frozen', False)}\n")
+            _df.write(f"_MEIPASS={getattr(sys, '_MEIPASS', None)}\n")
+    except Exception:
+        pass
+
+import multiprocessing
 
 # CRITIQUE : freeze_support() AVANT tout import lourd (BUG-008)
 # Sans cela, les sous-processus (resource_tracker de torch/sentence_transformers)
@@ -36,7 +94,6 @@ if getattr(sys, "frozen", False) and len(sys.argv) >= 3:
         sys.exit(0)
 
 import argparse
-import os
 
 # PyInstaller : ajuster les chemins pour trouver alembic/ et les data files
 if getattr(sys, "_MEIPASS", None):
@@ -56,6 +113,11 @@ def _kill_zombie_backends():
     from pathlib import Path
 
     current_pid = os.getpid()
+    # BUG-009 : Sur Windows, PyInstaller --onefile crée 2 process
+    # (bootloader parent + Python child). os.getpid() retourne le child PID,
+    # mais wmic trouve le parent PID (aussi nommé backend.exe).
+    # Sans exclure le parent, taskkill /T tue le parent ET ses enfants = self-kill.
+    parent_pid = os.getppid()
 
     if sys.platform == "win32":
         try:
@@ -66,14 +128,16 @@ def _kill_zombie_backends():
                     "get", "processid", "/format:list",
                 ],
                 capture_output=True, text=True, timeout=5,
+                stdin=subprocess.DEVNULL,  # BUG-009 : ne pas hériter le stdin cassé de Tauri
             )
             for line in result.stdout.splitlines():
                 if line.startswith("ProcessId="):
                     pid = int(line.split("=")[1].strip())
-                    if pid != current_pid:
+                    if pid != current_pid and pid != parent_pid:
                         subprocess.run(
                             ["taskkill", "/T", "/F", "/PID", str(pid)],
                             capture_output=True, timeout=5,
+                            stdin=subprocess.DEVNULL,
                         )
         except Exception:
             pass
@@ -82,12 +146,13 @@ def _kill_zombie_backends():
             result = subprocess.run(
                 ["pgrep", "-f", r"backend.*--host.*127\.0\.0\.1"],
                 capture_output=True, text=True, timeout=5,
+                stdin=subprocess.DEVNULL,
             )
             pids = []
             for line in result.stdout.splitlines():
                 try:
                     pid = int(line.strip())
-                    if pid != current_pid:
+                    if pid != current_pid and pid != parent_pid:
                         pids.append(pid)
                 except ValueError:
                     continue
