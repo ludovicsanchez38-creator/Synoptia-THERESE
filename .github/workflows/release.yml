@@ -78,11 +78,7 @@ jobs:
         shell: bash
         run: |
           echo "=== Remplacement de torch par la version CPU-only ==="
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            .venv/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
-          else
-            .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
-          fi
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu --reinstall --no-deps
 
       - name: Build sidecar (PyInstaller)
         shell: bash
