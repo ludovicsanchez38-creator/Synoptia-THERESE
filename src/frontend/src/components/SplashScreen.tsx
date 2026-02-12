@@ -51,7 +51,16 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [message, setMessage] = useState(MESSAGES[0]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const apiBaseReady = useRef(false);
+
+  // Charger la version de l'app (tauri.conf.json)
+  useEffect(() => {
+    import('@tauri-apps/api/app')
+      .then(({ getVersion }) => getVersion())
+      .then(setAppVersion)
+      .catch(() => {});
+  }, []);
 
   const checkHealth = useCallback(async (): Promise<boolean> => {
     return probeHealth(getApiBase());
@@ -141,9 +150,12 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     return (
       <div className="h-screen w-screen bg-bg flex items-center justify-center" data-tauri-drag-region>
         <div className="text-center max-w-md px-6">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-6">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-2">
             THÉRÈSE
           </h1>
+          {appVersion && (
+            <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
+          )}
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
             <p className="text-red-400 text-sm">{error}</p>
           </div>
@@ -157,13 +169,16 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
       <div className="text-center">
         {/* Logo animé */}
         <h1
-          className="text-5xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-8"
+          className="text-5xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-2"
           style={{
             animation: 'pulse 2s ease-in-out infinite',
           }}
         >
           THÉRÈSE
         </h1>
+        {appVersion && (
+          <p className="text-text-muted text-xs mb-6">v{appVersion}-alpha</p>
+        )}
 
         {/* Barre de progression */}
         <div className="w-64 mx-auto mb-4">
