@@ -4,9 +4,11 @@
  * Wrapper standalone pour les panels ouverts dans une fenêtre séparée.
  * Initialise l'auth API AVANT de rendre le panel, puis pré-charge
  * les comptes email si nécessaire (Email/Calendrier).
+ * Inclut un Error Boundary pour éviter les écrans blancs en cas de crash.
  */
 
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { initApiBase, initializeAuth, getEmailAuthStatus } from '../../services/api';
 import { useEmailStore } from '../../stores/emailStore';
 import { EmailPanel } from '../email';
@@ -15,6 +17,52 @@ import { TasksPanel } from '../tasks';
 import { InvoicesPanel } from '../invoices';
 import { CRMPanel } from '../crm';
 import type { PanelType } from '../../services/windowManager';
+
+/** Error Boundary pour capturer les erreurs de rendu dans les panels */
+class PanelErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[PanelWindow] Erreur de rendu :', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen w-screen bg-bg flex items-center justify-center">
+          <div className="text-center max-w-md px-6">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
+              THÉRÈSE
+            </h1>
+            <p className="text-red-400 mt-4 text-sm">
+              Une erreur est survenue dans ce panel.
+            </p>
+            <p className="text-text-muted mt-2 text-xs">
+              {this.state.error?.message || 'Erreur inconnue'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 rounded-lg bg-accent-cyan/20 text-accent-cyan text-sm hover:bg-accent-cyan/30 transition-colors"
+            >
+              Recharger
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface PanelWindowProps {
   panel: PanelType;
@@ -95,12 +143,14 @@ export function PanelWindow({ panel }: PanelWindowProps) {
   }
 
   return (
-    <div className="h-screen w-screen bg-bg text-text overflow-hidden">
-      {panel === 'email' && <EmailPanel standalone />}
-      {panel === 'calendar' && <CalendarPanel standalone />}
-      {panel === 'tasks' && <TasksPanel standalone />}
-      {panel === 'invoices' && <InvoicesPanel standalone />}
-      {panel === 'crm' && <CRMPanel standalone />}
-    </div>
+    <PanelErrorBoundary>
+      <div className="h-screen w-screen bg-bg text-text overflow-hidden">
+        {panel === 'email' && <EmailPanel standalone />}
+        {panel === 'calendar' && <CalendarPanel standalone />}
+        {panel === 'tasks' && <TasksPanel standalone />}
+        {panel === 'invoices' && <InvoicesPanel standalone />}
+        {panel === 'crm' && <CRMPanel standalone />}
+      </div>
+    </PanelErrorBoundary>
   );
 }

@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Reply,
   ReplyAll,
@@ -24,13 +25,30 @@ import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 
 /**
- * Supprime les balises <style> et <link stylesheet> du HTML d'un email
- * pour empêcher le CSS de l'email de fuiter dans l'app.
+ * Sanitise le HTML d'un email :
+ * 1. DOMPurify neutralise les scripts, event handlers, et vecteurs XSS
+ * 2. Supprime les <style>/<link stylesheet> pour éviter les fuites CSS
  */
 function sanitizeEmailHtml(html: string): string {
-  let sanitized = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  sanitized = sanitized.replace(/<link[^>]*rel=["']stylesheet["'][^>]*\/?>/gi, '');
-  return sanitized;
+  const purified = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'a', 'b', 'i', 'u', 'em', 'strong', 'p', 'br', 'div', 'span',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+      'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+      'img', 'blockquote', 'pre', 'code', 'hr', 'sup', 'sub', 'small',
+      'figure', 'figcaption', 'abbr', 'address', 'details', 'summary',
+    ],
+    ALLOWED_ATTR: [
+      'href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height',
+      'colspan', 'rowspan', 'cellpadding', 'cellspacing', 'border',
+      'align', 'valign', 'target', 'rel',
+    ],
+    ALLOW_DATA_ATTR: false,
+    ADD_ATTR: ['target'],
+    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
+  });
+  // Supprimer les <link stylesheet> résiduels
+  return purified.replace(/<link[^>]*rel=["']stylesheet["'][^>]*\/?>/gi, '');
 }
 
 interface EmailDetailProps {

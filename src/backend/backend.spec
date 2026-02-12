@@ -118,6 +118,13 @@ a = Analysis(
         "pytest",
         "mypy",
         "ruff",
+        # Exclure CUDA et modules torch inutiles (embeddings CPU uniquement)
+        "torch.cuda",
+        "torch.distributed",
+        "torch.testing",
+        "torch.utils.tensorboard",
+        "triton",
+        "caffe2",
     ],
     noarchive=False,
     cipher=block_cipher,

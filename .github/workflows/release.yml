@@ -74,6 +74,16 @@ jobs:
       - name: Installer UV et dépendances Python
         run: pip install uv && uv sync --dev
 
+      - name: Installer torch CPU-only (réduction ~1 Go)
+        shell: bash
+        run: |
+          echo "=== Remplacement de torch par la version CPU-only ==="
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            .venv/Scripts/pip install torch --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
+          else
+            .venv/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu --force-reinstall --no-deps
+          fi
+
       - name: Build sidecar (PyInstaller)
         shell: bash
         run: |

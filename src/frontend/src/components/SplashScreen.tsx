@@ -18,10 +18,23 @@ const MESSAGES = [
   'Presque prêt...',
 ];
 
+/**
+ * Crée un AbortSignal qui expire après `ms` millisecondes.
+ * Polyfill pour Safari <17.4 où AbortSignal.timeout() n'existe pas.
+ */
+function createTimeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 /** Teste si un backend THÉRÈSE répond sur une URL donnée */
 async function probeHealth(baseUrl: string): Promise<boolean> {
   try {
-    const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) });
+    const res = await fetch(`${baseUrl}/health`, { signal: createTimeoutSignal(2000) });
     if (res.ok) {
       const data = await res.json();
       // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
