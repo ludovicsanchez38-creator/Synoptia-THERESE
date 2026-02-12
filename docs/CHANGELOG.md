@@ -7,6 +7,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.1.10-alpha] - 12 février 2026 - Fix port IPC Mac M1
+
+### Fixed
+- **BUG-011 "Backend ne répond pas" sur Mac M1** : `initApiBase()` retry jusqu'à 10 fois (300ms entre chaque) si l'IPC Tauri échoue ou retourne le port par défaut. Le bridge IPC n'était pas prêt au chargement du WebView sur certains Mac, causant un fallback sur port 8000 alors que le backend tournait sur un port dynamique.
+- Version backend/frontend synchronisées à 0.1.10
+
+---
+
 ## [v0.1.9-alpha] - 12 février 2026 - Fix CRM Sync + Keychain startup
 
 ### Fixed
