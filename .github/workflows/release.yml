@@ -75,6 +75,7 @@ jobs:
         run: pip install uv && uv sync --dev
 
       - name: Installer torch CPU-only (réduction ~1 Go)
+        if: runner.os != 'macOS'
         shell: bash
         run: |
           echo "=== Remplacement de torch par la version CPU-only ==="
