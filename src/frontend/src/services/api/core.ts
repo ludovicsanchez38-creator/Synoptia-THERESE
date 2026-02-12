@@ -15,17 +15,43 @@ export let API_BASE = 'http://127.0.0.1:8000';
  */
 let _initPromise: Promise<void> | null = null;
 
-/** Initialise API_BASE avec le port dynamique du sidecar (via Tauri IPC) */
+/**
+ * Initialise API_BASE avec le port dynamique du sidecar (via Tauri IPC).
+ *
+ * Retry jusqu'à 10 fois avec 300ms de délai si l'IPC échoue ou retourne
+ * le port par défaut (8000). Sur certains Mac (M1), le bridge IPC Tauri
+ * n'est pas prêt immédiatement au chargement du WebView.
+ */
 export function initApiBase(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
+    const MAX_RETRIES = 10;
+    const RETRY_DELAY = 300;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        const port: number = await invoke('get_backend_port');
+        if (port && port !== 8000) {
+          API_BASE = `http://127.0.0.1:${port}`;
+          console.log(`[API] Port backend : ${port} (tentative ${attempt + 1})`);
+          return;
+        }
+        // Port 8000 = valeur initiale, le setup Rust n'a peut-être pas encore mis à jour
+        console.log(`[API] Port 8000 reçu, retry ${attempt + 1}/${MAX_RETRIES}...`);
+      } catch {
+        console.log(`[API] IPC échoué, retry ${attempt + 1}/${MAX_RETRIES}...`);
+      }
+      await new Promise((r) => setTimeout(r, RETRY_DELAY));
+    }
+
+    // Dernier essai ou fallback
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const port: number = await invoke('get_backend_port');
       API_BASE = `http://127.0.0.1:${port}`;
-      console.log(`[API] Port backend : ${port}`);
+      console.log(`[API] Port backend final : ${port}`);
     } catch {
-      // En dev (pas de sidecar), on garde le fallback 8000
       console.log('[API] Fallback port 8000 (mode dev)');
     }
   })();
