@@ -7,6 +7,17 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.1.12-alpha] - 13 février 2026 - Splash timeout + tests non-régression
+
+### Fixed
+- **Splash "backend ne répond pas" au premier lancement** : timeout du SplashScreen passé de 60s à 120s. Le premier lancement extrait PyInstaller + télécharge le modèle d'embeddings (~250 Mo), ce qui peut dépasser 60s sur certaines machines.
+
+### Added
+- **Tests de non-régression** (`tests/test_regression.py`) : 19 tests couvrant tous les bugs critiques (BUG-002 à BUG-013 + XSS). Chaque fix a désormais un test dédié qui empêche la régression.
+- Tests encryption adaptés au lazy init (v0.1.11)
+
+---
+
 ## [v0.1.11-alpha] - 13 février 2026 - Fix crash Mac M4 Max + Keychain UX
 
 ### Fixed

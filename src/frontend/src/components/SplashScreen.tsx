@@ -8,13 +8,14 @@ interface SplashScreenProps {
 }
 
 const POLL_INTERVAL = 500;
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 120_000; // 2 min : le premier lancement extrait PyInstaller + télécharge le modèle d'embeddings
 
 const MESSAGES = [
   'Démarrage du moteur...',
   'Chargement des modèles...',
   'Préparation de la mémoire...',
   'Initialisation des services...',
+  'Premier lancement, ça peut prendre un moment...',
   'Presque prêt...',
 ];
 

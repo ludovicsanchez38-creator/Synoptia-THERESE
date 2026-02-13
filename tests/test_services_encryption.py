@@ -170,6 +170,8 @@ class TestKeyFilePermissions:
     def test_key_file_permissions(self, mock_encryption_paths):
         """Le fichier de cle a les permissions 600."""
         service = EncryptionService()
+        # Déclencher le lazy init pour créer le fichier de clé
+        service.encrypt("trigger init")
         key_file = mock_encryption_paths / ".encryption_key"
 
         assert key_file.exists()
@@ -265,6 +267,8 @@ class TestKeyGeneration:
     def test_key_generation_creates_file(self, mock_encryption_paths):
         """Generation d'une nouvelle cle cree le fichier."""
         service = EncryptionService()
+        # Déclencher le lazy init pour créer le fichier de clé
+        service.encrypt("trigger init")
         key_file = mock_encryption_paths / ".encryption_key"
 
         assert key_file.exists()
@@ -288,8 +292,9 @@ class TestKeyGeneration:
 
     def test_key_loading_from_file(self, mock_encryption_paths):
         """Cle chargee depuis le fichier au lieu de generee."""
-        # Genere une premiere cle
+        # Genere une premiere cle (déclenche le lazy init)
         service1 = EncryptionService()
+        service1.encrypt("trigger init")
         key_file = mock_encryption_paths / ".encryption_key"
         original_key = key_file.read_bytes()
 
@@ -306,21 +311,24 @@ class TestKeyGeneration:
 class TestErrorHandling:
     """Tests de gestion d'erreurs."""
 
-    def test_encrypt_with_uninitialized_service(self, mock_encryption_paths):
-        """Chiffrement avec service non initialise leve RuntimeError."""
+    def test_encrypt_auto_initializes_on_first_call(self, mock_encryption_paths):
+        """Chiffrement avec _fernet=None déclenche l'init lazy (pas d'erreur)."""
         service = EncryptionService()
         service._fernet = None
 
-        with pytest.raises(RuntimeError, match="non initialise"):
-            service.encrypt("test")
+        # Le lazy init doit s'activer automatiquement
+        result = service.encrypt("test")
+        assert len(result) > 0, "encrypt() doit auto-initialiser et fonctionner"
 
-    def test_decrypt_with_uninitialized_service(self, mock_encryption_paths):
-        """Dechiffrement avec service non initialise leve RuntimeError."""
+    def test_decrypt_auto_initializes_on_first_call(self, mock_encryption_paths):
+        """Dechiffrement avec _fernet=None déclenche l'init lazy (pas d'erreur)."""
         service = EncryptionService()
-        service._fernet = None
+        encrypted = service.encrypt("test")
 
-        with pytest.raises(RuntimeError, match="non initialise"):
-            service.decrypt("test")
+        # Reset fernet pour forcer le lazy init
+        service._fernet = None
+        decrypted = service.decrypt(encrypted)
+        assert decrypted == "test", "decrypt() doit auto-initialiser et fonctionner"
 
     def test_invalid_token_logging(self, mock_encryption_paths, caplog):
         """Les erreurs de dechiffrement sont loggees."""
@@ -357,6 +365,8 @@ class TestKeyRotation:
     def test_rotate_key_returns_old_key(self, mock_encryption_paths):
         """rotate_key() retourne l'ancienne cle."""
         service = EncryptionService()
+        # Déclencher le lazy init pour créer le fichier de clé
+        service.encrypt("trigger init")
         key_file = mock_encryption_paths / ".encryption_key"
         first_key = key_file.read_bytes()
 
