@@ -7,6 +7,24 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.1.13-alpha] - 13 février 2026 - Fix clés API 401 + auto-création CRM Sheet
+
+### Fixed
+- **Bug critique : "API error: 401" sur tous les providers** : quand l'utilisateur changeait de provider LLM dans les paramètres, les clés API étaient envoyées chiffrées (blob Fernet brut) aux APIs au lieu d'être déchiffrées. Corrigé dans `config.py` (set_llm_config), `voice.py` (clé Groq) et `crm.py` (fallback Gemini).
+- **Cache clés API** : les clés qui échouent au déchiffrement sont maintenant ignorées au lieu d'être mises en cache avec leur valeur chiffrée (`llm.py`)
+- **CRM sync NoneType** : protection `safe_get=True` sur tous les appels upsert pour éviter les crashs quand Google Sheets renvoie des cellules vides
+
+### Added
+- **Auto-création du Google Sheet CRM à la connexion OAuth** : quand un utilisateur connecte son compte Google, un spreadsheet "THERESE CRM" est créé automatiquement avec 4 onglets pré-formatés (Clients, Projects, Deliverables, Tasks) et les bons en-têtes de colonnes
+- **Polling frontend OAuth** : le panneau CRM détecte automatiquement quand la connexion OAuth est terminée et met à jour l'UI (plus besoin de recharger)
+- **Méthode `create_spreadsheet()`** dans GoogleSheetsService pour créer des spreadsheets via l'API
+
+### Changed
+- **Scope OAuth Google Sheets** : passé de `spreadsheets.readonly` à `spreadsheets` pour permettre la création de spreadsheets
+- Refactoring du code de lecture des clés API dans `set_llm_config` (5 blocs dupliqués remplacés par un helper + dictionnaire)
+
+---
+
 ## [v0.1.12-alpha] - 13 février 2026 - Splash timeout + tests non-régression
 
 ### Fixed
