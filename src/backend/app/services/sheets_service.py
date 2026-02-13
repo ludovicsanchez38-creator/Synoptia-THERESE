@@ -189,6 +189,58 @@ class GoogleSheetsService:
 
         return data
 
+    async def create_spreadsheet(self, title: str, sheets: list[dict]) -> dict:
+        """
+        Crée un nouveau spreadsheet avec les onglets spécifiés.
+
+        Args:
+            title: Titre du spreadsheet
+            sheets: Liste de dicts avec 'title' (nom de l'onglet) et 'headers' (liste des colonnes)
+
+        Returns:
+            Réponse API avec spreadsheetId et spreadsheetUrl
+        """
+        body = {
+            "properties": {"title": title},
+            "sheets": [
+                {
+                    "properties": {"title": s["title"], "index": i},
+                    "data": [
+                        {
+                            "startRow": 0,
+                            "startColumn": 0,
+                            "rowData": [
+                                {
+                                    "values": [
+                                        {"userEnteredValue": {"stringValue": h}}
+                                        for h in s["headers"]
+                                    ]
+                                }
+                            ],
+                        }
+                    ],
+                }
+                for i, s in enumerate(sheets)
+            ],
+        }
+
+        client = await get_http_client()
+        response = await client.post(
+            SHEETS_API_BASE,
+            headers=self.headers,
+            json=body,
+            timeout=30.0,
+        )
+
+        if response.status_code not in (200, 201):
+            logger.error(f"Sheets API create error: {response.status_code} {response.text}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Impossible de créer le spreadsheet : {response.text}",
+            )
+
+        return response.json()
+
     async def append_row(
         self,
         spreadsheet_id: str,

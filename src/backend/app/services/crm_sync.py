@@ -38,6 +38,35 @@ CRM_SHEETS_CLIENT_ID_KEY = "crm_sheets_client_id"
 CRM_SHEETS_CLIENT_SECRET_KEY = "crm_sheets_client_secret"
 CRM_LAST_SYNC_KEY = "crm_last_sync"
 
+# Structure du Google Sheet CRM auto-créé
+CRM_SHEET_STRUCTURE = [
+    {
+        "title": "Clients",
+        "headers": [
+            "ID", "Nom", "Entreprise", "Email", "Tel",
+            "Source", "Stage", "Score", "Tags", "LastInteraction", "Notes",
+        ],
+    },
+    {
+        "title": "Projects",
+        "headers": [
+            "ID", "ClientID", "Name", "Description", "Status", "Budget", "Notes",
+        ],
+    },
+    {
+        "title": "Deliverables",
+        "headers": [
+            "ID", "ProjectID", "Title", "Description", "Status", "DueDate", "DeliveredDate",
+        ],
+    },
+    {
+        "title": "Tasks",
+        "headers": [
+            "ID", "Title", "Description", "Priority", "Status", "DueDate", "CreatedAt", "CompletedAt",
+        ],
+    },
+]
+
 
 @dataclass
 class SyncStats:
@@ -167,7 +196,7 @@ class CRMSyncService:
         """
         for row in clients_data:
             try:
-                contact, created = await upsert_contact(self.session, row)
+                contact, created = await upsert_contact(self.session, row, safe_get=True)
                 # Champ specifique au sync service : last_interaction
                 last_interaction = parse_datetime(row.get("LastInteraction", ""))
                 contact.last_interaction = last_interaction
@@ -189,7 +218,7 @@ class CRMSyncService:
         """
         for row in projects_data:
             try:
-                project, created = await upsert_project(self.session, row)
+                project, created = await upsert_project(self.session, row, safe_get=True)
                 # Verification specifique : le contact lie existe-t-il ?
                 if project.contact_id:
                     contact = await self.session.get(Contact, project.contact_id)
@@ -225,14 +254,14 @@ class CRMSyncService:
 
         for row in deliverables_data:
             try:
-                deliverable_id = row.get("ID", "").strip()
+                deliverable_id = (row.get("ID", "") or "").strip()
                 if not deliverable_id:
                     continue
 
                 existing = await self.session.get(Deliverable, deliverable_id)
 
                 # Get project ID
-                project_id = row.get("ProjectID", "").strip()
+                project_id = (row.get("ProjectID", "") or "").strip()
                 if not project_id:
                     continue  # Skip deliverables without project
 
@@ -243,7 +272,7 @@ class CRMSyncService:
                     continue
 
                 # Parse status
-                raw_status = row.get("Status", "a_faire").strip().lower()
+                raw_status = (row.get("Status", "a_faire") or "a_faire").strip().lower()
                 status = status_map.get(raw_status, "a_faire")
 
                 # Parse dates
@@ -251,8 +280,8 @@ class CRMSyncService:
                 completed_at = parse_datetime(row.get("DeliveredDate", ""))
 
                 if existing:
-                    existing.title = row.get("Title", "Sans titre").strip()
-                    existing.description = row.get("Description", "").strip() or None
+                    existing.title = (row.get("Title", "Sans titre") or "Sans titre").strip()
+                    existing.description = (row.get("Description", "") or "").strip() or None
                     existing.project_id = project_id
                     existing.status = status
                     existing.due_date = due_date
@@ -263,8 +292,8 @@ class CRMSyncService:
                 else:
                     deliverable = Deliverable(
                         id=deliverable_id,
-                        title=row.get("Title", "Sans titre").strip(),
-                        description=row.get("Description", "").strip() or None,
+                        title=(row.get("Title", "Sans titre") or "Sans titre").strip(),
+                        description=(row.get("Description", "") or "").strip() or None,
                         project_id=project_id,
                         status=status,
                         due_date=due_date,
@@ -285,7 +314,7 @@ class CRMSyncService:
         """
         for row in tasks_data:
             try:
-                _, created = await upsert_task(self.session, row)
+                _, created = await upsert_task(self.session, row, safe_get=True)
                 if created:
                     stats.tasks_created += 1
                 else:
@@ -428,6 +457,66 @@ async def set_crm_tokens(
             session.add(pref)
 
     await session.commit()
+
+
+async def auto_create_crm_spreadsheet(
+    session: AsyncSession,
+    access_token: str,
+) -> dict | None:
+    """
+    Crée automatiquement un Google Sheet CRM si aucun n'est configuré.
+
+    Vérifie d'abord si un spreadsheet_id existe déjà.
+    Si non, crée un nouveau Sheet avec la structure CRM (4 onglets).
+
+    Args:
+        session: Session async
+        access_token: Token OAuth valide avec scope spreadsheets
+
+    Returns:
+        Dict avec spreadsheetId et spreadsheetUrl si créé, None si déjà configuré
+    """
+    # Vérifier si un spreadsheet est déjà configuré
+    result = await session.execute(
+        select(Preference).where(Preference.key == CRM_SPREADSHEET_ID_KEY)
+    )
+    existing = result.scalar_one_or_none()
+    if existing and existing.value:
+        logger.info(f"CRM spreadsheet déjà configuré : {existing.value}")
+        return None
+
+    # Créer le spreadsheet
+    sheets_service = GoogleSheetsService(access_token=access_token)
+    try:
+        response = await sheets_service.create_spreadsheet(
+            title="THÉRÈSE CRM",
+            sheets=CRM_SHEET_STRUCTURE,
+        )
+    except Exception as e:
+        logger.error(f"Impossible de créer le spreadsheet CRM : {e}")
+        return None
+
+    spreadsheet_id = response.get("spreadsheetId")
+    spreadsheet_url = response.get("spreadsheetUrl")
+
+    if not spreadsheet_id:
+        logger.error("Réponse Sheets API sans spreadsheetId")
+        return None
+
+    # Sauvegarder l'ID dans les préférences
+    pref = Preference(
+        key=CRM_SPREADSHEET_ID_KEY,
+        value=spreadsheet_id,
+        category="crm",
+    )
+    session.add(pref)
+    await session.commit()
+
+    logger.info(f"CRM spreadsheet créé : {spreadsheet_id} ({spreadsheet_url})")
+    return {
+        "spreadsheet_id": spreadsheet_id,
+        "spreadsheet_url": spreadsheet_url,
+    }
 
 
 async def get_crm_access_token(session: AsyncSession) -> str | None:

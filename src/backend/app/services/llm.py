@@ -66,7 +66,8 @@ async def load_api_key_cache() -> None:
                         try:
                             value = encryption.decrypt(value)
                         except Exception:
-                            logger.debug(f"Decryption failed for {pref_key}")
+                            logger.warning(f"Decryption failed for {pref_key}, skipping")
+                            continue
                     _api_key_cache[pref_key] = value
 
         _api_key_cache_loaded = True

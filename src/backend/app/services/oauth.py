@@ -74,9 +74,9 @@ GCAL_SCOPES = [
 # Combined Google scopes (Gmail + Calendar)
 GOOGLE_ALL_SCOPES = GMAIL_SCOPES + GCAL_SCOPES
 
-# Google Sheets scopes (for CRM sync)
+# Google Sheets scopes (for CRM sync - read/write pour auto-création du Sheet)
 GSHEETS_SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "https://www.googleapis.com/auth/spreadsheets",
 ]
 
 

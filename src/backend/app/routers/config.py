@@ -26,7 +26,7 @@ from app.models.schemas import (
     WorkingDirectoryUpdate,
 )
 from app.services.audit import AuditAction, log_activity
-from app.services.encryption import encrypt_value
+from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.http_client import get_http_client
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -841,48 +841,39 @@ async def set_llm_config(
     api_key = None
     base_url = None
 
-    if provider == LLMProvider.ANTHROPIC:
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        result = await session.execute(
-            select(Preference).where(Preference.key == "anthropic_api_key")
-        )
-        pref = result.scalar_one_or_none()
-        if pref:
-            api_key = api_key or pref.value
-    elif provider == LLMProvider.OPENAI:
-        api_key = os.environ.get("OPENAI_API_KEY")
-        result = await session.execute(
-            select(Preference).where(Preference.key == "openai_api_key")
-        )
-        pref = result.scalar_one_or_none()
-        if pref:
-            api_key = api_key or pref.value
-    elif provider == LLMProvider.GEMINI:
-        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        result = await session.execute(
-            select(Preference).where(Preference.key == "gemini_api_key")
-        )
-        pref = result.scalar_one_or_none()
-        if pref:
-            api_key = api_key or pref.value
-    elif provider == LLMProvider.MISTRAL:
-        api_key = os.environ.get("MISTRAL_API_KEY")
-        result = await session.execute(
-            select(Preference).where(Preference.key == "mistral_api_key")
-        )
-        pref = result.scalar_one_or_none()
-        if pref:
-            api_key = api_key or pref.value
-    elif provider == LLMProvider.GROK:
-        api_key = os.environ.get("XAI_API_KEY")
-        result = await session.execute(
-            select(Preference).where(Preference.key == "grok_api_key")
-        )
-        pref = result.scalar_one_or_none()
-        if pref:
-            api_key = api_key or pref.value
-    elif provider == LLMProvider.OLLAMA:
+    # Helper: déchiffrer la clé API stockée en DB (chiffrée Fernet)
+    def _decrypt_pref_value(pref_value: str) -> str | None:
+        if not pref_value:
+            return None
+        if is_value_encrypted(pref_value):
+            try:
+                return decrypt_value(pref_value)
+            except Exception:
+                logger.warning("Échec déchiffrement clé API dans set_llm_config")
+                return None
+        return pref_value
+
+    env_key_map = {
+        LLMProvider.ANTHROPIC: ("ANTHROPIC_API_KEY", "anthropic_api_key"),
+        LLMProvider.OPENAI: ("OPENAI_API_KEY", "openai_api_key"),
+        LLMProvider.GEMINI: ("GEMINI_API_KEY", "gemini_api_key"),
+        LLMProvider.MISTRAL: ("MISTRAL_API_KEY", "mistral_api_key"),
+        LLMProvider.GROK: ("XAI_API_KEY", "grok_api_key"),
+    }
+
+    if provider == LLMProvider.OLLAMA:
         base_url = settings.ollama_base_url
+    elif provider in env_key_map:
+        env_var, pref_key = env_key_map[provider]
+        api_key = os.environ.get(env_var)
+        if provider == LLMProvider.GEMINI and not api_key:
+            api_key = os.environ.get("GOOGLE_API_KEY")
+        result = await session.execute(
+            select(Preference).where(Preference.key == pref_key)
+        )
+        pref = result.scalar_one_or_none()
+        if pref and not api_key:
+            api_key = _decrypt_pref_value(pref.value)
 
     # Create new config
     config = LLMConfig(

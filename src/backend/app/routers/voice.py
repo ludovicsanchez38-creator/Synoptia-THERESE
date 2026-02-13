@@ -29,12 +29,20 @@ async def _get_groq_api_key(session: AsyncSession) -> str | None:
     if api_key:
         return api_key
 
-    # Check database
+    # Check database (valeur chiffrée Fernet)
     result = await session.execute(
         select(Preference).where(Preference.key == "groq_api_key")
     )
     pref = result.scalar_one_or_none()
-    if pref:
+    if pref and pref.value:
+        from app.services.encryption import decrypt_value, is_value_encrypted
+
+        if is_value_encrypted(pref.value):
+            try:
+                return decrypt_value(pref.value)
+            except Exception:
+                logger.warning("Échec déchiffrement clé Groq")
+                return None
         return pref.value
 
     return None

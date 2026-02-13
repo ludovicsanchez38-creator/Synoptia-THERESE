@@ -85,11 +85,38 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         window.open(result.auth_url, '_blank');
       }
 
-      setSuccess('Autorisez l\'accès dans le navigateur puis revenez ici');
+      setSuccess('Autorisez l\'accès dans le navigateur...');
+
+      // Polling : détecter quand le callback OAuth est terminé
+      let attempts = 0;
+      const maxAttempts = 40; // 2 minutes (3s x 40)
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          setConnecting(false);
+          return;
+        }
+        try {
+          const cfg = await api.getCRMSyncConfig();
+          if (cfg.has_token) {
+            clearInterval(pollInterval);
+            setConfig(cfg);
+            if (cfg.spreadsheet_id) {
+              setSpreadsheetId(cfg.spreadsheet_id);
+              setSuccess('Google Sheets connecté et CRM créé automatiquement');
+            } else {
+              setSuccess('Google Sheets connecté avec succès');
+            }
+            setConnecting(false);
+          }
+        } catch {
+          // Ignorer les erreurs de polling
+        }
+      }, 3000);
     } catch (err: any) {
       console.error('Failed to initiate OAuth:', err);
       setError(err.message || 'Impossible de lancer la connexion OAuth');
-    } finally {
       setConnecting(false);
     }
   };

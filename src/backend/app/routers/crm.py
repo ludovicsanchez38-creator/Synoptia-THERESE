@@ -1003,7 +1003,7 @@ async def handle_sheets_oauth_callback(
     tokens = await oauth_service.handle_callback(state, code, error)
 
     # Store tokens + credentials pour le refresh automatique
-    from app.services.crm_sync import set_crm_tokens
+    from app.services.crm_sync import auto_create_crm_spreadsheet, set_crm_tokens
     await set_crm_tokens(
         session,
         tokens["access_token"],
@@ -1012,10 +1012,23 @@ async def handle_sheets_oauth_callback(
         client_secret=tokens.get("client_secret"),
     )
 
-    return {
+    # Auto-créer le Google Sheet CRM si aucun n'est configuré
+    spreadsheet_info = await auto_create_crm_spreadsheet(
+        session,
+        tokens["access_token"],
+    )
+
+    result = {
         "success": True,
         "message": "Google Sheets connecté avec succès",
     }
+
+    if spreadsheet_info:
+        result["spreadsheet_id"] = spreadsheet_info["spreadsheet_id"]
+        result["spreadsheet_url"] = spreadsheet_info["spreadsheet_url"]
+        result["message"] = "Google Sheets connecté et CRM créé automatiquement"
+
+    return result
 
 
 @router.post("/sync", response_model=CRMSyncResponse)
@@ -1068,7 +1081,8 @@ async def sync_crm(
                 api_key = decrypt_value(gemini_pref.value)
                 logger.info("Using Gemini API key for CRM sync")
             except Exception:
-                api_key = gemini_pref.value
+                logger.warning("Échec déchiffrement clé Gemini pour CRM sync")
+                api_key = None
 
     if not access_token and not api_key:
         raise HTTPException(
