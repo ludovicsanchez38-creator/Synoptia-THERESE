@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "THÉRÈSE",
+  "productName": "THERESE",
   "version": "0.1.15",
   "identifier": "fr.synoptia.therese",
   "build": {
