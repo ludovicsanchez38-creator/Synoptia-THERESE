@@ -35,6 +35,7 @@ class EmbeddingsService:
             self._model = SentenceTransformer(
                 settings.embedding_model,
                 trust_remote_code=True,  # Required for nomic models
+                device="cpu",  # Force CPU : MPS (Metal) crash silencieusement sur certains Mac (M4 Max)
             )
             logger.info("Embedding model loaded successfully")
         return self._model

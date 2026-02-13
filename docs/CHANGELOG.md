@@ -7,6 +7,14 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.1.11-alpha] - 13 février 2026 - Fix crash Mac M4 Max + Keychain UX
+
+### Fixed
+- **BUG-012 Crash silencieux Mac M4 Max** : forcer `device='cpu'` pour sentence-transformers. PyTorch détectait automatiquement MPS (Metal Performance Shaders) et crashait silencieusement sur certains Mac Apple Silicon (M4 Max). Les embeddings texte sont aussi rapides en CPU.
+- **Keychain bloque le démarrage 20+ secondes** : l'init du service de chiffrement est maintenant lazy (au premier encrypt/decrypt, pas au boot). Le health endpoint répond en ~4s au lieu de ~26s. Le prompt Trousseau macOS n'apparaît que quand l'utilisateur a besoin d'une clé API.
+
+---
+
 ## [v0.1.10-alpha] - 12 février 2026 - Fix port IPC Mac M1
 
 ### Fixed

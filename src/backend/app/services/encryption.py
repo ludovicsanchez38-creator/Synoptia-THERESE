@@ -58,13 +58,17 @@ class EncryptionService:
     _lock: threading.Lock = threading.Lock()
 
     def __new__(cls) -> "EncryptionService":
-        """Singleton pattern (thread-safe via double-checked locking)."""
+        """Singleton pattern (thread-safe via double-checked locking).
+
+        L'initialisation est lazy : le Keychain n'est contacté qu'au premier
+        encrypt()/decrypt(), pas au démarrage. Ça évite de bloquer le lifespan
+        (et donc le health endpoint) pendant que l'utilisateur tape son mot de
+        passe Trousseau macOS.
+        """
         if cls._instance is None:
             with cls._lock:
-                # Double-check apres acquisition du verrou
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
-                    cls._instance._initialize()
         return cls._instance
 
     def _initialize(self) -> None:
@@ -197,6 +201,13 @@ class EncryptionService:
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         return key
 
+    def _ensure_initialized(self) -> None:
+        """Lazy init : déclenche le Keychain uniquement au premier usage."""
+        if self._fernet is None:
+            with self._lock:
+                if self._fernet is None:
+                    self._initialize()
+
     def encrypt(self, plaintext: str) -> str:
         """
         Chiffre une chaine de caracteres.
@@ -210,8 +221,7 @@ class EncryptionService:
         if not plaintext:
             return ""
 
-        if not self._fernet:
-            raise RuntimeError("Service de chiffrement non initialise")
+        self._ensure_initialized()
 
         encrypted = self._fernet.encrypt(plaintext.encode("utf-8"))
         return base64.urlsafe_b64encode(encrypted).decode("utf-8")
@@ -232,8 +242,7 @@ class EncryptionService:
         if not ciphertext:
             return ""
 
-        if not self._fernet:
-            raise RuntimeError("Service de chiffrement non initialise")
+        self._ensure_initialized()
 
         try:
             encrypted = base64.urlsafe_b64decode(ciphertext.encode("utf-8"))
