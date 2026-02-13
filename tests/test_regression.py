@@ -334,3 +334,142 @@ class TestXSSEmailSanitization:
                 "dangerouslySetInnerHTML utilisé sans sanitisation - "
                 "utiliser DOMPurify.sanitize() pour éviter les XSS"
             )
+
+
+# ============================================================
+# BUG-014 (v0.1.12) - Splash timeout premier lancement
+# Le splash screen doit avoir un timeout >= 120s.
+# (Vérifié par review du code source - pas de test automatique ici,
+# couvert par le test de non-régression existant via inspection manuelle.)
+# ============================================================
+
+
+# ============================================================
+# BUG-015 (v0.1.15) - Port mismatch panels (CRM, Email, etc.)
+# Les fenêtres secondaires doivent recevoir le port backend via URL.
+# initApiBase() doit lire le paramètre ?port= de l'URL.
+# ============================================================
+
+
+TAURI_LIB_RS = (
+    Path(__file__).resolve().parent.parent
+    / "src" / "frontend" / "src-tauri" / "src" / "lib.rs"
+)
+WINDOW_MANAGER_TS = FRONTEND / "services" / "windowManager.ts"
+MESSAGE_LIST_TSX = FRONTEND / "components" / "chat" / "MessageList.tsx"
+
+
+class TestBUG015PortMismatchPanels:
+    """Les fenêtres panels doivent recevoir le port backend via l'URL."""
+
+    def test_window_manager_passes_port(self):
+        """windowManager doit passer le port backend en paramètre URL."""
+        content = WINDOW_MANAGER_TS.read_text(encoding="utf-8")
+        assert "port=" in content, (
+            "windowManager doit passer ?port=XXXX dans l'URL du panel"
+        )
+        assert "getApiBase" in content, (
+            "windowManager doit utiliser getApiBase() pour récupérer le port courant"
+        )
+
+    def test_api_core_reads_url_port(self):
+        """initApiBase() doit lire le paramètre ?port= de l'URL."""
+        content = API_CORE_TS.read_text(encoding="utf-8")
+        assert "urlParams" in content or "URLSearchParams" in content, (
+            "initApiBase doit parser les paramètres URL"
+        )
+        assert "portParam" in content or "urlParams.get('port')" in content, (
+            "initApiBase doit lire le paramètre 'port' de l'URL"
+        )
+
+    def test_url_port_checked_before_ipc(self):
+        """Le paramètre URL doit être vérifié AVANT le retry IPC Tauri."""
+        content = API_CORE_TS.read_text(encoding="utf-8")
+        url_pos = content.find("URLSearchParams")
+        ipc_pos = content.find("MAX_RETRIES")
+        assert url_pos > 0, "URLSearchParams absent de initApiBase"
+        assert ipc_pos > 0, "MAX_RETRIES absent de initApiBase"
+        assert url_pos < ipc_pos, (
+            "Le paramètre URL doit être vérifié AVANT le retry IPC"
+        )
+
+
+# ============================================================
+# BUG-009 (v0.1.15) - Zombie killer Rust : tasklist fallback
+# Le kill_zombie_backends Rust doit avoir un fallback tasklist
+# pour Windows 11 25H2+ où wmic est supprimé.
+# ============================================================
+
+
+class TestBUG009RustTasklistFallback:
+    """Fallback tasklist dans le zombie killer Rust (Windows 11 25H2+)."""
+
+    def test_rust_has_wmic(self):
+        """lib.rs doit utiliser wmic pour détecter les zombies Windows."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert "wmic" in content, (
+            "lib.rs doit utiliser wmic pour la détection de zombies Windows"
+        )
+
+    def test_rust_has_tasklist_fallback(self):
+        """lib.rs doit avoir un fallback tasklist quand wmic est indisponible."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert "tasklist" in content, (
+            "lib.rs doit avoir un fallback tasklist pour Windows 11 25H2+"
+        )
+
+    def test_rust_tasklist_after_wmic(self):
+        """tasklist doit être utilisé APRÈS wmic (fallback, pas remplacement)."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        wmic_pos = content.find('"wmic"')
+        tasklist_pos = content.find('"tasklist"')
+        assert wmic_pos > 0, '"wmic" absent de lib.rs'
+        assert tasklist_pos > 0, '"tasklist" absent de lib.rs'
+        assert wmic_pos < tasklist_pos, (
+            "wmic doit être essayé AVANT tasklist (tasklist est le fallback)"
+        )
+
+    def test_rust_windows_handle_wait(self):
+        """lib.rs doit attendre après taskkill pour libérer les handles fichier."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        # Vérifier qu'il y a un sleep après le bloc Windows
+        assert "from_secs(3)" in content or "from_secs(2)" in content, (
+            "lib.rs doit attendre après taskkill pour la libération des handles"
+        )
+
+
+# ============================================================
+# Scroll streaming (v0.1.15) - Pas de saccades pendant le streaming
+# MessageList doit utiliser scrollTop instantané pendant le streaming.
+# ============================================================
+
+
+class TestScrollStreaming:
+    """Scroll instantané pendant le streaming (pas de smooth qui saccade)."""
+
+    def test_instant_scroll_during_streaming(self):
+        """MessageList doit utiliser scrollTop direct pendant le streaming."""
+        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        assert "scrollTop" in content, (
+            "MessageList doit utiliser container.scrollTop pour le scroll instantané"
+        )
+        assert "scrollHeight" in content, (
+            "MessageList doit utiliser container.scrollHeight pour le scroll bas"
+        )
+
+    def test_user_scroll_detection(self):
+        """MessageList doit détecter quand l'utilisateur scrolle vers le haut."""
+        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        assert "userScrolledUp" in content, (
+            "MessageList doit tracker si l'utilisateur a scrollé vers le haut"
+        )
+
+    def test_smooth_scroll_only_when_not_streaming(self):
+        """scrollIntoView smooth ne doit être utilisé que hors streaming."""
+        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        assert "isStreaming" in content, (
+            "MessageList doit conditionner le type de scroll sur isStreaming"
+        )
+        assert "behavior: 'smooth'" in content, (
+            "MessageList doit garder le smooth scroll pour les messages normaux"
+        )

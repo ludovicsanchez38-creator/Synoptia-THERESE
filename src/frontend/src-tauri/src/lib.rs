@@ -99,7 +99,12 @@ fn kill_zombie_backends() {
 
     #[cfg(windows)]
     {
-        let output = std::process::Command::new("wmic")
+        let current_pid = std::process::id();
+        let mut found_pids: Vec<u32> = Vec::new();
+
+        // Méthode 1 : wmic (disponible sur Windows 10 et 11 < 25H2)
+        // wmic permet un filtre précis par ligne de commande
+        let wmic_result = std::process::Command::new("wmic")
             .args([
                 "process", "where",
                 "name='backend.exe' and commandline like '%--host%127.0.0.1%'",
@@ -108,24 +113,66 @@ fn kill_zombie_backends() {
             .stdin(std::process::Stdio::null())
             .output();
 
-        if let Ok(output) = output {
-            let text = String::from_utf8_lossy(&output.stdout);
-            let current_pid = std::process::id();
-
-            for line in text.lines() {
-                if let Some(pid_str) = line.strip_prefix("ProcessId=") {
-                    if let Ok(pid) = pid_str.trim().parse::<u32>() {
-                        if pid == current_pid {
-                            continue;
+        if let Ok(output) = &wmic_result {
+            if output.status.success() {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    if let Some(pid_str) = line.strip_prefix("ProcessId=") {
+                        if let Ok(pid) = pid_str.trim().parse::<u32>() {
+                            if pid != current_pid {
+                                found_pids.push(pid);
+                            }
                         }
-                        log_sidecar(&format!("Zombie Windows (PID: {}), taskkill...", pid));
-                        let _ = std::process::Command::new("taskkill")
-                            .args(["/T", "/F", "/PID", &pid.to_string()])
-                            .stdin(std::process::Stdio::null())
-                            .output();
                     }
                 }
+                if !found_pids.is_empty() {
+                    log_sidecar(&format!("wmic : {} zombie(s) détecté(s)", found_pids.len()));
+                }
             }
+        }
+
+        // Méthode 2 : tasklist (fallback Windows 11 25H2+ où wmic est supprimé)
+        // tasklist ne filtre que par nom d'image, moins précis mais toujours disponible
+        if found_pids.is_empty() {
+            log_sidecar("wmic indisponible ou aucun résultat, fallback tasklist...");
+            let tasklist_result = std::process::Command::new("tasklist")
+                .args(["/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"])
+                .stdin(std::process::Stdio::null())
+                .output();
+
+            if let Ok(output) = tasklist_result {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    // Format CSV : "backend.exe","12345","Console","1","45 000 K"
+                    let parts: Vec<&str> = line.split(',').collect();
+                    if parts.len() >= 2 {
+                        let pid_str = parts[1].trim().trim_matches('"');
+                        if let Ok(pid) = pid_str.parse::<u32>() {
+                            if pid != current_pid {
+                                found_pids.push(pid);
+                            }
+                        }
+                    }
+                }
+                if !found_pids.is_empty() {
+                    log_sidecar(&format!("tasklist : {} zombie(s) détecté(s)", found_pids.len()));
+                }
+            }
+        }
+
+        // Tuer les zombies détectés
+        for pid in &found_pids {
+            log_sidecar(&format!("Zombie Windows (PID: {}), taskkill /T /F...", pid));
+            let _ = std::process::Command::new("taskkill")
+                .args(["/T", "/F", "/PID", &pid.to_string()])
+                .stdin(std::process::Stdio::null())
+                .output();
+        }
+
+        // Attendre que Windows libère les handles fichier après taskkill
+        if !found_pids.is_empty() {
+            log_sidecar("Attente 3s pour libération des handles fichier...");
+            std::thread::sleep(std::time::Duration::from_secs(3));
         }
     }
 

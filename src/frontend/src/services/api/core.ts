@@ -16,15 +16,33 @@ export let API_BASE = 'http://127.0.0.1:8000';
 let _initPromise: Promise<void> | null = null;
 
 /**
- * Initialise API_BASE avec le port dynamique du sidecar (via Tauri IPC).
+ * Initialise API_BASE avec le port dynamique du sidecar.
  *
- * Retry jusqu'à 10 fois avec 300ms de délai si l'IPC échoue ou retourne
- * le port par défaut (8000). Sur certains Mac (M1), le bridge IPC Tauri
- * n'est pas prêt immédiatement au chargement du WebView.
+ * Ordre de résolution :
+ * 1. Paramètre URL ?port=XXXX (passé par la fenêtre principale aux panels)
+ * 2. Tauri IPC get_backend_port (retry 10x 300ms pour Mac M1 lent)
+ * 3. Fallback port 8000 (mode dev)
  */
 export function initApiBase(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
+    // 1. Vérifier le paramètre URL (panels ouverts depuis la fenêtre principale)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const portParam = urlParams.get('port');
+      if (portParam && /^\d+$/.test(portParam)) {
+        const port = parseInt(portParam, 10);
+        if (port > 0 && port <= 65535) {
+          API_BASE = `http://127.0.0.1:${port}`;
+          console.log(`[API] Port backend via URL : ${port}`);
+          return;
+        }
+      }
+    } catch {
+      // window.location peut ne pas être disponible dans certains contextes
+    }
+
+    // 2. Tauri IPC avec retry (fenêtre principale / SplashScreen)
     const MAX_RETRIES = 10;
     const RETRY_DELAY = 300;
 
@@ -45,7 +63,7 @@ export function initApiBase(): Promise<void> {
       await new Promise((r) => setTimeout(r, RETRY_DELAY));
     }
 
-    // Dernier essai ou fallback
+    // 3. Dernier essai ou fallback
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const port: number = await invoke('get_backend_port');

@@ -6,6 +6,7 @@
  */
 
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { getApiBase } from './api/core';
 
 export type PanelType = 'email' | 'calendar' | 'tasks' | 'invoices' | 'crm';
 
@@ -95,8 +96,11 @@ export async function openPanelWindow(panel: PanelType): Promise<void> {
   const config = PANEL_CONFIGS[panel];
   const label = `panel-${panel}`;
 
+  // Passer le port backend via l'URL pour que la fenêtre secondaire n'ait pas
+  // besoin de résoudre le port via Tauri IPC (qui peut échouer dans les panels)
+  const apiPort = new URL(getApiBase()).port;
   const webview = new WebviewWindow(label, {
-    url: `index.html?panel=${panel}`,
+    url: `index.html?panel=${panel}&port=${apiPort}`,
     title: config.title,
     width: config.width,
     height: config.height,
