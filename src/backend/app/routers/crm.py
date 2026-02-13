@@ -1108,7 +1108,7 @@ async def sync_crm(
             for raw_row in clients_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    _, created = await upsert_contact(session, row)
+                    _, created = await upsert_contact(session, row, safe_get=True)
                     if created:
                         stats["contacts_created"] += 1
                     else:
@@ -1131,7 +1131,7 @@ async def sync_crm(
             for raw_row in projects_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    _, created = await upsert_project(session, row)
+                    _, created = await upsert_project(session, row, safe_get=True)
                     if created:
                         stats["projects_created"] += 1
                     else:
@@ -1154,7 +1154,7 @@ async def sync_crm(
             for raw_row in tasks_data:
                 try:
                     row = _sanitize_row(raw_row)
-                    _, created = await upsert_task(session, row)
+                    _, created = await upsert_task(session, row, safe_get=True)
                     if created:
                         stats["tasks_created"] += 1
                     else:

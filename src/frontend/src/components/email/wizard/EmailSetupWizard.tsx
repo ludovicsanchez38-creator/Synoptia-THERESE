@@ -1,8 +1,8 @@
 /**
  * THÉRÈSE v2 - Email Setup Wizard
  *
- * Wizard guidé en 4 étapes pour configurer l'email.
- * Phase 1.2 - Amélioration UX
+ * Wizard guidé pour configurer l'email.
+ * Supporte Gmail OAuth et SMTP/IMAP classique.
  */
 
 import { useState, useEffect } from 'react';
@@ -13,6 +13,7 @@ import { ChoiceStep } from './ChoiceStep';
 import { GuideStep } from './GuideStep';
 import { CredentialsStep } from './CredentialsStep';
 import { VerifyStep } from './VerifyStep';
+import { SmtpConfigStep } from './SmtpConfigStep';
 import * as api from '../../../services/api';
 
 interface EmailSetupWizardProps {
@@ -76,6 +77,10 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
     if (step > 1) setStep((step - 1) as typeof step);
   };
 
+  // Nombre d'étapes selon le provider
+  const totalSteps = wizardState.provider === 'smtp' ? 2 : 4;
+  const currentStep = wizardState.provider === 'smtp' ? Math.min(step, 2) : step;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <motion.div
@@ -88,7 +93,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div>
             <h2 className="text-xl font-semibold text-text">Configuration Email</h2>
-            <p className="text-sm text-text-muted">Étape {step} sur 4</p>
+            <p className="text-sm text-text-muted">Étape {currentStep} sur {totalSteps}</p>
           </div>
           <button
             onClick={onCancel}
@@ -104,7 +109,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
           <motion.div
             className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
             initial={{ width: '0%' }}
-            animate={{ width: `${(step / 4) * 100}%` }}
+            animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
@@ -117,9 +122,10 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 key="choice"
                 onSelect={(provider) => {
                   updateState({ provider });
-                  // Si credentials MCP existent, skip étapes 2 et 3
-                  if (mcpCredentials && provider === 'gmail') {
-                    setStep(4); // Aller directement à la vérification
+                  if (provider === 'smtp') {
+                    nextStep(); // Aller à SmtpConfigStep
+                  } else if (mcpCredentials) {
+                    setStep(4); // Skip étapes 2 et 3 pour Gmail avec MCP
                   } else {
                     nextStep();
                   }
@@ -127,6 +133,17 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 mcpCredentials={mcpCredentials}
               />
             )}
+
+            {/* SMTP flow : step 2 = formulaire SMTP */}
+            {step === 2 && wizardState.provider === 'smtp' && (
+              <SmtpConfigStep
+                key="smtp-config"
+                onBack={() => setStep(1)}
+                onSuccess={onComplete}
+              />
+            )}
+
+            {/* Gmail flow : step 2 = guide */}
             {step === 2 && wizardState.provider === 'gmail' && !wizardState.useMcpCredentials && (
               <GuideStep
                 key="guide"
@@ -138,6 +155,8 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 onBack={prevStep}
               />
             )}
+
+            {/* Gmail flow : step 3 = credentials */}
             {step === 3 && wizardState.provider === 'gmail' && (
               <CredentialsStep
                 key="credentials"
@@ -150,6 +169,8 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 onContinue={() => nextStep()}
               />
             )}
+
+            {/* Gmail flow : step 4 = verify */}
             {step === 4 && wizardState.provider === 'gmail' && (
               <VerifyStep
                 key="verify"

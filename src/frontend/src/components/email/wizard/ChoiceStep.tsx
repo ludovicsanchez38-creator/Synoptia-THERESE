@@ -5,7 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Mail, Server, ShieldCheck, AlertCircle, Zap } from 'lucide-react';
+import { Mail, Server, ShieldCheck, Zap } from 'lucide-react';
 import type { EmailProvider } from './EmailSetupWizard';
 import type { GoogleCredentials } from '../../../services/api';
 
@@ -112,9 +112,9 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
               <ShieldCheck className="w-4 h-4 text-green-400" />
               <span>Compatible tous providers</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-yellow-400">
-              <AlertCircle className="w-4 h-4" />
-              <span>Mot de passe en clair</span>
+            <div className="flex items-center gap-2 text-sm text-text-muted">
+              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <span>Mot de passe chiffré localement</span>
             </div>
           </div>
         </motion.button>
@@ -123,7 +123,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
       <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
         <p className="text-sm text-text-muted">
           <strong className="text-text">Note :</strong> Gmail OAuth est recommandé pour une sécurité maximale.
-          Le SMTP classique sera disponible prochainement (Phase 1.1).
+          Le SMTP classique fonctionne avec tous les fournisseurs (OVH, Gandi, Infomaniak, etc.).
         </p>
       </div>
     </motion.div>

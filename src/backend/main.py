@@ -120,6 +120,15 @@ def _kill_zombie_backends():
     parent_pid = os.getppid()
 
     if sys.platform == "win32":
+        import time
+
+        killed_any = False
+        zombie_pids: list[int] = []
+
+        # Détecter les zombies backend.exe.
+        # wmic est supprimé sur Windows 11 25H2+ (oct 2025), donc on utilise
+        # tasklist en fallback. tasklist ne filtre pas par ligne de commande,
+        # mais backend.exe est spécifique à THÉRÈSE donc c'est acceptable.
         try:
             result = subprocess.run(
                 [
@@ -128,19 +137,52 @@ def _kill_zombie_backends():
                     "get", "processid", "/format:list",
                 ],
                 capture_output=True, text=True, timeout=5,
-                stdin=subprocess.DEVNULL,  # BUG-009 : ne pas hériter le stdin cassé de Tauri
+                stdin=subprocess.DEVNULL,
             )
             for line in result.stdout.splitlines():
                 if line.startswith("ProcessId="):
                     pid = int(line.split("=")[1].strip())
                     if pid != current_pid and pid != parent_pid:
-                        subprocess.run(
-                            ["taskkill", "/T", "/F", "/PID", str(pid)],
-                            capture_output=True, timeout=5,
-                            stdin=subprocess.DEVNULL,
-                        )
+                        zombie_pids.append(pid)
+        except FileNotFoundError:
+            # wmic absent (Windows 11 25H2+) → fallback tasklist
+            try:
+                result = subprocess.run(
+                    ["tasklist", "/FI", "IMAGENAME eq backend.exe", "/FO", "CSV", "/NH"],
+                    capture_output=True, text=True, timeout=5,
+                    stdin=subprocess.DEVNULL,
+                )
+                for line in result.stdout.splitlines():
+                    parts = line.strip().strip('"').split('","')
+                    if len(parts) >= 2:
+                        try:
+                            pid = int(parts[1].strip('"'))
+                            if pid != current_pid and pid != parent_pid:
+                                zombie_pids.append(pid)
+                        except (ValueError, IndexError):
+                            continue
+            except Exception:
+                pass
         except Exception:
             pass
+
+        # Tuer les zombies détectés
+        for pid in zombie_pids:
+            try:
+                subprocess.run(
+                    ["taskkill", "/T", "/F", "/PID", str(pid)],
+                    capture_output=True, timeout=5,
+                    stdin=subprocess.DEVNULL,
+                )
+                killed_any = True
+            except Exception:
+                pass
+
+        # BUG-009 : Attendre que Windows libère les handles fichier des zombies tués.
+        # Sans ce délai, le .lock Qdrant reste verrouillé et Path.unlink() échoue
+        # avec PermissionError [WinError 32].
+        if killed_any:
+            time.sleep(3)
     else:
         try:
             result = subprocess.run(

@@ -47,6 +47,9 @@ class QdrantService:
 
     def _init_client(self) -> None:
         """Initialize Qdrant client in embedded mode."""
+        import sys
+        import time
+
         qdrant_path = settings.qdrant_path
         if qdrant_path is None:
             qdrant_path = settings.data_dir / "qdrant"
@@ -59,16 +62,53 @@ class QdrantService:
         try:
             self._client = QdrantClient(path=str(qdrant_path))
         except RuntimeError as e:
-            if "already accessed" in str(e):
-                # Lock stale laissé par un ancien process non tué proprement
-                lock_file = qdrant_dir / ".lock"
-                if lock_file.exists():
-                    logger.warning("Qdrant verrouillé par un ancien process, suppression du lock stale")
-                    lock_file.unlink()
-                # Réessayer après nettoyage
-                self._client = QdrantClient(path=str(qdrant_path))
-            else:
+            if "already accessed" not in str(e):
                 raise
+
+            # Lock stale laissé par un ancien process non tué proprement
+            lock_file = qdrant_dir / ".lock"
+            if lock_file.exists():
+                logger.warning("Qdrant verrouillé par un ancien process, tentative de nettoyage du lock stale")
+                # BUG-009 : Sur Windows, le .lock peut être tenu par un zombie
+                # (portalocker utilise un lock natif Windows). Il faut retenter
+                # après un délai pour laisser le taskkill (fait dans main.py) agir.
+                max_retries = 5 if sys.platform == "win32" else 1
+                for attempt in range(max_retries):
+                    try:
+                        lock_file.unlink()
+                        logger.info(f"Lock Qdrant supprimé (tentative {attempt + 1})")
+                        break
+                    except PermissionError:
+                        if attempt < max_retries - 1:
+                            delay = (attempt + 1) * 2  # 2s, 4s, 6s, 8s
+                            logger.warning(
+                                f"Lock Qdrant tenu par un autre process, retry dans {delay}s "
+                                f"(tentative {attempt + 1}/{max_retries})"
+                            )
+                            time.sleep(delay)
+                        else:
+                            logger.error(
+                                "Impossible de supprimer le lock Qdrant après "
+                                f"{max_retries} tentatives. Redémarre l'application."
+                            )
+                            raise RuntimeError(
+                                "Le fichier .lock Qdrant est verrouillé par un autre processus. "
+                                "Ferme toutes les instances de THÉRÈSE et réessaie."
+                            ) from e
+                    except OSError as os_err:
+                        logger.warning(f"Erreur OS lors de la suppression du lock: {os_err}")
+                        break
+
+            # Réessayer après nettoyage du lock
+            try:
+                self._client = QdrantClient(path=str(qdrant_path))
+            except RuntimeError:
+                # Le lock n'a pas pu être supprimé (OSError, fichier absent, etc.)
+                raise RuntimeError(
+                    "Impossible d'initialiser Qdrant après nettoyage du lock. "
+                    "Ferme toutes les instances de THÉRÈSE, supprime "
+                    f"le fichier {qdrant_dir / '.lock'} et réessaie."
+                ) from e
         self._ensure_collection()
         self._initialized = True
         logger.info("Qdrant initialized successfully")

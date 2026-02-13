@@ -125,6 +125,58 @@ export async function generateEmailSetupGuide(
   return response.json();
 }
 
+// SMTP/IMAP Setup
+export interface SmtpSetupRequest {
+  email: string;
+  password: string;
+  imap_host: string;
+  imap_port: number;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_use_tls: boolean;
+}
+
+export interface EmailProviderConfig {
+  name: string;
+  imap_host: string;
+  imap_port: number;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_use_tls: boolean;
+}
+
+export async function setupSmtpAccount(request: SmtpSetupRequest): Promise<EmailAccount> {
+  const response = await apiFetch(`${API_BASE}/api/email/auth/imap-setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || 'Échec de la configuration SMTP');
+  }
+  return response.json();
+}
+
+export async function testSmtpConnection(request: SmtpSetupRequest): Promise<{ success: boolean; message: string }> {
+  const response = await apiFetch(`${API_BASE}/api/email/auth/test-connection`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || 'Échec du test de connexion');
+  }
+  return response.json();
+}
+
+export async function getEmailProviders(): Promise<EmailProviderConfig[]> {
+  const response = await apiFetch(`${API_BASE}/api/email/providers`);
+  if (!response.ok) throw new Error('Failed to get providers');
+  return response.json();
+}
+
 // OAuth
 export async function initiateEmailOAuth(clientId: string, clientSecret: string): Promise<OAuthFlowData> {
   const response = await apiFetch(`${API_BASE}/api/email/auth/initiate`, {
