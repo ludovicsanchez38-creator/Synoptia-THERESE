@@ -314,6 +314,7 @@ def _contact_to_response(contact: Contact) -> ContactResponse:
         company=contact.company,
         email=contact.email,
         phone=contact.phone,
+        address=contact.address,
         notes=contact.notes,
         tags=json.loads(contact.tags) if contact.tags else None,
         # CRM fields (Phase 5)
