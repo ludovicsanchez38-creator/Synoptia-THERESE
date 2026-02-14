@@ -7,16 +7,18 @@ interface SplashScreenProps {
   onReady: () => void;
 }
 
-const POLL_INTERVAL = 500;
-const TIMEOUT_MS = 120_000; // 2 min : le premier lancement extrait PyInstaller + télécharge le modèle d'embeddings
+const POLL_INTERVAL = 2_000; // 2s entre chaque health check (réduit la charge réseau)
+const TIMEOUT_MS = 600_000; // 10 min : premier lancement Windows avec Defender peut prendre 3+ min
 
 const MESSAGES = [
-  'Démarrage du moteur...',
-  'Chargement des modèles...',
-  'Préparation de la mémoire...',
-  'Initialisation des services...',
-  'Premier lancement, ça peut prendre un moment...',
-  'Presque prêt...',
+  { after: 0, text: 'Démarrage du moteur...' },
+  { after: 5_000, text: 'Chargement des modèles...' },
+  { after: 15_000, text: 'Préparation de la mémoire...' },
+  { after: 30_000, text: 'Initialisation des services...' },
+  { after: 60_000, text: 'Premier lancement, ça peut prendre un moment...' },
+  { after: 120_000, text: 'Encore un peu de patience...' },
+  { after: 180_000, text: 'Chargement en cours, Windows analyse les fichiers...' },
+  { after: 300_000, text: 'Presque prêt...' },
 ];
 
 /**
@@ -121,14 +123,17 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         // d'une session précédente, causant des erreurs d'auth silencieuses.
         // En dev, API_BASE est déjà 8000 par défaut (initApiBase fallback).
 
-        // Progression et messages
-        const pct = Math.min(95, (elapsed / TIMEOUT_MS) * 100);
+        // Progression (logarithmique pour rester informatif sans stresser)
+        // Monte vite au début, ralentit ensuite
+        const pct = Math.min(95, Math.log1p(elapsed / 1000) / Math.log1p(TIMEOUT_MS / 1000) * 100);
         setProgress(pct);
-        const msgIndex = Math.min(
-          MESSAGES.length - 1,
-          Math.floor((elapsed / TIMEOUT_MS) * MESSAGES.length)
-        );
-        setMessage(MESSAGES[msgIndex]);
+
+        // Message adapté au temps écoulé
+        let currentMsg = MESSAGES[0].text;
+        for (const m of MESSAGES) {
+          if (elapsed >= m.after) currentMsg = m.text;
+        }
+        setMessage(currentMsg);
 
         // Check
         const healthy = await checkHealth();
