@@ -473,3 +473,129 @@ class TestScrollStreaming:
         assert "behavior: 'smooth'" in content, (
             "MessageList doit garder le smooth scroll pour les messages normaux"
         )
+
+
+# ============================================================
+# BUG-017 (v0.1.16) - Redirection TEMP sidecar Windows
+# PyInstaller extrait dans %TEMP%/_MEIxxxx, scanné par Defender.
+# lib.rs doit rediriger TEMP/TMP/TMPDIR vers ~/.therese/runtime/
+# ============================================================
+
+
+class TestBUG017TempSidecarRedirect:
+    """Redirection TEMP/TMP/TMPDIR vers ~/.therese/runtime/ pour éviter Defender."""
+
+    def test_rust_sets_tmpdir(self):
+        """lib.rs doit rediriger TMPDIR vers ~/.therese/runtime/."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert '"TMPDIR"' in content, (
+            "lib.rs doit définir TMPDIR pour rediriger l'extraction PyInstaller"
+        )
+
+    def test_rust_sets_temp(self):
+        """lib.rs doit rediriger TEMP vers ~/.therese/runtime/."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert '"TEMP"' in content, (
+            "lib.rs doit définir TEMP pour Windows"
+        )
+
+    def test_rust_sets_tmp(self):
+        """lib.rs doit rediriger TMP vers ~/.therese/runtime/."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert '"TMP"' in content, (
+            "lib.rs doit définir TMP pour Windows"
+        )
+
+    def test_rust_runtime_dir_created(self):
+        """lib.rs doit créer le dossier ~/.therese/runtime/ avant le sidecar."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert "runtime" in content, (
+            "lib.rs doit référencer le dossier runtime"
+        )
+        assert "create_dir_all" in content, (
+            "lib.rs doit créer le dossier runtime avec create_dir_all"
+        )
+
+
+# ============================================================
+# BUG-018 (v0.1.16) - probeHealth accepte "degraded"
+# Le splash screen doit accepter status "degraded" en plus de "healthy".
+# Un backend degraded = fonctionnel mais un service non-critique pas prêt.
+# ============================================================
+
+
+SPLASH_SCREEN_TSX = FRONTEND / "components" / "SplashScreen.tsx"
+
+
+class TestBUG018DegradedStatus:
+    """probeHealth doit accepter le status 'degraded' en plus de 'healthy'."""
+
+    def test_probe_accepts_degraded(self):
+        """probeHealth doit traiter 'degraded' comme un statut valide."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        assert "degraded" in content, (
+            "probeHealth doit accepter le status 'degraded'"
+        )
+
+    def test_probe_accepts_healthy(self):
+        """probeHealth doit toujours accepter 'healthy'."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        assert "healthy" in content, (
+            "probeHealth doit accepter le status 'healthy'"
+        )
+
+
+# ============================================================
+# BUG-020 (v0.1.17) - Timeout splash Windows insuffisant
+# Le backend peut mettre 2min27s+ à démarrer sur Windows
+# (extraction PyInstaller + scan Defender + chargement modèles 975 Mo RAM).
+# TIMEOUT_MS doit être >= 600_000 (10 min) et POLL_INTERVAL >= 2_000.
+# ============================================================
+
+
+class TestBUG020SplashTimeout:
+    """Timeout splash 10 min et polling 2s pour Windows lent."""
+
+    def test_timeout_at_least_600s(self):
+        """TIMEOUT_MS doit être >= 600_000 (10 min)."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        # Chercher la constante TIMEOUT_MS
+        import re
+        match = re.search(r"TIMEOUT_MS\s*=\s*([\d_]+)", content)
+        assert match, "TIMEOUT_MS non trouvé dans SplashScreen.tsx"
+        value = int(match.group(1).replace("_", ""))
+        assert value >= 600_000, (
+            f"TIMEOUT_MS = {value} ms, doit être >= 600_000 (10 min) "
+            "pour supporter le démarrage lent sur Windows"
+        )
+
+    def test_poll_interval_at_least_2s(self):
+        """POLL_INTERVAL doit être >= 2_000 (2s) pour réduire la charge."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        import re
+        match = re.search(r"POLL_INTERVAL\s*=\s*([\d_]+)", content)
+        assert match, "POLL_INTERVAL non trouvé dans SplashScreen.tsx"
+        value = int(match.group(1).replace("_", ""))
+        assert value >= 2_000, (
+            f"POLL_INTERVAL = {value} ms, doit être >= 2_000 (2s) "
+            "pour ne pas surcharger le réseau pendant le boot"
+        )
+
+    def test_adaptive_messages(self):
+        """Le splash doit afficher des messages adaptés au temps écoulé."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        # Vérifier qu'il y a des messages pour les longues attentes (>= 60s)
+        assert "60_000" in content or "60000" in content, (
+            "Le splash doit avoir un message après 60s d'attente"
+        )
+        assert "120_000" in content or "120000" in content, (
+            "Le splash doit avoir un message après 120s d'attente"
+        )
+
+    def test_logarithmic_progress(self):
+        """La barre de progression doit être logarithmique (pas linéaire)."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        assert "log1p" in content or "Math.log" in content, (
+            "La progression doit être logarithmique pour rester informative "
+            "sans stresser l'utilisateur sur les longues attentes"
+        )
