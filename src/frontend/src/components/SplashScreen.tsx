@@ -54,7 +54,7 @@ async function probeHealth(baseUrl: string): Promise<boolean> {
 }
 
 export function SplashScreen({ onReady }: SplashScreenProps) {
-  const [message, setMessage] = useState(MESSAGES[0]);
+  const [message, setMessage] = useState(MESSAGES[0].text);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [appVersion, setAppVersion] = useState<string | null>(null);
