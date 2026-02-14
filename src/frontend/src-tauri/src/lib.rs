@@ -183,6 +183,23 @@ fn kill_zombie_backends() {
             log_sidecar("Nettoyage du fichier .lock Qdrant...");
             let _ = std::fs::remove_file(&lock_file);
         }
+
+        // Nettoyer les anciens dossiers _MEI* residuels de PyInstaller
+        // Un crash pendant l'extraction laisse un dossier incomplet qui bloque
+        // les lancements suivants
+        let runtime_dir = home.join(".therese").join("runtime");
+        if runtime_dir.exists() {
+            if let Ok(entries) = std::fs::read_dir(&runtime_dir) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name();
+                    let name_str = name.to_string_lossy();
+                    if name_str.starts_with("_MEI") && entry.path().is_dir() {
+                        log_sidecar(&format!("Nettoyage ancien dossier PyInstaller : {}", name_str));
+                        let _ = std::fs::remove_dir_all(entry.path());
+                    }
+                }
+            }
+        }
     }
 
     log_sidecar("Nettoyage des zombies terminé");
@@ -237,11 +254,19 @@ pub fn run() {
                 let backend_port = app.state::<BackendPort>();
                 *backend_port.0.lock().unwrap() = port;
 
-                let models_path = dirs::home_dir()
-                    .unwrap_or_default()
+                let home_dir = dirs::home_dir().unwrap_or_default();
+                let models_path = home_dir
                     .join(".therese/models")
                     .to_string_lossy()
                     .to_string();
+
+                // Rediriger le dossier TEMP du sidecar vers ~/.therese/runtime/
+                // Evite le scan antivirus sur %TEMP% qui bloque l'extraction PyInstaller
+                let runtime_path = home_dir
+                    .join(".therese/runtime")
+                    .to_string_lossy()
+                    .to_string();
+                let _ = std::fs::create_dir_all(&runtime_path);
 
                 log_sidecar(&format!("Démarrage sidecar sur port {}", port));
 
@@ -265,7 +290,14 @@ pub fn run() {
                             .args(["--host", "127.0.0.1", "--port", &port_str])
                             .env("THERESE_PORT", &port_str)
                             .env("THERESE_ENV", "production")
-                            .env("SENTENCE_TRANSFORMERS_HOME", &models_path);
+                            .env("SENTENCE_TRANSFORMERS_HOME", &models_path)
+                            // Rediriger TEMP/TMP/TMPDIR vers ~/.therese/runtime/
+                            // PyInstaller --onefile extrait dans TEMP/_MEIxxxx
+                            // %TEMP% est scanne par Windows Defender, causant des crashs silencieux
+                            // TMPDIR est prioritaire sur macOS/Linux
+                            .env("TMPDIR", &runtime_path)
+                            .env("TEMP", &runtime_path)
+                            .env("TMP", &runtime_path);
 
                         match cmd.spawn() {
                             Ok((mut rx, child)) => {
