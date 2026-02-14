@@ -40,7 +40,10 @@ async function probeHealth(baseUrl: string): Promise<boolean> {
       const data = await res.json();
       // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
       // (évite de se connecter à un autre service sur le même port)
-      return data.status === 'healthy' && typeof data.version === 'string';
+      // Accepter "degraded" : le backend tourne mais un service non-critique
+      // n'est pas prêt (ex: embeddings en cours de chargement sur Windows)
+      const validStatus = data.status === 'healthy' || data.status === 'degraded';
+      return validStatus && typeof data.version === 'string';
     }
     return false;
   } catch {
