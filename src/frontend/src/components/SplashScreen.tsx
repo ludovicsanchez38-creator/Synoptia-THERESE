@@ -36,19 +36,24 @@ function createTimeoutSignal(ms: number): AbortSignal {
 
 /** Teste si un backend THÉRÈSE répond sur une URL donnée */
 async function probeHealth(baseUrl: string): Promise<boolean> {
+  const url = `${baseUrl}/health`;
   try {
-    const res = await fetch(`${baseUrl}/health`, { signal: createTimeoutSignal(2000) });
-    if (res.ok) {
-      const data = await res.json();
-      // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
-      // (évite de se connecter à un autre service sur le même port)
-      // Accepter "degraded" : le backend tourne mais un service non-critique
-      // n'est pas prêt (ex: embeddings en cours de chargement sur Windows)
-      const validStatus = data.status === 'healthy' || data.status === 'degraded';
-      return validStatus && typeof data.version === 'string';
-    }
-    return false;
-  } catch {
+    console.log(`[probeHealth] GET ${url}`);
+    const res = await fetch(url, { signal: createTimeoutSignal(5000) });
+    console.log(`[probeHealth] status=${res.status} ok=${res.ok}`);
+    if (!res.ok) return false;
+    const text = await res.text();
+    console.log(`[probeHealth] body=${text.slice(0, 200)}`);
+    const data = JSON.parse(text);
+    // Vérifier status + version pour s'assurer que c'est bien THÉRÈSE
+    // Accepter "degraded" : le backend tourne mais un service non-critique
+    // n'est pas prêt (ex: embeddings en cours de chargement sur Windows)
+    const valid = (data.status === 'healthy' || data.status === 'degraded')
+      && typeof data.version === 'string';
+    console.log(`[probeHealth] status=${data.status} version=${data.version} valid=${valid}`);
+    return valid;
+  } catch (err) {
+    console.error(`[probeHealth] ERREUR sur ${url}:`, String(err));
     return false;
   }
 }

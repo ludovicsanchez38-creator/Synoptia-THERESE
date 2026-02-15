@@ -851,3 +851,55 @@ class TestPortFixe17293:
         assert "port != 8000" not in content, (
             "core.ts ne doit plus contenir 'port != 8000' (port fixe, plus besoin)"
         )
+
+
+# ============================================================
+# BUG-022 (v0.1.20) - CORS Windows (http://tauri.localhost)
+# Tauri 2.0 sur Windows utilise http://tauri.localhost comme origin.
+# Le CORS backend doit l'autoriser sinon fetch() échoue silencieusement.
+# ============================================================
+
+
+class TestBUG022CORSWindowsOrigin:
+    """BUG-022 : CORS bloquait le fetch health sur Windows (http://tauri.localhost absent)."""
+
+    def test_cors_has_http_tauri_localhost(self):
+        """L'origin Windows DOIT être dans la liste CORS."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        assert "http://tauri.localhost" in content, (
+            "main.py doit contenir http://tauri.localhost dans les origins CORS"
+        )
+
+    def test_cors_has_all_three_origins(self):
+        """Les 3 origins Tauri production DOIVENT être présents."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        assert "tauri://localhost" in content, (
+            "main.py doit contenir tauri://localhost (macOS/Linux)"
+        )
+        assert "https://tauri.localhost" in content, (
+            "main.py doit contenir https://tauri.localhost (HTTPS legacy)"
+        )
+        assert "http://tauri.localhost" in content, (
+            "main.py doit contenir http://tauri.localhost (Windows/Android)"
+        )
+
+    def test_probe_health_has_error_logging(self):
+        """probeHealth ne doit plus avoir de catch silencieux."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        assert "console.error" in content, (
+            "probeHealth doit logger les erreurs avec console.error (plus de catch silencieux)"
+        )
+
+    def test_probe_health_timeout_at_least_5s(self):
+        """Le timeout du health check doit être >= 5000ms."""
+        content = SPLASH_SCREEN_TSX.read_text(encoding="utf-8")
+        assert "createTimeoutSignal(5000)" in content, (
+            "probeHealth doit utiliser un timeout de 5000ms minimum"
+        )
+
+    def test_private_network_access_header(self):
+        """Le header Access-Control-Allow-Private-Network doit être géré."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        assert "Access-Control-Allow-Private-Network" in content, (
+            "main.py doit gérer le header PNA pour WebView2 143+"
+        )

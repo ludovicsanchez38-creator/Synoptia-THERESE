@@ -109,6 +109,6 @@ palette:
 - `docs/prd-therese.md` - PRD complet
 - `docs/stories/` - 35 user stories, 5 epics
 
-## Version actuelle : v0.1.19-alpha (15 février 2026)
+## Version actuelle : v0.1.20-alpha (15 février 2026)
 
 Voir `docs/CHANGELOG.md` pour le détail des fonctionnalités par version.

@@ -198,8 +198,9 @@ app = FastAPI(
 # CORS middleware (SEC-018)
 # Production: only Tauri origins. Dev: also allow Vite/Tauri dev servers.
 _cors_origins = [
-    "tauri://localhost",       # Tauri production
-    "https://tauri.localhost",  # Tauri production (HTTPS)
+    "tauri://localhost",        # Tauri production (macOS/Linux/iOS)
+    "https://tauri.localhost",  # Tauri production (HTTPS legacy)
+    "http://tauri.localhost",   # Tauri 2.0 production (Windows/Android)
 ]
 if settings.therese_env != "production":
     _cors_origins += [
@@ -377,6 +378,30 @@ async def auth_middleware(request: Request, call_next):
             content={"code": "UNAUTHORIZED", "message": "Token de session invalide ou manquant"},
         )
 
+    return await call_next(request)
+
+
+# Private Network Access middleware (BUG-022)
+# WebView2 v143+ peut bloquer les requêtes de http://tauri.localhost vers http://127.0.0.1
+# via la spec Chromium Private Network Access (PNA).
+@app.middleware("http")
+async def private_network_access_middleware(request: Request, call_next):
+    """Autorise Private Network Access (WebView2 143+, Chromium PNA spec)."""
+    response = await call_next(request)
+    if request.headers.get("Access-Control-Request-Private-Network"):
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+
+# CORS debug middleware (BUG-022)
+# Log les Origins non autorisés pour diagnostiquer les problèmes CORS.
+# Ajouté APRÈS CORSMiddleware (les middlewares Starlette s'exécutent en ordre inverse).
+@app.middleware("http")
+async def cors_debug_middleware(request: Request, call_next):
+    """Log les Origins rejetés par CORS pour faciliter le debug."""
+    origin = request.headers.get("origin")
+    if origin and origin not in _cors_origins:
+        logger.warning(f"CORS: origin '{origin}' non autorisé (attendu: {_cors_origins})")
     return await call_next(request)
 
 
