@@ -1118,6 +1118,36 @@ class TestBUG024ProfileSave:
 # ============================================================
 
 
+# ============================================================
+# BUG-024 (v0.2.2) - Templates DOCX/PPTX manquants dans PyInstaller
+# python-docx et python-pptx cherchent leurs templates XML mais
+# PyInstaller ne les inclut pas automatiquement dans le bundle.
+# ============================================================
+
+
+BACKEND_SPEC = SRC / "backend.spec"
+
+
+class TestBUG024DocxPptxTemplates:
+    """BUG-024 : collect_data_files docx + pptx dans backend.spec."""
+
+    def test_backend_spec_includes_docx_data_files(self):
+        """backend.spec doit collecter les data files de python-docx."""
+        spec = BACKEND_SPEC.read_text(encoding="utf-8")
+        assert 'collect_data_files("docx")' in spec, (
+            "backend.spec doit contenir collect_data_files('docx') "
+            "pour inclure les templates XML de python-docx"
+        )
+
+    def test_backend_spec_includes_pptx_data_files(self):
+        """backend.spec doit collecter les data files de python-pptx."""
+        spec = BACKEND_SPEC.read_text(encoding="utf-8")
+        assert 'collect_data_files("pptx")' in spec, (
+            "backend.spec doit contenir collect_data_files('pptx') "
+            "pour inclure les templates XML de python-pptx"
+        )
+
+
 class TestWindowControlsPlatform:
     """ChatHeader doit adapter les boutons fenêtre selon la plateforme."""
 
@@ -1157,6 +1187,6 @@ class TestStreamingAntiFlicker:
         assert "setInterval" in content, (
             "ChatInput doit utiliser setInterval pour batcher les updates streaming"
         )
-        assert "50" in content, (
-            "ChatInput doit utiliser un intervalle de 50ms pour le batch streaming"
+        assert "300" in content, (
+            "ChatInput doit utiliser un intervalle de 300ms pour le batch streaming (blocs)"
         )

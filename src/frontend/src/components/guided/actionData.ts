@@ -144,6 +144,15 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
           defaultQuality: 'high',
         },
       },
+      {
+        id: 'image-fal',
+        label: 'Image IA (Fal)',
+        prompt: 'Génère une image de [description détaillée]. Style : [réaliste, illustration, artistique].',
+        generatesImage: {
+          provider: 'fal-flux-pro',
+          defaultQuality: 'high',
+        },
+      },
     ],
   },
 

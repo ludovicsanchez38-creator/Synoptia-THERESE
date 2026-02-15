@@ -222,7 +222,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
 
-    // Batching SSE : flush toutes les 50ms (réduit les re-renders de ~60/s à ~20/s)
+    // Batching SSE : flush toutes les 300ms (affiche par blocs de ~15-20 mots)
     let lastFlushed = '';
     let flushTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -233,7 +233,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
             updateMessage(assistantMessageId, accumulatedContent);
             lastFlushed = accumulatedContent;
           }
-        }, 50);
+        }, 300);
       }
     };
 
@@ -268,7 +268,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
 
         if (chunk.type === 'text') {
-          // Accumulate content and batch update (50ms interval)
+          // Accumulate content and batch update (300ms interval)
           accumulatedContent += chunk.content;
           setActivity('streaming', "En train d'écrire...");
           startBatching();

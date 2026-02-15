@@ -1,6 +1,6 @@
 [package]
 name = "therese"
-version = "0.1.0"
+version = "0.2.2"
 description = "THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français"
 authors = ["Ludo Sanchez <ludo@synoptia.fr>"]
 license = "MIT"

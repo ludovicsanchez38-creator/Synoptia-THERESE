@@ -99,6 +99,8 @@ datas = [
 datas += collect_data_files("sentence_transformers")
 datas += collect_data_files("qdrant_client")
 datas += collect_data_files("certifi")
+datas += collect_data_files("docx")
+datas += collect_data_files("pptx")
 
 a = Analysis(
     [os.path.join(backend_dir, "main.py")],
