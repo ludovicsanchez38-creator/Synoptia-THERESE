@@ -400,6 +400,9 @@ class UserProfileUpdate(BaseModel):
     context: str = ""
     email: str = ""
     location: str = ""
+    address: str = ""
+    siren: str = ""
+    tva_intra: str = ""
 
 
 class UserProfileResponse(BaseModel):
@@ -412,6 +415,9 @@ class UserProfileResponse(BaseModel):
     context: str
     email: str
     location: str
+    address: str = ""
+    siren: str = ""
+    tva_intra: str = ""
     display_name: str
 
 

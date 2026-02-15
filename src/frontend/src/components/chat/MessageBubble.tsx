@@ -111,6 +111,10 @@ export const MessageBubble = memo(function MessageBubble({
             ? 'bg-gradient-to-br from-accent-magenta/12 to-accent-magenta/6 border border-accent-magenta/20 hover:border-accent-magenta/30 hover:shadow-[0_0_20px_rgba(225,29,141,0.1)]'
             : 'bg-surface-elevated border border-border hover:border-accent-cyan/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)]'
         )}
+        style={{
+          contain: 'layout style paint',
+          ...(message.isStreaming && { willChange: 'transform' }),
+        }}
       >
         {/* Copy full message button */}
         <button

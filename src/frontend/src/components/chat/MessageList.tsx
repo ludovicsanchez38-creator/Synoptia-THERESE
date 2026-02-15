@@ -90,7 +90,7 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
   }
 
   return (
-    <div ref={scrollContainerRef} onScroll={handleScroll} className="h-full overflow-y-auto px-4 py-6">
+    <div ref={scrollContainerRef} onScroll={handleScroll} className="h-full overflow-y-auto px-4 py-6" style={{ overflowAnchor: 'none' }}>
       <div className="max-w-3xl mx-auto space-y-4">
         <AnimatePresence initial={false}>
           {displayMessages.map((message, index) => (
@@ -102,6 +102,10 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
               transition={{
                 duration: 0.2,
                 delay: index * 0.03,
+              }}
+              style={{
+                contentVisibility: message.isStreaming ? 'visible' : 'auto',
+                containIntrinsicSize: 'auto 80px',
               }}
             >
               <MessageBubble message={message} />
@@ -132,7 +136,8 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
           </motion.div>
         )}
 
-        <div ref={messagesEndRef} />
+        {/* Ancre scroll - overflow-anchor fonctionne sur WebView2 (Windows) */}
+        <div ref={messagesEndRef} style={{ overflowAnchor: 'auto', height: 1 }} />
       </div>
     </div>
   );

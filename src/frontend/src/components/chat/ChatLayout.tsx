@@ -13,6 +13,7 @@ import { ConversationSidebar } from '../sidebar/ConversationSidebar';
 import { BoardPanel } from '../board';
 import { DropZone } from '../files/DropZone';
 import { SideToggle } from '../ui/SideToggle';
+import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { useKeyboardShortcuts, useConversationSync, useFileDrop } from '../../hooks';
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
@@ -137,10 +138,6 @@ export function ChatLayout() {
     setShowProjectModal(true);
   }, []);
 
-  const handleEditProject = useCallback((project: api.Project) => {
-    setEditingProject(project);
-    setShowProjectModal(true);
-  }, []);
 
   const handleToggleConversationSidebar = useCallback(() => {
     setShowConversationSidebar((prev) => !prev);
@@ -255,13 +252,13 @@ export function ChatLayout() {
 
       {/* Header with drag region for Tauri */}
       <ChatHeader
-        onOpenCommandPalette={handleOpenCommandPalette}
         onOpenSettings={handleOpenSettings}
         onToggleEmailPanel={handleToggleEmailPanel}
         onToggleCalendarPanel={handleToggleCalendarPanel}
         onToggleTasksPanel={handleToggleTasksPanel}
         onToggleInvoicesPanel={handleToggleInvoicesPanel}
         onToggleCRMPanel={handleToggleCRMPanel}
+        onToggleMemoryPanel={() => openPanelWindow('memory')}
       />
 
       {/* Messages area */}
@@ -310,9 +307,7 @@ export function ChatLayout() {
         isOpen={showMemoryPanel}
         onClose={handleCloseMemoryPanel}
         onNewContact={handleNewContact}
-        onNewProject={handleNewProject}
         onEditContact={handleEditContact}
-        onEditProject={handleEditProject}
       />
 
       {/* Settings Modal */}
@@ -348,6 +343,11 @@ export function ChatLayout() {
         isOpen={showBoardPanel}
         onClose={handleCloseBoardPanel}
       />
+
+      {/* Status connexion - coin bas droite */}
+      <div className="fixed bottom-1 right-4 z-10">
+        <ConnectionStatus />
+      </div>
     </div>
   );
 }

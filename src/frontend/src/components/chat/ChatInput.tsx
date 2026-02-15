@@ -222,19 +222,25 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
 
-    // Sprint 2 - PERF-2.7: Batching SSE updates with requestAnimationFrame
-    // This reduces re-renders from ~50/sec to max 60fps (frame-aligned)
-    let pendingUpdate = false;
-    let rafId: number | null = null;
+    // Batching SSE : flush toutes les 50ms (réduit les re-renders de ~60/s à ~20/s)
+    let lastFlushed = '';
+    let flushTimer: ReturnType<typeof setInterval> | null = null;
 
-    const batchedUpdateMessage = (content: string) => {
-      accumulatedContent = content;
-      if (!pendingUpdate) {
-        pendingUpdate = true;
-        rafId = requestAnimationFrame(() => {
-          updateMessage(assistantMessageId, accumulatedContent);
-          pendingUpdate = false;
-        });
+    const startBatching = () => {
+      if (!flushTimer) {
+        flushTimer = setInterval(() => {
+          if (accumulatedContent !== lastFlushed) {
+            updateMessage(assistantMessageId, accumulatedContent);
+            lastFlushed = accumulatedContent;
+          }
+        }, 50);
+      }
+    };
+
+    const stopBatching = () => {
+      if (flushTimer) {
+        clearInterval(flushTimer);
+        flushTimer = null;
       }
     };
 
@@ -262,10 +268,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
 
         if (chunk.type === 'text') {
-          // Accumulate content and batch update (Sprint 2 - PERF-2.7)
+          // Accumulate content and batch update (50ms interval)
           accumulatedContent += chunk.content;
           setActivity('streaming', "En train d'écrire...");
-          batchedUpdateMessage(accumulatedContent);
+          startBatching();
         } else if (chunk.type === 'status') {
           // Status updates (file processing, tool execution start, etc.)
           setActivity('thinking', chunk.content || 'Traitement...');
@@ -285,17 +291,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
       }
 
-      // Cancel any pending RAF and do final update (Sprint 2 - PERF-2.7)
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      // Stop batching and do final update
+      stopBatching();
       // Finalize the message (remove streaming flag)
       updateMessage(assistantMessageId, accumulatedContent);
     } catch (error) {
-      // Cancel any pending RAF on error (Sprint 2 - PERF-2.7)
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
+      // Stop batching on error
+      stopBatching();
       console.error('Error sending message:', error);
       const errorMessage = error instanceof ApiError
         ? `Erreur serveur (${error.status}): ${error.message}`

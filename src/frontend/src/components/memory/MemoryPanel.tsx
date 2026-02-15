@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Briefcase, Plus, Search, ChevronRight, FolderOpen, Trash2, AlertCircle, Shield, Download, UserX, RefreshCw } from 'lucide-react';
+import { X, Users, Plus, Search, ChevronRight, FolderOpen, Trash2, AlertCircle, Shield, Download, UserX, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
 import { FileBrowser } from '../files/FileBrowser';
-import { ProjectsKanban } from './ProjectsKanban';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
@@ -13,24 +12,21 @@ interface MemoryPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onNewContact?: () => void;
-  onNewProject?: () => void;
   onEditContact?: (contact: api.Contact) => void;
-  onEditProject?: (project: api.Project) => void;
 }
 
-type Tab = 'contacts' | 'projects' | 'files';
+type Tab = 'contacts' | 'files';
 
-export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEditContact, onEditProject }: MemoryPanelProps) {
+export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: MemoryPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('contacts');
   const [contacts, setContacts] = useState<api.Contact[]>([]);
-  const [projects, setProjects] = useState<api.Project[]>([]);
   const [indexedFiles, setIndexedFiles] = useState<api.FileMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // E3-05: Scope filter state
   const [scopeFilter, setScopeFilter] = useState<MemoryScope | 'all'>('all');
   // E3-06: Delete state
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'contact' | 'project'; id: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'contact'; id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // RGPD state (Phase 6)
@@ -41,7 +37,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
   } | null>(null);
   const [rgpdActionLoading, setRgpdActionLoading] = useState(false);
   const [anonymizeReason, setAnonymizeReason] = useState('');
-  const { enabled: demoEnabled, maskContact, maskProject, populateMap } = useDemoMask();
+  const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   // Load data when panel opens or scope changes
   useEffect(() => {
@@ -58,18 +54,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
         ? { scope: scopeFilter as MemoryScope }
         : undefined;
 
-      const [contactsData, projectsData, filesData, rgpdStatsData] = await Promise.all([
+      const [contactsData, filesData, rgpdStatsData] = await Promise.all([
         api.listContactsWithScope(0, 50, scopeParams),
-        api.listProjectsWithScope(0, 50, scopeParams),
         api.listFiles(),
         api.getRGPDStats().catch(() => null), // RGPD stats (fail silently)
       ]);
       setContacts(contactsData);
-      setProjects(projectsData);
       setIndexedFiles(filesData);
       setRgpdStats(rgpdStatsData);
       // Peupler la map de remplacement pour le mode démo
-      populateMap(contactsData, projectsData);
+      populateMap(contactsData, []);
     } catch (error) {
       console.error('Failed to load memory data:', error);
     } finally {
@@ -139,28 +133,13 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
 
     setDeleting(true);
     try {
-      if (deleteConfirm.type === 'contact') {
-        await api.deleteContactWithCascade(deleteConfirm.id, true);
-        setContacts(prev => prev.filter(c => c.id !== deleteConfirm.id));
-      } else {
-        await api.deleteProjectWithCascade(deleteConfirm.id, true);
-        setProjects(prev => prev.filter(p => p.id !== deleteConfirm.id));
-      }
+      await api.deleteContactWithCascade(deleteConfirm.id, true);
+      setContacts(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Failed to delete:', error);
     } finally {
       setDeleting(false);
-    }
-  }
-
-  // E3-Kanban: Status change handler for drag & drop
-  async function handleProjectStatusChange(projectId: string, newStatus: string) {
-    try {
-      const updated = await api.updateProject(projectId, { status: newStatus });
-      setProjects(prev => prev.map(p => p.id === projectId ? updated : p));
-    } catch (error) {
-      console.error('Failed to update project status:', error);
     }
   }
 
@@ -175,17 +154,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
     );
   });
 
-  const filteredProjects = projects.filter(p => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(searchLower) ||
-      p.description?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  // Mode démo : masquer les contacts et projets affichés
+  // Mode démo : masquer les contacts affichés
   const displayContacts = demoEnabled ? filteredContacts.map(c => maskContact(c)) : filteredContacts;
-  const displayProjects = demoEnabled ? filteredProjects.map(p => maskProject(p)) : filteredProjects;
 
   // Handle file indexed from browser
   const handleFileIndexed = (metadata: api.FileMetadata) => {
@@ -244,17 +214,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
                 Contacts ({contacts.length})
               </button>
               <button
-                onClick={() => setActiveTab('projects')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'projects'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Briefcase className="w-4 h-4" />
-                Projets ({projects.length})
-              </button>
-              <button
                 onClick={() => setActiveTab('files')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'files'
@@ -267,8 +226,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
               </button>
             </div>
 
-            {/* Search + Scope Filter - only for contacts and projects */}
-            {activeTab !== 'files' && (
+            {/* Search + Scope Filter - only for contacts */}
+            {activeTab === 'contacts' && (
               <div className="p-3 border-b border-border/30 space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -328,17 +287,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
                   })}
                   onRGPDAction={(type, contact) => setRgpdAction({ type, contact })}
                 />
-              ) : activeTab === 'projects' ? (
-                <ProjectsKanban
-                  projects={displayProjects}
-                  onSelect={(p) => onEditProject?.(p)}
-                  onDelete={(p) => setDeleteConfirm({
-                    type: 'project',
-                    id: p.id,
-                    name: p.name
-                  })}
-                  onStatusChange={handleProjectStatusChange}
-                />
               ) : (
                 <FileBrowser
                   onFileIndex={handleFileIndexed}
@@ -369,14 +317,12 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
                         <AlertCircle className="w-5 h-5 text-red-400" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-text">Supprimer {deleteConfirm.type === 'contact' ? 'le contact' : 'le projet'} ?</h3>
+                        <h3 className="text-base font-semibold text-text">Supprimer le contact ?</h3>
                         <p className="text-sm text-text-muted">{deleteConfirm.name}</p>
                       </div>
                     </div>
                     <p className="text-sm text-text-muted mb-4">
-                      {deleteConfirm.type === 'contact'
-                        ? 'Les projets et fichiers associés seront aussi supprimés.'
-                        : 'Les fichiers associés seront aussi supprimés.'}
+                      Les projets et fichiers associés seront aussi supprimés.
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -550,16 +496,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
               )}
             </AnimatePresence>
 
-            {/* Footer - Add button (not for files tab) */}
-            {activeTab !== 'files' && (
+            {/* Footer - Add button (contacts only) */}
+            {activeTab === 'contacts' && (
               <div className="p-3 border-t border-border/50">
                 <Button
                   variant="primary"
                   className="w-full"
-                  onClick={activeTab === 'contacts' ? onNewContact : onNewProject}
+                  onClick={onNewContact}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {activeTab === 'contacts' ? 'Nouveau contact' : 'Nouveau projet'}
+                  Nouveau contact
                 </Button>
               </div>
             )}

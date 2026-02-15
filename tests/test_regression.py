@@ -1053,3 +1053,110 @@ class TestAboutVersionDisplay:
             "AboutTab doit importer et utiliser checkHealth() pour récupérer la version "
             "dans les panels Tauri (contexte JS séparé)"
         )
+
+
+# ============================================================
+# BUG-024 (v0.2.0) - Profil utilisateur : champs facturation
+# Le schema Pydantic doit inclure address, siren, tva_intra
+# sinon le POST /profile les perd silencieusement.
+# ============================================================
+
+
+SCHEMAS_PY = SRC / "app" / "models" / "schemas.py"
+CONFIG_ROUTER_PY = SRC / "app" / "routers" / "config.py"
+
+
+class TestBUG024ProfileSave:
+    """BUG-024 : les champs facturation (address, siren, tva_intra) doivent être dans le schema."""
+
+    def test_profile_schema_has_billing_fields(self):
+        """UserProfileUpdate doit contenir address, siren, tva_intra."""
+        content = SCHEMAS_PY.read_text(encoding="utf-8")
+        # Parser l'AST pour trouver la classe UserProfileUpdate
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "UserProfileUpdate":
+                class_source = ast.get_source_segment(content, node)
+                assert "address" in class_source, (
+                    "UserProfileUpdate doit avoir le champ 'address'"
+                )
+                assert "siren" in class_source, (
+                    "UserProfileUpdate doit avoir le champ 'siren'"
+                )
+                assert "tva_intra" in class_source, (
+                    "UserProfileUpdate doit avoir le champ 'tva_intra'"
+                )
+                break
+        else:
+            pytest.fail("Classe UserProfileUpdate non trouvée dans schemas.py")
+
+    def test_profile_response_has_billing_fields(self):
+        """UserProfileResponse doit contenir address, siren, tva_intra."""
+        content = SCHEMAS_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "UserProfileResponse":
+                class_source = ast.get_source_segment(content, node)
+                assert "address" in class_source, (
+                    "UserProfileResponse doit avoir le champ 'address'"
+                )
+                assert "siren" in class_source, (
+                    "UserProfileResponse doit avoir le champ 'siren'"
+                )
+                assert "tva_intra" in class_source, (
+                    "UserProfileResponse doit avoir le champ 'tva_intra'"
+                )
+                break
+        else:
+            pytest.fail("Classe UserProfileResponse non trouvée dans schemas.py")
+
+
+# ============================================================
+# Boutons fenêtre Windows/Linux (v0.2.0)
+# ChatHeader doit détecter la plateforme et adapter les boutons.
+# macOS : traffic lights à gauche. Windows/Linux : boutons à droite.
+# ============================================================
+
+
+class TestWindowControlsPlatform:
+    """ChatHeader doit adapter les boutons fenêtre selon la plateforme."""
+
+    def test_platform_detection_in_header(self):
+        """ChatHeader doit détecter macOS vs Windows/Linux."""
+        content = CHAT_HEADER_TSX.read_text(encoding="utf-8")
+        assert "isMac" in content, (
+            "ChatHeader doit avoir une variable isMac pour la détection de plateforme"
+        )
+        assert "navigator.platform" in content, (
+            "ChatHeader doit utiliser navigator.platform pour détecter l'OS"
+        )
+
+
+# ============================================================
+# Anti-bump texte streaming (v0.2.0)
+# CSS containment + batch 50ms pour éviter les layout shifts.
+# ============================================================
+
+
+CHAT_INPUT_TSX = FRONTEND / "components" / "chat" / "ChatInput.tsx"
+
+
+class TestStreamingAntiFlicker:
+    """Optimisations anti-flicker pour le streaming (containment + batch)."""
+
+    def test_message_bubble_has_css_containment(self):
+        """MessageBubble doit utiliser CSS containment pour isoler les repaints."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        assert "contain" in content, (
+            "MessageBubble doit utiliser la propriété CSS 'contain' pour isoler les repaints"
+        )
+
+    def test_streaming_batch_interval(self):
+        """ChatInput doit batcher les updates streaming avec setInterval (pas rAF pur)."""
+        content = CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "setInterval" in content, (
+            "ChatInput doit utiliser setInterval pour batcher les updates streaming"
+        )
+        assert "50" in content, (
+            "ChatInput doit utiliser un intervalle de 50ms pour le batch streaming"
+        )

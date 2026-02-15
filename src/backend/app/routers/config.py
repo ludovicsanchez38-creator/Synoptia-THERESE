@@ -614,6 +614,9 @@ async def get_profile(session: AsyncSession = Depends(get_session)):
         context=profile.context,
         email=profile.email,
         location=profile.location,
+        address=profile.address,
+        siren=profile.siren,
+        tva_intra=profile.tva_intra,
         display_name=profile.display_name(),
     )
 
@@ -643,6 +646,9 @@ async def set_profile(
         context=request.context,
         email=request.email,
         location=request.location,
+        address=request.address,
+        siren=request.siren,
+        tva_intra=request.tva_intra,
     )
 
     saved_profile = await set_user_profile(session, profile)
@@ -658,6 +664,9 @@ async def set_profile(
         context=saved_profile.context,
         email=saved_profile.email,
         location=saved_profile.location,
+        address=saved_profile.address,
+        siren=saved_profile.siren,
+        tva_intra=saved_profile.tva_intra,
         display_name=saved_profile.display_name(),
     )
 
