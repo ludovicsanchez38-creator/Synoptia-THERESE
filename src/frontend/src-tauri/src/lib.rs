@@ -3,7 +3,6 @@
 //! L'assistante souveraine des entrepreneurs français.
 //! Gère le sidecar backend Python en mode release.
 
-use std::net::TcpListener;
 use std::sync::Mutex;
 use tauri::Emitter;
 use tauri::Manager;
@@ -12,14 +11,8 @@ use tauri::RunEvent;
 /// IPC Commands module
 mod commands;
 
-/// Trouve un port TCP libre en laissant l'OS en assigner un.
-fn find_free_port() -> u16 {
-    let listener = TcpListener::bind("127.0.0.1:0")
-        .expect("Impossible de trouver un port libre");
-    let port = listener.local_addr().unwrap().port();
-    drop(listener);
-    port
-}
+/// Port fixe du backend THÉRÈSE (port obscur, pas de conflit réaliste)
+const BACKEND_PORT: u16 = 17293;
 
 /// Écrit dans ~/.therese/logs/sidecar.log
 fn log_sidecar(msg: &str) {
@@ -223,7 +216,7 @@ pub fn run() {
         .manage(SidecarState {
             child: Mutex::new(None),
         })
-        .manage(BackendPort(Mutex::new(8000)))
+        .manage(BackendPort(Mutex::new(BACKEND_PORT)))
         .setup(|app| {
             // Get main window
             if let Some(window) = app.get_webview_window("main") {
@@ -247,7 +240,7 @@ pub fn run() {
                 // Tuer les anciens process backend zombies AVANT le lancement
                 kill_zombie_backends();
 
-                let port = find_free_port();
+                let port = BACKEND_PORT;
                 let port_str = port.to_string();
 
                 // Stocker le port pour le frontend

@@ -35,12 +35,19 @@ API_CORE_TS = FRONTEND / "services" / "api" / "core.ts"
 
 
 class TestBUG002PortDynamique:
-    """Port dynamique au lieu de 8000 hardcodé."""
+    """Port fixe 17293 au lieu de 8000 hardcodé (v0.1.19 : port fixe)."""
 
     def test_main_accepts_port_argument(self):
         """main.py accepte --port en argument CLI."""
         content = MAIN_PY.read_text(encoding="utf-8")
         assert "--port" in content, "main.py doit accepter --port"
+
+    def test_main_default_port_17293(self):
+        """main.py doit utiliser le port 17293 par défaut."""
+        content = MAIN_PY.read_text(encoding="utf-8")
+        assert "default=17293" in content, (
+            "main.py doit utiliser default=17293 (pas 8000)"
+        )
 
     def test_main_accepts_host_argument(self):
         """main.py accepte --host en argument CLI."""
@@ -156,11 +163,14 @@ class TestBUG008FreezeSupport:
 class TestBUG011IPCMacM1:
     """Retry IPC Tauri pour Mac M1."""
 
-    def test_retry_on_default_port(self):
-        """initApiBase() doit retenter si le port reçu est 8000 (défaut)."""
+    def test_retry_ipc_mechanism(self):
+        """initApiBase() doit retenter l'IPC si le port n'est pas valide."""
         content = API_CORE_TS.read_text(encoding="utf-8")
-        assert "port !== 8000" in content or "port != 8000" in content, (
-            "initApiBase doit détecter le port par défaut 8000 et retenter"
+        assert "MAX_RETRIES" in content, (
+            "initApiBase doit avoir un mécanisme de retry IPC"
+        )
+        assert "RETRY_DELAY" in content, (
+            "initApiBase doit avoir un délai entre les retries IPC"
         )
 
 
@@ -779,4 +789,65 @@ class TestUXEmailDisconnect:
         content = EMAIL_PANEL_TSX.read_text(encoding="utf-8")
         assert "disconnectEmailAccount" in content, (
             "EmailPanel doit appeler api.disconnectEmailAccount()"
+        )
+
+
+# ============================================================
+# Port fixe 17293 (v0.1.19) - Suppression du port dynamique
+# Le port dynamique (find_free_port) causait BUG-002, 008, 011, 015.
+# Le port fixe 17293 simplifie toute la chaîne.
+# ============================================================
+
+CONFIG_PY = SRC / "app" / "config.py"
+
+
+class TestPortFixe17293:
+    """Port fixe 17293 utilisé partout (lib.rs, main.py, core.ts, config.py)."""
+
+    def test_rust_uses_fixed_port(self):
+        """lib.rs doit utiliser le port fixe 17293 (pas find_free_port)."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert "17293" in content, (
+            "lib.rs doit contenir le port fixe 17293"
+        )
+        assert "find_free_port" not in content, (
+            "lib.rs ne doit plus contenir find_free_port (port dynamique supprimé)"
+        )
+
+    def test_rust_no_tcplistener_bind(self):
+        """lib.rs ne doit plus utiliser TcpListener::bind pour trouver un port."""
+        content = TAURI_LIB_RS.read_text(encoding="utf-8")
+        assert "TcpListener::bind" not in content, (
+            "lib.rs ne doit plus utiliser TcpListener::bind (port dynamique supprimé)"
+        )
+
+    def test_main_py_default_port_17293(self):
+        """main.py doit avoir default=17293 pour --port."""
+        content = MAIN_PY.read_text(encoding="utf-8")
+        assert "default=17293" in content, (
+            "main.py doit utiliser default=17293 pour le port"
+        )
+
+    def test_config_py_port_17293(self):
+        """config.py doit définir port: int = 17293."""
+        content = CONFIG_PY.read_text(encoding="utf-8")
+        assert "port: int = 17293" in content, (
+            "config.py doit définir le port par défaut à 17293"
+        )
+
+    def test_core_ts_fallback_17293(self):
+        """core.ts doit utiliser le port 17293 comme fallback."""
+        content = API_CORE_TS.read_text(encoding="utf-8")
+        assert "http://127.0.0.1:17293" in content, (
+            "core.ts doit utiliser http://127.0.0.1:17293 comme API_BASE"
+        )
+
+    def test_core_ts_no_port_8000_check(self):
+        """core.ts ne doit plus vérifier port !== 8000."""
+        content = API_CORE_TS.read_text(encoding="utf-8")
+        assert "port !== 8000" not in content, (
+            "core.ts ne doit plus contenir 'port !== 8000' (port fixe, plus besoin)"
+        )
+        assert "port != 8000" not in content, (
+            "core.ts ne doit plus contenir 'port != 8000' (port fixe, plus besoin)"
         )

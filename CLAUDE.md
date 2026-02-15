@@ -23,7 +23,7 @@ Créateur : Ludo Sanchez (Synoptïa) - "Ta mémoire, tes données, ton business.
 ```bash
 # Développement
 make dev                  # Backend + Tauri simultanés
-make dev-backend          # Backend seul (uvicorn :8000)
+make dev-backend          # Backend seul (uvicorn :17293)
 make dev-frontend         # Frontend seul (Vite :1420)
 make tauri                # Tauri uniquement
 
@@ -47,11 +47,11 @@ make db-migrate           # Alembic upgrade head
 make db-revision MSG='x'  # Nouvelle migration
 
 # Lancement manuel
-cd src/backend && uv run uvicorn app.main:app --reload --port 8000
+cd src/backend && uv run uvicorn app.main:app --reload --port 17293
 cd src/frontend && npm run tauri dev
 ```
 
-**URLs** : Backend http://localhost:8000 | Frontend http://localhost:1420 | Docs http://localhost:8000/docs
+**URLs** : Backend http://localhost:17293 | Frontend http://localhost:1420 | Docs http://localhost:17293/docs
 
 ## Architecture
 
@@ -109,6 +109,6 @@ palette:
 - `docs/prd-therese.md` - PRD complet
 - `docs/stories/` - 35 user stories, 5 epics
 
-## Version actuelle : v0.1.18-alpha (15 février 2026)
+## Version actuelle : v0.1.19-alpha (15 février 2026)
 
 Voir `docs/CHANGELOG.md` pour le détail des fonctionnalités par version.

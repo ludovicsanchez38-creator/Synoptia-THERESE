@@ -5,8 +5,8 @@
  * Sprint 2 - PERF-2.2: Extracted from monolithic api.ts
  */
 
-/** URL de base du backend (port dynamique en release, 8000 en dev) */
-export let API_BASE = 'http://127.0.0.1:8000';
+/** URL de base du backend (port fixe 17293) */
+export let API_BASE = 'http://127.0.0.1:17293';
 
 /**
  * Singleton : une seule promesse d'init partagée entre toutes les fenêtres/appels.
@@ -16,12 +16,12 @@ export let API_BASE = 'http://127.0.0.1:8000';
 let _initPromise: Promise<void> | null = null;
 
 /**
- * Initialise API_BASE avec le port dynamique du sidecar.
+ * Initialise API_BASE avec le port du sidecar.
  *
  * Ordre de résolution :
  * 1. Paramètre URL ?port=XXXX (passé par la fenêtre principale aux panels)
  * 2. Tauri IPC get_backend_port (retry 10x 300ms pour Mac M1 lent)
- * 3. Fallback port 8000 (mode dev)
+ * 3. Fallback port 17293 (mode dev)
  */
 export function initApiBase(): Promise<void> {
   if (_initPromise) return _initPromise;
@@ -50,13 +50,12 @@ export function initApiBase(): Promise<void> {
       try {
         const { invoke } = await import('@tauri-apps/api/core');
         const port: number = await invoke('get_backend_port');
-        if (port && port !== 8000) {
+        if (port && port > 0 && port <= 65535) {
           API_BASE = `http://127.0.0.1:${port}`;
           console.log(`[API] Port backend : ${port} (tentative ${attempt + 1})`);
           return;
         }
-        // Port 8000 = valeur initiale, le setup Rust n'a peut-être pas encore mis à jour
-        console.log(`[API] Port 8000 reçu, retry ${attempt + 1}/${MAX_RETRIES}...`);
+        console.log(`[API] Port invalide reçu, retry ${attempt + 1}/${MAX_RETRIES}...`);
       } catch {
         console.log(`[API] IPC échoué, retry ${attempt + 1}/${MAX_RETRIES}...`);
       }
@@ -67,11 +66,15 @@ export function initApiBase(): Promise<void> {
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const port: number = await invoke('get_backend_port');
-      API_BASE = `http://127.0.0.1:${port}`;
-      console.log(`[API] Port backend final : ${port}`);
+      if (port && port > 0 && port <= 65535) {
+        API_BASE = `http://127.0.0.1:${port}`;
+        console.log(`[API] Port backend final : ${port}`);
+        return;
+      }
     } catch {
-      console.log('[API] Fallback port 8000 (mode dev)');
+      // Fallback : port 17293 déjà défini dans API_BASE
     }
+    console.log('[API] Fallback port 17293 (mode dev)');
   })();
   return _initPromise;
 }

@@ -22,13 +22,13 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "THÉRÈSE"
-    app_version: str = "0.1.18"
+    app_version: str = "0.1.19"
     debug: bool = False
     therese_env: str = "development"  # "development" or "production" (SEC-018)
 
     # Server
     host: str = "127.0.0.1"
-    port: int = 8000
+    port: int = 17293
 
     # Paths
     therese_data_dir: str | None = None  # Override via env var for testing

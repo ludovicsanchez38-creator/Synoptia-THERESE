@@ -27,7 +27,7 @@ pub fn get_system_info() -> SystemInfo {
     }
 }
 
-/// Retourne le port du backend (dynamique en release, 8000 en dev)
+/// Retourne le port du backend (17293 par défaut)
 #[tauri::command]
 pub fn get_backend_port(state: tauri::State<'_, crate::BackendPort>) -> u16 {
     *state.0.lock().unwrap()

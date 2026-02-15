@@ -8,12 +8,12 @@ VENV = .venv/bin
 # Développement
 dev:
 	@echo "🚀 Lancement THÉRÈSE en mode dev..."
-	@$(VENV)/uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --app-dir $(BACKEND_DIR) &
+	@$(VENV)/uvicorn app.main:app --host 127.0.0.1 --port 17293 --reload --app-dir $(BACKEND_DIR) &
 	@cd $(FRONTEND_DIR) && npm run tauri dev
 
 dev-backend:
 	@echo "🐍 Lancement backend seul..."
-	@$(VENV)/uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload --app-dir $(BACKEND_DIR)
+	@$(VENV)/uvicorn app.main:app --host 127.0.0.1 --port 17293 --reload --app-dir $(BACKEND_DIR)
 
 dev-frontend:
 	@echo "⚛️  Lancement frontend seul (sans Tauri)..."
