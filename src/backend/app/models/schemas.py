@@ -368,9 +368,11 @@ class ConfigResponse(BaseModel):
     has_gemini_key: bool = False
     has_groq_key: bool = False
     has_grok_key: bool = False
+    has_openrouter_key: bool = False
     # Image generation specific keys (separate from LLM keys)
     has_openai_image_key: bool = False
     has_gemini_image_key: bool = False
+    has_fal_key: bool = False
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True
@@ -379,7 +381,7 @@ class ConfigResponse(BaseModel):
 class ApiKeyUpdate(BaseModel):
     """API key update request."""
 
-    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openai_image", "gemini_image"]
+    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal"]
     api_key: str
 
 
@@ -461,7 +463,7 @@ class HealthResponse(BaseModel):
 class LLMConfigUpdate(BaseModel):
     """LLM configuration update request."""
 
-    provider: Literal["anthropic", "openai", "gemini", "mistral", "ollama"]
+    provider: Literal["anthropic", "openai", "gemini", "mistral", "grok", "openrouter", "ollama"]
     model: str
 
 

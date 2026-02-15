@@ -26,6 +26,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     GEMINI = "gemini"
     GROK = "grok"
+    OPENROUTER = "openrouter"
 
 
 @dataclass

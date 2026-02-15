@@ -47,6 +47,12 @@ const providerConfig: Record<ImageProvider, {
     label: 'Nano Banana Pro',
     description: 'Image générée par Gemini'
   },
+  'fal-flux-pro': {
+    color: 'text-orange-400',
+    bgGradient: 'from-orange-500/20 to-amber-600/10',
+    label: 'Fal Flux Pro',
+    description: 'Image générée par Fal (Flux Pro v1.1)'
+  },
 };
 
 function formatFileSize(bytes: number): string {

@@ -20,6 +20,7 @@ from .grok import GrokProvider
 from .mistral import MistralProvider
 from .ollama import OllamaProvider
 from .openai import OpenAIProvider
+from .openrouter import OpenRouterProvider
 
 __all__ = [
     # Enums and types
@@ -34,6 +35,7 @@ __all__ = [
     # Provider implementations
     "AnthropicProvider",
     "OpenAIProvider",
+    "OpenRouterProvider",
     "GeminiProvider",
     "MistralProvider",
     "GrokProvider",

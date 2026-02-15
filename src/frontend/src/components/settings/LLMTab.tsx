@@ -86,6 +86,21 @@ export const PROVIDERS: ProviderConfig[] = [
     ],
   },
   {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Accès unifié à 200+ modèles (Claude, GPT, Gemini, Llama...)',
+    keyPrefix: 'sk-or-',
+    keyPlaceholder: 'sk-or-v1-...',
+    consoleUrl: 'https://openrouter.ai/keys',
+    models: [
+      { id: 'anthropic/claude-sonnet-4-5', name: 'Claude Sonnet 4.5', badge: 'Recommandé' },
+      { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
+      { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
+      { id: 'google/gemini-3-pro', name: 'Gemini 3 Pro' },
+      { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
+    ],
+  },
+  {
     id: 'ollama',
     name: 'Ollama (Local)',
     description: '100% local - Aucune clé API requise',
@@ -98,7 +113,7 @@ export interface ImageProviderConfig {
   id: string;
   name: string;
   description: string;
-  apiKeyId: 'openai_image' | 'gemini_image';
+  apiKeyId: 'openai_image' | 'gemini_image' | 'fal';
   keyName: string;
   keyPrefix: string;
   keyPlaceholder: string;
@@ -125,6 +140,16 @@ export const IMAGE_PROVIDERS: ImageProviderConfig[] = [
     keyPrefix: 'AIza',
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
+  },
+  {
+    id: 'fal-flux-pro',
+    name: 'Fal Flux Pro',
+    description: 'Génération d\'images rapide (Flux Pro v1.1)',
+    apiKeyId: 'fal',
+    keyName: 'Fal',
+    keyPrefix: '',
+    keyPlaceholder: 'Clé API Fal...',
+    consoleUrl: 'https://fal.ai/dashboard/keys',
   },
 ];
 
@@ -165,7 +190,7 @@ export interface LLMTabProps {
   setImageKeyInputs: (v: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void;
   imageKeySaving: string | null;
   imageKeySaved: string | null;
-  onSaveImageKey: (apiKeyId: 'openai_image' | 'gemini_image') => void;
+  onSaveImageKey: (apiKeyId: 'openai_image' | 'gemini_image' | 'fal') => void;
 }
 
 export function LLMTab({

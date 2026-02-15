@@ -92,6 +92,21 @@ const PROVIDERS: ProviderConfig[] = [
     ],
   },
   {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Accès unifié à 200+ modèles (Claude, GPT, Gemini, Llama...)',
+    keyPrefix: 'sk-or-',
+    keyPlaceholder: 'sk-or-v1-...',
+    consoleUrl: 'https://openrouter.ai/keys',
+    models: [
+      { id: 'anthropic/claude-sonnet-4-5', name: 'Claude Sonnet 4.5', badge: 'Recommandé' },
+      { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
+      { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
+      { id: 'google/gemini-3-pro', name: 'Gemini 3 Pro' },
+      { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
+    ],
+  },
+  {
     id: 'ollama',
     name: 'Ollama (Local)',
     description: '100% local - Aucune clé API requise',

@@ -13,7 +13,7 @@ Créateur : Ludo Sanchez (Synoptïa) - "Ta mémoire, tes données, ton business.
 - **Frontend** : Tauri 2.0 + React + TailwindCSS + Framer Motion + Zustand
 - **Backend** : Python FastAPI + UV + Alembic (migrations)
 - **Database** : SQLite (données) + Qdrant (embeddings vectoriels)
-- **LLM** : Multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, Ollama)
+- **LLM** : Multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, OpenRouter, Ollama)
 - **Skills Office** : python-docx, python-pptx, openpyxl (sandbox code-execution)
 - **MCP** : 19 presets (transport stdio, JSON-RPC)
 - **Tests** : Vitest (frontend), pytest (backend), Playwright (E2E)
@@ -60,7 +60,7 @@ src/backend/app/
   main.py              # FastAPI app avec lifespan
   models/              # entities.py (SQLModel), schemas.py (Pydantic), board.py
   routers/             # chat, memory, config, skills, images, board, mcp, files, data, crm, email, calendar...
-  services/            # llm.py (orchestrateur), providers/ (6 LLM), skills/ (code_executor, generators)
+  services/            # llm.py (orchestrateur), providers/ (7 LLM), skills/ (code_executor, generators)
                        # qdrant.py, embeddings.py, mcp_service.py, encryption.py, prompt_security.py...
 
 src/frontend/src/
@@ -109,6 +109,6 @@ palette:
 - `docs/prd-therese.md` - PRD complet
 - `docs/stories/` - 35 user stories, 5 epics
 
-## Version actuelle : v0.1.20-alpha (15 février 2026)
+## Version actuelle : v0.2.0-alpha (15 février 2026)
 
 Voir `docs/CHANGELOG.md` pour le détail des fonctionnalités par version.

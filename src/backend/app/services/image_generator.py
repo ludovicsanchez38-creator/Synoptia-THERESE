@@ -55,6 +55,7 @@ class ImageProvider(str, Enum):
 
     OPENAI = "gpt-image-1.5"
     GEMINI = "nanobanan-pro"
+    FAL = "fal-flux-pro"
 
 
 @dataclass
@@ -119,6 +120,8 @@ class ImageGeneratorService:
             return await self._generate_openai(prompt, config, reference_image_path)
         elif provider == ImageProvider.GEMINI:
             return await self._generate_gemini(prompt, config, reference_image_path)
+        elif provider == ImageProvider.FAL:
+            return await self._generate_fal(prompt, config, reference_image_path)
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 
@@ -261,6 +264,78 @@ class ImageGeneratorService:
 
         except Exception as e:
             logger.error(f"Gemini image generation error: {e}")
+            raise
+
+    async def _generate_fal(
+        self,
+        prompt: str,
+        config: ImageConfig,
+        reference_image_path: str | None = None,
+    ) -> GeneratedImage:
+        """Generate image with Fal Flux Pro v1.1."""
+        from app.services.http_client import get_http_client
+
+        api_key = (
+            os.getenv("FAL_API_KEY")
+            or _get_api_key_from_db("fal")
+        )
+        if not api_key:
+            raise ValueError("Clé API Fal non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.")
+
+        client = await get_http_client()
+
+        try:
+            # Déterminer la taille d'image
+            image_size = config.size if config.size != "1024x1024" else "landscape_16_9"
+            if config.size == "1024x1024":
+                image_size = "square"
+            elif config.size == "1536x1024":
+                image_size = "landscape_16_9"
+            elif config.size == "1024x1536":
+                image_size = "portrait_16_9"
+
+            payload = {
+                "prompt": prompt,
+                "image_size": image_size,
+                "num_images": 1,
+                "enable_safety_checker": True,
+            }
+
+            response = await client.post(
+                "https://fal.run/fal-ai/flux-pro/v1.1",
+                headers={
+                    "Authorization": f"Key {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=120.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            # Récupérer l'URL de l'image générée
+            images = data.get("images", [])
+            if not images:
+                raise ValueError("No image data in Fal response")
+
+            image_url = images[0].get("url")
+            if not image_url:
+                raise ValueError("No image URL in Fal response")
+
+            # Télécharger l'image
+            img_response = await client.get(image_url, timeout=60.0)
+            img_response.raise_for_status()
+            image_bytes = img_response.content
+
+            return self._save_image(
+                image_bytes=image_bytes,
+                provider=ImageProvider.FAL.value,
+                prompt=prompt,
+                extension="png",
+            )
+
+        except Exception as e:
+            logger.error(f"Fal image generation error: {e}")
             raise
 
     def _save_image(

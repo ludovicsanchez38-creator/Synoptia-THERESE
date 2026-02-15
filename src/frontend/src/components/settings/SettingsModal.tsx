@@ -228,7 +228,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }
 
-  async function handleSaveImageKey(apiKeyId: 'openai_image' | 'gemini_image') {
+  async function handleSaveImageKey(apiKeyId: 'openai_image' | 'gemini_image' | 'fal') {
     const keyInput = imageKeyInputs[apiKeyId] || '';
     if (!keyInput.trim()) {
       setError('Veuillez entrer une clé API');

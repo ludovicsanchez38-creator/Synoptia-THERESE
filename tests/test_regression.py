@@ -903,3 +903,153 @@ class TestBUG022CORSWindowsOrigin:
         assert "Access-Control-Allow-Private-Network" in content, (
             "main.py doit gérer le header PNA pour WebView2 143+"
         )
+
+
+# ============================================================
+# BUG-023 (v0.2.0) - Race condition email (loadMessages concurrent)
+# Zustand persist hydration déclenche loadMessages() plusieurs fois.
+# AbortController + garde isLoadingRef + getState() au lieu de closure.
+# ============================================================
+
+
+EMAIL_LIST_TSX = FRONTEND / "components" / "email" / "EmailList.tsx"
+
+
+class TestBUG023EmailRaceCondition:
+    """BUG-023 : race condition loadMessages (AbortController + garde + pas de closure stale)."""
+
+    def test_abort_controller_present(self):
+        """EmailList doit utiliser un AbortController pour annuler les chargements concurrents."""
+        content = EMAIL_LIST_TSX.read_text(encoding="utf-8")
+        assert "AbortController" in content, (
+            "EmailList doit utiliser AbortController pour annuler les loadMessages concurrents"
+        )
+        assert "abortControllerRef" in content, (
+            "EmailList doit stocker l'AbortController dans un ref"
+        )
+
+    def test_loading_guard_present(self):
+        """EmailList doit avoir un garde isLoadingRef pour éviter les appels concurrents."""
+        content = EMAIL_LIST_TSX.read_text(encoding="utf-8")
+        assert "isLoadingRef" in content, (
+            "EmailList doit avoir un isLoadingRef pour bloquer les appels concurrents"
+        )
+
+    def test_no_stale_closure(self):
+        """EmailList doit utiliser getState() au lieu d'une closure stale pour le cache."""
+        content = EMAIL_LIST_TSX.read_text(encoding="utf-8")
+        assert "useEmailStore.getState()" in content, (
+            "EmailList doit utiliser useEmailStore.getState() pour lire le cache "
+            "(pas une closure stale qui ne se met pas à jour)"
+        )
+
+    def test_abort_on_cleanup(self):
+        """EmailList doit abort() au démontage du composant."""
+        content = EMAIL_LIST_TSX.read_text(encoding="utf-8")
+        # Vérifier qu'il y a un cleanup return dans un useEffect qui appelle abort
+        assert "abortControllerRef.current" in content, (
+            "EmailList doit vérifier abortControllerRef.current dans le cleanup"
+        )
+        assert ".abort()" in content, (
+            "EmailList doit appeler .abort() pour annuler le chargement en cours"
+        )
+
+
+# ============================================================
+# OpenRouter provider (v0.2.0) - Nouveau provider LLM
+# API OpenAI-compatible à https://openrouter.ai/api/v1/chat/completions
+# ============================================================
+
+
+PROVIDERS_DIR = SRC / "app" / "services" / "providers"
+OPENROUTER_PY = PROVIDERS_DIR / "openrouter.py"
+PROVIDERS_INIT_PY = PROVIDERS_DIR / "__init__.py"
+LLM_PY = SRC / "app" / "services" / "llm.py"
+
+
+class TestOpenRouterProvider:
+    """Provider OpenRouter (API OpenAI-compatible, 200+ modèles)."""
+
+    def test_openrouter_file_exists(self):
+        """Le fichier openrouter.py doit exister dans les providers."""
+        assert OPENROUTER_PY.exists(), (
+            "src/backend/app/services/providers/openrouter.py doit exister"
+        )
+
+    def test_openrouter_in_init(self):
+        """OpenRouterProvider doit être exporté dans __init__.py."""
+        content = PROVIDERS_INIT_PY.read_text(encoding="utf-8")
+        assert "OpenRouterProvider" in content, (
+            "OpenRouterProvider doit être exporté dans providers/__init__.py"
+        )
+
+    def test_openrouter_in_provider_map(self):
+        """OPENROUTER doit être dans le provider_map de llm.py."""
+        content = LLM_PY.read_text(encoding="utf-8")
+        assert "OPENROUTER" in content, (
+            "LLMProvider.OPENROUTER doit être dans le provider_map de llm.py"
+        )
+        assert "OpenRouterProvider" in content, (
+            "OpenRouterProvider doit être importé dans llm.py"
+        )
+
+    def test_openrouter_api_url(self):
+        """Le provider doit utiliser l'URL API OpenRouter."""
+        content = OPENROUTER_PY.read_text(encoding="utf-8")
+        assert "openrouter.ai/api/v1" in content, (
+            "openrouter.py doit utiliser l'API OpenRouter (openrouter.ai/api/v1)"
+        )
+
+
+# ============================================================
+# Fal image provider (v0.2.0) - Génération d'images Flux Pro v1.1
+# API Fal à https://fal.run/fal-ai/flux-pro/v1.1
+# ============================================================
+
+
+IMAGE_GENERATOR_PY = SRC / "app" / "services" / "image_generator.py"
+
+
+class TestFalImageProvider:
+    """Provider Fal pour la génération d'images (Flux Pro v1.1)."""
+
+    def test_fal_in_image_provider_enum(self):
+        """FAL doit être dans l'enum ImageProvider."""
+        content = IMAGE_GENERATOR_PY.read_text(encoding="utf-8")
+        assert "FAL" in content, (
+            "ImageProvider.FAL doit exister dans image_generator.py"
+        )
+        assert "fal-flux-pro" in content, (
+            "FAL doit avoir la valeur 'fal-flux-pro' dans l'enum"
+        )
+
+    def test_fal_generation_method(self):
+        """La méthode _generate_fal doit exister dans ImageGeneratorService."""
+        content = IMAGE_GENERATOR_PY.read_text(encoding="utf-8")
+        assert "_generate_fal" in content, (
+            "ImageGeneratorService doit avoir une méthode _generate_fal()"
+        )
+        assert "fal.run" in content or "fal-ai/flux-pro" in content, (
+            "_generate_fal doit utiliser l'API Fal (fal.run ou fal-ai/flux-pro)"
+        )
+
+
+# ============================================================
+# Fix version À propos (v0.2.0) - Panels Tauri contexte JS séparé
+# AboutTab doit fetch la version si elle est null (panels séparés).
+# ============================================================
+
+
+ABOUT_TAB_TSX = FRONTEND / "components" / "settings" / "AboutTab.tsx"
+
+
+class TestAboutVersionDisplay:
+    """AboutTab doit récupérer la version même dans un panel séparé."""
+
+    def test_about_tab_fetches_version(self):
+        """AboutTab doit appeler checkHealth si la version est null."""
+        content = ABOUT_TAB_TSX.read_text(encoding="utf-8")
+        assert "checkHealth" in content, (
+            "AboutTab doit importer et utiliser checkHealth() pour récupérer la version "
+            "dans les panels Tauri (contexte JS séparé)"
+        )

@@ -97,6 +97,13 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         )
         has_grok = result.scalar_one_or_none() is not None
 
+    has_openrouter = bool(os.environ.get("OPENROUTER_API_KEY"))
+    if not has_openrouter:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "openrouter_api_key")
+        )
+        has_openrouter = result.scalar_one_or_none() is not None
+
     # Check for image-specific API keys
     has_openai_image = bool(os.environ.get("OPENAI_IMAGE_API_KEY"))
     if not has_openai_image:
@@ -111,6 +118,13 @@ async def get_config(session: AsyncSession = Depends(get_session)):
             select(Preference).where(Preference.key == "gemini_image_api_key")
         )
         has_gemini_image = result.scalar_one_or_none() is not None
+
+    has_fal = bool(os.environ.get("FAL_API_KEY"))
+    if not has_fal:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "fal_api_key")
+        )
+        has_fal = result.scalar_one_or_none() is not None
 
     # Check web search preference (default: enabled)
     web_search_enabled = True
@@ -131,8 +145,10 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         has_gemini_key=has_gemini,
         has_groq_key=has_groq,
         has_grok_key=has_grok,
+        has_openrouter_key=has_openrouter,
         has_openai_image_key=has_openai_image,
         has_gemini_image_key=has_gemini_image,
+        has_fal_key=has_fal,
         ollama_available=ollama_available,
         web_search_enabled=web_search_enabled,
     )
@@ -189,6 +205,11 @@ async def set_api_key(
         raise HTTPException(
             status_code=400,
             detail="La clé API Grok (xAI) doit commencer par 'xai-'"
+        )
+    elif provider == "openrouter" and not key.startswith("sk-or-"):
+        raise HTTPException(
+            status_code=400,
+            detail="La clé API OpenRouter doit commencer par 'sk-or-'"
         )
 
     key_name = f"{request.provider}_api_key"
@@ -269,8 +290,10 @@ async def delete_api_key(
         "gemini": "GEMINI_API_KEY",
         "groq": "GROQ_API_KEY",
         "grok": "XAI_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
         "openai_image": "OPENAI_IMAGE_API_KEY",
         "gemini_image": "GEMINI_IMAGE_API_KEY",
+        "fal": "FAL_API_KEY",
     }
     if provider in env_mapping and env_mapping[provider] in os.environ:
         del os.environ[env_mapping[provider]]
@@ -807,6 +830,15 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "grok-4-1-fast-non-reasoning",  # Fast variant
             "grok-3-beta",                  # Previous gen
         ]
+    elif config.provider.value == "openrouter":
+        # OpenRouter : accès unifié à 200+ modèles
+        available_models = [
+            "anthropic/claude-sonnet-4-5",     # Recommandé
+            "anthropic/claude-opus-4-6",       # Premium
+            "openai/gpt-5.2",                  # GPT-5.2
+            "google/gemini-3-pro",             # Gemini 3 Pro
+            "meta-llama/llama-4-maverick",     # Open Source
+        ]
 
     return LLMConfigResponse(
         provider=config.provider.value,
@@ -859,6 +891,7 @@ async def set_llm_config(
         LLMProvider.GEMINI: ("GEMINI_API_KEY", "gemini_api_key"),
         LLMProvider.MISTRAL: ("MISTRAL_API_KEY", "mistral_api_key"),
         LLMProvider.GROK: ("XAI_API_KEY", "grok_api_key"),
+        LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
     }
 
     if provider == LLMProvider.OLLAMA:

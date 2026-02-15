@@ -32,8 +32,10 @@ export async function getApiKeys(): Promise<Record<string, boolean>> {
     has_gemini_key: boolean;
     has_groq_key: boolean;
     has_grok_key: boolean;
+    has_openrouter_key: boolean;
     has_openai_image_key: boolean;
     has_gemini_image_key: boolean;
+    has_fal_key: boolean;
   }>('/api/config/');
   return {
     anthropic: config.has_anthropic_key,
@@ -42,8 +44,10 @@ export async function getApiKeys(): Promise<Record<string, boolean>> {
     gemini: config.has_gemini_key,
     groq: config.has_groq_key,
     grok: config.has_grok_key,
+    openrouter: config.has_openrouter_key,
     openai_image: config.has_openai_image_key,
     gemini_image: config.has_gemini_image_key,
+    fal: config.has_fal_key,
   };
 }
 
@@ -134,7 +138,7 @@ export async function setWorkingDirectory(path: string): Promise<WorkingDirector
 }
 
 // LLM Configuration
-export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok' | 'ollama';
+export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok' | 'openrouter' | 'ollama';
 
 export interface LLMConfig {
   provider: LLMProvider;

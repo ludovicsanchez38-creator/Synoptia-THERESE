@@ -25,6 +25,7 @@ from app.services.providers import (
     MistralProvider,
     OllamaProvider,
     OpenAIProvider,
+    OpenRouterProvider,
     StreamEvent,
     ToolCall,
     ToolResult,
@@ -257,6 +258,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
             "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", 1000000),
             "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
             "grok": (LLMProvider.GROK, "grok-4", 131072),
+            "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-5", 200000),
             "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
         }
 
@@ -276,6 +278,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
                     "gemini": "GEMINI_API_KEY",
                     "mistral": "MISTRAL_API_KEY",
                     "grok": "XAI_API_KEY",
+                    "openrouter": "OPENROUTER_API_KEY",
                 }
                 api_key = os.getenv(env_map.get(selected_provider, ""))
 
@@ -323,6 +326,7 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
                 LLMProvider.GEMINI: GeminiProvider,
                 LLMProvider.MISTRAL: MistralProvider,
                 LLMProvider.GROK: GrokProvider,
+                LLMProvider.OPENROUTER: OpenRouterProvider,
                 LLMProvider.OLLAMA: OllamaProvider,
             }
             provider_class = provider_map.get(self.config.provider)
@@ -495,6 +499,7 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
         "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
         "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
         "grok": (LLMProvider.GROK, "grok-4", "XAI_API_KEY", 131072),
+        "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-5", "OPENROUTER_API_KEY", 200000),
         "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
     }
 

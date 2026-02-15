@@ -1,10 +1,11 @@
 // Onglet "À propos" - Version actuelle + Vérification des mises à jour
 // Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCw, Download, CheckCircle, ExternalLink, Info } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useBackendStore } from '../../hooks/useBackend';
+import { checkHealth } from '../../services/api';
 
 const GITHUB_REPO = 'ludovicsanchez38-creator/Synoptia-THERESE';
 const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
@@ -54,6 +55,17 @@ export function AboutTab() {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
   const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Fetch la version si elle n'est pas encore disponible (panels Tauri = contexte JS séparé)
+  useEffect(() => {
+    if (!version) {
+      checkHealth()
+        .then((health) => {
+          useBackendStore.getState().setConnected(health);
+        })
+        .catch(() => {});
+    }
+  }, [version]);
 
   async function checkForUpdates() {
     setUpdateStatus('checking');

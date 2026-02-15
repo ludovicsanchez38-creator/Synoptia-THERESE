@@ -29,18 +29,35 @@ router = APIRouter()
 @router.get("/status")
 async def get_image_status() -> ImageProviderStatus:
     """Check status of image generation providers."""
-    openai_key = os.getenv("OPENAI_API_KEY")
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    from app.services.image_generator import _get_api_key_from_db
+
+    openai_key = (
+        os.getenv("OPENAI_IMAGE_API_KEY")
+        or _get_api_key_from_db("openai_image")
+        or os.getenv("OPENAI_API_KEY")
+        or _get_api_key_from_db("openai")
+    )
+    gemini_key = (
+        os.getenv("GEMINI_IMAGE_API_KEY")
+        or _get_api_key_from_db("gemini_image")
+        or os.getenv("GEMINI_API_KEY")
+        or os.getenv("GOOGLE_API_KEY")
+        or _get_api_key_from_db("gemini")
+    )
+    fal_key = os.getenv("FAL_API_KEY") or _get_api_key_from_db("fal")
 
     active = None
     if openai_key:
         active = "gpt-image-1.5"
     elif gemini_key:
         active = "nanobanan-pro"
+    elif fal_key:
+        active = "fal-flux-pro"
 
     return ImageProviderStatus(
         openai_available=bool(openai_key),
         gemini_available=bool(gemini_key),
+        fal_available=bool(fal_key),
         active_provider=active,
     )
 
@@ -104,7 +121,7 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
 @router.post("/generate-with-reference")
 async def generate_with_reference(
     prompt: str = Form(...),
-    provider: Literal["gpt-image-1.5", "nanobanan-pro"] = Form("gpt-image-1.5"),
+    provider: Literal["gpt-image-1.5", "nanobanan-pro", "fal-flux-pro"] = Form("gpt-image-1.5"),
     size: Literal["1024x1024", "1536x1024", "1024x1536"] = Form("1024x1024"),
     quality: Literal["low", "medium", "high"] = Form("high"),
     aspect_ratio: str = Form("1:1"),

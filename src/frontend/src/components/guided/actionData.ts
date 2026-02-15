@@ -17,7 +17,7 @@ export type FileFormat = 'docx' | 'pptx' | 'xlsx' | 'pdf';
 /**
  * Provider de generation d'images
  */
-export type ImageProvider = 'gpt-image-1.5' | 'nanobanan-pro';
+export type ImageProvider = 'gpt-image-1.5' | 'nanobanan-pro' | 'fal-flux-pro';
 
 /**
  * Configuration de generation de fichier pour une sous-option

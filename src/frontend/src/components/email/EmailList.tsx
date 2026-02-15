@@ -28,21 +28,45 @@ export function EmailList({ accountId }: EmailListProps) {
     setNeedsReauth,
   } = useEmailStore();
 
-  // Cache-first : si le store a des messages en cache, pas de spinner initial
-  const hasCachedMessages = messages.length > 0;
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load messages when label or account changes (avec retry automatique)
   const retryCountRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isLoadingRef = useRef(false);
+
   useEffect(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     retryCountRef.current = 0;
+    isLoadingRef.current = false;
     loadMessages();
   }, [accountId, currentLabelId]);
 
+  // Cleanup au démontage
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   async function loadMessages() {
-    // Si pas de cache, afficher le spinner. Sinon, rafraîchir en arrière-plan.
+    // Garde : empêcher les chargements concurrents
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+
+    // Annuler le chargement précédent et créer un nouvel AbortController
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Cache-first : lire directement depuis le store (pas de closure stale)
+    const hasCachedMessages = useEmailStore.getState().messages.length > 0;
+
     if (!hasCachedMessages) {
       setLoading(true);
     } else {
@@ -58,6 +82,8 @@ export function EmailList({ accountId }: EmailListProps) {
         query: searchQuery || undefined,
       });
 
+      if (controller.signal.aborted) return;
+
       // Fetch full details for each message
       const messagesWithDetails = await Promise.all(
         result.messages.map(async (msg) => {
@@ -69,6 +95,8 @@ export function EmailList({ accountId }: EmailListProps) {
           }
         })
       );
+
+      if (controller.signal.aborted) return;
 
       const validMessages = messagesWithDetails.filter((m): m is api.EmailMessage => m !== null);
 
@@ -95,24 +123,32 @@ export function EmailList({ accountId }: EmailListProps) {
         })
       );
 
+      if (controller.signal.aborted) return;
+
       setMessages(classifiedMessages);
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('Failed to load messages:', err);
       // Retry automatique (max 3 tentatives, délai croissant)
       if (retryCountRef.current < 3) {
         retryCountRef.current++;
         const delay = retryCountRef.current * 1500; // 1.5s, 3s, 4.5s
         console.log(`Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
+        isLoadingRef.current = false;
         setTimeout(() => loadMessages(), delay);
         return;
       }
       // Si on a du cache, ne pas afficher d'erreur bloquante
-      if (!hasCachedMessages) {
+      const stillHasCache = useEmailStore.getState().messages.length > 0;
+      if (!stillHasCache) {
         setError('Impossible de charger les messages');
       }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+      isLoadingRef.current = false;
     }
   }
 
