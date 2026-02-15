@@ -22,6 +22,7 @@ import {
   ChevronDown,
   AlertTriangle,
   ExternalLink,
+  LogOut,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-shell';
 import { useEmailStore } from '../../stores/emailStore';
@@ -147,6 +148,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     loadLabels(accountId);
   }
 
+  async function handleDisconnectAccount(accountId: string) {
+    try {
+      await api.disconnectEmailAccount(accountId);
+      setShowAccountMenu(false);
+      await loadAccounts();
+    } catch (err) {
+      console.error('Failed to disconnect account:', err);
+    }
+  }
+
   async function handleReauthorize() {
     if (!currentAccountId || reauthing) return;
     setReauthing(true);
@@ -235,15 +246,23 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   {showAccountMenu && (
                     <div className="absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 z-20 min-w-[250px]">
                       {accounts.map((acc) => (
-                        <button
-                          key={acc.id}
-                          onClick={() => switchAccount(acc.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                            acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
-                          }`}
-                        >
-                          {acc.email}
-                        </button>
+                        <div key={acc.id} className="flex items-center">
+                          <button
+                            onClick={() => switchAccount(acc.id)}
+                            className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
+                              acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                            }`}
+                          >
+                            {acc.email}
+                          </button>
+                          <button
+                            onClick={() => handleDisconnectAccount(acc.id)}
+                            className="px-2 py-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            title="Déconnecter ce compte"
+                          >
+                            <LogOut className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       ))}
                       <div className="h-px bg-border/30 my-1" />
                       <button
@@ -257,7 +276,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   )}
                 </div>
               ) : currentAccount ? (
-                <p className="text-xs text-text-muted">{currentAccount.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-text-muted">{currentAccount.email}</p>
+                  <button
+                    onClick={() => handleDisconnectAccount(currentAccount.id)}
+                    className="p-0.5 text-text-muted hover:text-red-400 transition-colors"
+                    title="Déconnecter ce compte"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>
@@ -433,15 +461,23 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   {showAccountMenu && (
                     <div className="absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 z-20 min-w-[250px]">
                       {accounts.map((acc) => (
-                        <button
-                          key={acc.id}
-                          onClick={() => switchAccount(acc.id)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                            acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
-                          }`}
-                        >
-                          {acc.email}
-                        </button>
+                        <div key={acc.id} className="flex items-center">
+                          <button
+                            onClick={() => switchAccount(acc.id)}
+                            className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
+                              acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                            }`}
+                          >
+                            {acc.email}
+                          </button>
+                          <button
+                            onClick={() => handleDisconnectAccount(acc.id)}
+                            className="px-2 py-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            title="Déconnecter ce compte"
+                          >
+                            <LogOut className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       ))}
                       <div className="h-px bg-border/30 my-1" />
                       <button
@@ -455,7 +491,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   )}
                 </div>
               ) : currentAccount ? (
-                <p className="text-xs text-text-muted">{currentAccount.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-text-muted">{currentAccount.email}</p>
+                  <button
+                    onClick={() => handleDisconnectAccount(currentAccount.id)}
+                    className="p-0.5 text-text-muted hover:text-red-400 transition-colors"
+                    title="Déconnecter ce compte"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>

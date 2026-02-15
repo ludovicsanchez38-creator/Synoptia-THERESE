@@ -1,4 +1,4 @@
-import { Plus, Settings, Command, Mail, Calendar, CheckSquare, FileText, Users } from 'lucide-react';
+import { Settings, Command, Mail, Calendar, CheckSquare, FileText, Users } from 'lucide-react';
 import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { Button } from '../ui/Button';
 import { useChatStore } from '../../stores/chatStore';
@@ -24,10 +24,9 @@ export function ChatHeader({
   onToggleInvoicesPanel,
   onToggleCRMPanel,
 }: ChatHeaderProps) {
-  const { createConversation, currentConversation, isCurrentConversationEmpty } = useChatStore();
+  const { createConversation, currentConversation } = useChatStore();
   const demoEnabled = useDemoStore((s) => s.enabled);
   const conversation = currentConversation();
-  const isEmpty = isCurrentConversationEmpty();
 
   // Drag window handler
   const handleMouseDown = async (e: React.MouseEvent) => {
@@ -75,12 +74,16 @@ export function ChatHeader({
           />
         </div>
 
-        {/* Logo + Title */}
+        {/* Logo + Title (cliquable = nouvelle conversation) */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => createConversation()}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            title="Nouvelle conversation (⌘N)"
+          >
             <div className="w-2 h-2 rounded-full bg-accent-cyan shadow-[0_0_8px_rgba(34,211,238,0.5)] animate-pulse" />
             <h1 className="text-lg font-bold gradient-text tracking-tight">THÉRÈSE</h1>
-          </div>
+          </button>
           {demoEnabled && (
             <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 rounded-full animate-pulse">
               Mode Démo
@@ -158,17 +161,6 @@ export function ChatHeader({
           title="Commandes (⌘K)"
         >
           <Command className="w-5 h-5" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => createConversation()}
-          disabled={isEmpty}
-          title={isEmpty ? "Conversation vide" : "Nouvelle conversation (⌘N)"}
-          className={isEmpty ? "opacity-40 cursor-not-allowed" : ""}
-        >
-          <Plus className="w-5 h-5" />
         </Button>
 
         <Button variant="ghost" size="icon" title="Paramètres" onClick={onOpenSettings}>

@@ -291,7 +291,10 @@ export const MessageBubble = memo(function MessageBubble({
 
             {/* Usage/cost display */}
             {message.usage && (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface">
+              <div
+                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface"
+                title="Coût estimé de cette requête API (consommation de tokens). Ce n'est pas une facture."
+              >
                 <Coins className="w-3 h-3" />
                 <span>
                   {message.usage.input_tokens + message.usage.output_tokens} tokens

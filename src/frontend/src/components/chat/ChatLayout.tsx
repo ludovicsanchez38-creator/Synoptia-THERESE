@@ -26,7 +26,7 @@ export function ChatLayout() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showMemoryPanel, setShowMemoryPanel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showConversationSidebar, setShowConversationSidebar] = useState(false);
+  const [showConversationSidebar, setShowConversationSidebar] = useState(true);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showBoardPanel, setShowBoardPanel] = useState(false);

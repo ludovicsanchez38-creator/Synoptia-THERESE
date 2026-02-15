@@ -42,15 +42,23 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
     userScrolledUp.current = distanceFromBottom > 100;
   }, []);
 
-  // Auto-scroll : instant pendant le streaming (pas de secousses), smooth sinon
+  // Throttle ref pour requestAnimationFrame (évite les saccades streaming)
+  const rafRef = useRef<number | null>(null);
+
+  // Auto-scroll : throttlé via rAF pendant le streaming, smooth sinon
   useEffect(() => {
     if (userScrolledUp.current) return;
     const container = scrollContainerRef.current;
     if (!container) return;
 
     if (isStreaming) {
-      // Pendant le streaming : scroll instantané vers le bas (pas de smooth qui se battent)
-      container.scrollTop = container.scrollHeight;
+      // Pendant le streaming : throttler avec requestAnimationFrame
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+          rafRef.current = null;
+        });
+      }
     } else {
       // Nouveau message ou fin de streaming : smooth scroll
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

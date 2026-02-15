@@ -224,7 +224,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onNewProject, onEdi
           >
             {/* Header */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-border/50">
-              <h2 className="text-lg font-semibold text-text">Espace de travail</h2>
+              <h2 className="text-lg font-semibold text-text">Mémoire</h2>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="w-5 h-5" />
               </Button>

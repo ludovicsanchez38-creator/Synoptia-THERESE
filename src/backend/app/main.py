@@ -107,19 +107,25 @@ async def lifespan(app: FastAPI):
     await initialize_mcp_service()
     logger.info("MCP service initialized")
 
-    # Pre-charge le modele d'embeddings (evite 5-10s de latence au premier appel)
+    # Pre-charge le modele d'embeddings en arrière-plan (non-bloquant)
+    # Le serveur HTTP démarre immédiatement, /health retourne "degraded" en attendant
+    import asyncio
+
     from app.services.embeddings import preload_embedding_model
-    try:
-        await preload_embedding_model()
-        logger.info("Embedding model pre-loaded")
-    except Exception as e:
-        logger.warning(f"Failed to preload embedding model (will lazy-load on first use): {e}")
+
+    async def _preload_embeddings_bg():
+        try:
+            await preload_embedding_model()
+            logger.info("Embedding model pre-loaded")
+        except Exception as e:
+            logger.warning(f"Failed to preload embedding model (will lazy-load on first use): {e}")
+
+    asyncio.create_task(_preload_embeddings_bg())
 
     # Load user profile into cache
     await _load_user_profile()
 
     # Start OAuth cleanup background task
-    import asyncio
 
     from app.services.oauth import cleanup_expired_flows_periodically
     oauth_cleanup_task = asyncio.create_task(cleanup_expired_flows_periodically())

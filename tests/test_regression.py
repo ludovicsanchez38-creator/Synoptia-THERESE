@@ -599,3 +599,184 @@ class TestBUG020SplashTimeout:
             "La progression doit être logarithmique pour rester informative "
             "sans stresser l'utilisateur sur les longues attentes"
         )
+
+
+# ============================================================
+# BUG-020/021 (v0.1.18) - Preload embeddings non-bloquant
+# Le preload_embedding_model doit être lancé en fire-and-forget
+# via asyncio.create_task, pas awaité directement.
+# ============================================================
+
+CHAT_LAYOUT_TSX = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+MEMORY_PANEL_TSX = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
+MESSAGE_BUBBLE_TSX = FRONTEND / "components" / "chat" / "MessageBubble.tsx"
+CHAT_HEADER_TSX = FRONTEND / "components" / "chat" / "ChatHeader.tsx"
+EMAIL_PANEL_TSX = FRONTEND / "components" / "email" / "EmailPanel.tsx"
+
+
+class TestBUG020LazyLoading:
+    """Le preload embeddings ne doit pas bloquer le démarrage du serveur HTTP."""
+
+    def test_preload_not_awaited_directly_in_lifespan(self):
+        """preload_embedding_model() ne doit PAS être awaité directement dans le lifespan."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        # Vérifier que le await n'est PAS au niveau d'indentation du lifespan (4 espaces)
+        # mais seulement dans une sous-fonction (8+ espaces) lancée via create_task
+        for line in content.split("\n"):
+            stripped = line.lstrip()
+            indent = len(line) - len(stripped)
+            if stripped.startswith("await preload_embedding_model()"):
+                assert indent > 4, (
+                    "preload_embedding_model() ne doit PAS être awaité directement "
+                    "dans le lifespan (indentation 4) - utiliser asyncio.create_task()"
+                )
+
+    def test_preload_uses_create_task(self):
+        """Le preload doit être lancé via asyncio.create_task (fire-and-forget)."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        assert "create_task" in content, (
+            "Le preload embeddings doit utiliser asyncio.create_task()"
+        )
+        assert "preload_embedding" in content, (
+            "Le preload embeddings doit référencer preload_embedding_model"
+        )
+
+
+# ============================================================
+# BUG-021 (v0.1.18) - Saccades streaming scroll
+# Le scroll pendant le streaming doit être throttlé via rAF.
+# ============================================================
+
+
+class TestBUG021StreamingScroll:
+    """Scroll throttlé via requestAnimationFrame pendant le streaming."""
+
+    def test_raf_used_for_streaming_scroll(self):
+        """MessageList doit utiliser requestAnimationFrame pendant le streaming."""
+        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        assert "requestAnimationFrame" in content, (
+            "MessageList doit utiliser requestAnimationFrame pour throttler le scroll streaming"
+        )
+
+    def test_raf_ref_present(self):
+        """MessageList doit avoir un ref pour tracker le rAF en cours."""
+        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        assert "rafRef" in content, (
+            "MessageList doit avoir un rafRef pour éviter les appels rAF redondants"
+        )
+
+
+# ============================================================
+# UX (v0.1.18) - Sidebar conversations visible par défaut
+# ============================================================
+
+
+class TestUXSidebarDefault:
+    """La sidebar conversations doit être visible au premier lancement."""
+
+    def test_sidebar_default_true(self):
+        """showConversationSidebar doit être initialisé à true."""
+        content = CHAT_LAYOUT_TSX.read_text(encoding="utf-8")
+        assert "useState(true)" in content, (
+            "showConversationSidebar doit être initialisé à true (sidebar visible par défaut)"
+        )
+        # Vérifier que c'est bien le bon useState (celui de showConversationSidebar)
+        lines = content.split("\n")
+        for line in lines:
+            if "showConversationSidebar" in line and "useState" in line:
+                assert "useState(true)" in line, (
+                    "showConversationSidebar doit utiliser useState(true)"
+                )
+                break
+
+
+# ============================================================
+# UX (v0.1.18) - Cohérence nommage Mémoire
+# ============================================================
+
+
+class TestUXNamingConsistency:
+    """Le panel mémoire doit afficher "Mémoire" (pas "Espace de travail")."""
+
+    def test_no_espace_de_travail(self):
+        """MemoryPanel ne doit plus contenir "Espace de travail"."""
+        content = MEMORY_PANEL_TSX.read_text(encoding="utf-8")
+        assert "Espace de travail" not in content, (
+            "MemoryPanel doit afficher 'Mémoire' au lieu de 'Espace de travail'"
+        )
+
+
+# ============================================================
+# UX (v0.1.18) - Tooltip tokens/EUR
+# ============================================================
+
+
+class TestUXTokenTooltip:
+    """Le compteur tokens/EUR doit avoir un tooltip explicatif."""
+
+    def test_usage_has_title_attribute(self):
+        """Le conteneur usage/cost doit avoir un attribut title (tooltip)."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        # Chercher le title près du Coins/usage
+        assert 'title="' in content and "tokens" in content, (
+            "Le conteneur usage/cost doit avoir un attribut title (tooltip)"
+        )
+        assert "pas une facture" in content or "coût estimé" in content.lower(), (
+            "Le tooltip doit expliquer que ce n'est pas une facture"
+        )
+
+
+# ============================================================
+# UX (v0.1.18) - Logo THÉRÈSE cliquable
+# ============================================================
+
+
+class TestUXLogoClickable:
+    """Le logo THÉRÈSE doit être cliquable (nouvelle conversation)."""
+
+    def test_logo_has_onclick(self):
+        """Le logo dans ChatHeader doit avoir un onClick pour créer une conversation."""
+        content = CHAT_HEADER_TSX.read_text(encoding="utf-8")
+        # Le logo doit être dans un élément cliquable
+        assert "createConversation" in content, (
+            "ChatHeader doit utiliser createConversation pour le logo"
+        )
+        # Vérifier qu'il y a un onClick sur un élément contenant THÉRÈSE
+        lines = content.split("\n")
+        found_clickable_logo = False
+        for i, line in enumerate(lines):
+            if "THÉRÈSE" in line:
+                # Vérifier les lignes avant pour un onClick
+                context = "\n".join(lines[max(0, i - 5):i + 1])
+                if "onClick" in context:
+                    found_clickable_logo = True
+                    break
+        assert found_clickable_logo, (
+            "Le logo THÉRÈSE doit être dans un élément cliquable (onClick)"
+        )
+
+
+# ============================================================
+# UX (v0.1.18) - Bouton déconnecter compte email
+# ============================================================
+
+
+class TestUXEmailDisconnect:
+    """EmailPanel doit permettre de déconnecter un compte email."""
+
+    def test_disconnect_button_present(self):
+        """EmailPanel doit contenir un bouton de déconnexion."""
+        content = EMAIL_PANEL_TSX.read_text(encoding="utf-8")
+        assert "handleDisconnectAccount" in content, (
+            "EmailPanel doit avoir une fonction handleDisconnectAccount"
+        )
+        assert "LogOut" in content or "Déconnecter" in content, (
+            "EmailPanel doit avoir un bouton de déconnexion visible"
+        )
+
+    def test_disconnect_calls_api(self):
+        """handleDisconnectAccount doit appeler l'API disconnectEmailAccount."""
+        content = EMAIL_PANEL_TSX.read_text(encoding="utf-8")
+        assert "disconnectEmailAccount" in content, (
+            "EmailPanel doit appeler api.disconnectEmailAccount()"
+        )
