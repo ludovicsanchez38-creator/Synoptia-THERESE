@@ -114,8 +114,9 @@ export const MessageBubble = memo(function MessageBubble({
             : 'bg-surface-elevated border border-border hover:border-accent-cyan/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)]'
         )}
         style={{
-          contain: 'layout style paint',
-          ...(message.isStreaming && { willChange: 'transform' }),
+          contain: message.isStreaming ? 'style paint' : 'layout style paint',
+          willChange: message.isStreaming ? 'transform' : 'auto',
+          minHeight: message.isStreaming ? `${Math.max(40, Math.ceil(message.content.length / 60) * 24)}px` : 'auto',
         }}
       >
         {/* Action buttons (copy + save as shortcut) */}
@@ -153,8 +154,13 @@ export const MessageBubble = memo(function MessageBubble({
           </button>
         </div>
 
-        {/* Markdown content */}
+        {/* Markdown content - texte brut pendant le streaming pour éviter les sauts */}
         <div className="prose prose-invert prose-sm max-w-none">
+          {message.isStreaming ? (
+            <div className="whitespace-pre-wrap break-words leading-relaxed">
+              {message.content}
+            </div>
+          ) : (
           <ReactMarkdown
             components={{
               code({ className, children, ...props }) {
@@ -279,6 +285,7 @@ export const MessageBubble = memo(function MessageBubble({
           >
             {message.content}
           </ReactMarkdown>
+          )}
         </div>
 
         {/* Streaming cursor indicator */}

@@ -1573,3 +1573,174 @@ class TestCRMProjectsTabRemoved:
         assert "ACTIVITY_FILTER_CHIPS" in content, (
             "CRMPanel doit définir ACTIVITY_FILTER_CHIPS pour les filtres"
         )
+
+
+# ============================================================
+# BUG-035 - Templates DOCX/PPTX : répertoires intermédiaires manquants
+# python-docx/pptx résolvent les templates via __file__ + '..'
+# (ex: docx/parts/../templates/default-footer.xml).
+# PyInstaller met les modules dans PYZ, donc docx/parts/ n'existe pas
+# sur disque. Le runtime hook crée ces répertoires vides.
+# ============================================================
+
+
+BACKEND_SPEC = SRC / "backend.spec"
+RUNTIME_HOOK = SRC / "runtime_hook_templates.py"
+
+
+class TestBUG035TemplatesPathResolution:
+    """BUG-035 : répertoires intermédiaires pour résolution templates Office."""
+
+    def test_runtime_hook_file_exists(self):
+        """Le fichier runtime_hook_templates.py doit exister."""
+        assert RUNTIME_HOOK.exists(), (
+            "runtime_hook_templates.py manquant dans src/backend/"
+        )
+
+    def test_runtime_hook_creates_docx_parts(self):
+        """Le hook doit créer docx/parts/ pour la résolution via '..'."""
+        content = RUNTIME_HOOK.read_text(encoding="utf-8")
+        assert "docx/parts" in content, (
+            "Le hook doit créer le répertoire docx/parts"
+        )
+
+    def test_runtime_hook_creates_pptx_oxml(self):
+        """Le hook doit créer pptx/oxml/ pour la résolution via '..'."""
+        content = RUNTIME_HOOK.read_text(encoding="utf-8")
+        assert "pptx/oxml" in content, (
+            "Le hook doit créer le répertoire pptx/oxml"
+        )
+
+    def test_runtime_hook_creates_pptx_shapes(self):
+        """Le hook doit créer pptx/shapes/ pour les icônes EMF."""
+        content = RUNTIME_HOOK.read_text(encoding="utf-8")
+        assert "pptx/shapes" in content, (
+            "Le hook doit créer le répertoire pptx/shapes"
+        )
+
+    def test_backend_spec_references_runtime_hook(self):
+        """backend.spec doit référencer le runtime hook."""
+        content = BACKEND_SPEC.read_text(encoding="utf-8")
+        assert "runtime_hook_templates" in content, (
+            "backend.spec doit inclure runtime_hook_templates.py dans runtime_hooks"
+        )
+
+    def test_runtime_hook_checks_meipass(self):
+        """Le hook ne doit s'exécuter que dans un bundle PyInstaller."""
+        content = RUNTIME_HOOK.read_text(encoding="utf-8")
+        assert "_MEIPASS" in content, (
+            "Le hook doit vérifier sys._MEIPASS avant de créer les répertoires"
+        )
+
+
+# ============================================================
+# BUG-028 (v0.2.5) - Prix EUR toujours 0.0000
+# TOKEN_PRICES.get(model) ne matchait pas les modèles OpenRouter
+# (préfixe provider/ ex: "anthropic/claude-sonnet-4-5-20250929").
+# estimate_cost() doit essayer sans le préfixe si pas trouvé.
+# ============================================================
+
+
+TOKEN_TRACKER_PY = SRC / "app" / "services" / "token_tracker.py"
+
+
+class TestBUG028PricingEUR:
+    """BUG-028 : prix EUR non-zéro pour les modèles connus (y compris OpenRouter)."""
+
+    def test_estimate_cost_strips_provider_prefix(self):
+        """estimate_cost() doit gérer les modèles avec préfixe provider."""
+        content = TOKEN_TRACKER_PY.read_text(encoding="utf-8")
+        assert 'model.split("/", 1)' in content, (
+            "estimate_cost() doit essayer de supprimer le préfixe provider "
+            "(ex: 'anthropic/claude-opus-4-6' → 'claude-opus-4-6')"
+        )
+
+    def test_estimate_cost_returns_nonzero_for_known_models(self):
+        """estimate_cost() doit retourner un prix > 0 pour les modèles connus."""
+        from app.services.token_tracker import TokenTracker
+
+        tracker = TokenTracker()
+        # Modèle direct
+        cost_direct = tracker.estimate_cost("claude-opus-4-6", 1000, 500)
+        assert cost_direct > 0, (
+            "Le prix doit être > 0 pour claude-opus-4-6"
+        )
+        # Modèle avec préfixe OpenRouter
+        cost_openrouter = tracker.estimate_cost("anthropic/claude-opus-4-6", 1000, 500)
+        assert cost_openrouter > 0, (
+            "Le prix doit être > 0 pour anthropic/claude-opus-4-6 (OpenRouter)"
+        )
+        # Les deux doivent être identiques
+        assert cost_direct == cost_openrouter, (
+            "Le prix doit être identique avec ou sans préfixe provider"
+        )
+
+    def test_estimate_cost_fallback_default_for_unknown(self):
+        """estimate_cost() doit retourner 0 pour les modèles inconnus (Ollama)."""
+        from app.services.token_tracker import TokenTracker
+
+        tracker = TokenTracker()
+        cost = tracker.estimate_cost("llama3:8b", 1000, 500)
+        assert cost == 0.0, (
+            "Le prix doit être 0 pour les modèles locaux (Ollama) inconnus"
+        )
+
+    def test_token_prices_has_major_models(self):
+        """TOKEN_PRICES doit contenir les modèles majeurs."""
+        from app.services.token_tracker import TOKEN_PRICES
+
+        required = [
+            "claude-opus-4-6",
+            "claude-sonnet-4-5-20250929",
+            "gpt-5.2",
+            "gemini-3-pro-preview",
+            "mistral-large-latest",
+        ]
+        for model in required:
+            assert model in TOKEN_PRICES, (
+                f"TOKEN_PRICES doit contenir {model}"
+            )
+            assert TOKEN_PRICES[model]["input"] > 0, (
+                f"Le prix input de {model} doit être > 0"
+            )
+
+
+# ============================================================
+# Streaming texte brut (v0.2.5) - Anti-saut streaming
+# Pendant le streaming, MessageBubble affiche le texte brut
+# (pas de ReactMarkdown) pour éviter les recalculs de layout.
+# ReactMarkdown est utilisé uniquement quand le streaming termine.
+# ============================================================
+
+
+class TestStreamingRawText:
+    """Texte brut pendant le streaming (pas de ReactMarkdown)."""
+
+    def test_message_bubble_has_streaming_condition(self):
+        """MessageBubble doit avoir un rendu conditionnel isStreaming."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        assert "message.isStreaming" in content, (
+            "MessageBubble doit vérifier message.isStreaming"
+        )
+        assert "whitespace-pre-wrap" in content, (
+            "Le texte brut streaming doit utiliser whitespace-pre-wrap"
+        )
+
+    def test_message_bubble_raw_text_before_markdown(self):
+        """Pendant le streaming, le texte brut doit être affiché AVANT ReactMarkdown."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        raw_pos = content.find("whitespace-pre-wrap")
+        markdown_pos = content.find("<ReactMarkdown")
+        assert raw_pos > 0, "whitespace-pre-wrap absent"
+        assert markdown_pos > 0, "ReactMarkdown absent"
+        assert raw_pos < markdown_pos, (
+            "Le texte brut (whitespace-pre-wrap) doit apparaître AVANT ReactMarkdown "
+            "dans le rendu conditionnel"
+        )
+
+    def test_message_bubble_has_min_height(self):
+        """MessageBubble doit avoir un minHeight dynamique pendant le streaming."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        assert "minHeight" in content, (
+            "MessageBubble doit calculer un minHeight dynamique pendant le streaming"
+        )

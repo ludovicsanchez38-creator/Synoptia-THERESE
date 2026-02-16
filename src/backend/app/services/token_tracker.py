@@ -208,7 +208,12 @@ class TokenTracker:
 
         Returns cost in EUR.
         """
-        prices = TOKEN_PRICES.get(model, TOKEN_PRICES["default"])
+        prices = TOKEN_PRICES.get(model)
+        if prices is None and "/" in model:
+            # OpenRouter : "anthropic/claude-sonnet-4-5-20250929" → "claude-sonnet-4-5-20250929"
+            prices = TOKEN_PRICES.get(model.split("/", 1)[1])
+        if prices is None:
+            prices = TOKEN_PRICES["default"]
         input_cost = (input_tokens / 1_000_000) * prices["input"]
         output_cost = (output_tokens / 1_000_000) * prices["output"]
         return input_cost + output_cost

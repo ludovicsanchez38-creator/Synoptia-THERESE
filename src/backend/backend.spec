@@ -99,8 +99,13 @@ datas = [
 datas += collect_data_files("sentence_transformers")
 datas += collect_data_files("qdrant_client")
 datas += collect_data_files("certifi")
+# BUG-024 : templates DOCX/PPTX nécessaires au runtime
 datas += collect_data_files("docx")
 datas += collect_data_files("pptx")
+# NOTE BUG-035 : les templates sont bien collectés, mais python-docx/pptx les
+# résolvent via __file__ + '..' (ex: docx/parts/../templates/default-footer.xml).
+# Or PyInstaller met les modules dans PYZ, donc docx/parts/ n'existe pas sur disque.
+# Le runtime hook runtime_hook_templates.py crée ces répertoires vides au démarrage.
 
 a = Analysis(
     [os.path.join(backend_dir, "main.py")],
@@ -110,7 +115,7 @@ a = Analysis(
     hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[os.path.join(backend_dir, "runtime_hook_templates.py")],
     excludes=[
         "tkinter",
         "matplotlib",
