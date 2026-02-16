@@ -23,12 +23,14 @@ const MAX_ROWS = 8;
 interface ChatInputProps {
   onOpenCommandPalette?: () => void;
   initialPrompt?: string;
+  initialSkillId?: string;
   onInitialPromptConsumed?: () => void;
   userCommands?: import('./SlashCommandsMenu').SlashCommand[];
 }
 
-export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPromptConsumed, userCommands }: ChatInputProps) {
+export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands }: ChatInputProps) {
   const [input, setInput] = useState('');
+  const [pendingSkillId, setPendingSkillId] = useState<string | undefined>(undefined);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [inputRect, setInputRect] = useState<DOMRect | null>(null);
@@ -104,6 +106,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
   const {
     isRecording,
     isProcessing,
+    pluginReady,
     toggleRecording,
   } = useVoiceRecorder({
     onTranscript: handleTranscript,
@@ -246,13 +249,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
       const conversation = currentConversation();
       const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
 
-      // Stream response from backend
+      // Stream response from backend (inclure skill_id si provient des guided prompts)
       const stream = streamMessage({
         message: trimmed,
         conversation_id: syncedConversationId || undefined,
         include_memory: true,
         stream: true,
+        ...(pendingSkillId && { skill_id: pendingSkillId }),
       });
+      // Consommer le skillId après envoi
+      setPendingSkillId(undefined);
 
       for await (const chunk of stream) {
         // Capture the backend conversation ID from the first chunk
@@ -376,6 +382,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
   useEffect(() => {
     if (initialPrompt) {
       setInput(initialPrompt);
+      setPendingSkillId(initialSkillId);
       onInitialPromptConsumed?.();
       // Focus and position cursor at end
       setTimeout(() => {
@@ -487,11 +494,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
             isRecording && 'bg-error hover:bg-error/90 animate-pulse',
             !voiceSupported && 'opacity-50 cursor-not-allowed'
           )}
-          disabled={isDisabled || isProcessing || !voiceSupported}
-          onClick={voiceSupported ? toggleRecording : undefined}
+          disabled={isDisabled || isProcessing || !voiceSupported || !pluginReady}
+          onClick={voiceSupported && pluginReady ? toggleRecording : undefined}
           title={
             !voiceSupported
               ? 'Dictée vocale non disponible (prochainement)'
+              : !pluginReady
+                ? 'Chargement du micro...'
               : isProcessing
                 ? 'Transcription en cours...'
                 : isRecording

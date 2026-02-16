@@ -1,18 +1,18 @@
 /**
- * THÉRÈSE v2 - CRM Panel (Phase 5)
+ * THÉRÈSE v2 - CRM Panel (Phase 6)
  *
- * Panel principal CRM avec Pipeline, Activities et Dashboard.
- * Filtre par source pour eviter les doublons.
+ * Panel principal CRM avec Pipeline et Activités.
+ * Filtre par source pour éviter les doublons.
  * Utilise crmStore avec persistance pour affichage instantané.
  */
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutDashboard, Users, Activity, UserPlus, FolderKanban, Calendar, DollarSign } from 'lucide-react';
+import { X, LayoutDashboard, Users, Activity, UserPlus, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { useCRMStore } from '../../stores/crmStore';
-import { listContacts, listProjects, updateContactStage, type ContactResponse } from '../../services/api';
+import { listContacts, listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
 import { createCRMContact, type CreateCRMContactRequest } from '../../services/api/crm';
 import { useDemoMask } from '../../hooks';
 
@@ -41,6 +41,8 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const [loading, setLoading] = useState(!hasCachedContacts);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddActivity, setShowAddActivity] = useState(false);
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   const effectiveOpen = standalone || isOpen;
@@ -113,7 +115,6 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const tabs = [
     { id: 'pipeline' as const, label: 'Pipeline', icon: LayoutDashboard },
     { id: 'activities' as const, label: 'Activités', icon: Activity },
-    { id: 'dashboard' as const, label: 'Projets', icon: FolderKanban },
   ];
 
   if (!effectiveOpen) return null;
@@ -218,104 +219,41 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
             >
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-text-primary">
-                  {displaySelectedContact.first_name} {displaySelectedContact.last_name}
-                </h3>
-                {displaySelectedContact.company && (
-                  <p className="text-sm text-text-muted">{displaySelectedContact.company}</p>
-                )}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    {displaySelectedContact.first_name} {displaySelectedContact.last_name}
+                  </h3>
+                  {displaySelectedContact.company && (
+                    <p className="text-sm text-text-muted">{displaySelectedContact.company}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowAddActivity(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-lg transition-colors text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ajouter une activité
+                </button>
               </div>
 
-              <ActivityTimeline contactId={selectedContact!.id} />
+              <ActivityTimeline contactId={selectedContact!.id} key={activityRefreshKey} />
+
+              {showAddActivity && selectedContact && (
+                <AddActivityModal
+                  contactId={selectedContact.id}
+                  onClose={() => setShowAddActivity(false)}
+                  onCreated={() => {
+                    setShowAddActivity(false);
+                    setActivityRefreshKey(prev => prev + 1);
+                  }}
+                />
+              )}
             </motion.div>
           )}
 
           {activeTab === 'activities' && !selectedContact && (
-            <motion.div
-              key="activities-empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center justify-center h-full text-text-muted"
-            >
-              <div className="text-center">
-                <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>Sélectionnez un contact pour voir son activité</p>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'dashboard' && (
-            <motion.div
-              key="projects"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-            >
-              {projects.length === 0 ? (
-                <div className="flex items-center justify-center h-64 text-text-muted">
-                  <div className="text-center">
-                    <FolderKanban className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p>Aucun projet</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.map((project) => {
-                    const linkedContact = contacts.find((c) => c.id === project.contact_id);
-                    return (
-                      <div
-                        key={project.id}
-                        className="bg-background border border-surface hover:border-accent-cyan/50 rounded-lg p-4 transition-colors"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <h4 className="font-semibold text-text-primary text-sm">{project.name}</h4>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            project.status === 'active' ? 'bg-green-500/20 text-green-400' :
-                            project.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
-                            project.status === 'on_hold' ? 'bg-yellow-500/20 text-yellow-400' :
-                            project.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
-                            'bg-gray-500/20 text-gray-400'
-                          }`}>
-                            {project.status === 'active' ? 'Actif' :
-                             project.status === 'completed' ? 'Terminé' :
-                             project.status === 'on_hold' ? 'En pause' :
-                             project.status === 'cancelled' ? 'Annulé' :
-                             project.status}
-                          </span>
-                        </div>
-
-                        {project.description && (
-                          <p className="text-xs text-text-muted mb-3 line-clamp-2">{project.description}</p>
-                        )}
-
-                        <div className="space-y-1.5">
-                          {linkedContact && (
-                            <div className="flex items-center gap-2 text-xs text-text-muted">
-                              <Users className="w-3 h-3" />
-                              <span>{linkedContact.first_name} {linkedContact.last_name}</span>
-                            </div>
-                          )}
-
-                          {project.budget != null && project.budget > 0 && (
-                            <div className="flex items-center gap-2 text-xs text-text-muted">
-                              <DollarSign className="w-3 h-3" />
-                              <span>{project.budget.toLocaleString('fr-FR')} €</span>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-2 text-xs text-text-muted">
-                            <Calendar className="w-3 h-3" />
-                            <span>{new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
+            <GlobalActivityView contacts={contacts} />
           )}
         </AnimatePresence>
       )}
@@ -527,6 +465,315 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Création...' : 'Créer le contact'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+// =============================================================================
+// GLOBAL ACTIVITY VIEW (no contact selected)
+// =============================================================================
+
+const ACTIVITY_FILTER_CHIPS = [
+  { id: 'all', label: 'Tous' },
+  { id: 'email', label: 'Email', icon: Mail },
+  { id: 'call', label: 'Appel', icon: Phone },
+  { id: 'meeting', label: 'Réunion', icon: Users },
+  { id: 'note', label: 'Note', icon: FileText },
+];
+
+const GLOBAL_ACTIVITY_ICONS: Record<string, typeof Mail> = {
+  email: Mail,
+  call: Phone,
+  meeting: Users,
+  note: FileText,
+};
+
+const GLOBAL_ACTIVITY_COLORS: Record<string, string> = {
+  email: 'text-blue-400',
+  call: 'text-green-400',
+  meeting: 'text-purple-400',
+  note: 'text-yellow-400',
+};
+
+function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
+  const [activities, setActivities] = useState<ActivityResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    loadAllActivities();
+  }, []);
+
+  const loadAllActivities = async () => {
+    try {
+      setLoading(true);
+      const data = await listActivities({ limit: 100 });
+      setActivities(data);
+    } catch (error) {
+      console.error('Failed to load global activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredActivities = filter === 'all'
+    ? activities
+    : activities.filter(a => a.type === filter);
+
+  const getContactName = (contactId: string) => {
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) return 'Contact inconnu';
+    return `${contact.first_name} ${contact.last_name || ''}`.trim();
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Il y a ${diffMins}min`;
+    if (diffHours < 24) return `Il y a ${diffHours}h`;
+    if (diffDays < 7) return `Il y a ${diffDays}j`;
+
+    return date.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  return (
+    <motion.div
+      key="activities-global"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {ACTIVITY_FILTER_CHIPS.map(chip => {
+          const isActive = filter === chip.id;
+          const ChipIcon = chip.icon;
+          return (
+            <button
+              key={chip.id}
+              onClick={() => setFilter(chip.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-accent-cyan/20 text-accent-cyan'
+                  : 'bg-surface text-text-muted hover:bg-surface-elevated'
+              }`}
+            >
+              {ChipIcon && <ChipIcon className="w-3.5 h-3.5" />}
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-cyan"></div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && filteredActivities.length === 0 && (
+        <div className="flex items-center justify-center py-12 text-text-muted">
+          <div className="text-center">
+            <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>{filter === 'all' ? 'Aucune activité enregistrée' : `Aucune activité de type "${ACTIVITY_FILTER_CHIPS.find(c => c.id === filter)?.label}"`}</p>
+            <p className="text-xs mt-1">Cliquez sur un contact dans le Pipeline pour ajouter une activité</p>
+          </div>
+        </div>
+      )}
+
+      {/* Timeline */}
+      {!loading && filteredActivities.length > 0 && (
+        <div className="space-y-3">
+          {filteredActivities.map((activity, index) => {
+            const Icon = GLOBAL_ACTIVITY_ICONS[activity.type] || FileText;
+            const color = GLOBAL_ACTIVITY_COLORS[activity.type] || 'text-text-muted';
+            const contactName = getContactName(activity.contact_id);
+
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="flex gap-3 items-start"
+              >
+                <div className={`${color} bg-surface rounded-full p-2 mt-0.5 shrink-0`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+
+                <div className="flex-1 bg-surface rounded-lg p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-medium text-accent-cyan">{contactName}</span>
+                        <span className="text-xs text-text-muted">·</span>
+                        <span className="text-xs text-text-muted capitalize">{
+                          activity.type === 'email' ? 'Email' :
+                          activity.type === 'call' ? 'Appel' :
+                          activity.type === 'meeting' ? 'Réunion' :
+                          activity.type === 'note' ? 'Note' :
+                          activity.type === 'stage_change' ? 'Changement de stage' :
+                          activity.type
+                        }</span>
+                      </div>
+                      <h4 className="text-sm font-medium text-text-primary">{activity.title}</h4>
+                      {activity.description && (
+                        <p className="text-xs text-text-muted mt-1 line-clamp-2">{activity.description}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-text-muted whitespace-nowrap shrink-0">
+                      {formatDate(activity.created_at)}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// =============================================================================
+// ADD ACTIVITY MODAL
+// =============================================================================
+
+const ACTIVITY_TYPES = [
+  { id: 'email', label: 'Email', icon: Mail },
+  { id: 'call', label: 'Appel', icon: Phone },
+  { id: 'meeting', label: 'Réunion', icon: Users },
+  { id: 'note', label: 'Note', icon: FileText },
+];
+
+interface AddActivityModalProps {
+  contactId: string;
+  onClose: () => void;
+  onCreated: () => void;
+}
+
+function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalProps) {
+  const [type, setType] = useState('note');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const { createActivity } = await import('../../services/api');
+      await createActivity({
+        contact_id: contactId,
+        type,
+        title: title.trim(),
+        description: description.trim() || undefined,
+      });
+      onCreated();
+    } catch (error) {
+      console.error('Failed to create activity:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-[60]">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative bg-surface border border-border rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-text-primary">Nouvelle activité</h3>
+          <button onClick={onClose} className="p-1 hover:bg-background rounded-lg transition-colors">
+            <X className="w-5 h-5 text-text-muted" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs text-text-muted mb-2">Type</label>
+            <div className="flex gap-2">
+              {ACTIVITY_TYPES.map(at => {
+                const AtIcon = at.icon;
+                const isActive = type === at.id;
+                return (
+                  <button
+                    key={at.id}
+                    type="button"
+                    onClick={() => setType(at.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-accent-cyan/20 text-accent-cyan'
+                        : 'bg-background text-text-muted hover:bg-background/80'
+                    }`}
+                  >
+                    <AtIcon className="w-4 h-4" />
+                    {at.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Titre *</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Appel de suivi, Envoi devis..."
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-text-muted mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Détails de l'activité..."
+              rows={3}
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-lg transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={!title.trim() || submitting}
+              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? 'Ajout...' : 'Ajouter'}
             </button>
           </div>
         </form>

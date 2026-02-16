@@ -21,6 +21,9 @@ interface CreateCommandFormProps {
     content: string;
   }) => Promise<void>;
   onBack: () => void;
+  initialContent?: string;
+  initialDescription?: string;
+  capturedPreview?: string;
 }
 
 const CATEGORY_OPTIONS = [
@@ -32,13 +35,13 @@ const CATEGORY_OPTIONS = [
   'autre',
 ];
 
-export function CreateCommandForm({ onSubmit, onBack }: CreateCommandFormProps) {
+export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDescription, capturedPreview }: CreateCommandFormProps) {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(initialDescription || '');
   const [category, setCategory] = useState('general');
   const [icon, setIcon] = useState('');
   const [showOnHome, setShowOnHome] = useState(true);
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,6 +143,14 @@ export function CreateCommandForm({ onSubmit, onBack }: CreateCommandFormProps) 
             )}
           />
         </div>
+
+        {/* Aperçu de la réponse capturée */}
+        {capturedPreview && (
+          <div className="px-3 py-2 rounded-lg bg-accent-cyan/5 border border-accent-cyan/20">
+            <p className="text-xs font-medium text-accent-cyan mb-1">Réponse capturée</p>
+            <p className="text-xs text-text-muted line-clamp-4">{capturedPreview}</p>
+          </div>
+        )}
 
         {/* Categorie + Icon */}
         <div className="grid grid-cols-2 gap-3">

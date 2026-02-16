@@ -5,7 +5,7 @@
  * Fallback sur MediaRecorder API pour les navigateurs web
  */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import * as api from '../services/api';
 
 export type RecordingState = 'idle' | 'recording' | 'processing';
@@ -19,6 +19,7 @@ interface UseVoiceRecorderReturn {
   state: RecordingState;
   isRecording: boolean;
   isProcessing: boolean;
+  pluginReady: boolean;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
   toggleRecording: () => Promise<void>;
@@ -34,14 +35,29 @@ let tauriMicRecorder: {
   stopRecording: () => Promise<string>;
 } | null = null;
 
+// BUG-034 : état de chargement du plugin, avec callbacks de notification
+let _pluginLoaded = false;
+const _pluginReadyCallbacks: Array<() => void> = [];
+
+function _notifyPluginReady() {
+  _pluginLoaded = true;
+  _pluginReadyCallbacks.forEach((cb) => cb());
+  _pluginReadyCallbacks.length = 0;
+}
+
 // Try to load Tauri plugin
 if (isTauri()) {
   import('tauri-plugin-mic-recorder-api').then((module) => {
     tauriMicRecorder = module;
     console.log('[VoiceRecorder] Tauri mic-recorder plugin loaded');
+    _notifyPluginReady();
   }).catch((err) => {
     console.warn('[VoiceRecorder] Failed to load Tauri mic-recorder plugin:', err);
+    _notifyPluginReady(); // Prêt même en échec (fallback Web API)
   });
+} else {
+  // Pas en Tauri : le plugin Web est toujours prêt
+  _pluginLoaded = true;
 }
 
 export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoiceRecorderReturn {
@@ -49,6 +65,21 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
 
   const [state, setState] = useState<RecordingState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [pluginReady, setPluginReady] = useState(_pluginLoaded);
+
+  // BUG-034 : suivre le chargement async du plugin Tauri
+  useEffect(() => {
+    if (_pluginLoaded) {
+      setPluginReady(true);
+      return;
+    }
+    const cb = () => setPluginReady(true);
+    _pluginReadyCallbacks.push(cb);
+    return () => {
+      const idx = _pluginReadyCallbacks.indexOf(cb);
+      if (idx >= 0) _pluginReadyCallbacks.splice(idx, 1);
+    };
+  }, []);
 
   // For web fallback
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -247,6 +278,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     state,
     isRecording: state === 'recording',
     isProcessing: state === 'processing',
+    pluginReady,
     startRecording,
     stopRecording,
     toggleRecording,

@@ -227,8 +227,14 @@ pub fn run() {
                     let _ = window.set_title_bar_style(TitleBarStyle::Overlay);
                 }
 
-                // Focus window
-                let _ = window.set_focus();
+                // Afficher la fenêtre après un court délai (laisse le webview rendre
+                // le premier frame, évite le flash blanc/transparent au démarrage)
+                let w = window.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(300));
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                });
             }
 
             // En release uniquement : lancer le sidecar backend

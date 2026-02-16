@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Copy, Check, AlertCircle, Coins } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
 
 interface MessageBubbleProps {
   message: Message;
+  onSaveAsCommand?: () => void;
 }
 
 // Code block with copy button
@@ -69,6 +70,7 @@ function CodeBlock({
 
 export const MessageBubble = memo(function MessageBubble({
   message,
+  onSaveAsCommand,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -116,22 +118,40 @@ export const MessageBubble = memo(function MessageBubble({
           ...(message.isStreaming && { willChange: 'transform' }),
         }}
       >
-        {/* Copy full message button */}
-        <button
-          onClick={copyToClipboard}
-          className={cn(
-            'absolute top-2 right-2 p-1.5 rounded-md transition-all z-10',
-            'opacity-0 group-hover:opacity-100',
-            'hover:bg-surface text-text-muted hover:text-text'
+        {/* Action buttons (copy + save as shortcut) */}
+        <div className={cn(
+          'absolute top-2 right-2 flex items-center gap-1 z-10',
+          'opacity-0 group-hover:opacity-100 transition-all'
+        )}>
+          {/* Sauvegarder comme raccourci (assistant uniquement, pas en streaming) */}
+          {!isUser && !message.isStreaming && onSaveAsCommand && (
+            <button
+              onClick={onSaveAsCommand}
+              className={cn(
+                'p-1.5 rounded-md transition-all',
+                'hover:bg-surface text-text-muted hover:text-accent-cyan'
+              )}
+              title="Sauvegarder comme raccourci"
+            >
+              <Bookmark className="w-4 h-4" />
+            </button>
           )}
-          title="Copier le message"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 text-green-500" />
-          ) : (
-            <Copy className="w-4 h-4" />
-          )}
-        </button>
+          {/* Copier le message */}
+          <button
+            onClick={copyToClipboard}
+            className={cn(
+              'p-1.5 rounded-md transition-all',
+              'hover:bg-surface text-text-muted hover:text-text'
+            )}
+            title="Copier le message"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-green-500" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
         {/* Markdown content */}
         <div className="prose prose-invert prose-sm max-w-none">

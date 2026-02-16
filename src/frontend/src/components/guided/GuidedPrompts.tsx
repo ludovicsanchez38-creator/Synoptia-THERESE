@@ -22,7 +22,7 @@ import {
 import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
 
 interface GuidedPromptsProps {
-  onPromptSelect: (prompt: string) => void;
+  onPromptSelect: (prompt: string, skillId?: string) => void;
   onImageGenerated?: (prompt: string, imageUrl: string, fileName: string) => void;
 }
 
@@ -187,12 +187,13 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     const isTextSkill = schema.output_type === 'text' || schema.output_type === 'analysis';
 
     if (isTextSkill) {
-      // Skills TEXT/ANALYSIS : construire un prompt structure pour le chat
+      // Skills TEXT/ANALYSIS : construire un prompt structuré pour le chat
+      // et passer le skillId pour que le backend injecte le system prompt enrichi
       const promptParts = Object.entries(inputs)
         .filter(([, value]) => value)
         .map(([key, value]) => `- ${key}: ${value}`);
       const prompt = `${option.label}\n${promptParts.join('\n')}`;
-      onPromptSelect(prompt);
+      onPromptSelect(prompt, skillId);
       setPendingDynamicSkill(null);
     } else {
       // Skills FILE : montrer le panel d'execution
@@ -492,6 +493,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
             onDownload={handleImageDownload}
             onRetry={handleImageRetry}
             onClose={handleCloseImage}
+            onUse={handleCloseImage}
           />
         ) : pendingImageOption ? (
           <SkillPromptPanel

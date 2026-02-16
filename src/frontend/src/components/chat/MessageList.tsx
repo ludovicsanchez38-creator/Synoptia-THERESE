@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../stores/chatStore';
 import { MessageBubble } from './MessageBubble';
@@ -8,10 +8,11 @@ import { EntitySuggestion } from './EntitySuggestion';
 import { useDemoMask } from '../../hooks';
 
 interface MessageListProps {
-  onPromptSelect?: (prompt: string) => void;
+  onPromptSelect?: (prompt: string, skillId?: string) => void;
+  onSaveAsCommand?: (userPrompt: string, assistantContent: string) => void;
 }
 
-export function MessageList({ onPromptSelect }: MessageListProps) {
+export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProps) {
   // Subscribe to actual state to trigger re-renders when messages change
   const conversations = useChatStore((state) => state.conversations);
   const currentConversationId = useChatStore((state) => state.currentConversationId);
@@ -46,7 +47,7 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
   const rafRef = useRef<number | null>(null);
 
   // Auto-scroll : throttlé via rAF pendant le streaming, smooth sinon
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (userScrolledUp.current) return;
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -108,7 +109,25 @@ export function MessageList({ onPromptSelect }: MessageListProps) {
                 containIntrinsicSize: 'auto 80px',
               }}
             >
-              <MessageBubble message={message} />
+              <MessageBubble
+                message={message}
+                onSaveAsCommand={
+                  message.role === 'assistant' && !message.isStreaming && onSaveAsCommand
+                    ? () => {
+                        // Trouver le message utilisateur précédent
+                        const msgIndex = displayMessages.indexOf(message);
+                        let userPrompt = '';
+                        for (let i = msgIndex - 1; i >= 0; i--) {
+                          if (displayMessages[i].role === 'user') {
+                            userPrompt = displayMessages[i].content;
+                            break;
+                          }
+                        }
+                        onSaveAsCommand(userPrompt, message.content);
+                      }
+                    : undefined
+                }
+              />
 
               {/* Show entity suggestions after assistant messages */}
               {message.role === 'assistant' && message.detectedEntities && (

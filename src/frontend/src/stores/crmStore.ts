@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ContactResponse, Project } from '../services/api';
 
-type Tab = 'pipeline' | 'activities' | 'dashboard';
+type Tab = 'pipeline' | 'activities';
 
 interface CRMStore {
   // Contacts

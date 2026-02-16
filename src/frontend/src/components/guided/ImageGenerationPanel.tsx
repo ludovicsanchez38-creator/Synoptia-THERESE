@@ -26,6 +26,7 @@ interface ImageGenerationPanelProps {
   onDownload?: () => void;
   onRetry?: () => void;
   onClose?: () => void;
+  onUse?: () => void;
 }
 
 // Config par provider
@@ -72,6 +73,7 @@ export function ImageGenerationPanel({
   onDownload,
   onRetry,
   onClose,
+  onUse,
 }: ImageGenerationPanelProps) {
   const config = providerConfig[provider];
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -285,6 +287,26 @@ export function ImageGenerationPanel({
 
         {/* Action buttons */}
         <div className="flex gap-3">
+          {status === 'success' && onUse && (
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onUse}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2',
+                'px-4 py-3 rounded-xl font-medium',
+                'bg-accent-cyan hover:bg-accent-cyan/90',
+                'text-bg shadow-lg shadow-accent-cyan/20',
+                'hover:shadow-accent-cyan/30 transition-all'
+              )}
+            >
+              <Check className="w-4 h-4" />
+              Utiliser
+            </motion.button>
+          )}
+
           {status === 'success' && onDownload && (
             <motion.button
               initial={{ opacity: 0, y: 10 }}
@@ -295,9 +317,9 @@ export function ImageGenerationPanel({
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
                 'px-4 py-3 rounded-xl font-medium',
-                'bg-accent-cyan hover:bg-accent-cyan/90',
-                'text-bg shadow-lg shadow-accent-cyan/20',
-                'hover:shadow-accent-cyan/30 transition-all'
+                onUse
+                  ? 'bg-surface border border-border text-text hover:bg-surface-elevated transition-colors'
+                  : 'bg-accent-cyan hover:bg-accent-cyan/90 text-bg shadow-lg shadow-accent-cyan/20 hover:shadow-accent-cyan/30 transition-all'
               )}
             >
               <Download className="w-4 h-4" />

@@ -444,7 +444,7 @@ async def send_message(
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
-            _stream_response(conversation.id, request.message, session, history),
+            _stream_response(conversation.id, request.message, session, history, skill_id=request.skill_id),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -511,6 +511,7 @@ async def _stream_response(
     user_message: str,
     session: AsyncSession,
     history: list[LLMMessage] | None = None,
+    skill_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -518,7 +519,7 @@ async def _stream_response(
 
     try:
         async for chunk in _do_stream_response(
-            conversation_id, user_message, session, history
+            conversation_id, user_message, session, history, skill_id=skill_id
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -534,6 +535,7 @@ async def _do_stream_response(
     user_message: str,
     session: AsyncSession,
     history: list[LLMMessage] | None = None,
+    skill_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Sprint 2 - PERF-2.11: Check for prompt injection
@@ -603,6 +605,22 @@ async def _do_stream_response(
             memory_context = file_context_str
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+
+    # Injecter le system prompt du skill si skill_id fourni (Phase 1 v0.2.4)
+    if skill_id:
+        try:
+            from app.services.skills import get_skills_registry
+            registry = get_skills_registry()
+            skill = registry.get(skill_id)
+            if skill:
+                skill_context = skill.get_system_prompt_addition()
+                if skill_context:
+                    context.system_prompt += f"\n\n{skill_context}"
+                    logger.info(f"Injected skill system prompt for: {skill_id}")
+            else:
+                logger.warning(f"Skill not found: {skill_id}")
+        except Exception as e:
+            logger.warning(f"Failed to inject skill context for {skill_id}: {e}")
 
     # Check if web search is enabled
     from app.models.entities import Preference
@@ -724,9 +742,9 @@ async def _do_stream_response(
     # Track token usage and costs (US-ESC-02, US-ESC-04)
     token_tracker = get_token_tracker()
 
-    # Estimate token counts from content length (rough approximation)
-    input_tokens = len(user_message) // 4  # ~4 chars per token
-    output_tokens = perf_summary.get("total_tokens", len(full_content) // 4) if perf_summary else len(full_content) // 4
+    # Estimation tokens : ~1 mot = 2 tokens (approximation raisonnable FR/EN)
+    input_tokens = len(user_message.split()) * 2
+    output_tokens = len(full_content.split()) * 2
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,

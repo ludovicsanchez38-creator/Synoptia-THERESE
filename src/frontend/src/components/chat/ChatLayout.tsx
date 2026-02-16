@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -19,7 +20,8 @@ import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { openPanelWindow } from '../../services/windowManager';
 import * as api from '../../services/api';
-import { listUserCommands, type UserCommand } from '../../services/api/commands';
+import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
+import { CreateCommandForm } from '../guided/CreateCommandForm';
 import type { SlashCommand } from './SlashCommandsMenu';
 
 export function ChatLayout() {
@@ -34,7 +36,10 @@ export function ChatLayout() {
   const [editingContact, setEditingContact] = useState<api.Contact | null>(null);
   const [editingProject, setEditingProject] = useState<api.Project | null>(null);
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
+  const [guidedSkillId, setGuidedSkillId] = useState<string | undefined>(undefined);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
+  const [showSaveCommand, setShowSaveCommand] = useState(false);
+  const [saveCommandData, setSaveCommandData] = useState<{ userPrompt: string; assistantContent: string } | null>(null);
 
   const { createConversation } = useChatStore();
   const toggleDemo = useDemoStore((s) => s.toggle);
@@ -162,12 +167,47 @@ export function ChatLayout() {
     // The panel will reload when it re-renders
   }, []);
 
-  const handleGuidedPromptSelect = useCallback((prompt: string) => {
+  const handleSaveAsCommand = useCallback((userPrompt: string, assistantContent: string) => {
+    setSaveCommandData({ userPrompt, assistantContent });
+    setShowSaveCommand(true);
+  }, []);
+
+  const handleSaveCommandSubmit = useCallback(async (data: {
+    name: string;
+    description: string;
+    category: string;
+    icon: string;
+    show_on_home: boolean;
+    content: string;
+  }) => {
+    await createUserCommand(data);
+    setShowSaveCommand(false);
+    setSaveCommandData(null);
+    // Rafraîchir les commandes slash
+    const commands = await listUserCommands();
+    const slashCmds: SlashCommand[] = commands.map((cmd: UserCommand) => ({
+      id: `user-${cmd.name}`,
+      name: cmd.name,
+      description: cmd.description || cmd.name,
+      icon: <Sparkles className="w-4 h-4" />,
+      prefix: cmd.content,
+    }));
+    setUserSlashCommands(slashCmds);
+  }, []);
+
+  const handleSaveCommandClose = useCallback(() => {
+    setShowSaveCommand(false);
+    setSaveCommandData(null);
+  }, []);
+
+  const handleGuidedPromptSelect = useCallback((prompt: string, skillId?: string) => {
     setGuidedPrompt(prompt);
+    setGuidedSkillId(skillId);
   }, []);
 
   const handleGuidedPromptConsumed = useCallback(() => {
     setGuidedPrompt(undefined);
+    setGuidedSkillId(undefined);
   }, []);
 
   const handleToggleBoardPanel = useCallback(() => {
@@ -263,7 +303,7 @@ export function ChatLayout() {
 
       {/* Messages area */}
       <div className="flex-1 overflow-hidden">
-        <MessageList onPromptSelect={handleGuidedPromptSelect} />
+        <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} />
       </div>
 
       {/* Input area */}
@@ -271,6 +311,7 @@ export function ChatLayout() {
         <ChatInput
           onOpenCommandPalette={handleOpenCommandPalette}
           initialPrompt={guidedPrompt}
+          initialSkillId={guidedSkillId}
           onInitialPromptConsumed={handleGuidedPromptConsumed}
           userCommands={userSlashCommands}
         />
@@ -343,6 +384,44 @@ export function ChatLayout() {
         isOpen={showBoardPanel}
         onClose={handleCloseBoardPanel}
       />
+
+      {/* Modal Sauvegarder comme raccourci */}
+      <AnimatePresence>
+        {showSaveCommand && saveCommandData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={handleSaveCommandClose}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="relative bg-surface-elevated border border-border rounded-2xl p-6 shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Bouton fermer */}
+              <button
+                onClick={handleSaveCommandClose}
+                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-surface text-text-muted hover:text-text transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <CreateCommandForm
+                onSubmit={handleSaveCommandSubmit}
+                onBack={handleSaveCommandClose}
+                initialContent={saveCommandData.userPrompt}
+                initialDescription={saveCommandData.assistantContent.slice(0, 100)}
+                capturedPreview={saveCommandData.assistantContent.slice(0, 300)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Status connexion - coin bas droite */}
       <div className="fixed bottom-1 right-4 z-10">

@@ -1312,3 +1312,264 @@ class TestUploadEndpoint:
         assert "ALLOWED_UPLOAD_EXTENSIONS" in content, (
             "files.py doit définir les extensions autorisées pour l'upload"
         )
+
+
+# ============================================================
+# Phase 1 (v0.2.4) - skill_id dans le chat endpoint
+# Les skills TEXT/ANALYSIS doivent recevoir le system prompt du skill.
+# ============================================================
+
+
+CHAT_ROUTER_PY = SRC / "app" / "routers" / "chat.py"
+CHAT_TS = FRONTEND / "services" / "api" / "chat.ts"
+GUIDED_PROMPTS_TSX = FRONTEND / "components" / "guided" / "GuidedPrompts.tsx"
+
+
+class TestSkillIdInChat:
+    """Phase 1 : skill_id doit être propagé du frontend au backend."""
+
+    def test_backend_schema_has_skill_id(self):
+        """ChatRequest (schemas.py) doit avoir le champ skill_id."""
+        content = SCHEMAS_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "ChatRequest":
+                class_source = ast.get_source_segment(content, node)
+                assert "skill_id" in class_source, (
+                    "ChatRequest doit avoir le champ skill_id"
+                )
+                break
+        else:
+            pytest.fail("Classe ChatRequest non trouvée dans schemas.py")
+
+    def test_backend_injects_skill_system_prompt(self):
+        """chat.py doit injecter le system prompt du skill quand skill_id est fourni."""
+        content = CHAT_ROUTER_PY.read_text(encoding="utf-8")
+        assert "get_skills_registry" in content, (
+            "chat.py doit importer get_skills_registry pour charger les skills"
+        )
+        assert "get_system_prompt_addition" in content, (
+            "chat.py doit appeler get_system_prompt_addition() sur le skill"
+        )
+
+    def test_frontend_chat_api_has_skill_id(self):
+        """ChatRequest dans chat.ts doit contenir skill_id."""
+        content = CHAT_TS.read_text(encoding="utf-8")
+        assert "skill_id" in content, (
+            "chat.ts ChatRequest doit contenir le champ skill_id"
+        )
+
+    def test_guided_prompts_passes_skill_id(self):
+        """GuidedPrompts doit passer le skillId à onPromptSelect."""
+        content = GUIDED_PROMPTS_TSX.read_text(encoding="utf-8")
+        assert "skillId" in content, (
+            "GuidedPrompts doit passer skillId à onPromptSelect"
+        )
+
+
+# ============================================================
+# Phase 2 (v0.2.4) - Sauvegarder comme raccourci
+# Bouton Bookmark dans MessageBubble + modal CreateCommandForm.
+# ============================================================
+
+
+class TestSaveAsCommand:
+    """Phase 2 : bouton sauvegarder comme raccourci dans le chat."""
+
+    def test_message_bubble_has_bookmark(self):
+        """MessageBubble doit avoir un bouton Bookmark pour sauvegarder."""
+        content = MESSAGE_BUBBLE_TSX.read_text(encoding="utf-8")
+        assert "Bookmark" in content, (
+            "MessageBubble doit importer l'icône Bookmark"
+        )
+        assert "onSaveAsCommand" in content, (
+            "MessageBubble doit avoir la prop onSaveAsCommand"
+        )
+
+    def test_message_list_has_save_as_command(self):
+        """MessageList doit propager onSaveAsCommand."""
+        content = (FRONTEND / "components" / "chat" / "MessageList.tsx").read_text(encoding="utf-8")
+        assert "onSaveAsCommand" in content, (
+            "MessageList doit avoir la prop onSaveAsCommand"
+        )
+
+    def test_chat_layout_has_save_command_modal(self):
+        """ChatLayout doit afficher le modal CreateCommandForm."""
+        content = (FRONTEND / "components" / "chat" / "ChatLayout.tsx").read_text(encoding="utf-8")
+        assert "CreateCommandForm" in content, (
+            "ChatLayout doit importer CreateCommandForm"
+        )
+        assert "showSaveCommand" in content, (
+            "ChatLayout doit avoir un state showSaveCommand"
+        )
+        assert "handleSaveAsCommand" in content, (
+            "ChatLayout doit avoir le handler handleSaveAsCommand"
+        )
+
+    def test_create_command_form_accepts_initial_values(self):
+        """CreateCommandForm doit accepter initialContent et initialDescription."""
+        content = (FRONTEND / "components" / "guided" / "CreateCommandForm.tsx").read_text(encoding="utf-8")
+        assert "initialContent" in content, (
+            "CreateCommandForm doit accepter la prop initialContent"
+        )
+        assert "initialDescription" in content, (
+            "CreateCommandForm doit accepter la prop initialDescription"
+        )
+        assert "capturedPreview" in content, (
+            "CreateCommandForm doit accepter la prop capturedPreview"
+        )
+
+
+# ============================================================
+# Phase 4c (v0.2.4) - Image : bouton "Utiliser"
+# ImageGenerationPanel doit avoir un bouton Utiliser.
+# ============================================================
+
+
+IMAGE_GENERATION_PANEL_TSX = FRONTEND / "components" / "guided" / "ImageGenerationPanel.tsx"
+
+
+class TestImageUseButton:
+    """Phase 4c : bouton Utiliser dans ImageGenerationPanel."""
+
+    def test_image_panel_has_onuse_prop(self):
+        """ImageGenerationPanel doit avoir la prop onUse."""
+        content = IMAGE_GENERATION_PANEL_TSX.read_text(encoding="utf-8")
+        assert "onUse" in content, (
+            "ImageGenerationPanel doit avoir la prop onUse"
+        )
+
+    def test_image_panel_has_utiliser_button(self):
+        """ImageGenerationPanel doit afficher un bouton Utiliser."""
+        content = IMAGE_GENERATION_PANEL_TSX.read_text(encoding="utf-8")
+        assert "Utiliser" in content, (
+            "ImageGenerationPanel doit avoir un bouton 'Utiliser'"
+        )
+
+
+# ============================================================
+# BUG-033 (v0.2.4) - FileBrowser accent "répertoire"
+# ============================================================
+
+
+FILE_BROWSER_TSX = FRONTEND / "components" / "files" / "FileBrowser.tsx"
+
+
+class TestBUG033FileBrowserAccent:
+    """BUG-033 : FileBrowser doit utiliser 'répertoire' (avec accent)."""
+
+    def test_no_repertoire_without_accent(self):
+        """FileBrowser ne doit pas contenir 'repertoire' sans accent."""
+        content = FILE_BROWSER_TSX.read_text(encoding="utf-8")
+        import re
+        # Chercher "repertoire" sans accent (pas "répertoire")
+        unaccented = re.findall(r'(?<![é])repertoire', content, re.IGNORECASE)
+        assert len(unaccented) == 0, (
+            "FileBrowser doit écrire 'répertoire' avec accent, "
+            f"trouvé {len(unaccented)} occurrences sans accent"
+        )
+
+
+# ============================================================
+# BUG-034 (v0.2.4) - Microphone plugin prêt
+# useVoiceRecorder doit exposer pluginReady.
+# ============================================================
+
+
+VOICE_RECORDER_TS = FRONTEND / "hooks" / "useVoiceRecorder.ts"
+
+
+class TestBUG034MicrophonePluginReady:
+    """BUG-034 : useVoiceRecorder doit exposer pluginReady."""
+
+    def test_hook_exports_plugin_ready(self):
+        """useVoiceRecorder doit retourner pluginReady."""
+        content = VOICE_RECORDER_TS.read_text(encoding="utf-8")
+        assert "pluginReady" in content, (
+            "useVoiceRecorder doit exposer pluginReady"
+        )
+
+    def test_chat_input_disables_mic_when_not_ready(self):
+        """ChatInput doit désactiver le micro quand le plugin n'est pas prêt."""
+        content = CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "pluginReady" in content, (
+            "ChatInput doit utiliser pluginReady pour désactiver le bouton micro"
+        )
+
+
+# ============================================================
+# Phase 5 (v0.2.4) - Calendrier vues Semaine et Jour
+# CalendarView doit implémenter WeekView et DayView.
+# ============================================================
+
+
+CALENDAR_VIEW_TSX = FRONTEND / "components" / "calendar" / "CalendarView.tsx"
+
+
+class TestCalendarWeekDayViews:
+    """Phase 5 : vues Semaine et Jour dans le calendrier."""
+
+    def test_week_view_exists(self):
+        """CalendarView doit contenir un composant WeekView."""
+        content = CALENDAR_VIEW_TSX.read_text(encoding="utf-8")
+        assert "function WeekView" in content, (
+            "CalendarView.tsx doit contenir le composant WeekView"
+        )
+        assert "WEEK_START_HOUR" in content, (
+            "WeekView doit définir les heures de début/fin"
+        )
+
+    def test_day_view_exists(self):
+        """CalendarView doit contenir un composant DayView."""
+        content = CALENDAR_VIEW_TSX.read_text(encoding="utf-8")
+        assert "function DayView" in content, (
+            "CalendarView.tsx doit contenir le composant DayView"
+        )
+        assert "DAY_START_HOUR" in content, (
+            "DayView doit définir les heures de début/fin"
+        )
+
+    def test_week_view_has_current_time_indicator(self):
+        """WeekView doit afficher la ligne rouge de l'heure actuelle."""
+        content = CALENDAR_VIEW_TSX.read_text(encoding="utf-8")
+        assert "nowLineTop" in content, (
+            "Les vues semaine/jour doivent calculer la position de la ligne rouge"
+        )
+        assert "bg-red-500" in content, (
+            "La ligne de l'heure actuelle doit être rouge"
+        )
+
+
+# ============================================================
+# Phase 6 (v0.2.4) - CRM : suppression onglet Projets
+# CRMPanel ne doit plus avoir d'onglet Projets.
+# ============================================================
+
+
+CRM_PANEL_TSX = FRONTEND / "components" / "crm" / "CRMPanel.tsx"
+
+
+class TestCRMProjectsTabRemoved:
+    """Phase 6 : l'onglet Projets du CRM doit être supprimé."""
+
+    def test_no_projects_tab(self):
+        """CRMPanel ne doit plus contenir d'onglet 'projects'."""
+        content = CRM_PANEL_TSX.read_text(encoding="utf-8")
+        # Chercher dans la définition des tabs
+        assert "'projects'" not in content, (
+            "CRMPanel ne doit plus contenir l'onglet 'projects'"
+        )
+
+    def test_global_activity_view_exists(self):
+        """CRMPanel doit avoir un composant GlobalActivityView."""
+        content = CRM_PANEL_TSX.read_text(encoding="utf-8")
+        assert "GlobalActivityView" in content, (
+            "CRMPanel doit contenir GlobalActivityView pour la vue activités globale"
+        )
+
+    def test_activity_filter_chips(self):
+        """GlobalActivityView doit avoir des filtres par type d'activité."""
+        content = CRM_PANEL_TSX.read_text(encoding="utf-8")
+        assert "ACTIVITY_FILTER_CHIPS" in content, (
+            "CRMPanel doit définir ACTIVITY_FILTER_CHIPS pour les filtres"
+        )

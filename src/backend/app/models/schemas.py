@@ -28,6 +28,7 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = None
     include_memory: bool = True
     stream: bool = True
+    skill_id: str | None = None
 
 
 class ChatResponse(BaseModel):

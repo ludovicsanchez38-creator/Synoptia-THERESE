@@ -195,20 +195,59 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setIsEventFormOpen(true);
   }
 
-  function handlePreviousMonth() {
+  function handlePrevious() {
     const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() - 1);
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() - 1);
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() - 7);
+    } else {
+      newDate.setMonth(newDate.getMonth() - 1);
+    }
     setSelectedDate(newDate);
   }
 
-  function handleNextMonth() {
+  function handleNext() {
     const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + 1);
+    if (viewMode === 'day') {
+      newDate.setDate(newDate.getDate() + 1);
+    } else if (viewMode === 'week') {
+      newDate.setDate(newDate.getDate() + 7);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
     setSelectedDate(newDate);
   }
 
   function handleToday() {
     setSelectedDate(new Date());
+  }
+
+  /** Libellé de navigation adapté au mode de vue */
+  function getNavLabel(): string {
+    if (viewMode === 'day') {
+      return selectedDate.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    }
+    if (viewMode === 'week') {
+      // Calculer lundi et dimanche de la semaine
+      const dayOfWeek = selectedDate.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(selectedDate);
+      monday.setDate(selectedDate.getDate() + mondayOffset);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const fmtStart = monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      const fmtEnd = sunday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      return `${fmtStart} - ${fmtEnd}`;
+    }
+    // month / list
+    return selectedDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
   }
 
   async function handleReauthorize() {
@@ -312,10 +351,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const calendarNav = (
     <div className="px-6 py-3 border-b border-border/30 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={handlePreviousMonth}>
+        <Button variant="ghost" size="sm" onClick={handlePrevious}>
           <ChevronLeft className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleNextMonth}>
+        <Button variant="ghost" size="sm" onClick={handleNext}>
           <ChevronRight className="w-4 h-4" />
         </Button>
         <Button variant="ghost" size="sm" onClick={handleToday}>
@@ -323,8 +362,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         </Button>
       </div>
 
-      <h3 className="text-lg font-semibold text-text">
-        {selectedDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+      <h3 className="text-lg font-semibold text-text capitalize">
+        {getNavLabel()}
       </h3>
 
       {/* Calendar Selector */}

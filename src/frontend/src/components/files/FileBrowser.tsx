@@ -163,8 +163,31 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       setEntries(visibleEntries);
     } catch (err) {
       console.error('Failed to read directory:', err);
-      setError('Impossible de lire ce repertoire');
+      setError('Impossible de lire ce répertoire');
       setEntries([]);
+      // Fallback : revenir au répertoire home
+      try {
+        const home = await homeDir();
+        if (path !== home) {
+          setCurrentPath(home);
+          const fallbackEntries = await readDir(home);
+          const mapped: FileEntry[] = await Promise.all(
+            fallbackEntries.map(async (entry) => {
+              const fullPath = await resolve(home, entry.name);
+              const extension = entry.isDirectory ? undefined : '.' + (entry.name.split('.').pop() || '');
+              return { name: entry.name, path: fullPath, isDirectory: entry.isDirectory || false, isFile: !entry.isDirectory, extension };
+            })
+          );
+          mapped.sort((a, b) => {
+            if (a.isDirectory && !b.isDirectory) return -1;
+            if (!a.isDirectory && b.isDirectory) return 1;
+            return a.name.localeCompare(b.name);
+          });
+          setEntries(mapped.filter(e => !e.name.startsWith('.')));
+        }
+      } catch {
+        // Impossible de charger le home non plus
+      }
     } finally {
       setLoading(false);
     }
@@ -188,7 +211,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
         await loadDirectory(home);
       } catch (err) {
         console.error('Failed to get home directory:', err);
-        setError('Impossible de charger le repertoire personnel');
+        setError('Impossible de charger le répertoire personnel');
       }
     }
     init();
@@ -272,7 +295,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           variant="ghost"
           size="icon"
           onClick={goHome}
-          title="Repertoire personnel"
+          title="Répertoire personnel"
           className="h-8 w-8"
         >
           <Home className="w-4 h-4" />

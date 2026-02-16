@@ -138,10 +138,17 @@ export function EmailList({ accountId }: EmailListProps) {
         setTimeout(() => loadMessages(), delay);
         return;
       }
-      // Si on a du cache, ne pas afficher d'erreur bloquante
-      const stillHasCache = useEmailStore.getState().messages.length > 0;
-      if (!stillHasCache) {
-        setError('Impossible de charger les messages');
+      // Détecter expiration token OAuth (BUG-029)
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('expired') || errMsg.includes('revoked') || errMsg.includes('401') || errMsg.includes('Token')) {
+        setError('Connexion Gmail expirée - reconnecte-toi.');
+        setNeedsReauth(true);
+      } else {
+        // Si on a du cache, ne pas afficher d'erreur bloquante
+        const stillHasCache = useEmailStore.getState().messages.length > 0;
+        if (!stillHasCache) {
+          setError('Impossible de charger les messages');
+        }
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -155,6 +162,7 @@ export function EmailList({ accountId }: EmailListProps) {
   async function handleTrash(e: React.MouseEvent, messageId: string) {
     e.stopPropagation();
     try {
+      // BUG-030 : attendre la confirmation API AVANT de retirer de l'UI
       await api.deleteEmailMessage(accountId, messageId, false);
       removeMessage(messageId);
       if (currentMessageId === messageId) {
