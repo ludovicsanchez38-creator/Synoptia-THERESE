@@ -162,9 +162,12 @@ async def set_user_profile(
     from datetime import UTC, datetime
 
     try:
-        # Get or create preference
+        # Get or create preference (BUG-026 : aligner sur key + category)
         result = await session.execute(
-            select(Preference).where(Preference.key == PROFILE_KEY)
+            select(Preference).where(
+                Preference.key == PROFILE_KEY,
+                Preference.category == PROFILE_CATEGORY,
+            )
         )
         pref = result.scalar_one_or_none()
 
@@ -268,8 +271,12 @@ async def delete_user_profile(session: AsyncSession) -> bool:
     Returns True if deleted, False if not found.
     """
     try:
+        # BUG-026 : aligner sur key + category (comme get_user_profile)
         result = await session.execute(
-            select(Preference).where(Preference.key == PROFILE_KEY)
+            select(Preference).where(
+                Preference.key == PROFILE_KEY,
+                Preference.category == PROFILE_CATEGORY,
+            )
         )
         pref = result.scalar_one_or_none()
 

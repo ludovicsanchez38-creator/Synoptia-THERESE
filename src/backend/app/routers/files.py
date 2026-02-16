@@ -5,6 +5,7 @@ Endpoints for file management and indexing.
 """
 
 import logging
+import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from app.models.schemas import FileIndexRequest, FileResponse
 from app.services.file_parser import chunk_text, extract_text, get_file_metadata
 from app.services.path_security import validate_indexable_file
 from app.services.qdrant import get_qdrant_service
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -254,3 +255,125 @@ async def get_file_content(
         "content": content[:10000],  # Limit content size
         "truncated": len(content) > 10000,
     }
+
+
+# Extensions autorisées pour l'upload vers un projet
+ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".csv", ".xlsx", ".pdf", ".docx"}
+
+
+@router.post("/upload", response_model=FileResponse)
+async def upload_file(
+    file: UploadFile,
+    project_id: str = Form(...),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Upload un fichier et l'associe à un projet.
+
+    Le fichier est sauvegardé dans ~/.therese/projects/{project_id}/files/
+    puis indexé dans Qdrant pour la recherche sémantique.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier manquant")
+
+    # Valider l'extension
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Extension {ext} non supportée. Extensions autorisées : {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}",
+        )
+
+    # Vérifier que le projet existe
+    from app.models.entities import Project
+    result = await session.execute(
+        select(Project).where(Project.id == project_id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+
+    # Créer le dossier de stockage
+    therese_dir = Path.home() / ".therese" / "projects" / project_id / "files"
+    therese_dir.mkdir(parents=True, exist_ok=True)
+
+    # Sauvegarder le fichier
+    dest_path = therese_dir / file.filename
+    try:
+        with dest_path.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+    except Exception as e:
+        logger.error(f"Erreur sauvegarde fichier : {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde du fichier")
+
+    # Récupérer les métadonnées
+    metadata = get_file_metadata(dest_path)
+
+    # Créer ou mettre à jour l'entrée en base
+    result = await session.execute(
+        select(FileMetadata).where(FileMetadata.path == str(dest_path))
+    )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        qdrant = get_qdrant_service()
+        await qdrant.async_delete_by_entity(existing.id)
+        existing.size = metadata["size"]
+        existing.mime_type = metadata["mime_type"]
+        existing.scope = "project"
+        existing.scope_id = project_id
+        existing.updated_at = datetime.now(UTC)
+        file_meta = existing
+    else:
+        file_meta = FileMetadata(
+            path=str(dest_path),
+            name=metadata["name"],
+            extension=metadata["extension"],
+            size=metadata["size"],
+            mime_type=metadata["mime_type"],
+            scope="project",
+            scope_id=project_id,
+        )
+        session.add(file_meta)
+        await session.flush()
+
+    # Extraire et indexer le contenu
+    text_content = extract_text(dest_path)
+    if text_content:
+        chunks = list(chunk_text(text_content, chunk_size=1000, overlap=200))
+        qdrant = get_qdrant_service()
+        items = []
+        for i, chunk in enumerate(chunks):
+            items.append({
+                "text": chunk,
+                "memory_type": "file",
+                "entity_id": file_meta.id,
+                "metadata": {
+                    "name": file_meta.name,
+                    "path": str(dest_path),
+                    "chunk_index": i,
+                    "total_chunks": len(chunks),
+                    "project_id": project_id,
+                },
+            })
+        if items:
+            await qdrant.async_add_memories(items)
+            logger.info(f"Indexé {len(chunks)} chunks pour {file_meta.name} (projet {project_id})")
+        file_meta.chunk_count = len(chunks)
+    else:
+        file_meta.chunk_count = 0
+
+    file_meta.indexed_at = datetime.now(UTC)
+    await session.commit()
+    await session.refresh(file_meta)
+
+    return FileResponse(
+        id=file_meta.id,
+        path=file_meta.path,
+        name=file_meta.name,
+        extension=file_meta.extension,
+        size=file_meta.size,
+        mime_type=file_meta.mime_type,
+        chunk_count=file_meta.chunk_count,
+        indexed_at=file_meta.indexed_at,
+        created_at=file_meta.created_at,
+    )

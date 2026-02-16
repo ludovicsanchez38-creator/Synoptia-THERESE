@@ -677,6 +677,21 @@ async def get_project(
     )
 
 
+@router.get("/projects/{project_id}/files")
+async def list_project_files(
+    project_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Liste les fichiers associés à un projet."""
+    result = await session.execute(
+        select(FileMetadata).where(
+            FileMetadata.scope == "project",
+            FileMetadata.scope_id == project_id,
+        )
+    )
+    return result.scalars().all()
+
+
 @router.patch("/projects/{project_id}", response_model=ProjectResponse)
 async def update_project(
     project_id: str,

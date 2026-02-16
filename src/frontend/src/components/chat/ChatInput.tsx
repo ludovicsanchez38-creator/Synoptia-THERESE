@@ -222,26 +222,23 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
     let accumulatedContent = '';
     let backendConversationId: string | null = null;
 
-    // Batching SSE : flush toutes les 300ms (affiche par blocs de ~15-20 mots)
-    let lastFlushed = '';
-    let flushTimer: ReturnType<typeof setInterval> | null = null;
+    // Streaming phrase-par-phrase : flush sur frontière naturelle (. ! ? \n\n)
+    // ou timeout 800ms - plus fluide que le setInterval 300ms
+    let displayedContent = '';
+    let pendingChunk = '';
+    const SENTENCE_ENDINGS = /[.!?]\s|[\n]{2}/;
+    let bufferTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const startBatching = () => {
-      if (!flushTimer) {
-        flushTimer = setInterval(() => {
-          if (accumulatedContent !== lastFlushed) {
-            updateMessage(assistantMessageId, accumulatedContent);
-            lastFlushed = accumulatedContent;
-          }
-        }, 300);
+    const flushToDisplay = () => {
+      if (accumulatedContent !== displayedContent) {
+        displayedContent = accumulatedContent;
+        updateMessage(assistantMessageId, displayedContent);
       }
+      if (bufferTimer) { clearTimeout(bufferTimer); bufferTimer = null; }
     };
 
     const stopBatching = () => {
-      if (flushTimer) {
-        clearInterval(flushTimer);
-        flushTimer = null;
-      }
+      if (bufferTimer) { clearTimeout(bufferTimer); bufferTimer = null; }
     };
 
     try {
@@ -268,10 +265,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, onInitialPrompt
         }
 
         if (chunk.type === 'text') {
-          // Accumulate content and batch update (300ms interval)
+          // Accumulate content et flush sur frontière de phrase
           accumulatedContent += chunk.content;
+          pendingChunk += chunk.content;
           setActivity('streaming', "En train d'écrire...");
-          startBatching();
+
+          // Flush si fin de phrase détectée dans le nouveau contenu
+          if (SENTENCE_ENDINGS.test(pendingChunk)) {
+            pendingChunk = '';
+            flushToDisplay();
+          } else if (!bufferTimer) {
+            // Timeout de sécurité : flush après 800ms max sans ponctuation
+            bufferTimer = setTimeout(() => {
+              pendingChunk = '';
+              flushToDisplay();
+            }, 800);
+          }
         } else if (chunk.type === 'status') {
           // Status updates (file processing, tool execution start, etc.)
           setActivity('thinking', chunk.content || 'Traitement...');

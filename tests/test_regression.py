@@ -1172,7 +1172,7 @@ CHAT_INPUT_TSX = FRONTEND / "components" / "chat" / "ChatInput.tsx"
 
 
 class TestStreamingAntiFlicker:
-    """Optimisations anti-flicker pour le streaming (containment + batch)."""
+    """Optimisations anti-flicker pour le streaming (containment + phrase-par-phrase)."""
 
     def test_message_bubble_has_css_containment(self):
         """MessageBubble doit utiliser CSS containment pour isoler les repaints."""
@@ -1181,12 +1181,134 @@ class TestStreamingAntiFlicker:
             "MessageBubble doit utiliser la propriété CSS 'contain' pour isoler les repaints"
         )
 
-    def test_streaming_batch_interval(self):
-        """ChatInput doit batcher les updates streaming avec setInterval (pas rAF pur)."""
+    def test_streaming_sentence_flush(self):
+        """ChatInput doit flusher sur frontière de phrase (v0.2.3)."""
         content = CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "setInterval" in content, (
-            "ChatInput doit utiliser setInterval pour batcher les updates streaming"
+        assert "SENTENCE_ENDINGS" in content, (
+            "ChatInput doit détecter les fins de phrase pour le flush streaming"
         )
-        assert "300" in content, (
-            "ChatInput doit utiliser un intervalle de 300ms pour le batch streaming (blocs)"
+        assert "flushToDisplay" in content, (
+            "ChatInput doit avoir une fonction flushToDisplay pour le streaming phrase-par-phrase"
+        )
+        assert "800" in content, (
+            "ChatInput doit avoir un timeout de sécurité 800ms pour le flush"
+        )
+
+
+# ============================================================
+# BUG-025 (v0.2.3) - Ollama /api/chat 404
+# Le provider Ollama doit utiliser le champ "system" séparé
+# au lieu d'un message role=system dans le tableau messages.
+# ============================================================
+
+
+PROVIDERS = SRC / "app" / "services" / "providers"
+
+
+class TestBUG025OllamaSystemPrompt:
+    """BUG-025 : Ollama provider doit utiliser le champ 'system' séparé."""
+
+    def test_ollama_provider_uses_system_field(self):
+        """Le body JSON doit contenir le champ 'system' pour le system prompt."""
+        code = PROVIDERS / "ollama.py"
+        content = code.read_text(encoding="utf-8")
+        assert '"system"' in content, (
+            "Ollama provider doit envoyer le system prompt via le champ 'system'"
+        )
+
+    def test_ollama_provider_filters_system_role(self):
+        """Les messages role=system doivent être filtrés du tableau messages."""
+        code = PROVIDERS / "ollama.py"
+        content = code.read_text(encoding="utf-8")
+        assert 'role' in content and 'system' in content, (
+            "Ollama provider doit filtrer les messages role=system"
+        )
+        assert "chat_messages" in content, (
+            "Ollama provider doit séparer les messages chat des messages system"
+        )
+
+
+# ============================================================
+# BUG-026 (v0.2.3) - Profil utilisateur ne sauvegarde pas
+# set_user_profile et delete_user_profile doivent utiliser
+# key + category (comme get_user_profile).
+# ============================================================
+
+
+class TestBUG026ProfileSave:
+    """BUG-026 : set_user_profile doit utiliser key + category."""
+
+    def test_set_profile_uses_category(self):
+        """Les 3 fonctions (get, set, delete) doivent toutes utiliser PROFILE_CATEGORY."""
+        code = USER_PROFILE_PY.read_text(encoding="utf-8")
+        assert code.count("PROFILE_CATEGORY") >= 3, (
+            "get, set et delete doivent tous utiliser PROFILE_CATEGORY"
+        )
+
+    def test_delete_profile_uses_category(self):
+        """delete_user_profile doit filtrer par PROFILE_CATEGORY."""
+        code = USER_PROFILE_PY.read_text(encoding="utf-8")
+        # Trouver la fonction delete_user_profile et vérifier PROFILE_CATEGORY
+        delete_start = code.find("async def delete_user_profile")
+        assert delete_start > 0, "delete_user_profile non trouvé"
+        delete_body = code[delete_start:delete_start + 500]
+        assert "PROFILE_CATEGORY" in delete_body, (
+            "delete_user_profile doit utiliser PROFILE_CATEGORY dans sa requête"
+        )
+
+
+# ============================================================
+# Support XLSX dans file_parser (v0.2.3)
+# file_parser.py doit pouvoir extraire le contenu de fichiers .xlsx.
+# ============================================================
+
+
+FILE_PARSER_PY = SRC / "app" / "services" / "file_parser.py"
+
+
+class TestXLSXSupport:
+    """Support extraction de fichiers Excel (.xlsx)."""
+
+    def test_xlsx_extract_function_exists(self):
+        """file_parser doit avoir une fonction _extract_xlsx."""
+        content = FILE_PARSER_PY.read_text(encoding="utf-8")
+        assert "_extract_xlsx" in content, (
+            "file_parser.py doit contenir la fonction _extract_xlsx"
+        )
+
+    def test_xlsx_extension_handled(self):
+        """file_parser doit gérer l'extension .xlsx."""
+        content = FILE_PARSER_PY.read_text(encoding="utf-8")
+        assert '".xlsx"' in content, (
+            "file_parser.py doit gérer l'extension .xlsx"
+        )
+
+
+# ============================================================
+# Upload fichiers vers projets (v0.2.3)
+# L'endpoint POST /api/files/upload doit exister.
+# ============================================================
+
+
+FILES_ROUTER_PY = SRC / "app" / "routers" / "files.py"
+
+
+class TestUploadEndpoint:
+    """Endpoint upload fichier vers projet."""
+
+    def test_upload_endpoint_exists(self):
+        """Le router files doit avoir un endpoint /upload."""
+        content = FILES_ROUTER_PY.read_text(encoding="utf-8")
+        assert "upload" in content, (
+            "files.py doit contenir un endpoint upload"
+        )
+        assert "UploadFile" in content, (
+            "files.py doit utiliser UploadFile de FastAPI"
+        )
+
+    def test_upload_validates_extension(self):
+        """L'upload doit valider les extensions autorisées."""
+        content = FILES_ROUTER_PY.read_text(encoding="utf-8")
+        assert "ALLOWED_UPLOAD_EXTENSIONS" in content, (
+            "files.py doit définir les extensions autorisées pour l'upload"
         )

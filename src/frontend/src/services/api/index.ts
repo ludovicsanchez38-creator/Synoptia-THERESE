@@ -110,6 +110,8 @@ export {
   getFile,
   getFileContent,
   deleteFile,
+  uploadProjectFile,
+  listProjectFiles,
   type FileMetadata,
 } from './files';
 

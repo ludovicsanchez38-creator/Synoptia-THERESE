@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Briefcase, Loader2, Trash2, AlertCircle, Users } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Briefcase, Loader2, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -47,6 +47,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [projectFiles, setProjectFiles] = useState<api.FileMetadata[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!project;
 
@@ -54,8 +57,62 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   useEffect(() => {
     if (isOpen) {
       loadContacts();
+      if (project) {
+        loadProjectFiles(project.id);
+      } else {
+        setProjectFiles([]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, project]);
+
+  async function loadProjectFiles(projectId: string) {
+    try {
+      const files = await api.listProjectFiles(projectId);
+      setProjectFiles(files);
+    } catch (err) {
+      console.error('Erreur chargement fichiers projet :', err);
+    }
+  }
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length || !project) return;
+
+    setUploadingFile(true);
+    setError(null);
+    try {
+      for (const file of Array.from(files)) {
+        await api.uploadProjectFile(file, project.id);
+      }
+      await loadProjectFiles(project.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'upload");
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [project]);
+
+  async function handleDeleteFile(fileId: string) {
+    try {
+      await api.deleteFile(fileId);
+      setProjectFiles((prev) => prev.filter((f) => f.id !== fileId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur suppression fichier');
+    }
+  }
+
+  function getFileIcon(ext: string) {
+    if (['.md', '.txt', '.docx', '.pdf'].includes(ext)) return <FileText className="w-4 h-4 text-accent-cyan" />;
+    if (['.xlsx', '.csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-green-400" />;
+    return <File className="w-4 h-4 text-text-muted" />;
+  }
+
+  function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  }
 
   async function loadContacts() {
     setLoadingContacts(true);
@@ -319,6 +376,59 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
+
+              {/* Fichiers du projet (visible uniquement en édition) */}
+              {isEditing && project && (
+                <div className="space-y-2">
+                  <label className="text-sm text-text-muted flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Fichiers du projet
+                  </label>
+                  {/* Liste des fichiers */}
+                  {projectFiles.length > 0 && (
+                    <div className="space-y-1">
+                      {projectFiles.map((f) => (
+                        <div
+                          key={f.id}
+                          className="flex items-center gap-2 px-3 py-2 bg-background/40 rounded-lg border border-border/30"
+                        >
+                          {getFileIcon(f.extension)}
+                          <span className="flex-1 text-sm text-text truncate">{f.name}</span>
+                          <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
+                          <button
+                            onClick={() => handleDeleteFile(f.id)}
+                            className="p-1 rounded hover:bg-red-500/10 text-text-muted hover:text-red-400 transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Bouton d'upload */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".md,.txt,.csv,.xlsx,.pdf,.docx"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="ghost"
+                    className="w-full border border-dashed border-border/50 hover:border-accent-cyan/50"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFile}
+                  >
+                    {uploadingFile ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Upload en cours...</>
+                    ) : (
+                      <><Upload className="w-4 h-4 mr-2" />Ajouter un fichier (.md, .xlsx, .pdf, .docx)</>
+                    )}
+                  </Button>
+                </div>
+              )}
 
               {/* Tags */}
               <div className="space-y-2">

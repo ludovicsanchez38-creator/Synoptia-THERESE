@@ -32,12 +32,17 @@ class OllamaProvider(BaseProvider):
         base_url = self.config.base_url or "http://localhost:11434"
 
         try:
+            # Séparer le system prompt des messages (BUG-025)
+            # Ollama attend un champ "system" séparé, pas un message role=system
+            chat_messages = [m for m in messages if m.get("role") != "system"]
+
             async with self.client.stream(
                 "POST",
                 f"{base_url}/api/chat",
                 json={
                     "model": self.config.model,
-                    "messages": messages,
+                    "messages": chat_messages,
+                    "system": system_prompt or "",
                     "stream": True,
                 },
             ) as response:

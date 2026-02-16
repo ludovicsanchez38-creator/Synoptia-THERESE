@@ -93,6 +93,10 @@ def extract_text(file_path: Path) -> str | None:
         if ext in {".docx", ".doc"}:
             return _extract_docx(file_path)
 
+        # Excel spreadsheets
+        if ext == ".xlsx":
+            return _extract_xlsx(file_path)
+
         # Unsupported
         logger.warning(f"Unsupported file type: {ext}")
         return None
@@ -188,6 +192,26 @@ def _extract_docx(file_path: Path) -> str:
             text_parts.append(para.text)
 
     return "\n\n".join(text_parts)
+
+
+def _extract_xlsx(file_path: Path) -> str:
+    """Extrait le contenu d'un fichier Excel en format texte tabulaire."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        logger.warning("openpyxl not installed, cannot extract XLSX")
+        return "[XLSX extraction unavailable - install openpyxl]"
+
+    wb = load_workbook(file_path, read_only=True, data_only=True)
+    output: list[str] = []
+    for sheet in wb.sheetnames:
+        ws = wb[sheet]
+        output.append(f"## Feuille : {sheet}\n")
+        for row in ws.iter_rows(values_only=True):
+            cells = [str(c) if c is not None else "" for c in row]
+            output.append(" | ".join(cells))
+    wb.close()
+    return "\n".join(output)
 
 
 def chunk_text(
