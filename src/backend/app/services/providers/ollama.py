@@ -29,12 +29,18 @@ class OllamaProvider(BaseProvider):
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream from local Ollama."""
-        base_url = self.config.base_url or "http://localhost:11434"
+        base_url = (self.config.base_url or "http://localhost:11434").rstrip("/")
 
         try:
-            # Séparer le system prompt des messages (BUG-025)
-            # Ollama attend un champ "system" séparé, pas un message role=system
-            chat_messages = [m for m in messages if m.get("role") != "system"]
+            # Construire la liste de messages avec le system prompt en premier
+            # /api/chat attend le system prompt comme message role="system",
+            # pas comme champ top-level (contrairement à /api/generate)
+            chat_messages: list[dict] = []
+            if system_prompt:
+                chat_messages.append({"role": "system", "content": system_prompt})
+            chat_messages.extend(
+                m for m in messages if m.get("role") != "system"
+            )
 
             async with self.client.stream(
                 "POST",
@@ -42,7 +48,6 @@ class OllamaProvider(BaseProvider):
                 json={
                     "model": self.config.model,
                     "messages": chat_messages,
-                    "system": system_prompt or "",
                     "stream": True,
                 },
             ) as response:

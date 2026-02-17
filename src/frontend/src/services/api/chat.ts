@@ -105,13 +105,15 @@ export async function sendMessage(req: ChatRequest): Promise<ChatResponse> {
 
 // Chat - Streaming (SSE)
 export async function* streamMessage(
-  req: ChatRequest
+  req: ChatRequest,
+  signal?: AbortSignal,
 ): AsyncGenerator<StreamChunk> {
   const url = `${API_BASE}/api/chat/send`;
   const response = await apiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...req, stream: true }),
+    signal,
   });
 
   if (!response.ok) {

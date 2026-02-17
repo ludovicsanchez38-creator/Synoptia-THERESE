@@ -1744,3 +1744,156 @@ class TestStreamingRawText:
         assert "minHeight" in content, (
             "MessageBubble doit calculer un minHeight dynamique pendant le streaming"
         )
+
+
+# ─── BUG-025 Ollama /api/chat 404 ─────────────────────────────────────────
+
+class TestBUG025_OllamaApiChat:
+    """Le provider Ollama doit envoyer le system prompt dans messages, pas en top-level."""
+
+    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+
+    def test_no_top_level_system_field(self):
+        """Le JSON envoyé à /api/chat ne doit pas contenir de champ 'system' top-level."""
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        # Chercher un dict literal avec "system": qui n'est pas dans messages
+        import re
+        # Le json= dict ne doit pas avoir "system" comme clé
+        json_block = re.search(r'json=\{(.*?)\}', content, re.DOTALL)
+        assert json_block, "Bloc json= non trouvé dans ollama.py"
+        json_content = json_block.group(1)
+        assert '"system"' not in json_content, (
+            "/api/chat n'accepte pas de champ 'system' top-level. "
+            "Le system prompt doit être un message role='system' dans messages."
+        )
+
+    def test_system_prompt_in_messages(self):
+        """Le system prompt doit être ajouté comme message role='system' dans la liste."""
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert '"role": "system"' in content or "role.*system" in content or \
+            '{"role": "system"' in content, (
+            "Le system prompt doit être inséré comme message avec role='system'"
+        )
+
+    def test_base_url_trailing_slash_stripped(self):
+        """base_url doit être nettoyé du trailing slash pour éviter //api/chat."""
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert '.rstrip("/")' in content or ".rstrip('/')" in content, (
+            "base_url doit être nettoyé avec rstrip('/') pour éviter les double slashes"
+        )
+
+
+# ─── BUG-036 XLSX code tronqué ────────────────────────────────────────────
+
+class TestBUG036_XlsxTruncatedCode:
+    """Le code tronqué doit être réparé avec ajout automatique de .save()."""
+
+    def test_ensure_save_call_adds_missing_save(self):
+        """_ensure_save_call doit ajouter wb.save(output_path) si absent."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code_without_save = 'wb = Workbook()\nws = wb.active\nws["A1"] = "test"'
+        result = _ensure_save_call(code_without_save)
+        assert ".save(output_path)" in result, (
+            "_ensure_save_call doit ajouter .save(output_path) quand absent"
+        )
+
+    def test_ensure_save_call_keeps_existing_save(self):
+        """_ensure_save_call ne doit pas dupliquer un .save() existant."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code_with_save = 'wb = Workbook()\nwb.save(output_path)'
+        result = _ensure_save_call(code_with_save)
+        assert result.count(".save(output_path)") == 1, (
+            "_ensure_save_call ne doit pas dupliquer le .save()"
+        )
+
+    def test_repair_truncated_code_adds_save(self):
+        """repair_truncated_code doit ajouter .save() après réparation."""
+        from app.services.skills.code_executor import repair_truncated_code
+
+        # Code tronqué : syntaxe invalide à la fin, et pas de .save()
+        truncated = 'wb = Workbook()\nws = wb.active\nws["A1"] = "test"\nws["A2'
+        result = repair_truncated_code(truncated)
+        assert result is not None, "repair_truncated_code doit réussir"
+        assert ".save(output_path)" in result, (
+            "repair_truncated_code doit ajouter .save(output_path) après réparation"
+        )
+
+
+# ─── BUG-025 Contraste dropdown modèle ────────────────────────────────────
+
+class TestBUG025_DropdownContraste:
+    """Le dropdown de sélection de modèle doit avoir un contraste suffisant."""
+
+    LLM_TAB_TSX = Path("src/frontend/src/components/settings/LLMTab.tsx")
+
+    def test_option_has_explicit_colors(self):
+        """Les <option> du select modèle doivent avoir des couleurs explicites."""
+        content = self.LLM_TAB_TSX.read_text(encoding="utf-8")
+        assert "option" in content and ("bg-[var(--color-surface)]" in content or
+            "bg-surface" in content), (
+            "Les <option> du dropdown doivent avoir un fond explicite pour le contraste"
+        )
+
+
+# ─── BUG-038 Bouton Stop streaming ────────────────────────────────────────
+
+class TestBUG038_StopStreaming:
+    """Le streaming doit pouvoir être interrompu par l'utilisateur."""
+
+    CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
+    CHAT_API_TS = Path("src/frontend/src/services/api/chat.ts")
+
+    def test_abort_controller_in_chat_input(self):
+        """ChatInput doit créer un AbortController pour le streaming."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "AbortController" in content, (
+            "ChatInput doit utiliser AbortController pour permettre l'interruption"
+        )
+
+    def test_stop_button_visible_during_streaming(self):
+        """Un bouton stop doit remplacer le bouton envoyer pendant le streaming."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "Square" in content, (
+            "ChatInput doit afficher une icône Square (stop) pendant le streaming"
+        )
+        assert "stopStreaming" in content, (
+            "ChatInput doit avoir une fonction stopStreaming"
+        )
+
+    def test_stream_message_accepts_signal(self):
+        """streamMessage doit accepter un AbortSignal en paramètre."""
+        content = self.CHAT_API_TS.read_text(encoding="utf-8")
+        assert "signal" in content, (
+            "streamMessage doit accepter un signal AbortSignal"
+        )
+
+    def test_abort_error_shows_partial_content(self):
+        """L'interruption doit afficher le texte déjà reçu, pas une erreur."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "AbortError" in content, (
+            "ChatInput doit gérer l'AbortError séparément des autres erreurs"
+        )
+
+
+# ─── UX Réponses trop lourdes (system prompt) ─────────────────────────────
+
+class TestUX_ReponsesLegeres:
+    """Le system prompt doit interdire les tableaux markdown par défaut."""
+
+    LLM_PY = Path("src/backend/app/services/llm.py")
+
+    def test_system_prompt_forbids_markdown_tables(self):
+        """Le system prompt doit contenir une instruction contre les tableaux."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        assert "tableau" in content.lower(), (
+            "Le system prompt doit mentionner l'interdiction des tableaux markdown"
+        )
+
+    def test_system_prompt_prefers_bullet_lists(self):
+        """Le system prompt doit encourager les listes à puces."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        assert "puces" in content.lower() or "listes" in content.lower(), (
+            "Le system prompt doit encourager les listes à puces"
+        )

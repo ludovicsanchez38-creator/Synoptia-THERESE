@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { Send, Paperclip, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Send, Square, Paperclip, Mic, MicOff, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './SlashCommandsMenu';
@@ -38,6 +38,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [isIndexing, setIsIndexing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const {
     addMessage,
@@ -250,13 +251,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
 
       // Stream response from backend (inclure skill_id si provient des guided prompts)
+      const controller = new AbortController();
+      abortRef.current = controller;
       const stream = streamMessage({
         message: trimmed,
         conversation_id: syncedConversationId || undefined,
         include_memory: true,
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
-      });
+      }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);
 
@@ -313,20 +316,31 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } catch (error) {
       // Stop batching on error
       stopBatching();
-      console.error('Error sending message:', error);
-      const errorMessage = error instanceof ApiError
-        ? `Erreur serveur (${error.status}): ${error.message}`
-        : error instanceof Error
-          ? error.message
-          : "Désolée, une erreur s'est produite. Veuillez réessayer.";
+      // Interruption volontaire : afficher le texte déjà reçu
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        updateMessage(assistantMessageId, accumulatedContent || '*(interrompu)*');
+      } else {
+        console.error('Error sending message:', error);
+        const errorMessage = error instanceof ApiError
+          ? `Erreur serveur (${error.status}): ${error.message}`
+          : error instanceof Error
+            ? error.message
+            : "Désolée, une erreur s'est produite. Veuillez réessayer.";
 
-      // Update the placeholder message with error
-      updateMessage(assistantMessageId, errorMessage);
+        // Update the placeholder message with error
+        updateMessage(assistantMessageId, errorMessage);
+      }
     } finally {
+      abortRef.current = null;
       setStreaming(false);
       setActivity('idle');
     }
   }, [input, isDisabled, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
+
+  // Interrompre le streaming en cours
+  const stopStreaming = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   // Handle slash command selection
   const handleSlashCommandSelect = useCallback((command: SlashCommand) => {
@@ -517,17 +531,29 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           )}
         </Button>
 
-        {/* Send button */}
-        <Button
-          variant="primary"
-          size="icon"
-          className="flex-shrink-0 h-9 w-9"
-          onClick={sendMessage}
-          disabled={isDisabled || !input.trim()}
-          title="Envoyer (↵)"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+        {/* Send / Stop button */}
+        {isStreaming ? (
+          <Button
+            variant="primary"
+            size="icon"
+            className="flex-shrink-0 h-9 w-9 bg-error hover:bg-error/80"
+            onClick={stopStreaming}
+            title="Arrêter la réponse"
+          >
+            <Square className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="icon"
+            className="flex-shrink-0 h-9 w-9"
+            onClick={sendMessage}
+            disabled={isDisabled || !input.trim()}
+            title="Envoyer (↵)"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {/* Voice error message */}
