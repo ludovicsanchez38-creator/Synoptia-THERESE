@@ -240,7 +240,7 @@ def repair_truncated_code(code: str) -> str | None:
     # D'abord vérifier si le code est déjà valide
     try:
         ast.parse(code)
-        return code
+        return _ensure_save_call(code)
     except SyntaxError:
         pass
 
@@ -278,14 +278,17 @@ def _ensure_save_call(code: str) -> str:
     Returns:
         Code avec .save(output_path) garanti
     """
-    if ".save(output_path)" in code:
+    # Vérifier si un .save() existe déjà (avec n'importe quel argument)
+    if re.search(r'\.save\s*\(', code):
         return code
 
     # Détecter le nom de la variable du document principal
     # Patterns courants : wb = Workbook(), doc = Document(), prs = Presentation()
+    # Inclut aussi load_workbook() pour les fichiers Excel existants
     doc_var = None
     for pattern in [
         r"(\w+)\s*=\s*Workbook\s*\(",
+        r"(\w+)\s*=\s*load_workbook\s*\(",
         r"(\w+)\s*=\s*Document\s*\(",
         r"(\w+)\s*=\s*Presentation\s*\(",
     ]:

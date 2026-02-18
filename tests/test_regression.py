@@ -1196,9 +1196,10 @@ class TestStreamingAntiFlicker:
 
 
 # ============================================================
-# BUG-025 (v0.2.3) - Ollama /api/chat 404
-# Le provider Ollama doit utiliser le champ "system" séparé
-# au lieu d'un message role=system dans le tableau messages.
+# BUG-025 (v0.2.3, corrigé v0.2.6) - Ollama /api/chat
+# Le provider Ollama doit envoyer le system prompt comme
+# message role="system" dans la liste messages (pas en top-level).
+# Le base_url doit être nettoyé du trailing slash.
 # ============================================================
 
 
@@ -1206,25 +1207,42 @@ PROVIDERS = SRC / "app" / "services" / "providers"
 
 
 class TestBUG025OllamaSystemPrompt:
-    """BUG-025 : Ollama provider doit utiliser le champ 'system' séparé."""
+    """BUG-025 : Ollama provider doit envoyer le system prompt dans messages."""
 
-    def test_ollama_provider_uses_system_field(self):
-        """Le body JSON doit contenir le champ 'system' pour le system prompt."""
+    def test_ollama_system_prompt_as_message(self):
+        """Le system prompt doit être ajouté comme message role='system'."""
         code = PROVIDERS / "ollama.py"
         content = code.read_text(encoding="utf-8")
-        assert '"system"' in content, (
-            "Ollama provider doit envoyer le system prompt via le champ 'system'"
+        assert '"role": "system"' in content, (
+            "Ollama provider doit insérer le system prompt comme message role='system'"
         )
 
-    def test_ollama_provider_filters_system_role(self):
-        """Les messages role=system doivent être filtrés du tableau messages."""
+    def test_ollama_no_top_level_system_in_json(self):
+        """Le JSON envoyé à /api/chat ne doit pas contenir 'system' top-level."""
+        import re
         code = PROVIDERS / "ollama.py"
         content = code.read_text(encoding="utf-8")
-        assert 'role' in content and 'system' in content, (
-            "Ollama provider doit filtrer les messages role=system"
+        json_block = re.search(r'json=\{(.*?)\}', content, re.DOTALL)
+        assert json_block, "Bloc json= non trouvé dans ollama.py"
+        json_content = json_block.group(1)
+        assert '"system"' not in json_content, (
+            "/api/chat n'accepte pas de champ 'system' top-level"
         )
+
+    def test_ollama_base_url_trailing_slash(self):
+        """base_url doit être nettoyé du trailing slash."""
+        code = PROVIDERS / "ollama.py"
+        content = code.read_text(encoding="utf-8")
+        assert '.rstrip("/")' in content or ".rstrip('/')" in content, (
+            "base_url doit être nettoyé avec rstrip('/') pour éviter les double slashes"
+        )
+
+    def test_ollama_filters_system_messages(self):
+        """Les messages role=system existants doivent être filtrés avant d'ajouter le system prompt."""
+        code = PROVIDERS / "ollama.py"
+        content = code.read_text(encoding="utf-8")
         assert "chat_messages" in content, (
-            "Ollama provider doit séparer les messages chat des messages system"
+            "Ollama provider doit construire une liste chat_messages propre"
         )
 
 
@@ -1746,41 +1764,8 @@ class TestStreamingRawText:
         )
 
 
-# ─── BUG-025 Ollama /api/chat 404 ─────────────────────────────────────────
-
-class TestBUG025_OllamaApiChat:
-    """Le provider Ollama doit envoyer le system prompt dans messages, pas en top-level."""
-
-    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
-
-    def test_no_top_level_system_field(self):
-        """Le JSON envoyé à /api/chat ne doit pas contenir de champ 'system' top-level."""
-        content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        # Chercher un dict literal avec "system": qui n'est pas dans messages
-        import re
-        # Le json= dict ne doit pas avoir "system" comme clé
-        json_block = re.search(r'json=\{(.*?)\}', content, re.DOTALL)
-        assert json_block, "Bloc json= non trouvé dans ollama.py"
-        json_content = json_block.group(1)
-        assert '"system"' not in json_content, (
-            "/api/chat n'accepte pas de champ 'system' top-level. "
-            "Le system prompt doit être un message role='system' dans messages."
-        )
-
-    def test_system_prompt_in_messages(self):
-        """Le system prompt doit être ajouté comme message role='system' dans la liste."""
-        content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert '"role": "system"' in content or "role.*system" in content or \
-            '{"role": "system"' in content, (
-            "Le system prompt doit être inséré comme message avec role='system'"
-        )
-
-    def test_base_url_trailing_slash_stripped(self):
-        """base_url doit être nettoyé du trailing slash pour éviter //api/chat."""
-        content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert '.rstrip("/")' in content or ".rstrip('/')" in content, (
-            "base_url doit être nettoyé avec rstrip('/') pour éviter les double slashes"
-        )
+# ─── BUG-025 Ollama /api/chat (tests consolidés ci-dessus) ─────────────────
+# Les tests Ollama ont été fusionnés dans TestBUG025OllamaSystemPrompt (ligne ~1208)
 
 
 # ─── BUG-036 XLSX code tronqué ────────────────────────────────────────────
@@ -1808,6 +1793,26 @@ class TestBUG036_XlsxTruncatedCode:
             "_ensure_save_call ne doit pas dupliquer le .save()"
         )
 
+    def test_ensure_save_call_detects_load_workbook(self):
+        """_ensure_save_call doit détecter load_workbook() et ajouter .save()."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code = 'wb = load_workbook("template.xlsx")\nws = wb.active\nws["A1"] = "modifié"'
+        result = _ensure_save_call(code)
+        assert ".save(output_path)" in result, (
+            "_ensure_save_call doit ajouter .save(output_path) pour load_workbook()"
+        )
+
+    def test_ensure_save_call_no_false_positive(self):
+        """_ensure_save_call ne doit pas ajouter .save() si un .save(fichier) existe déjà."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code = 'wb = Workbook()\nwb.save("mon_fichier.xlsx")'
+        result = _ensure_save_call(code)
+        assert result.count(".save") == 1, (
+            "_ensure_save_call ne doit pas dupliquer un .save() existant (même avec un autre argument)"
+        )
+
     def test_repair_truncated_code_adds_save(self):
         """repair_truncated_code doit ajouter .save() après réparation."""
         from app.services.skills.code_executor import repair_truncated_code
@@ -1818,6 +1823,18 @@ class TestBUG036_XlsxTruncatedCode:
         assert result is not None, "repair_truncated_code doit réussir"
         assert ".save(output_path)" in result, (
             "repair_truncated_code doit ajouter .save(output_path) après réparation"
+        )
+
+    def test_repair_valid_code_adds_save(self):
+        """repair_truncated_code doit ajouter .save() même si le code est déjà valide."""
+        from app.services.skills.code_executor import repair_truncated_code
+
+        # Code syntaxiquement valide mais sans .save()
+        valid_no_save = 'wb = Workbook()\nws = wb.active\nws["A1"] = "test"'
+        result = repair_truncated_code(valid_no_save)
+        assert result is not None, "repair_truncated_code doit réussir"
+        assert ".save(output_path)" in result, (
+            "repair_truncated_code doit ajouter .save() même si le code est syntaxiquement valide"
         )
 
 
