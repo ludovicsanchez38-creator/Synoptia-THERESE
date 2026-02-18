@@ -1744,3 +1744,54 @@ class TestStreamingRawText:
         assert "minHeight" in content, (
             "MessageBubble doit calculer un minHeight dynamique pendant le streaming"
         )
+
+
+# ─── BUG-039 Bouton email dans MessageBubble ──────────────────────────────
+
+class TestBUG039_EmailButton:
+    """MessageBubble doit avoir un bouton pour envoyer par email."""
+
+    MSG_BUBBLE = Path("src/frontend/src/components/chat/MessageBubble.tsx")
+
+    def test_mail_icon_imported(self):
+        """L'icône Mail doit être importée de lucide-react."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        assert "Mail" in content, "L'icône Mail doit être importée"
+
+    def test_mailto_link(self):
+        """Le bouton email doit ouvrir un lien mailto:."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        assert "mailto:" in content, "Le bouton email doit utiliser un lien mailto:"
+
+    def test_open_in_mail_client_function(self):
+        """La fonction openInMailClient doit exister."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        assert "openInMailClient" in content, (
+            "MessageBubble doit avoir une fonction openInMailClient"
+        )
+
+
+# ─── BUG-040 DOCX page blanche (code tronqué) ────────────────────────────
+
+class TestBUG040_DocxTruncatedCode:
+    """Le code DOCX tronqué doit être réparé avec ajout de .save()."""
+
+    def test_ensure_save_call_detects_document(self):
+        """_ensure_save_call doit détecter Document() et ajouter .save()."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code = 'doc = Document()\ndoc.add_heading("Test", level=0)'
+        result = _ensure_save_call(code)
+        assert ".save(output_path)" in result, (
+            "_ensure_save_call doit ajouter doc.save(output_path) pour Document()"
+        )
+
+    def test_ensure_save_call_detects_presentation(self):
+        """_ensure_save_call doit détecter Presentation() et ajouter .save()."""
+        from app.services.skills.code_executor import _ensure_save_call
+
+        code = 'prs = Presentation()\nslide = prs.slides.add_slide(prs.slide_layouts[0])'
+        result = _ensure_save_call(code)
+        assert ".save(output_path)" in result, (
+            "_ensure_save_call doit ajouter prs.save(output_path) pour Presentation()"
+        )

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Mail } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
@@ -81,6 +81,28 @@ export const MessageBubble = memo(function MessageBubble({
     setTimeout(() => setCopied(false), 2000);
   }, [message.content]);
 
+  const openInMailClient = useCallback(async () => {
+    const MAX_MAILTO_BODY = 1500;
+    let content = message.content;
+
+    // Si le contenu est trop long pour mailto: (limite Windows ~2083 chars),
+    // tronquer et copier le contenu complet dans le presse-papier
+    if (content.length > MAX_MAILTO_BODY) {
+      await navigator.clipboard.writeText(content);
+      content = content.substring(0, MAX_MAILTO_BODY)
+        + '\n\n[... suite copiée dans le presse-papier - Ctrl+V pour coller]';
+    }
+
+    const body = encodeURIComponent(content);
+    try {
+      const { open } = await import('@tauri-apps/plugin-shell');
+      await open(`mailto:?body=${body}`);
+    } catch {
+      // Fallback navigateur si Tauri non disponible
+      window.open(`mailto:?body=${body}`, '_blank');
+    }
+  }, [message.content]);
+
   return (
     <motion.div
       variants={messageVariants}
@@ -152,6 +174,19 @@ export const MessageBubble = memo(function MessageBubble({
               <Copy className="w-4 h-4" />
             )}
           </button>
+          {/* Envoyer par email (uniquement pour les réponses assistant) */}
+          {!isUser && (
+            <button
+              onClick={openInMailClient}
+              className={cn(
+                'p-1.5 rounded-md transition-all',
+                'hover:bg-surface text-text-muted hover:text-accent-magenta'
+              )}
+              title="Envoyer par email"
+            >
+              <Mail className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Markdown content - texte brut pendant le streaming pour éviter les sauts */}

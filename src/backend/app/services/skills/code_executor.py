@@ -227,6 +227,10 @@ def repair_truncated_code(code: str) -> str | None:
     Tente de réparer du code Python tronqué en retirant les lignes
     incomplètes à la fin jusqu'à obtenir un code syntaxiquement valide.
 
+    Si la réparation supprime l'appel .save(output_path), celui-ci est
+    rajouté automatiquement en détectant le nom de la variable du document
+    (wb, doc, prs, document, workbook, presentation).
+
     Args:
         code: Code Python potentiellement tronqué
 
@@ -236,7 +240,7 @@ def repair_truncated_code(code: str) -> str | None:
     # D'abord vérifier si le code est déjà valide
     try:
         ast.parse(code)
-        return code
+        return _ensure_save_call(code)
     except SyntaxError:
         pass
 
@@ -254,11 +258,53 @@ def repair_truncated_code(code: str) -> str | None:
                 removed,
                 len(lines),
             )
+            # Ajouter .save(output_path) si absent après réparation
+            candidate = _ensure_save_call(candidate)
             return candidate
         except SyntaxError:
             continue
 
     return None
+
+
+def _ensure_save_call(code: str) -> str:
+    """
+    Vérifie que le code contient un appel .save(output_path).
+    Si absent, détecte le nom de la variable du document et l'ajoute.
+
+    Args:
+        code: Code Python syntaxiquement valide
+
+    Returns:
+        Code avec .save(output_path) garanti
+    """
+    # Vérifier si un .save() existe déjà (avec n'importe quel argument)
+    if re.search(r'\.save\s*\(', code):
+        return code
+
+    # Détecter le nom de la variable du document principal
+    # Patterns courants : wb = Workbook(), doc = Document(), prs = Presentation()
+    doc_var = None
+    for pattern in [
+        r"(\w+)\s*=\s*Workbook\s*\(",
+        r"(\w+)\s*=\s*Document\s*\(",
+        r"(\w+)\s*=\s*Presentation\s*\(",
+    ]:
+        match = re.search(pattern, code)
+        if match:
+            doc_var = match.group(1)
+            break
+
+    if doc_var:
+        save_line = f"\n{doc_var}.save(output_path)\n"
+        logger.warning(
+            "Appel .save(output_path) manquant, "
+            "ajout automatique : %s.save(output_path)",
+            doc_var,
+        )
+        return code + save_line
+
+    return code
 
 
 def validate_code(code: str) -> tuple[bool, str]:
@@ -624,6 +670,10 @@ class CodeGenSkill(BaseSkill):
                 '.save(output_path)',
                 code,
             )
+
+            # Ajouter .save(output_path) si absent (code tronqué par max_tokens
+            # mais syntaxiquement valide, donc pas réparé par repair_truncated_code)
+            code = _ensure_save_call(code)
 
             try:
                 logger.info(
