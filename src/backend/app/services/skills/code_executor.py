@@ -300,7 +300,8 @@ def _ensure_save_call(code: str) -> str:
     if doc_var:
         save_line = f"\n{doc_var}.save(output_path)\n"
         logger.warning(
-            "Appel .save(output_path) manquant après réparation, "
+            "Appel .save(output_path) manquant, "
+
             "ajout automatique : %s.save(output_path)",
             doc_var,
         )
