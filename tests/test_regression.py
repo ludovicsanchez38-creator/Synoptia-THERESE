@@ -1965,3 +1965,29 @@ class TestBUG040_DocxTruncatedCode:
         assert ".save(output_path)" in result, (
             "_ensure_save_call doit ajouter prs.save(output_path) pour Presentation()"
         )
+
+
+# ─── BUG-037 Saut scroll résiduel en fin de streaming ────────────────────
+
+class TestBUG037_ScrollJumpStreaming:
+    """MessageList doit utiliser un scroll instantané en fin de streaming."""
+
+    MSG_LIST = Path("src/frontend/src/components/chat/MessageList.tsx")
+
+    def test_was_streaming_ref_present(self):
+        """Le ref wasStreamingRef doit exister pour distinguer fin-streaming vs nouveau message."""
+        content = self.MSG_LIST.read_text(encoding="utf-8")
+        assert "wasStreamingRef" in content, (
+            "MessageList doit avoir un ref wasStreamingRef pour détecter la fin du streaming"
+        )
+
+    def test_instant_scroll_on_streaming_end(self):
+        """En fin de streaming, le scroll doit être instantané (scrollTop = scrollHeight)."""
+        content = self.MSG_LIST.read_text(encoding="utf-8")
+        assert "wasStreamingRef.current" in content, (
+            "MessageList doit utiliser wasStreamingRef.current pour le scroll instantané"
+        )
+        # Vérifier que le scroll instantané est utilisé (pas uniquement smooth)
+        assert "container.scrollTop = container.scrollHeight" in content, (
+            "En fin de streaming, le scroll doit être instantané (container.scrollTop = container.scrollHeight)"
+        )
