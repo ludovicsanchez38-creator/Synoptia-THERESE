@@ -80,14 +80,14 @@ export function CredentialsStep({
         </div>
         <h3 className="text-lg font-semibold text-text">Entre tes identifiants</h3>
         <p className="text-sm text-text-muted">
-          Copie le Client ID et Client Secret depuis Google Cloud Console
+          Copie l'ID client et le Code secret du client depuis Google Cloud Console
         </p>
       </div>
 
-      {/* Client ID */}
+      {/* ID client */}
       <div>
         <label htmlFor="clientId" className="text-sm text-text-muted mb-2 block">
-          Client ID
+          ID client
         </label>
         <div className="relative">
           <input
@@ -119,10 +119,10 @@ export function CredentialsStep({
         )}
       </div>
 
-      {/* Client Secret */}
+      {/* Code secret du client */}
       <div>
         <label htmlFor="clientSecret" className="text-sm text-text-muted mb-2 block">
-          Client Secret
+          Code secret du client
         </label>
         <div className="relative">
           <input
