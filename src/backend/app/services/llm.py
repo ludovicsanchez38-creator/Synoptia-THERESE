@@ -9,6 +9,7 @@ Sprint 2 - PERF-2.1: Refactored to use modular providers.
 
 import logging
 import os
+import re
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -194,10 +195,18 @@ Tu es efficace, professionnelle et tu utilises un français naturel et fluide.
 
 ## Style de réponse
 - Réponds de manière concise et directe. Va droit au but.
-- N'utilise PAS de tableaux markdown sauf si l'utilisateur le demande explicitement.
-- Privilégie les listes à puces ou le texte simple pour les récapitulatifs.
+- N'utilise JAMAIS de tableaux markdown (lignes avec | et ---) sauf si l'utilisateur demande explicitement un tableau.
+- Privilégie toujours les listes à puces (- item) ou le texte simple.
 - Pas d'emojis de statut, pas de dashboards non sollicités.
-- Si tu fais un récap en fin de réponse, utilise des listes à puces simples.
+
+## Règle ABSOLUE pour les récapitulatifs
+Quand tu fais un récap ou un résumé en fin de réponse, tu DOIS utiliser des listes à puces simples.
+INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
+AUTORISÉ : les listes à puces (- point clé : valeur).
+Exemple de format correct pour un récap :
+- Sujet : valeur
+- Action : valeur
+- Date : valeur
 
 ## Mémoire persistante
 Tu as accès à une mémoire persistante contenant les contacts et projets de l'utilisateur.
@@ -208,9 +217,14 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 
 ## Style de réponse
 - Réponds de manière concise et directe. Va droit au but.
-- N'utilise PAS de tableaux markdown sauf si l'utilisateur le demande explicitement.
-- Privilégie les listes à puces ou le texte simple pour les récapitulatifs.
+- N'utilise JAMAIS de tableaux markdown (lignes avec | et ---) sauf si l'utilisateur demande explicitement un tableau.
+- Privilégie toujours les listes à puces (- item) ou le texte simple.
 - Pas d'emojis de statut, pas de dashboards non sollicités.
+
+## Règle ABSOLUE pour les récapitulatifs
+Quand tu fais un récap ou un résumé en fin de réponse, tu DOIS utiliser des listes à puces simples.
+INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
+AUTORISÉ : les listes à puces (- point clé : valeur).
 {therese_md}"""
 
     def __init__(self, config: LLMConfig | None = None):
@@ -545,3 +559,108 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
     )
 
     return LLMService(config)
+
+
+# ---------------------------------------------------------------------------
+# F-11 : Post-processing - Conversion tableaux Markdown → listes à puces
+# ---------------------------------------------------------------------------
+
+def _parse_table_row(row: str) -> list[str]:
+    """Extrait les cellules d'une ligne de tableau Markdown."""
+    cells = [c.strip() for c in row.strip().strip("|").split("|")]
+    return [c for c in cells if c]
+
+
+def _is_separator_row(row: str) -> bool:
+    """Détecte une ligne séparatrice de tableau (--- ou :---:)."""
+    stripped = row.strip().strip("|").strip()
+    return bool(re.fullmatch(r"[\s|:\-]+", stripped) and "-" in stripped)
+
+
+def _table_block_to_bullets(table_lines: list[str]) -> str:
+    """Convertit un bloc de tableau Markdown en liste à puces lisible.
+
+    Règles :
+    - La première ligne est traitée comme en-tête (si suivie d'un séparateur).
+    - Chaque ligne de données devient un item de liste à puces.
+    - Si une seule colonne : « - valeur ».
+    - Si plusieurs colonnes : « - Clé1 : val1 | Clé2 : val2 ... ».
+    - Si pas d'en-tête détectable : « - val1, val2, val3 ».
+    """
+    # Filtrer les lignes vides
+    lines = [ln for ln in table_lines if ln.strip()]
+    if not lines:
+        return ""
+
+    headers: list[str] = []
+    data_rows: list[list[str]] = []
+
+    # Chercher la ligne séparatrice pour identifier les en-têtes
+    sep_idx = next(
+        (i for i, ln in enumerate(lines) if _is_separator_row(ln)),
+        None,
+    )
+
+    if sep_idx is not None and sep_idx > 0:
+        headers = _parse_table_row(lines[sep_idx - 1])
+        data_lines = lines[sep_idx + 1:]
+    else:
+        data_lines = lines
+
+    for line in data_lines:
+        if not _is_separator_row(line):
+            cells = _parse_table_row(line)
+            if cells:
+                data_rows.append(cells)
+
+    if not data_rows:
+        return ""
+
+    result_parts: list[str] = []
+
+    for cells in data_rows:
+        if headers and len(headers) == len(cells):
+            # Format « Clé : valeur » pour chaque colonne non vide
+            parts = [
+                f"{h} : {v}" for h, v in zip(headers, cells) if v
+            ]
+            result_parts.append("- " + " | ".join(parts))
+        elif len(cells) == 1:
+            result_parts.append(f"- {cells[0]}")
+        else:
+            result_parts.append("- " + ", ".join(c for c in cells if c))
+
+    return "\n".join(result_parts)
+
+
+def convert_markdown_tables_to_bullets(text: str) -> str:
+    """Post-processing F-11 : convertit les tableaux Markdown résiduels en
+    listes à puces lisibles.
+
+    N'affecte que les blocs de type tableau (lignes commençant par |).
+    Le reste du texte est préservé tel quel.
+    """
+    lines = text.split("\n")
+    output: list[str] = []
+    table_buffer: list[str] = []
+
+    for line in lines:
+        if re.match(r"\s*\|", line):
+            # Ligne appartenant à un tableau
+            table_buffer.append(line)
+        else:
+            if table_buffer:
+                # Fin du bloc tableau : convertir et vider le buffer
+                converted = _table_block_to_bullets(table_buffer)
+                if converted:
+                    output.append(converted)
+                table_buffer = []
+            output.append(line)
+
+    # Traiter un éventuel tableau en fin de texte
+    if table_buffer:
+        converted = _table_block_to_bullets(table_buffer)
+        if converted:
+            output.append(converted)
+
+    return "\n".join(output)
