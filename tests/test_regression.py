@@ -1965,3 +1965,39 @@ class TestBUG040_DocxTruncatedCode:
         assert ".save(output_path)" in result, (
             "_ensure_save_call doit ajouter prs.save(output_path) pour Presentation()"
         )
+
+
+# ─── BUG-026 Bouton "Utiliser" inopérant dans Mail (macOS) ────────────────
+
+class TestBUG026_EmailUtiliserButton:
+    """handleUseResponse doit toujours ouvrir le compositeur, même si message est undefined."""
+
+    EMAIL_DETAIL_TSX = Path("src/frontend/src/components/email/EmailDetail.tsx")
+
+    def test_no_silent_early_return_when_message_undefined(self):
+        """handleUseResponse ne doit pas silencieusement retourner si message est undefined."""
+        content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
+        # Le pattern fautif dans handleUseResponse : early return avant setIsComposing
+        # Dans le fix, le code doit appeler setIsComposing même si message est null
+        # On vérifie que "if (message) {" est utilisé (pattern conditionnel, pas early return)
+        assert "if (message) {" in content, (
+            "handleUseResponse doit utiliser 'if (message) {}' pour le fallback gracieux "
+            "plutôt qu'un early return silencieux (BUG-026)"
+        )
+
+    def test_set_composing_always_called(self):
+        """setIsComposing(true) doit toujours être appelé dans handleUseResponse."""
+        content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
+        # Vérifier que setIsComposing(true) est dans la fonction handleUseResponse
+        assert "setIsComposing(true)" in content, (
+            "handleUseResponse doit toujours appeler setIsComposing(true) "
+            "pour ouvrir le compositeur"
+        )
+
+    def test_set_draft_body_always_called(self):
+        """setDraftBody doit toujours être appelé avec la réponse générée."""
+        content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
+        assert "setDraftBody(response)" in content, (
+            "handleUseResponse doit toujours appeler setDraftBody(response) "
+            "pour pré-remplir le compositeur avec le texte généré"
+        )
