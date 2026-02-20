@@ -1965,3 +1965,50 @@ class TestBUG040_DocxTruncatedCode:
         assert ".save(output_path)" in result, (
             "_ensure_save_call doit ajouter prs.save(output_path) pour Presentation()"
         )
+
+
+# ─── BUG-041 Layout shift pendant le streaming ───────────────────────────
+
+class TestBUG041_LayoutShiftStreaming:
+    """MessageBubble doit avoir un layout stable pendant le streaming."""
+
+    MSG_BUBBLE = Path("src/frontend/src/components/chat/MessageBubble.tsx")
+
+    def test_layout_disabled_during_streaming(self):
+        """Framer Motion layout doit être désactivé pendant le streaming."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        assert "layout={!message.isStreaming}" in content, (
+            "Le prop layout de motion.div doit être désactivé pendant le streaming "
+            "pour éviter les re-animations de layout sur tous les messages"
+        )
+        # S'assurer qu'il n'y a pas de layout=true non conditionnel
+        assert "layout\n" not in content or "layout={" in content, (
+            "Le prop layout ne doit pas être inconditionnellement activé"
+        )
+
+    def test_contain_always_includes_layout(self):
+        """contain doit toujours inclure 'layout' (même pendant le streaming)."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        assert "contain: 'layout style paint'" in content, (
+            "contain doit toujours inclure 'layout' pour isoler les re-layouts "
+            "du reste de la page pendant le streaming"
+        )
+        # Vérifier qu'il n'y a plus de contain sans 'layout' pendant le streaming
+        assert "contain: message.isStreaming ? 'style paint'" not in content, (
+            "contain ne doit pas retirer 'layout' pendant le streaming"
+        )
+
+    def test_min_height_fixed_during_streaming(self):
+        """minHeight doit être fixe pendant le streaming (pas dynamique)."""
+        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
+        # 56px = py-3 (24px) + 1 ligne leading-relaxed (~32px) : valeur fixe, pas recalculée
+        assert "minHeight: message.isStreaming ? '56px'" in content, (
+            "minHeight doit être une valeur fixe (56px) pendant le streaming, "
+            "pas calculée dynamiquement à chaque chunk"
+        )
+        # S'assurer que le calcul dynamique a disparu
+        assert "Math.ceil(message.content.length" not in content, (
+            "minHeight ne doit plus utiliser message.content.length "
+            "(recalcul à chaque chunk = layout shift)"
+        )
+
