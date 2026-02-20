@@ -64,6 +64,10 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [reauthing, setReauthing] = useState(false);
+  // Contrôle l'affichage du wizard indépendamment de isConnected.
+  // Initialisé à true pour l'afficher automatiquement si aucun compte.
+  // Mis à false quand l'utilisateur clique la croix du wizard.
+  const [showSetupWizard, setShowSetupWizard] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load accounts on mount (standalone ou modal)
@@ -139,6 +143,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
 
   function handleAddAccountComplete() {
     setShowAddAccount(false);
+    setShowSetupWizard(true);
     loadAccounts();
   }
 
@@ -350,9 +355,23 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 Réessayer
               </Button>
             </div>
-          ) : !isConnected || showAddAccount ? (
+          ) : (!isConnected && showSetupWizard) || showAddAccount ? (
             <div className="flex-1">
-              <EmailSetupWizard onComplete={handleAddAccountComplete} onCancel={() => setShowAddAccount(false)} />
+              <EmailSetupWizard
+                onComplete={handleAddAccountComplete}
+                onCancel={() => {
+                  setShowAddAccount(false);
+                  setShowSetupWizard(false);
+                }}
+              />
+            </div>
+          ) : !isConnected ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <Mail className="w-12 h-12 text-text-muted/40" />
+              <p className="text-text-muted text-sm">Aucun compte email configuré.</p>
+              <Button variant="primary" size="sm" onClick={() => setShowSetupWizard(true)}>
+                Configurer un compte
+              </Button>
             </div>
           ) : isComposing ? (
             <EmailCompose />
@@ -571,9 +590,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 Réessayer
               </Button>
             </div>
-          ) : !isConnected || showAddAccount ? (
+          ) : (!isConnected && showSetupWizard) || showAddAccount ? (
             <div className="flex-1">
-              <EmailSetupWizard onComplete={handleAddAccountComplete} onCancel={() => showAddAccount ? setShowAddAccount(false) : toggleEmailPanel()} />
+              <EmailSetupWizard
+                onComplete={handleAddAccountComplete}
+                onCancel={() => {
+                  setShowAddAccount(false);
+                  setShowSetupWizard(false);
+                  if (!showAddAccount) toggleEmailPanel();
+                }}
+              />
             </div>
           ) : isComposing ? (
             <EmailCompose />
