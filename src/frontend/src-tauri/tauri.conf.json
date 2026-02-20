@@ -11,6 +11,7 @@
   },
   "app": {
     "withGlobalTauri": true,
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "THÉRÈSE - L'assistante souveraine",
@@ -50,7 +51,7 @@
       "frameworks": [],
       "entitlements": null,
       "exceptionDomain": ""
-    },
+    }
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
