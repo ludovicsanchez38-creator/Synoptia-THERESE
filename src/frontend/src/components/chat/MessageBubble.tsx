@@ -115,7 +115,7 @@ export const MessageBubble = memo(function MessageBubble({
       initial="initial"
       animate="animate"
       exit="exit"
-      layout
+      layout={!message.isStreaming}
       className={cn(
         'flex gap-3 group',
         isUser ? 'flex-row-reverse' : 'flex-row'
@@ -142,9 +142,10 @@ export const MessageBubble = memo(function MessageBubble({
             : 'bg-surface-elevated border border-border hover:border-accent-cyan/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)]'
         )}
         style={{
-          contain: message.isStreaming ? 'style paint' : 'layout style paint',
-          willChange: message.isStreaming ? 'transform' : 'auto',
-          minHeight: message.isStreaming ? `${Math.max(40, Math.ceil(message.content.length / 60) * 24)}px` : 'auto',
+          contain: 'layout style paint',
+          willChange: message.isStreaming ? 'contents' : 'auto',
+          // 56px = py-3 (24px) + 1 ligne leading-relaxed (~32px) : évite un saut initial
+          minHeight: message.isStreaming ? '56px' : 'auto',
         }}
       >
         {/* Action buttons (copy + save as shortcut) */}
