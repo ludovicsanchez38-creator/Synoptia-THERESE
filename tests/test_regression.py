@@ -1977,9 +1977,6 @@ class TestBUG026_EmailUtiliserButton:
     def test_no_silent_early_return_when_message_undefined(self):
         """handleUseResponse ne doit pas silencieusement retourner si message est undefined."""
         content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
-        # Le pattern fautif dans handleUseResponse : early return avant setIsComposing
-        # Dans le fix, le code doit appeler setIsComposing même si message est null
-        # On vérifie que "if (message) {" est utilisé (pattern conditionnel, pas early return)
         assert "if (message) {" in content, (
             "handleUseResponse doit utiliser 'if (message) {}' pour le fallback gracieux "
             "plutôt qu'un early return silencieux (BUG-026)"
@@ -1988,7 +1985,6 @@ class TestBUG026_EmailUtiliserButton:
     def test_set_composing_always_called(self):
         """setIsComposing(true) doit toujours être appelé dans handleUseResponse."""
         content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
-        # Vérifier que setIsComposing(true) est dans la fonction handleUseResponse
         assert "setIsComposing(true)" in content, (
             "handleUseResponse doit toujours appeler setIsComposing(true) "
             "pour ouvrir le compositeur"
@@ -2000,4 +1996,29 @@ class TestBUG026_EmailUtiliserButton:
         assert "setDraftBody(response)" in content, (
             "handleUseResponse doit toujours appeler setDraftBody(response) "
             "pour pré-remplir le compositeur avec le texte généré"
+        )
+
+
+# ─── BUG-037 Saut scroll résiduel en fin de streaming ────────────────────
+
+class TestBUG037_ScrollJumpStreaming:
+    """MessageList doit utiliser un scroll instantané en fin de streaming."""
+
+    MSG_LIST = Path("src/frontend/src/components/chat/MessageList.tsx")
+
+    def test_was_streaming_ref_present(self):
+        """Le ref wasStreamingRef doit exister pour distinguer fin-streaming vs nouveau message."""
+        content = self.MSG_LIST.read_text(encoding="utf-8")
+        assert "wasStreamingRef" in content, (
+            "MessageList doit avoir un ref wasStreamingRef pour détecter la fin du streaming"
+        )
+
+    def test_instant_scroll_on_streaming_end(self):
+        """En fin de streaming, le scroll doit être instantané (scrollTop = scrollHeight)."""
+        content = self.MSG_LIST.read_text(encoding="utf-8")
+        assert "wasStreamingRef.current" in content, (
+            "MessageList doit utiliser wasStreamingRef.current pour le scroll instantané"
+        )
+        assert "container.scrollTop = container.scrollHeight" in content, (
+            "En fin de streaming, le scroll doit être instantané (container.scrollTop = container.scrollHeight)"
         )

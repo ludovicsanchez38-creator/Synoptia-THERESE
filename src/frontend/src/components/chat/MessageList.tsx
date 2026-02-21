@@ -45,14 +45,17 @@ export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProp
 
   // Throttle ref pour requestAnimationFrame (évite les saccades streaming)
   const rafRef = useRef<number | null>(null);
+  // Suivre si on était en streaming pour distinguer fin-streaming vs nouveau message
+  const wasStreamingRef = useRef(false);
 
-  // Auto-scroll : throttlé via rAF pendant le streaming, smooth sinon
+  // Auto-scroll : throttlé via rAF pendant le streaming, smooth pour nouveaux messages
   useLayoutEffect(() => {
-    if (userScrolledUp.current) return;
     const container = scrollContainerRef.current;
     if (!container) return;
 
     if (isStreaming) {
+      wasStreamingRef.current = true;
+      if (userScrolledUp.current) return; // L'utilisateur a scrollé, pas de force-scroll
       // Pendant le streaming : throttler avec requestAnimationFrame
       if (rafRef.current === null) {
         rafRef.current = requestAnimationFrame(() => {
@@ -60,8 +63,17 @@ export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProp
           rafRef.current = null;
         });
       }
+    } else if (wasStreamingRef.current) {
+      // Fin de streaming : réinitialiser le ref TOUJOURS (même si l'utilisateur a scrollé)
+      // pour éviter que le prochain message utilisateur hérite du scroll instantané
+      wasStreamingRef.current = false;
+      if (userScrolledUp.current) return; // L'utilisateur a scrollé, respecter son choix
+      // Scroll instantané (pas smooth) pour éviter le saut visible :
+      // le contenu vient de passer de texte brut à Markdown+boutons, la hauteur a changé
+      container.scrollTop = container.scrollHeight;
     } else {
-      // Nouveau message ou fin de streaming : smooth scroll
+      if (userScrolledUp.current) return; // L'utilisateur a scrollé, pas de force-scroll
+      // Nouveau message utilisateur (pas fin de streaming) : smooth scroll
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [conversation?.messages, isStreaming]);
