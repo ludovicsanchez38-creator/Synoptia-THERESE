@@ -126,8 +126,8 @@ palette:
 - **Tests** : ~10 350 lignes (pytest + Vitest + Playwright E2E)
 - **Endpoints API** : 170+ (22 routers FastAPI)
 - **Tables SQL** : 16 (SQLite) + Qdrant vectoriel
-- **Version actuelle** : v0.2.6-alpha (18 fév 2026)
-- **Tests de non-régression** : `tests/test_regression.py` (141 tests couvrant BUG-002 à BUG-040 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop)
+- **Version actuelle** : v0.2.7-alpha (21 fév 2026)
+- **Tests de non-régression** : `tests/test_regression.py` (149 tests couvrant BUG-002 à BUG-041 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop + layout shift)
 
 ### Modules fonctionnels
 Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office (DOCX/PPTX/XLSX), Email (Gmail OAuth + IMAP/SMTP + classification IA), Calendrier (Google + CalDAV + local), CRM (pipeline, scoring, sync Google Sheets, import/export), Facturation (devis/facture/avoir, PDF conforme, TVA franchise en base), Board de décision IA (5 conseillers), Génération d'images (DALL-E 3 + Gemini), Transcription vocale (Groq Whisper), MCP (19 presets), RGPD (export, anonymisation), Calculateurs (ROI, ICE, RICE, NPV)
@@ -268,6 +268,7 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 | v0.2.4-alpha | 16 fév | Pre-release | Skills enrichis + raccourcis + calendrier + CRM + 6 bug fixes + 108 tests |
 | v0.2.5-alpha | 16 fév | Pre-release | BUG-028 prix + BUG-035 templates runtime hook + streaming partiel + 121 tests |
 | v0.2.6-alpha | 18 fév | Pre-release | BUG-036 XLSX + BUG-038 stop + BUG-039 email + BUG-040 DOCX + Ollama fix + 141 tests |
+| v0.2.7-alpha | 21 fév | Pre-release | CI réparée + 7 PR Zézette mergées (F-09/F-10/F-11/BUG-026/BUG-037/BUG-041) + 149 tests régression |
 
 ---
 
@@ -331,7 +332,14 @@ Laroll (Yoan), Julien, Arnolhn, Alb, Flo'Houx (Florent), Psychedelic_Mayhem (Pau
 - [x] Contraste dropdown LLM (classes CSS sur `<option>`)
 - [x] 141 tests de non-régression (+20 : Ollama, XLSX, email, stop, DOCX/PPTX save)
 
-### TODO v0.2.7-alpha (prochaine version)
+### v0.2.7-alpha (21 fév 2026) - FAIT
+- [x] **CI réparée** : 5 erreurs lint Ruff corrigées (noqa E402/I001 + F841), 5 tests corrigés (OAuth redirect_uri, board session mock, MCP subprocess mocks)
+- [x] **7 PR Zézette mergées** : F-09 (spinner macOS), F-10 (labels Gmail FR), F-11 (récaps listes à puces), BUG-026 (bouton email), BUG-037 (scroll streaming), BUG-041 (layout shift streaming), croix fermeture wizard email
+- [x] **Issues créées** : BUG-038 retours à la ligne Windows (#15), BUG-039 icône Apple/Ctrl (#16), BUG-040 Ollama gemma3:1b (#17)
+- [x] 149 tests de non-régression (+8 : BUG-026, BUG-037 scroll, BUG-041 layout shift)
+- [x] 588 tests backend, 94 tests frontend, 0 erreur lint, 0 erreur TypeScript
+
+### TODO v0.2.8-alpha (prochaine version)
 - [ ] **BUG-037** : Saut streaming résiduel - le fix v0.2.5 (texte brut + minHeight) réduit les sauts mais ne les élimine pas complètement. **Piste** : évaluer `use-stick-to-bottom` (lib StackBlitz, ResizeObserver + spring animations) ou utiliser `scrollIntoView` avec `behavior: smooth` sur le dernier élément
 - [ ] **BUG-027** : Compteur tokens faux - le backend estime avec `len(text)//4` au lieu d'utiliser les vrais compteurs renvoyés par les API. Ajouter champ `usage` dans `StreamEvent` (base.py), récupérer `input_tokens`/`output_tokens` de chaque provider
 - [ ] **UX** : File d'attente de messages visible - quand l'IA répond, permettre d'envoyer un message suivant qui s'affiche en attente et sera traité après la réponse en cours
@@ -343,7 +351,6 @@ Laroll (Yoan), Julien, Arnolhn, Alb, Flo'Houx (Florent), Psychedelic_Mayhem (Pau
 - [ ] Attendre confirmation WebPadawan sur BUG-009 (Windows v0.1.8)
 - [ ] Attendre confirmation Richard sur BUG-012 (Mac M4 Max)
 - [ ] Communiquer v0.2.4 sur Discord #annonces (priorité : Jérôme/Dr_logic-3D pour test Windows)
-- [ ] Corriger le lint Python (ruff) pour que la CI passe au vert
 - [ ] Envisager clé API partagée ou proxy pour testeurs non-techniques
 - [ ] Code signing Apple (99 USD/an) + Windows (70-300 EUR/an)
 - [ ] Tuto vidéo installation (3 min YouTube)
