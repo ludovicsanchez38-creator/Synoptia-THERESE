@@ -126,8 +126,8 @@ palette:
 - **Tests** : ~10 350 lignes (pytest + Vitest + Playwright E2E)
 - **Endpoints API** : 170+ (22 routers FastAPI)
 - **Tables SQL** : 16 (SQLite) + Qdrant vectoriel
-- **Version actuelle** : v0.2.7-alpha (21 fév 2026)
-- **Tests de non-régression** : `tests/test_regression.py` (149 tests couvrant BUG-002 à BUG-041 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop + layout shift)
+- **Version actuelle** : v0.2.8-alpha (21 fév 2026)
+- **Tests de non-régression** : `tests/test_regression.py` (159 tests couvrant BUG-002 à BUG-041 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop + layout shift + erreurs Ollama + listbox contraste + retours à la ligne)
 
 ### Modules fonctionnels
 Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office (DOCX/PPTX/XLSX), Email (Gmail OAuth + IMAP/SMTP + classification IA), Calendrier (Google + CalDAV + local), CRM (pipeline, scoring, sync Google Sheets, import/export), Facturation (devis/facture/avoir, PDF conforme, TVA franchise en base), Board de décision IA (5 conseillers), Génération d'images (DALL-E 3 + Gemini), Transcription vocale (Groq Whisper), MCP (19 presets), RGPD (export, anonymisation), Calculateurs (ROI, ICE, RICE, NPV)
@@ -233,7 +233,7 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 ## CI & Releases
 
 ### CI GitHub Actions
-- **CI THÉRÈSE V2** : lint Ruff + pytest backend + vitest frontend. Le lint Python échoue actuellement (erreurs de style, PAS bloquant pour les testeurs). Les 10 warnings frontend sont des dépendances manquantes dans les hooks React.
+- **CI THÉRÈSE V2** : lint Ruff + pytest backend + vitest frontend. CI verte depuis v0.2.8 (fix timeout threads orphelins httpx). Les 10 warnings frontend sont des dépendances manquantes dans les hooks React.
 - **Release THÉRÈSE** : build Tauri (macOS ARM64 + Windows x64 + Linux x64). Se déclenche sur push de tag. v0.2.2-alpha build 3/3 success (15 fév).
 - **Leçon v0.1.7** : NE JAMAIS exclure de sous-modules torch dans backend.spec - torch les importe tous à l'init.
 
@@ -269,6 +269,7 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 | v0.2.5-alpha | 16 fév | Pre-release | BUG-028 prix + BUG-035 templates runtime hook + streaming partiel + 121 tests |
 | v0.2.6-alpha | 18 fév | Pre-release | BUG-036 XLSX + BUG-038 stop + BUG-039 email + BUG-040 DOCX + Ollama fix + 141 tests |
 | v0.2.7-alpha | 21 fév | Pre-release | CI réparée + 7 PR Zézette mergées (F-09/F-10/F-11/BUG-026/BUG-037/BUG-041) + 149 tests régression |
+| v0.2.8-alpha | 21 fév | Pre-release | BUG-040 Ollama erreurs lisibles + BUG-039 listbox contraste + BUG-038 retours à la ligne + CI timeout fix + 159 tests régression |
 
 ---
 
@@ -339,7 +340,15 @@ Laroll (Yoan), Julien, Arnolhn, Alb, Flo'Houx (Florent), Psychedelic_Mayhem (Pau
 - [x] 149 tests de non-régression (+8 : BUG-026, BUG-037 scroll, BUG-041 layout shift)
 - [x] 588 tests backend, 94 tests frontend, 0 erreur lint, 0 erreur TypeScript
 
-### TODO v0.2.8-alpha (prochaine version)
+### v0.2.8-alpha (21 fév 2026) - FAIT
+- [x] **BUG-040** : Messages d'erreur Ollama lisibles en français - capture httpx.ConnectError ("ollama serve"), ReadTimeout (modèle lent), HTTPStatusError 404 ("ollama pull"), erreur mid-stream, contenu vide
+- [x] **BUG-039** : Fix listbox blanc sur blanc - règle CSS globale `select option` (fond sombre + texte clair) pour tous les <select> du frontend
+- [x] **BUG-038** : Retours à la ligne préservés dans les messages user - rendu texte brut (whitespace-pre-wrap) au lieu de ReactMarkdown
+- [x] **CI** : Fix timeout pytest (threads orphelins httpx/urllib3) - timeout 300s + traitement exit code 124
+- [x] **CI** : Remplacement "Unknown error" par message français dans chat.py
+- [x] 159 tests de non-régression (+10 : 7 Ollama, 2 listbox, 1 retours à la ligne)
+
+### TODO v0.2.9-alpha (prochaine version)
 - [ ] **BUG-037** : Saut streaming résiduel - le fix v0.2.5 (texte brut + minHeight) réduit les sauts mais ne les élimine pas complètement. **Piste** : évaluer `use-stick-to-bottom` (lib StackBlitz, ResizeObserver + spring animations) ou utiliser `scrollIntoView` avec `behavior: smooth` sur le dernier élément
 - [ ] **BUG-027** : Compteur tokens faux - le backend estime avec `len(text)//4` au lieu d'utiliser les vrais compteurs renvoyés par les API. Ajouter champ `usage` dans `StreamEvent` (base.py), récupérer `input_tokens`/`output_tokens` de chaque provider
 - [ ] **UX** : File d'attente de messages visible - quand l'IA répond, permettre d'envoyer un message suivant qui s'affiche en attente et sera traité après la réponse en cours
