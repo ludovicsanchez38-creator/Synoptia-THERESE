@@ -84,6 +84,12 @@ button,
   background: var(--color-text-muted);
 }
 
+/* Select / Option - contraste thème sombre (BUG-039 listbox blanc sur blanc) */
+select option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
 /* Focus visible styles */
 :focus-visible {
   outline: 2px solid var(--color-accent-cyan);

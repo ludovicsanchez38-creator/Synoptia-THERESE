@@ -2130,3 +2130,49 @@ class TestBUG040_OllamaErrorMessages:
             "chat.py ne doit plus contenir 'Unknown error' - "
             "utiliser un message en français à la place"
         )
+
+
+# ─── BUG-039 Listbox blanc sur blanc (v0.2.8) ─────────────────────────────
+
+GLOBALS_CSS = Path("src/frontend/src/styles/globals.css")
+
+
+class TestBUG039_ListboxContrast:
+    """BUG-039 : Les options des <select> doivent être lisibles en thème sombre."""
+
+    def test_global_css_styles_select_options(self):
+        """globals.css doit contenir un style pour select option."""
+        content = GLOBALS_CSS.read_text(encoding="utf-8")
+        assert "select option" in content, (
+            "globals.css doit contenir une règle 'select option' pour forcer "
+            "le fond sombre et le texte clair sur toutes les listes déroulantes"
+        )
+
+    def test_select_option_has_background(self):
+        """Les options doivent avoir un background explicite."""
+        content = GLOBALS_CSS.read_text(encoding="utf-8")
+        assert "background-color" in content and "--color-surface" in content, (
+            "Les options <select> doivent avoir un background-color "
+            "utilisant --color-surface pour le thème sombre"
+        )
+
+
+# ─── BUG-038 Retours à la ligne chat (v0.2.8) ─────────────────────────────
+
+MESSAGE_BUBBLE = Path("src/frontend/src/components/chat/MessageBubble.tsx")
+
+
+class TestBUG038_LineBreaksChat:
+    """BUG-038 : Les messages utilisateur doivent préserver les retours à la ligne."""
+
+    def test_user_messages_not_through_react_markdown(self):
+        """Les messages user doivent utiliser whitespace-pre-wrap, pas ReactMarkdown."""
+        content = MESSAGE_BUBBLE.read_text(encoding="utf-8")
+        assert "isUser" in content, (
+            "MessageBubble doit distinguer les messages user des messages assistant"
+        )
+        # Vérifier que le path user utilise whitespace-pre-wrap
+        assert content.count("whitespace-pre-wrap") >= 2, (
+            "MessageBubble doit avoir au moins 2 occurrences de whitespace-pre-wrap "
+            "(streaming + messages user)"
+        )

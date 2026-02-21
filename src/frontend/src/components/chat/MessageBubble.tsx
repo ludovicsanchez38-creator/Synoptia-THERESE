@@ -202,6 +202,10 @@ export const MessageBubble = memo(function MessageBubble({
             <div className="whitespace-pre-wrap break-words leading-relaxed">
               {message.content}
             </div>
+          ) : isUser ? (
+            <div className="whitespace-pre-wrap break-words leading-relaxed">
+              {message.content}
+            </div>
           ) : (
           <ReactMarkdown
             components={{
