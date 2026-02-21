@@ -4,6 +4,9 @@ THERESE v2 - Board Router Tests
 Tests for US-BOARD-01 to US-BOARD-05.
 """
 
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -96,13 +99,29 @@ class TestBoardDeliberation:
     """Tests for US-BOARD-01: Submit question to board."""
 
     @pytest.mark.asyncio
-    async def test_deliberate_returns_sse_stream(self, client: AsyncClient, sample_board_request):
+    async def test_deliberate_returns_sse_stream(self, client: AsyncClient, sample_board_request, db_session):
         """Test deliberation returns SSE stream."""
-        # Note: This is a streaming endpoint, we test the response format
-        response = await client.post(
-            "/api/board/deliberate",
-            json=sample_board_request,
-        )
+
+        @asynccontextmanager
+        async def mock_session_context():
+            yield db_session
+
+        # Mock BoardService.deliberate pour éviter un vrai appel LLM
+        async def fake_deliberate(*args, **kwargs):
+            return
+            yield  # pragma: no cover - rend la fonction async generator
+
+        with patch(
+            "app.routers.board.get_session_context",
+            mock_session_context,
+        ), patch(
+            "app.routers.board.BoardService",
+        ) as mock_board_cls:
+            mock_board_cls.return_value.deliberate = fake_deliberate
+            response = await client.post(
+                "/api/board/deliberate",
+                json=sample_board_request,
+            )
 
         assert response.status_code == 200
         assert response.headers["content-type"].startswith("text/event-stream")

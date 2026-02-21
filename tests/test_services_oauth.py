@@ -47,7 +47,7 @@ def oauth_config():
         auth_url=GOOGLE_AUTH_URL,
         token_url=GOOGLE_TOKEN_URL,
         scopes=GMAIL_SCOPES,
-        redirect_uri="http://localhost:8080/oauth/callback",
+        redirect_uri="http://localhost:8000/api/email/auth/callback-redirect",
     )
 
 

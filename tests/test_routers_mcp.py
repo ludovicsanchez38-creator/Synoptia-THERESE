@@ -5,6 +5,7 @@ Tests for US-MCP-01 to US-MCP-10.
 """
 
 import uuid
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -94,7 +95,12 @@ class TestMCPPresets:
 
         if len(presets) > 0:
             preset_id = presets[0]["id"]
-            response = await client.post(f"/api/mcp/presets/{preset_id}/install")
+            # Mocker le subprocess pour éviter de lancer un vrai serveur MCP
+            with patch(
+                "app.services.mcp_service.asyncio.create_subprocess_exec",
+                new_callable=AsyncMock,
+            ):
+                response = await client.post(f"/api/mcp/presets/{preset_id}/install")
 
             # Should either succeed or fail gracefully
             # May get 500 if duplicate command+args already exist in singleton service

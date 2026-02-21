@@ -227,8 +227,9 @@ class TestMCPService:
         assert result is False
         mock_subprocess.assert_not_called()
 
+    @pytest.mark.asyncio
     @patch("app.services.mcp_service.asyncio.create_subprocess_exec")
-    def test_start_server_creates_subprocess(self, mock_subprocess, mcp_service, mock_save_config):
+    async def test_start_server_creates_subprocess(self, mock_subprocess, mcp_service, mock_save_config):
         """start_server() crée un subprocess avec la bonne commande."""
         # Mock du processus qui échoue rapidement (pas de vrais MCP server)
         mock_process = AsyncMock()
@@ -247,7 +248,7 @@ class TestMCPService:
         # On sait que start_server échouera à l'init car pas de vraie réponse MCP
         # Mais on vérifie que create_subprocess_exec a été appelé correctement
         try:
-            asyncio.run(mcp_service.start_server(server.id))
+            await mcp_service.start_server(server.id)
         except Exception:
             pass  # L'init timeout est attendu dans ce test mocké
 
