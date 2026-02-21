@@ -2064,3 +2064,69 @@ class TestBUG041_LayoutShiftStreaming:
             "minHeight ne doit plus utiliser message.content.length "
             "(recalcul à chaque chunk = layout shift)"
         )
+
+
+# ─── BUG-040 Ollama erreurs lisibles (v0.2.8) ─────────────────────────────
+
+OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+
+
+class TestBUG040_OllamaErrorMessages:
+    """BUG-040 : Ollama doit renvoyer des erreurs lisibles en français."""
+
+    def test_ollama_catches_connect_error(self):
+        """Le provider doit capturer httpx.ConnectError séparément."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert "httpx.ConnectError" in content, (
+            "ollama.py doit capturer httpx.ConnectError pour un message clair "
+            "quand Ollama n'est pas lancé"
+        )
+
+    def test_ollama_catches_read_timeout(self):
+        """Le provider doit capturer httpx.ReadTimeout séparément."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert "httpx.ReadTimeout" in content, (
+            "ollama.py doit capturer httpx.ReadTimeout pour un message clair "
+            "quand le modèle est trop lent"
+        )
+
+    def test_ollama_catches_http_status_error(self):
+        """Le provider doit capturer httpx.HTTPStatusError pour les 404."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert "httpx.HTTPStatusError" in content, (
+            "ollama.py doit capturer httpx.HTTPStatusError pour un message clair "
+            "quand le modèle n'est pas installé (404)"
+        )
+
+    def test_ollama_404_mentions_ollama_pull(self):
+        """En cas de 404, le message doit suggérer 'ollama pull'."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert "ollama pull" in content, (
+            "En cas de modèle introuvable (404), le message d'erreur doit "
+            "suggérer 'ollama pull <modèle>' pour l'installer"
+        )
+
+    def test_ollama_connect_error_mentions_serve(self):
+        """En cas de connexion impossible, le message doit suggérer 'ollama serve'."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert "ollama serve" in content, (
+            "En cas de connexion impossible, le message d'erreur doit "
+            "suggérer 'ollama serve' pour lancer le service"
+        )
+
+    def test_ollama_checks_error_in_stream(self):
+        """Le provider doit vérifier le champ 'error' dans les événements stream."""
+        content = OLLAMA_PY.read_text(encoding="utf-8")
+        assert 'event.get("error")' in content, (
+            "ollama.py doit vérifier le champ 'error' dans chaque événement "
+            "du flux JSON (certains modèles renvoient des erreurs mid-stream)"
+        )
+
+    def test_no_unknown_error_fallback(self):
+        """Le router chat ne doit plus afficher 'Unknown error'."""
+        chat_router = Path("src/backend/app/routers/chat.py")
+        content = chat_router.read_text(encoding="utf-8")
+        assert "Unknown error" not in content, (
+            "chat.py ne doit plus contenir 'Unknown error' - "
+            "utiliser un message en français à la place"
+        )

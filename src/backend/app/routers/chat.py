@@ -715,7 +715,7 @@ async def _do_stream_response(
             elif event.type == "error":
                 error_data = StreamChunk(
                     type="error",
-                    content=event.content or "Unknown error",
+                    content=event.content or "Erreur inattendue du fournisseur LLM",
                     conversation_id=conversation_id,
                 )
                 yield f"data: {json.dumps(error_data.model_dump())}\n\n"
