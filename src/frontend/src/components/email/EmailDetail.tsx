@@ -123,9 +123,13 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   }
 
   function handleUseResponse(response: string) {
-    if (!message) return;
-    setDraftRecipients([message.from_email]);
-    setDraftSubject(`Re: ${message.subject || ''}`);
+    // Si le message n'est plus disponible dans le store (race condition, navigation rapide),
+    // on ouvre quand même le compositeur avec le texte généré
+    // plutôt que de silencieusement ne rien faire (BUG-026)
+    if (message) {
+      setDraftRecipients([message.from_email]);
+      setDraftSubject(`Re: ${message.subject || ''}`);
+    }
     setDraftBody(response);
     setIsComposing(true);
     setShowResponseModal(false);
