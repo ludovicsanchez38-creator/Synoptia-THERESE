@@ -2176,3 +2176,54 @@ class TestBUG038_LineBreaksChat:
             "MessageBubble doit avoir au moins 2 occurrences de whitespace-pre-wrap "
             "(streaming + messages user)"
         )
+
+
+# ============================================================
+# BUG-026 (revisited) : Bouton "Utiliser" du générateur de réponse email
+# Fix : createPortal document.body + z-[60] + stopPropagation
+# ============================================================
+
+RESPONSE_GENERATOR_MODAL = (
+    FRONTEND / "components" / "email" / "ResponseGeneratorModal.tsx"
+)
+EMAIL_DETAIL = FRONTEND / "components" / "email" / "EmailDetail.tsx"
+
+
+class TestBUG026_BoutonUtiliserEmail:
+    """BUG-026 (revisited) : Le bouton Utiliser du générateur de réponse email doit fonctionner."""
+
+    def test_modal_uses_portal(self):
+        """Le modal doit utiliser createPortal vers document.body pour éviter les problèmes de stacking context."""
+        content = RESPONSE_GENERATOR_MODAL.read_text(encoding="utf-8")
+        assert "createPortal" in content, (
+            "ResponseGeneratorModal doit utiliser createPortal (react-dom)"
+        )
+        assert "document.body" in content, (
+            "Le portal doit cibler document.body"
+        )
+
+    def test_modal_z_index_above_email_panel(self):
+        """Le modal doit avoir un z-index supérieur à z-50 (l'email panel)."""
+        content = RESPONSE_GENERATOR_MODAL.read_text(encoding="utf-8")
+        assert "z-[60]" in content, (
+            "Le modal doit utiliser z-[60] pour passer au-dessus de l'email panel (z-50)"
+        )
+
+    def test_handle_use_stops_propagation(self):
+        """handleUse doit appeler stopPropagation pour éviter les interférences d'événements."""
+        content = RESPONSE_GENERATOR_MODAL.read_text(encoding="utf-8")
+        assert "stopPropagation" in content, (
+            "handleUse doit appeler e.stopPropagation() pour empêcher le bubbling"
+        )
+
+    def test_handle_use_response_sets_composing(self):
+        """handleUseResponse doit toujours appeler setIsComposing(true), même si message est null."""
+        content = EMAIL_DETAIL.read_text(encoding="utf-8")
+        # Vérifier que setIsComposing(true) est hors du bloc if (message)
+        # En cherchant qu'il y a setDraftBody ET setIsComposing après le if
+        assert "setDraftBody(response)" in content, (
+            "handleUseResponse doit appeler setDraftBody avec la réponse"
+        )
+        assert "setIsComposing(true)" in content, (
+            "handleUseResponse doit appeler setIsComposing(true)"
+        )

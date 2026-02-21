@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, RefreshCw, Check, Loader2 } from 'lucide-react';
 import * as api from '../../services/api';
@@ -64,8 +65,15 @@ export function ResponseGeneratorModal({
     generateResponse();
   };
 
-  const handleUse = () => {
-    onUseResponse(draft);
+  const handleUse = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      onUseResponse(draft);
+    } catch (err) {
+      console.error('ResponseGeneratorModal: erreur dans onUseResponse', err);
+    }
+    // onClose est aussi appelé par onUseResponse (qui fait setShowResponseModal(false))
+    // mais on le rappelle ici par sécurité au cas où onUseResponse ne ferme pas le modal
     onClose();
   };
 
@@ -86,7 +94,9 @@ export function ResponseGeneratorModal({
     }
   }, [isOpen]);
 
-  return (
+  // Portal vers document.body pour éviter les problèmes de stacking context
+  // (transform Framer Motion sur les ancêtres + overflow-hidden qui cassent position:fixed)
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -95,7 +105,7 @@ export function ResponseGeneratorModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
             onClick={onClose}
           />
 
@@ -104,7 +114,7 @@ export function ResponseGeneratorModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-3xl"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-full max-w-3xl"
           >
             <div className="bg-surface border border-text-muted/20 rounded-xl shadow-2xl p-6">
               {/* Header */}
@@ -238,6 +248,7 @@ export function ResponseGeneratorModal({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
