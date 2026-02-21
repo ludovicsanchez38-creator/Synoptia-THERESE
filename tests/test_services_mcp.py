@@ -231,7 +231,7 @@ class TestMCPService:
     @patch("app.services.mcp_service.asyncio.create_subprocess_exec")
     async def test_start_server_creates_subprocess(self, mock_subprocess, mcp_service, mock_save_config):
         """start_server() crée un subprocess avec la bonne commande."""
-        # Mock du processus qui échoue rapidement (pas de vrais MCP server)
+        # Mock du processus
         mock_process = AsyncMock()
         mock_process.pid = 12345
         mock_process.stdout = AsyncMock()
@@ -245,12 +245,10 @@ class TestMCPService:
 
         server = mcp_service.add_server("Test Server", "npx", args=["@test/mcp"])
 
-        # On sait que start_server échouera à l'init car pas de vraie réponse MCP
-        # Mais on vérifie que create_subprocess_exec a été appelé correctement
-        try:
+        # Mocker _initialize_server et _list_tools pour éviter le timeout 30s
+        with patch.object(mcp_service, "_initialize_server", new_callable=AsyncMock), \
+             patch.object(mcp_service, "_list_tools", new_callable=AsyncMock):
             await mcp_service.start_server(server.id)
-        except Exception:
-            pass  # L'init timeout est attendu dans ce test mocké
 
         # Vérifie que subprocess a été appelé avec les bons arguments
         mock_subprocess.assert_called_once()

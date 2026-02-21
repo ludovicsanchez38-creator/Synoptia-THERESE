@@ -95,10 +95,12 @@ class TestMCPPresets:
 
         if len(presets) > 0:
             preset_id = presets[0]["id"]
-            # Mocker le subprocess pour éviter de lancer un vrai serveur MCP
-            with patch(
-                "app.services.mcp_service.asyncio.create_subprocess_exec",
+            # Mocker start_server pour éviter le timeout de 30s sur _initialize_server
+            with patch.object(
+                __import__("app.services.mcp_service", fromlist=["MCPService"]).MCPService,
+                "start_server",
                 new_callable=AsyncMock,
+                return_value=True,
             ):
                 response = await client.post(f"/api/mcp/presets/{preset_id}/install")
 
