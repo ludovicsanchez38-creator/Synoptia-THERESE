@@ -227,11 +227,14 @@ pub fn run() {
                     let _ = window.set_title_bar_style(TitleBarStyle::Overlay);
                 }
 
-                // Afficher la fenêtre après un court délai (laisse le webview rendre
-                // le premier frame, évite le flash blanc/transparent au démarrage)
+                // Afficher la fenêtre rapidement.
+                // F-09 (macOS) : réduit à 100ms (vs 300ms) car index.html contient
+                // maintenant un spinner CSS natif qui s'affiche immédiatement,
+                // supprimant le besoin d'un délai plus long pour masquer le flash blanc.
+                // Sur Windows, le délai est aussi réduit (même bénéfice).
                 let w = window.clone();
                 std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(300));
+                    std::thread::sleep(std::time::Duration::from_millis(100));
                     let _ = w.show();
                     let _ = w.set_focus();
                 });

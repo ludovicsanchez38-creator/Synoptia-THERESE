@@ -7,6 +7,28 @@ interface SplashScreenProps {
   onReady: () => void;
 }
 
+/**
+ * F-09 : Met à jour la barre de progression dans le dock macOS.
+ * Utilise setProgressBar (Tauri v2) activé via macOSPrivateApi.
+ * No-op silencieux sur Windows et en mode dev.
+ */
+async function setDockProgress(progress: number): Promise<void> {
+  try {
+    const { getCurrentWindow, ProgressBarStatus } = await import('@tauri-apps/api/window');
+    const win = getCurrentWindow();
+    if (progress >= 100) {
+      await win.setProgressBar({ status: ProgressBarStatus.None });
+    } else {
+      await win.setProgressBar({
+        status: ProgressBarStatus.Normal,
+        progress: Math.round(progress),
+      });
+    }
+  } catch {
+    // Pas en contexte Tauri ou macOSPrivateApi non activé : on ignore silencieusement
+  }
+}
+
 const POLL_INTERVAL = 2_000; // 2s entre chaque health check (réduit la charge réseau)
 const TIMEOUT_MS = 600_000; // 10 min : premier lancement Windows avec Defender peut prendre 3+ min
 
@@ -133,6 +155,9 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         const pct = Math.min(95, Math.log1p(elapsed / 1000) / Math.log1p(TIMEOUT_MS / 1000) * 100);
         setProgress(pct);
 
+        // F-09 : mise à jour de la barre de progression dans le dock macOS
+        void setDockProgress(pct);
+
         // Message adapté au temps écoulé
         let currentMsg = MESSAGES[0].text;
         for (const m of MESSAGES) {
@@ -145,6 +170,8 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         if (healthy && !cancelled) {
           setProgress(100);
           setMessage('Prêt !');
+          // F-09 : effacer la progression du dock macOS
+          void setDockProgress(100);
           // Petit délai pour l'animation
           await new Promise((r) => setTimeout(r, 300));
           if (!cancelled) onReady();
@@ -193,6 +220,27 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         {appVersion && (
           <p className="text-text-muted text-xs mb-6">v{appVersion}-alpha</p>
         )}
+
+        {/*
+          F-09 : Spinner de chargement macOS-style
+          Affiché pendant tout le démarrage, avant et après que le backend soit prêt.
+          Remplace l'absence de retour visuel sur macOS entre le clic sur l'icône
+          et l'apparition de la fenêtre pleinement opérationnelle.
+        */}
+        <div
+          className="mx-auto mb-5"
+          style={{
+            width: '28px',
+            height: '28px',
+            border: '2.5px solid rgba(255,255,255,0.12)',
+            borderTopColor: 'var(--color-accent-cyan, #00d4ff)',
+            borderRightColor: 'var(--color-accent-magenta, #ff00aa)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+          role="status"
+          aria-label="Chargement en cours"
+        />
 
         {/* Barre de progression */}
         <div className="w-64 mx-auto mb-4">

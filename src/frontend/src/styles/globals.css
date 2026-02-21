@@ -247,6 +247,11 @@ p, span, div:not(:hover), section {
   transition: none;
 }
 
+/* F-09 : Spinner de démarrage macOS - animation de rotation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Status indicator pulses */
 @keyframes pulse-glow {
   0%, 100% {

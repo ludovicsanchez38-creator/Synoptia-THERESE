@@ -6,9 +6,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>THÉRÈSE - L'assistante souveraine</title>
     <meta name="description" content="THÉRÈSE v2 - L'assistante IA souveraine des entrepreneurs français" />
+
+    <!--
+      F-09 : Spinner de démarrage macOS
+      Affiché immédiatement dès l'ouverture de la fenêtre WebView,
+      avant même le chargement de React/JavaScript.
+      Disparaît automatiquement quand React remplace le contenu de #root.
+    -->
+    <style>
+      /* Variables alignées sur le thème THÉRÈSE (repris du CSS global) */
+      :root {
+        --therese-bg: #0f0f13;
+        --therese-cyan: #00d4ff;
+        --therese-magenta: #ff00aa;
+        --therese-text-muted: rgba(255, 255, 255, 0.45);
+      }
+
+      /* Reset minimal pour le splash */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--therese-bg);
+        height: 100%;
+      }
+
+      /* Conteneur du splash inline */
+      #therese-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--therese-bg);
+        z-index: 9999;
+        /* -webkit-app-region requis pour le drag macOS sans barre de titre */
+        -webkit-app-region: drag;
+        user-select: none;
+      }
+
+      /* Titre dégradé animé (pulse) */
+      #therese-splash h1 {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 0 0 0.25rem;
+        background: linear-gradient(135deg, var(--therese-cyan), var(--therese-magenta));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: therese-pulse 2s ease-in-out infinite;
+      }
+
+      /* Spinner circulaire macOS-style */
+      #therese-splash .therese-spinner {
+        width: 28px;
+        height: 28px;
+        margin-top: 1.5rem;
+        border: 2.5px solid rgba(255, 255, 255, 0.12);
+        border-top-color: var(--therese-cyan);
+        border-right-color: var(--therese-magenta);
+        border-radius: 50%;
+        animation: therese-spin 0.8s linear infinite;
+      }
+
+      /* Message de statut */
+      #therese-splash .therese-status {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        font-size: 0.8rem;
+        color: var(--therese-text-muted);
+        margin-top: 0.75rem;
+      }
+
+      @keyframes therese-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+
+      @keyframes therese-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      F-09 : Le splash inline est visible tant que React n'a pas rendu le contenu.
+      React remplace le innerHTML de #root au premier render, effaçant ce splash.
+    -->
+    <div id="root">
+      <div id="therese-splash">
+        <h1>THÉRÈSE</h1>
+        <div class="therese-spinner" aria-label="Chargement en cours" role="status"></div>
+        <p class="therese-status">Démarrage…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
