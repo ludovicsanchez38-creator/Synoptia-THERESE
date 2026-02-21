@@ -737,7 +737,7 @@ async def _do_stream_response(
     await session.commit()
 
     # Finish performance tracking (US-PERF-01)
-    perf_summary = perf_monitor.finish_stream(conversation_id)
+    perf_monitor.finish_stream(conversation_id)
 
     # Track token usage and costs (US-ESC-02, US-ESC-04)
     token_tracker = get_token_tracker()

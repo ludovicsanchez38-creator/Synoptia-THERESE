@@ -66,7 +66,7 @@ if getattr(sys, "frozen", False):
     except Exception:
         pass
 
-import multiprocessing
+import multiprocessing  # noqa: E402
 
 # CRITIQUE : freeze_support() AVANT tout import lourd (BUG-008)
 # Sans cela, les sous-processus (resource_tracker de torch/sentence_transformers)
@@ -93,7 +93,7 @@ if getattr(sys, "frozen", False) and len(sys.argv) >= 3:
         exec(sys.argv[-1])  # noqa: S102 - Code généré par CPython, sûr
         sys.exit(0)
 
-import argparse
+import argparse  # noqa: E402
 
 # PyInstaller : ajuster les chemins pour trouver alembic/ et les data files
 if getattr(sys, "_MEIPASS", None):
@@ -229,12 +229,12 @@ def _kill_zombie_backends():
 if getattr(sys, "frozen", False) and __name__ == "__main__":
     _kill_zombie_backends()
 
-from app.main import app
+from app.main import app  # noqa: E402
 
 __all__ = ["app"]
 
 if __name__ == "__main__":
-    import atexit
+    import atexit  # noqa: I001
     import uvicorn
 
     # Nettoyage des processus enfants à la fermeture (BUG-007)
