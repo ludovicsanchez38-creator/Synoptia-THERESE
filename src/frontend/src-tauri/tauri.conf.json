@@ -51,7 +51,7 @@
       "frameworks": [],
       "entitlements": null,
       "exceptionDomain": ""
-    }
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
