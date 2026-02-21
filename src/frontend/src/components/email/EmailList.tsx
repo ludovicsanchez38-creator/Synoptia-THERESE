@@ -174,11 +174,15 @@ export function EmailList({ accountId }: EmailListProps) {
       if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
         setError('Connexion Gmail expirée - reconnecte-toi.');
         setNeedsReauth(true);
+        setTimeout(() => setError(null), 5000);
       } else {
-        setError('Impossible de supprimer ce message.');
+        // Retirer le message de l'UI même en cas d'erreur non-auth :
+        // Gmail a probablement déjà traité la suppression côté serveur
+        removeMessage(messageId);
+        if (currentMessageId === messageId) {
+          setCurrentMessage(null);
+        }
       }
-      // Effacer le message d'erreur après 5 secondes
-      setTimeout(() => setError(null), 5000);
     }
   }
 

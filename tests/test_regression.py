@@ -1974,28 +1974,31 @@ class TestBUG026_EmailUtiliserButton:
 
     EMAIL_DETAIL_TSX = Path("src/frontend/src/components/email/EmailDetail.tsx")
 
-    def test_no_silent_early_return_when_message_undefined(self):
-        """handleUseResponse ne doit pas silencieusement retourner si message est undefined."""
+    def test_use_response_calls_start_composing(self):
+        """handleUseResponse doit utiliser startComposing pour un set() atomique."""
         content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
-        assert "if (message) {" in content, (
-            "handleUseResponse doit utiliser 'if (message) {}' pour le fallback gracieux "
-            "plutôt qu'un early return silencieux (BUG-026)"
+        assert "startComposing" in content, (
+            "handleUseResponse doit utiliser startComposing (set atomique) "
+            "au lieu de 4 set() séparés pour éviter les problèmes de timing"
         )
 
-    def test_set_composing_always_called(self):
-        """setIsComposing(true) doit toujours être appelé dans handleUseResponse."""
+    def test_reply_uses_start_composing(self):
+        """handleReply doit utiliser startComposing pour un set() atomique."""
         content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
-        assert "setIsComposing(true)" in content, (
-            "handleUseResponse doit toujours appeler setIsComposing(true) "
-            "pour ouvrir le compositeur"
+        # handleReply appelle startComposing
+        assert "startComposing([message.from_email]" in content, (
+            "handleReply doit appeler startComposing avec le from_email du message"
         )
 
-    def test_set_draft_body_always_called(self):
-        """setDraftBody doit toujours être appelé avec la réponse générée."""
-        content = self.EMAIL_DETAIL_TSX.read_text(encoding="utf-8")
-        assert "setDraftBody(response)" in content, (
-            "handleUseResponse doit toujours appeler setDraftBody(response) "
-            "pour pré-remplir le compositeur avec le texte généré"
+    def test_store_has_start_composing(self):
+        """Le store email doit exposer startComposing pour les mises à jour atomiques."""
+        store_path = self.EMAIL_DETAIL_TSX.parent.parent.parent / "stores" / "emailStore.ts"
+        content = store_path.read_text(encoding="utf-8")
+        assert "startComposing:" in content, (
+            "Le store email doit définir startComposing pour le set() atomique"
+        )
+        assert "isComposing: true" in content, (
+            "startComposing doit mettre isComposing à true"
         )
 
 
@@ -2216,14 +2219,17 @@ class TestBUG026_BoutonUtiliserEmail:
             "handleUse doit appeler e.stopPropagation() pour empêcher le bubbling"
         )
 
-    def test_handle_use_response_sets_composing(self):
-        """handleUseResponse doit toujours appeler setIsComposing(true), même si message est null."""
+    def test_handle_use_response_uses_start_composing(self):
+        """handleUseResponse doit utiliser startComposing (set atomique) au lieu de set() séparés."""
         content = EMAIL_DETAIL.read_text(encoding="utf-8")
-        # Vérifier que setIsComposing(true) est hors du bloc if (message)
-        # En cherchant qu'il y a setDraftBody ET setIsComposing après le if
-        assert "setDraftBody(response)" in content, (
-            "handleUseResponse doit appeler setDraftBody avec la réponse"
+        assert "startComposing" in content, (
+            "handleUseResponse doit utiliser startComposing pour un seul set() atomique"
         )
-        assert "setIsComposing(true)" in content, (
-            "handleUseResponse doit appeler setIsComposing(true)"
+
+    def test_delete_optimistic_removal(self):
+        """handleTrash doit retirer le message de l'UI même en cas d'erreur non-auth."""
+        content = EMAIL_DETAIL.read_text(encoding="utf-8")
+        # Vérifier que le catch non-auth fait removeMessage
+        assert "removeMessage(messageId);" in content, (
+            "handleTrash doit appeler removeMessage dans le try ET dans le else du catch"
         )

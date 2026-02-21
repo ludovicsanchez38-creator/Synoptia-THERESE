@@ -71,10 +71,11 @@ export function ResponseGeneratorModal({
       onUseResponse(draft);
     } catch (err) {
       console.error('ResponseGeneratorModal: erreur dans onUseResponse', err);
+      // Fallback : fermer le modal même si onUseResponse a échoué
+      onClose();
     }
-    // onClose est aussi appelé par onUseResponse (qui fait setShowResponseModal(false))
-    // mais on le rappelle ici par sécurité au cas où onUseResponse ne ferme pas le modal
-    onClose();
+    // NE PAS appeler onClose() ici : onUseResponse gère la fermeture
+    // et appelle startComposing qui démonte EmailDetail (et donc ce portal)
   };
 
   React.useEffect(() => {

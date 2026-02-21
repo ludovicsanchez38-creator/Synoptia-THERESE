@@ -5,7 +5,7 @@
  * Phase 1 Frontend - Email
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, X, Loader2, Paperclip } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
@@ -27,6 +27,14 @@ export function EmailCompose() {
   const [toInput, setToInput] = useState(draftRecipients.join(', '));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // Synchroniser toInput avec draftRecipients (au cas où le store change après le mount)
+  useEffect(() => {
+    if (draftRecipients.length > 0) {
+      setToInput(draftRecipients.join(', '));
+    }
+  }, [draftRecipients]);
 
   async function handleSend() {
     if (!currentAccountId) return;
@@ -102,10 +110,19 @@ export function EmailCompose() {
   }
 
   function handleCancel() {
-    if (confirm('Abandonner ce brouillon ?')) {
+    // Si le brouillon est vide, fermer directement sans confirmation
+    if (!draftBody.trim() && !draftSubject.trim() && !toInput.trim()) {
       clearDraft();
       setIsComposing(false);
+      return;
     }
+    setShowCancelConfirm(true);
+  }
+
+  function confirmCancel() {
+    setShowCancelConfirm(false);
+    clearDraft();
+    setIsComposing(false);
   }
 
   return (
@@ -161,6 +178,25 @@ export function EmailCompose() {
           />
         </div>
       </div>
+
+      {/* Confirmation d'abandon */}
+      {showCancelConfirm && (
+        <div className="px-6 py-3 bg-yellow-500/10 border-t border-yellow-500/20 flex items-center gap-3">
+          <p className="text-sm text-yellow-200 flex-1">Abandonner ce brouillon ?</p>
+          <button
+            onClick={confirmCancel}
+            className="px-3 py-1.5 text-sm bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg transition-colors"
+          >
+            Oui, abandonner
+          </button>
+          <button
+            onClick={() => setShowCancelConfirm(false)}
+            className="px-3 py-1.5 text-sm text-text-muted hover:text-text transition-colors"
+          >
+            Non, continuer
+          </button>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30">

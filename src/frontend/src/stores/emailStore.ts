@@ -50,6 +50,7 @@ interface EmailStore {
   setDraftBody: (body: string) => void;
   setDraftIsHtml: (isHtml: boolean) => void;
   clearDraft: () => void;
+  startComposing: (recipients: string[], subject: string, body: string) => void;
 
   // Auth
   needsReauth: boolean;
@@ -136,6 +137,14 @@ export const useEmailStore = create<EmailStore>()(
           draftBody: '',
           draftIsHtml: false,
           isComposing: false,
+        }),
+      startComposing: (recipients, subject, body) =>
+        set({
+          draftRecipients: recipients,
+          draftSubject: subject,
+          draftBody: body,
+          draftIsHtml: false,
+          isComposing: true,
         }),
 
       // Auth

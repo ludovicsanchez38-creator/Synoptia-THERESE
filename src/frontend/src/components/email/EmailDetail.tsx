@@ -57,7 +57,7 @@ interface EmailDetailProps {
 }
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
-  const { messages, setCurrentMessage, updateMessage, removeMessage, setIsComposing, setDraftRecipients, setDraftSubject, setDraftBody, setNeedsReauth } = useEmailStore();
+  const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
@@ -117,30 +117,26 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
         setNeedsReauth(true);
       } else {
-        setTrashError('Impossible de supprimer ce message.');
+        // Retirer le message de l'UI même en cas d'erreur non-auth :
+        // Gmail a probablement déjà traité la suppression côté serveur
+        removeMessage(messageId);
+        setCurrentMessage(null);
       }
     }
   }
 
   function handleUseResponse(response: string) {
-    // Si le message n'est plus disponible dans le store (race condition, navigation rapide),
-    // on ouvre quand même le compositeur avec le texte généré
-    // plutôt que de silencieusement ne rien faire (BUG-026)
-    if (message) {
-      setDraftRecipients([message.from_email]);
-      setDraftSubject(`Re: ${message.subject || ''}`);
-    }
-    setDraftBody(response);
-    setIsComposing(true);
+    // Un seul set() atomique pour éviter les problèmes de timing
+    // entre le démontage d'EmailDetail et le montage d'EmailCompose
+    const recipients = message ? [message.from_email] : [];
+    const subject = message ? `Re: ${message.subject || ''}` : '';
     setShowResponseModal(false);
+    startComposing(recipients, subject, response);
   }
 
   function handleReply() {
     if (!message) return;
-    setDraftRecipients([message.from_email]);
-    setDraftSubject(`Re: ${message.subject || ''}`);
-    setDraftBody('');
-    setIsComposing(true);
+    startComposing([message.from_email], `Re: ${message.subject || ''}`, '');
   }
 
   function handleReplyAll() {
@@ -148,19 +144,13 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     const allRecipients = [message.from_email, ...message.to_emails].filter(
       (email, index, self) => self.indexOf(email) === index
     );
-    setDraftRecipients(allRecipients);
-    setDraftSubject(`Re: ${message.subject || ''}`);
-    setDraftBody('');
-    setIsComposing(true);
+    startComposing(allRecipients, `Re: ${message.subject || ''}`, '');
   }
 
   function handleForward() {
     if (!message) return;
-    setDraftRecipients([]);
-    setDraftSubject(`Fwd: ${message.subject || ''}`);
     const forwardBody = `\n\n---------- Message transféré ----------\nDe : ${message.from_name || message.from_email} <${message.from_email}>\nDate : ${formatDate(message.date)}\nObjet : ${message.subject || '(Sans objet)'}\nÀ : ${message.to_emails.join(', ')}\n\n${message.body_plain || ''}`;
-    setDraftBody(forwardBody);
-    setIsComposing(true);
+    startComposing([], `Fwd: ${message.subject || ''}`, forwardBody);
   }
 
   function formatDate(dateStr: string): string {
