@@ -2233,3 +2233,160 @@ class TestBUG026_BoutonUtiliserEmail:
         assert "removeMessage(messageId);" in content, (
             "handleTrash doit appeler removeMessage dans le try ET dans le else du catch"
         )
+
+
+# ─── BUG-041 Ollama 500 admin mode + messages d'erreur persistés ─────────
+
+class TestBUG041_OllamaAdminError:
+    """Ollama 500 doit afficher un message actionnable + les erreurs doivent être persistées."""
+
+    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+    CHAT_PY = Path("src/backend/app/routers/chat.py")
+
+    def test_ollama_500_mentions_admin(self):
+        """Le cas HTTP 500 d'Ollama doit mentionner le mode administrateur."""
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "elif status == 500:" in content, (
+            "ollama.py doit avoir un cas spécifique pour HTTP 500"
+        )
+        assert "administrateur" in content, (
+            "Le message d'erreur 500 doit mentionner le mode administrateur (Windows)"
+        )
+
+    def test_ollama_empty_response_yields_error(self):
+        """Une réponse vide d'Ollama doit produire un StreamEvent d'erreur visible."""
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "has_content" in content, (
+            "ollama.py doit vérifier si du contenu a été reçu"
+        )
+        # Le cas 'pas de contenu' doit yielder une erreur, pas juste logger
+        assert 'type="error"' in content or "type='error'" in content, (
+            "Le cas réponse vide doit yielder un StreamEvent de type 'error'"
+        )
+        assert "gelé" in content, (
+            "Le message d'erreur réponse vide doit mentionner qu'Ollama est peut-être gelé"
+        )
+
+    def test_error_messages_persisted_in_db(self):
+        """Les messages d'erreur de streaming doivent être persistés en base."""
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        # Vérifier que quand un event.type == "error" arrive, un Message est sauvegardé
+        assert "session.add(err_msg)" in content, (
+            "chat.py doit sauvegarder un Message en base lors d'une erreur de streaming "
+            "pour que le message d'erreur ne disparaisse pas au rechargement"
+        )
+        assert "await session.commit()" in content, (
+            "chat.py doit commiter la sauvegarde du message d'erreur"
+        )
+
+
+# ─── Batch v0.2.11 - Ollama, mail, SMTP, Apple, Linux ────────────────────
+
+class TestBatchV0211_OllamaAdminWindows:
+    """Ollama HTTP 500 → message actionnable + erreur vide → error event."""
+
+    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+    CHAT_PY = Path("src/backend/app/routers/chat.py")
+
+    def test_ollama_500_admin_message(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "elif status == 500:" in content, "Cas spécifique HTTP 500 manquant"
+        assert "administrateur" in content, "Message 500 doit mentionner le mode admin Windows"
+
+    def test_ollama_empty_response_error_event(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "gelé" in content, "Réponse vide Ollama doit mentionner 'gelé'"
+
+    def test_error_messages_persisted(self):
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "session.add(err_msg)" in content, "Messages d'erreur doivent être persistés en base"
+
+
+class TestBatchV0211_EmailWizardPortal:
+    """EmailSetupWizard doit utiliser createPortal pour éviter l'interférence Framer Motion."""
+
+    WIZARD_TSX = Path("src/frontend/src/components/email/wizard/EmailSetupWizard.tsx")
+
+    def test_create_portal_imported(self):
+        content = self.WIZARD_TSX.read_text(encoding="utf-8")
+        assert "createPortal" in content, "EmailSetupWizard doit utiliser createPortal"
+
+    def test_higher_z_index(self):
+        content = self.WIZARD_TSX.read_text(encoding="utf-8")
+        assert "z-[70]" in content, "Wizard doit avoir z-[70] pour passer au-dessus des overlays z-50"
+
+    def test_portal_to_body(self):
+        content = self.WIZARD_TSX.read_text(encoding="utf-8")
+        assert "document.body" in content, "createPortal doit cibler document.body"
+
+
+class TestBatchV0211_SmtpFailedToFetch:
+    """SMTP 'Failed to fetch' doit afficher un message lisible."""
+
+    SMTP_TSX = Path("src/frontend/src/components/email/wizard/SmtpConfigStep.tsx")
+
+    def test_failed_to_fetch_intercepted(self):
+        content = self.SMTP_TSX.read_text(encoding="utf-8")
+        assert "Failed to fetch" in content, "SmtpConfigStep doit intercepter 'Failed to fetch'"
+
+    def test_user_friendly_error_message(self):
+        content = self.SMTP_TSX.read_text(encoding="utf-8")
+        assert "Impossible de joindre le serveur" in content, (
+            "Message d'erreur 'Failed to fetch' doit être traduit en message lisible"
+        )
+
+
+class TestBatchV0211_GmailRedirectUri:
+    """VerifyStep doit afficher la redirect_uri exacte lors d'un mismatch."""
+
+    VERIFY_TSX = Path("src/frontend/src/components/email/wizard/VerifyStep.tsx")
+
+    def test_redirect_uri_stored(self):
+        content = self.VERIFY_TSX.read_text(encoding="utf-8")
+        assert "redirectUri" in content, "VerifyStep doit stocker la redirectUri reçue du backend"
+
+    def test_redirect_uri_displayed_on_error(self):
+        content = self.VERIFY_TSX.read_text(encoding="utf-8")
+        assert "redirect_uri_mismatch" in content, (
+            "VerifyStep doit afficher la redirectUri exacte lors d'une erreur redirect_uri_mismatch"
+        )
+
+
+class TestBatchV0211_AppleIconWindows:
+    """Icône ⌘ ne doit pas apparaître sur Windows/Linux."""
+
+    SHORTCUTS_TSX = Path("src/frontend/src/components/chat/ShortcutsModal.tsx")
+    SKILL_TSX = Path("src/frontend/src/components/guided/SkillPromptPanel.tsx")
+
+    def test_shortcuts_modal_adapts_to_platform(self):
+        content = self.SHORTCUTS_TSX.read_text(encoding="utf-8")
+        assert "adaptKey" in content, (
+            "ShortcutsModal doit avoir une fonction adaptKey pour remplacer ⌘ par Ctrl sur Windows"
+        )
+
+    def test_skill_prompt_panel_platform_aware(self):
+        content = self.SKILL_TSX.read_text(encoding="utf-8")
+        assert "navigator.platform" in content, (
+            "SkillPromptPanel doit détecter la plateforme pour afficher Ctrl ou ⌘"
+        )
+
+
+class TestBatchV0211_LinuxCategory:
+    """Le fichier .desktop Linux doit avoir la catégorie Productivity."""
+
+    TAURI_CONF = Path("src/frontend/src-tauri/tauri.conf.json")
+
+    def test_linux_desktop_category_set(self):
+        import json
+        content = json.loads(self.TAURI_CONF.read_text(encoding="utf-8"))
+        category = content.get("bundle", {}).get("category", "")
+        assert category == "Productivity", (
+            f"bundle.category doit être 'Productivity' pour le .desktop Linux, trouvé : '{category}'"
+        )
+
+    def test_splash_screen_windows_message_platform_aware(self):
+        splash = Path("src/frontend/src/components/SplashScreen.tsx").read_text(encoding="utf-8")
+        # Le message "Windows analyse les fichiers" ne doit plus être inconditionnel
+        assert "indexOf('WIN')" in splash, (
+            "SplashScreen doit adapter le message 'Windows analyse les fichiers' selon la plateforme"
+        )

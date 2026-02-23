@@ -80,6 +80,14 @@ class OllamaProvider(BaseProvider):
 
                 if not has_content:
                     logger.warning(f"Ollama ({model}): réponse vide, aucun contenu reçu")
+                    yield StreamEvent(
+                        type="error",
+                        content=(
+                            f"Ollama n'a renvoyé aucun contenu pour le modèle '{model}'. "
+                            "Ollama est peut-être gelé ou surchargé - essaie de le relancer."
+                        ),
+                    )
+                    return
 
             yield StreamEvent(type="done", stop_reason="end_turn")
 
@@ -115,6 +123,15 @@ class OllamaProvider(BaseProvider):
                     content=(
                         f"Le modèle '{model}' n'est pas installé dans Ollama. "
                         f"Lance 'ollama pull {model}' dans un terminal pour l'installer."
+                    ),
+                )
+            elif status == 500:
+                yield StreamEvent(
+                    type="error",
+                    content=(
+                        f"Ollama a rencontré une erreur interne (HTTP 500). "
+                        "Sur Windows, essaie de relancer Ollama en mode administrateur. "
+                        f"Détail : {detail}"
                     ),
                 )
             else:

@@ -61,6 +61,10 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 ];
 
 export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
+  // Adapter ⌘ → Ctrl sur Windows/Linux (BUG-042 icône Apple sur Windows)
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const adaptKey = (keys: string) => isMac ? keys : keys.replace(/⌘/g, 'Ctrl');
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -134,7 +138,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                             {shortcut.description}
                           </span>
                           <div className="flex items-center gap-1">
-                            {shortcut.keys.split(' + ').map((key, i) => (
+                            {adaptKey(shortcut.keys).split(' + ').map((key, i) => (
                               <span key={i} className="flex items-center gap-1">
                                 {i > 0 && (
                                   <span className="text-text-muted text-xs">+</span>

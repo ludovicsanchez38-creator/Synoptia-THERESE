@@ -28,6 +28,8 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
   const [error, setError] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
+  // URI exacte à ajouter dans Google Cloud Console (BUG-042 redirect_uri_mismatch)
+  const [redirectUri, setRedirectUri] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialAccountCountRef = useRef<number>(0);
@@ -53,6 +55,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       // Initier le flow OAuth
       const flow = await api.initiateEmailOAuth(clientId, clientSecret);
       setAuthUrl(flow.auth_url);
+      setRedirectUri(flow.redirect_uri || null);
 
       // Ouvrir le navigateur par défaut
       try {
@@ -152,6 +155,18 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
             </button>
           )}
 
+          {/* URI exacte à ajouter dans Google Cloud Console (prévention redirect_uri_mismatch) */}
+          {redirectUri && (
+            <div className="p-3 bg-surface/60 border border-border/50 rounded-lg text-left space-y-1 mt-2">
+              <p className="text-xs text-text-muted">
+                Si Google affiche une erreur, ajoute cette URI dans Google Cloud Console :
+              </p>
+              <code className="block text-xs text-accent-cyan bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
+                {redirectUri}
+              </code>
+            </div>
+          )}
+
           <div className="pt-2">
             <Button variant="ghost" size="sm" onClick={onBack}>
               <ChevronLeft className="w-4 h-4 mr-2" />
@@ -202,6 +217,18 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           </div>
           <h3 className="text-lg font-semibold text-text">Échec de la connexion</h3>
           <p className="text-sm text-text-muted">{error || 'Une erreur est survenue'}</p>
+
+          {/* Si redirect_uri_mismatch, afficher l'URI exacte à copier dans Google Cloud */}
+          {(error?.includes('redirect_uri_mismatch') || error?.includes('redirect_uri')) && redirectUri && (
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-left space-y-1">
+              <p className="text-xs font-medium text-amber-400">
+                Ajoute cette URI dans Google Cloud Console → OAuth → URIs de redirection autorisées :
+              </p>
+              <code className="block text-xs text-text bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
+                {redirectUri}
+              </code>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button variant="ghost" size="md" onClick={onBack} className="flex-1">

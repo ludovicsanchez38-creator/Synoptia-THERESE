@@ -713,12 +713,27 @@ async def _do_stream_response(
                         yield continued_event
 
             elif event.type == "error":
+                error_content = event.content or "Erreur inattendue du fournisseur LLM"
                 error_data = StreamChunk(
                     type="error",
-                    content=event.content or "Erreur inattendue du fournisseur LLM",
+                    content=error_content,
                     conversation_id=conversation_id,
                 )
                 yield f"data: {json.dumps(error_data.model_dump())}\n\n"
+                # Persister le message d'erreur en base (BUG-041) pour qu'il ne
+                # disparaisse pas au rechargement de la conversation
+                try:
+                    saved_content = full_content if full_content else f"⚠️ {error_content}"
+                    err_msg = Message(
+                        conversation_id=conversation_id,
+                        role="assistant",
+                        content=saved_content,
+                        model=llm_service.config.model,
+                    )
+                    session.add(err_msg)
+                    await session.commit()
+                except Exception as db_err:
+                    logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
 
     except Exception as e:
@@ -729,6 +744,18 @@ async def _do_stream_response(
             conversation_id=conversation_id,
         )
         yield f"data: {json.dumps(error_data.model_dump())}\n\n"
+        # Persister le message d'erreur en base (BUG-041)
+        try:
+            err_msg = Message(
+                conversation_id=conversation_id,
+                role="assistant",
+                content=full_content or f"⚠️ Erreur de génération: {str(e)}",
+                model=llm_service.config.model if llm_service else "unknown",
+            )
+            session.add(err_msg)
+            await session.commit()
+        except Exception as db_err:
+            logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
 
     # Save complete assistant message

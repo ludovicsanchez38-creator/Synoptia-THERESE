@@ -141,7 +141,7 @@ function DemoModeSection() {
             </span>
           </div>
           <p className="text-xs text-text-muted mt-1.5">
-            Raccourci : ⌘⇧D pour activer/désactiver
+            Raccourci : {navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl'}⇧D pour activer/désactiver
           </p>
         </div>
       )}

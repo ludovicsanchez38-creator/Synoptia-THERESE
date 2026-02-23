@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -81,8 +82,11 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
   const totalSteps = wizardState.provider === 'smtp' ? 2 : 4;
   const currentStep = wizardState.provider === 'smtp' ? Math.min(step, 2) : step;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+  // createPortal : rendu au niveau document.body pour éviter que Framer Motion
+  // (transform CSS sur les parents animés) ne crée un containing block CSS
+  // qui perturbe le positionnement fixed du wizard et bloque les clics (BUG mail streaming)
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -183,6 +187,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
           </AnimatePresence>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

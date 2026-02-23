@@ -5,6 +5,7 @@ import { Accessibility } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
 export function AccessibilityTab() {
+  const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl';
   const {
     reduceMotion,
     setReduceMotion,
@@ -147,10 +148,10 @@ export function AccessibilityTab() {
           <div className="text-sm text-accent-cyan">
             <p className="font-medium">Raccourcis clavier disponibles</p>
             <ul className="mt-1 text-xs space-y-0.5 text-accent-cyan/80">
-              <li>⌘+K : Palette de commandes</li>
-              <li>⌘+B : Conversations</li>
-              <li>⌘+M : Mémoire</li>
-              <li>⌘+D : Board de décision</li>
+              <li>{mod}+K : Palette de commandes</li>
+              <li>{mod}+B : Conversations</li>
+              <li>{mod}+M : Mémoire</li>
+              <li>{mod}+D : Board de décision</li>
               <li>Tab / Shift+Tab : Navigation</li>
             </ul>
           </div>

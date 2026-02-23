@@ -132,7 +132,9 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
         {/* Footer with hints and generate button */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border/50">
           <p className="text-xs text-text-muted">
-            <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-muted">⌘</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-muted">
+              {navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl'}
+            </kbd>
             <span className="mx-1">+</span>
             <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-muted">↵</kbd>
             <span className="ml-2">pour générer</span>

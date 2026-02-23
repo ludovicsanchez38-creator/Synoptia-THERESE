@@ -56,7 +56,8 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       }
-    }
+    },
+    "category": "Productivity"
   },
   "plugins": {
     "shell": {

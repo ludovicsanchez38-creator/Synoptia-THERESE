@@ -39,7 +39,9 @@ const MESSAGES = [
   { after: 30_000, text: 'Initialisation des services...' },
   { after: 60_000, text: 'Premier lancement, ça peut prendre un moment...' },
   { after: 120_000, text: 'Encore un peu de patience...' },
-  { after: 180_000, text: 'Chargement en cours, Windows analyse les fichiers...' },
+  { after: 180_000, text: navigator.platform.toUpperCase().indexOf('WIN') >= 0
+      ? 'Chargement en cours, Windows analyse les fichiers...'
+      : 'Chargement en cours, les dépendances sont volumineuses...' },
   { after: 300_000, text: 'Presque prêt...' },
 ];
 
