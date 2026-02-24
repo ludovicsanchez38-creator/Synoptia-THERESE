@@ -2553,3 +2553,52 @@ class TestBUGNEW_FilesExtractText:
         assert "if content is None" in content, (
             "extract_text() peut retourner None (formats non supportés) — guard obligatoire"
         )
+
+
+# ============================================================
+# Asyncio get_event_loop() déprécié (Python 3.13)
+# Aucun fichier backend ne doit utiliser get_event_loop()
+# car déprécié depuis Python 3.10 et supprimé en 3.14.
+# Utiliser get_running_loop() à la place.
+# PR #19 : corrigé dans imap_smtp_provider.py (11 occurrences)
+# Ce fix : corrigé dans caldav_provider.py (9 occurrences)
+# ============================================================
+
+
+class TestAsyncioGetRunningLoop:
+    """Aucun fichier backend ne doit utiliser asyncio.get_event_loop()."""
+
+    BACKEND_APP_DIR = Path(__file__).resolve().parent.parent / "src" / "backend" / "app"
+
+    def _scan_backend_for_get_event_loop(self) -> list[str]:
+        """Parcourt tous les fichiers .py du backend et retourne ceux qui utilisent get_event_loop()."""
+        violations = []
+        for py_file in self.BACKEND_APP_DIR.rglob("*.py"):
+            content = py_file.read_text(encoding="utf-8")
+            if "get_event_loop()" in content:
+                violations.append(str(py_file.relative_to(self.BACKEND_APP_DIR)))
+        return violations
+
+    def test_no_get_event_loop_in_backend(self):
+        """Aucun fichier dans src/backend/app/ ne doit contenir get_event_loop().
+
+        get_event_loop() est déprécié en Python 3.10+ et émet un DeprecationWarning
+        en Python 3.12+. Il sera supprimé en Python 3.14.
+        Utiliser asyncio.get_running_loop() à la place.
+        """
+        violations = self._scan_backend_for_get_event_loop()
+        assert violations == [], (
+            f"get_event_loop() trouvé dans {len(violations)} fichier(s) backend : "
+            f"{', '.join(violations)}. Utiliser asyncio.get_running_loop() à la place."
+        )
+
+    def test_caldav_uses_get_running_loop(self):
+        """caldav_provider.py doit utiliser get_running_loop() (pas get_event_loop())."""
+        caldav_file = self.BACKEND_APP_DIR / "services" / "calendar" / "caldav_provider.py"
+        content = caldav_file.read_text(encoding="utf-8")
+        assert "get_running_loop()" in content, (
+            "caldav_provider.py doit utiliser asyncio.get_running_loop()"
+        )
+        assert "get_event_loop()" not in content, (
+            "caldav_provider.py ne doit plus contenir get_event_loop() (déprécié Python 3.13)"
+        )
