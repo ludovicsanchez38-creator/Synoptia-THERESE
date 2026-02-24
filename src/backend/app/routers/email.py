@@ -150,6 +150,10 @@ async def ensure_valid_access_token(
             account.access_token = encrypt_value(new_tokens['access_token'])
             account.token_expiry = _utcnow() + timedelta(seconds=new_tokens['expires_in'])
             account.updated_at = _utcnow()
+            # Rotation du refresh_token (Google peut en émettre un nouveau)
+            if new_tokens.get('refresh_token'):
+                account.refresh_token = encrypt_value(new_tokens['refresh_token'])
+                logger.info(f"Refresh token renouvelé pour {account.email}")
             session.add(account)
             await session.commit()
 

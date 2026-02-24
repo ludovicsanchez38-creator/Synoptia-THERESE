@@ -420,14 +420,14 @@ async def send_message(
         session.add(conversation)
         await session.flush()
 
-    # Load conversation history for context
+    # Load conversation history for context (BUG-031 : DESC + reversed = 50 DERNIERS messages)
     history_result = await session.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at)
+        .order_by(Message.created_at.desc())
         .limit(50)  # Limit history to last 50 messages
     )
-    history_messages = history_result.scalars().all()
+    history_messages = list(reversed(history_result.scalars().all()))
     history = [
         LLMMessage(role=msg.role, content=msg.content)
         for msg in history_messages
