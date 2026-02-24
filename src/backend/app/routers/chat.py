@@ -424,7 +424,7 @@ async def send_message(
     history_result = await session.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at.desc())
+        .order_by(Message.created_at.desc(), Message.id.desc())
         .limit(50)  # Limit history to last 50 messages
     )
     history_messages = list(reversed(history_result.scalars().all()))

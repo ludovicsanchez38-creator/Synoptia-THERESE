@@ -2553,3 +2553,40 @@ class TestBUGNEW_FilesExtractText:
         assert "if content is None" in content, (
             "extract_text() peut retourner None (formats non supportés) — guard obligatoire"
         )
+
+
+# ============================================================
+# BUG-031 bis - Tri déterministe historique chat
+# Si deux messages ont le même created_at (ex: user et assistant
+# créés dans la même milliseconde), l'ordre est non déterministe
+# en SQLite. Il faut une clé de tri secondaire (Message.id).
+# ============================================================
+
+
+class TestBUG031_TriDeterministeChat:
+    """Le chargement de l'historique chat doit trier par (created_at, id) pour être déterministe."""
+
+    CHAT_PY = SRC / "app" / "routers" / "chat.py"
+
+    def test_order_by_has_two_keys(self):
+        """Le order_by du chargement d'historique doit utiliser created_at ET id."""
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "Message.created_at.desc(), Message.id.desc()" in content, (
+            "Le tri de l'historique chat doit utiliser deux clés : "
+            "Message.created_at.desc() ET Message.id.desc() pour éviter "
+            "un ordre non déterministe quand deux messages ont le même timestamp"
+        )
+
+    def test_order_by_not_single_key(self):
+        """Vérifie qu'on n'a pas un order_by avec created_at seul (sans id)."""
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        # On cherche le pattern "order_by(Message.created_at.desc())" suivi de ".limit"
+        # sans Message.id en clé secondaire - ce pattern ne doit PAS exister
+        import re
+        # Cherche order_by avec seulement created_at.desc() et rien d'autre avant la parenthèse fermante
+        pattern = r"\.order_by\(Message\.created_at\.desc\(\)\)\s*\n\s*\.limit"
+        match = re.search(pattern, content)
+        assert match is None, (
+            "Il reste un order_by(Message.created_at.desc()) sans clé secondaire Message.id.desc(). "
+            "Cela cause un tri non déterministe en SQLite quand deux messages ont le même timestamp."
+        )
