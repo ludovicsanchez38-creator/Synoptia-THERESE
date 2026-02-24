@@ -237,13 +237,15 @@ async def get_file_content(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File no longer exists on disk")
 
-    # TODO: Implement proper file parsing based on extension
-    # For now, just read text files
+    # Utiliser extract_text() (déjà importé) pour supporter PDF, DOCX, XLSX, etc.
     try:
-        if file_meta.extension in [".txt", ".md", ".py", ".js", ".ts", ".json"]:
-            content = file_path.read_text(encoding="utf-8")
-        else:
-            content = f"[Content extraction not yet implemented for {file_meta.extension} files]"
+        content = extract_text(file_path)
+        # extract_text() retourne None pour les formats non supportés ou fichiers vides
+        if content is None:
+            content = ""
+    except ValueError as e:
+        # ex : fichier > 50 Mo → HTTP 413
+        raise HTTPException(status_code=413, detail=str(e))
     except Exception as e:
         logger.error(f"Error reading file {file_path}: {e}")
         raise HTTPException(status_code=500, detail="Error reading file content")

@@ -2390,3 +2390,166 @@ class TestBatchV0211_LinuxCategory:
         assert "indexOf('WIN')" in splash, (
             "SplashScreen doit adapter le message 'Windows analyse les fichiers' selon la plateforme"
         )
+
+
+# ─── Batch v0.2.12 ─────────────────────────────────────────────────────────
+
+class TestBUG031_ContextMessageOrder:
+    """chat.py doit charger les 50 DERNIERS messages (DESC) remis en ordre chrono."""
+
+    CHAT_PY = Path("src/backend/app/routers/chat.py")
+
+    def test_desc_order_on_history_load(self):
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "order_by(Message.created_at.desc())" in content, (
+            "La requête d'historique doit utiliser .desc() pour récupérer les 50 derniers messages"
+        )
+
+    def test_list_reversed_applied(self):
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "list(reversed(history_result.scalars().all()))" in content, (
+            "Les messages DESC doivent être remis en ordre chrono via list(reversed(...))"
+        )
+
+
+class TestBUGNEW_PutToPatchCRM:
+    """updateContact et updateProject doivent utiliser PATCH (le backend expose PATCH, pas PUT)."""
+
+    MEMORY_TS = Path("src/frontend/src/services/api/memory.ts")
+
+    def test_update_contact_uses_patch(self):
+        content = self.MEMORY_TS.read_text(encoding="utf-8")
+        # Vérifier qu'il n'y a plus de PUT dans updateContact
+        lines = content.split('\n')
+        in_update_contact = False
+        for line in lines:
+            if 'updateContact' in line and 'async function' in line:
+                in_update_contact = True
+            if in_update_contact and "method: 'PUT'" in line:
+                raise AssertionError(
+                    "updateContact utilise encore PUT au lieu de PATCH"
+                )
+            if in_update_contact and "method: 'PATCH'" in line:
+                break  # OK, trouvé le PATCH attendu
+        assert "method: 'PATCH'" in content, "updateContact doit utiliser PATCH"
+
+    def test_update_project_uses_patch(self):
+        content = self.MEMORY_TS.read_text(encoding="utf-8")
+        assert content.count("method: 'PATCH'") >= 2, (
+            "updateContact ET updateProject doivent tous les deux utiliser PATCH"
+        )
+
+    def test_no_put_for_update_functions(self):
+        content = self.MEMORY_TS.read_text(encoding="utf-8")
+        # Compter les PUT restants dans le fichier (certains peuvent être légitimes)
+        put_count = content.count("method: 'PUT'")
+        assert put_count == 0, (
+            f"Il ne doit plus y avoir de method: 'PUT' dans memory.ts, trouvé {put_count}"
+        )
+
+
+class TestBUG048_OllamaNumPredict:
+    """Ollama stream() doit transmettre num_predict et num_ctx."""
+
+    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+
+    def test_options_block_present(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert '"options"' in content or "'options'" in content, (
+            "La requête Ollama doit inclure un bloc 'options' avec num_predict et num_ctx"
+        )
+
+    def test_num_predict_transmitted(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "num_predict" in content, (
+            "La requête Ollama doit transmettre num_predict pour éviter la troncature"
+        )
+
+    def test_num_ctx_transmitted(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "num_ctx" in content, (
+            "La requête Ollama doit transmettre num_ctx pour les prompts longs des skills"
+        )
+
+
+class TestBUGNEW_AsyncioPython313:
+    """imap_smtp_provider.py ne doit plus utiliser asyncio.get_event_loop() (deprecated Python 3.13)."""
+
+    IMAP_SMTP_PY = Path("src/backend/app/services/email/imap_smtp_provider.py")
+
+    def test_no_get_event_loop(self):
+        content = self.IMAP_SMTP_PY.read_text(encoding="utf-8")
+        assert "get_event_loop()" not in content, (
+            "asyncio.get_event_loop() est déprécié en Python 3.13, "
+            "utiliser get_running_loop() à la place"
+        )
+
+    def test_get_running_loop_used(self):
+        content = self.IMAP_SMTP_PY.read_text(encoding="utf-8")
+        assert "get_running_loop()" in content, (
+            "imap_smtp_provider.py doit utiliser asyncio.get_running_loop()"
+        )
+
+
+class TestBUGNEW_GoogleRefreshTokenRotation:
+    """ensure_valid_access_token doit sauvegarder le nouveau refresh_token si Google en retourne un."""
+
+    EMAIL_PY = Path("src/backend/app/routers/email.py")
+
+    def test_refresh_token_rotation_handled(self):
+        content = self.EMAIL_PY.read_text(encoding="utf-8")
+        assert "new_tokens.get('refresh_token')" in content, (
+            "ensure_valid_access_token doit vérifier si Google retourne un nouveau refresh_token"
+        )
+
+    def test_refresh_token_encrypted_and_saved(self):
+        content = self.EMAIL_PY.read_text(encoding="utf-8")
+        assert "account.refresh_token = encrypt_value(new_tokens['refresh_token'])" in content, (
+            "Le nouveau refresh_token doit être chiffré et sauvegardé sur le compte"
+        )
+
+
+class TestBUG032_ExcelFileFilter:
+    """Le dialog Tauri doit inclure xlsx, xls, ods, pptx, ppt dans le filtre Documents."""
+
+    CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
+
+    def test_xlsx_in_filter(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "'xlsx'" in content, "Le filtre Documents doit inclure 'xlsx'"
+
+    def test_xls_in_filter(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "'xls'" in content, "Le filtre Documents doit inclure 'xls'"
+
+    def test_pptx_in_filter(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "'pptx'" in content, "Le filtre Documents doit inclure 'pptx'"
+
+    def test_ods_in_filter(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "'ods'" in content, "Le filtre Documents doit inclure 'ods'"
+
+
+class TestBUGNEW_FilesExtractText:
+    """GET /files/{id}/content doit utiliser extract_text() (plus le placeholder TODO)."""
+
+    FILES_PY = Path("src/backend/app/routers/files.py")
+
+    def test_todo_removed(self):
+        content = self.FILES_PY.read_text(encoding="utf-8")
+        assert "TODO: Implement proper file parsing" not in content, (
+            "Le TODO hardcodé doit être remplacé par un appel à extract_text()"
+        )
+
+    def test_extract_text_called(self):
+        content = self.FILES_PY.read_text(encoding="utf-8")
+        assert "content = extract_text(file_path)" in content, (
+            "get_file_content doit appeler extract_text(file_path)"
+        )
+
+    def test_none_guard_present(self):
+        content = self.FILES_PY.read_text(encoding="utf-8")
+        assert "if content is None" in content, (
+            "extract_text() peut retourner None (formats non supportés) — guard obligatoire"
+        )

@@ -93,7 +93,7 @@ export async function updateContact(
   data: Partial<Contact>
 ): Promise<Contact> {
   return request<Contact>(`/api/memory/contacts/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
@@ -165,7 +165,7 @@ export async function updateProject(
   data: Partial<Project>
 ): Promise<Project> {
   return request<Project>(`/api/memory/projects/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     body: JSON.stringify(data),
   });
 }

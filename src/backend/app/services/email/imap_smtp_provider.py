@@ -130,7 +130,7 @@ class ImapSmtpProvider(EmailProvider):
 
                 return result, next_token
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         messages, next_token = await loop.run_in_executor(None, _sync_fetch)
 
         return messages, next_token
@@ -152,7 +152,7 @@ class ImapSmtpProvider(EmailProvider):
                     return self._imap_to_dto(msg, include_attachments=include_attachments)
                 raise ValueError(f"Message {message_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_fetch)
 
     async def send_message(self, request: SendEmailRequest) -> str:
@@ -235,7 +235,7 @@ class ImapSmtpProvider(EmailProvider):
 
             return f"draft_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_create)
 
     async def modify_message(
@@ -268,7 +268,7 @@ class ImapSmtpProvider(EmailProvider):
 
                 raise ValueError(f"Message {message_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_modify)
 
     async def delete_message(self, message_id: str, permanent: bool = False) -> None:
@@ -289,7 +289,7 @@ class ImapSmtpProvider(EmailProvider):
                             break
                     mailbox.move([message_id], trash_folder)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _sync_delete)
 
     async def move_message(self, message_id: str, destination_folder: str) -> EmailMessageDTO:
@@ -308,7 +308,7 @@ class ImapSmtpProvider(EmailProvider):
 
                 raise ValueError(f"Message {message_id} not found after move")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_move)
 
     # ============================================================
@@ -350,7 +350,7 @@ class ImapSmtpProvider(EmailProvider):
 
             return folders
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_list)
 
     async def create_folder(self, name: str, parent: str | None = None) -> EmailFolderDTO:
@@ -370,7 +370,7 @@ class ImapSmtpProvider(EmailProvider):
                     path=folder_name,
                 )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_create)
 
     async def delete_folder(self, folder_id: str) -> None:
@@ -382,7 +382,7 @@ class ImapSmtpProvider(EmailProvider):
             ) as mailbox:
                 mailbox.folder.delete(folder_id)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _sync_delete)
 
     # ============================================================
@@ -412,7 +412,7 @@ class ImapSmtpProvider(EmailProvider):
                             )
                 raise ValueError(f"Attachment {attachment_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_fetch)
 
     # ============================================================
@@ -441,7 +441,7 @@ class ImapSmtpProvider(EmailProvider):
                 logger.error(f"IMAP connection test failed: {e}")
                 return False
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_test)
 
     # ============================================================

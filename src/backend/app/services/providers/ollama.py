@@ -46,6 +46,15 @@ class OllamaProvider(BaseProvider):
                 m for m in messages if m.get("role") != "system"
             )
 
+            # BUG-048 : transmettre num_predict + num_ctx pour les skills Office
+            # (certains modèles Ollama ont des défauts trop petits : 128 tokens)
+            ollama_options: dict = {
+                "num_predict": self.config.max_tokens,
+                # Cap à 32768 pour éviter l'OOM sur les petites machines
+                # Ollama respecte le context_window réel du modèle si inférieur
+                "num_ctx": min(max(self.config.context_window, 8192), 32768),
+            }
+
             async with self.client.stream(
                 "POST",
                 f"{base_url}/api/chat",
@@ -53,6 +62,7 @@ class OllamaProvider(BaseProvider):
                     "model": model,
                     "messages": chat_messages,
                     "stream": True,
+                    "options": ollama_options,
                 },
                 timeout=120.0,
             ) as response:
