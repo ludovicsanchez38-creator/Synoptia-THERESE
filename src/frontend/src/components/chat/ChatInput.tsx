@@ -129,7 +129,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         filters: [
           {
             name: 'Documents',
-            extensions: ['txt', 'md', 'pdf', 'doc', 'docx', 'xlsx', 'xls', 'ods', 'pptx', 'ppt', 'odt', 'json', 'csv'],
+            extensions: ['txt', 'md', 'pdf', 'docx', 'xlsx', 'json', 'csv'],
           },
           {
             name: 'Code',

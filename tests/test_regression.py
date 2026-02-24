@@ -2510,25 +2510,69 @@ class TestBUGNEW_GoogleRefreshTokenRotation:
 
 
 class TestBUG032_ExcelFileFilter:
-    """Le dialog Tauri doit inclure xlsx, xls, ods, pptx, ppt dans le filtre Documents."""
+    """Le filtre Documents du dialog Tauri doit etre aligné sur extract_text() (audit v0.2.12)."""
 
     CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
+    FILE_PARSER_PY = Path("src/backend/app/services/file_parser.py")
 
     def test_xlsx_in_filter(self):
         content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
         assert "'xlsx'" in content, "Le filtre Documents doit inclure 'xlsx'"
 
-    def test_xls_in_filter(self):
+    def test_dead_extensions_removed(self):
+        """Les extensions non supportées par extract_text() ne doivent PAS etre dans le filtre."""
         content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "'xls'" in content, "Le filtre Documents doit inclure 'xls'"
+        dead_extensions = ["'xls'", "'ods'", "'pptx'", "'ppt'", "'odt'"]
+        for ext in dead_extensions:
+            assert ext not in content, (
+                f"Le filtre Documents contient {ext} mais extract_text() ne le supporte pas"
+            )
 
-    def test_pptx_in_filter(self):
+    def test_doc_removed(self):
+        """python-docx ne lit PAS le format binaire .doc - retiré du filtre."""
+        import re
         content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "'pptx'" in content, "Le filtre Documents doit inclure 'pptx'"
+        matches = re.findall(r"'doc'", content)
+        assert len(matches) == 0, (
+            "Le filtre contient 'doc' mais python-docx ne lit pas le format binaire .doc"
+        )
 
-    def test_ods_in_filter(self):
-        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "'ods'" in content, "Le filtre Documents doit inclure 'ods'"
+    def test_filter_only_supported_extensions(self):
+        """Le filtre Documents ne doit contenir QUE des extensions supportées par extract_text()."""
+        import re
+
+        tsx_content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        doc_filter_match = re.search(
+            r"name:\s*'Documents'.*?extensions:\s*\[([^\]]+)\]",
+            tsx_content,
+            re.DOTALL,
+        )
+        assert doc_filter_match, "Filtre Documents introuvable dans ChatInput.tsx"
+        filter_exts = set(re.findall(r"'(\w+)'", doc_filter_match.group(1)))
+
+        parser_content = self.FILE_PARSER_PY.read_text(encoding="utf-8")
+        tree = ast.parse(parser_content)
+        supported_exts: set[str] = set()
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id in (
+                        "TEXT_EXTENSIONS", "CODE_EXTENSIONS", "CSV_EXTENSIONS",
+                    ):
+                        if isinstance(node.value, ast.Set):
+                            for elt in node.value.elts:
+                                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                    supported_exts.add(elt.value.lstrip("."))
+
+        # Extensions traitées dans les branches if de extract_text()
+        # .pdf, .docx, .xlsx (pas .doc car python-docx ne supporte pas le format binaire)
+        supported_exts.update({"pdf", "docx", "xlsx"})
+
+        unsupported = filter_exts - supported_exts
+        assert not unsupported, (
+            f"Le filtre Documents contient des extensions non supportées par extract_text() : {unsupported}"
+        )
 
 
 class TestBUGNEW_FilesExtractText:
