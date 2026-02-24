@@ -104,7 +104,7 @@ class CalDAVProvider(CalendarProvider):
             calendars = principal.calendars()
             return [self._caldav_cal_to_dto(cal) for cal in calendars]
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_list)
 
     async def get_calendar(self, calendar_id: str) -> CalendarDTO:
@@ -117,7 +117,7 @@ class CalDAVProvider(CalendarProvider):
                     return self._caldav_cal_to_dto(cal)
             raise ValueError(f"Calendar {calendar_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_get)
 
     async def create_calendar(
@@ -139,7 +139,7 @@ class CalDAVProvider(CalendarProvider):
                 logger.error(f"Failed to create CalDAV calendar: {e}")
                 raise ValueError(f"Calendar creation not supported or failed: {e}")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_create)
 
     async def update_calendar(
@@ -166,7 +166,7 @@ class CalDAVProvider(CalendarProvider):
                     return
             raise ValueError(f"Calendar {calendar_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _sync_delete)
 
     # ============================================================
@@ -223,7 +223,7 @@ class CalDAVProvider(CalendarProvider):
 
             return result, None  # CalDAV doesn't have pagination tokens
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_list)
 
     async def get_event(
@@ -259,7 +259,7 @@ class CalDAVProvider(CalendarProvider):
 
             raise ValueError(f"Event {event_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_get)
 
     async def create_event(self, request: CreateEventRequest) -> CalendarEventDTO:
@@ -329,7 +329,7 @@ class CalDAVProvider(CalendarProvider):
 
             return self._caldav_event_to_dto(event, request.calendar_id)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_create)
 
     async def update_event(
@@ -410,7 +410,7 @@ class CalDAVProvider(CalendarProvider):
 
             return self._caldav_event_to_dto(event, calendar_id)
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _sync_update)
 
     async def delete_event(
@@ -446,7 +446,7 @@ class CalDAVProvider(CalendarProvider):
 
             raise ValueError(f"Event {event_id} not found")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _sync_delete)
 
     # ============================================================

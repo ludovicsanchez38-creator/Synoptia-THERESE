@@ -2634,3 +2634,35 @@ class TestBUG031_TriDeterministeChat:
             "Il reste un order_by(Message.created_at.desc()) sans clé secondaire Message.id.desc(). "
             "Cela cause un tri non déterministe en SQLite quand deux messages ont le même timestamp."
         )
+
+
+# ============================================================
+# asyncio.get_event_loop() déprécié Python 3.13
+# Tous les fichiers backend doivent utiliser get_running_loop()
+# ============================================================
+
+
+class TestAsyncioGetRunningLoop:
+    """Aucun fichier backend ne doit utiliser asyncio.get_event_loop() (déprécié Python 3.13)."""
+
+    BACKEND_DIR = Path("src/backend/app")
+
+    def test_no_get_event_loop_in_backend(self):
+        """Scanne tout src/backend/app/ pour get_event_loop()."""
+        violations = []
+        for py_file in self.BACKEND_DIR.rglob("*.py"):
+            content = py_file.read_text(encoding="utf-8")
+            if "get_event_loop()" in content:
+                violations.append(str(py_file))
+        assert violations == [], (
+            f"asyncio.get_event_loop() trouvé dans : {violations}. "
+            "Utiliser asyncio.get_running_loop() à la place (Python 3.13)."
+        )
+
+    def test_caldav_uses_get_running_loop(self):
+        """caldav_provider.py doit utiliser get_running_loop()."""
+        caldav = Path("src/backend/app/services/calendar/caldav_provider.py")
+        content = caldav.read_text(encoding="utf-8")
+        assert "get_running_loop()" in content, (
+            "caldav_provider.py doit utiliser asyncio.get_running_loop()"
+        )
