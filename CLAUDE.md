@@ -19,7 +19,7 @@ Créateur : Ludo Sanchez (Synoptïa) - "Ta mémoire, tes données, ton business.
 - **Frontend** : Tauri 2.0 + React 19 + TailwindCSS 4 + Framer Motion + Zustand 5
 - **Backend** : Python FastAPI + UV + SQLModel + Alembic (migrations)
 - **Database** : SQLite (données) + Qdrant (embeddings vectoriels, nomic-embed-text-v1.5, 768 dim)
-- **LLM** : Multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, OpenRouter, Ollama)
+- **LLM** : Multi-provider (Anthropic, OpenAI, Gemini, Mistral, Grok, OpenRouter, Ollama) + Brave Search (web)
 - **Skills Office** : python-docx, python-pptx, openpyxl (sandbox code-execution)
 - **Desktop** : Tauri 2.0 (Rust) avec sidecar PyInstaller
 - **Sécurité** : Fernet/Keychain, anti-injection prompt, rate limiting, CORS restrictif
@@ -66,16 +66,16 @@ cd src/frontend && npm run tauri dev
 ```
 src/backend/app/
   main.py              # FastAPI app avec lifespan
-  models/              # entities.py (SQLModel), schemas.py (Pydantic), board.py
-  routers/             # chat, memory, config, skills, images, board, mcp, files, data, crm, email, calendar...
-  services/            # llm.py (orchestrateur), providers/ (7 LLM), skills/ (code_executor, generators)
-                       # qdrant.py, embeddings.py, mcp_service.py, encryption.py, prompt_security.py...
+  models/              # entities.py (SQLModel), schemas.py (Pydantic), board.py, schemas_commands.py
+  routers/             # chat, memory, config, skills, images, board, mcp, files, data, crm, email, calendar, tools, commands_v3...
+  services/            # llm.py (orchestrateur), providers/ (7 LLM), skills/ (code_executor, generators, installed_tool, tool_installer)
+                       # qdrant.py, embeddings.py, mcp_service.py, encryption.py, prompt_security.py, web_search.py, commands_v3.py...
 
 src/frontend/src/
   App.tsx              # Entry point (onboarding check, panel routing)
   components/          # chat/, guided/, board/, memory/, settings/, onboarding/, sidebar/, panels/, ui/
-  services/api/        # 14 modules (chat, memory, config, mcp, skills, images, board, etc.)
-  stores/              # Zustand (chatStore, emailStore, calendarStore, etc.)
+  services/api/        # 15 modules (chat, memory, config, mcp, skills, images, board, tools, etc.)
+  stores/              # Zustand (chatStore, emailStore, calendarStore, toolsStore, etc.)
   hooks/               # useKeyboardShortcuts, useVoiceRecorder, etc.
 
 src/frontend/src-tauri/ # Configuration Tauri 2.0 (Rust)
@@ -92,7 +92,8 @@ src/frontend/src-tauri/ # Configuration Tauri 2.0 (Rust)
 
 ## Données utilisateur
 
-- **Répertoire** : `~/.therese/` (DB, images, backups, mcp_servers.json)
+- **Répertoire** : `~/.therese/` (DB, images, backups, mcp_servers.json, tools/)
+- **Outils installés** : `~/.therese/tools/{tool_id}/` (manifest.json + tool.py + test_fixture.json)
 - **Sandbox tests** : `~/.therese-test-sandbox/`
 - **Clés API** : chiffrées Fernet (clé dans macOS Keychain via `keyring`)
 
@@ -119,18 +120,18 @@ palette:
 
 ---
 
-## État du projet (màj 18 fév 2026)
+## État du projet (màj 25 fév 2026)
 
 ### Chiffres clés
-- **Code** : ~62 200 lignes (31 600 frontend + 30 600 backend)
-- **Tests** : ~10 350 lignes (pytest + Vitest + Playwright E2E)
-- **Endpoints API** : 170+ (22 routers FastAPI)
+- **Code** : ~65 000 lignes (32 500 frontend + 32 500 backend)
+- **Tests** : ~11 000 lignes (pytest + Vitest + Playwright E2E)
+- **Endpoints API** : 180+ (24 routers FastAPI)
 - **Tables SQL** : 16 (SQLite) + Qdrant vectoriel
-- **Version actuelle** : v0.2.8-alpha (21 fév 2026)
-- **Tests de non-régression** : `tests/test_regression.py` (159 tests couvrant BUG-002 à BUG-041 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop + layout shift + erreurs Ollama + listbox contraste + retours à la ligne)
+- **Version actuelle** : v0.3.0-alpha (25 fév 2026)
+- **Tests de non-régression** : 444 tests (349 backend + 1 xfail + 94 frontend), couvrant BUG-002 à BUG-041 + XSS + scroll + UX + OpenRouter + Fal + Ollama + upload + skill_id + raccourci + calendrier + CRM + pricing + streaming + email + stop + layout shift + erreurs Ollama + listbox contraste + retours à la ligne
 
 ### Modules fonctionnels
-Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office (DOCX/PPTX/XLSX), Email (Gmail OAuth + IMAP/SMTP + classification IA), Calendrier (Google + CalDAV + local), CRM (pipeline, scoring, sync Google Sheets, import/export), Facturation (devis/facture/avoir, PDF conforme, TVA franchise en base), Board de décision IA (5 conseillers), Génération d'images (DALL-E 3 + Gemini), Transcription vocale (Groq Whisper), MCP (19 presets), RGPD (export, anonymisation), Calculateurs (ROI, ICE, RICE, NPV)
+Chat multi-LLM (file d'attente V3), Mémoire (contacts/projets/recherche sémantique), Skills Office (DOCX/PPTX/XLSX), Outils installés V3 (scripts pré-validés ~/.therese/tools/), Commandes V3 (système unifié + commandes utilisateur custom), Email (Gmail OAuth + IMAP/SMTP + classification IA), Calendrier (Google + CalDAV + local), CRM (pipeline, scoring, sync Google Sheets, import/export), Facturation (devis/facture/avoir, PDF conforme, TVA franchise en base), Board de décision IA (5 conseillers), Génération d'images (DALL-E 3 + Gemini), Transcription vocale (Groq Whisper), Recherche web (Brave Search), MCP (19 presets), RGPD (export, anonymisation), Calculateurs (ROI, ICE, RICE, NPV)
 
 ---
 
@@ -162,8 +163,15 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 - v0.2.4 : Skills enrichis (skill_id dans chat, system prompt injecté), sauvegarder comme raccourci (Bookmark chat → CreateCommandForm), BUG-029 email reconnexion 401, BUG-033 accent répertoire, BUG-034 micro pluginReady, image bouton Utiliser, calendrier vues Semaine+Jour, CRM suppression Projets + activités globales, 108 tests
 - v0.2.5 : BUG-028 prix EUR (stripping préfixe provider OpenRouter), BUG-035 templates DOCX/PPTX (runtime hook PyInstaller), fix streaming partiel (texte brut pendant streaming, minHeight progressive, CSS containment), 121 tests
 - v0.2.6 : BUG-025 Ollama fix définitif (role: system dans messages, rstrip trailing slash), BUG-036 XLSX/DOCX/PPTX code tronqué (_ensure_save_call avec regex + load_workbook), BUG-038 bouton Stop streaming (AbortController), BUG-039 bouton email MessageBubble (mailto:), BUG-040 DOCX page blanche (ensure save), system prompt anti-tableaux, contraste dropdown, 141 tests
+- v0.2.7 : CI réparée (5 lint Ruff + 5 tests), 7 PR Zézette mergées (F-09/F-10/F-11/BUG-026/BUG-037/BUG-041), 149 tests
+- v0.2.8 : BUG-040 Ollama erreurs lisibles FR, BUG-039 listbox contraste, BUG-038 retours à la ligne, CI timeout fix, 159 tests
+- v0.2.9 : BUG-026 bouton Utiliser email (createPortal + z-index), fix virgule tauri.conf.json
+- v0.2.10 : Audit module email (startComposing atomique, delete optimiste, confirm inline)
+- v0.2.11 : Batch fixes Ollama 500, mail streaming, SMTP, Gmail OAuth, Apple Windows, Linux
+- v0.2.12 : Batch fixes contexte chat, CRM PATCH, Ollama skills, asyncio CalDAV, tri chat, tokens
+- v0.2.13 : Ollama re-test bouton, skills timeout, Gmail 403
 
-### Matrice de traçabilité bugs (18 fév 2026)
+### Matrice de traçabilité bugs (25 fév 2026)
 
 | Bug | Description | Statut | Confirmé par |
 |-----|-------------|--------|-------------|
@@ -234,7 +242,7 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 
 ### CI GitHub Actions
 - **CI THÉRÈSE V2** : lint Ruff + pytest backend + vitest frontend. CI verte depuis v0.2.8 (fix timeout threads orphelins httpx). Les 10 warnings frontend sont des dépendances manquantes dans les hooks React.
-- **Release THÉRÈSE** : build Tauri (macOS ARM64 + Windows x64 + Linux x64). Se déclenche sur push de tag. v0.2.2-alpha build 3/3 success (15 fév).
+- **Release THÉRÈSE** : build Tauri (macOS ARM64 + Windows x64 + Linux x64). Se déclenche sur push de tag. v0.3.0-alpha build 3/3 success (25 fév).
 - **Leçon v0.1.7** : NE JAMAIS exclure de sous-modules torch dans backend.spec - torch les importe tous à l'init.
 
 ### Releases GitHub
@@ -270,6 +278,12 @@ Chat multi-LLM, Mémoire (contacts/projets/recherche sémantique), Skills Office
 | v0.2.6-alpha | 18 fév | Pre-release | BUG-036 XLSX + BUG-038 stop + BUG-039 email + BUG-040 DOCX + Ollama fix + 141 tests |
 | v0.2.7-alpha | 21 fév | Pre-release | CI réparée + 7 PR Zézette mergées (F-09/F-10/F-11/BUG-026/BUG-037/BUG-041) + 149 tests régression |
 | v0.2.8-alpha | 21 fév | Pre-release | BUG-040 Ollama erreurs lisibles + BUG-039 listbox contraste + BUG-038 retours à la ligne + CI timeout fix + 159 tests régression |
+| v0.2.9-alpha | 21 fév | Pre-release | BUG-026 bouton Utiliser email (createPortal) + fix virgule tauri.conf.json |
+| v0.2.10-alpha | 21 fév | Pre-release | Audit module email (startComposing atomique + delete optimiste + confirm inline) |
+| v0.2.11-alpha | 23 fév | Pre-release | Batch fixes Ollama 500, mail streaming, SMTP, Gmail OAuth, Apple Windows, Linux |
+| v0.2.12-alpha | 24 fév | Pre-release | Batch fixes contexte chat, CRM PATCH, Ollama skills, asyncio CalDAV, tri chat, tokens |
+| v0.2.13-alpha | 25 fév | Pre-release | Ollama re-test bouton, skills timeout, Gmail 403 |
+| **v0.3.0-alpha** | **25 fév** | **Pre-release** | **V3 : file d'attente chat, outils installés, commandes unifiées, Brave Search, Sonnet 4.6 + 444 tests** |
 
 ---
 
@@ -348,18 +362,42 @@ Laroll (Yoan), Julien, Arnolhn, Alb, Flo'Houx (Florent), Psychedelic_Mayhem (Pau
 - [x] **CI** : Remplacement "Unknown error" par message français dans chat.py
 - [x] 159 tests de non-régression (+10 : 7 Ollama, 2 listbox, 1 retours à la ligne)
 
-### TODO v0.2.9-alpha (prochaine version)
+### v0.2.9 à v0.2.13 (21-25 fév 2026) - FAIT (PRs Zézette)
+- [x] v0.2.9 : BUG-026 bouton Utiliser email (createPortal + z-index fix)
+- [x] v0.2.10 : Audit module email (startComposing atomique, delete optimiste, confirm inline)
+- [x] v0.2.11 : Batch fixes Ollama 500, mail streaming, SMTP, Gmail OAuth, Apple Windows, Linux
+- [x] v0.2.12 : Batch fixes contexte chat, CRM PATCH, Ollama skills, asyncio CalDAV, tri chat, tokens
+- [x] v0.2.13 : Ollama re-test bouton, skills timeout, Gmail 403
+
+### v0.3.0-alpha (25 fév 2026) - FAIT
+- [x] **File d'attente chat** : pendant le streaming, l'utilisateur peut taper 1 prompt supplémentaire. Bulle italique au-dessus de la barre de prompt, envoi automatique dès la fin du streaming. Bouton × pour annuler.
+  - `chatStore.ts` (queuedPrompt state), `ChatInput.tsx` (logique queue + bulle + auto-send)
+- [x] **Outils installés (backend)** : infrastructure pour installer des scripts Python pré-validés dans `~/.therese/tools/`. Boucle generate-test-fix (max 3 tentatives, escalade modèle). Les appels suivants utilisent le script directement sans LLM.
+  - Nouveaux : `installed_tool.py`, `tool_installer.py`, `routers/tools.py`
+  - Modifiés : `registry.py` (discover_installed_tools), `main.py` (router mount)
+- [x] **Commandes V3 unifiées** : refonte du système de commandes avec JSON schema unifié et commandes utilisateur custom
+  - Nouveaux : `models/schemas_commands.py`, `services/commands_v3.py`, `routers/commands_v3.py`
+- [x] **Brave Search** : intégration recherche web via Brave Search API
+  - `services/web_search.py`, config endpoint `has_brave_key`, UI Settings
+- [x] **Sonnet 4.6** : mise à jour des références claude-sonnet-4-5 → claude-sonnet-4-6
+- [x] **OpenRouter amélioré** : meilleure prise en charge des modèles
+- [x] 9 tests corrigés (6 encryption lazy init, 2 OAuth redirect_uri, 1 board xfail)
+- [x] 2 fixes lint Ruff (import sorting I001)
+- [x] Rebase réussi de 2 commits V3 sur 50+ commits remote (v0.2.7-v0.2.13), 16 conflits résolus
+- [x] 444 tests (349 backend + 1 xfail + 94 frontend) = 0 échec
+
+### TODO v0.3.1-alpha (prochaine version)
 - [ ] **BUG-037** : Saut streaming résiduel - le fix v0.2.5 (texte brut + minHeight) réduit les sauts mais ne les élimine pas complètement. **Piste** : évaluer `use-stick-to-bottom` (lib StackBlitz, ResizeObserver + spring animations) ou utiliser `scrollIntoView` avec `behavior: smooth` sur le dernier élément
 - [ ] **BUG-027** : Compteur tokens faux - le backend estime avec `len(text)//4` au lieu d'utiliser les vrais compteurs renvoyés par les API. Ajouter champ `usage` dans `StreamEvent` (base.py), récupérer `input_tokens`/`output_tokens` de chaque provider
-- [ ] **UX** : File d'attente de messages visible - quand l'IA répond, permettre d'envoyer un message suivant qui s'affiche en attente et sera traité après la réponse en cours
 - [ ] Filtrage `<think>...</think>` pour les modèles raisonnement (DeepSeek R1, Qwen QwQ, etc.) - cacher le raisonnement interne ou l'afficher dans un bloc dépliable
+- [ ] **Outils installés (frontend)** : API client `tools.ts`, store `toolsStore.ts`, UI gestion des outils dans Settings
+- [ ] **Outils Office V3** : convertir les 3 skills Office (docx-pro, pptx-pro, xlsx-pro) en outils installés
 - [ ] Paramètres commandes utilisateur (Phase 3 : `{{param}}` dans les templates)
 
 ### Backlog
 - [ ] Attendre confirmation Julien sur BUG-006 (v0.1.6)
 - [ ] Attendre confirmation WebPadawan sur BUG-009 (Windows v0.1.8)
 - [ ] Attendre confirmation Richard sur BUG-012 (Mac M4 Max)
-- [ ] Communiquer v0.2.4 sur Discord #annonces (priorité : Jérôme/Dr_logic-3D pour test Windows)
 - [ ] Envisager clé API partagée ou proxy pour testeurs non-techniques
 - [ ] Code signing Apple (99 USD/an) + Windows (70-300 EUR/an)
 - [ ] Tuto vidéo installation (3 min YouTube)
