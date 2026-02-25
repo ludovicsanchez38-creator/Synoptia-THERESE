@@ -19,6 +19,7 @@ export interface ChatRequest {
   include_memory?: boolean;
   stream?: boolean;
   skill_id?: string;
+  file_paths?: string[];
 }
 
 export interface ChatResponse {

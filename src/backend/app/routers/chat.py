@@ -445,7 +445,7 @@ async def send_message(
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
-            _stream_response(conversation.id, request.message, session, history, skill_id=request.skill_id),
+            _stream_response(conversation.id, request.message, session, history, skill_id=request.skill_id, file_paths=request.file_paths),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -470,6 +470,15 @@ async def send_message(
             file_contexts.append(file_ctx)
         elif error:
             logger.warning(f"File command error: {error}")
+
+    # BUG-044 : Traiter les fichiers joints (drag & drop)
+    if request.file_paths:
+        for fp in request.file_paths:
+            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            if file_ctx:
+                file_contexts.append(file_ctx)
+            elif error:
+                logger.warning(f"Attached file error: {error}")
 
     # Combine memory and file contexts
     if file_contexts:
@@ -517,6 +526,7 @@ async def _stream_response(
     session: AsyncSession,
     history: list[LLMMessage] | None = None,
     skill_id: str | None = None,
+    file_paths: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -524,7 +534,7 @@ async def _stream_response(
 
     try:
         async for chunk in _do_stream_response(
-            conversation_id, user_message, session, history, skill_id=skill_id
+            conversation_id, user_message, session, history, skill_id=skill_id, file_paths=file_paths
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -541,6 +551,7 @@ async def _do_stream_response(
     session: AsyncSession,
     history: list[LLMMessage] | None = None,
     skill_id: str | None = None,
+    file_paths: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Sprint 2 - PERF-2.11: Check for prompt injection
@@ -586,9 +597,19 @@ async def _do_stream_response(
             file_errors.append(error)
             logger.warning(f"File command error: {error}")
 
-    # Send file processing status if we had file commands
-    if file_commands:
-        status_msg = f"Traitement de {len(file_commands)} fichier(s)..."
+    # BUG-044 : Traiter les fichiers joints (drag & drop) via file_paths
+    if file_paths:
+        for fp in file_paths:
+            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            if file_ctx:
+                file_contexts.append(file_ctx)
+            elif error:
+                file_errors.append(error)
+                logger.warning(f"Attached file error: {error}")
+
+    # Send file processing status if we had file commands or attached files
+    if file_commands or file_paths:
+        status_msg = f"Traitement de {len(file_commands) + len(file_paths or [])} fichier(s)..."
         if file_contexts:
             status_msg += f" {len(file_contexts)} charge(s)."
         if file_errors:

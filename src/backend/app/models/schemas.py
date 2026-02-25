@@ -29,6 +29,7 @@ class ChatRequest(BaseModel):
     include_memory: bool = True
     stream: bool = True
     skill_id: str | None = None
+    file_paths: list[str] | None = None
 
 
 class ChatResponse(BaseModel):

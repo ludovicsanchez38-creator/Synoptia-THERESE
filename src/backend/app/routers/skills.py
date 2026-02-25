@@ -150,7 +150,8 @@ async def execute_skill(
 """
 
         # 5. Appeler le LLM (max_tokens augmenté pour les skills FILE qui génèrent du code)
-        llm_max_tokens = 8192 if skill.output_type == SkillOutputType.FILE else None
+        # 16384 tokens pour éviter la troncature sur les documents longs (BUG-042)
+        llm_max_tokens = 16384 if skill.output_type == SkillOutputType.FILE else None
         llm_content = await llm_service.generate_content(
             prompt=enriched_prompt,
             context=request.context,
@@ -166,6 +167,37 @@ async def execute_skill(
         )
 
         result = await registry.execute(skill_id, skill_request, llm_content)
+
+        # BUG-043 : Vérifier que le document généré contient assez de contenu.
+        # Si quasi vide (code-execution minimal + fallback vide), retry en Markdown.
+        if (
+            skill.output_type == SkillOutputType.FILE
+            and result.file_path
+            and result.file_path.exists()
+        ):
+            from app.services.skills.code_executor import _validate_document_content
+            if not _validate_document_content(
+                str(result.file_path), skill.output_format.value
+            ):
+                logger.warning(
+                    f"Skill {skill_id} : document quasi vide, retry Markdown"
+                )
+                markdown_addition = skill.get_markdown_prompt_addition()
+                retry_prompt = f"""
+{request.prompt}
+
+## Contexte utilisateur
+{enrichment_text}
+
+{markdown_addition}
+IMPORTANT : Écris directement le contenu textuel complet et détaillé. NE génère PAS de code Python.
+"""
+                retry_content = await llm_service.generate_content(
+                    prompt=retry_prompt,
+                    context=request.context,
+                    max_tokens=llm_max_tokens,
+                )
+                result = await registry.execute(skill_id, skill_request, retry_content)
 
         return result
 

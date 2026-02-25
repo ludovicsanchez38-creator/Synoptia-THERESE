@@ -2755,3 +2755,85 @@ class TestBUGGmail403_AccessDenied:
         assert "403" in content, (
             "VerifyStep doit avoir un bloc d'aide visible pour l'erreur 403"
         )
+
+
+# ─── BUG-042/043/044 : Skills documents + fichiers joints ────────────────────
+
+
+class TestBUG042_SkillsMaxTokens:
+    """max_tokens doit être >= 16384 pour les skills FILE (anti-troncature)."""
+
+    SKILLS_PY = Path("src/backend/app/routers/skills.py")
+
+    def test_max_tokens_at_least_16384(self):
+        content = self.SKILLS_PY.read_text(encoding="utf-8")
+        import re
+        match = re.search(r"llm_max_tokens\s*=\s*(\d+)", content)
+        assert match, "llm_max_tokens doit être défini dans skills.py"
+        value = int(match.group(1))
+        assert value >= 16384, (
+            f"llm_max_tokens={value} est trop bas, minimum 16384 pour éviter la troncature"
+        )
+
+
+class TestBUG043_DocumentContentValidation:
+    """code_executor doit valider le contenu des documents générés."""
+
+    CODE_EXEC = Path("src/backend/app/services/skills/code_executor.py")
+
+    def test_validate_document_content_exists(self):
+        content = self.CODE_EXEC.read_text(encoding="utf-8")
+        assert "_validate_document_content" in content, (
+            "code_executor.py doit avoir une fonction _validate_document_content"
+        )
+
+    def test_validation_called_after_code_execution(self):
+        content = self.CODE_EXEC.read_text(encoding="utf-8")
+        assert "_validate_document_content" in content and "fallback vers parser legacy" in content, (
+            "La validation de contenu doit être appelée après code-execution, avec fallback"
+        )
+
+    def test_min_content_elements_defined(self):
+        content = self.CODE_EXEC.read_text(encoding="utf-8")
+        assert "MIN_CONTENT_ELEMENTS" in content, (
+            "MIN_CONTENT_ELEMENTS doit définir les seuils par format (docx, pptx, xlsx)"
+        )
+
+    def test_retry_markdown_in_router(self):
+        skills_py = Path("src/backend/app/routers/skills.py").read_text(encoding="utf-8")
+        assert "retry" in skills_py.lower() and "markdown" in skills_py.lower(), (
+            "skills.py doit retenter en Markdown si le document est quasi vide"
+        )
+
+
+class TestBUG044_FilePathsInChat:
+    """Les fichiers joints doivent être envoyés au backend pour injection dans le contexte LLM."""
+
+    SCHEMAS_PY = Path("src/backend/app/models/schemas.py")
+    CHAT_PY = Path("src/backend/app/routers/chat.py")
+    CHAT_TS = Path("src/frontend/src/services/api/chat.ts")
+    CHAT_INPUT = Path("src/frontend/src/components/chat/ChatInput.tsx")
+
+    def test_chat_request_has_file_paths_field(self):
+        content = self.SCHEMAS_PY.read_text(encoding="utf-8")
+        assert "file_paths" in content, (
+            "ChatRequest doit avoir un champ file_paths pour les fichiers joints"
+        )
+
+    def test_frontend_sends_file_paths(self):
+        content = self.CHAT_INPUT.read_text(encoding="utf-8")
+        assert "file_paths" in content, (
+            "ChatInput.tsx doit envoyer file_paths dans la requête streamMessage"
+        )
+
+    def test_backend_processes_file_paths(self):
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "file_paths" in content and "_get_file_context" in content, (
+            "chat.py doit traiter les file_paths via _get_file_context"
+        )
+
+    def test_frontend_chat_request_type_has_file_paths(self):
+        content = self.CHAT_TS.read_text(encoding="utf-8")
+        assert "file_paths" in content, (
+            "ChatRequest interface dans chat.ts doit avoir file_paths"
+        )

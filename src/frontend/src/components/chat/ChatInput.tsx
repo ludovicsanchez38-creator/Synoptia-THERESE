@@ -235,6 +235,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     setShowSlashMenu(false);
 
     // Build message content with file attachments
+    // BUG-044 : capturer les paths AVANT le clear pour les envoyer au backend
+    const filePaths = attachedFiles.length > 0
+      ? attachedFiles.map((f) => f.path)
+      : undefined;
     let messageContent = trimmed;
     if (attachedFiles.length > 0) {
       const filesList = attachedFiles.map((f) => f.name).join(', ');
@@ -298,6 +302,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         include_memory: true,
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
+        ...(filePaths && { file_paths: filePaths }),
       }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);

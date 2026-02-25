@@ -166,6 +166,66 @@ class CodeExecutionError(Exception):
     pass
 
 
+# Seuils minimum de contenu pour valider un document généré par code-execution.
+MIN_CONTENT_ELEMENTS = {
+    "docx": 3,   # au moins 3 paragraphes non vides (hors titre)
+    "pptx": 2,   # au moins 2 slides
+    "xlsx": 2,   # au moins 2 lignes de données (hors header)
+}
+
+
+def _validate_document_content(output_path: str, format_type: str) -> bool:
+    """
+    Vérifie qu'un document généré contient assez de contenu.
+
+    Retourne True si le document est suffisamment riche, False sinon.
+    """
+    min_elements = MIN_CONTENT_ELEMENTS.get(format_type, 2)
+    path = Path(output_path)
+
+    try:
+        if format_type == "docx":
+            from docx import Document
+            doc = Document(str(path))
+            non_empty = sum(1 for p in doc.paragraphs if p.text.strip())
+            logger.debug(
+                "Validation DOCX : %d paragraphes non vides (min=%d)",
+                non_empty, min_elements,
+            )
+            return non_empty >= min_elements
+
+        elif format_type == "pptx":
+            from pptx import Presentation
+            prs = Presentation(str(path))
+            slide_count = len(prs.slides)
+            logger.debug(
+                "Validation PPTX : %d slides (min=%d)",
+                slide_count, min_elements,
+            )
+            return slide_count >= min_elements
+
+        elif format_type == "xlsx":
+            from openpyxl import load_workbook
+            wb = load_workbook(str(path), read_only=True)
+            ws = wb.active
+            if ws is None:
+                return False
+            row_count = sum(
+                1 for row in ws.iter_rows(max_row=100) if any(c.value for c in row)
+            )
+            wb.close()
+            logger.debug(
+                "Validation XLSX : %d lignes avec données (min=%d)",
+                row_count, min_elements,
+            )
+            return row_count >= min_elements
+
+    except Exception as e:
+        logger.warning("Erreur validation contenu %s : %s", format_type, e)
+
+    return True  # En cas d'erreur de lecture, on accepte le fichier
+
+
 def extract_python_code(llm_response: str) -> str | None:
     """
     Extrait le code Python d'un bloc ```python``` dans la réponse LLM.
@@ -689,21 +749,30 @@ class CodeGenSkill(BaseSkill):
                     format_type=self.output_format.value,
                 )
 
-                # Vérifier que le fichier a été créé
+                # Vérifier que le fichier a été créé et contient du contenu
                 if output_path.exists() and output_path.stat().st_size > 0:
-                    file_size = output_path.stat().st_size
-                    logger.info(
-                        f"[{self.skill_id}] Code-execution réussi : "
-                        f"{output_path} ({file_size} bytes)"
-                    )
-                    return SkillResult(
-                        file_id=file_id,
-                        file_path=output_path,
-                        file_name=output_path.name,
-                        file_size=file_size,
-                        mime_type=self.get_mime_type(),
-                        format=self.output_format,
-                    )
+                    # BUG-043 : valider que le document n'est pas quasi vide
+                    if not _validate_document_content(
+                        str(output_path), self.output_format.value
+                    ):
+                        logger.warning(
+                            f"[{self.skill_id}] Code exécuté mais document quasi vide "
+                            f"(contenu insuffisant), fallback vers parser legacy"
+                        )
+                    else:
+                        file_size = output_path.stat().st_size
+                        logger.info(
+                            f"[{self.skill_id}] Code-execution réussi : "
+                            f"{output_path} ({file_size} bytes)"
+                        )
+                        return SkillResult(
+                            file_id=file_id,
+                            file_path=output_path,
+                            file_name=output_path.name,
+                            file_size=file_size,
+                            mime_type=self.get_mime_type(),
+                            format=self.output_format,
+                        )
                 else:
                     logger.warning(
                         f"[{self.skill_id}] Code exécuté mais fichier vide ou inexistant, "
