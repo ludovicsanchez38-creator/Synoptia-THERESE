@@ -43,6 +43,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // Ollama
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [retestingOllama, setRetestingOllama] = useState(false);
 
   // Groq (transcription vocale)
   const [hasGroqKey, setHasGroqKey] = useState(false);
@@ -162,6 +163,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       console.error('Échec du chargement des paramètres:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // BUG-049 : re-tester la disponibilité Ollama sans recharger tous les paramètres
+  async function retestOllama() {
+    setRetestingOllama(true);
+    try {
+      const statusData = await api.getOllamaStatus();
+      if (statusData) {
+        setOllamaStatus(statusData);
+        if (statusData.available && statusData.models.length > 0) {
+          setOllamaModels(statusData.models.map((m: { name: string }) => m.name));
+        }
+      }
+    } catch {
+      // laisser l'état précédent si erreur réseau
+    } finally {
+      setRetestingOllama(false);
     }
   }
 
@@ -592,6 +611,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   imageKeySaving={imageKeySaving}
                   imageKeySaved={imageKeySaved}
                   onSaveImageKey={handleSaveImageKey}
+                  onRetestOllama={retestOllama}
+                  retestingOllama={retestingOllama}
                 />
               ) : activeTab === 'accessibility' ? (
                 <AccessibilityTab />

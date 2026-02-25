@@ -2401,7 +2401,8 @@ class TestBUG031_ContextMessageOrder:
 
     def test_desc_order_on_history_load(self):
         content = self.CHAT_PY.read_text(encoding="utf-8")
-        assert "order_by(Message.created_at.desc())" in content, (
+        # Ludo a ajouté Message.id.desc() pour tri déterministe (PR #21)
+        assert "Message.created_at.desc()" in content, (
             "La requête d'historique doit utiliser .desc() pour récupérer les 50 derniers messages"
         )
 
@@ -2665,4 +2666,92 @@ class TestAsyncioGetRunningLoop:
         content = caldav.read_text(encoding="utf-8")
         assert "get_running_loop()" in content, (
             "caldav_provider.py doit utiliser asyncio.get_running_loop()"
+        )
+
+
+# ─── Batch v0.2.13 ─────────────────────────────────────────────────────────
+
+class TestBUG049_OllamaRetestButton:
+    """LLMTab doit avoir un bouton Re-tester pour rafraichir le statut Ollama."""
+
+    LLM_TAB_TSX = Path("src/frontend/src/components/settings/LLMTab.tsx")
+    SETTINGS_MODAL_TSX = Path("src/frontend/src/components/settings/SettingsModal.tsx")
+
+    def test_retest_prop_in_interface(self):
+        content = self.LLM_TAB_TSX.read_text(encoding="utf-8")
+        assert "onRetestOllama" in content, (
+            "LLMTabProps doit avoir une prop onRetestOllama"
+        )
+
+    def test_refresh_icon_used(self):
+        content = self.LLM_TAB_TSX.read_text(encoding="utf-8")
+        assert "RefreshCw" in content, (
+            "LLMTab doit importer et utiliser l'icône RefreshCw pour le bouton Re-tester"
+        )
+
+    def test_retest_function_in_settings_modal(self):
+        content = self.SETTINGS_MODAL_TSX.read_text(encoding="utf-8")
+        assert "retestOllama" in content, (
+            "SettingsModal doit avoir une fonction retestOllama qui appelle api.getOllamaStatus()"
+        )
+
+    def test_retest_passed_to_llmtab(self):
+        content = self.SETTINGS_MODAL_TSX.read_text(encoding="utf-8")
+        assert "onRetestOllama={retestOllama}" in content, (
+            "SettingsModal doit passer onRetestOllama au composant LLMTab"
+        )
+
+
+class TestBUG050_OllamaSkillsTimeout:
+    """Ollama streaming doit avoir timeout=None (pas de timeout forcé côté serveur)."""
+
+    OLLAMA_PY = Path("src/backend/app/services/providers/ollama.py")
+
+    def test_no_fixed_read_timeout(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "timeout=120.0" not in content, (
+            "Le timeout Ollama ne doit plus être fixé à 120s (trop court pour machines lentes)"
+        )
+
+    def test_read_timeout_none(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "read=None" in content, (
+            "Ollama doit avoir read=None (pas de timeout de lecture) — AbortController frontend gère l'annulation"
+        )
+
+    def test_connect_timeout_preserved(self):
+        content = self.OLLAMA_PY.read_text(encoding="utf-8")
+        assert "connect=5.0" in content, (
+            "Ollama doit garder un connect timeout court (5s) pour détecter si Ollama n'est pas démarré"
+        )
+
+
+class TestBUGGmail403_AccessDenied:
+    """La page de callback OAuth doit afficher des conseils lisibles pour erreur 403 access_denied."""
+
+    EMAIL_PY = Path("src/backend/app/routers/email.py")
+    VERIFY_TSX = Path("src/frontend/src/components/email/wizard/VerifyStep.tsx")
+
+    def test_access_denied_special_case(self):
+        content = self.EMAIL_PY.read_text(encoding="utf-8")
+        assert "access_denied" in content, (
+            "Le callback OAuth doit détecter l'erreur 'access_denied' et afficher des conseils"
+        )
+
+    def test_test_users_tip_shown(self):
+        content = self.EMAIL_PY.read_text(encoding="utf-8")
+        assert "Test" in content and ("Utilisateurs de test" in content or "utilisateurs de test" in content), (
+            "Le message d'erreur 403 doit mentionner le mode Test et les utilisateurs de test"
+        )
+
+    def test_apis_activation_tip_shown(self):
+        content = self.EMAIL_PY.read_text(encoding="utf-8")
+        assert "Gmail API" in content, (
+            "Le message d'erreur 403 doit mentionner l'activation de Gmail API"
+        )
+
+    def test_verify_step_has_403_tips(self):
+        content = self.VERIFY_TSX.read_text(encoding="utf-8")
+        assert "403" in content, (
+            "VerifyStep doit avoir un bloc d'aide visible pour l'erreur 403"
         )

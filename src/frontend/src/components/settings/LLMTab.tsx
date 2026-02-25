@@ -1,7 +1,7 @@
 // Onglet configuration LLM - Paramètres THÉRÈSE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { Key, Check, AlertCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, Mic, Image as ImageIcon, Globe } from 'lucide-react';
+import { Key, Check, AlertCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, Mic, Image as ImageIcon, Globe, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -191,6 +191,9 @@ export interface LLMTabProps {
   imageKeySaving: string | null;
   imageKeySaved: string | null;
   onSaveImageKey: (apiKeyId: 'openai_image' | 'gemini_image' | 'fal') => void;
+  // BUG-049 : re-tester la disponibilité Ollama à la demande
+  onRetestOllama?: () => void;
+  retestingOllama?: boolean;
 }
 
 export function LLMTab({
@@ -231,6 +234,8 @@ export function LLMTab({
   imageKeySaving,
   imageKeySaved,
   onSaveImageKey,
+  onRetestOllama,
+  retestingOllama = false,
 }: LLMTabProps) {
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
   const hasApiKey = apiKeys[selectedProvider] === true;
@@ -428,19 +433,34 @@ export function LLMTab({
             </div>
           </div>
 
-          {ollamaStatus?.available ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">Ollama connecté ({ollamaStatus.base_url})</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <span className="text-sm text-red-400">
-                {ollamaStatus?.error || 'Ollama non disponible'}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {ollamaStatus?.available ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex-1">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400">Ollama connecté ({ollamaStatus.base_url})</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg flex-1">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <span className="text-sm text-red-400">
+                  {ollamaStatus?.error || 'Ollama non disponible'}
+                </span>
+              </div>
+            )}
+            {/* BUG-049 : bouton Re-tester pour forcer un re-check sans recharger les paramètres */}
+            {onRetestOllama && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRetestOllama}
+                disabled={retestingOllama}
+                title="Re-tester la connexion Ollama"
+                className="shrink-0"
+              >
+                <RefreshCw className={`w-4 h-4 ${retestingOllama ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

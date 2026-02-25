@@ -167,6 +167,19 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
             </div>
           )}
 
+          {/* BUG-Gmail-403 : conseils si Google affiche 403 access_denied */}
+          <details className="mt-2 text-left">
+            <summary className="text-xs text-text-muted/70 cursor-pointer hover:text-text-muted transition-colors">
+              Google affiche une erreur 403 ?
+            </summary>
+            <div className="mt-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-1.5 text-xs text-text-muted">
+              <p className="font-medium text-amber-400">Causes fréquentes :</p>
+              <p>• <strong className="text-text">App en mode Test</strong> : ajoute ton email dans Google Cloud Console → Écran de consentement OAuth → Utilisateurs de test.</p>
+              <p>• <strong className="text-text">APIs non activées</strong> : active "Gmail API" et "Google Calendar API" dans la Bibliothèque de ton projet.</p>
+              <p>• <strong className="text-text">Redirect URI manquante</strong> : copie l'URI ci-dessus dans OAuth → URIs de redirection autorisées.</p>
+            </div>
+          </details>
+
           <div className="pt-2">
             <Button variant="ghost" size="sm" onClick={onBack}>
               <ChevronLeft className="w-4 h-4 mr-2" />

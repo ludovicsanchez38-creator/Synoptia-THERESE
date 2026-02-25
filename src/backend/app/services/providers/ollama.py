@@ -64,7 +64,11 @@ class OllamaProvider(BaseProvider):
                     "stream": True,
                     "options": ollama_options,
                 },
-                timeout=120.0,
+                # BUG-050 : pas de timeout de lecture pour les providers locaux
+                # Les skills Office sur machines lentes (Pentium G620) peuvent dépasser 120s
+                # L'AbortController frontend + bouton Stop gèrent déjà l'annulation utilisateur
+                # connect=5s pour détecter rapidement si Ollama n'est pas démarré
+                timeout=httpx.Timeout(connect=5.0, read=None, write=None, pool=5.0),
             ) as response:
                 response.raise_for_status()
                 has_content = False
@@ -110,15 +114,8 @@ class OllamaProvider(BaseProvider):
                     "Vérifie qu'Ollama est lancé (ouvre un terminal et tape 'ollama serve')."
                 ),
             )
-        except httpx.ReadTimeout:
-            logger.error(f"Ollama timeout pour le modèle {model}")
-            yield StreamEvent(
-                type="error",
-                content=(
-                    f"Ollama a mis trop de temps à répondre avec le modèle '{model}'. "
-                    "Le modèle est peut-être trop lent ou surchargé. Réessaie ou choisis un modèle plus léger."
-                ),
-            )
+        # Note : httpx.ReadTimeout ne peut pas être levé avec read=None (timeout désactivé)
+        # Le catch ReadTimeout a été retiré — l'arrêt de génération se fait via AbortController
         except httpx.HTTPStatusError as e:
             status = e.response.status_code
             try:

@@ -312,13 +312,29 @@ async def handle_oauth_redirect(
     error = request.query_params.get("error")
 
     if error:
+        # BUG-Gmail-403 : message explicatif selon le type d'erreur OAuth
+        if error == "access_denied":
+            error_detail = """
+            <p>Google a refusé l'accès à THÉRÈSE. Causes probables :</p>
+            <ul style="text-align:left;color:#B6C7DA;margin:1rem 0;padding-left:1.5rem;line-height:1.8">
+              <li><strong>App en mode Test</strong> : ton adresse email n'est pas dans la liste des utilisateurs de test.<br>
+                  → Google Cloud Console → API &amp; Services → Écran de consentement OAuth → Utilisateurs de test → Ajouter ton adresse.</li>
+              <li><strong>APIs non activées</strong> : Gmail API et/ou Google Calendar API ne sont pas activées dans ton projet.<br>
+                  → Bibliothèque → chercher "Gmail API" → Activer. Même chose pour "Google Calendar API".</li>
+              <li><strong>Client OAuth révoqué</strong> : les identifiants ont changé ou l'app a été supprimée.</li>
+            </ul>
+            <p style="font-size:0.85rem;color:#6B7BA4">Erreur Google : <code>{}</code></p>
+            """.format(html.escape(error))
+        else:
+            error_detail = f"<p>{html.escape(error)}</p>"
         return HTMLResponse(content=f"""
         <!DOCTYPE html>
         <html><head><title>THERESE - Erreur OAuth</title>
         <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
-        .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
-        h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}</style></head>
-        <body><div class="card"><h1>Erreur d'autorisation</h1><p>{html.escape(error)}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
+        .card{{padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:500px}}
+        h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}
+        strong{{color:#E6EDF7}}code{{color:#22D3EE;font-size:0.8rem}}</style></head>
+        <body><div class="card"><h1>Erreur d'autorisation</h1>{error_detail}<p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
         """, status_code=400)
 
     if not code or not state:
@@ -389,7 +405,7 @@ async def handle_oauth_redirect(
         .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
         h1{{color:#22D3EE;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}
         .email{{color:#22D3EE;font-weight:600}}</style></head>
-        <body><div class="card"><h1>Connexion réussie !</h1><p>Le compte <span class="email">{email_address}</span> est connecté à THERESE.</p><p>Tu peux fermer cette fenêtre.</p></div></body></html>
+        <body><div class="card"><h1>Connexion réussie !</h1><p>Le compte <span class="email">{html.escape(email_address)}</span> est connecté à THERESE.</p><p>Tu peux fermer cette fenêtre.</p></div></body></html>
         """)
     except Exception as e:
         logger.error(f"OAuth redirect callback failed: {e}")
@@ -399,7 +415,7 @@ async def handle_oauth_redirect(
         <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
         .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:400px}}
         h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA}}</style></head>
-        <body><div class="card"><h1>Erreur</h1><p>{str(e)}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
+        <body><div class="card"><h1>Erreur</h1><p>{html.escape(str(e))}</p><p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>
         """, status_code=500)
 
 
