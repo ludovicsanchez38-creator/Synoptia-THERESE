@@ -1711,7 +1711,7 @@ class TestBUG028PricingEUR:
             "claude-opus-4-6",
             "claude-sonnet-4-5-20250929",
             "gpt-5.2",
-            "gemini-3-pro-preview",
+            "gemini-3.1-pro-preview",
             "mistral-large-latest",
         ]
         for model in required:

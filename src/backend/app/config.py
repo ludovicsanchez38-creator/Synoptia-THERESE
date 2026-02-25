@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
 
     # Default models
-    claude_model: str = "claude-sonnet-4-20250514"
+    claude_model: str = "claude-sonnet-4-6"
     mistral_model: str = "mistral-large-latest"
     ollama_model: str = "mistral:7b"
 

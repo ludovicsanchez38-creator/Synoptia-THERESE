@@ -28,7 +28,7 @@ TOKEN_PRICES = {
     "o3": {"input": 15.00, "output": 60.00},
     "o3-mini": {"input": 1.10, "output": 4.40},
     # Gemini (février 2026)
-    "gemini-3-pro-preview": {"input": 1.25, "output": 5.00},
+    "gemini-3.1-pro-preview": {"input": 1.25, "output": 5.00},
     "gemini-3-flash-preview": {"input": 0.075, "output": 0.30},
     "gemini-2.5-pro": {"input": 1.25, "output": 10.00},
     "gemini-2.5-flash": {"input": 0.075, "output": 0.30},

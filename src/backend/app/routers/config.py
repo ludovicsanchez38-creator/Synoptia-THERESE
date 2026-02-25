@@ -847,7 +847,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     elif config.provider.value == "gemini":
         # Gemini 3 + 2.5 series (janvier 2026)
         available_models = [
-            "gemini-3-pro-preview",   # Latest flagship
+            "gemini-3.1-pro-preview",   # Latest flagship
             "gemini-3-flash-preview", # Fast Gemini 3
             "gemini-2.5-pro",         # High capability
             "gemini-2.5-flash",       # Fast & capable
@@ -873,7 +873,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "anthropic/claude-sonnet-4-6",     # Recommandé
             "anthropic/claude-opus-4-6",       # Premium
             "openai/gpt-5.2",                  # GPT-5.2
-            "google/gemini-3-pro",             # Gemini 3 Pro
+            "google/gemini-3.1-pro",             # Gemini 3.1 Pro
             "meta-llama/llama-4-maverick",     # Open Source
         ]
 
