@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-blue.svg" alt="MIT License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-blue.svg" alt="AGPL-3.0 License" /></a>
   <a href="https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions"><img src="https://img.shields.io/github/actions/workflow/status/ludovicsanchez38-creator/Synoptia-THERESE/ci.yml?branch=main&label=CI" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.1.2--alpha-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.3.3--alpha-orange" alt="Version" />
 </p>
 
 <p align="center">
@@ -21,50 +21,50 @@
 
 ---
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
-- 🤖 **Chat multi-LLM** - Claude, GPT, Gemini, Mistral, Grok, Ollama (local)
-- 🧠 **Mémoire persistante** - Contacts, projets, fichiers : tout reste sur ta machine
-- 📧 **Email et Calendrier** - IMAP/Gmail, CalDAV/Google Calendar intégrés
-- 📊 **CRM et Facturation** - Local ou sync Google Sheets, PDF conforme (mentions légales FR)
-- 🎯 **Board de Décision IA** - 5 conseillers virtuels pour t'aider à trancher
-- 📝 **Skills Office** - Génération Word, Excel, PowerPoint en un prompt
-- 🔌 **Connexions externes** - 19 services préconfigurés (Google, Notion, Airtable...)
-- 🔒 **Local-first** - Données chiffrées, rien dans le cloud
+- **Chat multi-LLM** - Claude, GPT, Gemini, Mistral, Grok, Ollama (100% local)
+- **Mémoire persistante** - Contacts, projets, fichiers : tout reste sur ta machine
+- **Email et Calendrier** - IMAP/Gmail, CalDAV/Google Calendar intégrés
+- **CRM et Facturation** - Local ou sync Google Sheets, PDF conforme (mentions légales FR)
+- **Board de Décision IA** - 5 conseillers virtuels pour t'aider à trancher
+- **18 skills intégrés** - Word, Excel, PowerPoint, emails pro, posts LinkedIn, propositions commerciales, analyses PDF/web, planification projets/semaine/objectifs
+- **Recherche web** - Brave Search intégré
+- **Dictée vocale** - Parle, THÉRÈSE écrit
+- **Local-first** - Données chiffrées sur ta machine, rien dans le cloud
 
-## 📥 Télécharger (alpha fermée)
+## Télécharger (alpha)
 
-> THÉRÈSE est en **alpha fermée** avec 20 testeurs (6 semaines).
+> THÉRÈSE est en **alpha** avec 21 testeurs.
 
 Les installeurs sont disponibles dans les [GitHub Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases).
-
-> Une page de téléchargement simplifiée sera bientôt disponible sur synoptia.fr/therese
 
 | Plateforme | Fichier |
 |------------|---------|
 | macOS (Apple Silicon) | `THERESE_x.x.x_aarch64.dmg` |
 | Windows (x64) | `THERESE_x.x.x_x64-setup.exe` |
+| Linux (x64) | `THERESE_x.x.x_amd64.deb` |
 
 > **macOS** : Clic droit sur l'app > Ouvrir > Confirmer (Gatekeeper, app non signée pour l'instant).
 > **Windows** : SmartScreen peut afficher un avertissement, clique sur "Informations complémentaires" > "Exécuter quand même".
 
-Tu as besoin d'un **code d'accès au service IA** (appelé "clé API") pour utiliser THÉRÈSE. Anthropic est recommandé : [console.anthropic.com](https://console.anthropic.com). C'est un code unique que tu obtiens en créant un compte chez le fournisseur IA de ton choix.
+Tu as besoin d'un **code d'accès au service IA** (appelé "clé API") pour utiliser THÉRÈSE. Anthropic est recommandé : [console.anthropic.com](https://console.anthropic.com). Ou utilise [Ollama](https://ollama.ai) pour un usage 100% local et gratuit.
 
-## 🚀 Premiers pas
+## Premiers pas
 
 1. **Télécharge et installe** la dernière build depuis les [Releases](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases)
 2. **Suis l'assistant de configuration** qui te guide étape par étape
 3. **Commence à discuter** avec THÉRÈSE !
 
-👉 Guide complet pour les testeurs : [docs/USER_GUIDE_ALPHA.md](docs/USER_GUIDE_ALPHA.md)
+Guide complet pour les testeurs : [docs/USER_GUIDE_ALPHA.md](docs/USER_GUIDE_ALPHA.md)
 
-## 🐛 Signaler un bug
+## Signaler un bug
 
-- **Discord** : mentionne `@Thérèse bug : [description]` dans `#bugs` ([serveur therese-alpha](https://discord.gg/therese-alpha))
+- **Discord** : mentionne `@Thérèse bug : [description]` dans `#bugs`
 - **GitHub** : ouvre une [issue](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/issues/new?template=bug_report.md)
 - **Email** : ludo@synoptia.fr avec l'objet `[THÉRÈSE Alpha] Bug`
 
-## 🛠 Pour les développeurs
+## Pour les développeurs
 
 ### Prérequis
 
@@ -83,17 +83,26 @@ make dev        # Lancer backend + Tauri en mode dev
 
 ```bash
 make dev              # Backend + Tauri simultanés
-make dev-backend      # Backend seul (uvicorn :8000)
-make test             # Tous les tests
+make dev-backend      # Backend seul (uvicorn)
+make test             # Tous les tests (52 fichiers)
 make lint             # Vérifier le code (ruff + eslint)
 make build-release    # Build complète de production
 make help             # Toutes les commandes disponibles
 ```
 
-👉 Installation détaillée : [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
-👉 Contribuer : [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+Installation depuis les sources : [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
-## 📁 Structure du projet
+## Stack technique
+
+| Couche | Technologie |
+|--------|-------------|
+| Desktop | Tauri 2.0 (Rust) |
+| Frontend | React 19, TypeScript 5, TailwindCSS 4, Zustand 5 |
+| Backend | Python 3.11+, FastAPI, SQLModel, SQLite |
+| Mémoire | Qdrant (vecteurs), sentence-transformers (embeddings) |
+| LLM | Anthropic, OpenAI, Google, Mistral, Grok, Ollama |
+
+## Structure du projet
 
 ```
 Synoptia-THERESE/
@@ -109,7 +118,7 @@ Synoptia-THERESE/
 └── .github/workflows/      # CI/CD
 ```
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -120,15 +129,21 @@ Synoptia-THERESE/
 | [Architecture](docs/architecture.md) | Architecture technique détaillée |
 | [Changelog](docs/CHANGELOG.md) | Historique des versions |
 
-## 🔐 Sécurité
+## Sécurité
 
 Voir [SECURITY.md](SECURITY.md) pour la politique de sécurité et le signalement de vulnérabilités.
 
-## 📄 Licence
+## Licence
 
-[MIT](LICENSE) - Synoptïa (Ludovic Sanchez)
+[AGPL-3.0](LICENSE) - Synoptïa (Ludovic Sanchez)
 
-## 📬 Contact
+THÉRÈSE est un logiciel libre. Tu peux l'utiliser, le modifier et le redistribuer sous les termes de la licence AGPL-3.0. Si tu modifies THÉRÈSE et que des utilisateurs y accèdent (y compris via un réseau), tu dois publier ton code source modifié.
+
+## Contribuer
+
+Les contributions sont les bienvenues ! Consulte [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) pour les conventions et le workflow.
+
+## Contact
 
 **Ludo Sanchez** - [Synoptïa](https://synoptia.fr) - ludo@synoptia.fr
 
