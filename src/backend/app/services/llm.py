@@ -281,7 +281,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         provider_configs = {
             "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", 200000),
             "openai": (LLMProvider.OPENAI, "gpt-5.2", 200000),
-            "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", 1000000),
+            "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", 1000000),
             "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
             "grok": (LLMProvider.GROK, "grok-4", 131072),
             "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
@@ -324,7 +324,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         elif openai_key:
             return LLMConfig(LLMProvider.OPENAI, "gpt-5.2", api_key=openai_key, context_window=200000)
         elif gemini_key:
-            return LLMConfig(LLMProvider.GEMINI, "gemini-3-pro-preview", api_key=gemini_key, context_window=1000000)
+            return LLMConfig(LLMProvider.GEMINI, "gemini-3.1-pro-preview", api_key=gemini_key, context_window=1000000)
         elif mistral_key:
             return LLMConfig(LLMProvider.MISTRAL, "mistral-large-latest", api_key=mistral_key, context_window=256000)
         else:
@@ -522,7 +522,7 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
     provider_configs = {
         "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", "ANTHROPIC_API_KEY", 200000),
         "openai": (LLMProvider.OPENAI, "gpt-5.2", "OPENAI_API_KEY", 200000),
-        "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
+        "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
         "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
         "grok": (LLMProvider.GROK, "grok-4", "XAI_API_KEY", 131072),
         "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),

@@ -61,7 +61,7 @@ const PROVIDERS: ProviderConfig[] = [
     consoleUrl: 'https://aistudio.google.com/app/apikey',
     models: [
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', badge: 'Recommandé' },
-      { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro', badge: 'Flagship' },
+      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
       { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
     ],
@@ -102,7 +102,7 @@ const PROVIDERS: ProviderConfig[] = [
       { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
       { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
-      { id: 'google/gemini-3-pro', name: 'Gemini 3 Pro' },
+      { id: 'google/gemini-3.1-pro', name: 'Gemini 3.1 Pro' },
       { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
     ],
   },

@@ -248,7 +248,7 @@ async def get_context_info():
         "o3": 200000,
         "o3-mini": 200000,
         # Gemini
-        "gemini-3-pro-preview": 1000000,
+        "gemini-3.1-pro-preview": 1000000,
         "gemini-3-flash-preview": 1000000,
         "gemini-2.5-pro": 1000000,
         "gemini-2.5-flash": 1000000,
