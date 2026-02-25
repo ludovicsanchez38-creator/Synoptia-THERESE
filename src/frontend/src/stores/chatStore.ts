@@ -45,6 +45,7 @@ interface ChatStore {
   conversations: Conversation[];
   currentConversationId: string | null;
   isStreaming: boolean;
+  queuedPrompt: string | null;
 
   // Computed
   currentConversation: () => Conversation | null;
@@ -60,6 +61,7 @@ interface ChatStore {
   clearMessageEntities: (id: string) => void;
   setMessageMetadata: (id: string, usage?: MessageUsage, uncertainty?: MessageUncertainty) => void;
   setStreaming: (isStreaming: boolean) => void;
+  setQueuedPrompt: (prompt: string | null) => void;
   clearCurrentConversation: () => void;
 
   // Sync actions
@@ -74,6 +76,7 @@ export const useChatStore = create<ChatStore>()(
       conversations: [],
       currentConversationId: null,
       isStreaming: false,
+      queuedPrompt: null,
 
       currentConversation: () => {
         const { conversations, currentConversationId } = get();
@@ -247,6 +250,8 @@ export const useChatStore = create<ChatStore>()(
       },
 
       setStreaming: (isStreaming) => set({ isStreaming }),
+
+      setQueuedPrompt: (prompt) => set({ queuedPrompt: prompt }),
 
       clearCurrentConversation: () => {
         set((state) => ({

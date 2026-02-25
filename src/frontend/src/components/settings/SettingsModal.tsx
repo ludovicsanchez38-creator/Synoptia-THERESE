@@ -35,7 +35,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
-  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-5-20250929');
+  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -60,6 +60,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   // Recherche web
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [webSearchLoading, setWebSearchLoading] = useState(false);
+
+  // Brave Search
+  const [hasBraveKey, setHasBraveKey] = useState(false);
+  const [braveKeyInput, setBraveKeyInput] = useState('');
+  const [braveSaving, setBraveSaving] = useState(false);
+  const [braveSaved, setBraveSaved] = useState(false);
 
   // Préférences mémoire
   const [autoExtractEntities, setAutoExtractEntities] = useState(true);
@@ -109,7 +115,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     try {
       const [keys, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, groqKeyStatus, webSearchStatus] = await Promise.all([
         api.getApiKeys(),
-        api.getLLMConfig().catch(() => ({ provider: 'anthropic', model: 'claude-sonnet-4-5-20250929', available_models: [] })),
+        api.getLLMConfig().catch(() => ({ provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] })),
         api.getPreferences().catch(() => ({})),
         api.getStats().catch(() => null),
         api.getProfile().catch(() => null),
@@ -126,6 +132,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
       setHasGroqKey(groqKeyStatus);
+      setHasBraveKey(!!keys.brave);
       setWebSearchEnabled(webSearchStatus.enabled);
 
       // Statut Ollama
@@ -244,6 +251,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setGroqSaving(false);
+    }
+  }
+
+  async function handleSaveBraveKey() {
+    if (!braveKeyInput.trim()) {
+      setError('Veuillez entrer une clé API Brave Search');
+      return;
+    }
+
+    setBraveSaving(true);
+    setError(null);
+
+    try {
+      await api.setApiKey('brave', braveKeyInput);
+      setBraveSaved(true);
+      setHasBraveKey(true);
+      setBraveKeyInput('');
+
+      setTimeout(() => {
+        setBraveSaved(false);
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+    } finally {
+      setBraveSaving(false);
     }
   }
 
@@ -603,6 +635,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   webSearchEnabled={webSearchEnabled}
                   webSearchLoading={webSearchLoading}
                   onToggleWebSearch={handleToggleWebSearch}
+                  // Props Brave Search
+                  hasBraveKey={hasBraveKey}
+                  braveKeyInput={braveKeyInput}
+                  setBraveKeyInput={setBraveKeyInput}
+                  braveSaving={braveSaving}
+                  braveSaved={braveSaved}
+                  onSaveBraveKey={handleSaveBraveKey}
                   // Props génération d'images
                   selectedImageProvider={selectedImageProvider}
                   onSelectImageProvider={setSelectedImageProvider}

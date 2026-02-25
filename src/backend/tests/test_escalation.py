@@ -17,7 +17,7 @@ class TestCostEstimation:
         response = await async_client.post(
             "/api/escalation/estimate-cost",
             json={
-                "model": "claude-sonnet-4-5-20250929",
+                "model": "claude-sonnet-4-6",
                 "input_tokens": 1000,
                 "output_tokens": 500,
             },
@@ -43,7 +43,7 @@ class TestCostEstimation:
 
         # Check some models have pricing
         prices = data["prices"]
-        assert "claude-sonnet-4-5-20250929" in prices
+        assert "claude-sonnet-4-6" in prices
         assert "gpt-4o" in prices
 
 
@@ -225,8 +225,8 @@ class TestContextTruncation:
 
         # Check some models have context limits
         limits = data["context_limits"]
-        assert "claude-sonnet-4-5-20250929" in limits
-        assert limits["claude-sonnet-4-5-20250929"] == 200000
+        assert "claude-sonnet-4-6" in limits
+        assert limits["claude-sonnet-4-6"] == 200000
 
 
 class TestEscalationStatus:
@@ -255,7 +255,7 @@ class TestTokenTrackerUnit:
 
         # Claude Sonnet: $3/1M input, $15/1M output
         cost = tracker.estimate_cost(
-            "claude-sonnet-4-5-20250929",
+            "claude-sonnet-4-6",
             input_tokens=1000000,
             output_tokens=100000,
         )

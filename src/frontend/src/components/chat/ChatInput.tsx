@@ -6,7 +6,8 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { Send, Square, Paperclip, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Send, Square, Paperclip, Mic, MicOff, Loader2, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './SlashCommandsMenu';
@@ -16,9 +17,11 @@ import { useStatusStore } from '../../stores/statusStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { streamMessage, indexFile, ApiError } from '../../services/api';
+import { useGhostText } from '../../hooks/useGhostText';
 import { cn } from '../../lib/utils';
 
-const MAX_ROWS = 8;
+const MIN_ROWS = 2;
+const MAX_ROWS = 12;
 
 interface ChatInputProps {
   onOpenCommandPalette?: () => void;
@@ -39,6 +42,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     addMessage,
@@ -50,10 +54,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     currentConversationId,
     currentConversation,
     updateConversationId,
+    queuedPrompt,
+    setQueuedPrompt,
   } = useChatStore();
   const { connectionState, setActivity } = useStatusStore();
 
-  const isDisabled = connectionState !== 'connected' || isStreaming;
+  const isOffline = connectionState !== 'connected';
+  const hasQueuedPrompt = queuedPrompt !== null;
+  const isDisabled = isOffline || hasQueuedPrompt;
+
+  // Ghost text prédictif
+  const { suggestion, accept: acceptGhost, dismiss: dismissGhost } = useGhostText(
+    input,
+    currentConversationId,
+    isStreaming,
+  );
 
   // File drop handling (with deduplication)
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
@@ -119,7 +134,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Open file picker
+  // Handle browser file input change (fallback when Tauri dialog unavailable)
+  const handleBrowserFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    const files: DroppedFile[] = Array.from(fileList).map((f) => ({
+      path: f.name,
+      name: f.name,
+      size: f.size,
+      mimeType: f.type,
+    }));
+    handleFilesDropped(files);
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  }, [handleFilesDropped]);
+
+  // Open file picker (Tauri dialog or browser fallback)
   const handleAttachClick = useCallback(async () => {
     if (isDisabled) return;
 
@@ -154,8 +184,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         }));
         handleFilesDropped(files);
       }
-    } catch (err) {
-      console.error('File picker error:', err);
+    } catch {
+      // Tauri dialog not available (browser mode) - fallback to input[type=file]
+      fileInputRef.current?.click();
     }
   }, [isDisabled, handleFilesDropped]);
 
@@ -190,7 +221,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed || isDisabled) return;
+    if (!trimmed || isOffline) return;
+
+    // Si streaming en cours, mettre en file d'attente (1 seul)
+    if (isStreaming) {
+      setQueuedPrompt(trimmed);
+      setInput('');
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      return;
+    }
 
     // Close slash menu if open
     setShowSlashMenu(false);
@@ -335,7 +374,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isDisabled, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
+  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, setQueuedPrompt]);
+
+  // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+
+  // Auto-send du prompt en file d'attente quand le streaming finit
+  useEffect(() => {
+    if (!isStreaming && queuedPrompt) {
+      setInput(queuedPrompt);
+      setQueuedPrompt(null);
+      setTimeout(() => {
+        sendMessageRef.current?.();
+      }, 50);
+    }
+  }, [isStreaming, queuedPrompt, setQueuedPrompt]);
 
   // Interrompre le streaming en cours
   const stopStreaming = useCallback(() => {
@@ -368,6 +422,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         }
       }
 
+      // Ghost text : Tab accepte, Escape dismiss
+      if (e.key === 'Tab' && suggestion) {
+        e.preventDefault();
+        setInput(input + suggestion);
+        acceptGhost();
+        return;
+      }
+      if (e.key === 'Escape' && suggestion) {
+        e.preventDefault();
+        dismissGhost();
+        return;
+      }
+
       // Cmd+K opens command palette
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
@@ -384,7 +451,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         sendMessage();
       }
     },
-    [sendMessage, showSlashMenu, onOpenCommandPalette]
+    [sendMessage, showSlashMenu, onOpenCommandPalette, suggestion, input, acceptGhost, dismissGhost]
   );
 
   // Focus textarea on mount
@@ -452,10 +519,33 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         </div>
       )}
 
+      {/* Bulle prompt en file d'attente */}
+      <AnimatePresence>
+        {queuedPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="flex items-center gap-2 mb-2 px-4 py-2.5 rounded-xl
+                       bg-surface-elevated/60 border border-accent-cyan/20"
+          >
+            <span className="flex-1 text-sm italic text-text-muted truncate">
+              {queuedPrompt}
+            </span>
+            <button
+              onClick={() => setQueuedPrompt(null)}
+              className="flex-shrink-0 text-text-muted/60 hover:text-text transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div
         ref={containerRef}
         className={cn(
-          'flex items-end gap-2 p-3 rounded-2xl',
+          'flex items-center gap-2 p-3 rounded-2xl',
           'bg-surface-elevated/80 backdrop-blur-sm border border-border',
           'focus-within:border-accent-cyan/50 focus-within:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
           'hover:border-border/80 transition-all duration-200',
@@ -474,30 +564,44 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <Paperclip className="w-5 h-5" />
         </Button>
 
-        {/* Textarea */}
-        <label htmlFor="chat-input" className="sr-only">Message à THÉRÈSE</label>
-        <textarea
-          id="chat-input"
-          ref={textareaRef}
-          value={input}
-          onChange={handleInput}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            isStreaming
-              ? 'THÉRÈSE réfléchit...'
-              : connectionState !== 'connected'
-                ? 'En attente de connexion...'
-                : 'Comment puis-je vous aider ?'
-          }
-          disabled={isDisabled}
-          rows={1}
-          className={cn(
-            'flex-1 resize-none bg-transparent text-text placeholder:text-text-muted',
-            'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed',
-            'text-sm leading-6 py-1.5'
+        {/* Textarea + ghost text overlay */}
+        <div className="flex-1 relative">
+          <label htmlFor="chat-input" className="sr-only">Message à THÉRÈSE</label>
+          <textarea
+            id="chat-input"
+            ref={textareaRef}
+            value={input}
+            onChange={handleInput}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              hasQueuedPrompt
+                ? 'Un message en file d\'attente'
+                : isStreaming
+                  ? 'Ajouter un message à la file...'
+                  : isOffline
+                    ? 'En attente de connexion...'
+                    : 'Comment puis-je vous aider ?'
+            }
+            disabled={isDisabled}
+            rows={MIN_ROWS}
+            className={cn(
+              'w-full resize-none bg-transparent text-text placeholder:text-text-muted',
+              'focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed',
+              'text-sm leading-6 py-1.5'
+            )}
+            style={{ maxHeight: `${24 * MAX_ROWS}px` }}
+          />
+          {/* Ghost text suggestion overlay */}
+          {suggestion && (
+            <div
+              className="absolute inset-0 pointer-events-none text-sm leading-6 py-1.5 whitespace-pre-wrap break-words"
+              aria-hidden="true"
+            >
+              <span className="invisible">{input}</span>
+              <span className="text-text-muted/40">{suggestion}</span>
+            </div>
           )}
-          style={{ maxHeight: `${24 * MAX_ROWS}px` }}
-        />
+        </div>
 
         {/* Voice button */}
         <Button
@@ -531,8 +635,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           )}
         </Button>
 
-        {/* Send / Stop button */}
-        {isStreaming ? (
+        {/* Send / Stop buttons */}
+        {isStreaming && (
           <Button
             variant="primary"
             size="icon"
@@ -542,18 +646,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           >
             <Square className="w-4 h-4" />
           </Button>
-        ) : (
-          <Button
-            variant="primary"
-            size="icon"
-            className="flex-shrink-0 h-9 w-9"
-            onClick={sendMessage}
-            disabled={isDisabled || !input.trim()}
-            title="Envoyer (↵)"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
         )}
+        <Button
+          variant="primary"
+          size="icon"
+          className="flex-shrink-0 h-9 w-9"
+          onClick={sendMessage}
+          disabled={isDisabled || !input.trim()}
+          title={isStreaming ? 'Envoyer en file d\'attente' : 'Envoyer (↵)'}
+        >
+          <Send className="w-4 h-4" />
+        </Button>
       </div>
 
       {/* Voice error message */}
@@ -562,6 +665,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <p className="text-xs text-error">{voiceError}</p>
         </div>
       )}
+
+      {/* Hidden file input (browser fallback) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept=".txt,.md,.pdf,.docx,.xlsx,.json,.csv,.py,.js,.ts,.tsx,.jsx,.html,.css,.png,.jpg,.jpeg,.gif,.webp"
+        onChange={handleBrowserFileChange}
+      />
 
       {/* Hints */}
       <div className="flex items-center justify-center gap-4 mt-2">
@@ -573,6 +686,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <kbd className="px-1 rounded bg-surface-elevated">⌘</kbd>+
           <kbd className="px-1 rounded bg-surface-elevated">K</kbd> commandes
         </p>
+        {suggestion && (
+          <p className="text-xs text-accent-cyan/60">
+            <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd> accepter
+          </p>
+        )}
       </div>
     </div>
   );

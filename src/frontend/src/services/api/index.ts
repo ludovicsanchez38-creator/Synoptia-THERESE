@@ -408,6 +408,20 @@ export {
   type CRMSyncResponse,
 } from './crm-extended';
 
+// Tools - Outils installés
+export {
+  listInstalledTools,
+  installTool,
+  getToolManifest,
+  testTool,
+  deleteTool,
+  type InstalledTool,
+  type ToolInput,
+  type ToolInstallRequest,
+  type ToolInstallResponse,
+  type ToolTestResponse,
+} from './tools';
+
 // RGPD - Conformité données personnelles
 export {
   exportContactRGPD,

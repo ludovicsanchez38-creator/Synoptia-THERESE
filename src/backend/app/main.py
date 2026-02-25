@@ -36,6 +36,7 @@ from app.routers import (
     calendar_router,  # Phase 2 - ACTIVATED
     chat_router,
     commands_router,  # User Commands
+    commands_v3_router,  # V3 - Commands unifiées
     config_router,
     crm_router,  # Phase 5 - Implemented
     data_router,
@@ -52,6 +53,7 @@ from app.routers import (
     rgpd_router,  # Phase 6 - RGPD Compliance
     skills_router,
     tasks_router,  # Phase 3 - ACTIVATED
+    tools_router,  # V3 - Installed Tools
     voice_router,
 )
 from app.services import close_qdrant, init_qdrant
@@ -64,6 +66,29 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+async def _load_brave_key():
+    """Load Brave Search API key from database into cache."""
+    try:
+        from sqlalchemy import select
+
+        from app.models.database import get_session_context
+        from app.models.entities import Preference
+        from app.services.encryption import decrypt_value
+        from app.services.web_search import set_brave_api_key
+
+        async with get_session_context() as session:
+            result = await session.execute(
+                select(Preference).where(Preference.key == "brave_api_key")
+            )
+            pref = result.scalar_one_or_none()
+            if pref and pref.value:
+                key = decrypt_value(pref.value)
+                set_brave_api_key(key)
+                logger.info("Brave Search API key loaded from database")
+    except Exception as e:
+        logger.debug(f"Brave Search key not configured: {e}")
 
 
 async def _load_user_profile():
@@ -124,6 +149,14 @@ async def lifespan(app: FastAPI):
 
     # Load user profile into cache
     await _load_user_profile()
+
+    # Load Brave Search API key into cache if configured
+    await _load_brave_key()
+
+    # Initialize command registry (V3 unified commands)
+    from app.services.command_registry import init_command_registry
+    await init_command_registry()
+    logger.info("Command registry initialized")
 
     # Start OAuth cleanup background task
 
@@ -208,20 +241,9 @@ if settings.therese_env != "production":
         "http://localhost:5173",  # Vite dev
     ]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=[
-        "Content-Type",
-        "Authorization",
-        "X-Therese-Token",
-        "Accept",
-        "Origin",
-    ],
-    expose_headers=["Content-Disposition"],  # Pour le telechargement de fichiers
-)
+# NOTE: CORSMiddleware est ajouté APRÈS les autres middleware (voir plus bas)
+# pour être le outermost et ajouter les headers CORS à TOUTES les réponses,
+# y compris les 401 du auth middleware.
 
 # Rate limiting middleware (SEC-015)
 if HAS_SLOWAPI:
@@ -418,6 +440,26 @@ async def security_headers_middleware(request: Request, call_next):
     return response
 
 
+# CORS middleware (SEC-018) - DOIT être le dernier middleware ajouté (= outermost)
+# pour que les headers CORS soient ajoutés à TOUTES les réponses, y compris
+# les 401 du auth middleware. Sinon le navigateur bloque les réponses 401
+# comme des erreurs CORS.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "X-Therese-Token",
+        "Accept",
+        "Origin",
+    ],
+    expose_headers=["Content-Disposition"],  # Pour le telechargement de fichiers
+)
+
+
 # Include routers
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
@@ -452,6 +494,12 @@ app.include_router(rgpd_router, prefix="/api/rgpd", tags=["RGPD"])  # Phase 6
 
 # User Commands
 app.include_router(commands_router, prefix="/api/commands", tags=["Commands"])
+
+# V3 - Commands unifiées
+app.include_router(commands_v3_router, prefix="/api/v3/commands", tags=["Commands V3"])
+
+# V3 - Installed Tools
+app.include_router(tools_router, prefix="/api/tools", tags=["Tools"])
 
 
 # Health endpoints

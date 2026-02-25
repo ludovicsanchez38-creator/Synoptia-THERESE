@@ -374,6 +374,7 @@ class ConfigResponse(BaseModel):
     has_openai_image_key: bool = False
     has_gemini_image_key: bool = False
     has_fal_key: bool = False
+    has_brave_key: bool = False
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True
@@ -382,7 +383,7 @@ class ConfigResponse(BaseModel):
 class ApiKeyUpdate(BaseModel):
     """API key update request."""
 
-    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal"]
+    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal", "brave"]
     api_key: str
 
 

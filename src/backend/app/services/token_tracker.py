@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN_PRICES = {
     # Anthropic (février 2026)
-    "claude-sonnet-4-5-20250929": {"input": 3.00, "output": 15.00},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     # OpenAI (février 2026)
@@ -210,7 +210,7 @@ class TokenTracker:
         """
         prices = TOKEN_PRICES.get(model)
         if prices is None and "/" in model:
-            # OpenRouter : "anthropic/claude-sonnet-4-5-20250929" → "claude-sonnet-4-5-20250929"
+            # OpenRouter : "anthropic/claude-sonnet-4-6" → "claude-sonnet-4-6"
             prices = TOKEN_PRICES.get(model.split("/", 1)[1])
         if prices is None:
             prices = TOKEN_PRICES["default"]

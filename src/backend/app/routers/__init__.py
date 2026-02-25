@@ -11,6 +11,9 @@ from app.routers.chat import router as chat_router
 
 # User Commands
 from app.routers.commands import router as commands_router
+
+# V3 - Commands unifiées
+from app.routers.commands_v3 import router as commands_v3_router
 from app.routers.config import router as config_router
 
 # Phase 5 CRM (implemented)
@@ -35,6 +38,9 @@ from app.routers.personalisation import router as personalisation_router
 from app.routers.rgpd import router as rgpd_router
 from app.routers.skills import router as skills_router
 from app.routers.tasks import router as tasks_router
+
+# V3 - Installed Tools
+from app.routers.tools import router as tools_router
 from app.routers.voice import router as voice_router
 
 __all__ = [
@@ -60,4 +66,6 @@ __all__ = [
     "rgpd_router",  # Phase 6 - RGPD Compliance
     "email_setup_router",  # Phase 1.2 - Email Setup Wizard
     "commands_router",  # User Commands
+    "commands_v3_router",  # V3 - Commands unifiées
+    "tools_router",  # V3 - Installed Tools
 ]

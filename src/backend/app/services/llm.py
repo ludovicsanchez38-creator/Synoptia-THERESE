@@ -284,7 +284,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", 1000000),
             "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
             "grok": (LLMProvider.GROK, "grok-4", 131072),
-            "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-5", 200000),
+            "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
             "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
         }
 
@@ -525,7 +525,7 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
         "gemini": (LLMProvider.GEMINI, "gemini-3-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
         "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
         "grok": (LLMProvider.GROK, "grok-4", "XAI_API_KEY", 131072),
-        "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-5", "OPENROUTER_API_KEY", 200000),
+        "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),
         "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
     }
 

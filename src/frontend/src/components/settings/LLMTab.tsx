@@ -26,7 +26,7 @@ export const PROVIDERS: ProviderConfig[] = [
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     models: [
       { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Flagship' },
-      { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', badge: 'Recommandé' },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
     ],
   },
@@ -93,7 +93,7 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
     models: [
-      { id: 'anthropic/claude-sonnet-4-5', name: 'Claude Sonnet 4.5', badge: 'Recommandé' },
+      { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
       { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
       { id: 'google/gemini-3-pro', name: 'Gemini 3 Pro' },
@@ -183,6 +183,13 @@ export interface LLMTabProps {
   webSearchEnabled: boolean;
   webSearchLoading: boolean;
   onToggleWebSearch: () => void;
+  // Props Brave Search
+  hasBraveKey: boolean;
+  braveKeyInput: string;
+  setBraveKeyInput: (v: string) => void;
+  braveSaving: boolean;
+  braveSaved: boolean;
+  onSaveBraveKey: () => void;
   // Props génération d'images
   selectedImageProvider: string;
   onSelectImageProvider: (provider: string) => void;
@@ -226,6 +233,13 @@ export function LLMTab({
   webSearchEnabled,
   webSearchLoading,
   onToggleWebSearch,
+  // Props Brave Search
+  hasBraveKey,
+  braveKeyInput,
+  setBraveKeyInput,
+  braveSaving,
+  braveSaved,
+  onSaveBraveKey,
   // Props génération d'images
   selectedImageProvider,
   onSelectImageProvider,
@@ -599,7 +613,54 @@ export function LLMTab({
         </div>
         <div className="text-xs text-text-muted space-y-1 pl-13 ml-[52px]">
           <p>• <strong>Gemini</strong> : Google Search Grounding (natif)</p>
-          <p>• <strong>Claude, GPT, Mistral, Grok</strong> : DuckDuckGo (tool calling)</p>
+          <p>• <strong>Claude, GPT, Mistral, Grok</strong> : {hasBraveKey ? 'Brave Search API' : 'DuckDuckGo'} (tool calling)</p>
+        </div>
+
+        {/* Clé API Brave Search (optionnelle) */}
+        <div className="ml-[52px] space-y-2">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-text-muted flex-1">
+              <strong>Brave Search</strong> (optionnel) - Résultats plus précis que DuckDuckGo.{' '}
+              <a
+                href="https://brave.com/search/api/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-cyan hover:underline"
+              >
+                Obtenir une clé gratuite
+              </a>
+            </p>
+            {hasBraveKey && (
+              <span className="flex items-center gap-1 text-xs text-green-400">
+                <Check className="w-3 h-3" /> Configuré
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={braveKeyInput}
+              onChange={(e) => setBraveKeyInput(e.target.value)}
+              placeholder="BSA..."
+              className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-border text-sm text-text
+                         placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onSaveBraveKey}
+              disabled={braveSaving || !braveKeyInput.trim()}
+              className="text-xs px-3"
+            >
+              {braveSaving ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : braveSaved ? (
+                <Check className="w-3 h-3" />
+              ) : (
+                'Sauver'
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -31,6 +31,40 @@ class SkillsRegistry:
         self._skills: dict[str, BaseSkill] = {}
         self._output_dir = Path(settings.data_dir) / "outputs"
         self._output_dir.mkdir(parents=True, exist_ok=True)
+        self.discover_installed_tools()
+
+    def discover_installed_tools(self) -> int:
+        """
+        Découvre et enregistre les outils installés dans ~/.therese/tools/.
+
+        Returns:
+            Nombre d'outils découverts
+        """
+        from app.services.skills.installed_tool import InstalledToolSkill
+
+        tools_dir = Path(settings.data_dir) / "tools"
+        if not tools_dir.exists():
+            tools_dir.mkdir(parents=True, exist_ok=True)
+            return 0
+
+        count = 0
+        for tool_dir in sorted(tools_dir.iterdir()):
+            if not tool_dir.is_dir():
+                continue
+            manifest_path = tool_dir / "manifest.json"
+            tool_path = tool_dir / "tool.py"
+            if manifest_path.exists() and tool_path.exists():
+                try:
+                    skill = InstalledToolSkill(tool_dir, self._output_dir)
+                    self._skills[skill.skill_id] = skill
+                    logger.info(f"Outil installé découvert : {skill.skill_id} ({skill.name})")
+                    count += 1
+                except Exception as e:
+                    logger.warning(f"Erreur chargement outil {tool_dir.name} : {e}")
+
+        if count > 0:
+            logger.info(f"{count} outil(s) installé(s) chargé(s)")
+        return count
 
     def register(self, skill: BaseSkill) -> None:
         """

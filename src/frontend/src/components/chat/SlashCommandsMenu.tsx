@@ -8,8 +8,21 @@ import {
   ListTodo,
   Mail,
   Calendar,
+  Image,
+  Palette,
+  Wand2,
+  Presentation,
+  FileSpreadsheet,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useCommandsStore } from '../../stores/commandsStore';
+
+/** Map icon name (string from backend) to Lucide component */
+const ICON_MAP: Record<string, LucideIcon> = {
+  UserPlus, FolderPlus, Search, FileText, Sparkles, ListTodo, Mail, Calendar,
+  Image, Palette, Wand2, Presentation, FileSpreadsheet,
+};
 
 export interface SlashCommand {
   id: string;
@@ -100,12 +113,35 @@ export function SlashCommandsMenu({
   userCommands,
 }: SlashCommandsMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const storeCommands = useCommandsStore((s) => s.commands);
 
-  // Merge built-in and user commands
+  // Merge built-in static commands with dynamic commands from the store
   const allCommands = useMemo(() => {
-    if (!userCommands || userCommands.length === 0) return SLASH_COMMANDS;
-    return [...SLASH_COMMANDS, ...userCommands];
-  }, [userCommands]);
+    // Convert store slash commands to SlashCommand format
+    const storeSlash = storeCommands
+      .filter((c) => c.show_in_slash)
+      .filter((c) => !SLASH_COMMANDS.some((s) => s.id === c.id)) // pas de doublons
+      .map((c): SlashCommand => {
+        const IconComp = typeof c.icon === 'string' ? ICON_MAP[c.icon] : null;
+        return {
+          id: c.id,
+          name: c.name,
+          description: c.description,
+          icon: IconComp ? <IconComp className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />,
+          prefix: `/${c.name} `,
+        };
+      });
+
+    const base = [...SLASH_COMMANDS, ...storeSlash];
+    // Ajouter aussi les userCommands props (ancien système, fallback)
+    if (userCommands && userCommands.length > 0) {
+      const ids = new Set(base.map((c) => c.id));
+      for (const uc of userCommands) {
+        if (!ids.has(uc.id)) base.push(uc);
+      }
+    }
+    return base;
+  }, [storeCommands, userCommands]);
 
   // Filter commands based on query
   const filteredCommands = useMemo(() => {

@@ -12,12 +12,14 @@ from app.services.skills.base import (
     SkillParams,
     SkillResult,
 )
+from app.services.skills.installed_tool import InstalledToolSkill
 from app.services.skills.registry import (
     SkillsRegistry,
     close_skills,
     get_skills_registry,
     init_skills,
 )
+from app.services.skills.tool_installer import ToolInstaller, get_tool_installer
 
 __all__ = [
     # Base classes
@@ -32,4 +34,8 @@ __all__ = [
     "get_skills_registry",
     "init_skills",
     "close_skills",
+    # Installed tools
+    "InstalledToolSkill",
+    "ToolInstaller",
+    "get_tool_installer",
 ]

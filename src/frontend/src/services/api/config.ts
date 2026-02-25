@@ -36,6 +36,7 @@ export async function getApiKeys(): Promise<Record<string, boolean>> {
     has_openai_image_key: boolean;
     has_gemini_image_key: boolean;
     has_fal_key: boolean;
+    has_brave_key: boolean;
   }>('/api/config/');
   return {
     anthropic: config.has_anthropic_key,
@@ -48,6 +49,7 @@ export async function getApiKeys(): Promise<Record<string, boolean>> {
     openai_image: config.has_openai_image_key,
     gemini_image: config.has_gemini_image_key,
     fal: config.has_fal_key,
+    brave: config.has_brave_key,
   };
 }
 

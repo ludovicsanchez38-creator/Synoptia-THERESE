@@ -238,7 +238,7 @@ async def get_context_info():
     """
     context_limits = {
         # Anthropic
-        "claude-sonnet-4-5-20250929": 200000,
+        "claude-sonnet-4-6": 200000,
         "claude-haiku-4-5-20251001": 200000,
         "claude-opus-4-6": 200000,
         # OpenAI

@@ -34,7 +34,7 @@ const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     models: [
-      { id: 'claude-sonnet-4-5-20250929', name: 'Claude 4.5 Sonnet', badge: 'Recommandé' },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude 4.5 Haiku', badge: 'Rapide' },
       { id: 'claude-opus-4-6', name: 'Claude 4.6 Opus', badge: 'Premium' },
     ],
@@ -99,7 +99,7 @@ const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
     models: [
-      { id: 'anthropic/claude-sonnet-4-5', name: 'Claude Sonnet 4.5', badge: 'Recommandé' },
+      { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
       { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
       { id: 'google/gemini-3-pro', name: 'Gemini 3 Pro' },
@@ -116,7 +116,7 @@ const PROVIDERS: ProviderConfig[] = [
 
 export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
-  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-5-20250929');
+  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});

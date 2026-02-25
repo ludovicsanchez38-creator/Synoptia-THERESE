@@ -80,10 +80,40 @@ const openWindows = new Map<PanelType, WebviewWindow>();
  * Ouvre un panel dans une fenetre macOS separee.
  * Si la fenetre existe deja, elle prend le focus.
  */
+// Détecte si on tourne dans Tauri (vs navigateur pur)
+function isTauriAvailable(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+// Tracking des fenêtres navigateur (fallback)
+const openBrowserWindows = new Map<PanelType, Window>();
+
 export async function openPanelWindow(panel: PanelType): Promise<void> {
   // Runtime whitelist check (SEC-018) - defense against dynamic values
   if (!isValidPanel(panel)) {
     console.error(`[Security] Invalid panel name rejected: ${panel}`);
+    return;
+  }
+
+  // Fallback navigateur : ouvre dans un nouvel onglet/fenêtre
+  if (!isTauriAvailable()) {
+    const existing = openBrowserWindows.get(panel);
+    if (existing && !existing.closed) {
+      existing.focus();
+      return;
+    }
+
+    const config = PANEL_CONFIGS[panel];
+    const apiPort = new URL(getApiBase()).port;
+    const url = `${window.location.origin}/?panel=${panel}&port=${apiPort}`;
+    const win = window.open(
+      url,
+      `panel-${panel}`,
+      `width=${config.width},height=${config.height},menubar=no,toolbar=no`,
+    );
+    if (win) {
+      openBrowserWindows.set(panel, win);
+    }
     return;
   }
 

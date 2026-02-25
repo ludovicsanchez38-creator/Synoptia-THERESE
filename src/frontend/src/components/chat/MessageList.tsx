@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../stores/chatStore';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
-import { GuidedPrompts } from '../guided';
+import { HomeCommands } from '../home';
 import { EntitySuggestion } from './EntitySuggestion';
 import { useDemoMask } from '../../hooks';
 
@@ -97,7 +97,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProp
   if (!conversation || conversation.messages.length === 0) {
     return (
       <div className="h-full overflow-y-auto flex items-center justify-center py-8">
-        <GuidedPrompts onPromptSelect={onPromptSelect || (() => {})} />
+        <HomeCommands onPromptSelect={onPromptSelect || (() => {})} />
       </div>
     );
   }

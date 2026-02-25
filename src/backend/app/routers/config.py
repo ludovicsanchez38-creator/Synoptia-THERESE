@@ -126,6 +126,13 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         )
         has_fal = result.scalar_one_or_none() is not None
 
+    has_brave = bool(os.environ.get("BRAVE_API_KEY"))
+    if not has_brave:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "brave_api_key")
+        )
+        has_brave = result.scalar_one_or_none() is not None
+
     # Check web search preference (default: enabled)
     web_search_enabled = True
     result = await session.execute(
@@ -149,6 +156,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         has_openai_image_key=has_openai_image,
         has_gemini_image_key=has_gemini_image,
         has_fal_key=has_fal,
+        has_brave_key=has_brave,
         ollama_available=ollama_available,
         web_search_enabled=web_search_enabled,
     )
@@ -254,6 +262,11 @@ async def set_api_key(
     # Reset LLM service to pick up new config
     import app.services.llm as _llm_mod
     _llm_mod._llm_service = None
+
+    # Mettre à jour le cache Brave Search si la clé change
+    if provider == "brave":
+        from app.services.web_search import set_brave_api_key
+        set_brave_api_key(key)
 
     return {"success": True, "provider": request.provider}
 
@@ -391,13 +404,28 @@ async def get_web_search_status(session: AsyncSession = Depends(get_session)):
     pref = result.scalar_one_or_none()
     enabled = pref.value.lower() == "true" if pref else True  # Default: enabled
 
+    # Vérifier si Brave Search est configuré
+    has_brave = bool(os.environ.get("BRAVE_API_KEY"))
+    if not has_brave:
+        brave_result = await session.execute(
+            select(Preference).where(Preference.key == "brave_api_key")
+        )
+        has_brave = brave_result.scalar_one_or_none() is not None
+
+    others_provider = "Brave Search API" if has_brave else "DuckDuckGo (tool calling)"
+    description = (
+        f"Gemini utilise le grounding Google Search natif. "
+        f"Les autres LLMs (Claude, GPT, Mistral, Grok) utilisent {others_provider} via tool calling."
+    )
+
     return {
         "enabled": enabled,
         "providers": {
             "gemini": "Google Search Grounding (natif)",
-            "others": "DuckDuckGo (tool calling)",
+            "others": others_provider,
         },
-        "description": "Gemini utilise le grounding Google Search natif. Les autres LLMs (Claude, GPT, Mistral, Grok) utilisent DuckDuckGo via tool calling.",
+        "has_brave_key": has_brave,
+        "description": description,
     }
 
 
@@ -804,7 +832,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         # Claude 4.5/4.6 series (février 2026)
         available_models = [
             "claude-opus-4-6",               # Flagship, best overall
-            "claude-sonnet-4-5-20250929",    # Best coding model
+            "claude-sonnet-4-6",             # Best coding model
             "claude-haiku-4-5-20251001",     # Fast & cost-efficient
         ]
     elif config.provider.value == "openai":
@@ -842,7 +870,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     elif config.provider.value == "openrouter":
         # OpenRouter : accès unifié à 200+ modèles
         available_models = [
-            "anthropic/claude-sonnet-4-5",     # Recommandé
+            "anthropic/claude-sonnet-4-6",     # Recommandé
             "anthropic/claude-opus-4-6",       # Premium
             "openai/gpt-5.2",                  # GPT-5.2
             "google/gemini-3-pro",             # Gemini 3 Pro

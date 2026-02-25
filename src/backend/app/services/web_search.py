@@ -2,7 +2,7 @@
 THÉRÈSE v2 - Web Search Service
 
 Provides web search capabilities for LLMs.
-Uses DuckDuckGo (free, no API key required) as the default search engine.
+Supports Brave Search (with API key) and DuckDuckGo (free fallback).
 """
 
 import logging
@@ -30,6 +30,111 @@ class SearchResponse:
     query: str
     results: list[SearchResult]
     total_results: int
+
+
+class BraveSearchService:
+    """
+    Web search service using Brave Search API.
+
+    Requires a Brave Search API key (https://brave.com/search/api/).
+    Free tier : 2 000 requêtes/mois.
+    """
+
+    BRAVE_API_URL = "https://api.search.brave.com/res/v1/web/search"
+
+    def __init__(self, api_key: str):
+        self._api_key = api_key
+        self._client: httpx.AsyncClient | None = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get or create HTTP client."""
+        if self._client is None:
+            self._client = httpx.AsyncClient(
+                timeout=15.0,
+                headers={
+                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip",
+                    "X-Subscription-Token": self._api_key,
+                },
+            )
+        return self._client
+
+    async def search(
+        self,
+        query: str,
+        max_results: int = 5,
+        region: str = "fr",
+    ) -> SearchResponse:
+        """
+        Search the web using Brave Search API.
+
+        Args:
+            query: Search query
+            max_results: Maximum number of results (default 5)
+            region: Country code (default fr)
+
+        Returns:
+            SearchResponse with results
+        """
+        client = await self._get_client()
+
+        try:
+            response = await client.get(
+                self.BRAVE_API_URL,
+                params={
+                    "q": query,
+                    "count": max_results,
+                    "country": region,
+                    "search_lang": "fr",
+                    "text_decorations": False,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            results: list[SearchResult] = []
+            for item in data.get("web", {}).get("results", [])[:max_results]:
+                results.append(SearchResult(
+                    title=item.get("title", ""),
+                    url=item.get("url", ""),
+                    snippet=item.get("description", ""),
+                    source="brave",
+                ))
+
+            return SearchResponse(
+                query=query,
+                results=results,
+                total_results=len(results),
+            )
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Brave Search error: {e.response.status_code}")
+            return SearchResponse(query=query, results=[], total_results=0)
+        except Exception as e:
+            logger.error(f"Brave Search error: {e}")
+            return SearchResponse(query=query, results=[], total_results=0)
+
+    def format_results_for_llm(self, response: SearchResponse) -> str:
+        """Format search results as context for LLM."""
+        if not response.results:
+            return f"Aucun résultat trouvé pour: {response.query}"
+
+        lines = [f"Résultats de recherche web pour: {response.query}\n"]
+
+        for i, result in enumerate(response.results, 1):
+            lines.append(f"{i}. **{result.title}**")
+            lines.append(f"   URL: {result.url}")
+            if result.snippet:
+                lines.append(f"   {result.snippet}")
+            lines.append("")
+
+        return "\n".join(lines)
+
+    async def close(self) -> None:
+        """Close the HTTP client."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
 
 
 class WebSearchService:
@@ -165,16 +270,70 @@ class WebSearchService:
             self._client = None
 
 
-# Global instance
+# Global instances
 _web_search_service: WebSearchService | None = None
+_brave_search_service: BraveSearchService | None = None
 
 
-def get_web_search_service() -> WebSearchService:
-    """Get the global web search service instance."""
-    global _web_search_service
+def get_web_search_service() -> WebSearchService | BraveSearchService:
+    """
+    Get the global web search service instance.
+
+    Priorité : Brave Search (si clé API configurée) > DuckDuckGo (fallback).
+    """
+    global _web_search_service, _brave_search_service
+
+    # Vérifier si Brave Search est configuré
+    brave_key = _get_brave_api_key()
+    if brave_key:
+        if _brave_search_service is None:
+            _brave_search_service = BraveSearchService(brave_key)
+            logger.info("Brave Search API activé")
+        return _brave_search_service
+
+    # Fallback DuckDuckGo
     if _web_search_service is None:
         _web_search_service = WebSearchService()
     return _web_search_service
+
+
+_brave_api_key_cache: str | None = None
+
+
+def _get_brave_api_key() -> str | None:
+    """
+    Récupère la clé API Brave Search.
+
+    Vérifie : variable d'environnement > cache module.
+    Le cache est alimenté par set_brave_api_key() lors de la config.
+    """
+    import os
+
+    env_key = os.environ.get("BRAVE_API_KEY")
+    if env_key:
+        return env_key
+
+    return _brave_api_key_cache
+
+
+def set_brave_api_key(key: str | None) -> None:
+    """
+    Met à jour la clé API Brave Search en cache.
+
+    Appelé lors du changement de clé API dans la config.
+    Invalide le service Brave existant pour forcer la recréation.
+    """
+    global _brave_api_key_cache, _brave_search_service
+    _brave_api_key_cache = key
+    # Invalider le service pour qu'il soit recréé avec la nouvelle clé
+    if _brave_search_service is not None:
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_brave_search_service.close())
+        except RuntimeError:
+            pass
+        _brave_search_service = None
 
 
 # Tool definition for LLM function calling
