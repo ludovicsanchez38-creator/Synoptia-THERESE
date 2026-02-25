@@ -3,7 +3,6 @@ Tests pour le CommandRegistry V3.
 """
 
 import pytest
-
 from app.models.command import CommandAction, CommandDefinition, CommandSource
 from app.services.command_registry import CommandRegistry
 
