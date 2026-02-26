@@ -136,23 +136,54 @@ a = Analysis(
 
 pyz = PYZ(a.pure, cipher=block_cipher)
 
-exe = EXE(
-    pyz,
-    a.scripts,
-    a.binaries,
-    a.datas,
-    [],
-    name="backend",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=sys.platform != "win32",  # strip corrompt les DLL Windows
-    upx=False,                      # UPX corrompt python3xx.dll et vcruntime140.dll sur Windows
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
+if sys.platform == "linux":
+    # Mode onedir pour Linux : les .so OpenBLAS/scipy restent sur disque,
+    # pas d'extraction en /tmp, pas d'erreur ELF page-alignment.
+    # BUG-044 : libscipy_openblas64_.so non aligné en mémoire avec --onefile.
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],             # binaries et datas vont dans COLLECT, pas dans EXE
+        exclude_binaries=True,
+        name="backend",
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=False,    # strip peut corrompre certains .so ELF sur Linux
+        upx=False,
+        console=True,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+    )
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        strip=False,
+        upx=False,
+        name="backend",
+    )
+else:
+    # Mode onefile pour macOS et Windows (comportement actuel)
+    exe = EXE(
+        pyz,
+        a.scripts,
+        a.binaries,
+        a.datas,
+        [],
+        name="backend",
+        debug=False,
+        bootloader_ignore_signals=False,
+        strip=sys.platform != "win32",  # strip corrompt les DLL Windows
+        upx=False,                      # UPX corrompt python3xx.dll et vcruntime140.dll sur Windows
+        upx_exclude=[],
+        runtime_tmpdir=None,
+        console=True,
+        disable_windowed_traceback=False,
+        argv_emulation=False,
+        target_arch=None,
+        codesign_identity=None,
+        entitlements_file=None,
+    )

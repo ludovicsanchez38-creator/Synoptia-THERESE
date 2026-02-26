@@ -95,11 +95,59 @@ jobs:
         shell: bash
         run: |
           mkdir -p src/frontend/src-tauri/binaries
-          SRC="src/backend/dist/backend${{ matrix.platform.binary-ext }}"
-          DEST="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}${{ matrix.platform.binary-ext }}"
-          cp "$SRC" "$DEST"
-          chmod +x "$DEST" 2>/dev/null || true
-          echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
+
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            # BUG-044 : mode onedir Linux
+            # PyInstaller produit dist/backend/ (dossier) au lieu de dist/backend (binaire unique)
+            # On crée un wrapper shell comme "sidecar" + on copie le dossier dans binaries/backend-libs/
+
+            WRAPPER="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}"
+            LIBS_DIR="src/frontend/src-tauri/binaries/backend-libs"
+
+            # Vérifier que l'output onedir existe
+            if [ ! -d "src/backend/dist/backend" ]; then
+              echo "ERREUR : src/backend/dist/backend/ introuvable (onedir attendu)" >&2
+              exit 1
+            fi
+
+            # Créer le wrapper shell
+            # Note : pas besoin de LD_LIBRARY_PATH explicite en PyInstaller 6.x onedir.
+            # Le bootloader PyInstaller configure LD_LIBRARY_PATH vers _internal/ en interne
+            # avant de charger Python. Les .so sont dans $LIBS_DIR/_internal/.
+            cat > "$WRAPPER" << 'EOF'
+#!/bin/sh
+# THÉRÈSE - wrapper backend Linux (PyInstaller onedir, BUG-044)
+# THERESE_BACKEND_LIBS est passé par lib.rs via app.path().resource_dir()
+LIBS_DIR="${THERESE_BACKEND_LIBS:-$(cd "$(dirname "$0")" && pwd)/backend-libs}"
+exec "$LIBS_DIR/backend" "$@"
+EOF
+            chmod +x "$WRAPPER"
+            echo "Wrapper shell créé : $WRAPPER"
+
+            # Copier le CONTENU du dossier onedir dans backend-libs/
+            # Attention : cp -r dist/backend backend-libs/ copierait backend/ DANS backend-libs/
+            # (crée backend-libs/backend/backend, wrapper pointerait sur un dossier).
+            # On copie dist/backend/* pour avoir backend-libs/backend (binaire) directement.
+            mkdir -p "$LIBS_DIR"
+            cp -r src/backend/dist/backend/. "$LIBS_DIR/"
+            chmod +x "$LIBS_DIR/backend"
+            echo "Libs onedir copiés : $LIBS_DIR ($(du -sh "$LIBS_DIR" | cut -f1))"
+
+          else
+            # macOS et Windows : mode onefile (comportement actuel)
+            SRC="src/backend/dist/backend${{ matrix.platform.binary-ext }}"
+            DEST="src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}${{ matrix.platform.binary-ext }}"
+            cp "$SRC" "$DEST"
+            chmod +x "$DEST" 2>/dev/null || true
+            echo "Sidecar copié : $DEST ($(du -sh "$DEST" | cut -f1))"
+
+            # Créer le placeholder backend-libs/ pour satisfaire le glob de resources Tauri.
+            # Sur macOS/Windows, ce dossier est vide (pas utilisé au runtime).
+            # Sur Linux, il est peuplé avec le contenu du onedir.
+            mkdir -p src/frontend/src-tauri/binaries/backend-libs
+            touch src/frontend/src-tauri/binaries/backend-libs/.gitkeep
+            echo "Placeholder backend-libs créé pour les resources Tauri (macOS/Windows)"
+          fi
 
       - name: Signer le sidecar (macOS ad-hoc)
         if: runner.os == 'macOS'

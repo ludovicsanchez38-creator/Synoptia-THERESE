@@ -366,18 +366,23 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         {getNavLabel()}
       </h3>
 
-      {/* Calendar Selector */}
-      <select
-        value={currentCalendarId || ''}
-        onChange={(e) => setCurrentCalendar(e.target.value)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
-      >
-        {calendars.map((cal) => (
-          <option key={cal.id} value={cal.id}>
-            {cal.summary}
-          </option>
-        ))}
-      </select>
+      {/* Calendar Selector
+          BUG-049 : le dropdown passait derrière les autres composants sur Windows/Linux.
+          Cause : stacking context bas (body overflow:hidden + conteneur sans z-index).
+          Fix : wrapper relative z-[100] force le dropdown au-dessus de toute la pile CSS. */}
+      <div className="relative z-[100]">
+        <select
+          value={currentCalendarId || ''}
+          onChange={(e) => setCurrentCalendar(e.target.value)}
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        >
+          {calendars.map((cal) => (
+            <option key={cal.id} value={cal.id}>
+              {cal.summary}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 

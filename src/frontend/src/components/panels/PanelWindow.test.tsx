@@ -159,4 +159,25 @@ describe('PanelWindow', () => {
 
     expect(mockGetEmailAuthStatus).not.toHaveBeenCalled();
   });
+
+  // BUG-049 : le conteneur principal de PanelWindow ne doit PAS avoir overflow-hidden.
+  // overflow-hidden sur un ancêtre clippe les menus <select> dans WebView2 (Windows)
+  // qui les rend via Chromium (pas via l'OS) - le dropdown du calendrier passait derrière.
+  it('BUG049 : le conteneur principal ne doit pas avoir overflow-hidden', async () => {
+    const { PanelWindow } = await import('./PanelWindow');
+    render(<PanelWindow panel="calendar" />);
+
+    // Attendre que le panel soit prêt (init résolue)
+    await waitFor(() => {
+      expect(screen.getByTestId('calendar-panel')).toBeTruthy();
+    });
+
+    // Le conteneur h-screen w-screen (après PanelErrorBoundary qui n'ajoute pas de div)
+    // ne doit PAS avoir overflow-hidden
+    const wrapper = screen.getByTestId('calendar-panel').parentElement;
+    expect(wrapper).toBeTruthy();
+    expect(wrapper!.classList.contains('overflow-hidden')).toBe(false);
+    expect(wrapper!.classList.contains('h-screen')).toBe(true);
+    expect(wrapper!.classList.contains('w-screen')).toBe(true);
+  });
 });

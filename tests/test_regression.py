@@ -2837,3 +2837,114 @@ class TestBUG044_FilePathsInChat:
         assert "file_paths" in content, (
             "ChatRequest interface dans chat.ts doit avoir file_paths"
         )
+
+
+class TestBUG044_LinuxOnedirPyInstaller:
+    """BUG-044 : PyInstaller onedir sur Linux pour éviter ELF page-alignment OpenBLAS.
+    Le backend.spec doit utiliser COLLECT (onedir) sur Linux au lieu de EXE (onefile).
+    Le wrapper shell doit utiliser THERESE_BACKEND_LIBS pour trouver le vrai binaire.
+    """
+
+    BACKEND_SPEC = Path("src/backend/backend.spec")
+    RELEASE_YML = Path(".github/workflows/release.yml")
+    LIB_RS = Path("src/frontend/src-tauri/src/lib.rs")
+    TAURI_CONF = Path("src/frontend/src-tauri/tauri.conf.json")
+
+    def test_backend_spec_has_collect_for_linux(self):
+        content = self.BACKEND_SPEC.read_text(encoding="utf-8")
+        assert 'sys.platform == "linux"' in content, (
+            "backend.spec doit avoir une branche conditionnelle pour Linux"
+        )
+        assert "COLLECT(" in content, (
+            "backend.spec doit avoir une section COLLECT pour le mode onedir Linux"
+        )
+        assert "exclude_binaries=True" in content, (
+            "backend.spec doit avoir exclude_binaries=True dans l'EXE Linux"
+        )
+
+    def test_release_yml_linux_uses_wrapper_script(self):
+        content = self.RELEASE_YML.read_text(encoding="utf-8")
+        assert "THERESE_BACKEND_LIBS" in content, (
+            "release.yml doit créer un wrapper shell qui utilise THERESE_BACKEND_LIBS"
+        )
+        assert "backend-libs" in content, (
+            "release.yml doit copier le dossier onedir dans backend-libs/"
+        )
+        assert "LD_LIBRARY_PATH" in content, (
+            "Le wrapper shell doit configurer LD_LIBRARY_PATH"
+        )
+
+    def test_lib_rs_passes_backend_libs_env_on_linux(self):
+        content = self.LIB_RS.read_text(encoding="utf-8")
+        assert "THERESE_BACKEND_LIBS" in content, (
+            "lib.rs doit passer THERESE_BACKEND_LIBS au sidecar sur Linux"
+        )
+        assert 'target_os = "linux"' in content, (
+            "lib.rs doit conditionner THERESE_BACKEND_LIBS avec #[cfg(target_os = 'linux')]"
+        )
+        assert "resource_dir()" in content, (
+            "lib.rs doit utiliser app.path().resource_dir() pour trouver backend-libs"
+        )
+
+    def test_tauri_conf_has_backend_libs_resources(self):
+        import json
+        with open(self.TAURI_CONF, encoding="utf-8") as f:
+            conf = json.load(f)
+        resources = conf.get("bundle", {}).get("resources", [])
+        assert any("backend-libs" in str(r) for r in resources), (
+            "tauri.conf.json doit avoir une entrée resources pour backend-libs/**"
+        )
+
+    def test_release_yml_cp_copies_content_not_folder(self):
+        content = self.RELEASE_YML.read_text(encoding="utf-8")
+        # La commande cp doit copier le CONTENU du dossier onedir (dist/backend/.)
+        # et non le dossier lui-même (dist/backend), ce qui créerait backend-libs/backend/backend
+        # (le wrapper pointerait sur un dossier et non un binaire → backend ne démarre jamais)
+        assert "dist/backend/." in content or "dist/backend/*" in content, (
+            "release.yml : la commande cp doit copier le contenu du dossier onedir "
+            "(dist/backend/. ou dist/backend/*) et non le dossier lui-même"
+        )
+
+
+class TestBUG049_CalendarDropdownOverflow:
+    """BUG-049 : Le dropdown <select> du calendrier passait derrière les autres composants.
+    Cause : overflow-hidden sur le conteneur PanelWindow clippait le menu déroulant
+    dans WebView2 (Windows) qui rend <select> via Chromium et non via l'OS.
+    Fix : supprimer overflow-hidden du conteneur h-screen w-screen de PanelWindow.
+    """
+
+    PANEL_WINDOW = Path("src/frontend/src/components/panels/PanelWindow.tsx")
+
+    def test_panel_window_outer_container_has_no_overflow_hidden(self):
+        content = self.PANEL_WINDOW.read_text(encoding="utf-8")
+        # Le conteneur h-screen w-screen ne doit pas avoir overflow-hidden
+        # (il peut exister ailleurs, mais pas sur le conteneur principal des panels)
+        import re
+        # Chercher la ligne du conteneur principal des panels (après PanelErrorBoundary)
+        match = re.search(r'h-screen w-screen[^"]*overflow-hidden', content)
+        assert match is None, (
+            "PanelWindow : le conteneur h-screen w-screen ne doit pas avoir overflow-hidden "
+            "(cause le clipping du <select> calendrier dans WebView2)"
+        )
+
+    def test_panel_window_outer_container_exists_without_overflow(self):
+        content = self.PANEL_WINDOW.read_text(encoding="utf-8")
+        import re
+        # Le conteneur doit exister (h-screen w-screen bg-bg text-text)
+        match = re.search(r'className="h-screen w-screen bg-bg text-text"', content)
+        assert match is not None, (
+            "PanelWindow doit avoir un conteneur h-screen w-screen bg-bg text-text "
+            "sans overflow-hidden"
+        )
+
+    def test_calendar_select_has_zindex_wrapper(self):
+        content = Path("src/frontend/src/components/calendar/CalendarPanel.tsx").read_text(encoding="utf-8")
+        assert 'z-[100]' in content, (
+            "CalendarPanel : le <select> doit être enveloppé dans un div z-[100] "
+            "pour que le dropdown s'affiche au-dessus des autres composants"
+        )
+        assert 'relative z-[100]' in content, (
+            "Le wrapper doit avoir 'relative z-[100]' pour créer un nouveau contexte de stacking"
+        )
+
+

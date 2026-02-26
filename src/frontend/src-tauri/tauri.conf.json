@@ -44,6 +44,9 @@
     "externalBin": [
       "binaries/backend"
     ],
+    "resources": [
+      "binaries/backend-libs/**"
+    ],
     "macOS": {
       "minimumSystemVersion": "10.15",
       "frameworks": [],

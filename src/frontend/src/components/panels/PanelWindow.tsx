@@ -145,7 +145,7 @@ export function PanelWindow({ panel }: PanelWindowProps) {
 
   return (
     <PanelErrorBoundary>
-      <div className="h-screen w-screen bg-bg text-text overflow-hidden">
+      <div className="h-screen w-screen bg-bg text-text">
         {panel === 'email' && <EmailPanel standalone />}
         {panel === 'calendar' && <CalendarPanel standalone />}
         {panel === 'tasks' && <TasksPanel standalone />}
