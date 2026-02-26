@@ -1709,7 +1709,7 @@ class TestBUG028PricingEUR:
 
         required = [
             "claude-opus-4-6",
-            "claude-sonnet-4-5-20250929",
+            "claude-sonnet-4-6",
             "gpt-5.2",
             "gemini-3.1-pro-preview",
             "mistral-large-latest",
@@ -2946,5 +2946,181 @@ class TestBUG049_CalendarDropdownOverflow:
         assert 'relative z-[100]' in content, (
             "Le wrapper doit avoir 'relative z-[100]' pour créer un nouveau contexte de stacking"
         )
+
+
+# ============================================================
+# BUG-050 (v0.3.5) - Backup fichier clé Fernet
+# Un changement de productName (signature binaire) provoquait la
+# perte de la clé Keychain. Le fix synchronise toujours un fichier
+# backup et restaure depuis celui-ci si la clé Keychain a changé.
+# ============================================================
+
+
+class TestBUG050_EncryptionKeyBackupFile:
+    """BUG-050 : _create_key_in_keychain() doit aussi écrire dans KEY_FILE."""
+
+    def test_create_key_calls_write_key_backup(self):
+        """_create_key_in_keychain appelle _write_key_backup après keyring.set_password."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        # La méthode _create_key_in_keychain doit appeler self._write_key_backup(key)
+        assert "_write_key_backup" in content, (
+            "encryption.py doit contenir _write_key_backup (BUG-050)"
+        )
+        # Vérifier que _create_key_in_keychain contient l'appel
+        import re
+        # Trouver le bloc de _create_key_in_keychain
+        match = re.search(
+            r"def _create_key_in_keychain\(self\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None, "_create_key_in_keychain doit exister"
+        method_body = match.group(0)
+        assert "self._write_key_backup(key)" in method_body, (
+            "_create_key_in_keychain doit appeler self._write_key_backup(key) "
+            "pour créer un fichier backup de la clé (BUG-050)"
+        )
+
+    def test_write_key_backup_method_exists(self):
+        """_write_key_backup doit exister et écrire dans KEY_FILE."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        assert "def _write_key_backup(self, key: bytes)" in content, (
+            "encryption.py doit avoir une méthode _write_key_backup (BUG-050)"
+        )
+        # Vérifier qu'elle écrit dans KEY_FILE
+        import re
+        match = re.search(
+            r"def _write_key_backup\(self, key: bytes\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None
+        method_body = match.group(0)
+        assert "KEY_FILE" in method_body, (
+            "_write_key_backup doit écrire dans KEY_FILE"
+        )
+        assert "os.open" in method_body or "open(" in method_body, (
+            "_write_key_backup doit ouvrir le fichier pour écrire"
+        )
+
+    def test_migrate_does_not_delete_file(self):
+        """_migrate_key_to_keychain ne doit PAS supprimer le fichier source."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        import re
+        match = re.search(
+            r"def _migrate_key_to_keychain\(self\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None, "_migrate_key_to_keychain doit exister"
+        method_body = match.group(0)
+        # Vérifier qu'il n'y a PAS de KEY_FILE.unlink() actif (commenté OK)
+        lines = method_body.split("\n")
+        for line in lines:
+            stripped = line.strip()
+            if "KEY_FILE.unlink()" in stripped and not stripped.startswith("#"):
+                pytest.fail(
+                    "_migrate_key_to_keychain ne doit PAS supprimer KEY_FILE "
+                    "(le fichier sert de backup - BUG-050)"
+                )
+
+
+class TestBUG050_KeychainFallbackToFile:
+    """BUG-050 : si la clé Keychain diffère du fichier backup, utiliser le fichier."""
+
+    def test_get_or_create_key_checks_file_coherence(self):
+        """_get_or_create_key doit comparer clé Keychain et fichier backup."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        import re
+        match = re.search(
+            r"def _get_or_create_key\(self\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None, "_get_or_create_key doit exister"
+        method_body = match.group(0)
+        assert "file_key != keychain_key" in method_body, (
+            "_get_or_create_key doit comparer la clé Keychain avec le fichier backup "
+            "pour détecter un changement de signature binaire (BUG-050)"
+        )
+
+    def test_get_or_create_key_restores_file_key_to_keychain(self):
+        """Quand les clés divergent, la clé fichier doit être restaurée dans le Keychain."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        import re
+        match = re.search(
+            r"def _get_or_create_key\(self\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None
+        method_body = match.group(0)
+        # Doit restaurer la clé fichier dans le Keychain via keyring.set_password
+        assert "file_key.decode" in method_body, (
+            "_get_or_create_key doit restaurer la clé fichier dans le Keychain (BUG-050)"
+        )
+        assert "return file_key" in method_body, (
+            "_get_or_create_key doit retourner file_key quand les clés divergent (BUG-050)"
+        )
+
+    def test_keychain_key_synced_to_backup_file(self):
+        """Quand la clé Keychain est valide, elle doit être synchronisée dans le fichier backup."""
+        content = ENCRYPTION_PY.read_text(encoding="utf-8")
+        import re
+        match = re.search(
+            r"def _get_or_create_key\(self\).*?(?=\n    def |\nclass |\Z)",
+            content,
+            re.DOTALL,
+        )
+        assert match is not None
+        method_body = match.group(0)
+        assert "self._write_key_backup(keychain_key)" in method_body, (
+            "_get_or_create_key doit synchroniser la clé Keychain dans le fichier backup (BUG-050)"
+        )
+
+    def test_bug050_functional_keychain_fallback(self):
+        """Test fonctionnel : si le Keychain a une nouvelle clé, le fichier backup est utilisé."""
+        import tempfile
+
+        from cryptography.fernet import Fernet
+
+        from app.services.encryption import EncryptionService
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            tmp_key_file = tmp_path / ".encryption_key"
+
+            # Clé originale (dans le fichier backup)
+            original_key = Fernet.generate_key()
+            # Nouvelle clé (générée par un binaire avec une autre signature)
+            new_keychain_key = Fernet.generate_key()
+
+            # Écrire la clé originale dans le fichier backup
+            with open(tmp_key_file, "wb") as f:
+                f.write(original_key)
+
+            # Simuler : le Keychain retourne la nouvelle clé, mais le fichier a l'ancienne
+            mock_keyring = MagicMock()
+            mock_keyring.set_password = MagicMock()
+
+            with (
+                patch("app.services.encryption._try_keyring_available", return_value=True),
+                patch("app.services.encryption.KEY_FILE", tmp_key_file),
+                patch("app.services.encryption.THERESE_DIR", tmp_path),
+            ):
+                svc = EncryptionService.__new__(EncryptionService)
+                svc._using_keychain = False
+
+                with (
+                    patch.object(svc, "_get_key_from_keychain", return_value=new_keychain_key),
+                    patch.dict("sys.modules", {"keyring": mock_keyring}),
+                ):
+                    key = svc._get_or_create_key()
+
+            # La clé retournée doit être celle du fichier (pas du Keychain)
+            assert key == original_key, (
+                "Quand le Keychain a une clé différente du fichier backup, "
+                "la clé fichier doit être utilisée (BUG-050)"
+            )
 
 

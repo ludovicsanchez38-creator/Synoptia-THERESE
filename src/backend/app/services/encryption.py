@@ -83,22 +83,61 @@ class EncryptionService:
         logger.info(f"Service de chiffrement initialise (storage: {storage})")
 
     def _get_or_create_key(self) -> bytes:
-        """Recupere ou genere la cle de chiffrement."""
+        """Recupere ou genere la cle de chiffrement.
+
+        BUG-050: Si le Keychain retourne une cle mais que le fichier backup
+        contient une cle differente, on prefere le fichier backup (la cle
+        Keychain a pu etre re-generee suite a un changement de signature binaire).
+        """
         # 1. Essayer le keychain (Sprint 2 - PERF-2.10)
         if _try_keyring_available():
-            key = self._get_key_from_keychain()
-            if key:
-                self._using_keychain = True
-                return key
+            keychain_key = self._get_key_from_keychain()
 
-            # Migrer depuis fichier si existant
+            if keychain_key:
+                # BUG-050: verifier coherence avec le fichier backup
+                if KEY_FILE.exists():
+                    try:
+                        with open(KEY_FILE, "rb") as f:
+                            file_key = f.read()
+                        if file_key and file_key != keychain_key:
+                            # Le Keychain a une cle differente du fichier backup.
+                            # C'est le signe d'un changement de signature binaire :
+                            # le nouveau binaire n'a pas pu lire l'ancienne cle Keychain
+                            # et en a genere une nouvelle, perdant l'acces aux donnees.
+                            # On restaure la cle du fichier dans le Keychain.
+                            logger.warning(
+                                "BUG-050: Cle Keychain differente du fichier backup. "
+                                "Restauration de la cle fichier dans le Keychain."
+                            )
+                            try:
+                                import keyring
+                                keyring.set_password(
+                                    KEYCHAIN_SERVICE,
+                                    KEYCHAIN_ACCOUNT,
+                                    file_key.decode("utf-8"),
+                                )
+                                self._using_keychain = True
+                                return file_key
+                            except Exception as e:
+                                logger.warning(f"Restauration Keychain echouee: {e}")
+                                # Utiliser quand meme la cle fichier
+                                return file_key
+                    except Exception as e:
+                        logger.debug(f"Lecture fichier backup echouee: {e}")
+
+                # Keychain OK, synchroniser le fichier backup
+                self._write_key_backup(keychain_key)
+                self._using_keychain = True
+                return keychain_key
+
+            # Pas de cle dans le Keychain - fallback sur fichier si existant
             if KEY_FILE.exists():
                 key = self._migrate_key_to_keychain()
                 if key:
                     self._using_keychain = True
                     return key
 
-            # Generer nouvelle cle dans keychain
+            # Generer nouvelle cle dans keychain (+ fichier backup)
             key = self._create_key_in_keychain()
             if key:
                 self._using_keychain = True
@@ -120,19 +159,39 @@ class EncryptionService:
         return None
 
     def _create_key_in_keychain(self) -> bytes | None:
-        """Genere et stocke une nouvelle cle dans le keychain."""
+        """Genere et stocke une nouvelle cle dans le keychain + fichier backup."""
         try:
             import keyring
             key = Fernet.generate_key()
             keyring.set_password(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, key.decode("utf-8"))
-            logger.info("Nouvelle cle generee dans le keychain")
+            # BUG-050: toujours ecrire un backup fichier pour survivre aux
+            # changements de signature binaire (ex: productName modifie)
+            self._write_key_backup(key)
+            logger.info("Nouvelle cle generee dans le keychain + fichier backup")
             return key
         except Exception as e:
             logger.warning(f"Impossible de stocker dans le keychain: {e}")
         return None
 
+    def _write_key_backup(self, key: bytes) -> None:
+        """Ecrit la cle dans le fichier backup (BUG-050).
+
+        Ce fichier sert de filet de securite si le Keychain devient inaccessible
+        (changement de signature binaire, corruption, reinstallation).
+        """
+        try:
+            THERESE_DIR.mkdir(parents=True, exist_ok=True)
+            fd = os.open(KEY_FILE, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+            try:
+                os.write(fd, key)
+            finally:
+                os.close(fd)
+            logger.debug("Fichier backup cle ecrit: %s", KEY_FILE)
+        except Exception as e:
+            logger.warning(f"Impossible d'ecrire le fichier backup cle: {e}")
+
     def _migrate_key_to_keychain(self) -> bytes | None:
-        """Migre la cle du fichier vers le keychain."""
+        """Migre la cle du fichier vers le keychain (garde le fichier comme backup)."""
         try:
             import keyring
 
@@ -143,10 +202,10 @@ class EncryptionService:
             # Stocker dans le keychain
             keyring.set_password(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, key.decode("utf-8"))
 
-            # Supprimer le fichier (optionnel - garder comme backup)
-            # KEY_FILE.unlink()
+            # BUG-050: NE PAS supprimer le fichier - il sert de backup
+            # en cas de changement de signature binaire
 
-            logger.info("Cle migree du fichier vers le keychain")
+            logger.info("Cle migree du fichier vers le keychain (fichier backup conserve)")
             return key
         except Exception as e:
             logger.warning(f"Migration vers keychain echouee: {e}")
