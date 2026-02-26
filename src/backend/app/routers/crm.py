@@ -876,6 +876,58 @@ async def set_sync_config(
     return await get_sync_config(session)
 
 
+@router.post("/sync/credentials")
+async def save_google_credentials(
+    request: dict,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    F-13 : Re-saisie des credentials Google OAuth (client_id, client_secret).
+
+    Utile quand les credentials stockées sont corrompues (perte clé Fernet).
+    """
+    from app.services.encryption import encrypt_value
+
+    client_id = request.get("client_id", "").strip()
+    client_secret = request.get("client_secret", "").strip()
+
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="client_id et client_secret sont requis")
+
+    # Validation format
+    if not client_id.endswith(".apps.googleusercontent.com"):
+        raise HTTPException(
+            status_code=400,
+            detail="Le client_id doit se terminer par .apps.googleusercontent.com",
+        )
+
+    if not client_secret.startswith("GOCSPX-"):
+        raise HTTPException(
+            status_code=400,
+            detail="Le client_secret doit commencer par GOCSPX-",
+        )
+
+    # Stocker les credentials chiffrées dans preferences
+    for pref_key, pref_value in [
+        ("google_client_id", client_id),
+        ("google_client_secret", client_secret),
+    ]:
+        result = await session.execute(
+            select(Preference).where(Preference.key == pref_key)
+        )
+        pref = result.scalar_one_or_none()
+        encrypted = encrypt_value(pref_value)
+        if pref:
+            pref.value = encrypted
+        else:
+            session.add(Preference(key=pref_key, value=encrypted, category="oauth"))
+
+    await session.commit()
+    logger.info("Google OAuth credentials saved via F-13 re-entry")
+
+    return {"success": True, "message": "Credentials Google OAuth enregistrées"}
+
+
 @router.post("/sync/connect")
 async def initiate_sheets_oauth(
     session: AsyncSession = Depends(get_session),

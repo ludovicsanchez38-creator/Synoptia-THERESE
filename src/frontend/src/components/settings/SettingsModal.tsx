@@ -37,6 +37,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
+  const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
 
@@ -113,8 +114,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   async function loadSettings() {
     setLoading(true);
     try {
-      const [keys, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, groqKeyStatus, webSearchStatus] = await Promise.all([
-        api.getApiKeys(),
+      const [keysResult, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, groqKeyStatus, webSearchStatus] = await Promise.all([
+        api.getApiKeysWithCorrupted().catch((): api.ApiKeysResult => ({ keys: {} as Record<string, boolean>, corrupted: [] })),
         api.getLLMConfig().catch(() => ({ provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] })),
         api.getPreferences().catch(() => ({})),
         api.getStats().catch(() => null),
@@ -125,7 +126,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         api.getWebSearchStatus().catch(() => ({ enabled: true })),
       ]);
 
+      const keys = keysResult.keys;
       setApiKeys(keys);
+      setCorruptedKeys(keysResult.corrupted);
       setSelectedProvider(llmConfig.provider as api.LLMProvider);
       setSelectedModel(llmConfig.model);
       setStats(statsData);
@@ -341,6 +344,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setSelectedModel(defaultModel);
       try {
         await api.setLLMConfig(provider, defaultModel);
+        // F-12 : notifier ChatInput du changement de config LLM
+        window.dispatchEvent(new Event('therese:llm-config-changed'));
       } catch (err) {
         console.error('Échec de la sauvegarde de la config LLM:', err);
       }
@@ -351,6 +356,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setSelectedModel(modelId);
     try {
       await api.setLLMConfig(selectedProvider, modelId);
+      // F-12 : notifier ChatInput du changement de config LLM
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
     } catch (err) {
       console.error('Échec de la sauvegarde de la config LLM:', err);
     }
@@ -609,6 +616,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   selectedProvider={selectedProvider}
                   selectedModel={selectedModel}
                   apiKeys={apiKeys}
+                  corruptedKeys={corruptedKeys}
                   apiKeyInput={apiKeyInput}
                   setApiKeyInput={setApiKeyInput}
                   showApiKey={showApiKey}

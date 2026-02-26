@@ -24,7 +24,17 @@ export async function setPreference(
 }
 
 // API Keys
+export interface ApiKeysResult {
+  keys: Record<string, boolean>;
+  corrupted: string[];
+}
+
 export async function getApiKeys(): Promise<Record<string, boolean>> {
+  const result = await getApiKeysWithCorrupted();
+  return result.keys;
+}
+
+export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
   const config = await request<{
     has_anthropic_key: boolean;
     has_mistral_key: boolean;
@@ -37,19 +47,23 @@ export async function getApiKeys(): Promise<Record<string, boolean>> {
     has_gemini_image_key: boolean;
     has_fal_key: boolean;
     has_brave_key: boolean;
+    corrupted_keys: string[];
   }>('/api/config/');
   return {
-    anthropic: config.has_anthropic_key,
-    mistral: config.has_mistral_key,
-    openai: config.has_openai_key,
-    gemini: config.has_gemini_key,
-    groq: config.has_groq_key,
-    grok: config.has_grok_key,
-    openrouter: config.has_openrouter_key,
-    openai_image: config.has_openai_image_key,
-    gemini_image: config.has_gemini_image_key,
-    fal: config.has_fal_key,
-    brave: config.has_brave_key,
+    keys: {
+      anthropic: config.has_anthropic_key,
+      mistral: config.has_mistral_key,
+      openai: config.has_openai_key,
+      gemini: config.has_gemini_key,
+      groq: config.has_groq_key,
+      grok: config.has_grok_key,
+      openrouter: config.has_openrouter_key,
+      openai_image: config.has_openai_image_key,
+      gemini_image: config.has_gemini_image_key,
+      fal: config.has_fal_key,
+      brave: config.has_brave_key,
+    },
+    corrupted: config.corrupted_keys || [],
   };
 }
 

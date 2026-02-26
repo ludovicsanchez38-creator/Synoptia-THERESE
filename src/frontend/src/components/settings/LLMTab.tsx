@@ -1,7 +1,7 @@
 // Onglet configuration LLM - Paramètres THÉRÈSE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { Key, Check, AlertCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, Mic, Image as ImageIcon, Globe, RefreshCw } from 'lucide-react';
+import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, Sparkles, Mic, Image as ImageIcon, Globe, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -157,6 +157,7 @@ export interface LLMTabProps {
   selectedProvider: api.LLMProvider;
   selectedModel: string;
   apiKeys: Record<string, boolean>;
+  corruptedKeys?: string[];
   apiKeyInput: string;
   setApiKeyInput: (v: string) => void;
   showApiKey: boolean;
@@ -207,6 +208,7 @@ export function LLMTab({
   selectedProvider,
   selectedModel,
   apiKeys,
+  corruptedKeys = [],
   apiKeyInput,
   setApiKeyInput,
   showApiKey,
@@ -320,8 +322,8 @@ export function LLMTab({
                   <p className="text-xs text-text-muted mt-0.5">{provider.description}</p>
                 </div>
                 {provider.id !== 'ollama' && (
-                  <div className={`shrink-0 ${providerHasKey ? 'text-green-400' : 'text-text-muted'}`}>
-                    {providerHasKey ? <Check className="w-4 h-4" /> : <Key className="w-4 h-4" />}
+                  <div className={`shrink-0 ${corruptedKeys.includes(provider.id) ? 'text-red-400' : providerHasKey ? 'text-green-400' : 'text-text-muted'}`}>
+                    {corruptedKeys.includes(provider.id) ? <XCircle className="w-4 h-4" /> : providerHasKey ? <Check className="w-4 h-4" /> : <Key className="w-4 h-4" />}
                   </div>
                 )}
               </button>
@@ -346,7 +348,12 @@ export function LLMTab({
           </div>
 
           {/* Statut */}
-          {hasApiKey ? (
+          {corruptedKeys.includes(selectedProvider) ? (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <XCircle className="w-4 h-4 text-red-400" />
+              <span className="text-sm text-red-400">Clé API corrompue - veuillez la ressaisir</span>
+            </div>
+          ) : hasApiKey ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <Check className="w-4 h-4 text-green-400" />
               <span className="text-sm text-green-400">Clé API configurée</span>

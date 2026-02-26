@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { Send, Square, Paperclip, Mic, MicOff, Loader2, X } from 'lucide-react';
+import { Send, Square, Paperclip, Mic, MicOff, Loader2, X, Cpu } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -16,7 +16,7 @@ import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
-import { streamMessage, indexFile, ApiError } from '../../services/api';
+import { streamMessage, indexFile, ApiError, getLLMConfig } from '../../services/api';
 import { useGhostText } from '../../hooks/useGhostText';
 import { cn } from '../../lib/utils';
 
@@ -62,6 +62,26 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const isOffline = connectionState !== 'connected';
   const hasQueuedPrompt = queuedPrompt !== null;
   const isDisabled = isOffline || hasQueuedPrompt;
+
+  // F-12 : modèle LLM actif
+  const [currentModel, setCurrentModel] = useState<string | null>(null);
+
+  useEffect(() => {
+    getLLMConfig()
+      .then((cfg) => setCurrentModel(cfg.model))
+      .catch(() => {});
+  }, []);
+
+  // Écouter les changements de config LLM depuis Settings
+  useEffect(() => {
+    const handler = () => {
+      getLLMConfig()
+        .then((cfg) => setCurrentModel(cfg.model))
+        .catch(() => {});
+    };
+    window.addEventListener('therese:llm-config-changed', handler);
+    return () => window.removeEventListener('therese:llm-config-changed', handler);
+  }, []);
 
   // Ghost text prédictif
   const { suggestion, accept: acceptGhost, dismiss: dismissGhost } = useGhostText(
@@ -546,6 +566,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* F-12 : indicateur modèle actif */}
+      {currentModel && (
+        <div className="flex items-center gap-1.5 px-2 mb-1">
+          <Cpu className="w-3 h-3 text-text-muted/60" />
+          <span className="text-xs text-text-muted/60">{currentModel}</span>
+        </div>
+      )}
 
       <div
         ref={containerRef}

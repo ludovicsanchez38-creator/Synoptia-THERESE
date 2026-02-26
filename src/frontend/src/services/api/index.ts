@@ -77,6 +77,7 @@ export {
   getPreferences,
   setPreference,
   getApiKeys,
+  getApiKeysWithCorrupted,
   setApiKey,
   getProfile,
   setProfile,
@@ -101,6 +102,7 @@ export {
   type OllamaStatus,
   type OnboardingStatus,
   type WebSearchStatus,
+  type ApiKeysResult,
 } from './config';
 
 // Files - File management
@@ -384,6 +386,7 @@ export {
 
 // CRM Extended - Activities, deliverables, pipeline, sync
 export {
+  saveCRMGoogleCredentials,
   listActivities,
   createActivity,
   deleteActivity,

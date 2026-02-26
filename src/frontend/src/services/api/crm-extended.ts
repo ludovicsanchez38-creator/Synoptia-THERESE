@@ -63,6 +63,23 @@ export interface CRMSyncResponse {
   sync_time: string | null;
 }
 
+// F-13 : Re-saisie credentials Google OAuth
+export async function saveCRMGoogleCredentials(
+  clientId: string,
+  clientSecret: string
+): Promise<{ success: boolean; message: string }> {
+  const response = await apiFetch(`${API_BASE}/api/crm/sync/credentials`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
+  });
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  return response.json();
+}
+
 // Activities API
 export async function listActivities(params: {
   contact_id?: string;

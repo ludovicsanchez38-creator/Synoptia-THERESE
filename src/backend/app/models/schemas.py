@@ -379,6 +379,8 @@ class ConfigResponse(BaseModel):
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True
+    # BUG-051 : clés API corrompues (blob Fernet illisible après perte de clé)
+    corrupted_keys: list[str] = []
 
 
 class ApiKeyUpdate(BaseModel):

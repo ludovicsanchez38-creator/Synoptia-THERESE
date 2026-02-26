@@ -3126,3 +3126,184 @@ class TestBUG050_KeychainFallbackToFile:
             )
 
 
+# ============================================================
+# BUG-051 (v0.3.6) - Clés API corrompues affichent une check verte
+# Le backend doit tenter de déchiffrer les clés avant de les
+# déclarer valides, et signaler les clés corrompues.
+# ============================================================
+
+
+class TestBUG051_CorruptedKeysDetection:
+    """Détection des clés API corrompues (blob Fernet illisible)."""
+
+    CONFIG_ROUTER_PY = Path("src/backend/app/routers/config.py")
+    SCHEMAS_PY = Path("src/backend/app/models/schemas.py")
+
+    def test_config_has_check_key_decryptable_helper(self):
+        """config.py doit avoir un helper _check_key_decryptable."""
+        content = self.CONFIG_ROUTER_PY.read_text(encoding="utf-8")
+        assert "_check_key_decryptable" in content, (
+            "config.py doit définir _check_key_decryptable pour vérifier le déchiffrement"
+        )
+
+    def test_config_uses_decrypt_value_in_check(self):
+        """_check_key_decryptable doit appeler decrypt_value."""
+        content = self.CONFIG_ROUTER_PY.read_text(encoding="utf-8")
+        # Le helper doit tenter de déchiffrer
+        assert "decrypt_value" in content, (
+            "config.py doit utiliser decrypt_value pour vérifier les clés"
+        )
+
+    def test_config_response_has_corrupted_keys(self):
+        """ConfigResponse doit avoir un champ corrupted_keys."""
+        content = self.SCHEMAS_PY.read_text(encoding="utf-8")
+        assert "corrupted_keys" in content, (
+            "ConfigResponse doit inclure corrupted_keys: list[str]"
+        )
+
+    def test_get_config_returns_corrupted_keys(self):
+        """get_config doit retourner corrupted_keys dans la réponse."""
+        content = self.CONFIG_ROUTER_PY.read_text(encoding="utf-8")
+        assert "corrupted_keys=corrupted_keys" in content, (
+            "get_config doit passer corrupted_keys à ConfigResponse"
+        )
+
+
+# ============================================================
+# BUG-052 (v0.3.6) - Modèle Ollama ignoré (gemma → mistral-nemo)
+# Le modèle sélectionné par l'utilisateur doit être respecté.
+# ============================================================
+
+
+class TestBUG052_OllamaModelPreference:
+    """Le modèle Ollama sélectionné par l'utilisateur ne doit pas être ignoré."""
+
+    LLM_PY = Path("src/backend/app/services/llm.py")
+
+    def test_fallback_uses_selected_model(self):
+        """Le fallback Ollama doit utiliser selected_model or 'mistral-nemo'."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        assert 'selected_model or "mistral-nemo"' in content, (
+            "Le fallback Ollama doit respecter selected_model (BUG-052)"
+        )
+
+    def test_get_llm_service_reads_db_model(self):
+        """get_llm_service_for_provider doit lire llm_model depuis la DB."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        # Chercher la lecture de llm_model dans get_llm_service_for_provider
+        fn_start = content.find("def get_llm_service_for_provider")
+        assert fn_start > 0, "get_llm_service_for_provider doit exister"
+        fn_body = content[fn_start:fn_start + 2000]
+        assert "llm_model" in fn_body, (
+            "get_llm_service_for_provider doit lire llm_model depuis la DB (BUG-052)"
+        )
+
+
+# ============================================================
+# F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
+# ChatInput doit afficher le modèle LLM actif.
+# ============================================================
+
+
+class TestF12_ModelIndicator:
+    """Indicateur du modèle LLM actif dans ChatInput."""
+
+    CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
+
+    def test_chat_input_imports_get_llm_config(self):
+        """ChatInput doit importer getLLMConfig."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "getLLMConfig" in content, (
+            "ChatInput doit importer getLLMConfig pour afficher le modèle actif (F-12)"
+        )
+
+    def test_chat_input_has_current_model_state(self):
+        """ChatInput doit avoir un state currentModel."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "currentModel" in content, (
+            "ChatInput doit avoir un state currentModel (F-12)"
+        )
+
+    def test_chat_input_listens_to_config_changed(self):
+        """ChatInput doit écouter l'event therese:llm-config-changed."""
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "therese:llm-config-changed" in content, (
+            "ChatInput doit écouter therese:llm-config-changed pour refresh (F-12)"
+        )
+
+
+# ============================================================
+# F-13 (v0.3.6) - Re-saisie credentials Google OAuth dans CRM
+# Un endpoint /sync/credentials et un formulaire frontend.
+# ============================================================
+
+
+class TestF13_CRMCredentials:
+    """Re-saisie des credentials Google OAuth pour le CRM."""
+
+    CRM_PY = Path("src/backend/app/routers/crm.py")
+    CRM_SYNC_PANEL_TSX = Path("src/frontend/src/components/settings/CRMSyncPanel.tsx")
+
+    def test_crm_has_credentials_endpoint(self):
+        """crm.py doit avoir un endpoint POST /sync/credentials."""
+        content = self.CRM_PY.read_text(encoding="utf-8")
+        assert "/sync/credentials" in content, (
+            "crm.py doit définir POST /sync/credentials (F-13)"
+        )
+
+    def test_crm_validates_client_id_format(self):
+        """L'endpoint doit valider le format .apps.googleusercontent.com."""
+        content = self.CRM_PY.read_text(encoding="utf-8")
+        assert "apps.googleusercontent.com" in content, (
+            "L'endpoint credentials doit valider le format client_id (F-13)"
+        )
+
+    def test_frontend_has_credentials_form(self):
+        """CRMSyncPanel doit avoir un formulaire de credentials."""
+        content = self.CRM_SYNC_PANEL_TSX.read_text(encoding="utf-8")
+        assert "showCredentialsForm" in content, (
+            "CRMSyncPanel doit avoir un état showCredentialsForm (F-13)"
+        )
+
+
+# ============================================================
+# BUG-044b (v0.3.6) - Linux .deb manque backend-libs/
+# Le tauri.linux.conf.json doit inclure les resources backend-libs.
+# ============================================================
+
+
+class TestBUG044b_LinuxDebBackendLibs:
+    """Le .deb Linux doit inclure le dossier backend-libs/."""
+
+    TAURI_LINUX_CONF = Path("src/frontend/src-tauri/tauri.linux.conf.json")
+    RELEASE_YML = Path(".github/workflows/release.yml")
+
+    def test_tauri_linux_conf_has_backend_libs_resource(self):
+        """tauri.linux.conf.json doit référencer backend-libs dans resources."""
+        content = self.TAURI_LINUX_CONF.read_text(encoding="utf-8")
+        assert "backend-libs" in content, (
+            "tauri.linux.conf.json doit inclure backend-libs dans resources (BUG-044b)"
+        )
+
+    def test_tauri_linux_conf_uses_recursive_glob(self):
+        """tauri.linux.conf.json doit utiliser un glob récursif **."""
+        content = self.TAURI_LINUX_CONF.read_text(encoding="utf-8")
+        assert "**" in content, (
+            "tauri.linux.conf.json doit utiliser ** pour capturer tous les fichiers (BUG-044b)"
+        )
+
+    def test_release_yml_copies_backend_libs(self):
+        """release.yml doit copier backend-libs dans les binaries Tauri."""
+        content = self.RELEASE_YML.read_text(encoding="utf-8")
+        assert "backend-libs" in content, (
+            "release.yml doit copier backend-libs pour Linux (BUG-044b)"
+        )
+
+    def test_release_yml_uses_linux_config(self):
+        """release.yml doit utiliser tauri.linux.conf.json pour le build Linux."""
+        content = self.RELEASE_YML.read_text(encoding="utf-8")
+        assert "tauri.linux.conf.json" in content, (
+            "release.yml doit utiliser tauri.linux.conf.json sur Linux (BUG-044b)"
+        )
+
+

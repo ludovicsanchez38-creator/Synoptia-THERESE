@@ -28,6 +28,12 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [lastSyncStats, setLastSyncStats] = useState<api.CRMSyncStats | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState(DEFAULT_SPREADSHEET_ID);
 
+  // F-13 : formulaire re-saisie credentials Google OAuth
+  const [showCredentialsForm, setShowCredentialsForm] = useState(false);
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [clientSecretInput, setClientSecretInput] = useState('');
+  const [credentialsSaving, setCredentialsSaving] = useState(false);
+
   // Load config on mount
   useEffect(() => {
     loadConfig();
@@ -116,8 +122,35 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       }, 3000);
     } catch (err: any) {
       console.error('Failed to initiate OAuth:', err);
-      setError(err.message || 'Impossible de lancer la connexion OAuth');
+      const msg = err.message || 'Impossible de lancer la connexion OAuth';
+      setError(msg);
       setConnecting(false);
+      // F-13 : si Bad Request (credentials introuvables/corrompues), proposer la re-saisie
+      if (msg.includes('introuvables') || msg.includes('Bad Request') || (err.status && err.status === 400)) {
+        setShowCredentialsForm(true);
+      }
+    }
+  };
+
+  // F-13 : sauvegarde des credentials Google OAuth
+  const handleSaveCredentials = async () => {
+    if (!clientIdInput.trim() || !clientSecretInput.trim()) {
+      setError('Les deux champs sont requis');
+      return;
+    }
+    setCredentialsSaving(true);
+    setError(null);
+    try {
+      await api.saveCRMGoogleCredentials(clientIdInput.trim(), clientSecretInput.trim());
+      setSuccess('Credentials Google OAuth enregistrées');
+      setShowCredentialsForm(false);
+      setClientIdInput('');
+      setClientSecretInput('');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la sauvegarde des credentials');
+    } finally {
+      setCredentialsSaving(false);
     }
   };
 
@@ -273,6 +306,67 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           {config?.has_token ? 'Reconnecter Google Sheets' : 'Connecter Google Sheets'}
         </Button>
       </div>
+
+      {/* F-13 : formulaire re-saisie credentials Google OAuth */}
+      {showCredentialsForm && (
+        <div className="p-3 bg-background/40 rounded-lg border border-border/30 space-y-3">
+          <div>
+            <h4 className="text-sm font-medium text-text">Credentials Google OAuth</h4>
+            <p className="text-xs text-text-muted mt-1">
+              Créez un projet sur{' '}
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-cyan hover:underline"
+              >
+                Google Cloud Console
+              </a>
+              {' '}et copiez les identifiants OAuth 2.0.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs text-text-muted">Client ID</label>
+              <input
+                type="text"
+                value={clientIdInput}
+                onChange={(e) => setClientIdInput(e.target.value)}
+                placeholder="...apps.googleusercontent.com"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-text-muted">Client Secret</label>
+              <input
+                type="password"
+                value={clientSecretInput}
+                onChange={(e) => setClientSecretInput(e.target.value)}
+                placeholder="GOCSPX-..."
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveCredentials}
+              disabled={credentialsSaving || !clientIdInput.trim() || !clientSecretInput.trim()}
+              className="flex-1"
+            >
+              {credentialsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enregistrer'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCredentialsForm(false)}
+            >
+              Annuler
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Last sync info */}
       {config?.last_sync && (

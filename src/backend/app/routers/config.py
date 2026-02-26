@@ -40,6 +40,28 @@ router = APIRouter()
 _startup_time = datetime.now(UTC)
 
 
+async def _check_key_decryptable(session: AsyncSession, pref_key: str) -> tuple[bool, bool]:
+    """Vérifie si une clé API en DB existe et est déchiffrable.
+
+    Returns:
+        (has_key, is_corrupted) : has_key=True si la ligne existe,
+        is_corrupted=True si le blob Fernet est illisible.
+    """
+    result = await session.execute(
+        select(Preference).where(Preference.key == pref_key)
+    )
+    pref = result.scalar_one_or_none()
+    if pref is None:
+        return False, False
+    # La clé existe en DB - vérifier qu'elle est déchiffrable
+    try:
+        if is_value_encrypted(pref.value):
+            decrypt_value(pref.value)
+        return True, False
+    except Exception:
+        return False, True
+
+
 @router.get("/", response_model=ConfigResponse)
 async def get_config(session: AsyncSession = Depends(get_session)):
     """Get current application configuration."""
@@ -52,6 +74,8 @@ async def get_config(session: AsyncSession = Depends(get_session)):
     except Exception:
         pass
 
+    corrupted_keys: list[str] = []
+
     # Check API keys from environment (updated dynamically) or DB
     has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY") or settings.anthropic_api_key)
     has_mistral = bool(os.environ.get("MISTRAL_API_KEY") or settings.mistral_api_key)
@@ -60,78 +84,69 @@ async def get_config(session: AsyncSession = Depends(get_session)):
     has_groq = bool(os.environ.get("GROQ_API_KEY"))
     has_grok = bool(os.environ.get("XAI_API_KEY"))
 
-    # Also check DB for stored keys
-    if not has_anthropic:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "anthropic_api_key")
-        )
-        has_anthropic = result.scalar_one_or_none() is not None
-
-    if not has_mistral:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "mistral_api_key")
-        )
-        has_mistral = result.scalar_one_or_none() is not None
-
-    if not has_openai:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "openai_api_key")
-        )
-        has_openai = result.scalar_one_or_none() is not None
-
-    if not has_gemini:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "gemini_api_key")
-        )
-        has_gemini = result.scalar_one_or_none() is not None
-
-    if not has_groq:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "groq_api_key")
-        )
-        has_groq = result.scalar_one_or_none() is not None
-
-    if not has_grok:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "grok_api_key")
-        )
-        has_grok = result.scalar_one_or_none() is not None
+    # BUG-051 : vérifier que les clés DB sont déchiffrables (pas juste "is not None")
+    key_checks = {
+        "anthropic": ("anthropic_api_key", has_anthropic),
+        "mistral": ("mistral_api_key", has_mistral),
+        "openai": ("openai_api_key", has_openai),
+        "gemini": ("gemini_api_key", has_gemini),
+        "groq": ("groq_api_key", has_groq),
+        "grok": ("grok_api_key", has_grok),
+    }
+    for provider_id, (db_key, has_env) in key_checks.items():
+        if not has_env:
+            has_db, is_corrupted = await _check_key_decryptable(session, db_key)
+            if is_corrupted:
+                corrupted_keys.append(provider_id)
+            # has_key = True seulement si la clé existe ET est lisible
+            if provider_id == "anthropic":
+                has_anthropic = has_db and not is_corrupted
+            elif provider_id == "mistral":
+                has_mistral = has_db and not is_corrupted
+            elif provider_id == "openai":
+                has_openai = has_db and not is_corrupted
+            elif provider_id == "gemini":
+                has_gemini = has_db and not is_corrupted
+            elif provider_id == "groq":
+                has_groq = has_db and not is_corrupted
+            elif provider_id == "grok":
+                has_grok = has_db and not is_corrupted
 
     has_openrouter = bool(os.environ.get("OPENROUTER_API_KEY"))
     if not has_openrouter:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "openrouter_api_key")
-        )
-        has_openrouter = result.scalar_one_or_none() is not None
+        has_db, is_corrupted = await _check_key_decryptable(session, "openrouter_api_key")
+        if is_corrupted:
+            corrupted_keys.append("openrouter")
+        has_openrouter = has_db and not is_corrupted
 
     # Check for image-specific API keys
     has_openai_image = bool(os.environ.get("OPENAI_IMAGE_API_KEY"))
     if not has_openai_image:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "openai_image_api_key")
-        )
-        has_openai_image = result.scalar_one_or_none() is not None
+        has_db, is_corrupted = await _check_key_decryptable(session, "openai_image_api_key")
+        if is_corrupted:
+            corrupted_keys.append("openai_image")
+        has_openai_image = has_db and not is_corrupted
 
     has_gemini_image = bool(os.environ.get("GEMINI_IMAGE_API_KEY"))
     if not has_gemini_image:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "gemini_image_api_key")
-        )
-        has_gemini_image = result.scalar_one_or_none() is not None
+        has_db, is_corrupted = await _check_key_decryptable(session, "gemini_image_api_key")
+        if is_corrupted:
+            corrupted_keys.append("gemini_image")
+        has_gemini_image = has_db and not is_corrupted
 
     has_fal = bool(os.environ.get("FAL_API_KEY"))
     if not has_fal:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "fal_api_key")
-        )
-        has_fal = result.scalar_one_or_none() is not None
+        has_db, is_corrupted = await _check_key_decryptable(session, "fal_api_key")
+        if is_corrupted:
+            corrupted_keys.append("fal")
+        has_fal = has_db and not is_corrupted
 
     has_brave = bool(os.environ.get("BRAVE_API_KEY"))
     if not has_brave:
-        result = await session.execute(
-            select(Preference).where(Preference.key == "brave_api_key")
-        )
-        has_brave = result.scalar_one_or_none() is not None
+        has_db, is_corrupted = await _check_key_decryptable(session, "brave_api_key")
+        if is_corrupted:
+            corrupted_keys.append("brave")
+        has_brave = has_db and not is_corrupted
 
     # Check web search preference (default: enabled)
     web_search_enabled = True
@@ -159,6 +174,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         has_brave_key=has_brave,
         ollama_available=ollama_available,
         web_search_enabled=web_search_enabled,
+        corrupted_keys=corrupted_keys,
     )
 
 

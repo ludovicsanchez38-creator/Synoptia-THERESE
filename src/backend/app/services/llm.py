@@ -328,7 +328,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         elif mistral_key:
             return LLMConfig(LLMProvider.MISTRAL, "mistral-large-latest", api_key=mistral_key, context_window=256000)
         else:
-            return LLMConfig(LLMProvider.OLLAMA, "mistral-nemo", base_url="http://localhost:11434", context_window=32000)
+            return LLMConfig(LLMProvider.OLLAMA, selected_model or "mistral-nemo", base_url="http://localhost:11434", context_window=32000)
 
     async def _get_client(self):
         """Get shared HTTP client from global pool."""
@@ -532,7 +532,25 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
     if provider_name not in provider_configs:
         return None
 
-    provider, model, env_vars, context_window = provider_configs[provider_name]
+    provider, default_model, env_vars, context_window = provider_configs[provider_name]
+
+    # BUG-052 : lire le modèle sélectionné par l'utilisateur depuis la DB
+    user_model = None
+    try:
+        from app.config import settings
+        from sqlalchemy import create_engine, text
+
+        engine = create_engine(f"sqlite:///{settings.db_path}")
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT value FROM preferences WHERE key = 'llm_model'"),
+            )
+            row = result.fetchone()
+            if row and row[0]:
+                user_model = row[0]
+    except Exception:
+        pass
+    model = user_model or default_model
 
     api_key = None
     if env_vars:
