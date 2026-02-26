@@ -1,7 +1,7 @@
 """
 THÉRÈSE v2 - Image Generation Service
 
-Supports GPT Image 1.5 (OpenAI) and Nano Banana Pro (Google Gemini).
+Supports GPT Image 1.5 (OpenAI) and Nano Banana 2 (Google Gemini).
 """
 
 import base64
@@ -201,7 +201,7 @@ class ImageGeneratorService:
         config: ImageConfig,
         reference_image_path: str | None = None,
     ) -> GeneratedImage:
-        """Generate image with Google Gemini 3 Pro Image."""
+        """Generate image with Google Gemini 3.1 Flash Image (Nano Banana 2)."""
         try:
             from google import genai
             from google.genai import types
@@ -234,7 +234,7 @@ class ImageGeneratorService:
 
             # Generate image
             response = client.models.generate_content(
-                model="gemini-3.1-pro-image-preview",
+                model="gemini-3.1-flash-image-preview",
                 contents=contents,
                 config=types.GenerateContentConfig(
                     response_modalities=["TEXT", "IMAGE"],

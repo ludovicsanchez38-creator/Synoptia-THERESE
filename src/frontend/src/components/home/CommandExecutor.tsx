@@ -202,7 +202,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
 
       addMessage({
         role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana Pro'}*\n\n[Télécharger ${response.file_name}](${imageUrl})`,
+        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana 2'}*\n\n[Télécharger ${response.file_name}](${imageUrl})`,
       });
 
       setImageState({ provider, status: 'success', prompt: customPrompt, response });

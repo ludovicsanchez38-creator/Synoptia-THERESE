@@ -208,39 +208,84 @@ class SkillsRegistry:
         generic_titles = {
             "document", "titre", "title", "données", "configuration",
             "couleurs", "couleurs synoptia", "mise en page",
-            "configuration des marges", "styles", "template",
+            "configuration des marges", "configuration de la mise en page",
+            "styles", "template", "imports", "constantes",
             "document word", "présentation", "tableur",
+            "code", "script", "contenu", "création du document",
         }
+        # Patterns regex à rejeter (commentaires de code, numérotation de slides/sections)
+        generic_patterns = [
+            r'^slide\s*\d',       # "Slide 1", "Slide 2 : Titre"
+            r'^section\s*\d',     # "Section 1"
+            r'^étape\s*\d',       # "Étape 1"
+            r'^step\s*\d',        # "Step 1"
+            r'^page\s*\d',        # "Page 1"
+            r'^partie\s*\d',      # "Partie 1"
+        ]
 
         def _is_good_title(t: str) -> bool:
             """Vérifie qu'un titre est exploitable (pas générique, pas une variable)."""
-            if not t or t.lower() in generic_titles:
+            if not t:
                 return False
-            if t.startswith("{") or t.startswith("f\"") or t == "title":
+            # Nettoyer les séparateurs décoratifs (--- titre ---, === titre ===)
+            t_clean = t.strip("-=_ ").strip()
+            if not t_clean:
                 return False
+            if t_clean.lower() in generic_titles:
+                return False
+            if t_clean.startswith("{") or t_clean.startswith("f\"") or t_clean == "title":
+                return False
+            # Rejeter les lignes qui ne sont que des séparateurs (----, ====, etc.)
+            if re.match(r'^[-=_#*\s]+$', t):
+                return False
+            # Rejeter les patterns génériques (Slide 1, Section 2, etc.)
+            for pat in generic_patterns:
+                if re.match(pat, t_clean, re.IGNORECASE):
+                    return False
             return True
 
-        # 1. Chercher doc.add_heading("...", level=0 ou 1) dans le code Python
-        # C'est la source la plus fiable pour le titre du document
+        def _clean_title(t: str) -> str:
+            """Nettoie un titre brut (supprime séparateurs décoratifs)."""
+            return t.strip("-=_ ").strip()[:50]
+
+        # 1. Chercher doc.add_heading("...", level=0 ou 1) dans le code Python (DOCX)
         heading_code = re.search(
             r'add_heading\(\s*["\'](.+?)["\']\s*,\s*level\s*=\s*[01]\s*\)',
             llm_content,
         )
         if heading_code and _is_good_title(heading_code.group(1).strip()):
-            return heading_code.group(1).strip()[:50]
+            return _clean_title(heading_code.group(1))
 
-        # 2. Chercher le premier heading Markdown (# Titre)
-        heading_match = re.search(r'^#\s+(.+)$', llm_content, re.MULTILINE)
-        if heading_match and _is_good_title(heading_match.group(1).strip()):
-            return heading_match.group(1).strip()[:50]
+        # 2. Chercher prs.slide_layouts / add_slide titre (PPTX)
+        # Pattern : tf.text = "Titre" ou shapes.title.text = "Titre"
+        pptx_title = re.search(
+            r'(?:title\.text|tf\.text)\s*=\s*["\'](.+?)["\']',
+            llm_content,
+        )
+        if pptx_title and _is_good_title(pptx_title.group(1).strip()):
+            return _clean_title(pptx_title.group(1))
 
-        # 3. Chercher title = "..." dans le code Python
+        # 3. Chercher ws.title = "..." ou ws['A1'] = "..." (XLSX)
+        xlsx_title = re.search(
+            r'(?:ws\.title|ws\[.A1.\])\s*=\s*["\'](.+?)["\']',
+            llm_content,
+        )
+        if xlsx_title and _is_good_title(xlsx_title.group(1).strip()):
+            return _clean_title(xlsx_title.group(1))
+
+        # 4. Chercher title = "..." dans le code Python
         title_var = re.search(
             r'\btitle\s*=\s*["\'](.+?)["\']',
             llm_content,
         )
         if title_var and _is_good_title(title_var.group(1).strip()):
-            return title_var.group(1).strip()[:50]
+            return _clean_title(title_var.group(1))
+
+        # 5. Chercher le premier heading Markdown (# Titre)
+        # EN DERNIER car ça matche aussi les commentaires Python
+        heading_match = re.search(r'^#\s+(.+)$', llm_content, re.MULTILINE)
+        if heading_match and _is_good_title(heading_match.group(1).strip()):
+            return _clean_title(heading_match.group(1))
 
         return None
 

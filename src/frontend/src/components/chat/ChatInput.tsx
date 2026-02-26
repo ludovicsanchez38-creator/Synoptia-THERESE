@@ -16,7 +16,7 @@ import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
-import { streamMessage, indexFile, ApiError, getLLMConfig } from '../../services/api';
+import { streamMessage, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import { useGhostText } from '../../hooks/useGhostText';
 import { cn } from '../../lib/utils';
 
@@ -63,25 +63,42 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const hasQueuedPrompt = queuedPrompt !== null;
   const isDisabled = isOffline || hasQueuedPrompt;
 
-  // F-12 : modèle LLM actif
+  // F-12 : modèle LLM actif + sélecteur rapide
   const [currentModel, setCurrentModel] = useState<string | null>(null);
+  const [currentProvider, setCurrentProvider] = useState<LLMProvider | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
 
-  useEffect(() => {
+  const loadLLMConfig = useCallback(() => {
     getLLMConfig()
-      .then((cfg) => setCurrentModel(cfg.model))
+      .then((cfg) => {
+        setCurrentModel(cfg.model);
+        setCurrentProvider(cfg.provider);
+        setAvailableModels(cfg.available_models || []);
+      })
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    loadLLMConfig();
+  }, [loadLLMConfig]);
+
   // Écouter les changements de config LLM depuis Settings
   useEffect(() => {
-    const handler = () => {
-      getLLMConfig()
-        .then((cfg) => setCurrentModel(cfg.model))
-        .catch(() => {});
-    };
-    window.addEventListener('therese:llm-config-changed', handler);
-    return () => window.removeEventListener('therese:llm-config-changed', handler);
-  }, []);
+    window.addEventListener('therese:llm-config-changed', loadLLMConfig);
+    return () => window.removeEventListener('therese:llm-config-changed', loadLLMConfig);
+  }, [loadLLMConfig]);
+
+  const handleModelChange = useCallback(async (newModel: string) => {
+    if (!currentProvider || newModel === currentModel) return;
+    try {
+      const cfg = await setLLMConfig(currentProvider, newModel);
+      setCurrentModel(cfg.model);
+      setAvailableModels(cfg.available_models || []);
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
+    } catch {
+      // Silently fail - model stays unchanged
+    }
+  }, [currentProvider, currentModel]);
 
   // Ghost text prédictif
   const { suggestion, accept: acceptGhost, dismiss: dismissGhost } = useGhostText(
@@ -567,11 +584,26 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         )}
       </AnimatePresence>
 
-      {/* F-12 : indicateur modèle actif */}
+      {/* F-12 : sélecteur de modèle actif */}
       {currentModel && (
         <div className="flex items-center gap-1.5 px-2 mb-1">
           <Cpu className="w-3 h-3 text-text-muted/60" />
-          <span className="text-xs text-text-muted/60">{currentModel}</span>
+          {availableModels.length > 1 ? (
+            <select
+              value={currentModel}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="text-xs text-text-muted/60 bg-transparent border-none outline-none cursor-pointer hover:text-text-muted transition-colors appearance-none pr-4"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
+            >
+              {availableModels.map((m) => (
+                <option key={m} value={m} className="bg-surface text-text-primary">
+                  {m}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-xs text-text-muted/60">{currentModel}</span>
+          )}
         </div>
       )}
 

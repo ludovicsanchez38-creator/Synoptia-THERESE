@@ -19,6 +19,7 @@ import { cn } from '../../lib/utils';
 interface HomeCommandsProps {
   onPromptSelect: (prompt: string) => void;
   onImageGenerated?: (prompt: string, imageUrl: string, fileName: string) => void;
+  onGuidedPanelChange?: (active: boolean) => void;
 }
 
 /** Les 3 catégories affichées comme blocs */
@@ -52,7 +53,7 @@ const CATEGORY_BLOCKS: Array<{
   },
 ];
 
-export function HomeCommands({ onPromptSelect }: HomeCommandsProps) {
+export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeCommandsProps) {
   const { commands, fetchCommands, isLoading } = useCommandsStore();
   const [selectedCategory, setSelectedCategory] = useState<typeof CATEGORY_BLOCKS[number] | null>(null);
   const [activeCommand, setActiveCommand] = useState<CommandDefinition | null>(null);
@@ -88,11 +89,13 @@ export function HomeCommands({ onPromptSelect }: HomeCommandsProps) {
   const handleCommandClick = useCallback((cmd: CommandDefinition) => {
     setActiveCommand(cmd);
     setSelectedCategory(null);
-  }, []);
+    onGuidedPanelChange?.(true);
+  }, [onGuidedPanelChange]);
 
   const handleClose = useCallback(() => {
     setActiveCommand(null);
-  }, []);
+    onGuidedPanelChange?.(false);
+  }, [onGuidedPanelChange]);
 
   const handleStartRFC = useCallback(() => {
     setShowRFC(true);

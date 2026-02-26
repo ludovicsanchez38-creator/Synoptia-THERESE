@@ -10,9 +10,10 @@ import { useDemoMask } from '../../hooks';
 interface MessageListProps {
   onPromptSelect?: (prompt: string, skillId?: string) => void;
   onSaveAsCommand?: (userPrompt: string, assistantContent: string) => void;
+  onGuidedPanelChange?: (active: boolean) => void;
 }
 
-export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProps) {
+export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChange }: MessageListProps) {
   // Subscribe to actual state to trigger re-renders when messages change
   const conversations = useChatStore((state) => state.conversations);
   const currentConversationId = useChatStore((state) => state.currentConversationId);
@@ -97,7 +98,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand }: MessageListProp
   if (!conversation || conversation.messages.length === 0) {
     return (
       <div className="h-full overflow-y-auto flex items-center justify-center py-8">
-        <HomeCommands onPromptSelect={onPromptSelect || (() => {})} />
+        <HomeCommands onPromptSelect={onPromptSelect || (() => {})} onGuidedPanelChange={onGuidedPanelChange} />
       </div>
     );
   }

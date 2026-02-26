@@ -54,7 +54,7 @@ export function ChatHeader({
     >
 
       {/* Gauche: Window controls (macOS) + Logo */}
-      <div className="flex-1 flex items-center gap-4">
+      <div className="flex-1 min-w-0 flex items-center gap-4">
         {/* macOS traffic lights */}
         {isMac && (
           <div className="flex items-center gap-2">
@@ -102,72 +102,66 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* Centre: Navigation (6 boutons) */}
-      <div className="flex-shrink-0 flex items-center gap-1">
+      {/* Centre: Navigation (6 boutons icônes) */}
+      <div className="flex-shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleEmailPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Mail (⌘E)' : 'Mail (Ctrl+E)'}
         >
           <Mail className="w-4 h-4" />
-          <span className="text-xs">Mail</span>
         </Button>
 
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleCalendarPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Calendrier (⌘⇧C)' : 'Calendrier (Ctrl+Shift+C)'}
         >
           <Calendar className="w-4 h-4" />
-          <span className="text-xs">Calendrier</span>
         </Button>
 
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleTasksPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Tâches (⌘T)' : 'Tâches (Ctrl+T)'}
         >
           <CheckSquare className="w-4 h-4" />
-          <span className="text-xs">Tâches</span>
         </Button>
 
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleMemoryPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Projet (⌘M)' : 'Projet (Ctrl+M)'}
         >
           <Briefcase className="w-4 h-4" />
-          <span className="text-xs">Projet</span>
         </Button>
 
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleCRMPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'CRM (⌘P)' : 'CRM (Ctrl+P)'}
         >
           <Users className="w-4 h-4" />
-          <span className="text-xs">CRM</span>
         </Button>
 
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onToggleInvoicesPanel}
-          className="flex items-center gap-1 px-2 py-1 hover:bg-accent-cyan/10"
+          className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Facture (⌘I)' : 'Facture (Ctrl+I)'}
         >
           <FileText className="w-4 h-4" />
-          <span className="text-xs">Facture</span>
         </Button>
       </div>
 

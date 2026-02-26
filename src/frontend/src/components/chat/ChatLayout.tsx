@@ -39,6 +39,7 @@ export function ChatLayout() {
   const [guidedSkillId, setGuidedSkillId] = useState<string | undefined>(undefined);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const [showSaveCommand, setShowSaveCommand] = useState(false);
+  const [guidedPanelActive, setGuidedPanelActive] = useState(false);
   const [saveCommandData, setSaveCommandData] = useState<{ userPrompt: string; assistantContent: string } | null>(null);
 
   const { createConversation } = useChatStore();
@@ -303,10 +304,11 @@ export function ChatLayout() {
 
       {/* Messages area */}
       <div className="flex-1 overflow-hidden">
-        <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} />
+        <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
       </div>
 
-      {/* Input area */}
+      {/* Input area - masqué quand un panel guidé est actif */}
+      {!guidedPanelActive && (
       <div className="border-t border-border">
         <ChatInput
           onOpenCommandPalette={handleOpenCommandPalette}
@@ -316,6 +318,7 @@ export function ChatLayout() {
           userCommands={userSlashCommands}
         />
       </div>
+      )}
 
       {/* Command Palette (modal) */}
       <CommandPalette

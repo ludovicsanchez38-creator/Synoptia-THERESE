@@ -1,8 +1,9 @@
 // Onglet Profil utilisateur - Paramètres THÉRÈSE
 // Extraction depuis SettingsModal.tsx pour modularité
 
-import { User, Upload, Check, AlertCircle } from 'lucide-react';
+import { User, Upload, Check, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
 
 // Types des props du formulaire profil
@@ -42,7 +43,6 @@ export function ProfileTab({
   onSave: _onSave,
   onImport,
 }: ProfileTabProps) {
-  // Réservé pour usage futur (bouton Sauvegarder explicite)
   void _saving;
   void _onSave;
 
@@ -228,6 +228,54 @@ export function ProfileTab({
       <p className="text-xs text-text-muted">
         Tu peux aussi importer ton profil depuis un fichier THERESE.md
       </p>
+
+      {/* Mode Démo */}
+      <DemoModeSection />
+    </div>
+  );
+}
+
+// Section Mode Démo - masque les données réelles
+function DemoModeSection() {
+  const demoEnabled = useDemoStore((s) => s.enabled);
+  const toggleDemo = useDemoStore((s) => s.toggle);
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+  return (
+    <div className="space-y-3 pt-4 border-t border-border/30">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+          demoEnabled ? 'bg-accent-cyan/20' : 'bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20'
+        }`}>
+          <Eye className="w-5 h-5 text-accent-cyan" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-medium text-text">Mode Démo</h3>
+          <p className="text-xs text-text-muted">
+            Masque les noms et données clients par des personas fictifs
+          </p>
+        </div>
+        <button
+          onClick={toggleDemo}
+          className={`relative w-11 h-6 rounded-full transition-colors ${
+            demoEnabled ? 'bg-accent-cyan' : 'bg-border'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+              demoEnabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
+      {demoEnabled && (
+        <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+          <span className="text-sm text-accent-cyan">
+            Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
+          </span>
+        </div>
+      )}
     </div>
   );
 }

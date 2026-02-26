@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, FileText, Presentation, Table } from 'lucide-react';
+import { ArrowLeft, Sparkles, FileText, Presentation, Table, ImageIcon } from 'lucide-react';
 import type { SubOption, FileFormat } from './actionData';
 import { cn } from '../../lib/utils';
 
@@ -42,8 +42,11 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
   const [prompt, setPrompt] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const isImage = !!option.generatesImage;
   const format = option.generatesFile?.format || 'docx';
-  const config = formatConfig[format];
+  const config = isImage
+    ? { icon: ImageIcon, color: 'text-purple-400', bgGradient: 'from-purple-500/20 to-pink-600/10' }
+    : formatConfig[format];
   const FormatIcon = config.icon;
 
   // Focus textarea on mount
@@ -100,7 +103,9 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
           <div>
             <h3 className="font-semibold text-text">{option.label}</h3>
             <p className="text-xs text-text-muted">
-              Fichier .{format} avec style Synoptïa
+              {option.generatesImage
+                ? 'Décris ce que tu veux créer'
+                : `Fichier .${format} avec style Synoptïa`}
             </p>
           </div>
         </div>
@@ -164,7 +169,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
       <div className="mt-4 space-y-2">
         <p className="text-xs text-text-muted font-medium">Exemples :</p>
         <div className="flex flex-wrap gap-2">
-          {getSuggestions(format).map((suggestion, i) => (
+          {(isImage ? getImageSuggestions() : getSuggestions(format)).map((suggestion, i) => (
             <button
               key={i}
               onClick={() => setPrompt(suggestion)}
@@ -183,6 +188,14 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
       </div>
     </motion.div>
   );
+}
+
+function getImageSuggestions(): string[] {
+  return [
+    'Un chat astronaute sur la lune, style illustration',
+    'Un bureau moderne avec un MacBook, lumière naturelle',
+    'Un logo minimaliste pour une startup IA',
+  ];
 }
 
 function getSuggestions(format: FileFormat): string[] {

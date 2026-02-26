@@ -1,7 +1,7 @@
 """
 THÉRÈSE v2 - Images Router
 
-API endpoints for image generation with GPT Image 1.5 and Nano Banana Pro.
+API endpoints for image generation with GPT Image 1.5 and Nano Banana 2.
 """
 
 import logging
@@ -69,7 +69,7 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
 
     Supports:
     - GPT Image 1.5 (OpenAI): High quality, good for portraits
-    - Nano Banana Pro (Gemini): Up to 4K, good with reference images
+    - Nano Banana 2 (Gemini): Up to 4K, good with reference images
     """
     try:
         service = get_image_service()
@@ -201,6 +201,7 @@ async def download_image(image_id: str):
         path=image.file_path,
         media_type=image.mime_type,
         filename=image.file_name,
+        content_disposition_type="inline",
     )
 
 

@@ -45,7 +45,7 @@ const providerConfig: Record<ImageProvider, {
   'nanobanan-pro': {
     color: 'text-purple-400',
     bgGradient: 'from-purple-500/20 to-pink-600/10',
-    label: 'Nano Banana Pro',
+    label: 'Nano Banana 2',
     description: 'Image générée par Gemini'
   },
   'fal-flux-pro': {

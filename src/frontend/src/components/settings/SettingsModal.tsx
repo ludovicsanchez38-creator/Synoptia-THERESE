@@ -1,8 +1,8 @@
-// Modal Paramètres - Shell principal avec navigation par onglets
-// Les onglets sont extraits dans des composants séparés pour la maintenabilité
+// Modal Paramètres - Shell principal avec navigation sidebar
+// Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
 import { useState, useEffect } from 'react';
-import { X, Cpu, Database, User, Wrench, Accessibility, Gauge, AlertTriangle, Info, Loader2 } from 'lucide-react';
+import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -12,11 +12,9 @@ import * as api from '../../services/api';
 // Composants des onglets
 import { ProfileTab, ProfileFormData } from './ProfileTab';
 import { LLMTab, PROVIDERS, IMAGE_PROVIDERS } from './LLMTab';
-import { DataTab } from './DataTab';
-import { AccessibilityTab } from './AccessibilityTab';
-import { PerformanceTab } from './PerformanceTab';
-import { LimitsTab } from './LimitsTab';
+import { ServicesTab } from './ServicesTab';
 import { ToolsPanel } from './ToolsPanel';
+import { AdvancedTab } from './AdvancedTab';
 import { AboutTab } from './AboutTab';
 
 interface SettingsModalProps {
@@ -24,7 +22,16 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-type Tab = 'profile' | 'api' | 'tools' | 'data' | 'accessibility' | 'performance' | 'personalisation' | 'escalation' | 'about';
+type Tab = 'profile' | 'ai' | 'services' | 'tools' | 'advanced' | 'about';
+
+const TABS: { id: Tab; label: string; icon: typeof User }[] = [
+  { id: 'profile', label: 'Profil', icon: User },
+  { id: 'ai', label: 'IA', icon: Cpu },
+  { id: 'services', label: 'Services', icon: Layers },
+  { id: 'tools', label: 'Outils', icon: Wrench },
+  { id: 'advanced', label: 'Avancé', icon: SlidersHorizontal },
+  { id: 'about', label: 'À propos', icon: Info },
+];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
@@ -101,7 +108,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }, [isOpen]);
 
-  // Rafraîchissement des stats (callback sync CRM)
   async function refreshStats() {
     try {
       const statsData = await api.getStats();
@@ -138,7 +144,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setHasBraveKey(!!keys.brave);
       setWebSearchEnabled(webSearchStatus.enabled);
 
-      // Statut Ollama
       if (ollamaStatusData) {
         setOllamaStatus(ollamaStatusData);
         if (ollamaStatusData.available && ollamaStatusData.models.length > 0) {
@@ -146,7 +151,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
       }
 
-      // Initialisation du formulaire profil
       if (profileData) {
         setProfileForm({
           name: profileData.name || '',
@@ -162,7 +166,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         });
       }
 
-      // Chargement des préférences sauvegardées
       if (preferences && typeof preferences === 'object') {
         const prefs = preferences as Record<string, unknown>;
         if ('auto_extract_entities' in prefs && typeof prefs.auto_extract_entities === 'boolean') {
@@ -176,7 +179,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }
 
-  // BUG-049 : re-tester la disponibilité Ollama sans recharger tous les paramètres
   async function retestOllama() {
     setRetestingOllama(true);
     try {
@@ -188,7 +190,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         }
       }
     } catch {
-      // laisser l'état précédent si erreur réseau
+      // laisser l'état précédent
     } finally {
       setRetestingOllama(false);
     }
@@ -200,7 +202,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       return;
     }
 
-    // Vérification du format de la clé
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
     if (providerConfig?.keyPrefix && !apiKeyInput.startsWith(providerConfig.keyPrefix)) {
       setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
@@ -216,10 +217,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
       setCorruptedKeys(prev => prev.filter(k => k !== selectedProvider));
       setApiKeyInput('');
-
-      setTimeout(() => {
-        setSaved(false);
-      }, 3000);
+      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -232,8 +230,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setError('Veuillez entrer une clé API Groq');
       return;
     }
-
-    // Les clés Groq commencent par "gsk_"
     if (!groqKeyInput.startsWith('gsk_')) {
       setError('La clé API Groq doit commencer par "gsk_"');
       return;
@@ -247,10 +243,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setGroqSaved(true);
       setHasGroqKey(true);
       setGroqKeyInput('');
-
-      setTimeout(() => {
-        setGroqSaved(false);
-      }, 3000);
+      setTimeout(() => setGroqSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -272,10 +265,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setBraveSaved(true);
       setHasBraveKey(true);
       setBraveKeyInput('');
-
-      setTimeout(() => {
-        setBraveSaved(false);
-      }, 3000);
+      setTimeout(() => setBraveSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -290,9 +280,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       return;
     }
 
-    // Validation du format
     const provider = IMAGE_PROVIDERS.find(p => p.apiKeyId === apiKeyId);
-    if (provider && !keyInput.startsWith(provider.keyPrefix)) {
+    if (provider && provider.keyPrefix && !keyInput.startsWith(provider.keyPrefix)) {
       setError(`La clé API doit commencer par "${provider.keyPrefix}"`);
       return;
     }
@@ -305,10 +294,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setImageKeySaved(apiKeyId);
       setApiKeys(prev => ({ ...prev, [apiKeyId]: true }));
       setImageKeyInputs(prev => ({ ...prev, [apiKeyId]: '' }));
-
-      setTimeout(() => {
-        setImageKeySaved(null);
-      }, 3000);
+      setTimeout(() => setImageKeySaved(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -332,11 +318,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
 
-    // Modèle par défaut pour le provider sélectionné
     const providerConfig = PROVIDERS.find(p => p.id === provider);
     let defaultModel = providerConfig?.models[0]?.id || '';
 
-    // Pour Ollama, utiliser le premier modèle disponible
     if (provider === 'ollama' && ollamaModels.length > 0) {
       defaultModel = ollamaModels[0];
     }
@@ -345,7 +329,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setSelectedModel(defaultModel);
       try {
         await api.setLLMConfig(provider, defaultModel);
-        // F-12 : notifier ChatInput du changement de config LLM
         window.dispatchEvent(new Event('therese:llm-config-changed'));
       } catch (err) {
         console.error('Échec de la sauvegarde de la config LLM:', err);
@@ -357,7 +340,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setSelectedModel(modelId);
     try {
       await api.setLLMConfig(selectedProvider, modelId);
-      // F-12 : notifier ChatInput du changement de config LLM
       window.dispatchEvent(new Event('therese:llm-config-changed'));
     } catch (err) {
       console.error('Échec de la sauvegarde de la config LLM:', err);
@@ -398,10 +380,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       });
       setProfile(savedProfile);
       setProfileSaved(true);
-
-      setTimeout(() => {
-        setProfileSaved(false);
-      }, 3000);
+      setTimeout(() => setProfileSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -469,6 +448,104 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  function renderContent() {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-32">
+          <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <ProfileTab
+            profileForm={profileForm}
+            setProfileForm={setProfileForm}
+            profile={profile}
+            saving={profileSaving}
+            saved={profileSaved}
+            error={error}
+            setError={setError}
+            onSave={handleSaveProfile}
+            onImport={handleImportClaudeMd}
+          />
+        );
+      case 'ai':
+        return (
+          <LLMTab
+            selectedProvider={selectedProvider}
+            selectedModel={selectedModel}
+            apiKeys={apiKeys}
+            corruptedKeys={corruptedKeys}
+            apiKeyInput={apiKeyInput}
+            setApiKeyInput={setApiKeyInput}
+            showApiKey={showApiKey}
+            setShowApiKey={setShowApiKey}
+            ollamaStatus={ollamaStatus}
+            ollamaModels={ollamaModels}
+            saving={saving}
+            saved={saved}
+            error={error}
+            setError={setError}
+            onSelectProvider={handleSelectProvider}
+            onSelectModel={handleSelectModel}
+            onSaveApiKey={handleSaveApiKey}
+            onRetestOllama={retestOllama}
+            retestingOllama={retestingOllama}
+          />
+        );
+      case 'services':
+        return (
+          <ServicesTab
+            apiKeys={apiKeys}
+            showApiKey={showApiKey}
+            setShowApiKey={setShowApiKey}
+            error={error}
+            setError={setError}
+            selectedImageProvider={selectedImageProvider}
+            onSelectImageProvider={setSelectedImageProvider}
+            imageKeyInputs={imageKeyInputs}
+            setImageKeyInputs={setImageKeyInputs}
+            imageKeySaving={imageKeySaving}
+            imageKeySaved={imageKeySaved}
+            onSaveImageKey={handleSaveImageKey}
+            hasGroqKey={hasGroqKey}
+            groqKeyInput={groqKeyInput}
+            setGroqKeyInput={setGroqKeyInput}
+            groqSaving={groqSaving}
+            groqSaved={groqSaved}
+            onSaveGroqKey={handleSaveGroqKey}
+            webSearchEnabled={webSearchEnabled}
+            webSearchLoading={webSearchLoading}
+            onToggleWebSearch={handleToggleWebSearch}
+            hasBraveKey={hasBraveKey}
+            braveKeyInput={braveKeyInput}
+            setBraveKeyInput={setBraveKeyInput}
+            braveSaving={braveSaving}
+            braveSaved={braveSaved}
+            onSaveBraveKey={handleSaveBraveKey}
+            autoExtractEntities={autoExtractEntities}
+            onToggleAutoExtract={handleToggleAutoExtract}
+          />
+        );
+      case 'tools':
+        return <ToolsPanel onError={setError} />;
+      case 'advanced':
+        return (
+          <AdvancedTab
+            stats={stats}
+            workingDir={workingDir}
+            onSelectWorkingDir={handleSelectWorkingDir}
+            onRefreshStats={refreshStats}
+          />
+        );
+      case 'about':
+        return <AboutTab />;
+    }
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -500,184 +577,34 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </Button>
             </div>
 
-            {/* Onglets */}
-            <div className="flex border-b border-border/50 shrink-0 overflow-x-auto scrollbar-hide">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'profile'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <User className="w-4 h-4" />
-                Profil
-              </button>
-              <button
-                onClick={() => setActiveTab('api')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'api'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Cpu className="w-4 h-4" />
-                LLM
-              </button>
-              <button
-                onClick={() => setActiveTab('tools')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'tools'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Wrench className="w-4 h-4" />
-                Tools
-              </button>
-              <button
-                onClick={() => setActiveTab('data')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'data'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Database className="w-4 h-4" />
-                Données
-              </button>
-              <button
-                onClick={() => setActiveTab('accessibility')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'accessibility'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Accessibility className="w-4 h-4" />
-                A11Y
-              </button>
-              <button
-                onClick={() => setActiveTab('performance')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'performance'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Gauge className="w-4 h-4" />
-                Perf
-              </button>
-              <button
-                onClick={() => setActiveTab('escalation')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'escalation'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Limites
-              </button>
-              <button
-                onClick={() => setActiveTab('about')}
-                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'about'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Info className="w-4 h-4" />
-                À propos
-              </button>
-            </div>
+            {/* Corps : sidebar + contenu */}
+            <div className="flex-1 flex overflow-hidden min-h-0">
+              {/* Sidebar navigation */}
+              <nav className="w-44 shrink-0 border-r border-border/30 py-2 overflow-y-auto bg-background/30">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                        isActive
+                          ? 'bg-accent-cyan/10 text-accent-cyan border-r-2 border-accent-cyan'
+                          : 'text-text-muted hover:text-text hover:bg-surface-elevated/30'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
 
-            {/* Contenu */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
-                </div>
-              ) : activeTab === 'profile' ? (
-                <ProfileTab
-                  profileForm={profileForm}
-                  setProfileForm={setProfileForm}
-                  profile={profile}
-                  saving={profileSaving}
-                  saved={profileSaved}
-                  error={error}
-                  setError={setError}
-                  onSave={handleSaveProfile}
-                  onImport={handleImportClaudeMd}
-                />
-              ) : activeTab === 'tools' ? (
-                <ToolsPanel onError={setError} />
-              ) : activeTab === 'api' ? (
-                <LLMTab
-                  selectedProvider={selectedProvider}
-                  selectedModel={selectedModel}
-                  apiKeys={apiKeys}
-                  corruptedKeys={corruptedKeys}
-                  apiKeyInput={apiKeyInput}
-                  setApiKeyInput={setApiKeyInput}
-                  showApiKey={showApiKey}
-                  setShowApiKey={setShowApiKey}
-                  ollamaStatus={ollamaStatus}
-                  ollamaModels={ollamaModels}
-                  saving={saving}
-                  saved={saved}
-                  error={error}
-                  setError={setError}
-                  onSelectProvider={handleSelectProvider}
-                  onSelectModel={handleSelectModel}
-                  onSaveApiKey={handleSaveApiKey}
-                  autoExtractEntities={autoExtractEntities}
-                  onToggleAutoExtract={handleToggleAutoExtract}
-                  // Props transcription vocale Groq
-                  hasGroqKey={hasGroqKey}
-                  groqKeyInput={groqKeyInput}
-                  setGroqKeyInput={setGroqKeyInput}
-                  groqSaving={groqSaving}
-                  groqSaved={groqSaved}
-                  onSaveGroqKey={handleSaveGroqKey}
-                  // Props recherche web
-                  webSearchEnabled={webSearchEnabled}
-                  webSearchLoading={webSearchLoading}
-                  onToggleWebSearch={handleToggleWebSearch}
-                  // Props Brave Search
-                  hasBraveKey={hasBraveKey}
-                  braveKeyInput={braveKeyInput}
-                  setBraveKeyInput={setBraveKeyInput}
-                  braveSaving={braveSaving}
-                  braveSaved={braveSaved}
-                  onSaveBraveKey={handleSaveBraveKey}
-                  // Props génération d'images
-                  selectedImageProvider={selectedImageProvider}
-                  onSelectImageProvider={setSelectedImageProvider}
-                  imageKeyInputs={imageKeyInputs}
-                  setImageKeyInputs={setImageKeyInputs}
-                  imageKeySaving={imageKeySaving}
-                  imageKeySaved={imageKeySaved}
-                  onSaveImageKey={handleSaveImageKey}
-                  onRetestOllama={retestOllama}
-                  retestingOllama={retestingOllama}
-                />
-              ) : activeTab === 'accessibility' ? (
-                <AccessibilityTab />
-              ) : activeTab === 'performance' ? (
-                <PerformanceTab />
-              ) : activeTab === 'escalation' ? (
-                <LimitsTab />
-              ) : activeTab === 'about' ? (
-                <AboutTab />
-              ) : (
-                <DataTab
-                  stats={stats}
-                  workingDir={workingDir}
-                  onSelectWorkingDir={handleSelectWorkingDir}
-                  onRefreshStats={refreshStats}
-                />
-              )}
+              {/* Contenu */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {renderContent()}
+              </div>
             </div>
 
             {/* Pied de page */}

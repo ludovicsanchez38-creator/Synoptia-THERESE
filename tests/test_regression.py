@@ -1919,25 +1919,16 @@ class TestUX_ReponsesLegeres:
 # ─── BUG-039 Bouton email dans MessageBubble ──────────────────────────────
 
 class TestBUG039_EmailButton:
-    """MessageBubble doit avoir un bouton pour envoyer par email."""
+    """v0.4.0 : Le bouton email a été retiré de MessageBubble (doublon avec le module Mail).
+    On vérifie qu'il n'est plus présent."""
 
     MSG_BUBBLE = Path("src/frontend/src/components/chat/MessageBubble.tsx")
 
-    def test_mail_icon_imported(self):
-        """L'icône Mail doit être importée de lucide-react."""
+    def test_mail_icon_removed(self):
+        """L'icône Mail ne doit plus être importée dans MessageBubble (v0.4.0)."""
         content = self.MSG_BUBBLE.read_text(encoding="utf-8")
-        assert "Mail" in content, "L'icône Mail doit être importée"
-
-    def test_mailto_link(self):
-        """Le bouton email doit ouvrir un lien mailto:."""
-        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
-        assert "mailto:" in content, "Le bouton email doit utiliser un lien mailto:"
-
-    def test_open_in_mail_client_function(self):
-        """La fonction openInMailClient doit exister."""
-        content = self.MSG_BUBBLE.read_text(encoding="utf-8")
-        assert "openInMailClient" in content, (
-            "MessageBubble doit avoir une fonction openInMailClient"
+        assert "openInMailClient" not in content, (
+            "Le bouton email a été retiré en v0.4.0"
         )
 
 

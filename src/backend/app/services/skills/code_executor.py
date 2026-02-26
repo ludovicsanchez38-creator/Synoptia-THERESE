@@ -279,6 +279,60 @@ def extract_python_code(llm_response: str) -> str | None:
             )
             return code
 
+    # 5. Dernier recours : détecter du code Python brut (sans bloc markdown)
+    # Certains modèles (ex: Gemini) renvoient du code sans ```python```
+    # On cherche des marqueurs forts de code python-docx/pptx/openpyxl
+    code_markers = [
+        r'from\s+(?:docx|pptx|openpyxl)\s+import',
+        r'(?:Document|Presentation|Workbook)\s*\(',
+        r'\.add_slide\s*\(',
+        r'\.add_heading\s*\(',
+        r'\.save\s*\(',
+    ]
+    marker_count = sum(1 for m in code_markers if re.search(m, llm_response))
+    if marker_count >= 2:
+        # Extraire les lignes qui ressemblent à du code Python
+        # (ignorer les lignes de texte libre avant/après le code)
+        lines = llm_response.split('\n')
+        code_lines: list[str] = []
+        in_code = False
+        for line in lines:
+            stripped = line.strip()
+            # Début du code : import ou assignation ou commentaire Python
+            if not in_code:
+                if (stripped.startswith(('from ', 'import ', '#'))
+                    or re.match(r'^[a-zA-Z_]\w*\s*=\s*', stripped)):
+                    in_code = True
+                    code_lines.append(line)
+            else:
+                # Fin du code : ligne vide après du contenu, ou texte narratif
+                if stripped and not stripped.startswith('#') and not any(c in stripped for c in '=()[]{}.:,+-*/_"\'\\') and len(stripped.split()) > 5:
+                    # Ligne de texte narratif (pas de code) - on arrête si on a déjà du code
+                    if len(code_lines) > 5:
+                        break
+                else:
+                    code_lines.append(line)
+
+        if code_lines:
+            code = '\n'.join(code_lines).strip()
+            try:
+                ast.parse(code)
+                logger.warning(
+                    "Code Python détecté sans bloc markdown (%d lignes, %d markers)",
+                    len(code_lines),
+                    marker_count,
+                )
+                return code
+            except SyntaxError:
+                # Tenter réparation
+                repaired = repair_truncated_code(code)
+                if repaired:
+                    logger.warning(
+                        "Code Python sans bloc markdown réparé (%d lignes)",
+                        len(code_lines),
+                    )
+                    return repaired
+
     return None
 
 
