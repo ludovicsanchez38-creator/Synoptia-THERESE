@@ -4,7 +4,7 @@ version = "0.3.4"
 description = "Backend THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "AGPL-3.0-only" }
 authors = [
     { name = "Ludo Sanchez", email = "ludo@synoptia.fr" }
 ]
