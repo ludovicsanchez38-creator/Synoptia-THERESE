@@ -114,13 +114,13 @@ jobs:
             # Note : pas besoin de LD_LIBRARY_PATH explicite en PyInstaller 6.x onedir.
             # Le bootloader PyInstaller configure LD_LIBRARY_PATH vers _internal/ en interne
             # avant de charger Python. Les .so sont dans $LIBS_DIR/_internal/.
-            cat > "$WRAPPER" << 'EOF'
-#!/bin/sh
-# THÉRÈSE - wrapper backend Linux (PyInstaller onedir, BUG-044)
-# THERESE_BACKEND_LIBS est passé par lib.rs via app.path().resource_dir()
-LIBS_DIR="${THERESE_BACKEND_LIBS:-$(cd "$(dirname "$0")" && pwd)/backend-libs}"
-exec "$LIBS_DIR/backend" "$@"
-EOF
+            printf '%s\n' \
+              '#!/bin/sh' \
+              '# THERESE - wrapper backend Linux (PyInstaller onedir, BUG-044)' \
+              '# THERESE_BACKEND_LIBS est passe par lib.rs via app.path().resource_dir()' \
+              'LIBS_DIR="${THERESE_BACKEND_LIBS:-$(cd "$(dirname "$0")" && pwd)/backend-libs}"' \
+              'exec "$LIBS_DIR/backend" "$@"' \
+              > "$WRAPPER"
             chmod +x "$WRAPPER"
             echo "Wrapper shell créé : $WRAPPER"
 
