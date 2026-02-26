@@ -2886,13 +2886,15 @@ class TestBUG044_LinuxOnedirPyInstaller:
             "lib.rs doit utiliser app.path().resource_dir() pour trouver backend-libs"
         )
 
-    def test_tauri_conf_has_backend_libs_resources(self):
-        import json
-        with open(self.TAURI_CONF, encoding="utf-8") as f:
-            conf = json.load(f)
-        resources = conf.get("bundle", {}).get("resources", [])
-        assert any("backend-libs" in str(r) for r in resources), (
-            "tauri.conf.json doit avoir une entrée resources pour backend-libs/**"
+    def test_release_yml_injects_backend_libs_resources_linux(self):
+        """Le workflow release.yml injecte backend-libs dans resources pour Linux.
+
+        Note : resources reste [] dans tauri.conf.json (sinon macOS/Windows cassent
+        car le dossier backend-libs n'existe pas). L'injection se fait dans le workflow.
+        """
+        content = self.RELEASE_YML.read_text(encoding="utf-8")
+        assert "backend-libs" in content, (
+            "release.yml doit injecter backend-libs dans les resources Tauri pour Linux"
         )
 
     def test_release_yml_cp_copies_content_not_folder(self):
