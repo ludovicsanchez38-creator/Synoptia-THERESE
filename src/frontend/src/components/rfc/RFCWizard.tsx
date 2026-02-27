@@ -63,7 +63,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
     name: '',
     description: '',
     icon: '',
-    category: 'personnaliser',
+    category: 'production',
     prompt_template: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);

@@ -8,7 +8,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Brain, GitBranch, ChevronLeft, Plus, type LucideIcon } from 'lucide-react';
+import { Sparkles, Brain, GitBranch, ChevronLeft, Plus, Trash2, ArrowRightLeft, type LucideIcon } from 'lucide-react';
 import { useCommandsStore } from '../../stores/commandsStore';
 import { CommandExecutor } from './CommandExecutor';
 import { CommandCard } from './CommandCard';
@@ -54,10 +54,14 @@ const CATEGORY_BLOCKS: Array<{
 ];
 
 export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeCommandsProps) {
-  const { commands, fetchCommands, isLoading } = useCommandsStore();
+  const { commands, fetchCommands, updateCommand, deleteCommand, isLoading } = useCommandsStore();
   const [selectedCategory, setSelectedCategory] = useState<typeof CATEGORY_BLOCKS[number] | null>(null);
   const [activeCommand, setActiveCommand] = useState<CommandDefinition | null>(null);
   const [showRFC, setShowRFC] = useState(false);
+  /** ID de la commande en cours de confirmation de suppression */
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  /** ID de la commande dont on affiche le menu de déplacement */
+  const [showMoveMenuId, setShowMoveMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCommands();
@@ -107,7 +111,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
       name: 'Créer une commande',
       description: 'Créer une commande personnalisée avec l\'aide de THÉRÈSE',
       icon: 'Plus',
-      category: 'personnaliser',
+      category: 'production',
       source: 'builtin',
       action: 'rfc',
       prompt_template: '',
@@ -122,6 +126,24 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
     });
     setSelectedCategory(null);
   }, []);
+
+  const handleDeleteCommand = useCallback(async (commandId: string) => {
+    try {
+      await deleteCommand(commandId);
+      setConfirmDeleteId(null);
+    } catch (err) {
+      console.error('Erreur suppression commande:', err);
+    }
+  }, [deleteCommand]);
+
+  const handleMoveCommand = useCallback(async (commandId: string, newCategory: string) => {
+    try {
+      await updateCommand(commandId, { category: newCategory });
+      setShowMoveMenuId(null);
+    } catch (err) {
+      console.error('Erreur déplacement commande:', err);
+    }
+  }, [updateCommand]);
 
   return (
     <div className="w-full flex flex-col items-center justify-center px-4">
@@ -203,12 +225,85 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
             {/* Commandes en pills */}
             <div className="flex flex-wrap gap-3">
               {(grouped[selectedCategory.id] || []).map((cmd, index) => (
-                <CommandCard
-                  key={cmd.id}
-                  command={cmd}
-                  onClick={handleCommandClick}
-                  index={index}
-                />
+                <div key={cmd.id} className="relative group/cmd flex items-center gap-1">
+                  <CommandCard
+                    command={cmd}
+                    onClick={handleCommandClick}
+                    index={index}
+                  />
+                  {/* Actions pour commandes utilisateur */}
+                  {cmd.is_editable && (
+                    <div className="hidden group-hover/cmd:flex items-center gap-0.5">
+                      {/* Bouton déplacer */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowMoveMenuId(showMoveMenuId === cmd.id ? null : cmd.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="p-1 rounded-full hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan transition-colors"
+                          title="Déplacer"
+                        >
+                          <ArrowRightLeft className="w-3 h-3" />
+                        </button>
+                        {/* Menu de déplacement */}
+                        {showMoveMenuId === cmd.id && (
+                          <div className="absolute top-full left-0 mt-1 z-20 bg-surface border border-border rounded-lg shadow-xl py-1 min-w-[140px]">
+                            {CATEGORY_BLOCKS.filter((cat) => cat.id !== selectedCategory.id).map((cat) => (
+                              <button
+                                key={cat.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveCommand(cmd.id, cat.id);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-accent-cyan/10 hover:text-accent-cyan transition-colors"
+                              >
+                                <cat.icon className="w-3.5 h-3.5" />
+                                {cat.title}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {/* Bouton supprimer */}
+                      {confirmDeleteId === cmd.id ? (
+                        <div className="flex items-center gap-1 ml-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCommand(cmd.id);
+                            }}
+                            className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                          >
+                            Confirmer
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteId(null);
+                            }}
+                            className="px-2 py-0.5 rounded text-xs font-medium text-text-muted hover:text-text transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDeleteId(cmd.id);
+                            setShowMoveMenuId(null);
+                          }}
+                          className="p-1 rounded-full hover:bg-red-500/15 text-text-muted hover:text-red-400 transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
               {/* Bouton "Créer une commande" en dernier */}
               <motion.button
