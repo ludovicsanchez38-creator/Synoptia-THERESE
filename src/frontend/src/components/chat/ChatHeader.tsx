@@ -144,7 +144,7 @@ export function ChatHeader({
           className="w-8 h-8 hover:bg-accent-cyan/15"
           title={isMac ? 'Board (⌘D)' : 'Board (Ctrl+D)'}
         >
-          <svg width="18" height="18" viewBox="0 0 40 40" fill="none" className="shrink-0">
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none" className="shrink-0">
             <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
             <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
             <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />

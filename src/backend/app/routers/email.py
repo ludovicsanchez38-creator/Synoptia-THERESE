@@ -753,40 +753,42 @@ async def _list_messages_gmail(
         label_ids=label_ids_list,
     )
 
-    # Enrich with metadata CONCURRENTLY (BUG-061: was sequential, 50 calls one by one)
+    # Enrich with metadata (concurrency limited to avoid Gmail API rate limits)
     import asyncio
 
-    async def _enrich_one(msg: dict) -> dict:
-        try:
-            msg_detail = await gmail.get_message(msg['id'], format='metadata')
-            headers = {h['name']: h['value'] for h in msg_detail.get('payload', {}).get('headers', [])}
-            label_ids_msg = msg_detail.get('labelIds', [])
+    sem = asyncio.Semaphore(5)
 
-            return {
-                'id': msg['id'],
-                'threadId': msg.get('threadId'),
-                'snippet': msg_detail.get('snippet', ''),
-                'subject': headers.get('Subject', '(No subject)'),
-                'from': headers.get('From', ''),
-                'date': headers.get('Date', ''),
-                'labelIds': label_ids_msg,
-                'is_read': 'UNREAD' not in label_ids_msg,
-                'is_starred': 'STARRED' in label_ids_msg,
-            }
-        except Exception as e:
-            logger.error(f"Failed to get message {msg['id']}: {e}")
-            return {
-                'id': msg['id'],
-                'threadId': msg.get('threadId'),
-                'error': str(e),
-            }
+    async def _enrich_one(msg: dict) -> dict:
+        async with sem:
+            try:
+                msg_detail = await gmail.get_message(msg['id'], format='metadata')
+                headers = {h['name']: h['value'] for h in msg_detail.get('payload', {}).get('headers', [])}
+                label_ids_msg = msg_detail.get('labelIds', [])
+
+                return {
+                    'id': msg['id'],
+                    'threadId': msg.get('threadId'),
+                    'snippet': msg_detail.get('snippet', ''),
+                    'subject': headers.get('Subject', '(No subject)'),
+                    'from': headers.get('From', ''),
+                    'date': headers.get('Date', ''),
+                    'labelIds': label_ids_msg,
+                    'is_read': 'UNREAD' not in label_ids_msg,
+                    'is_starred': 'STARRED' in label_ids_msg,
+                }
+            except Exception as e:
+                logger.error(f"Failed to get message {msg['id']}: {e}")
+                return {
+                    'id': msg['id'],
+                    'threadId': msg.get('threadId'),
+                    'error': str(e),
+                }
 
     raw_messages = result.get('messages', [])
     enriched_messages = await asyncio.gather(
         *(_enrich_one(msg) for msg in raw_messages)
     ) if raw_messages else []
 
-    # BUG-061b: log enrichment results for diagnosis
     error_count = sum(1 for m in enriched_messages if m.get('error'))
     if error_count:
         logger.warning(f"Email enrichment: {len(enriched_messages) - error_count}/{len(enriched_messages)} OK, {error_count} errors")

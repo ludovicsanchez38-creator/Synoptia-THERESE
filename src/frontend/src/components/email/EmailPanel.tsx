@@ -91,10 +91,11 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     try {
       const status = await api.getEmailAuthStatus();
       setAccounts(status.accounts);
-      if (status.accounts.length > 0 && !currentAccountId) {
+      const accountStillExists = status.accounts.some((a: { id: string }) => a.id === currentAccountId);
+      if (status.accounts.length > 0 && (!currentAccountId || !accountStillExists)) {
         setCurrentAccount(status.accounts[0].id);
         await loadLabels(status.accounts[0].id);
-      } else if (currentAccountId) {
+      } else if (currentAccountId && accountStillExists) {
         await loadLabels(currentAccountId);
       }
     } catch (err) {
