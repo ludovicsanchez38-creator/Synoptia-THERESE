@@ -459,10 +459,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         disabled={!question.trim()}
                         className={cn(
                           'w-full py-3 px-6 rounded-xl font-semibold text-white',
-                          'bg-gradient-to-r from-accent-cyan to-accent-magenta',
+                          'bg-accent-cyan hover:bg-accent-cyan/90',
                           'hover:scale-[1.02] active:scale-[0.98] transition-all duration-200',
                           'shadow-[0_4px_20px_rgba(34,211,238,0.3)]',
-                          'hover:shadow-[0_8px_30px_rgba(34,211,238,0.4)]',
+                          'hover:shadow-[0_6px_24px_rgba(34,211,238,0.35)]',
                           'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100',
                           'flex items-center justify-center gap-2',
                         )}
