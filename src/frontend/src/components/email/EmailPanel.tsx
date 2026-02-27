@@ -71,10 +71,12 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const [showSetupWizard, setShowSetupWizard] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load accounts on mount (standalone ou modal)
+  // Load accounts on mount/open (standalone ou modal)
   useEffect(() => {
     if (standalone || isEmailPanelOpen) {
       loadAccounts();
+      // Forcer le rechargement des messages à chaque ouverture du panel
+      triggerRefresh();
     }
   }, [standalone, isEmailPanelOpen]);
 
@@ -306,8 +308,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
                   <UserPlus className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
+                  {syncing && <span className="ml-1 text-xs text-accent-cyan">Sync...</span>}
                 </Button>
               </>
             )}
@@ -535,8 +538,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
                   <UserPlus className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
+                  {syncing && <span className="ml-1 text-xs text-accent-cyan">Sync...</span>}
                 </Button>
               </>
             )}

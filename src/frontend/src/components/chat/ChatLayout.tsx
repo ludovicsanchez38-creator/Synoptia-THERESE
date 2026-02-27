@@ -42,8 +42,13 @@ export function ChatLayout() {
   const [guidedPanelActive, setGuidedPanelActive] = useState(false);
   const [saveCommandData, setSaveCommandData] = useState<{ userPrompt: string; assistantContent: string } | null>(null);
 
-  const { createConversation } = useChatStore();
+  const { createConversation, currentConversationId } = useChatStore();
   const toggleDemo = useDemoStore((s) => s.toggle);
+
+  // Reset guidedPanelActive quand la conversation change (BUG-070)
+  useEffect(() => {
+    setGuidedPanelActive(false);
+  }, [currentConversationId]);
 
   // Fetch user commands for slash menu integration
   useEffect(() => {

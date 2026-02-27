@@ -27,6 +27,7 @@ export interface Message {
   detectedEntities?: DetectedEntities;
   usage?: MessageUsage;
   uncertainty?: MessageUncertainty;
+  imageId?: string;
 }
 
 export interface Conversation {

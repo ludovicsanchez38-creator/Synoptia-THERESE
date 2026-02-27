@@ -227,11 +227,11 @@ export function EmailList({ accountId }: EmailListProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto relative">
-        {/* Indicateur de rafraîchissement discret (overlay, ne pousse pas le contenu) */}
+        {/* Indicateur de rafraîchissement */}
         {refreshing && (
-          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-1 bg-accent-cyan/5 backdrop-blur-sm border-b border-border/20">
-            <Loader2 className="w-3 h-3 animate-spin text-accent-cyan mr-2" />
-            <span className="text-xs text-text-muted">Mise à jour...</span>
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-accent-cyan/10 backdrop-blur-sm border-b border-accent-cyan/20">
+            <Loader2 className="w-4 h-4 animate-spin text-accent-cyan mr-2" />
+            <span className="text-sm font-medium text-accent-cyan">Mise à jour des messages...</span>
           </div>
         )}
         {loading ? (

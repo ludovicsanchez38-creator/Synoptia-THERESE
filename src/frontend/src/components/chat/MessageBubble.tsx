@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, Image as ImageIcon } from 'lucide-react';
+import { downloadGeneratedImage, getImageDownloadUrl } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
@@ -73,13 +74,42 @@ export const MessageBubble = memo(function MessageBubble({
   onSaveAsCommand,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const isImage = !!message.imageId;
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const copyToClipboard = useCallback(async () => {
-    await navigator.clipboard.writeText(message.content);
+    if (isImage && message.imageId) {
+      // Copier l'image dans le presse-papier
+      try {
+        const url = getImageDownloadUrl(message.imageId);
+        const response = await fetch(url);
+        const blob = await response.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob }),
+        ]);
+      } catch {
+        // Fallback : copier le texte
+        await navigator.clipboard.writeText(message.content);
+      }
+    } else {
+      await navigator.clipboard.writeText(message.content);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [message.content]);
+  }, [message.content, message.imageId, isImage]);
+
+  const handleImageDownload = useCallback(async () => {
+    if (!message.imageId) return;
+    setDownloading(true);
+    try {
+      await downloadGeneratedImage(message.imageId);
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setDownloading(false);
+    }
+  }, [message.imageId]);
 
 
   return (
@@ -126,8 +156,8 @@ export const MessageBubble = memo(function MessageBubble({
           'absolute top-2 right-2 flex items-center gap-1 z-10',
           'opacity-0 group-hover:opacity-100 transition-all'
         )}>
-          {/* Sauvegarder comme raccourci (assistant uniquement, pas en streaming) */}
-          {!isUser && !message.isStreaming && onSaveAsCommand && (
+          {/* Sauvegarder comme raccourci (assistant uniquement, pas en streaming, pas pour les images) */}
+          {!isUser && !message.isStreaming && !isImage && onSaveAsCommand && (
             <button
               onClick={onSaveAsCommand}
               className={cn(
@@ -139,17 +169,34 @@ export const MessageBubble = memo(function MessageBubble({
               <Bookmark className="w-4 h-4" />
             </button>
           )}
-          {/* Copier le message */}
+          {/* Télécharger l'image (images uniquement) */}
+          {isImage && !message.isStreaming && (
+            <button
+              onClick={handleImageDownload}
+              disabled={downloading}
+              className={cn(
+                'p-1.5 rounded-md transition-all',
+                'hover:bg-surface text-text-muted hover:text-accent-cyan',
+                downloading && 'opacity-50'
+              )}
+              title="Enregistrer l'image"
+            >
+              <Download className={cn('w-4 h-4', downloading && 'animate-pulse')} />
+            </button>
+          )}
+          {/* Copier le message / l'image */}
           <button
             onClick={copyToClipboard}
             className={cn(
               'p-1.5 rounded-md transition-all',
               'hover:bg-surface text-text-muted hover:text-text'
             )}
-            title="Copier le message"
+            title={isImage ? "Copier l'image" : "Copier le message"}
           >
             {copied ? (
               <Check className="w-4 h-4 text-green-500" />
+            ) : isImage ? (
+              <ImageIcon className="w-4 h-4" />
             ) : (
               <Copy className="w-4 h-4" />
             )}

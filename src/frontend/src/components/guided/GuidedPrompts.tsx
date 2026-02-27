@@ -353,7 +353,8 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       const imageUrl = getImageDownloadUrl(response.id);
       addMessage({
         role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : 'Nano Banana 2'}*\n\n[Télécharger ${response.file_name}](${imageUrl})`,
+        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2'}*`,
+        imageId: response.id,
       });
 
       setImageState({

@@ -45,13 +45,23 @@ export function useConversationSync() {
       // Get current local conversations (from Zustand state)
       const localConversations = useChatStore.getState().conversations;
 
+      // Préserver les messages locaux quand le backend n'en a pas (BUG-071/072)
+      // Ex: messages de génération d'image stockés uniquement en local
+      const mergedSynced = syncedConversations.map((synced) => {
+        const local = localConversations.find((l) => l.id === synced.id);
+        if (local && local.messages.length > 0 && (synced.messageCount === 0 || !synced.messageCount)) {
+          return { ...synced, messages: local.messages, messageCount: local.messages.length };
+        }
+        return synced;
+      });
+
       // Find local-only conversations (not synced to backend)
       const localOnlyConversations = localConversations.filter(
-        (local) => !local.synced && !syncedConversations.some((synced) => synced.id === local.id)
+        (local) => !local.synced && !mergedSynced.some((synced) => synced.id === local.id)
       );
 
       // Merge: backend conversations first (sorted by date), then local-only
-      const mergedConversations = [...syncedConversations, ...localOnlyConversations];
+      const mergedConversations = [...mergedSynced, ...localOnlyConversations];
 
       setConversations(mergedConversations);
 
