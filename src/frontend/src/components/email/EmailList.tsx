@@ -59,8 +59,12 @@ export function EmailList({ accountId }: EmailListProps) {
 
   async function loadMessages() {
     // Garde : empêcher les chargements concurrents
-    if (isLoadingRef.current) return;
+    if (isLoadingRef.current) {
+      console.log('[Email] loadMessages bloqué (chargement déjà en cours)');
+      return;
+    }
     isLoadingRef.current = true;
+    console.log('[Email] loadMessages démarré', { accountId, labelId: currentLabelId, retry: retryCountRef.current });
 
     // Annuler le chargement précédent et créer un nouvel AbortController
     const controller = new AbortController();
@@ -139,28 +143,49 @@ export function EmailList({ accountId }: EmailListProps) {
       classifyInBackground(mappedMessages, accountId, controller);
     } catch (err) {
       if (controller.signal.aborted) return;
-      console.error('Failed to load messages:', err);
+
+      // BUG-066: Diagnostic complet de l'erreur (avant c'était opaque)
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isNetworkError = err instanceof TypeError || errMsg.includes('Load failed') || errMsg.includes('Failed to fetch');
+      const isAuthError = errMsg.includes('expired') || errMsg.includes('revoked') || errMsg.includes('401') || errMsg.includes('Token');
+
+      console.error('[Email] Échec chargement messages:', {
+        message: errMsg,
+        type: isNetworkError ? 'NETWORK' : isAuthError ? 'AUTH' : 'API',
+        retry: `${retryCountRef.current}/3`,
+        accountId,
+        labelId: currentLabelId,
+        error: err,
+      });
+
       // Retry automatique (max 3 tentatives, délai croissant)
       if (retryCountRef.current < 3) {
         retryCountRef.current++;
         const delay = retryCountRef.current * 1500; // 1.5s, 3s, 4.5s
-        console.log(`Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
+        console.log(`[Email] Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
         isLoadingRef.current = false;
         setTimeout(() => loadMessages(), delay);
         return;
       }
+
       // Détecter expiration token OAuth (BUG-029)
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes('expired') || errMsg.includes('revoked') || errMsg.includes('401') || errMsg.includes('Token')) {
+      if (isAuthError) {
         setError('Connexion Gmail expirée - reconnecte-toi.');
         setNeedsReauth(true);
-      } else {
-        // BUG-061: Montrer l'erreur même avec du cache (avant c'était silencieux)
-        setError('Échec du rafraîchissement');
-        // Effacer l'erreur après 4s si on a du cache (non-bloquant)
+      } else if (isNetworkError) {
+        // BUG-066: Erreur réseau identifiée clairement
+        setError('Erreur réseau - le backend ne répond pas');
         const stillHasCache = useEmailStore.getState().messages.length > 0;
         if (stillHasCache) {
           setTimeout(() => setError(null), 4000);
+        }
+      } else {
+        // BUG-066: Afficher l'erreur réelle au lieu du message générique
+        const displayMsg = errMsg.length > 80 ? errMsg.slice(0, 80) + '...' : errMsg;
+        setError(`Échec du rafraîchissement : ${displayMsg}`);
+        const stillHasCache = useEmailStore.getState().messages.length > 0;
+        if (stillHasCache) {
+          setTimeout(() => setError(null), 6000);
         }
       }
     } finally {
