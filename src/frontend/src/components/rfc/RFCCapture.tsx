@@ -25,10 +25,9 @@ interface RFCCaptureProps {
 }
 
 const CATEGORIES = [
-  { value: 'production', label: 'Production' },
-  { value: 'analyse', label: 'Analyse' },
-  { value: 'organisation', label: 'Organisation' },
-  { value: 'personnaliser', label: 'Personnaliser' },
+  { value: 'production', label: 'Produire' },
+  { value: 'analyse', label: 'Comprendre' },
+  { value: 'organisation', label: 'Organiser' },
 ];
 
 export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {

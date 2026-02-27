@@ -74,10 +74,9 @@ export interface GenerateTemplateResponse {
 
 /** Catégories ordonnées pour l'affichage accueil */
 export const COMMAND_CATEGORIES = [
-  { id: 'production', label: 'Production', icon: 'Sparkles' },
-  { id: 'analyse', label: 'Analyse', icon: 'Brain' },
-  { id: 'organisation', label: 'Organisation', icon: 'GitBranch' },
-  { id: 'personnaliser', label: 'Personnaliser', icon: 'Plus' },
+  { id: 'production', label: 'Produire', icon: 'Sparkles' },
+  { id: 'analyse', label: 'Comprendre', icon: 'Brain' },
+  { id: 'organisation', label: 'Organiser', icon: 'GitBranch' },
 ] as const;
 
 export type CommandCategory = typeof COMMAND_CATEGORIES[number]['id'];

@@ -139,7 +139,7 @@ async def generate_template(request: GenerateTemplateRequest):
         "L'utilisateur te donne un brief décrivant ce que sa commande doit faire. "
         "Tu dois générer un template de commande au format JSON avec les champs : "
         "name (slug court), description (1 phrase), icon (un seul emoji), "
-        "category (production/analyse/organisation/personnaliser), "
+        "category (production/analyse/organisation), "
         "prompt_template (template avec des {{placeholders}} entre doubles accolades). "
         "Réponds UNIQUEMENT avec le JSON, sans markdown ni explication."
     )
@@ -172,7 +172,7 @@ async def generate_template(request: GenerateTemplateRequest):
             "name": template.get("name", ""),
             "description": template.get("description", ""),
             "icon": template.get("icon", ""),
-            "category": template.get("category", "personnaliser"),
+            "category": template.get("category", "production"),
             "prompt_template": template.get("prompt_template", ""),
         }
     except Exception as e:

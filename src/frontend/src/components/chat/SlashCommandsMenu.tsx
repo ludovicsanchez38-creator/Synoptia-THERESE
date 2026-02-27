@@ -123,12 +123,16 @@ export function SlashCommandsMenu({
       .filter((c) => !SLASH_COMMANDS.some((s) => s.id === c.id)) // pas de doublons
       .map((c): SlashCommand => {
         const IconComp = typeof c.icon === 'string' ? ICON_MAP[c.icon] : null;
+        // Pour les commandes utilisateur avec template, injecter le template
+        const prefix = c.source === 'user' && c.prompt_template
+          ? c.prompt_template
+          : `/${c.name} `;
         return {
           id: c.id,
           name: c.name,
           description: c.description,
           icon: IconComp ? <IconComp className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />,
-          prefix: `/${c.name} `,
+          prefix,
         };
       });
 

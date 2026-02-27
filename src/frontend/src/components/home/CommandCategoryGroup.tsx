@@ -6,15 +6,14 @@
  */
 
 import type { ReactNode } from 'react';
-import { Sparkles, Brain, GitBranch, Plus, type LucideIcon } from 'lucide-react';
+import { Sparkles, Brain, GitBranch, type LucideIcon } from 'lucide-react';
 import { CommandCard } from './CommandCard';
 import type { CommandDefinition } from '../../types/command';
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
-  production: { label: 'Production', icon: Sparkles },
-  analyse: { label: 'Analyse', icon: Brain },
-  organisation: { label: 'Organisation', icon: GitBranch },
-  personnaliser: { label: 'Personnaliser', icon: Plus },
+  production: { label: 'Produire', icon: Sparkles },
+  analyse: { label: 'Comprendre', icon: Brain },
+  organisation: { label: 'Organiser', icon: GitBranch },
 };
 
 interface CommandCategoryGroupProps {

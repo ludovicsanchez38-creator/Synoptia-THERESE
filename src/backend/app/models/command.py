@@ -34,7 +34,7 @@ class CommandDefinition(BaseModel):
     name: str = Field(..., description="Nom affiché")
     description: str = Field("", description="Description courte")
     icon: str = Field("", description="Emoji ou nom d'icône Lucide")
-    category: str = Field("general", description="Catégorie : production, analyse, organisation, personnaliser")
+    category: str = Field("general", description="Catégorie : production, analyse, organisation")
     source: CommandSource = Field(..., description="Origine de la commande")
     action: CommandAction = Field(..., description="Type d'action")
     prompt_template: str = Field("", description="Template avec {{placeholders}}")
@@ -75,7 +75,7 @@ class CreateUserCommandRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     description: str = Field("", max_length=200)
     icon: str = Field("", max_length=10)
-    category: str = Field("general", max_length=50)
+    category: str = Field("production", max_length=50)
     prompt_template: str = Field("", description="Template avec {{placeholders}}")
     show_on_home: bool = True
     show_in_slash: bool = True
