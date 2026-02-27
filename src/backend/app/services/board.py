@@ -22,7 +22,7 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
-from app.services.llm import Message as LLMMessage
+from app.services.llm import LLMProvider, Message as LLMMessage
 from app.services.llm import get_llm_service, get_llm_service_for_provider, load_therese_md
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import WebSearchService
@@ -170,9 +170,30 @@ class BoardService:
         if is_sovereign:
             # --- MODE SOUVERAIN : séquentiel via Ollama ---
             logger.info("Board en mode souverain (Ollama séquentiel)")
+
+            # Déterminer le modèle Ollama par défaut (celui sélectionné par l'utilisateur)
+            default_ollama_model = "mistral-nemo:12b"
+            try:
+                user_llm = get_llm_service()
+                if user_llm and user_llm.config.provider == LLMProvider.OLLAMA:
+                    default_ollama_model = user_llm.config.model
+            except Exception:
+                pass
+            # Fallback : utiliser le premier modèle disponible via Ollama API
+            if not default_ollama_model or ":" not in default_ollama_model:
+                try:
+                    import httpx
+                    resp = httpx.get("http://localhost:11434/api/tags", timeout=3.0)
+                    if resp.status_code == 200:
+                        models = resp.json().get("models", [])
+                        if models:
+                            default_ollama_model = models[0]["name"]
+                except Exception:
+                    pass
+
             for role in advisors:
                 config = ADVISOR_CONFIG[role]
-                ollama_model = (request.ollama_models or {}).get(role.value, "mistral-nemo")
+                ollama_model = (request.ollama_models or {}).get(role.value, default_ollama_model)
 
                 # Obtenir le service Ollama avec le modèle choisi
                 ollama_llm = get_llm_service_for_provider("ollama", model_override=ollama_model)
@@ -340,7 +361,7 @@ class BoardService:
         # En mode souverain, utiliser Ollama pour la synthèse aussi
         synthesis_llm = default_llm
         if is_sovereign:
-            synth_model = (request.ollama_models or {}).get("synthesis", "mistral-nemo")
+            synth_model = (request.ollama_models or {}).get("synthesis", default_ollama_model)
             ollama_synth = get_llm_service_for_provider("ollama", model_override=synth_model)
             if ollama_synth:
                 synthesis_llm = ollama_synth

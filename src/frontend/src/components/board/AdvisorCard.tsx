@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Loader2,
@@ -6,6 +7,8 @@ import {
   Flame,
   Wrench,
   Rocket,
+  ChevronDown,
+  ChevronUp,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -65,8 +68,11 @@ export function AdvisorCard({
 }: AdvisorCardProps) {
   void _emoji; // Unused, keeping for backwards compatibility
 
+  const [expanded, setExpanded] = useState(false);
   const Icon = ADVISOR_ICONS[role];
   const providerInfo = getProviderInfo(provider);
+  const isLongContent = isComplete && !isLoading && content.length > 300;
+  const displayContent = isLongContent && !expanded ? content.slice(0, 300) + '...' : content;
 
   return (
     <motion.div
@@ -126,13 +132,34 @@ export function AdvisorCard({
 
       {/* Content */}
       <div className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap">
-        {content || (
+        {displayContent || (
           <span className="italic opacity-50">En attente de réponse...</span>
         )}
         {isLoading && content && (
           <span className="inline-block w-2 h-4 ml-1 bg-text-muted/50 animate-pulse" />
         )}
       </div>
+
+      {/* Expand/Collapse toggle */}
+      {isLongContent && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 mt-2 text-xs font-medium transition-colors"
+          style={{ color }}
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="w-3.5 h-3.5" />
+              Réduire
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-3.5 h-3.5" />
+              Voir plus
+            </>
+          )}
+        </button>
+      )}
     </motion.div>
   );
 }

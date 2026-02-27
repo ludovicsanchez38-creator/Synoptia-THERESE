@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Cloud, Shield } from 'lucide-react';
+import { Cloud, Shield, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export type BoardMode = 'cloud' | 'sovereign';
@@ -15,9 +15,10 @@ interface ModeSelectorProps {
   mode: BoardMode;
   onChange: (mode: BoardMode) => void;
   ollamaAvailable: boolean;
+  onRefreshOllama?: () => void;
 }
 
-export function ModeSelector({ mode, onChange, ollamaAvailable }: ModeSelectorProps) {
+export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama }: ModeSelectorProps) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -62,6 +63,16 @@ export function ModeSelector({ mode, onChange, ollamaAvailable }: ModeSelectorPr
         <Shield className="w-4 h-4 relative z-10" />
         <span className="relative z-10">Souverain</span>
       </button>
+
+      {!ollamaAvailable && onRefreshOllama && (
+        <button
+          onClick={onRefreshOllama}
+          title="Vérifier Ollama"
+          className="p-1.5 rounded-lg text-text-muted hover:text-accent-cyan hover:bg-accent-cyan/10 transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 }

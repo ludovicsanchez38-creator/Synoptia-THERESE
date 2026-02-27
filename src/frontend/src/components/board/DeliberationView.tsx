@@ -172,7 +172,7 @@ export function DeliberationView({
                 role={advisor.role}
                 name={config.name}
                 color={config.color}
-                content={advisor.isComplete && !advisor.isLoading ? advisor.content.slice(0, 300) + (advisor.content.length > 300 ? '...' : '') : advisor.content}
+                content={advisor.content}
                 provider={advisor.provider}
                 isLoading={advisor.isLoading}
                 isComplete={advisor.isComplete}

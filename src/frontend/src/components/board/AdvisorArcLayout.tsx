@@ -18,6 +18,7 @@ import {
 import { cn } from '../../lib/utils';
 import type { AdvisorRole } from '../../services/api';
 import type { BoardMode } from './ModeSelector';
+import advisorsBg from '../../assets/board/advisors-bg.png';
 
 const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
   analyst: BarChart3,
@@ -37,6 +38,8 @@ const ADVISOR_META: Record<AdvisorRole, { name: string; color: string; personali
 
 const ROLES: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmatic', 'visionary'];
 const ARC_ANGLES = [-50, -25, 0, 25, 50]; // Degrees for 5 cards
+// Background position X pour chaque strip de l'image (5 bandes verticales)
+const BG_POSITIONS = ['0%', '25%', '50%', '75%', '100%'];
 
 export interface OllamaModelInfo {
   name: string;
@@ -93,7 +96,19 @@ export function AdvisorArcLayout({
       )}
 
       {/* Arc layout for md+ screens */}
-      <div className="hidden md:flex justify-center items-end gap-3 min-h-[220px]">
+      <div className="hidden md:flex justify-center items-end gap-3 min-h-[260px] relative">
+        {/* Image de fond atmosphérique */}
+        <div
+          className="absolute inset-0 rounded-2xl overflow-hidden opacity-[0.07] pointer-events-none"
+          style={{
+            backgroundImage: `url(${advisorsBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 20%',
+            maskImage: 'radial-gradient(ellipse 80% 70% at center, black 30%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at center, black 30%, transparent 80%)',
+          }}
+        />
+
         {ROLES.map((role, i) => {
           const meta = ADVISOR_META[role];
           const Icon = ADVISOR_ICONS[role];
@@ -106,22 +121,40 @@ export function AdvisorArcLayout({
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="w-36 flex flex-col items-center"
+              className="w-36 flex flex-col items-center relative z-10"
               style={{
                 transform: `translateY(${yOffset}px) rotate(${angle * 0.1}deg)`,
               }}
             >
-              {/* Avatar */}
+              {/* Avatar avec visage androïde */}
               <div
-                className="w-14 h-14 rounded-full flex items-center justify-center mb-2"
+                className="w-16 h-16 rounded-full mb-2 relative overflow-hidden"
                 style={{
-                  backgroundColor: `${meta.color}15`,
-                  boxShadow: `0 0 12px ${meta.color}25`,
-                  outline: `2px solid ${meta.color}40`,
+                  boxShadow: `0 0 16px ${meta.color}30, inset 0 0 8px ${meta.color}10`,
+                  outline: `2px solid ${meta.color}50`,
                   outlineOffset: '2px',
                 }}
               >
-                <Icon className="w-6 h-6" style={{ color: meta.color }} />
+                {/* Image de fond - strip du conseiller */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `url(${advisorsBg})`,
+                    backgroundSize: '500% auto',
+                    backgroundPosition: `${BG_POSITIONS[i]} 15%`,
+                  }}
+                />
+                {/* Overlay sombre + teinte couleur */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(180deg, ${meta.color}20 0%, ${meta.color}40 100%)`,
+                  }}
+                />
+                {/* Icône en overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Icon className="w-5 h-5 drop-shadow-lg" style={{ color: '#fff' }} />
+                </div>
               </div>
 
               {/* Name */}

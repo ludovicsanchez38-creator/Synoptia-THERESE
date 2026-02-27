@@ -64,8 +64,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Check Ollama availability on mount
-  useEffect(() => {
+  // Check Ollama availability
+  const checkOllama = useCallback(() => {
     fetch('http://localhost:11434/api/tags')
       .then((res) => res.json())
       .then((data) => {
@@ -80,10 +80,16 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
               }))
               .sort((a: { size: number }, b: { size: number }) => a.size - b.size)
           );
+        } else {
+          setOllamaAvailable(false);
         }
       })
       .catch(() => setOllamaAvailable(false));
   }, []);
+
+  useEffect(() => {
+    checkOllama();
+  }, [checkOllama]);
 
   const handleModelChange = useCallback((role: string, model: string) => {
     setSelectedModels((prev) => ({ ...prev, [role]: model }));
@@ -395,6 +401,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         mode={mode}
                         onChange={setMode}
                         ollamaAvailable={ollamaAvailable}
+                        onRefreshOllama={checkOllama}
                       />
                     </div>
 

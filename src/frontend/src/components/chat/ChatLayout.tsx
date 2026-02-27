@@ -305,6 +305,7 @@ export function ChatLayout() {
         onToggleInvoicesPanel={handleToggleInvoicesPanel}
         onToggleCRMPanel={handleToggleCRMPanel}
         onToggleMemoryPanel={() => openPanelWindow('memory')}
+        onToggleBoardPanel={handleToggleBoardPanel}
       />
 
       {/* Messages area */}
