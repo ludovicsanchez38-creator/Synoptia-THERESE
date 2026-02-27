@@ -3276,11 +3276,21 @@ class TestBUG044b_LinuxDebBackendLibs:
             "tauri.linux.conf.json doit inclure backend-libs dans resources (BUG-044b)"
         )
 
-    def test_tauri_linux_conf_uses_recursive_glob(self):
-        """tauri.linux.conf.json doit utiliser un glob récursif **."""
-        content = self.TAURI_LINUX_CONF.read_text(encoding="utf-8")
-        assert "**" in content, (
-            "tauri.linux.conf.json doit utiliser ** pour capturer tous les fichiers (BUG-044b)"
+    def test_tauri_linux_conf_uses_record_format_for_correct_install_path(self):
+        """tauri.linux.conf.json doit utiliser le format RECORD pour installer backend-libs/
+        directement dans resource_dir() sans préfixe 'binaries/' (BUG-044b).
+        Le format array préservait le chemin relatif complet et causait un path mismatch."""
+        import json
+        with open(self.TAURI_LINUX_CONF, encoding="utf-8") as f:
+            conf = json.load(f)
+        resources = conf.get("bundle", {}).get("resources", {})
+        assert isinstance(resources, dict), (
+            "tauri.linux.conf.json : resources doit être un objet (format RECORD) "
+            "pour que backend-libs/ soit installé à resource_dir()/backend-libs/ "
+            "et non resource_dir()/binaries/backend-libs/"
+        )
+        assert any(v == "backend-libs" for v in resources.values()), (
+            "tauri.linux.conf.json : la cible doit être 'backend-libs' (pas 'binaries/backend-libs')"
         )
 
     def test_release_yml_copies_backend_libs(self):
@@ -3298,3 +3308,66 @@ class TestBUG044b_LinuxDebBackendLibs:
         )
 
 
+
+
+class TestBUG044b_LinuxBackendLibsMissingDeb:
+    """BUG-044b : Le dossier backend-libs/ n'était pas inclus dans le .deb Linux.
+    Deux causes :
+    1. Ludo a vidé "resources": [] dans le commit v0.4.0 → backend-libs non bundlé
+    2. PR #27 avait le mauvais chemin dans lib.rs (resource_dir()/backend-libs)
+       alors que l'array format Tauri installerait à resource_dir()/binaries/backend-libs/
+    Fix : utiliser le format RECORD Tauri v2 ("binaries/backend-libs/": "backend-libs")
+    qui installe le dossier entier directement à resource_dir()/backend-libs/
+    (préserve _internal/ nécessaire au bootloader PyInstaller 6.x).
+    lib.rs reste correct avec resource_dir().join("backend-libs").
+    """
+
+    TAURI_CONF = Path("src/frontend/src-tauri/tauri.conf.json")
+    LIB_RS = Path("src/frontend/src-tauri/src/lib.rs")
+
+    def test_tauri_conf_resources_uses_record_format(self):
+        import json
+        with open(self.TAURI_CONF, encoding="utf-8") as f:
+            conf = json.load(f)
+        resources = conf.get("bundle", {}).get("resources", {})
+        # Doit être un objet (dict) et non un array vide
+        assert resources, (
+            "tauri.conf.json : bundle.resources ne doit pas être vide "
+            "(backend-libs/ ne serait pas inclus dans le .deb)"
+        )
+        assert isinstance(resources, dict), (
+            "tauri.conf.json : bundle.resources doit être au format RECORD (objet) pour "
+            "contrôler le chemin d'installation. Le format array préserverait le préfixe "
+            "'binaries/' qui ne correspond pas au chemin attendu par lib.rs."
+        )
+        assert any("backend-libs" in k for k in resources.keys()), (
+            "tauri.conf.json : bundle.resources doit avoir une clé contenant 'backend-libs'"
+        )
+        # Le target doit être "backend-libs" (sans préfixe binaries/) pour correspondre à lib.rs
+        assert any(v == "backend-libs" for v in resources.values()), (
+            "tauri.conf.json : la valeur de la ressource backend-libs doit être 'backend-libs' "
+            "(chemin d'installation dans resource_dir())"
+        )
+
+    def test_lib_rs_uses_direct_backend_libs_path(self):
+        content = self.LIB_RS.read_text(encoding="utf-8")
+        # Avec le format RECORD Tauri v2, les libs sont à resource_dir()/backend-libs/
+        # lib.rs doit utiliser .join("backend-libs") SANS préfixe "binaries/"
+        assert '.join("backend-libs")' in content, (
+            "lib.rs : resource_dir() doit être suivi de .join('backend-libs') "
+            "(le format RECORD Tauri installe directement à resource_dir()/backend-libs/)"
+        )
+        assert '.join("binaries").join("backend-libs")' not in content, (
+            "lib.rs : ne doit PAS utiliser .join('binaries').join('backend-libs') "
+            "(ce préfixe est incorrect avec le format RECORD Tauri)"
+        )
+
+    def test_tauri_conf_category_productivity(self):
+        """Vérification bonus : category Productivity présent (test pré-existant KO avant v0.4.0)."""
+        import json
+        with open(self.TAURI_CONF, encoding="utf-8") as f:
+            conf = json.load(f)
+        category = conf.get("bundle", {}).get("category", "")
+        assert category == "Productivity", (
+            f"tauri.conf.json : bundle.category doit être 'Productivity', trouvé : '{category}'"
+        )

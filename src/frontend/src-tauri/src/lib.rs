@@ -301,10 +301,15 @@ pub fn run() {
                             .env("TEMP", &runtime_path)
                             .env("TMP", &runtime_path);
 
-                        // BUG-044 : Linux onedir — passer le chemin des libs au wrapper shell.
+                        // BUG-044 / BUG-044b : Linux onedir — passer le chemin des libs au wrapper shell.
                         // PyInstaller onedir produit backend/ (dossier) au lieu d'un binaire unique.
                         // Le sidecar est un wrapper shell qui utilise THERESE_BACKEND_LIBS pour
                         // trouver le vrai binaire et configurer LD_LIBRARY_PATH.
+                        //
+                        // Les resources Tauri v2 (format record avec trailing slash) :
+                        //   "binaries/backend-libs/": "backend-libs"
+                        // installe le dossier entier à ${resource_dir}/backend-libs/ en préservant
+                        // la structure (y compris _internal/*.so nécessaire au bootloader PyInstaller).
                         #[cfg(target_os = "linux")]
                         let cmd = {
                             let libs_path = match app.path().resource_dir() {

@@ -45,7 +45,9 @@
       "binaries/backend"
     ],
     "category": "Productivity",
-    "resources": [],
+    "resources": {
+      "binaries/backend-libs/": "backend-libs"
+    },
     "macOS": {
       "minimumSystemVersion": "10.15",
       "frameworks": [],
