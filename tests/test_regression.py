@@ -3184,7 +3184,7 @@ class TestBUG052_OllamaModelPreference:
         # Chercher la lecture de llm_model dans get_llm_service_for_provider
         fn_start = content.find("def get_llm_service_for_provider")
         assert fn_start > 0, "get_llm_service_for_provider doit exister"
-        fn_body = content[fn_start:fn_start + 2000]
+        fn_body = content[fn_start:fn_start + 3000]
         assert "llm_model" in fn_body, (
             "get_llm_service_for_provider doit lire llm_model depuis la DB (BUG-052)"
         )
@@ -3685,6 +3685,112 @@ class TestF17_BoardModeSelector:
         content = self.MODE_SELECTOR_TSX.read_text(encoding="utf-8")
         assert "layoutId" in content or "motion" in content, (
             "ModeSelector doit utiliser Framer Motion pour l'animation (F-17)"
+        )
+
+
+# ============================================================
+# BUG-057 (v0.4.3) - Board annulation délibération
+# L'utilisateur doit pouvoir annuler une délibération en cours
+# via AbortController + bouton Annuler.
+# ============================================================
+
+
+class TestBUG057_BoardCancelDeliberation:
+    """Le Board doit permettre d'annuler une délibération en cours."""
+
+    BOARD_PANEL_TSX = Path("src/frontend/src/components/board/BoardPanel.tsx")
+    BOARD_TS = Path("src/frontend/src/services/api/board.ts")
+    DELIBERATION_TSX = Path("src/frontend/src/components/board/DeliberationView.tsx")
+
+    def test_abort_controller_in_board_panel(self):
+        content = self.BOARD_PANEL_TSX.read_text(encoding="utf-8")
+        assert "AbortController" in content, (
+            "BoardPanel doit utiliser AbortController pour annuler (BUG-057)"
+        )
+
+    def test_signal_in_stream_deliberation(self):
+        content = self.BOARD_TS.read_text(encoding="utf-8")
+        assert "signal" in content, (
+            "streamDeliberation doit accepter un AbortSignal (BUG-057)"
+        )
+
+    def test_cancel_button_in_deliberation_view(self):
+        content = self.DELIBERATION_TSX.read_text(encoding="utf-8")
+        assert "onCancel" in content, (
+            "DeliberationView doit avoir un prop onCancel (BUG-057)"
+        )
+
+    def test_annuler_label(self):
+        content = self.DELIBERATION_TSX.read_text(encoding="utf-8")
+        assert "Annuler" in content, (
+            "Le bouton d'annulation doit afficher 'Annuler' (BUG-057)"
+        )
+
+
+# ============================================================
+# BUG-058 (v0.4.3) - Board cloud vide (modèle utilisateur
+# envoyé à tous les providers)
+# get_llm_service_for_provider ne doit appliquer user_model
+# que si le provider demandé correspond au provider principal.
+# ============================================================
+
+
+class TestBUG058_BoardCloudProviderModel:
+    """Le Board cloud ne doit pas envoyer le modèle utilisateur aux autres providers."""
+
+    LLM_PY = Path("src/backend/app/services/llm.py")
+
+    def test_provider_match_check(self):
+        """Le modèle utilisateur ne doit s'appliquer que si provider correspond."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        fn_start = content.find("def get_llm_service_for_provider")
+        assert fn_start > 0
+        fn_body = content[fn_start:fn_start + 3000]
+        assert "user_provider == provider_name" in fn_body, (
+            "get_llm_service_for_provider doit vérifier que le provider correspond "
+            "avant d'appliquer user_model (BUG-058)"
+        )
+
+    def test_llm_provider_read_from_db(self):
+        """La préférence llm_provider doit être lue depuis la DB."""
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        fn_start = content.find("def get_llm_service_for_provider")
+        fn_body = content[fn_start:fn_start + 3000]
+        assert "llm_provider" in fn_body, (
+            "get_llm_service_for_provider doit lire llm_provider depuis la DB (BUG-058)"
+        )
+
+
+# ============================================================
+# BUG-059 (v0.4.3) - Email OAuth re-auth bloqué sur
+# "En attente d'autorisation"
+# Le polling doit détecter la re-auth (updated_at changé),
+# pas seulement les nouveaux comptes.
+# ============================================================
+
+
+class TestBUG059_EmailReAuthPolling:
+    """Le wizard email doit détecter la re-auth via updated_at."""
+
+    VERIFY_STEP_TSX = Path("src/frontend/src/components/email/wizard/VerifyStep.tsx")
+    EMAIL_TS = Path("src/frontend/src/services/api/email.ts")
+
+    def test_updated_at_in_email_account(self):
+        content = self.EMAIL_TS.read_text(encoding="utf-8")
+        assert "updated_at" in content, (
+            "EmailAccount doit avoir un champ updated_at (BUG-059)"
+        )
+
+    def test_initial_accounts_ref(self):
+        content = self.VERIFY_STEP_TSX.read_text(encoding="utf-8")
+        assert "initialAccountsRef" in content, (
+            "VerifyStep doit stocker un snapshot initial des comptes (BUG-059)"
+        )
+
+    def test_updated_at_comparison(self):
+        content = self.VERIFY_STEP_TSX.read_text(encoding="utf-8")
+        assert "updated_at" in content, (
+            "VerifyStep doit comparer updated_at pour détecter la re-auth (BUG-059)"
         )
 
 
