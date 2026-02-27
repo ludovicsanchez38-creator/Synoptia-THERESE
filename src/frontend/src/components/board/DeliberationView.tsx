@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Plus, Globe, X } from 'lucide-react';
+import { Loader2, Plus, Globe, X, Shield } from 'lucide-react';
 import { AdvisorCard } from './AdvisorCard';
 import { SynthesisCard } from './SynthesisCard';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import type { AdvisorRole, BoardSynthesis } from '../../services/api';
+
+const ADVISOR_ORDER: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmatic', 'visionary'];
 
 // Advisor configuration (emoji deprecated, using icons in AdvisorCard)
 const ADVISOR_CONFIG: Record<AdvisorRole, { name: string; color: string }> = {
@@ -26,6 +28,7 @@ interface AdvisorState {
 interface DeliberationViewProps {
   question: string;
   isSearchingWeb?: boolean;
+  isSovereign?: boolean;
   advisorStates: Map<AdvisorRole, AdvisorState>;
   synthesis: BoardSynthesis | null;
   isSynthesizing: boolean;
@@ -37,6 +40,7 @@ interface DeliberationViewProps {
 export function DeliberationView({
   question,
   isSearchingWeb = false,
+  isSovereign = false,
   advisorStates,
   synthesis,
   isSynthesizing,
@@ -45,6 +49,9 @@ export function DeliberationView({
   onClose,
 }: DeliberationViewProps) {
   const advisors = Array.from(advisorStates.values());
+  const completedCount = advisors.filter((a) => a.isComplete).length;
+  const activeAdvisor = advisors.find((a) => a.isLoading);
+  const totalAdvisors = Math.max(advisors.length, 5);
 
   return (
     <div className="space-y-6">
@@ -85,18 +92,74 @@ export function DeliberationView({
         )}
       </AnimatePresence>
 
+      {/* Sovereign mode banner */}
+      {isSovereign && !isComplete && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-magenta/10 border border-accent-magenta/20"
+        >
+          <Shield className="w-4 h-4 text-accent-magenta" />
+          <span className="text-sm text-accent-magenta">
+            Mode souverain - Conseillers interrogés un par un via Ollama
+          </span>
+        </motion.div>
+      )}
+
+      {/* Progress indicator */}
+      {!isComplete && advisors.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta rounded-full"
+              initial={{ width: '0%' }}
+              animate={{ width: `${(completedCount / totalAdvisors) * 100}%` }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+            />
+          </div>
+          <span className="text-xs text-text-muted whitespace-nowrap">
+            {activeAdvisor
+              ? `${completedCount + 1}/${totalAdvisors} - ${ADVISOR_CONFIG[activeAdvisor.role]?.name || ''} en réflexion...`
+              : isSynthesizing
+                ? 'Synthèse en cours...'
+                : `${completedCount}/${totalAdvisors}`
+            }
+          </span>
+        </div>
+      )}
+
       {/* Advisors Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         <AnimatePresence mode="popLayout">
-          {advisors.map((advisor) => {
-            const config = ADVISOR_CONFIG[advisor.role];
+          {(isSovereign ? ADVISOR_ORDER : Array.from(advisorStates.keys())).map((role) => {
+            const advisor = advisorStates.get(role);
+            const config = ADVISOR_CONFIG[role];
+            if (!config) return null;
+
+            // En mode souverain, afficher les conseillers en attente grisés
+            if (!advisor && isSovereign) {
+              return (
+                <AdvisorCard
+                  key={role}
+                  role={role}
+                  name={config.name}
+                  color={config.color}
+                  content=""
+                  isLoading={false}
+                  isComplete={false}
+                  isWaiting={true}
+                />
+              );
+            }
+            if (!advisor) return null;
+
             return (
               <AdvisorCard
                 key={advisor.role}
                 role={advisor.role}
                 name={config.name}
                 color={config.color}
-                content={advisor.content}
+                content={advisor.isComplete && !advisor.isLoading ? advisor.content.slice(0, 300) + (advisor.content.length > 300 ? '...' : '') : advisor.content}
                 provider={advisor.provider}
                 isLoading={advisor.isLoading}
                 isComplete={advisor.isComplete}

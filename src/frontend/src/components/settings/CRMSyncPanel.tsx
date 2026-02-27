@@ -5,8 +5,8 @@
  * Supports OAuth and API key authentication.
  */
 
-import { useState, useEffect } from 'react';
-import { RefreshCw, Link2, Check, AlertCircle, Loader2, ExternalLink, Cloud, Key } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { RefreshCw, Link2, Check, AlertCircle, Loader2, ExternalLink, Cloud, Key, Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -33,6 +33,34 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
   const [credentialsSaving, setCredentialsSaving] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const credentialsFileRef = useRef<HTMLInputElement>(null);
+
+  // F-16 : Importer credentials.json
+  const handleImportCredentials = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        const creds = json.installed || json.web;
+        if (!creds?.client_id || !creds?.client_secret) {
+          setImportError('Format invalide : client_id ou client_secret introuvable');
+          return;
+        }
+        setClientIdInput(creds.client_id);
+        setClientSecretInput(creds.client_secret);
+        setImportError(null);
+      } catch {
+        setImportError('Fichier JSON invalide');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }, []);
 
   // Load config on mount
   useEffect(() => {
@@ -310,21 +338,42 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       {/* F-13 : formulaire re-saisie credentials Google OAuth */}
       {showCredentialsForm && (
         <div className="p-3 bg-background/40 rounded-lg border border-border/30 space-y-3">
-          <div>
-            <h4 className="text-sm font-medium text-text">Credentials Google OAuth</h4>
-            <p className="text-xs text-text-muted mt-1">
-              Créez un projet sur{' '}
-              <a
-                href="https://console.cloud.google.com/apis/credentials"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-accent-cyan hover:underline"
-              >
-                Google Cloud Console
-              </a>
-              {' '}et copiez les identifiants OAuth 2.0.
-            </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-text">Credentials Google OAuth</h4>
+              <p className="text-xs text-text-muted mt-1">
+                Créez un projet sur{' '}
+                <a
+                  href="https://console.cloud.google.com/apis/credentials"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent-cyan hover:underline"
+                >
+                  Google Cloud Console
+                </a>
+                {' '}et importez le fichier <code className="text-accent-cyan">credentials.json</code>.
+              </p>
+            </div>
+            <input
+              ref={credentialsFileRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportCredentials}
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => credentialsFileRef.current?.click()}
+              className="shrink-0 ml-2"
+            >
+              <Upload className="w-4 h-4 mr-1.5" />
+              Importer
+            </Button>
           </div>
+          {importError && (
+            <p className="text-xs text-red-400">{importError}</p>
+          )}
           <div className="space-y-2">
             <div>
               <label className="text-xs text-text-muted">Client ID</label>

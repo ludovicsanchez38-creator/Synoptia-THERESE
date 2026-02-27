@@ -58,7 +58,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   const [imageState, setImageState] = useState<ImageState | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
 
-  const { addMessage } = useChatStore();
+  const { addMessage, updateMessage } = useChatStore();
 
   // Exécuter une commande selon son type d'action
   const execute = useCallback(async (cmd: CommandDefinition) => {
@@ -181,6 +181,15 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     }
 
     addMessage({ role: 'user', content: `Génère une image : ${customPrompt}` });
+
+    // BUG-056 : Message loading visible pendant la génération
+    const providerLabel = provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
+    const loadingId = addMessage({
+      role: 'assistant',
+      content: `Génération de l'image en cours avec ${providerLabel}...`,
+      isStreaming: true,
+    });
+
     setImageState({ provider, status: 'generating', prompt: customPrompt });
     setImagePromptCommand(null);
 
@@ -200,19 +209,19 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
       const response = await generateImage(req);
       const imageUrl = getImageDownloadUrl(response.id);
 
-      addMessage({
-        role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2'}*`,
-        imageId: response.id,
-      });
+      updateMessage(
+        loadingId,
+        `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${providerLabel}*`,
+        { imageId: response.id },
+      );
 
       setImageState({ provider, status: 'success', prompt: customPrompt, response });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Erreur de génération';
-      addMessage({ role: 'assistant', content: `Erreur : ${errorMsg}` });
+      updateMessage(loadingId, `Erreur : ${errorMsg}`);
       setImageState({ provider, status: 'error', prompt: customPrompt, error: errorMsg });
     }
-  }, [imagePromptCommand, addMessage]);
+  }, [imagePromptCommand, addMessage, updateMessage]);
 
   // Rendu conditionnel
   return (

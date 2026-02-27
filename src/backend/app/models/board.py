@@ -153,6 +153,12 @@ class AdvisorOpinion(BaseModel):
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
+class BoardMode(str, Enum):
+    """Mode de délibération du board."""
+    CLOUD = "cloud"          # Mode cloud : providers multiples en parallèle + recherche web
+    SOVEREIGN = "sovereign"  # Mode souverain : Ollama séquentiel, pas de recherche web
+
+
 class BoardRequest(BaseModel):
     """Requête pour convoquer le board."""
     question: str = Field(..., min_length=10, description="La question stratégique à soumettre")
@@ -160,6 +166,11 @@ class BoardRequest(BaseModel):
     advisors: list[AdvisorRole] | None = Field(
         None,
         description="Conseillers à convoquer (tous si non spécifié)"
+    )
+    mode: BoardMode = Field(default=BoardMode.CLOUD, description="Mode de délibération")
+    ollama_models: dict[str, str] | None = Field(
+        None,
+        description="Modèles Ollama par conseiller (ex: {'analyst': 'mistral-nemo', 'strategist': 'llama3.1'})"
     )
 
 
@@ -189,6 +200,7 @@ class BoardDecision(BaseModel):
     context: str | None = None
     opinions: list[AdvisorOpinion]
     synthesis: BoardSynthesis
+    mode: str = "cloud"
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -207,4 +219,5 @@ class BoardDecisionResponse(BaseModel):
     context: str | None = None
     recommendation: str
     confidence: str
+    mode: str = "cloud"
     created_at: datetime

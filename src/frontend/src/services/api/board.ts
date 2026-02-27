@@ -16,10 +16,14 @@ export interface AdvisorInfo {
   personality: string;
 }
 
+export type BoardMode = 'cloud' | 'sovereign';
+
 export interface BoardRequest {
   question: string;
   context?: string;
   advisors?: AdvisorRole[];
+  mode?: BoardMode;
+  ollama_models?: Record<string, string>;
 }
 
 export interface BoardDeliberationChunk {
@@ -45,6 +49,7 @@ export interface BoardDecisionResponse {
   context?: string;
   recommendation: string;
   confidence: string;
+  mode?: string;
   created_at: string;
 }
 

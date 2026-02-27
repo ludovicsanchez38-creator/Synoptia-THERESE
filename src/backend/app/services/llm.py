@@ -515,7 +515,7 @@ def invalidate_llm_service() -> None:
     _llm_service = None
 
 
-def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
+def get_llm_service_for_provider(provider_name: str, model_override: str | None = None) -> LLMService | None:
     """Get LLM service for a specific provider if configured."""
     provider_name = provider_name.lower()
 
@@ -550,7 +550,7 @@ def get_llm_service_for_provider(provider_name: str) -> LLMService | None:
                 user_model = row[0]
     except Exception:
         pass
-    model = user_model or default_model
+    model = model_override or user_model or default_model
 
     api_key = None
     if env_vars:

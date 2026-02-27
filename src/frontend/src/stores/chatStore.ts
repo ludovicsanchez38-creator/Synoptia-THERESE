@@ -57,7 +57,7 @@ interface ChatStore {
   loadConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'> & { id?: string }) => string;
-  updateMessage: (id: string, content: string) => void;
+  updateMessage: (id: string, content: string, meta?: Partial<Message>) => void;
   setMessageEntities: (id: string, entities: DetectedEntities) => void;
   clearMessageEntities: (id: string) => void;
   setMessageMetadata: (id: string, usage?: MessageUsage, uncertainty?: MessageUncertainty) => void;
@@ -183,14 +183,14 @@ export const useChatStore = create<ChatStore>()(
         return messageId;
       },
 
-      updateMessage: (id, content) => {
+      updateMessage: (id, content, meta) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
             c.id === state.currentConversationId
               ? {
                   ...c,
                   messages: c.messages.map((m) =>
-                    m.id === id ? { ...m, content, isStreaming: false } : m
+                    m.id === id ? { ...m, content, isStreaming: false, ...meta } : m
                   ),
                   updatedAt: new Date(),
                 }

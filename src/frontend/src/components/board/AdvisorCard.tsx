@@ -29,6 +29,7 @@ interface AdvisorCardProps {
   provider?: string;
   isLoading?: boolean;
   isComplete?: boolean;
+  isWaiting?: boolean;
 }
 
 // Provider display names and colors
@@ -38,8 +39,18 @@ const PROVIDER_INFO: Record<string, { label: string; color: string }> = {
   gemini: { label: 'GEMINI', color: '#4285F4' },
   mistral: { label: 'MISTRAL', color: '#FF7000' },
   grok: { label: 'GROK', color: '#1DA1F2' },
-  ollama: { label: 'LOCAL', color: '#8B5CF6' },
+  ollama: { label: 'OLLAMA', color: '#8B5CF6' },
 };
+
+function getProviderInfo(provider?: string): { label: string; color: string } | null {
+  if (!provider) return null;
+  // Support "ollama:model-name" format
+  if (provider.startsWith('ollama:')) {
+    const model = provider.slice(7);
+    return { label: model.toUpperCase(), color: '#8B5CF6' };
+  }
+  return PROVIDER_INFO[provider] || null;
+}
 
 export function AdvisorCard({
   role,
@@ -50,33 +61,47 @@ export function AdvisorCard({
   provider,
   isLoading,
   isComplete,
+  isWaiting,
 }: AdvisorCardProps) {
   void _emoji; // Unused, keeping for backwards compatibility
 
   const Icon = ADVISOR_ICONS[role];
-  const providerInfo = provider ? PROVIDER_INFO[provider] : null;
+  const providerInfo = getProviderInfo(provider);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: isWaiting ? 0.4 : 1, y: 0 }}
       className={cn(
-        'relative rounded-xl border p-4',
+        'relative rounded-xl border p-4 transition-all duration-300',
         'bg-surface-elevated/80 backdrop-blur-sm',
-        isComplete ? 'border-border' : 'border-border/50'
+        isWaiting && 'opacity-40',
+        isComplete ? 'border-border' : 'border-border/50',
       )}
       style={{
-        borderColor: isComplete ? color : undefined,
-        boxShadow: isComplete ? `0 0 20px ${color}20` : undefined,
+        borderColor: isLoading ? color : isComplete ? color : undefined,
+        boxShadow: isLoading
+          ? `0 0 24px ${color}30, inset 0 0 12px ${color}08`
+          : isComplete
+            ? `0 0 20px ${color}20`
+            : undefined,
       }}
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: `${color}20` }}
+          className={cn(
+            'w-14 h-14 rounded-full flex items-center justify-center transition-all',
+            isLoading && 'animate-pulse',
+          )}
+          style={{
+            backgroundColor: `${color}15`,
+            outline: `2px solid ${isLoading ? color : `${color}40`}`,
+            outlineOffset: '2px',
+            boxShadow: isLoading ? `0 0 16px ${color}40` : undefined,
+          }}
         >
-          <Icon className="w-5 h-5" style={{ color }} />
+          <Icon className="w-6 h-6" style={{ color }} />
         </div>
         <div className="flex-1">
           <h4 className="font-semibold text-text" style={{ color }}>

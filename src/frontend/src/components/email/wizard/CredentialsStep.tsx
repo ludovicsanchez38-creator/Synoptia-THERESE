@@ -4,9 +4,9 @@
  * Saisie des identifiants avec validation temps réel.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Key, ChevronLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { Key, ChevronLeft, CheckCircle, AlertCircle, Upload } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
 
@@ -35,6 +35,35 @@ export function CredentialsStep({
     clientSecret: null,
   });
   const [validating, setValidating] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // F-16 : Importer credentials.json
+  const handleImportCredentials = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        const creds = json.installed || json.web;
+        if (!creds?.client_id || !creds?.client_secret) {
+          setImportError('Format invalide : client_id ou client_secret introuvable');
+          return;
+        }
+        onChange('clientId', creds.client_id);
+        onChange('clientSecret', creds.client_secret);
+        setImportError(null);
+      } catch {
+        setImportError('Fichier JSON invalide');
+      }
+    };
+    reader.readAsText(file);
+    // Reset pour permettre de re-sélectionner le même fichier
+    e.target.value = '';
+  }, [onChange]);
 
   // Validation temps réel (debounced)
   useEffect(() => {
@@ -154,12 +183,32 @@ export function CredentialsStep({
         )}
       </div>
 
-      {/* Info */}
-      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
-        <p className="text-sm text-text-muted">
-          <strong className="text-text">Astuce :</strong> Les identifiants sont validés en temps
-          réel. Assure-toi qu'ils correspondent bien au format attendu.
-        </p>
+      {/* Import credentials.json + Info */}
+      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-text-muted">
+            <strong className="text-text">Astuce :</strong> Tu peux importer directement le fichier <code className="text-accent-cyan">credentials.json</code> téléchargé depuis Google Cloud Console.
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportCredentials}
+            className="hidden"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0 ml-3"
+          >
+            <Upload className="w-4 h-4 mr-1.5" />
+            Importer
+          </Button>
+        </div>
+        {importError && (
+          <p className="text-xs text-red-400">{importError}</p>
+        )}
       </div>
 
       {/* Actions */}

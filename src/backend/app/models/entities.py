@@ -174,6 +174,7 @@ class BoardDecisionDB(SQLModel, table=True):
     synthesis: str  # JSON object of BoardSynthesis
     confidence: str  # high, medium, low (denormalized for quick queries)
     recommendation: str  # Denormalized for quick display
+    mode: str = Field(default="cloud")  # cloud or sovereign
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 
 

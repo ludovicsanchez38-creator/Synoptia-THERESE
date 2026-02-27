@@ -68,7 +68,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
   const [userCommands, setUserCommands] = useState<UserCommand[]>([]);
 
   // Get chat store functions to add messages to conversation
-  const { addMessage } = useChatStore();
+  const { addMessage, updateMessage } = useChatStore();
 
   // P1-C: Fetch user commands on mount
   useEffect(() => {
@@ -325,7 +325,15 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
 
     addMessage({
       role: 'user',
-      content: `Genere une image : ${customPrompt}`,
+      content: `Génère une image : ${customPrompt}`,
+    });
+
+    // BUG-056 : Message loading visible pendant la génération
+    const providerLabel = provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
+    const loadingId = addMessage({
+      role: 'assistant',
+      content: `Génération de l'image en cours avec ${providerLabel}...`,
+      isStreaming: true,
     });
 
     setImageState({
@@ -351,11 +359,11 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       const response = await generateImage(request);
 
       const imageUrl = getImageDownloadUrl(response.id);
-      addMessage({
-        role: 'assistant',
-        content: `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2'}*`,
-        imageId: response.id,
-      });
+      updateMessage(
+        loadingId,
+        `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${providerLabel}*`,
+        { imageId: response.id },
+      );
 
       setImageState({
         provider,
@@ -366,11 +374,8 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
 
       onImageGenerated?.(customPrompt, imageUrl, response.file_name);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur de generation';
-      addMessage({
-        role: 'assistant',
-        content: `Erreur lors de la generation de l'image : ${errorMessage}`,
-      });
+      const errorMessage = err instanceof Error ? err.message : 'Erreur de génération';
+      updateMessage(loadingId, `Erreur lors de la génération de l'image : ${errorMessage}`);
 
       setImageState({
         provider,
@@ -379,7 +384,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         error: errorMessage,
       });
     }
-  }, [pendingImageOption, addMessage, onImageGenerated]);
+  }, [pendingImageOption, addMessage, updateMessage, onImageGenerated]);
 
   const handleImagePromptBack = useCallback(() => {
     setPendingImageOption(null);

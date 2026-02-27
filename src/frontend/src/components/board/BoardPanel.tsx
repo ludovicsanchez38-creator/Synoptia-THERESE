@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -8,14 +8,12 @@ import {
   ChevronLeft,
   Loader2,
   Trash2,
-  BarChart3,
-  Target,
-  Flame,
-  Wrench,
-  Rocket,
+  FileDown,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { DeliberationView } from './DeliberationView';
+import { ModeSelector, type BoardMode } from './ModeSelector';
+import { AdvisorArcLayout } from './AdvisorArcLayout';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import { cn } from '../../lib/utils';
 import {
@@ -59,7 +57,28 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     opinions: Array<{ role: AdvisorRole; content: string }>;
     synthesis: BoardSynthesis;
   } | null>(null);
+  const [mode, setMode] = useState<BoardMode>('cloud');
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
+  const [ollamaAvailable, setOllamaAvailable] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check Ollama availability on mount
+  useEffect(() => {
+    fetch('http://localhost:11434/api/tags')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.models?.length > 0) {
+          setOllamaAvailable(true);
+          setOllamaModels(data.models.map((m: { name: string }) => m.name));
+        }
+      })
+      .catch(() => setOllamaAvailable(false));
+  }, []);
+
+  const handleModelChange = useCallback((role: string, model: string) => {
+    setSelectedModels((prev) => ({ ...prev, [role]: model }));
+  }, []);
 
   const resetDeliberation = useCallback(() => {
     setIsSearchingWeb(false);
@@ -88,6 +107,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       const stream = streamDeliberation({
         question: question.trim(),
         context: context.trim() || undefined,
+        mode,
+        ollama_models: mode === 'sovereign' ? selectedModels : undefined,
       });
 
       for await (const chunk of stream) {
@@ -288,9 +309,21 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                   </Button>
                 )}
                 {(viewState === 'history' || viewState === 'viewing' || (viewState === 'deliberating' && isComplete)) && (
-                  <Button variant="primary" size="sm" onClick={handleNewDeliberation}>
-                    + Nouvelle question
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      title="Bientôt disponible"
+                      className="opacity-40 cursor-not-allowed"
+                    >
+                      <FileDown className="w-4 h-4 mr-1.5" />
+                      PDF
+                    </Button>
+                    <Button variant="primary" size="sm" onClick={handleNewDeliberation}>
+                      + Nouvelle question
+                    </Button>
+                  </>
                 )}
                 <Button variant="ghost" size="icon" onClick={onClose}>
                   <X className="w-5 h-5" />
@@ -326,31 +359,22 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       </p>
                     </div>
 
-                    {/* Conseillers preview */}
-                    <div className="flex flex-wrap justify-center gap-3 mb-8">
-                      {[
-                        { icon: BarChart3, name: 'Analyste', color: '#22D3EE' },
-                        { icon: Target, name: 'Stratège', color: '#A855F7' },
-                        { icon: Flame, name: 'Avocat du Diable', color: '#EF4444' },
-                        { icon: Wrench, name: 'Pragmatique', color: '#F59E0B' },
-                        { icon: Rocket, name: 'Visionnaire', color: '#E11D8D' },
-                      ].map((advisor) => {
-                        const Icon = advisor.icon;
-                        return (
-                          <div
-                            key={advisor.name}
-                            className={cn(
-                              'px-3 py-2 rounded-lg',
-                              'bg-surface-elevated border border-border',
-                              'flex items-center gap-2'
-                            )}
-                          >
-                            <Icon className="w-4 h-4" style={{ color: advisor.color }} />
-                            <span className="text-sm text-text-muted">{advisor.name}</span>
-                          </div>
-                        );
-                      })}
+                    {/* Mode selector */}
+                    <div className="flex justify-center mb-4">
+                      <ModeSelector
+                        mode={mode}
+                        onChange={setMode}
+                        ollamaAvailable={ollamaAvailable}
+                      />
                     </div>
+
+                    {/* Conseillers arc layout */}
+                    <AdvisorArcLayout
+                      mode={mode}
+                      ollamaModels={ollamaModels}
+                      selectedModels={selectedModels}
+                      onModelChange={handleModelChange}
+                    />
 
                     {/* Question input */}
                     <div className="space-y-4">
@@ -393,15 +417,22 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         />
                       </div>
 
-                      <Button
-                        variant="primary"
-                        className="w-full"
+                      <button
                         onClick={handleStartDeliberation}
                         disabled={!question.trim()}
+                        className={cn(
+                          'w-full py-3 px-6 rounded-xl font-semibold text-white',
+                          'bg-gradient-to-r from-accent-cyan to-accent-magenta',
+                          'hover:scale-[1.02] active:scale-[0.98] transition-all duration-200',
+                          'shadow-[0_4px_20px_rgba(34,211,238,0.3)]',
+                          'hover:shadow-[0_8px_30px_rgba(34,211,238,0.4)]',
+                          'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100',
+                          'flex items-center justify-center gap-2',
+                        )}
                       >
-                        <Send className="w-4 h-4 mr-2" />
-                        Convoquer le Board
-                      </Button>
+                        <Send className="w-4 h-4" />
+                        {mode === 'sovereign' ? 'Délibération souveraine' : 'Convoquer le Board'}
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -417,6 +448,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
+                      isSovereign={mode === 'sovereign'}
                       advisorStates={advisorStates}
                       synthesis={synthesis}
                       isSynthesizing={isSynthesizing}

@@ -3510,3 +3510,181 @@ class TestF15_ModelIndicatorUI:
         )
 
 
+# ============================================================
+# BUG-056 (v0.4.2) - Indicateur de chargement image
+# Un message loading doit s'afficher pendant la génération d'image.
+# ============================================================
+
+
+class TestBUG056_ImageLoadingIndicator:
+    """Un message assistant loading doit s'afficher pendant generateImage()."""
+
+    COMMAND_EXECUTOR_TSX = Path(
+        "src/frontend/src/components/home/CommandExecutor.tsx"
+    )
+    GUIDED_PROMPTS_TSX = Path(
+        "src/frontend/src/components/guided/GuidedPrompts.tsx"
+    )
+    CHAT_STORE_TS = Path("src/frontend/src/stores/chatStore.ts")
+
+    def test_loading_message_in_command_executor(self):
+        content = self.COMMAND_EXECUTOR_TSX.read_text(encoding="utf-8")
+        assert "isStreaming: true" in content, (
+            "CommandExecutor doit créer un message loading avec isStreaming: true (BUG-056)"
+        )
+
+    def test_update_message_replaces_loading(self):
+        content = self.COMMAND_EXECUTOR_TSX.read_text(encoding="utf-8")
+        assert "updateMessage" in content, (
+            "CommandExecutor doit utiliser updateMessage pour remplacer le loading (BUG-056)"
+        )
+
+    def test_loading_message_in_guided_prompts(self):
+        content = self.GUIDED_PROMPTS_TSX.read_text(encoding="utf-8")
+        assert "isStreaming: true" in content, (
+            "GuidedPrompts doit créer un message loading avec isStreaming: true (BUG-056)"
+        )
+
+    def test_chat_store_update_message_accepts_meta(self):
+        content = self.CHAT_STORE_TS.read_text(encoding="utf-8")
+        assert "meta" in content, (
+            "chatStore.updateMessage doit accepter un paramètre meta (BUG-056)"
+        )
+
+
+# ============================================================
+# F-16 (v0.4.2) - Upload credentials.json Google OAuth
+# Les formulaires de credentials doivent avoir un bouton d'import JSON.
+# ============================================================
+
+
+class TestF16_CredentialsJsonImport:
+    """Un bouton Import credentials.json doit exister dans CredentialsStep et CRMSyncPanel."""
+
+    CREDENTIALS_STEP_TSX = Path(
+        "src/frontend/src/components/email/wizard/CredentialsStep.tsx"
+    )
+    CRM_SYNC_PANEL_TSX = Path(
+        "src/frontend/src/components/settings/CRMSyncPanel.tsx"
+    )
+
+    def test_file_input_in_credentials_step(self):
+        content = self.CREDENTIALS_STEP_TSX.read_text(encoding="utf-8")
+        assert 'type="file"' in content, (
+            "CredentialsStep doit avoir un input type=file pour l'import (F-16)"
+        )
+
+    def test_json_parsing_in_credentials_step(self):
+        content = self.CREDENTIALS_STEP_TSX.read_text(encoding="utf-8")
+        assert "client_id" in content and "client_secret" in content, (
+            "CredentialsStep doit parser client_id et client_secret du JSON (F-16)"
+        )
+
+    def test_file_input_in_crm_sync_panel(self):
+        content = self.CRM_SYNC_PANEL_TSX.read_text(encoding="utf-8")
+        assert 'type="file"' in content, (
+            "CRMSyncPanel doit avoir un input type=file pour l'import (F-16)"
+        )
+
+    def test_json_parsing_in_crm_sync_panel(self):
+        content = self.CRM_SYNC_PANEL_TSX.read_text(encoding="utf-8")
+        assert "client_id" in content and "client_secret" in content, (
+            "CRMSyncPanel doit parser client_id et client_secret du JSON (F-16)"
+        )
+
+
+# ============================================================
+# F-17 (v0.4.2) - Refonte Board de Décision + Mode Souverain
+# Backend : BoardMode enum, mode sovereign séquentiel Ollama
+# Frontend : ModeSelector, AdvisorArcLayout, refactoring Board
+# ============================================================
+
+
+class TestF17_BoardSovereignMode:
+    """Le backend doit supporter le mode souverain (séquentiel Ollama)."""
+
+    BOARD_MODELS_PY = Path("src/backend/app/models/board.py")
+    BOARD_SERVICE_PY = Path("src/backend/app/services/board.py")
+    ENTITIES_PY = Path("src/backend/app/models/entities.py")
+
+    def test_board_mode_enum_exists(self):
+        content = self.BOARD_MODELS_PY.read_text(encoding="utf-8")
+        assert "BoardMode" in content, (
+            "board.py doit définir l'enum BoardMode (F-17)"
+        )
+
+    def test_board_mode_values(self):
+        content = self.BOARD_MODELS_PY.read_text(encoding="utf-8")
+        assert "CLOUD" in content and "SOVEREIGN" in content, (
+            "BoardMode doit avoir les valeurs CLOUD et SOVEREIGN (F-17)"
+        )
+
+    def test_board_request_has_mode(self):
+        content = self.BOARD_MODELS_PY.read_text(encoding="utf-8")
+        assert "mode" in content and "ollama_models" in content, (
+            "BoardRequest doit avoir les champs mode et ollama_models (F-17)"
+        )
+
+    def test_sovereign_sequential_path(self):
+        content = self.BOARD_SERVICE_PY.read_text(encoding="utf-8")
+        assert "sovereign" in content.lower(), (
+            "board.py service doit avoir un chemin séquentiel pour le mode souverain (F-17)"
+        )
+
+    def test_entities_has_mode(self):
+        content = self.ENTITIES_PY.read_text(encoding="utf-8")
+        assert "mode" in content, (
+            "BoardDecisionDB doit avoir un champ mode (F-17)"
+        )
+
+
+class TestF17_BoardArcLayout:
+    """AdvisorArcLayout.tsx doit exister avec l'arc de cercle."""
+
+    ARC_LAYOUT_TSX = Path(
+        "src/frontend/src/components/board/AdvisorArcLayout.tsx"
+    )
+
+    def test_file_exists(self):
+        assert self.ARC_LAYOUT_TSX.exists(), (
+            "AdvisorArcLayout.tsx doit exister (F-17)"
+        )
+
+    def test_arc_angles(self):
+        content = self.ARC_LAYOUT_TSX.read_text(encoding="utf-8")
+        assert "ARC_ANGLES" in content, (
+            "AdvisorArcLayout doit définir ARC_ANGLES pour l'arc de cercle (F-17)"
+        )
+
+    def test_responsive_fallback(self):
+        content = self.ARC_LAYOUT_TSX.read_text(encoding="utf-8")
+        assert "md:hidden" in content or "grid" in content, (
+            "AdvisorArcLayout doit avoir un fallback grille pour petits écrans (F-17)"
+        )
+
+
+class TestF17_BoardModeSelector:
+    """ModeSelector.tsx doit exister avec le toggle Cloud/Souverain."""
+
+    MODE_SELECTOR_TSX = Path(
+        "src/frontend/src/components/board/ModeSelector.tsx"
+    )
+
+    def test_file_exists(self):
+        assert self.MODE_SELECTOR_TSX.exists(), (
+            "ModeSelector.tsx doit exister (F-17)"
+        )
+
+    def test_cloud_sovereign_toggle(self):
+        content = self.MODE_SELECTOR_TSX.read_text(encoding="utf-8")
+        assert "cloud" in content.lower() and "souverain" in content.lower(), (
+            "ModeSelector doit avoir les options Cloud et Souverain (F-17)"
+        )
+
+    def test_framer_motion_animation(self):
+        content = self.MODE_SELECTOR_TSX.read_text(encoding="utf-8")
+        assert "layoutId" in content or "motion" in content, (
+            "ModeSelector doit utiliser Framer Motion pour l'animation (F-17)"
+        )
+
+

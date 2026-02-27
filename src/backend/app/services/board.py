@@ -17,6 +17,7 @@ from app.models.board import (
     AdvisorRole,
     BoardDecision,
     BoardDeliberationChunk,
+    BoardMode,
     BoardRequest,
     BoardSynthesis,
 )
@@ -134,167 +135,221 @@ class BoardService:
         """
         Lance une délibération du board en streaming.
 
-        Chaque conseiller utilise son provider LLM préféré si configuré,
-        sinon tombe sur le provider par défaut.
-
-        Les 5 conseillers sont sollicités EN PARALLÈLE pour plus de rapidité.
+        Mode cloud : providers multiples en parallèle + recherche web.
+        Mode souverain : Ollama séquentiel, pas de recherche web.
 
         Yields chunks pour chaque conseiller puis la synthèse.
         """
+        is_sovereign = request.mode == BoardMode.SOVEREIGN
         default_llm = get_llm_service()
-
-        # Determine which advisors to consult
         advisors = request.advisors or list(AdvisorRole)
 
-        # Signal web search start
-        yield BoardDeliberationChunk(
-            type="web_search_start",
-            content="Recherche d'informations actualisées...",
-        )
+        # --- Recherche web (cloud uniquement) ---
+        web_search_results = ""
+        if not is_sovereign:
+            yield BoardDeliberationChunk(
+                type="web_search_start",
+                content="Recherche d'informations actualisées...",
+            )
+            web_search_results = await self._search_web_for_context(request.question)
+            yield BoardDeliberationChunk(
+                type="web_search_done",
+                content=f"{len(web_search_results)} caractères de contexte web" if web_search_results else "Aucun résultat",
+            )
 
-        # Perform web search FIRST to enrich context for all advisors
-        web_search_results = await self._search_web_for_context(request.question)
-
-        # Signal web search done
-        yield BoardDeliberationChunk(
-            type="web_search_done",
-            content=f"{len(web_search_results)} caractères de contexte web" if web_search_results else "Aucun résultat",
-        )
-
-        # Build context message with web search results
+        # --- Contexte commun ---
         context_msg = f"Question stratégique : {request.question}"
         if request.context:
             context_msg += f"\n\nContexte fourni : {request.context}"
         if web_search_results:
             context_msg += f"\n\n{web_search_results}"
 
-        # Get user context (profile + THERESE.md)
         user_context = _get_user_context()
+        opinions: list[AdvisorOpinion] = []
 
-        # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
-        advisor_services: dict[AdvisorRole, tuple] = {}  # role -> (llm_service, actual_provider)
-        for role in advisors:
-            config = ADVISOR_CONFIG[role]
-            preferred_provider = config.get("preferred_provider")
-            advisor_llm = None
-            actual_provider = default_llm.config.provider.value
-            if preferred_provider:
-                advisor_llm = get_llm_service_for_provider(preferred_provider)
-                if advisor_llm:
-                    actual_provider = preferred_provider
-                    logger.info(f"Advisor {config['name']} using {preferred_provider}")
-                else:
-                    logger.info(f"Advisor {config['name']} fallback to default")
-            llm_service = advisor_llm or default_llm
-            advisor_services[role] = (llm_service, actual_provider)
+        if is_sovereign:
+            # --- MODE SOUVERAIN : séquentiel via Ollama ---
+            logger.info("Board en mode souverain (Ollama séquentiel)")
+            for role in advisors:
+                config = ADVISOR_CONFIG[role]
+                ollama_model = (request.ollama_models or {}).get(role.value, "mistral-nemo")
 
-        # Queue for collecting chunks from parallel advisors
-        chunk_queue: asyncio.Queue[BoardDeliberationChunk | None] = asyncio.Queue()
-        opinions_dict: dict[AdvisorRole, AdvisorOpinion] = {}
+                # Obtenir le service Ollama avec le modèle choisi
+                ollama_llm = get_llm_service_for_provider("ollama", model_override=ollama_model)
+                if not ollama_llm:
+                    ollama_llm = get_llm_service_for_provider("ollama")
+                llm_service = ollama_llm or default_llm
+                actual_provider = f"ollama:{ollama_model}" if ollama_llm else default_llm.config.provider.value
 
-        async def process_advisor(role: AdvisorRole):
-            """Process a single advisor and put chunks in the queue."""
-            config = ADVISOR_CONFIG[role]
-            llm_service, actual_provider = advisor_services[role]
+                yield BoardDeliberationChunk(
+                    type="advisor_start",
+                    role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
+                    provider=actual_provider,
+                )
 
-            # Signal advisor start
-            await chunk_queue.put(BoardDeliberationChunk(
-                type="advisor_start",
-                role=role,
-                name=config["name"],
-                emoji=config["emoji"],
-                provider=actual_provider,
-            ))
+                advisor_system = config["system_prompt"]
+                if user_context:
+                    advisor_system = f"{config['system_prompt']}\n\n{user_context}"
 
-            # Build system prompt with user context
-            advisor_system = config["system_prompt"]
-            if user_context:
-                advisor_system = f"{config['system_prompt']}\n\n{user_context}"
+                messages = [LLMMessage(role="user", content=context_msg)]
+                context = llm_service.prepare_context(messages, system_prompt=advisor_system)
 
-            messages = [LLMMessage(role="user", content=context_msg)]
-            context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+                full_content = ""
+                try:
+                    async for chunk in llm_service.stream_response(context):
+                        full_content += chunk
+                        yield BoardDeliberationChunk(
+                            type="advisor_chunk",
+                            role=role,
+                            name=config["name"],
+                            emoji=config["emoji"],
+                            provider=actual_provider,
+                            content=chunk,
+                        )
+                except Exception as e:
+                    logger.error(f"Sovereign advisor {config['name']} error: {e}")
+                    full_content = f"Erreur : {str(e)}"
+                    yield BoardDeliberationChunk(
+                        type="advisor_chunk",
+                        role=role,
+                        provider=actual_provider,
+                        content=full_content,
+                    )
 
-            # Stream response
-            full_content = ""
-            try:
-                async for chunk in llm_service.stream_response(context):
-                    full_content += chunk
+                opinions.append(AdvisorOpinion(
+                    role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
+                    content=full_content,
+                ))
+
+                yield BoardDeliberationChunk(
+                    type="advisor_done",
+                    role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
+                    provider=actual_provider,
+                    content=full_content,
+                )
+
+        else:
+            # --- MODE CLOUD : parallèle multi-providers ---
+            # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
+            advisor_services: dict[AdvisorRole, tuple] = {}
+            for role in advisors:
+                config = ADVISOR_CONFIG[role]
+                preferred_provider = config.get("preferred_provider")
+                advisor_llm = None
+                actual_provider = default_llm.config.provider.value
+                if preferred_provider:
+                    advisor_llm = get_llm_service_for_provider(preferred_provider)
+                    if advisor_llm:
+                        actual_provider = preferred_provider
+                        logger.info(f"Advisor {config['name']} using {preferred_provider}")
+                    else:
+                        logger.info(f"Advisor {config['name']} fallback to default")
+                llm_service = advisor_llm or default_llm
+                advisor_services[role] = (llm_service, actual_provider)
+
+            chunk_queue: asyncio.Queue[BoardDeliberationChunk | None] = asyncio.Queue()
+            opinions_dict: dict[AdvisorRole, AdvisorOpinion] = {}
+
+            async def process_advisor(role: AdvisorRole):
+                """Process a single advisor and put chunks in the queue."""
+                config = ADVISOR_CONFIG[role]
+                llm_service, actual_provider = advisor_services[role]
+
+                await chunk_queue.put(BoardDeliberationChunk(
+                    type="advisor_start",
+                    role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
+                    provider=actual_provider,
+                ))
+
+                advisor_system = config["system_prompt"]
+                if user_context:
+                    advisor_system = f"{config['system_prompt']}\n\n{user_context}"
+
+                messages = [LLMMessage(role="user", content=context_msg)]
+                context = llm_service.prepare_context(messages, system_prompt=advisor_system)
+
+                full_content = ""
+                try:
+                    async for chunk in llm_service.stream_response(context):
+                        full_content += chunk
+                        await chunk_queue.put(BoardDeliberationChunk(
+                            type="advisor_chunk",
+                            role=role,
+                            name=config["name"],
+                            emoji=config["emoji"],
+                            provider=actual_provider,
+                            content=chunk,
+                        ))
+                except Exception as e:
+                    logger.error(f"Error getting opinion from {config['name']}: {e}")
+                    full_content = f"Désolé, une erreur s'est produite: {str(e)}"
                     await chunk_queue.put(BoardDeliberationChunk(
                         type="advisor_chunk",
                         role=role,
-                        name=config["name"],
-                        emoji=config["emoji"],
                         provider=actual_provider,
-                        content=chunk,
+                        content=full_content,
                     ))
-            except Exception as e:
-                logger.error(f"Error getting opinion from {config['name']}: {e}")
-                full_content = f"Désolé, une erreur s'est produite: {str(e)}"
-                await chunk_queue.put(BoardDeliberationChunk(
-                    type="advisor_chunk",
+
+                opinions_dict[role] = AdvisorOpinion(
                     role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
+                    content=full_content,
+                )
+
+                await chunk_queue.put(BoardDeliberationChunk(
+                    type="advisor_done",
+                    role=role,
+                    name=config["name"],
+                    emoji=config["emoji"],
                     provider=actual_provider,
                     content=full_content,
                 ))
 
-            # Record opinion
-            opinions_dict[role] = AdvisorOpinion(
-                role=role,
-                name=config["name"],
-                emoji=config["emoji"],
-                content=full_content,
-            )
+            tasks = [asyncio.create_task(process_advisor(role)) for role in advisors]
 
-            # Signal advisor done
-            await chunk_queue.put(BoardDeliberationChunk(
-                type="advisor_done",
-                role=role,
-                name=config["name"],
-                emoji=config["emoji"],
-                provider=actual_provider,
-                content=full_content,
-            ))
+            async def monitor_tasks():
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for i, result in enumerate(results):
+                    if isinstance(result, Exception):
+                        logger.error(f"Advisor task {i} failed: {result}")
+                await chunk_queue.put(None)
 
-        # Launch all advisors in parallel
-        tasks = [asyncio.create_task(process_advisor(role)) for role in advisors]
+            monitor = asyncio.create_task(monitor_tasks())
 
-        # Yield chunks as they arrive
-        completed = 0
+            while True:
+                chunk = await chunk_queue.get()
+                if chunk is None:
+                    break
+                yield chunk
 
-        async def monitor_tasks():
-            """Signal when all tasks are done."""
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            # Log les erreurs individuelles sans crasher la deliberation
-            for i, result in enumerate(results):
-                if isinstance(result, Exception):
-                    logger.error(f"Advisor task {i} failed: {result}")
-            await chunk_queue.put(None)  # Sentinel to stop the loop
+            await monitor
+            opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
 
-        monitor = asyncio.create_task(monitor_tasks())
-
-        while True:
-            chunk = await chunk_queue.get()
-            if chunk is None:
-                break
-            yield chunk
-            if chunk.type == "advisor_done":
-                completed += 1
-
-        # Wait for monitor to finish
-        await monitor
-
-        # Build opinions list in order
-        opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
-
-        # Generate synthesis (use default LLM for best quality)
+        # --- Synthèse ---
         yield BoardDeliberationChunk(type="synthesis_start", content="")
 
-        synthesis = await self._generate_synthesis(request.question, opinions, default_llm)
+        # En mode souverain, utiliser Ollama pour la synthèse aussi
+        synthesis_llm = default_llm
+        if is_sovereign:
+            synth_model = (request.ollama_models or {}).get("synthesis", "mistral-nemo")
+            ollama_synth = get_llm_service_for_provider("ollama", model_override=synth_model)
+            if ollama_synth:
+                synthesis_llm = ollama_synth
 
-        # Save decision to SQLite BEFORE sending synthesis chunk
-        # (to ensure persistence even if client disconnects after receiving synthesis)
+        synthesis = await self._generate_synthesis(request.question, opinions, synthesis_llm)
+
+        # --- Persistance SQLite ---
         decision_id = str(uuid4())
-        logger.info(f"Saving board decision {decision_id} to SQLite...")
+        logger.info(f"Saving board decision {decision_id} (mode={request.mode.value}) to SQLite...")
         if self._session:
             try:
                 db_decision = BoardDecisionDB(
@@ -305,6 +360,7 @@ class BoardService:
                     synthesis=json.dumps(synthesis.model_dump(mode="json"), ensure_ascii=False),
                     confidence=synthesis.confidence,
                     recommendation=synthesis.recommendation,
+                    mode=request.mode.value,
                 )
                 self._session.add(db_decision)
                 await self._session.commit()
@@ -318,13 +374,11 @@ class BoardService:
         else:
             logger.warning("No session provided, decision not persisted")
 
-        # Stream synthesis as JSON (after saving to ensure persistence)
         yield BoardDeliberationChunk(
             type="synthesis_chunk",
             content=json.dumps(synthesis.model_dump(), ensure_ascii=False),
         )
 
-        # Signal done
         yield BoardDeliberationChunk(
             type="done",
             content=decision_id,
@@ -461,5 +515,6 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
             context=db.context,
             opinions=[AdvisorOpinion(**op) for op in opinions_data],
             synthesis=BoardSynthesis(**synthesis_data),
+            mode=getattr(db, "mode", "cloud"),
             created_at=db.created_at,
         )
