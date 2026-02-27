@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users,
   X,
   Send,
   History,
@@ -331,7 +330,14 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                   </Button>
                 )}
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-accent-cyan" />
+                  <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none">
+                    <circle cx="20" cy="20" r="5.5" fill="currentColor" className="text-accent-cyan" />
+                    <circle cx="20" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                    <circle cx="31.4" cy="16.3" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                    <circle cx="27.1" cy="29.7" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                    <circle cx="12.9" cy="29.7" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                    <circle cx="8.6" cy="16.3" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                  </svg>
                   <h2 className="text-lg font-semibold text-text">
                     Board de Décision Stratégique
                   </h2>
@@ -381,10 +387,17 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                   >
                     {/* Avatar et intro */}
                     <div className="text-center mb-8">
-                      <div className="relative w-20 h-20 mx-auto mb-4">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
-                        <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 border-2 border-accent-cyan/30 flex items-center justify-center">
-                          <Users className="w-10 h-10 text-accent-cyan" />
+                      <div className="relative w-16 h-16 mx-auto mb-4">
+                        <div className="absolute inset-0 rounded-2xl bg-accent-cyan/30 blur-xl animate-pulse" />
+                        <div className="relative w-full h-full rounded-2xl bg-accent-cyan/20 border-2 border-accent-cyan/30 flex items-center justify-center">
+                          <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+                            <circle cx="20" cy="20" r="5.5" fill="currentColor" className="text-accent-cyan" />
+                            <circle cx="20" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                            <circle cx="31.4" cy="16.3" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                            <circle cx="27.1" cy="29.7" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                            <circle cx="12.9" cy="29.7" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                            <circle cx="8.6" cy="16.3" r="3" stroke="currentColor" strokeWidth="1.5" className="text-accent-cyan" />
+                          </svg>
                         </div>
                       </div>
                       <h3 className="text-xl font-semibold text-text mb-2">
