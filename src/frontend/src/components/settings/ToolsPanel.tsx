@@ -146,7 +146,9 @@ function PresetCategory({
                         {isInstalling && <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-green-400" />}
                         {!isInstalling && isInstalled && !runningServer && (
-                          <AlertCircle className="w-4 h-4 text-yellow-400" />
+                          <span title="Installé mais inactif - cliquer pour démarrer">
+                            <AlertCircle className="w-4 h-4 text-yellow-400" />
+                          </span>
                         )}
                       </div>
                     </div>

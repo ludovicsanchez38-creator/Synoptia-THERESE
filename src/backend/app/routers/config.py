@@ -892,6 +892,18 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "google/gemini-3.1-pro",             # Gemini 3.1 Pro
             "meta-llama/llama-4-maverick",     # Open Source
         ]
+    elif config.provider.value == "ollama":
+        # F-14 : lister les modèles Ollama installés localement
+        try:
+            import httpx
+            client = await get_http_client()
+            resp = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                available_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+        except Exception:
+            # Ollama non disponible - liste vide, pas d'erreur
+            available_models = []
 
     return LLMConfigResponse(
         provider=config.provider.value,
@@ -997,10 +1009,23 @@ async def set_llm_config(
 
     await session.commit()
 
+    # Récupérer la liste des modèles disponibles pour le provider
+    post_available_models: list[str] = []
+    if provider == LLMProvider.OLLAMA:
+        try:
+            import httpx
+            client = await get_http_client()
+            resp = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
+            if resp.status_code == 200:
+                data = resp.json()
+                post_available_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+        except Exception:
+            pass
+
     return LLMConfigResponse(
         provider=request.provider,
         model=request.model,
-        available_models=[],
+        available_models=post_available_models,
     )
 
 

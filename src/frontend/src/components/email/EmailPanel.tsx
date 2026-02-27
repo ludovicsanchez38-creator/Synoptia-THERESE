@@ -54,6 +54,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     setCurrentLabel,
     needsReauth,
     setNeedsReauth,
+    triggerRefresh,
   } = useEmailStore();
 
   // Cache-first : si le store a déjà des données (localStorage), pas de spinner
@@ -127,8 +128,8 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     if (!currentAccountId) return;
     setSyncing(true);
     try {
-      // Reload messages (will be handled by EmailList)
       await loadLabels(currentAccountId);
+      triggerRefresh();
     } catch (err) {
       console.error('Failed to sync:', err);
       setError('Échec de la synchronisation');

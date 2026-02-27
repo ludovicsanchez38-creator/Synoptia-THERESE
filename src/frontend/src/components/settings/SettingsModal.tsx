@@ -587,7 +587,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => { setActiveTab(tab.id); setError(null); }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                         isActive
                           ? 'bg-accent-cyan/10 text-accent-cyan border-r-2 border-accent-cyan'

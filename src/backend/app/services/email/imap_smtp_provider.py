@@ -428,21 +428,65 @@ class ImapSmtpProvider(EmailProvider):
             "smtp_host": self._smtp_host,
         }
 
-    async def test_connection(self) -> bool:
-        """Test IMAP connection."""
+    async def test_connection(self) -> dict:
+        """Test IMAP and SMTP connections with timeout."""
 
-        def _sync_test():
+        # Test IMAP
+        def _sync_test_imap():
             try:
                 with MailBox(self._imap_host, self._imap_port).login(
                     self._email, self._password
                 ):
-                    return True
+                    return {"ok": True, "message": "IMAP OK"}
             except Exception as e:
                 logger.error(f"IMAP connection test failed: {e}")
-                return False
+                return {"ok": False, "message": f"IMAP : {e}"}
 
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, _sync_test)
+        try:
+            imap_result = await asyncio.wait_for(
+                loop.run_in_executor(None, _sync_test_imap),
+                timeout=15.0,
+            )
+        except asyncio.TimeoutError:
+            imap_result = {"ok": False, "message": "IMAP : délai de connexion dépassé (15s)"}
+
+        # Test SMTP
+        try:
+            smtp = aiosmtplib.SMTP(
+                hostname=self._smtp_host,
+                port=self._smtp_port,
+                use_tls=not self._smtp_use_tls,
+                start_tls=self._smtp_use_tls,
+                timeout=15.0,
+            )
+            await asyncio.wait_for(smtp.connect(), timeout=15.0)
+            await smtp.login(self._email, self._password)
+            await smtp.quit()
+            smtp_result = {"ok": True, "message": "SMTP OK"}
+        except asyncio.TimeoutError:
+            smtp_result = {"ok": False, "message": "SMTP : délai de connexion dépassé (15s)"}
+        except Exception as e:
+            logger.error(f"SMTP connection test failed: {e}")
+            smtp_result = {"ok": False, "message": f"SMTP : {e}"}
+
+        success = imap_result["ok"] and smtp_result["ok"]
+        if success:
+            message = "Connexion IMAP et SMTP réussie"
+        else:
+            parts = []
+            if not imap_result["ok"]:
+                parts.append(imap_result["message"])
+            if not smtp_result["ok"]:
+                parts.append(smtp_result["message"])
+            message = " | ".join(parts)
+
+        return {
+            "success": success,
+            "imap_ok": imap_result["ok"],
+            "smtp_ok": smtp_result["ok"],
+            "message": message,
+        }
 
     # ============================================================
     # Private Helpers

@@ -584,26 +584,28 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         )}
       </AnimatePresence>
 
-      {/* F-12 : sélecteur de modèle actif */}
+      {/* F-12/F-14/F-15 : sélecteur de modèle actif (pill interactif) */}
       {currentModel && (
-        <div className="flex items-center gap-1.5 px-2 mb-1">
-          <Cpu className="w-3 h-3 text-text-muted/60" />
-          {availableModels.length > 1 ? (
-            <select
-              value={currentModel}
-              onChange={(e) => handleModelChange(e.target.value)}
-              className="text-xs text-text-muted/60 bg-transparent border-none outline-none cursor-pointer hover:text-text-muted transition-colors appearance-none pr-4"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
-            >
-              {availableModels.map((m) => (
-                <option key={m} value={m} className="bg-surface text-text-primary">
-                  {m}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-xs text-text-muted/60">{currentModel}</span>
-          )}
+        <div className="flex items-center px-2 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
+            <Cpu className="w-3.5 h-3.5 text-accent-cyan" />
+            {availableModels.length > 1 ? (
+              <select
+                value={currentModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                className="text-xs font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
+              >
+                {availableModels.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-xs font-medium text-text">{currentModel}</span>
+            )}
+          </div>
         </div>
       )}
 

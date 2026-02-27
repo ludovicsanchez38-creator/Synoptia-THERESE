@@ -194,12 +194,17 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         </div>
 
         <div>
-          <label htmlFor="profile-context" className="text-xs text-text-muted mb-1 block">Contexte additionnel</label>
+          <label htmlFor="profile-context" className="text-xs text-text-muted mb-1 block">
+            Contexte additionnel
+          </label>
+          <p className="text-xs text-text-muted/60 mb-1.5">
+            Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses.
+          </p>
           <textarea
             id="profile-context"
             value={profileForm.context}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
-            placeholder="Infos supplémentaires sur ton activité, tes projets en cours..."
+            placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
             className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
           />

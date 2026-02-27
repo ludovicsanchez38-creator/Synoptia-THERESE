@@ -63,6 +63,10 @@ interface EmailStore {
   setSelectedLabels: (labels: string[]) => void;
   toggleLabel: (labelId: string) => void;
 
+  // Refresh
+  refreshCounter: number;
+  triggerRefresh: () => void;
+
   // Pagination
   pageToken: string | null;
   hasMore: boolean;
@@ -164,6 +168,10 @@ export const useEmailStore = create<EmailStore>()(
           set({ selectedLabels: [...selectedLabels, labelId] });
         }
       },
+
+      // Refresh
+      refreshCounter: 0,
+      triggerRefresh: () => set((state) => ({ refreshCounter: state.refreshCounter + 1 })),
 
       // Pagination
       pageToken: null,

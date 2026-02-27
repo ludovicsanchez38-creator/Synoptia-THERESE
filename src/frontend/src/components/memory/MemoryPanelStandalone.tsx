@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, AlertCircle } from 'lucide-react';
+import { Plus, Search, Trash2, AlertCircle, Briefcase } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { ProjectsKanban } from './ProjectsKanban';
@@ -82,8 +82,13 @@ export function MemoryPanelStandalone() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="h-14 flex items-center justify-between px-6 border-b border-border/50 bg-surface/60">
-        <h1 className="text-lg font-bold gradient-text">Projets</h1>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
+            <Briefcase className="w-5 h-5 text-accent-cyan" />
+          </div>
+          <h2 className="text-lg font-semibold text-text">Projets</h2>
+        </div>
         <Button
           variant="primary"
           size="sm"

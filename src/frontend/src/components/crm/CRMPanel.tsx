@@ -120,12 +120,17 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   if (!effectiveOpen) return null;
 
   const crmHeader = (
-    <div className="flex items-center justify-between p-6 border-b border-surface">
-      <div>
-        <h2 className="text-2xl font-bold text-text-primary">CRM Pipeline</h2>
-        <p className="text-sm text-text-muted">
-          {contacts.length} contact{contacts.length > 1 ? 's' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
-        </p>
+    <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
+          <LayoutDashboard className="w-5 h-5 text-accent-cyan" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-text">CRM Pipeline</h2>
+          <p className="text-sm text-text-muted">
+            {contacts.length} contact{contacts.length > 1 ? 's' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

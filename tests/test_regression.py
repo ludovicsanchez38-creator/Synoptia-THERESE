@@ -3298,3 +3298,215 @@ class TestBUG044b_LinuxDebBackendLibs:
         )
 
 
+# ============================================================
+# v0.4.1 - Batch fixes UX + MCP + Ollama + Email
+# ============================================================
+
+
+class TestBUG057_CSPImagePreview:
+    """tauri.conf.json doit autoriser http://localhost dans img-src CSP."""
+
+    TAURI_CONF = Path("src/frontend/src-tauri/tauri.conf.json")
+
+    def test_img_src_allows_localhost(self):
+        content = self.TAURI_CONF.read_text(encoding="utf-8")
+        assert "http://localhost:*" in content, (
+            "CSP img-src doit autoriser http://localhost:* pour les images backend (BUG-057)"
+        )
+
+    def test_img_src_allows_127(self):
+        content = self.TAURI_CONF.read_text(encoding="utf-8")
+        assert "http://127.0.0.1:*" in content, (
+            "CSP img-src doit autoriser http://127.0.0.1:* pour les images backend (BUG-057)"
+        )
+
+
+class TestBUG058_EmailRefresh:
+    """EmailPanel doit déclencher un refresh des messages après sync."""
+
+    EMAIL_STORE_TS = Path("src/frontend/src/stores/emailStore.ts")
+    EMAIL_PANEL_TSX = Path("src/frontend/src/components/email/EmailPanel.tsx")
+    EMAIL_LIST_TSX = Path("src/frontend/src/components/email/EmailList.tsx")
+
+    def test_store_has_refresh_counter(self):
+        content = self.EMAIL_STORE_TS.read_text(encoding="utf-8")
+        assert "refreshCounter" in content, (
+            "emailStore doit avoir un refreshCounter pour forcer le re-chargement (BUG-058)"
+        )
+
+    def test_store_has_trigger_refresh(self):
+        content = self.EMAIL_STORE_TS.read_text(encoding="utf-8")
+        assert "triggerRefresh" in content, (
+            "emailStore doit avoir une action triggerRefresh (BUG-058)"
+        )
+
+    def test_email_panel_calls_trigger_refresh(self):
+        content = self.EMAIL_PANEL_TSX.read_text(encoding="utf-8")
+        assert "triggerRefresh" in content, (
+            "EmailPanel.handleSync doit appeler triggerRefresh() (BUG-058)"
+        )
+
+    def test_email_list_watches_refresh_counter(self):
+        content = self.EMAIL_LIST_TSX.read_text(encoding="utf-8")
+        assert "refreshCounter" in content, (
+            "EmailList useEffect doit dépendre de refreshCounter (BUG-058)"
+        )
+
+
+class TestBUG059_SMTPTestTimeout:
+    """test_connection() doit tester IMAP et SMTP avec timeout."""
+
+    IMAP_SMTP_PY = Path("src/backend/app/services/email/imap_smtp_provider.py")
+
+    def test_smtp_test_present(self):
+        content = self.IMAP_SMTP_PY.read_text(encoding="utf-8")
+        assert "aiosmtplib" in content, (
+            "test_connection() doit tester SMTP via aiosmtplib (BUG-059)"
+        )
+
+    def test_timeout_present(self):
+        content = self.IMAP_SMTP_PY.read_text(encoding="utf-8")
+        assert "wait_for" in content, (
+            "test_connection() doit utiliser asyncio.wait_for pour le timeout (BUG-059)"
+        )
+
+    def test_returns_dict(self):
+        content = self.IMAP_SMTP_PY.read_text(encoding="utf-8")
+        assert "imap_ok" in content and "smtp_ok" in content, (
+            "test_connection() doit retourner un dict avec imap_ok et smtp_ok (BUG-059)"
+        )
+
+
+class TestBUG060_CRMHeaderHomogeneity:
+    """CRMPanel doit utiliser le pattern header gradient badge comme EmailPanel."""
+
+    CRM_PANEL_TSX = Path("src/frontend/src/components/crm/CRMPanel.tsx")
+
+    def test_gradient_badge_present(self):
+        content = self.CRM_PANEL_TSX.read_text(encoding="utf-8")
+        assert "bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20" in content, (
+            "CRMPanel header doit utiliser le badge gradient (BUG-060)"
+        )
+
+    def test_icon_in_badge(self):
+        content = self.CRM_PANEL_TSX.read_text(encoding="utf-8")
+        assert "w-10 h-10 rounded-lg" in content, (
+            "CRMPanel header doit avoir un badge 10x10 arrondi (BUG-060)"
+        )
+
+
+class TestBUG061_ProjectsHeaderHomogeneity:
+    """MemoryPanelStandalone doit utiliser le pattern header gradient badge."""
+
+    PROJECTS_TSX = Path("src/frontend/src/components/memory/MemoryPanelStandalone.tsx")
+
+    def test_gradient_badge_present(self):
+        content = self.PROJECTS_TSX.read_text(encoding="utf-8")
+        assert "bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20" in content, (
+            "Projets header doit utiliser le badge gradient (BUG-061)"
+        )
+
+    def test_briefcase_icon_imported(self):
+        content = self.PROJECTS_TSX.read_text(encoding="utf-8")
+        assert "Briefcase" in content, (
+            "Projets header doit utiliser l'icône Briefcase (BUG-061)"
+        )
+
+
+class TestBUG062_MCPNodePath:
+    """mcp_service.py doit enrichir le PATH pour trouver npx dans l'app packagée."""
+
+    MCP_SERVICE_PY = Path("src/backend/app/services/mcp_service.py")
+
+    def test_nvm_path_added(self):
+        content = self.MCP_SERVICE_PY.read_text(encoding="utf-8")
+        assert ".nvm" in content, (
+            "mcp_service.py doit chercher Node.js dans ~/.nvm (BUG-062)"
+        )
+
+    def test_homebrew_path_added(self):
+        content = self.MCP_SERVICE_PY.read_text(encoding="utf-8")
+        assert "/opt/homebrew/bin" in content, (
+            "mcp_service.py doit inclure /opt/homebrew/bin dans le PATH (BUG-062)"
+        )
+
+    def test_volta_path_added(self):
+        content = self.MCP_SERVICE_PY.read_text(encoding="utf-8")
+        assert ".volta" in content, (
+            "mcp_service.py doit chercher Node.js dans ~/.volta (BUG-062)"
+        )
+
+
+class TestBUG064_MCPPresetTooltip:
+    """L'icône AlertCircle des presets MCP doit avoir un tooltip explicatif."""
+
+    TOOLS_PANEL_TSX = Path("src/frontend/src/components/settings/ToolsPanel.tsx")
+
+    def test_alertcircle_has_tooltip(self):
+        content = self.TOOLS_PANEL_TSX.read_text(encoding="utf-8")
+        assert "Installé mais inactif" in content, (
+            "L'icône AlertCircle MCP doit avoir un tooltip explicatif (BUG-064)"
+        )
+
+
+class TestBUG065_SettingsErrorClear:
+    """SettingsModal doit effacer l'erreur quand on change d'onglet."""
+
+    SETTINGS_TSX = Path("src/frontend/src/components/settings/SettingsModal.tsx")
+
+    def test_error_cleared_on_tab_switch(self):
+        content = self.SETTINGS_TSX.read_text(encoding="utf-8")
+        assert "setError(null)" in content, (
+            "SettingsModal doit appeler setError(null) au changement d'onglet (BUG-065)"
+        )
+
+
+class TestBUG066_ContexteAdditionnel:
+    """Le champ 'Contexte additionnel' doit avoir une description explicative."""
+
+    PROFILE_TAB_TSX = Path("src/frontend/src/components/settings/ProfileTab.tsx")
+
+    def test_description_present(self):
+        content = self.PROFILE_TAB_TSX.read_text(encoding="utf-8")
+        assert "personnaliser ses réponses" in content, (
+            "Le champ Contexte additionnel doit avoir une description explicative (BUG-066)"
+        )
+
+
+class TestF14_OllamaModelListing:
+    """GET /api/config/llm doit lister les modèles Ollama installés."""
+
+    CONFIG_PY = Path("src/backend/app/routers/config.py")
+
+    def test_ollama_branch_in_get_llm(self):
+        content = self.CONFIG_PY.read_text(encoding="utf-8")
+        assert 'config.provider.value == "ollama"' in content, (
+            "GET /llm doit avoir une branche pour Ollama (F-14)"
+        )
+
+    def test_ollama_fetches_api_tags(self):
+        content = self.CONFIG_PY.read_text(encoding="utf-8")
+        # Vérifier que /api/tags est appelé dans le contexte du GET /llm
+        assert 'api/tags' in content, (
+            "GET /llm doit appeler /api/tags pour lister les modèles Ollama (F-14)"
+        )
+
+
+class TestF15_ModelIndicatorUI:
+    """L'indicateur de modèle dans ChatInput doit être un pill avec accent cyan."""
+
+    CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
+
+    def test_pill_badge_styling(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "rounded-full bg-accent-cyan/10" in content, (
+            "L'indicateur de modèle doit être un pill arrondi avec fond cyan (F-15)"
+        )
+
+    def test_model_selector_dropdown(self):
+        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        assert "handleModelChange" in content, (
+            "ChatInput doit avoir un handler pour changer de modèle (F-14/F-15)"
+        )
+
+

@@ -26,6 +26,7 @@ export function EmailList({ accountId }: EmailListProps) {
     searchQuery,
     setSearchQuery,
     setNeedsReauth,
+    refreshCounter,
   } = useEmailStore();
 
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ export function EmailList({ accountId }: EmailListProps) {
     retryCountRef.current = 0;
     isLoadingRef.current = false;
     loadMessages();
-  }, [accountId, currentLabelId]);
+  }, [accountId, currentLabelId, refreshCounter]);
 
   // Cleanup au démontage
   useEffect(() => {

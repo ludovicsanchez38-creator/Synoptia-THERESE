@@ -276,9 +276,39 @@ class MCPService:
 
             # Env minimal pour subprocess MCP (SEC-005)
             # Ne PAS copier tout os.environ pour eviter de leaker les cles API
+            home = os.environ.get("HOME", "")
+            base_path = os.environ.get("PATH", "")
+
+            # BUG-062 : Dans l'app packagée (sidecar PyInstaller), le PATH est
+            # restreint et n'inclut pas les emplacements courants de Node.js/npx.
+            # On injecte les chemins les plus courants pour macOS/Linux.
+            extra_paths = [
+                "/usr/local/bin",
+                "/opt/homebrew/bin",
+                f"{home}/.nvm/versions/node",  # NVM - résolu dynamiquement ci-dessous
+                f"{home}/.fnm/node-versions",  # FNM
+                f"{home}/.volta/bin",  # Volta
+            ]
+            # Résoudre le chemin NVM/FNM vers la version active (le plus récent)
+            for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
+                base_path_obj = Path(base)
+                if base_path_obj.exists():
+                    versions = sorted(base_path_obj.iterdir(), reverse=True)
+                    for v in versions:
+                        bin_dir = v / "bin"
+                        if bin_dir.exists():
+                            extra_paths.append(str(bin_dir))
+                            break
+
+            # Construire le PATH enrichi
+            path_parts = base_path.split(":") if base_path else []
+            for p in extra_paths:
+                if p and p not in path_parts and Path(p).exists():
+                    path_parts.append(p)
+
             env = {
-                "PATH": os.environ.get("PATH", ""),
-                "HOME": os.environ.get("HOME", ""),
+                "PATH": ":".join(path_parts),
+                "HOME": home,
                 "USER": os.environ.get("USER", ""),
                 "LANG": os.environ.get("LANG", "en_US.UTF-8"),
                 "TERM": os.environ.get("TERM", "xterm-256color"),
