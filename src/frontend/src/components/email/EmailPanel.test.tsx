@@ -38,6 +38,7 @@ vi.mock('../../stores/emailStore', () => ({
     setCurrentLabel: vi.fn(),
     needsReauth: false,
     setNeedsReauth: vi.fn(),
+    triggerRefresh: vi.fn(),
   }),
 }));
 
