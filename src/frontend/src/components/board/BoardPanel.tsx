@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users,
   X,
   Send,
   History,
@@ -331,7 +330,14 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                   </Button>
                 )}
                 <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-accent-cyan" />
+                  <svg viewBox="0 0 40 40" className="w-5 h-5" fill="none">
+                    <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
+                    <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
+                    <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
+                    <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />
+                    <circle cx="12.9" cy="29.7" r="3" stroke="#F59E0B" strokeWidth="1.5" />
+                    <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
+                  </svg>
                   <h2 className="text-lg font-semibold text-text">
                     Board de Décision Stratégique
                   </h2>
@@ -381,10 +387,17 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                   >
                     {/* Avatar et intro */}
                     <div className="text-center mb-8">
-                      <div className="relative w-20 h-20 mx-auto mb-4">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
-                        <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 border-2 border-accent-cyan/30 flex items-center justify-center">
-                          <Users className="w-10 h-10 text-accent-cyan" />
+                      <div className="relative w-16 h-16 mx-auto mb-4">
+                        <div className="absolute inset-0 rounded-2xl bg-accent-cyan/30 blur-xl animate-pulse" />
+                        <div className="relative w-full h-full rounded-2xl bg-accent-cyan/20 border-2 border-accent-cyan/30 flex items-center justify-center">
+                          <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
+                            <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
+                            <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
+                            <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
+                            <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />
+                            <circle cx="12.9" cy="29.7" r="3" stroke="#F59E0B" strokeWidth="1.5" />
+                            <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
+                          </svg>
                         </div>
                       </div>
                       <h3 className="text-xl font-semibold text-text mb-2">
@@ -459,10 +472,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         disabled={!question.trim()}
                         className={cn(
                           'w-full py-3 px-6 rounded-xl font-semibold text-white',
-                          'bg-gradient-to-r from-accent-cyan to-accent-magenta',
+                          'bg-accent-cyan hover:bg-accent-cyan/90',
                           'hover:scale-[1.02] active:scale-[0.98] transition-all duration-200',
                           'shadow-[0_4px_20px_rgba(34,211,238,0.3)]',
-                          'hover:shadow-[0_8px_30px_rgba(34,211,238,0.4)]',
+                          'hover:shadow-[0_6px_24px_rgba(34,211,238,0.35)]',
                           'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100',
                           'flex items-center justify-center gap-2',
                         )}

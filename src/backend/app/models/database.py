@@ -98,6 +98,19 @@ async def init_db() -> None:
 
     SQLModel.metadata.create_all(sync_engine)
 
+    # Auto-migration : ajouter les colonnes manquantes aux tables existantes
+    with sync_engine.connect() as conn:
+        alter_statements = [
+            # BUG-068 : colonne mode ajoutée dans BoardDecisionDB mais absente des DB existantes
+            "ALTER TABLE board_decisions ADD COLUMN mode VARCHAR DEFAULT 'cloud'",
+        ]
+        for stmt in alter_statements:
+            try:
+                conn.execute(sqlalchemy_text(stmt))
+            except Exception:
+                pass  # Colonne déjà existante
+        conn.commit()
+
     # Phase 3 + PERF audit: Creer les index manquants pour les DB existantes
     with sync_engine.connect() as conn:
         index_statements = [

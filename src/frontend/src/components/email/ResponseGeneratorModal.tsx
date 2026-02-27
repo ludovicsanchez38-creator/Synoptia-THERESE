@@ -239,7 +239,7 @@ export function ResponseGeneratorModal({
                 <button
                   onClick={handleUse}
                   disabled={!hasGenerated || isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-accent-cyan to-accent-magenta text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" />
                   Utiliser

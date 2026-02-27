@@ -144,24 +144,13 @@ export function ChatHeader({
           className="w-8 h-8 hover:bg-accent-cyan/15"
           title={isMac ? 'Board (⌘D)' : 'Board (Ctrl+D)'}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="shrink-0">
-            <circle cx="4" cy="10" r="2.8" stroke="#22D3EE" strokeWidth="1.3" />
-            <circle cx="8.5" cy="5.5" r="2.8" stroke="#A855F7" strokeWidth="1.3" />
-            <circle cx="12" cy="4" r="2.8" stroke="#EF4444" strokeWidth="1.3" />
-            <circle cx="15.5" cy="5.5" r="2.8" stroke="#F59E0B" strokeWidth="1.3" />
-            <circle cx="20" cy="10" r="2.8" stroke="#E11D8D" strokeWidth="1.3" />
-            <line x1="3" y1="9.5" x2="3.7" y2="9.5" stroke="#22D3EE" strokeWidth="1" strokeLinecap="round" />
-            <line x1="4.3" y1="9.5" x2="5" y2="9.5" stroke="#22D3EE" strokeWidth="1" strokeLinecap="round" />
-            <line x1="7.5" y1="5" x2="8.2" y2="5" stroke="#A855F7" strokeWidth="1" strokeLinecap="round" />
-            <line x1="8.8" y1="5" x2="9.5" y2="5" stroke="#A855F7" strokeWidth="1" strokeLinecap="round" />
-            <line x1="11" y1="3.5" x2="11.7" y2="3.5" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" />
-            <line x1="12.3" y1="3.5" x2="13" y2="3.5" stroke="#EF4444" strokeWidth="1" strokeLinecap="round" />
-            <line x1="14.5" y1="5" x2="15.2" y2="5" stroke="#F59E0B" strokeWidth="1" strokeLinecap="round" />
-            <line x1="15.8" y1="5" x2="16.5" y2="5" stroke="#F59E0B" strokeWidth="1" strokeLinecap="round" />
-            <line x1="19" y1="9.5" x2="19.7" y2="9.5" stroke="#E11D8D" strokeWidth="1" strokeLinecap="round" />
-            <line x1="20.3" y1="9.5" x2="21" y2="9.5" stroke="#E11D8D" strokeWidth="1" strokeLinecap="round" />
-            <path d="M6.5 13 L12 17 L17.5 13" stroke="#E6EDF7" strokeWidth="1" fill="none" opacity="0.5" />
-            <circle cx="12" cy="19.5" r="2" stroke="#E6EDF7" strokeWidth="1" opacity="0.6" />
+          <svg width="18" height="18" viewBox="0 0 40 40" fill="none" className="shrink-0">
+            <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
+            <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
+            <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
+            <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />
+            <circle cx="12.9" cy="29.7" r="3" stroke="#F59E0B" strokeWidth="1.5" />
+            <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
           </svg>
         </Button>
 
