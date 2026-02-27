@@ -525,7 +525,9 @@ class MCPService:
             else:
                 future.set_result(message.get("result"))
 
-    async def _send_request(self, server_id: str, method: str, params: dict | None = None) -> Any:
+    async def _send_request(
+        self, server_id: str, method: str, params: dict | None = None, timeout: float = 30.0,
+    ) -> Any:
         """Send a JSON-RPC request to an MCP server."""
         import time
 
@@ -559,7 +561,7 @@ class MCPService:
 
         # Wait for response with timeout
         try:
-            result = await asyncio.wait_for(future, timeout=30.0)
+            result = await asyncio.wait_for(future, timeout=timeout)
             return result
         except asyncio.TimeoutError:
             self._pending_requests.pop(request_id, None)
@@ -569,6 +571,7 @@ class MCPService:
     async def _initialize_server(self, server_id: str):
         """Send initialize request to MCP server."""
         try:
+            # BUG-062: timeout 90s pour l'init (npx télécharge le package au premier lancement)
             result = await self._send_request(server_id, "initialize", {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {
@@ -578,7 +581,7 @@ class MCPService:
                     "name": "THERESE",
                     "version": "2.0",
                 },
-            })
+            }, timeout=90.0)
             logger.info(f"Initialized MCP server {server_id}: {result}")
 
             # Send initialized notification
