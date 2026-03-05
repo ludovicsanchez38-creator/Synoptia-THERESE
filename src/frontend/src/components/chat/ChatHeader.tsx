@@ -159,16 +159,6 @@ export function ChatHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onToggleAtelierPanel}
-          className="w-8 h-8 hover:bg-purple-500/15"
-          title={isMac ? 'Atelier (⌘⇧A)' : 'Atelier (Ctrl+Shift+A)'}
-        >
-          <Zap className="w-4 h-4 text-purple-400" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
           onClick={onToggleMemoryPanel}
           className="w-8 h-8 hover:bg-accent-cyan/10"
           title={isMac ? 'Projet (⌘M)' : 'Projet (Ctrl+M)'}
@@ -197,8 +187,17 @@ export function ChatHeader({
         </Button>
       </div>
 
-      {/* Droite: Paramètres + Window controls */}
+      {/* Droite: Atelier + Paramètres + Window controls */}
       <div className="flex-1 flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleAtelierPanel}
+          className="w-8 h-8 hover:bg-purple-500/15"
+          title={isMac ? 'Atelier (⌘⇧A)' : 'Atelier (Ctrl+Shift+A)'}
+        >
+          <Zap className="w-4 h-4 text-purple-400" />
+        </Button>
         <Button variant="ghost" size="icon" title="Paramètres" onClick={onOpenSettings}>
           <Settings className="w-5 h-5" />
         </Button>
