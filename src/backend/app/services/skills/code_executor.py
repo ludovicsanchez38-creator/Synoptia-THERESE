@@ -499,7 +499,7 @@ def _validate_imports(code: str, format_type: str) -> tuple[bool, str]:
 
 
 def _build_namespace(
-    output_path: str, title: str, format_type: str
+    output_path: str, title: str, format_type: str, nb_slides: int = 10
 ) -> dict[str, Any]:
     """
     Construit le namespace d'exécution sandboxé.
@@ -522,6 +522,7 @@ def _build_namespace(
         # Variables injectées
         "output_path": output_path,
         "title": title,
+        "nb_slides": nb_slides,
         "SYNOPTIA_COLORS": SYNOPTIA_COLORS.copy(),
         # Modules communs
         "datetime": datetime,
@@ -670,6 +671,7 @@ async def execute_sandboxed(
     output_path: str,
     title: str,
     format_type: str,
+    nb_slides: int = 10,
 ) -> None:
     """
     Exécute du code Python dans un namespace restreint avec timeout.
@@ -694,7 +696,7 @@ async def execute_sandboxed(
         raise CodeExecutionError(f"Validation imports échouée : {import_error}")
 
     # 3. Construire le namespace
-    namespace = _build_namespace(output_path, title, format_type)
+    namespace = _build_namespace(output_path, title, format_type, nb_slides)
 
     # 4. Exécuter dans un thread avec timeout
     def _execute():
@@ -801,6 +803,7 @@ class CodeGenSkill(BaseSkill):
                     output_path=str(output_path),
                     title=params.title,
                     format_type=self.output_format.value,
+                    nb_slides=params.metadata.get("nb_slides", 10),
                 )
 
                 # Vérifier que le fichier a été créé et contient du contenu

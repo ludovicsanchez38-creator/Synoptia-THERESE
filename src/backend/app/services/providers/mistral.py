@@ -47,6 +47,8 @@ class MistralProvider(BaseProvider):
                     "temperature": self.config.temperature,
                     "messages": messages,
                     "stream": True,
+                    # BUG-mcp-tools : transmettre les tools à l'API Mistral
+                    **({"tools": tools, "tool_choice": "auto"} if tools else {}),
                 },
             ) as response:
                 response.raise_for_status()
@@ -60,8 +62,28 @@ class MistralProvider(BaseProvider):
                             choices = event.get("choices", [])
                             if choices:
                                 delta = choices[0].get("delta", {})
-                                if content := delta.get("content"):
-                                    yield StreamEvent(type="text", content=content)
+                                if text := delta.get("content"):
+                                    yield StreamEvent(type="text", content=text)
+                                # BUG-mcp-tools : détecter les tool_calls Mistral
+                                if tc_list := delta.get("tool_calls"):
+                                    for tc in tc_list:
+                                        fn = tc.get("function", {})
+                                        raw_args = fn.get("arguments", "{}")
+                                        try:
+                                            tool_input = (
+                                                json.loads(raw_args)
+                                                if isinstance(raw_args, str)
+                                                else raw_args or {}
+                                            )
+                                        except json.JSONDecodeError:
+                                            # Arguments partiellement streamés (chunk invalide)
+                                            tool_input = {}
+                                        yield StreamEvent(
+                                            type="tool_use",
+                                            tool_use_id=tc.get("id", ""),
+                                            tool_name=fn.get("name", ""),
+                                            tool_input=tool_input,
+                                        )
                         except json.JSONDecodeError:
                             continue
 

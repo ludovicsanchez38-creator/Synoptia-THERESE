@@ -64,6 +64,13 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         return;
       }
 
+      // Cmd+N - Nouvelle conversation (fonctionne même si le focus est dans le textarea)
+      if (key === 'n' && !event.shiftKey) {
+        event.preventDefault();
+        handlers.onNewConversation?.();
+        return;
+      }
+
       // Skip other shortcuts when in inputs
       if (isInput) return;
 
@@ -91,13 +98,6 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       }
 
       // --- Non-shift combos ---
-
-      // Cmd+N - New conversation
-      if (key === 'n' && !event.shiftKey) {
-        event.preventDefault();
-        handlers.onNewConversation?.();
-        return;
-      }
 
       // Cmd+M - Toggle memory panel
       if (key === 'm') {

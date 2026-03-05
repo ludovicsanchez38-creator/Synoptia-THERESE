@@ -81,12 +81,14 @@ docx (Document), docx.shared (Cm, Pt, Inches, RGBColor), docx.enum.text (WD_ALIG
 5. **Mise en page** :
    - Marges : 2.5 cm (ou Inches(1))
    - Espacement : line_spacing = 1.15, space_after = Pt(10)
-6. **Footer** : "Généré par THERESE - Synoptia" centré, 9pt, italique, couleur #A9B8D8
+6. **Footer** : "Généré par THÉRÈSE - Synoptïa" centré, 9pt, italique, couleur #A9B8D8
 7. **Structure** :
    - Introduction (contexte, objectif)
    - Corps (sections logiques avec titres)
    - Conclusion (résumé, prochaines étapes)
 8. **Finir par** : `doc.save(output_path)`
+
+IMPORTANT : Ne pas ajouter de bloc récapitulatif (Sujet / Action / Date) à la fin du document. Le document se termine avec le contenu demandé uniquement (ou le footer Synoptïa si applicable). Ce bloc est réservé aux réponses chat.
 
 ### Structure du code
 
@@ -113,7 +115,7 @@ footer = section.footer
 footer.is_linked_to_previous = False
 para = footer.paragraphs[0]
 para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = para.add_run("Généré par THERESE - Synoptia")
+run = para.add_run("Généré par THÉRÈSE - Synoptïa")
 run.font.size = Pt(9)
 run.font.italic = True
 run.font.color.rgb = RGBColor(0xA9, 0xB8, 0xD8)
@@ -343,7 +345,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
         para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        run = para.add_run("Généré par THERESE - Synoptia")
+        run = para.add_run("Généré par THÉRÈSE - Synoptïa")
         run.font.size = Pt(9)
         run.font.color.rgb = SYNOPTIA_COLORS["muted"]
         run.font.italic = True

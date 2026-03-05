@@ -344,6 +344,7 @@ export function ChatLayout() {
         onToggleCRM={handleToggleCRMPanel}
         onSearch={() => setShowMemoryPanel(true)}
         onOpenFile={() => console.log('Open file')}
+        onOpenGuided={() => setGuidedPanelActive(false)}
       />
 
       {/* Shortcuts Modal */}
