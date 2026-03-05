@@ -88,6 +88,10 @@ openpyxl (Workbook, Font, PatternFill, Alignment, Border, Side, BarChart, LineCh
 9. **Footer** : dernière ligne = "Généré par THERESE - Synoptia" en italique gris
 10. **Finir par** : `wb.save(output_path)`
 
+**RÈGLE ABSOLUE** : Si les données demandées ne sont pas présentes dans le contexte fourni (contacts, projets, fichiers joints), NE PAS inventer de données. Générer à la place un modèle de tableau avec des en-têtes appropriés et des exemples de lignes clairement marquées comme "[Exemple - à remplacer]". Mentionner dans une cellule colorée : "Données non disponibles - modèle vierge fourni".
+
+**INTERDIT** : Ne pas ajouter de bloc récapitulatif (Sujet / Action / Date) après le fichier. Le code se termine par `wb.save(output_path)`.
+
 ### Structure du code
 
 ```python

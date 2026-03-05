@@ -58,6 +58,7 @@ Tu dois générer un **bloc de code Python** complet utilisant la bibliothèque 
 Le code sera exécuté dans un environnement sandboxé avec les variables suivantes pré-injectées :
 - `output_path` (str) : chemin où sauvegarder le fichier .pptx
 - `title` (str) : sujet demandé par l'utilisateur (utilise-le comme inspiration, mais génère un titre professionnel et pertinent pour la slide de titre, PAS le prompt brut)
+- `nb_slides` (int) : nombre de slides demandé par l'utilisateur. RESPECTE exactement ce nombre (slide de titre + slides de contenu + slide de fin = nb_slides total)
 - `SYNOPTIA_COLORS` (dict) : palette de couleurs Synoptia
 
 ### Imports disponibles
@@ -103,8 +104,12 @@ pptx (Presentation), pptx.util (Inches, Pt, Cm, Emu), pptx.dml.color (RGBColor),
    - Slide citation : texte centré en italique avec guillemets
    - Slide tableau : grille de données
 8. **Texte** : Inter 24pt pour le corps, ne pas dépasser 6 lignes par slide
-9. **Slide de fin** : "Merci" en 48pt cyan centré + "Généré par THERESE - Synoptia" en muted
+9. **Slide de fin** : "Merci" en 48pt cyan centré + "Généré par THÉRÈSE - Synoptïa" en muted
 10. **Finir par** : `prs.save(output_path)`
+
+**INTERDIT** : Ne jamais mettre de balises Markdown (`**`, `*`, `~~`, `_`) dans le texte des slides. Texte brut uniquement.
+
+**INTERDIT** : Ne pas ajouter de bloc récapitulatif (Sujet / Action / Date) après la présentation. Le code se termine par `prs.save(output_path)` sans aucun autre output.
 
 ### Structure du code
 
@@ -137,7 +142,7 @@ set_bg(slide)
 # Slide finale
 slide = prs.slides.add_slide(blank)
 set_bg(slide)
-# ... "Merci" + footer ...
+# ... "Merci" + footer "Généré par THÉRÈSE - Synoptïa" ...
 
 prs.save(output_path)
 ```

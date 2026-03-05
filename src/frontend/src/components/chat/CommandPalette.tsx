@@ -20,6 +20,7 @@ import {
   BarChart3,
   FileText,
   Search as SearchIcon,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useChatStore } from '../../stores/chatStore';
@@ -51,6 +52,7 @@ interface CommandPaletteProps {
   onToggleCRM?: () => void;
   onSearch?: () => void;
   onOpenFile?: () => void;
+  onOpenGuided?: () => void;
   onExportData?: () => void;
 }
 
@@ -71,6 +73,7 @@ export function CommandPalette({
   onToggleCRM,
   onSearch,
   onOpenFile,
+  onOpenGuided,
   onExportData,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
@@ -107,6 +110,14 @@ export function CommandPalette({
         icon: <PanelLeft className="w-4 h-4" />,
         shortcut: '⌘B',
         action: () => { onClose(); onToggleConversations?.(); },
+        category: 'chat',
+      },
+      {
+        id: 'produce',
+        name: 'Produire un document',
+        description: 'Générer DOCX, PPTX ou XLSX avec les Skills Office',
+        icon: <Sparkles className="w-4 h-4" />,
+        action: () => { onClose(); onOpenGuided?.(); },
         category: 'chat',
       },
       // -- Memoire --
@@ -239,7 +250,7 @@ export function CommandPalette({
     [createConversation, clearCurrentConversation, onClose, onShowShortcuts,
      onNewContact, onNewProject, onOpenSettings, onToggleConversations,
      onToggleMemory, onToggleBoard, onToggleEmail, onToggleCalendar,
-     onToggleTasks, onToggleInvoices, onToggleCRM, onSearch, onOpenFile, onExportData]
+     onToggleTasks, onToggleInvoices, onToggleCRM, onSearch, onOpenFile, onOpenGuided, onExportData]
   );
 
   const filteredCommands = useMemo(() => {
@@ -304,7 +315,7 @@ export function CommandPalette({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
+          className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh]"
           onClick={onClose}
         >
           {/* Backdrop with fade animation */}

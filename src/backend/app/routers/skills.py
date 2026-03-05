@@ -158,12 +158,23 @@ async def execute_skill(
             max_tokens=llm_max_tokens,
         )
 
+        # BUG-pptx-nb-slides : extraire nb_slides depuis le prompt (ex: "5 slides", "10 diapositives")
+        import re as _re_nb
+        nb_slides_match = _re_nb.search(
+            r'\b(\d{1,2})\s*(?:slides?|diapositives?|pages?|diapos?)\b',
+            request.prompt,
+            _re_nb.IGNORECASE,
+        )
+        nb_slides_from_prompt = int(nb_slides_match.group(1)) if nb_slides_match else 10
+        # Clamp raisonnable : 3-30 slides
+        nb_slides_from_prompt = max(3, min(30, nb_slides_from_prompt))
+
         # Exécuter le skill avec le contenu généré
         skill_request = SkillExecuteRequest(
             prompt=request.prompt,
             title=request.title,
             template=request.template,
-            context=request.context,
+            context={**(request.context or {}), "nb_slides": nb_slides_from_prompt},
         )
 
         result = await registry.execute(skill_id, skill_request, llm_content)

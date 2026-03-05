@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Wrench,
   Plus,
@@ -200,9 +200,36 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   const [addingServer, setAddingServer] = useState(false);
 
   // Load data
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current !== null) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
+  // BUG-mcp-timeout : polling automatique quand un serveur est en état "starting"
+  // Arrêt automatique dès que tous les serveurs sont running/error/stopped.
+  useEffect(() => {
+    const hasStarting = servers.some((s) => s.status === 'starting');
+    if (hasStarting) {
+      if (pollingIntervalRef.current === null) {
+        pollingIntervalRef.current = setInterval(() => {
+          refreshStatus();
+        }, 3000);
+      }
+    } else {
+      stopPolling();
+    }
+    return stopPolling;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servers, stopPolling]);
+
   useEffect(() => {
     loadData();
-  }, []);
+    return stopPolling; // Cleanup au démontage
+  }, [stopPolling]);
 
   async function loadData() {
     setLoading(true);

@@ -3924,3 +3924,193 @@ class TestBUG059_EmailReAuthPolling:
         )
 
 
+
+
+# ============================================================
+# Batch v0.3.8 - 05 mars 2026
+# ============================================================
+
+class TestBUG070_ConversationGhost404:
+    """BUG-070 : 404 persistant après suppression de conversations vides."""
+
+    def test_chat_input_imports_delete_conversation(self):
+        """ChatInput doit importer deleteConversation depuis le store."""
+        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        assert 'deleteConversation,' in content, "deleteConversation doit être importé dans ChatInput"
+
+    def test_ghost_conversation_reset_on_404(self):
+        """Le catch block doit appeler deleteConversation en cas de 404 Conversation not found."""
+        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        assert 'isConversationGhost' in content
+        assert 'deleteConversation(currentConversationId' in content
+        assert "Conversation not found" in content
+
+    def test_ghost_message_is_user_friendly(self):
+        """Le message d'erreur 404 doit être compréhensible pour l'utilisateur."""
+        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        assert "nouveau chat a été créé automatiquement" in content
+
+
+class TestBUG053_DateActuelleSubstituee:
+    """BUG-053 : [Date actuelle] non substituée dans les réponses chat."""
+
+    def test_llm_imports_datetime(self):
+        """llm.py doit importer datetime pour injecter la date."""
+        content = open('src/backend/app/services/llm.py').read()
+        assert 'from datetime import' in content
+        assert 'UTC' in content
+
+    def test_system_prompt_template_has_current_date(self):
+        """DEFAULT_SYSTEM_PROMPT_TEMPLATE doit contenir {current_date}."""
+        content = open('src/backend/app/services/llm.py').read()
+        assert '{current_date}' in content
+
+    def test_system_prompt_no_profile_has_current_date(self):
+        """DEFAULT_SYSTEM_PROMPT_NO_PROFILE doit contenir {current_date}."""
+        content = open('src/backend/app/services/llm.py').read()
+        # Deux occurrences : une dans chaque template
+        assert content.count('{current_date}') >= 2
+
+    def test_get_system_prompt_injects_date(self):
+        """_get_system_prompt_with_identity doit passer current_date au format()."""
+        content = open('src/backend/app/services/llm.py').read()
+        assert 'current_date=current_date' in content
+
+    def test_recap_rule_restricted_to_chat(self):
+        """La règle de récapitulatif doit préciser 'chat uniquement', pas pour les documents."""
+        content = open('src/backend/app/services/llm.py').read()
+        assert 'chat uniquement' in content
+        assert 'JAMAIS pour la génération de documents' in content
+
+
+class TestBUG_DocxPptxXlsxGuardrails:
+    """BUG docx/pptx/xlsx : leakage recap + hallucination données + watermark + markdown."""
+
+    def test_docx_no_recap_guardrail(self):
+        """docx_generator doit interdire le bloc récapitulatif dans les documents."""
+        content = open('src/backend/app/services/skills/docx_generator.py').read()
+        assert 'récapitulatif' in content.lower() or 'récap' in content.lower()
+        assert 'JAMAIS' in content or 'INTERDIT' in content or 'bloc récapitulatif' in content
+
+    def test_docx_watermark_accent(self):
+        """Footer DOCX doit contenir THÉRÈSE et Synoptïa avec accents."""
+        content = open('src/backend/app/services/skills/docx_generator.py').read()
+        assert 'THÉRÈSE - Synoptïa' in content
+
+    def test_pptx_no_markdown_guardrail(self):
+        """pptx_generator doit interdire les balises Markdown dans les slides."""
+        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        assert 'Markdown' in content
+        assert '**' in content  # La règle mentionne le symbole interdit
+
+    def test_pptx_nb_slides_variable(self):
+        """pptx_generator doit documenter la variable nb_slides dans le system prompt."""
+        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        assert 'nb_slides' in content
+        assert 'RESPECTE exactement ce nombre' in content
+
+    def test_pptx_no_recap_guardrail(self):
+        """pptx_generator doit interdire le bloc récapitulatif."""
+        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        assert 'récapitulatif' in content.lower() or 'INTERDIT' in content
+
+    def test_xlsx_no_hallucination_guardrail(self):
+        """xlsx_generator doit avoir un guardrail anti-hallucination de données."""
+        content = open('src/backend/app/services/skills/xlsx_generator.py').read()
+        assert 'NE PAS inventer' in content or 'RÈGLE ABSOLUE' in content
+        assert 'modèle' in content.lower()
+
+    def test_xlsx_no_recap_guardrail(self):
+        """xlsx_generator doit interdire le bloc récapitulatif."""
+        content = open('src/backend/app/services/skills/xlsx_generator.py').read()
+        assert 'récapitulatif' in content.lower() or 'INTERDIT' in content
+
+
+class TestBUG_CommandPaletteProduire:
+    """BUG cmd-k : commande 'Produire' absente + z-index + Cmd+N textarea."""
+
+    def test_command_palette_has_produce_command(self):
+        """CommandPalette doit contenir la commande 'Produire un document'."""
+        content = open('src/frontend/src/components/chat/CommandPalette.tsx').read()
+        assert "'produce'" in content
+        assert 'Produire un document' in content
+        assert 'onOpenGuided' in content
+
+    def test_command_palette_z_index_above_settings(self):
+        """CommandPalette doit avoir un z-index supérieur à SettingsModal (z-50)."""
+        content = open('src/frontend/src/components/chat/CommandPalette.tsx').read()
+        import re
+        # Chercher z-[N] ou z-N dans le conteneur principal de la palette
+        matches = re.findall(r'z-\[?(\d+)\]?', content)
+        if matches:
+            max_z = max(int(z) for z in matches)
+            assert max_z > 50, f"z-index max de CommandPalette doit être > 50 (trouvé : {max_z})"
+
+    def test_cmd_n_works_in_input_context(self):
+        """Cmd+N doit être intercepté avant le garde isInput dans useKeyboardShortcuts."""
+        content = open('src/frontend/src/hooks/useKeyboardShortcuts.ts').read()
+        # La section Cmd+N doit apparaître AVANT "if (isInput) return"
+        idx_n = content.find("// Cmd+N - Nouvelle conversation")
+        idx_guard = content.find("// Skip other shortcuts when in inputs\n      if (isInput) return;")
+        assert idx_n != -1, "Le bloc Cmd+N avant garde isInput introuvable"
+        assert idx_guard != -1, "Le garde isInput introuvable"
+        assert idx_n < idx_guard, "Cmd+N doit être placé AVANT le garde isInput"
+
+
+class TestBUG_PptxNbSlides:
+    """BUG PPTX : nb_slides non injecté dans le sandbox."""
+
+    def test_build_namespace_accepts_nb_slides(self):
+        """_build_namespace doit accepter nb_slides comme paramètre."""
+        import ast
+        content = open('src/backend/app/services/skills/code_executor.py').read()
+        assert 'nb_slides: int = 10' in content
+
+    def test_namespace_contains_nb_slides(self):
+        """Le namespace d'exécution doit contenir nb_slides."""
+        content = open('src/backend/app/services/skills/code_executor.py').read()
+        assert '"nb_slides": nb_slides' in content
+
+    def test_execute_sandboxed_passes_nb_slides(self):
+        """execute_sandboxed doit passer nb_slides à _build_namespace."""
+        content = open('src/backend/app/services/skills/code_executor.py').read()
+        assert '_build_namespace(output_path, title, format_type, nb_slides)' in content
+
+    def test_skills_router_extracts_nb_slides_from_prompt(self):
+        """Le router skills doit extraire nb_slides du prompt par regex."""
+        content = open('src/backend/app/routers/skills.py').read()
+        assert 'nb_slides_from_prompt' in content
+        assert 'slides?' in content  # regex pour détecter "slides"
+
+
+class TestBUG_MistralTools:
+    """BUG MCP tools : Mistral ne transmettait pas les tools à l'API."""
+
+    def test_mistral_sends_tools_in_json_body(self):
+        """mistral.py doit inclure les tools dans le body JSON quand fournis."""
+        content = open('src/backend/app/services/providers/mistral.py').read()
+        assert '"tools": tools' in content
+        assert '"tool_choice": "auto"' in content
+
+    def test_mistral_parses_tool_calls_in_stream(self):
+        """mistral.py doit détecter les tool_calls dans le stream Mistral."""
+        content = open('src/backend/app/services/providers/mistral.py').read()
+        assert 'tool_calls' in content
+        assert 'tool_use' in content
+
+
+class TestBUG_MCPPollingStarting:
+    """BUG MCP : pas de polling pendant l'état 'starting' (npx télécharge)."""
+
+    def test_tools_panel_imports_use_ref(self):
+        """ToolsPanel doit importer useRef pour le polling interval."""
+        content = open('src/frontend/src/components/settings/ToolsPanel.tsx').read()
+        assert 'useRef' in content
+
+    def test_tools_panel_has_polling_effect(self):
+        """ToolsPanel doit avoir un useEffect qui lance le polling quand status=starting."""
+        content = open('src/frontend/src/components/settings/ToolsPanel.tsx').read()
+        assert 'pollingIntervalRef' in content
+        assert "status === 'starting'" in content
+        assert 'setInterval' in content
+        assert '3000' in content  # 3s interval

@@ -54,6 +54,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     currentConversationId,
     currentConversation,
     updateConversationId,
+    deleteConversation,
     queuedPrompt,
     setQueuedPrompt,
   } = useChatStore();
@@ -402,11 +403,28 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         updateMessage(assistantMessageId, accumulatedContent || '*(interrompu)*');
       } else {
         console.error('Error sending message:', error);
-        const errorMessage = error instanceof ApiError
-          ? `Erreur serveur (${error.status}): ${error.message}`
-          : error instanceof Error
-            ? error.message
-            : "Désolée, une erreur s'est produite. Veuillez réessayer.";
+
+        // BUG-070 : conversation fantôme → 404 persistant
+        // Si le backend répond 404 "Conversation not found", la conversation locale
+        // référence un ID supprimé. On la retire du store (sans appel API) pour
+        // que le prochain message crée une nouvelle conversation propre.
+        const isConversationGhost =
+          error instanceof ApiError &&
+          error.status === 404 &&
+          typeof error.message === 'string' &&
+          error.message.includes('Conversation not found');
+
+        if (isConversationGhost && currentConversationId) {
+          deleteConversation(currentConversationId);
+        }
+
+        const errorMessage = isConversationGhost
+          ? "La conversation n'existait plus sur le serveur. Un nouveau chat a été créé automatiquement. Vous pouvez renvoyer votre message."
+          : error instanceof ApiError
+            ? `Erreur serveur (${error.status}): ${error.message}`
+            : error instanceof Error
+              ? error.message
+              : "Désolée, une erreur s'est produite. Veuillez réessayer.";
 
         // Update the placeholder message with error
         updateMessage(assistantMessageId, errorMessage);
@@ -416,7 +434,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, setQueuedPrompt]);
+  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);

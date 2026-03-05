@@ -10,6 +10,7 @@ Sprint 2 - PERF-2.1: Refactored to use modular providers.
 import logging
 import os
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -189,6 +190,9 @@ class LLMService:
 ## Utilisateur
 {user_identity}
 
+## Date et heure actuelles
+{current_date}
+
 ## Ton rôle
 Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 Tu es efficace, professionnelle et tu utilises un français naturel et fluide.
@@ -199,14 +203,15 @@ Tu es efficace, professionnelle et tu utilises un français naturel et fluide.
 - Privilégie toujours les listes à puces (- item) ou le texte simple.
 - Pas d'emojis de statut, pas de dashboards non sollicités.
 
-## Règle ABSOLUE pour les récapitulatifs
-Quand tu fais un récap ou un résumé en fin de réponse, tu DOIS utiliser des listes à puces simples.
+## Règle ABSOLUE pour les récapitulatifs (chat uniquement)
+Cette règle s'applique UNIQUEMENT dans le chat conversationnel, JAMAIS pour la génération de documents.
+Quand tu fais un récap ou un résumé en fin de réponse chat, tu DOIS utiliser des listes à puces simples.
 INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
 AUTORISÉ : les listes à puces (- point clé : valeur).
 Exemple de format correct pour un récap :
 - Sujet : valeur
 - Action : valeur
-- Date : valeur
+- Date : {current_date_example}
 
 ## Mémoire persistante
 Tu as accès à une mémoire persistante contenant les contacts et projets de l'utilisateur.
@@ -215,14 +220,18 @@ Tu as accès à une mémoire persistante contenant les contacts et projets de l'
     DEFAULT_SYSTEM_PROMPT_NO_PROFILE = """Tu es THÉRÈSE, une assistante IA souveraine française.
 Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 
+## Date et heure actuelles
+{current_date}
+
 ## Style de réponse
 - Réponds de manière concise et directe. Va droit au but.
 - N'utilise JAMAIS de tableaux markdown (lignes avec | et ---) sauf si l'utilisateur demande explicitement un tableau.
 - Privilégie toujours les listes à puces (- item) ou le texte simple.
 - Pas d'emojis de statut, pas de dashboards non sollicités.
 
-## Règle ABSOLUE pour les récapitulatifs
-Quand tu fais un récap ou un résumé en fin de réponse, tu DOIS utiliser des listes à puces simples.
+## Règle ABSOLUE pour les récapitulatifs (chat uniquement)
+Cette règle s'applique UNIQUEMENT dans le chat conversationnel, JAMAIS pour la génération de documents.
+Quand tu fais un récap ou un résumé en fin de réponse chat, tu DOIS utiliser des listes à puces simples.
 INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
 AUTORISÉ : les listes à puces (- point clé : valeur).
 {therese_md}"""
@@ -244,12 +253,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 content += "\n\n[... tronqué ...]"
             therese_md_section = f"\n\n## Instructions THERESE.md:\n{content}"
 
+        # BUG-053 : injecter la date réelle pour éviter [Date actuelle] non substituée
+        now = datetime.now(UTC)
+        current_date = now.strftime("%-d %B %Y, %H:%M UTC")
+        # Exemple de date pour l'instruction de récapitulatif (pas de placeholder)
+        current_date_example = now.strftime("%-d %B %Y")
+
         if not profile or not profile.name:
-            return self.DEFAULT_SYSTEM_PROMPT_NO_PROFILE.format(therese_md=therese_md_section)
+            return self.DEFAULT_SYSTEM_PROMPT_NO_PROFILE.format(
+                current_date=current_date,
+                therese_md=therese_md_section,
+            )
 
         return self.DEFAULT_SYSTEM_PROMPT_TEMPLATE.format(
             user_identity=profile.format_for_llm(),
-            therese_md=therese_md_section
+            current_date=current_date,
+            current_date_example=current_date_example,
+            therese_md=therese_md_section,
         )
 
     def _default_config(self) -> LLMConfig:
