@@ -68,9 +68,32 @@ def _resolve_soul_md(agent_id: str, builtin_dir: Path) -> str:
     return ""
 
 
+def _resolve_agents_dir() -> Path:
+    """Trouve le dossier agents/ : builtin ou dans le source path."""
+    # 1. Builtin (mode dev, __file__ pointe vers le vrai fichier)
+    if (_BUILTIN_AGENTS_DIR / "therese" / "agent.json").exists():
+        return _BUILTIN_AGENTS_DIR
+
+    # 2. Source path (mode build empaquété, le builtin est dans _MEI*)
+    try:
+        # Import circulaire évité par import local
+        from app.routers.agents import _get_source_path
+
+        source = _get_source_path()
+        if source:
+            candidate = Path(source) / "src" / "backend" / "app" / "agents"
+            if (candidate / "therese" / "agent.json").exists():
+                return candidate
+    except Exception:
+        pass
+
+    # 3. Fallback sur le builtin même s'il n'existe pas (lèvera FileNotFoundError plus tard)
+    return _BUILTIN_AGENTS_DIR
+
+
 def load_agent_config(agent_id: str) -> AgentConfig:
     """Charge la configuration complète d'un agent."""
-    builtin_dir = _BUILTIN_AGENTS_DIR
+    builtin_dir = _resolve_agents_dir()
 
     # Charger agent.json
     agent_json_path = builtin_dir / agent_id / "agent.json"
