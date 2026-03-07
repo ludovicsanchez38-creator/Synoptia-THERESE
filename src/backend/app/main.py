@@ -7,6 +7,7 @@ L'assistante souveraine des entrepreneurs français.
 # Installation : uv add slowapi
 
 import logging
+import os
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
@@ -124,66 +125,71 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
-    await init_qdrant()
-    logger.info("Qdrant vector store initialized")
+    # En mode test (THERESE_SKIP_SERVICES=1), sauter les services externes
+    # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
+    skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"
 
-    await init_skills()
-    logger.info("Skills system initialized")
+    if not skip_services:
+        await init_qdrant()
+        logger.info("Qdrant vector store initialized")
 
-    await initialize_mcp_service()
-    logger.info("MCP service initialized")
+        await init_skills()
+        logger.info("Skills system initialized")
 
-    # Pre-charge le modele d'embeddings en arrière-plan (non-bloquant)
-    # Le serveur HTTP démarre immédiatement, /health retourne "degraded" en attendant
+        await initialize_mcp_service()
+        logger.info("MCP service initialized")
+
     import asyncio
 
-    from app.services.embeddings import preload_embedding_model
+    if not skip_services:
+        # Pre-charge le modele d'embeddings en arrière-plan (non-bloquant)
+        from app.services.embeddings import preload_embedding_model
 
-    async def _preload_embeddings_bg():
-        try:
-            await preload_embedding_model()
-            logger.info("Embedding model pre-loaded")
-        except Exception as e:
-            logger.warning(f"Failed to preload embedding model (will lazy-load on first use): {e}")
+        async def _preload_embeddings_bg():
+            try:
+                await preload_embedding_model()
+                logger.info("Embedding model pre-loaded")
+            except Exception as e:
+                logger.warning(f"Failed to preload embedding model (will lazy-load on first use): {e}")
 
-    asyncio.create_task(_preload_embeddings_bg())
+        asyncio.create_task(_preload_embeddings_bg())
 
-    # Load user profile into cache
-    await _load_user_profile()
+        # Load user profile into cache
+        await _load_user_profile()
 
-    # Load Brave Search API key into cache if configured
-    await _load_brave_key()
+        # Load Brave Search API key into cache if configured
+        await _load_brave_key()
 
-    # Initialize command registry (V3 unified commands)
-    from app.services.command_registry import init_command_registry
-    await init_command_registry()
-    logger.info("Command registry initialized")
+        # Initialize command registry (V3 unified commands)
+        from app.services.command_registry import init_command_registry
+        await init_command_registry()
+        logger.info("Command registry initialized")
 
-    # Start OAuth cleanup background task
+        # Start OAuth cleanup background task
+        from app.services.oauth import cleanup_expired_flows_periodically
+        oauth_cleanup_task = asyncio.create_task(cleanup_expired_flows_periodically())
+    else:
+        logger.info("Mode test : services externes ignorés (THERESE_SKIP_SERVICES=1)")
+        oauth_cleanup_task = None
 
-    from app.services.oauth import cleanup_expired_flows_periodically
-    oauth_cleanup_task = asyncio.create_task(cleanup_expired_flows_periodically())
+    if not skip_services:
+        # Register memory cleanup callbacks (US-PERF-03)
+        from app.services.performance import get_memory_manager
+        memory_manager = get_memory_manager()
 
-    # Register memory cleanup callbacks (US-PERF-03)
-    from app.services.performance import get_memory_manager
-    memory_manager = get_memory_manager()
+        async def cleanup_mcp():
+            get_mcp_service()
+            return {"mcp": "cleaned"}
 
-    # Register MCP service cleanup
-    async def cleanup_mcp():
-        get_mcp_service()
-        # Clear any stale connections
-        return {"mcp": "cleaned"}
-
-    memory_manager.register_cleanup(cleanup_mcp)
-    logger.info("Memory cleanup callbacks registered")
+        memory_manager.register_cleanup(cleanup_mcp)
+        logger.info("Memory cleanup callbacks registered")
 
     # Generate session auth token (SEC-010)
     token = secrets.token_urlsafe(32)
     token_path = FilePath.home() / ".therese" / ".session_token"
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_text(token)
-    import os as _os
-    _os.chmod(token_path, 0o600)
+    os.chmod(str(token_path), 0o600)
     app.state.session_token = token
     logger.info(f"Session token generated and saved to {token_path}")
 
@@ -192,12 +198,12 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("Shutting down...")
 
-    # Cancel OAuth cleanup background task
-    oauth_cleanup_task.cancel()
-    try:
-        await oauth_cleanup_task
-    except asyncio.CancelledError:
-        pass
+    if oauth_cleanup_task is not None:
+        oauth_cleanup_task.cancel()
+        try:
+            await oauth_cleanup_task
+        except asyncio.CancelledError:
+            pass
 
     # Cleanup session token
     try:
@@ -211,16 +217,18 @@ async def lifespan(app: FastAPI):
     from app.services.http_client import close_http_client
     await close_http_client()
 
-    # Fermer le browser agent si actif (v0.6)
-    from app.services.browser_agent import get_browser_agent
-    browser = get_browser_agent()
-    if browser.is_active:
-        await browser.stop()
+    if not skip_services:
+        # Fermer le browser agent si actif (v0.6)
+        from app.services.browser_agent import get_browser_agent
+        browser = get_browser_agent()
+        if browser.is_active:
+            await browser.stop()
 
-    mcp_service = get_mcp_service()
-    await mcp_service.shutdown()
-    await close_skills()
-    await close_qdrant()
+        mcp_service = get_mcp_service()
+        await mcp_service.shutdown()
+        await close_skills()
+        await close_qdrant()
+
     await close_db()
     logger.info("Cleanup complete")
 

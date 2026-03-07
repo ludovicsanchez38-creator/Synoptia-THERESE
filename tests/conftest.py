@@ -27,6 +27,9 @@ if _backend_dir not in sys.path:
 os.environ["THERESE_ENV"] = "test"
 os.environ["THERESE_DB_PATH"] = ":memory:"
 
+# Flag pour que le lifespan de l'app saute les services externes en mode test
+os.environ["THERESE_SKIP_SERVICES"] = "1"
+
 from app.main import app
 from app.models.database import get_session
 
@@ -48,7 +51,7 @@ async_session_maker = sessionmaker(
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Create event loop for the test session."""
+    """Create event loop for the test session (requis par pytest-asyncio 1.3)."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
