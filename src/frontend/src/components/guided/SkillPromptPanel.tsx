@@ -31,6 +31,11 @@ const formatConfig: Record<FileFormat, {
     color: 'text-green-400',
     bgGradient: 'from-green-500/20 to-green-600/10',
   },
+  html: {
+    icon: FileText,
+    color: 'text-cyan-400',
+    bgGradient: 'from-cyan-500/20 to-cyan-600/10',
+  },
   pdf: {
     icon: FileText,
     color: 'text-red-400',

@@ -56,6 +56,13 @@ const formatConfig: Record<FileFormat, {
     label: 'Tableur Excel',
     description: 'Fichier .xlsx prêt à être téléchargé'
   },
+  html: {
+    icon: FileText,
+    color: 'text-cyan-400',
+    bgGradient: 'from-cyan-500/20 to-cyan-600/10',
+    label: 'Page Web',
+    description: 'Fichier .html prêt à être téléchargé'
+  },
   pdf: {
     icon: FileText,
     color: 'text-red-400',

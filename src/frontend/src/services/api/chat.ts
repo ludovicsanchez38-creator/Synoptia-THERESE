@@ -56,7 +56,7 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected';
+  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing';
   content: string;
   conversation_id?: string;
   message_id?: string;

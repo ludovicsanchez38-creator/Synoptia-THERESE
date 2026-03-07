@@ -8,6 +8,7 @@ const formatConfig: Record<FileFormat, { icon: typeof FileText; color: string; l
   docx: { icon: FileText, color: 'text-blue-400 bg-blue-400/20', label: 'DOCX' },
   pptx: { icon: Presentation, color: 'text-orange-400 bg-orange-400/20', label: 'PPTX' },
   xlsx: { icon: Table, color: 'text-green-400 bg-green-400/20', label: 'XLSX' },
+  html: { icon: FileText, color: 'text-cyan-400 bg-cyan-400/20', label: 'HTML' },
   pdf: { icon: FileText, color: 'text-red-400 bg-red-400/20', label: 'PDF' },
 };
 
