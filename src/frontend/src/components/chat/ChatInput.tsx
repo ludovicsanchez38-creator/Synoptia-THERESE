@@ -714,7 +714,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           className="flex-shrink-0 h-9 w-9"
           disabled={isDisabled}
           onClick={handleAttachClick}
-          title="Joindre un fichier (⌘+O)"
+          title={`Joindre un fichier (${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'}O)`}
         >
           <Paperclip className="w-5 h-5" />
         </Button>
@@ -850,7 +850,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <kbd className="px-1 rounded bg-surface-elevated">↵</kbd> nouvelle ligne
         </p>
         <p className="text-xs text-text-muted">
-          <kbd className="px-1 rounded bg-surface-elevated">⌘</kbd>+
+          <kbd className="px-1 rounded bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
           <kbd className="px-1 rounded bg-surface-elevated">K</kbd> commandes
         </p>
         {suggestion && (

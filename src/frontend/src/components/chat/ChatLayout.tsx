@@ -294,14 +294,14 @@ export function ChatLayout() {
         isOpen={showConversationSidebar}
         onClick={handleToggleConversationSidebar}
         label="Conversations"
-        shortcut="⌘B"
+        shortcut={/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘B' : 'Ctrl+B'}
       />
       <SideToggle
         side="right"
         isOpen={showMemoryPanel}
         onClick={handleToggleMemoryPanel}
         label="Mémoire"
-        shortcut="⌘M"
+        shortcut={/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘M' : 'Ctrl+M'}
       />
 
       {/* Header with drag region for Tauri */}

@@ -303,9 +303,19 @@ export function ServicesTab({
           <div className="flex items-center gap-2">
             <p className="text-xs text-text-muted flex-1">
               <strong>Brave Search</strong> (optionnel) -{' '}
-              <a href="https://brave.com/search/api/" target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline">
+              <button
+                onClick={async () => {
+                  try {
+                    const { open } = await import('@tauri-apps/plugin-shell');
+                    await open('https://brave.com/search/api/');
+                  } catch {
+                    window.open('https://brave.com/search/api/', '_blank');
+                  }
+                }}
+                className="text-accent-cyan hover:underline cursor-pointer bg-transparent border-none p-0 text-xs"
+              >
                 Obtenir une clé gratuite
-              </a>
+              </button>
             </p>
             {hasBraveKey && (
               <span className="flex items-center gap-1 text-xs text-green-400">
