@@ -3972,9 +3972,9 @@ class TestBUG053_DateActuelleSubstituee:
         assert content.count('{current_date}') >= 2
 
     def test_get_system_prompt_injects_date(self):
-        """_get_system_prompt_with_identity doit passer current_date au format()."""
+        """_get_system_prompt_with_identity doit substituer current_date dans le template."""
         content = open('src/backend/app/services/llm.py').read()
-        assert 'current_date=current_date' in content
+        assert '"{current_date}", current_date' in content
 
     def test_recap_rule_restricted_to_chat(self):
         """La règle de récapitulatif doit préciser 'chat uniquement', pas pour les documents."""

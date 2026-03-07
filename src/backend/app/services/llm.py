@@ -277,7 +277,6 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         prompt = prompt.replace("{current_date_example}", current_date_example)
         prompt = prompt.replace("{therese_md}", therese_md_section)
         return prompt
-        )
 
     def _default_config(self) -> LLMConfig:
         """Get default configuration from user preferences."""
