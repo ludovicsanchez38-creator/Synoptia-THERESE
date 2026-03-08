@@ -47,6 +47,30 @@ async def _test_lifespan(_app):
 
 app.router.lifespan_context = _test_lifespan
 
+
+# Mock Qdrant : injecter un mock directement dans le singleton du module
+# pour que tous les imports (chat.py, memory.py, files.py etc.) le voient
+from unittest.mock import MagicMock
+
+import app.services.qdrant as _qdrant_module
+
+_mock_qdrant = MagicMock()
+_mock_qdrant.search.return_value = []
+_mock_qdrant.add_memory.return_value = None
+_mock_qdrant.add_memories.return_value = 0
+_mock_qdrant.delete_by_entity.return_value = 0
+_mock_qdrant.delete_by_scope.return_value = 0
+_mock_qdrant._initialized = True
+_mock_qdrant.is_initialized.return_value = True
+
+# Remplacer le singleton directement dans le module
+_qdrant_module._qdrant_service = _mock_qdrant
+
+# Aussi overrider la fonction factory pour que les nouveaux appels retournent le mock
+_original_get_qdrant = _qdrant_module.get_qdrant_service
+_qdrant_module.get_qdrant_service = lambda: _mock_qdrant
+
+
 # Test database setup
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -65,7 +89,7 @@ async_session_maker = sessionmaker(
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Create a fresh database session for each test."""
+    """Create a fresh database session for each test (async, pour les tests unitaires)."""
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
@@ -77,45 +101,55 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 
-class _AsyncTestClientWrapper:
-    """Wrapper qui rend TestClient compatible avec `await client.get(...)`."""
+class _AwaitableResponse:
+    """Wrapper pour que response = await client.get(...) fonctionne avec TestClient sync."""
+
+    def __init__(self, response):
+        self._response = response
+
+    def __getattr__(self, name):
+        return getattr(self._response, name)
+
+    def __await__(self):
+        yield
+        return self._response
+
+
+class _AsyncCompatClient:
+    """TestClient dont les méthodes HTTP retournent des awaitables.
+
+    Permet aux tests async existants (await client.get(...)) de fonctionner
+    sans modifier chaque fichier de test.
+    """
 
     def __init__(self, tc: TestClient):
         self._tc = tc
 
-    async def get(self, *args, **kwargs):
-        return self._tc.get(*args, **kwargs)
+    def get(self, *args, **kwargs):
+        return _AwaitableResponse(self._tc.get(*args, **kwargs))
 
-    async def post(self, *args, **kwargs):
-        return self._tc.post(*args, **kwargs)
+    def post(self, *args, **kwargs):
+        return _AwaitableResponse(self._tc.post(*args, **kwargs))
 
-    async def put(self, *args, **kwargs):
-        return self._tc.put(*args, **kwargs)
+    def put(self, *args, **kwargs):
+        return _AwaitableResponse(self._tc.put(*args, **kwargs))
 
-    async def patch(self, *args, **kwargs):
-        return self._tc.patch(*args, **kwargs)
+    def patch(self, *args, **kwargs):
+        return _AwaitableResponse(self._tc.patch(*args, **kwargs))
 
-    async def delete(self, *args, **kwargs):
-        return self._tc.delete(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        return _AwaitableResponse(self._tc.delete(*args, **kwargs))
 
 
-@pytest_asyncio.fixture(scope="function")
-async def client(db_session: AsyncSession) -> AsyncGenerator:
-    """Create test client with database session override.
+@pytest.fixture(scope="function")
+def client():
+    """Create test client (sync, compatible await via _AsyncCompatClient).
 
-    Utilise TestClient synchrone wrappé en async pour éviter le deadlock
-    entre pytest-asyncio et ASGITransport.
+    Le TestClient utilise la DB initialisée par le test lifespan.
+    Les tests qui créent des données les verront via les endpoints.
     """
-
-    async def override_get_session():
-        yield db_session
-
-    app.dependency_overrides[get_session] = override_get_session
-
     with TestClient(app, raise_server_exceptions=False) as tc:
-        yield _AsyncTestClientWrapper(tc)
-
-    app.dependency_overrides.clear()
+        yield _AsyncCompatClient(tc)
 
 
 @pytest.fixture
