@@ -30,8 +30,22 @@ os.environ["THERESE_DB_PATH"] = ":memory:"
 # Flag pour que le lifespan de l'app saute les services externes en mode test
 os.environ["THERESE_SKIP_SERVICES"] = "1"
 
+from contextlib import asynccontextmanager
+
 from app.main import app
 from app.models.database import get_session
+
+
+# Remplacer le lifespan par un lifespan minimal pour les tests
+# (init DB seulement, pas de Qdrant, embeddings, MCP, skills)
+@asynccontextmanager
+async def _test_lifespan(_app):
+    from app.models.database import init_db, close_db
+    await init_db()
+    yield
+    await close_db()
+
+app.router.lifespan_context = _test_lifespan
 
 # Test database setup
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -49,14 +63,6 @@ async_session_maker = sessionmaker(
 )
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for the test session (requis par pytest-asyncio 1.3)."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest_asyncio.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test."""
@@ -71,20 +77,43 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 
+class _AsyncTestClientWrapper:
+    """Wrapper qui rend TestClient compatible avec `await client.get(...)`."""
+
+    def __init__(self, tc: TestClient):
+        self._tc = tc
+
+    async def get(self, *args, **kwargs):
+        return self._tc.get(*args, **kwargs)
+
+    async def post(self, *args, **kwargs):
+        return self._tc.post(*args, **kwargs)
+
+    async def put(self, *args, **kwargs):
+        return self._tc.put(*args, **kwargs)
+
+    async def patch(self, *args, **kwargs):
+        return self._tc.patch(*args, **kwargs)
+
+    async def delete(self, *args, **kwargs):
+        return self._tc.delete(*args, **kwargs)
+
+
 @pytest_asyncio.fixture(scope="function")
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create async test client with database session override."""
+async def client(db_session: AsyncSession) -> AsyncGenerator:
+    """Create test client with database session override.
+
+    Utilise TestClient synchrone wrappé en async pour éviter le deadlock
+    entre pytest-asyncio et ASGITransport.
+    """
 
     async def override_get_session():
         yield db_session
 
     app.dependency_overrides[get_session] = override_get_session
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
-        yield ac
+    with TestClient(app, raise_server_exceptions=False) as tc:
+        yield _AsyncTestClientWrapper(tc)
 
     app.dependency_overrides.clear()
 
