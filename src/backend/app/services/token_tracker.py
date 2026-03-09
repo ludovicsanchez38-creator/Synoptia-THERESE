@@ -30,6 +30,7 @@ TOKEN_PRICES = {
     # Gemini (février 2026)
     "gemini-3.1-pro-preview": {"input": 1.25, "output": 5.00},
     "gemini-3-flash-preview": {"input": 0.075, "output": 0.30},
+    "gemini-3.1-flash-lite-preview": {"input": 0.25, "output": 1.50},
     "gemini-2.5-pro": {"input": 1.25, "output": 10.00},
     "gemini-2.5-flash": {"input": 0.075, "output": 0.30},
     # Mistral (février 2026)

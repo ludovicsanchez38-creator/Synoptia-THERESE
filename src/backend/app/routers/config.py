@@ -867,6 +867,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "gemini-3.1-pro-preview",   # Latest flagship
             "gemini-3-flash-preview", # Fast Gemini 3
             "gemini-2.5-pro",         # High capability
+            "gemini-3.1-flash-lite-preview",  # Ultra-rapide, économique
             "gemini-2.5-flash",       # Fast & capable
         ]
     elif config.provider.value == "mistral":
@@ -891,6 +892,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "anthropic/claude-opus-4-6",       # Premium
             "openai/gpt-5.2",                  # GPT-5.2
             "google/gemini-3.1-pro",             # Gemini 3.1 Pro
+            "google/gemini-3.1-flash-lite-preview",  # Ultra-rapide
             "meta-llama/llama-4-maverick",     # Open Source
         ]
     elif config.provider.value == "ollama":

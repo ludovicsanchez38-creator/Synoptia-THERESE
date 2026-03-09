@@ -26,6 +26,7 @@ AVAILABLE_MODELS = [
     # Google
     {"id": "gemini-3.1-pro", "name": "Gemini 3.1 Pro", "provider": "gemini"},
     {"id": "gemini-3.1-flash", "name": "Gemini 3.1 Flash", "provider": "gemini"},
+    {"id": "gemini-3.1-flash-lite-preview", "name": "Gemini 3.1 Flash Lite", "provider": "gemini"},
     # xAI
     {"id": "grok-4-1-fast-reasoning", "name": "Grok 4.1 Fast", "provider": "grok"},
     # Mistral

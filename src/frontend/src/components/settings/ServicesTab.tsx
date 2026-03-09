@@ -204,7 +204,7 @@ export function ServicesTab({
           <div>
             <h3 className="font-medium text-text">Transcription vocale</h3>
             <p className="text-xs text-text-muted">
-              Clé API Groq pour la transcription audio (Whisper)
+              Transcription audio via Groq (whisper-large-v3-turbo, cloud)
             </p>
           </div>
         </div>
