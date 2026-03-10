@@ -462,10 +462,11 @@ export function LLMTab({
           <select
             value={selectedModel}
             onChange={(e) => onSelectModel(e.target.value)}
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-[#0B1226] [&>option]:text-[#E6EDF7]"
+            style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
           >
             {availableModels.map((model) => (
-              <option key={model.id} value={model.id} className="bg-[var(--color-surface)] text-[var(--color-text)]">
+              <option key={model.id} value={model.id} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
                 {model.name} {model.badge ? `(${model.badge})` : ''}
               </option>
             ))}

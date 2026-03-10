@@ -50,9 +50,9 @@ class OllamaProvider(BaseProvider):
             # (certains modèles Ollama ont des défauts trop petits : 128 tokens)
             ollama_options: dict = {
                 "num_predict": self.config.max_tokens,
-                # Cap à 32768 pour éviter l'OOM sur les petites machines
+                # BUG-052 : cap à 8192 pour éviter l'OOM sur les machines <8 Go RAM
                 # Ollama respecte le context_window réel du modèle si inférieur
-                "num_ctx": min(max(self.config.context_window, 8192), 32768),
+                "num_ctx": min(max(self.config.context_window, 2048), 8192),
             }
 
             async with self.client.stream(
@@ -133,11 +133,17 @@ class OllamaProvider(BaseProvider):
                     ),
                 )
             elif status == 500:
+                # BUG-052 : message spécifique si problème de mémoire
+                ram_hint = ""
+                if "out of memory" in detail.lower() or "num_ctx" in detail.lower() or "alloc" in detail.lower():
+                    ram_hint = (
+                        " Ta machine n'a probablement pas assez de RAM pour ce modèle. "
+                        "Essaie un modèle plus léger (ex: qwen3:1.7b, gemma3:1b)."
+                    )
                 yield StreamEvent(
                     type="error",
                     content=(
-                        f"Ollama a rencontré une erreur interne (HTTP 500). "
-                        "Sur Windows, essaie de relancer Ollama en mode administrateur. "
+                        f"Ollama a rencontré une erreur interne (HTTP 500).{ram_hint} "
                         f"Détail : {detail}"
                     ),
                 )

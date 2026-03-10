@@ -71,15 +71,33 @@ class OpenRouterProvider(BaseProvider):
 
                 # Track tool calls being built
                 tool_calls: dict[int, dict] = {}
+                has_content = False
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data = line[6:]
                         if data.strip() == "[DONE]":
-                            yield StreamEvent(type="done", stop_reason="stop")
+                            if not has_content and not tool_calls:
+                                logger.warning("OpenRouter: réponse vide (aucun contenu reçu)")
+                                yield StreamEvent(
+                                    type="error",
+                                    content="Le modèle n'a produit aucune réponse. "
+                                    "Essayez un autre modèle ou vérifiez votre clé API OpenRouter.",
+                                )
+                            else:
+                                yield StreamEvent(type="done", stop_reason="stop")
                             break
                         try:
                             event = json.loads(data)
+
+                            # OpenRouter peut renvoyer une erreur dans le flux SSE
+                            if "error" in event:
+                                err = event["error"]
+                                err_msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+                                logger.error(f"OpenRouter SSE error: {err_msg}")
+                                yield StreamEvent(type="error", content=f"Erreur OpenRouter : {err_msg}")
+                                break
+
                             choices = event.get("choices", [])
                             if choices:
                                 delta = choices[0].get("delta", {})
@@ -87,6 +105,7 @@ class OpenRouterProvider(BaseProvider):
 
                                 # Handle text content
                                 if content := delta.get("content"):
+                                    has_content = True
                                     yield StreamEvent(type="text", content=content)
 
                                 # Handle tool calls
@@ -128,12 +147,43 @@ class OpenRouterProvider(BaseProvider):
                                 elif finish_reason == "stop":
                                     yield StreamEvent(type="done", stop_reason="stop")
 
+                                elif finish_reason == "length":
+                                    if not has_content:
+                                        logger.warning("OpenRouter: finish_reason=length sans contenu (budget tokens épuisé par le raisonnement)")
+                                        yield StreamEvent(
+                                            type="error",
+                                            content="Le modèle a épuisé son budget de tokens sans produire de réponse visible. "
+                                            "Essayez avec un prompt plus court ou augmentez max_tokens.",
+                                        )
+                                    else:
+                                        yield StreamEvent(type="done", stop_reason="length")
+
+                                elif finish_reason == "content_filter":
+                                    logger.warning("OpenRouter: réponse filtrée par le modèle")
+                                    yield StreamEvent(
+                                        type="error",
+                                        content="Le modèle a filtré la réponse (content_filter). "
+                                        "Reformulez votre message ou essayez un autre modèle.",
+                                    )
+
                         except json.JSONDecodeError:
                             continue
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"OpenRouter API error: {e.response.status_code}")
-            yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
+            error_body = ""
+            try:
+                error_body = e.response.text
+            except Exception:
+                pass
+            logger.error(f"OpenRouter API error: {e.response.status_code} - {error_body}")
+            if e.response.status_code == 401:
+                yield StreamEvent(type="error", content="Clé API OpenRouter invalide ou expirée.")
+            elif e.response.status_code == 402:
+                yield StreamEvent(type="error", content="Crédit OpenRouter insuffisant. Rechargez votre compte sur openrouter.ai.")
+            elif e.response.status_code == 429:
+                yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patientez quelques secondes.")
+            else:
+                yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({e.response.status_code})")
         except Exception as e:
             logger.error(f"OpenRouter streaming error: {e}")
             yield StreamEvent(type="error", content=str(e))
