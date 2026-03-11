@@ -176,14 +176,45 @@ class OpenRouterProvider(BaseProvider):
             except Exception:
                 pass
             logger.error(f"OpenRouter API error: {e.response.status_code} - {error_body}")
-            if e.response.status_code == 401:
+
+            # BUG-openrouter-403 : parser le body JSON pour un message d'erreur lisible
+            api_error_msg = ""
+            try:
+                if error_body:
+                    err_json = json.loads(error_body)
+                    err_obj = err_json.get("error", {})
+                    api_error_msg = err_obj.get("message", "") if isinstance(err_obj, dict) else str(err_obj)
+            except (json.JSONDecodeError, AttributeError):
+                pass
+            # Borne la longueur pour éviter de flooder l'UI avec un message très long
+            api_error_msg = api_error_msg[:200]
+
+            status = e.response.status_code
+            if status == 401:
                 yield StreamEvent(type="error", content="Clé API OpenRouter invalide ou expirée.")
-            elif e.response.status_code == 402:
+            elif status == 402:
                 yield StreamEvent(type="error", content="Crédit OpenRouter insuffisant. Rechargez votre compte sur openrouter.ai.")
-            elif e.response.status_code == 429:
+            elif status == 403:
+                # 403 = pas de crédits, compte suspendu, ou clé sans permission
+                if api_error_msg:
+                    yield StreamEvent(
+                        type="error",
+                        content=f"OpenRouter a refusé la requête (403) : {api_error_msg}. "
+                        "Vérifiez vos crédits sur openrouter.ai/settings/billing ou choisissez un modèle gratuit (:free).",
+                    )
+                else:
+                    yield StreamEvent(
+                        type="error",
+                        content="OpenRouter : accès refusé (403). Crédits insuffisants ou clé sans permission. "
+                        "Rechargez votre compte sur openrouter.ai/settings/billing ou choisissez un modèle gratuit (:free).",
+                    )
+            elif status == 429:
                 yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patientez quelques secondes.")
             else:
-                yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({e.response.status_code})")
+                if api_error_msg:
+                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status}) : {api_error_msg}")
+                else:
+                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
         except Exception as e:
             logger.error(f"OpenRouter streaming error: {e}")
             yield StreamEvent(type="error", content=str(e))

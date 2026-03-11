@@ -4307,3 +4307,103 @@ class TestGroqWhisperLabel:
         assert "transcription audio (Whisper)" not in src, (
             "Ancien libelle trompeur encore present : 'transcription audio (Whisper)'"
         )
+
+
+class TestBUGOpenRouter403MessageErreur:
+    """BUG openrouter-403 : message d'erreur vide/opaque sur 403 Forbidden."""
+
+    @staticmethod
+    def _make_provider():
+        """Crée un OpenRouterProvider avec un client httpx mock."""
+        import httpx
+        from app.services.providers.openrouter import OpenRouterProvider
+        from app.services.llm import LLMConfig, LLMProvider
+        config = LLMConfig(
+            provider=LLMProvider.OPENROUTER,
+            model="anthropic/claude-sonnet-4-6",
+            api_key="test-key",
+        )
+        client = httpx.AsyncClient()
+        return OpenRouterProvider(config, client)
+
+    def test_openrouter_403_message_specifique(self):
+        """Un 403 doit générer un message lisible sur les crédits, pas juste le code HTTP."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+        import httpx
+
+        provider = self._make_provider()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.text = '{"error":{"message":"You have exceeded your free tier limits. Please add a payment method at openrouter.ai/settings/billing","code":403}}'
+        error = httpx.HTTPStatusError("403 Forbidden", request=MagicMock(), response=mock_response)
+
+        async def run():
+            with patch.object(provider.client, "stream", side_effect=error):
+                events = []
+                async for event in provider.stream(None, [{"role": "user", "content": "test"}]):
+                    events.append(event)
+                return events
+
+        events = asyncio.new_event_loop().run_until_complete(run())
+        assert events, "Aucun événement reçu"
+        err_event = events[0]
+        assert err_event.type == "error"
+        msg = err_event.content or ""
+        assert any(word in msg.lower() for word in ["crédit", "credit", "openrouter", "403", "paiement", "billing", "exceeded"]), (
+            f"Message 403 non informatif : {msg!r}"
+        )
+        assert msg != "Erreur API OpenRouter (403)", (
+            f"Message générique non informatif toujours présent : {msg!r}"
+        )
+
+    def test_openrouter_403_body_vide_fallback(self):
+        """Un 403 avec body vide doit donner un message de fallback lisible."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+        import httpx
+
+        provider = self._make_provider()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.text = ""
+        error = httpx.HTTPStatusError("403 Forbidden", request=MagicMock(), response=mock_response)
+
+        async def run():
+            with patch.object(provider.client, "stream", side_effect=error):
+                events = []
+                async for event in provider.stream(None, [{"role": "user", "content": "test"}]):
+                    events.append(event)
+                return events
+
+        events = asyncio.new_event_loop().run_until_complete(run())
+        err_event = events[0]
+        assert err_event.type == "error"
+        assert "403" in (err_event.content or "") or "crédit" in (err_event.content or "").lower()
+
+    def test_openrouter_401_non_affecte(self):
+        """La correction du 403 ne doit pas casser le handler 401."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+        import httpx
+
+        provider = self._make_provider()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.text = '{"error":{"message":"Invalid API key"}}'
+        error = httpx.HTTPStatusError("401 Unauthorized", request=MagicMock(), response=mock_response)
+
+        async def run():
+            with patch.object(provider.client, "stream", side_effect=error):
+                events = []
+                async for event in provider.stream(None, [{"role": "user", "content": "test"}]):
+                    events.append(event)
+                return events
+
+        events = asyncio.new_event_loop().run_until_complete(run())
+        err_event = events[0]
+        assert err_event.type == "error"
+        assert "invalid" in (err_event.content or "").lower() or "invalide" in (err_event.content or "").lower() or "clé" in (err_event.content or "").lower()
