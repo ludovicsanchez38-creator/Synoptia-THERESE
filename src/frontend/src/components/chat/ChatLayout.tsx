@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChatHeader } from './ChatHeader';
@@ -6,14 +6,16 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { CommandPalette } from './CommandPalette';
 import { ShortcutsModal } from './ShortcutsModal';
-import { MemoryPanel } from '../memory/MemoryPanel';
-import { ContactModal } from '../memory/ContactModal';
-import { ProjectModal } from '../memory/ProjectModal';
-import { SettingsModal } from '../settings/SettingsModal';
 import { ConversationSidebar } from '../sidebar/ConversationSidebar';
-import { BoardPanel } from '../board';
-import { AtelierPanel } from '../atelier';
 import { DropZone } from '../files/DropZone';
+
+// Lazy-loaded panels (UltraJury perf: reduire le bundle initial)
+const MemoryPanel = lazy(() => import('../memory/MemoryPanel').then(m => ({ default: m.MemoryPanel })));
+const ContactModal = lazy(() => import('../memory/ContactModal').then(m => ({ default: m.ContactModal })));
+const ProjectModal = lazy(() => import('../memory/ProjectModal').then(m => ({ default: m.ProjectModal })));
+const SettingsModal = lazy(() => import('../settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const BoardPanel = lazy(() => import('../board/BoardPanel').then(m => ({ default: m.BoardPanel })));
+const AtelierPanel = lazy(() => import('../atelier/AtelierPanel').then(m => ({ default: m.AtelierPanel })));
 import { SideToggle } from '../ui/SideToggle';
 import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { useKeyboardShortcuts, useConversationSync, useFileDrop } from '../../hooks';
@@ -305,35 +307,40 @@ export function ChatLayout() {
       />
 
       {/* Header with drag region for Tauri */}
-      <ChatHeader
-        onOpenSettings={handleOpenSettings}
-        onToggleEmailPanel={handleToggleEmailPanel}
-        onToggleCalendarPanel={handleToggleCalendarPanel}
-        onToggleTasksPanel={handleToggleTasksPanel}
-        onToggleInvoicesPanel={handleToggleInvoicesPanel}
-        onToggleCRMPanel={handleToggleCRMPanel}
-        onToggleMemoryPanel={() => openPanelWindow('memory')}
-        onToggleBoardPanel={handleToggleBoardPanel}
-        onToggleAtelierPanel={handleToggleAtelierPanel}
-      />
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-hidden">
-        <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
-      </div>
-
-      {/* Input area - masqué quand un panel guidé est actif */}
-      {!guidedPanelActive && (
-      <div className="border-t border-border">
-        <ChatInput
-          onOpenCommandPalette={handleOpenCommandPalette}
-          initialPrompt={guidedPrompt}
-          initialSkillId={guidedSkillId}
-          onInitialPromptConsumed={handleGuidedPromptConsumed}
-          userCommands={userSlashCommands}
+      <header role="banner" aria-label="Barre d'outils Therese">
+        <ChatHeader
+          onOpenSettings={handleOpenSettings}
+          onToggleEmailPanel={handleToggleEmailPanel}
+          onToggleCalendarPanel={handleToggleCalendarPanel}
+          onToggleTasksPanel={handleToggleTasksPanel}
+          onToggleInvoicesPanel={handleToggleInvoicesPanel}
+          onToggleCRMPanel={handleToggleCRMPanel}
+          onToggleMemoryPanel={() => openPanelWindow('memory')}
+          onToggleBoardPanel={handleToggleBoardPanel}
+          onToggleAtelierPanel={handleToggleAtelierPanel}
         />
-      </div>
-      )}
+      </header>
+
+      {/* Zone principale du chat */}
+      <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
+        {/* Messages area */}
+        <div className="flex-1 overflow-hidden">
+          <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
+        </div>
+
+        {/* Input area - masque quand un panel guide est actif */}
+        {!guidedPanelActive && (
+        <div className="border-t border-border">
+          <ChatInput
+            onOpenCommandPalette={handleOpenCommandPalette}
+            initialPrompt={guidedPrompt}
+            initialSkillId={guidedSkillId}
+            onInitialPromptConsumed={handleGuidedPromptConsumed}
+            userCommands={userSlashCommands}
+          />
+        </div>
+        )}
+      </main>
 
       {/* Command Palette (modal) */}
       <CommandPalette
@@ -362,50 +369,55 @@ export function ChatLayout() {
         onClose={handleCloseShortcuts}
       />
 
-      {/* Memory Panel (sidebar) */}
-      <MemoryPanel
-        isOpen={showMemoryPanel}
-        onClose={handleCloseMemoryPanel}
-        onNewContact={handleNewContact}
-        onEditContact={handleEditContact}
-      />
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={handleCloseSettings}
-      />
-
       {/* Conversation Sidebar */}
-      <ConversationSidebar
-        isOpen={showConversationSidebar}
-        onClose={handleCloseConversationSidebar}
-      />
+      <aside role="complementary" aria-label="Conversations">
+        <ConversationSidebar
+          isOpen={showConversationSidebar}
+          onClose={handleCloseConversationSidebar}
+        />
+      </aside>
 
-      {/* Contact Modal */}
-      <ContactModal
-        isOpen={showContactModal}
-        onClose={handleCloseContactModal}
-        onSaved={handleMemorySaved}
-        contact={editingContact}
-      />
+      {/* Lazy-loaded panels (charges a la demande) */}
+      <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-text-muted">Chargement...</div></div>}>
+        {/* Memory Panel (sidebar) */}
+        <MemoryPanel
+          isOpen={showMemoryPanel}
+          onClose={handleCloseMemoryPanel}
+          onNewContact={handleNewContact}
+          onEditContact={handleEditContact}
+        />
 
-      {/* Project Modal */}
-      <ProjectModal
-        isOpen={showProjectModal}
-        onClose={handleCloseProjectModal}
-        onSaved={handleMemorySaved}
-        project={editingProject}
-      />
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={handleCloseSettings}
+        />
 
-      {/* Board de Decision */}
-      <BoardPanel
-        isOpen={showBoardPanel}
-        onClose={handleCloseBoardPanel}
-      />
+        {/* Contact Modal */}
+        <ContactModal
+          isOpen={showContactModal}
+          onClose={handleCloseContactModal}
+          onSaved={handleMemorySaved}
+          contact={editingContact}
+        />
 
-      {/* Atelier - Agents IA Embarqués */}
-      <AtelierPanel />
+        {/* Project Modal */}
+        <ProjectModal
+          isOpen={showProjectModal}
+          onClose={handleCloseProjectModal}
+          onSaved={handleMemorySaved}
+          project={editingProject}
+        />
+
+        {/* Board de Decision */}
+        <BoardPanel
+          isOpen={showBoardPanel}
+          onClose={handleCloseBoardPanel}
+        />
+
+        {/* Atelier - Agents IA Embarques */}
+        <AtelierPanel />
+      </Suspense>
 
       {/* Modal Sauvegarder comme raccourci */}
       <AnimatePresence>
