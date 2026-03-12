@@ -627,7 +627,20 @@ async def delete_backup(backup_name: str):
     """Delete a backup."""
     from pathlib import Path
 
+    # Validation du nom de backup (SEC-019)
+    if not re.match(r'^[a-zA-Z0-9_\-\.]+$', backup_name):
+        raise HTTPException(
+            status_code=400,
+            detail="Nom de backup invalide. Seuls les caracteres alphanumeriques, tirets, underscores et points sont autorises.",
+        )
+
     backup_dir = Path.home() / ".therese" / "backups"
+
+    # Verify path is within backups directory
+    backup_path = backup_dir / backup_name
+    if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
+        raise HTTPException(status_code=403, detail="Chemin de backup non autorise")
+
     backup_db = backup_dir / f"{backup_name}.db"
     metadata_file = backup_dir / f"{backup_name}.json"
 

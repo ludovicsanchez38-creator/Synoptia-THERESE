@@ -175,8 +175,6 @@ async def anonymize_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
 
-    old_name = f"{contact.first_name or ''} {contact.last_name or ''}".strip()
-
     # Anonymize contact data
     contact.first_name = "[ANONYMISÉ]"
     contact.last_name = None
@@ -225,7 +223,7 @@ async def anonymize_contact(
         contact_id=contact_id,
         type="rgpd_anonymization",
         title="Contact anonymisé",
-        description=f"Raison: {request.reason}. Ancien nom: {old_name}",
+        description=f"Raison: {request.reason}. Contact ID: {contact_id} anonymisé",
     )
     session.add(anonymization_log)
 
