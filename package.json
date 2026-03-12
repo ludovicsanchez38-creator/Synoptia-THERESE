@@ -7,7 +7,7 @@
     "email": "ludo@synoptia.fr",
     "url": "https://synoptia.fr"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "scripts": {
@@ -29,7 +29,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ludovicsanchez38-creator/therese-v2"
+    "url": "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE"
   },
   "engines": {
     "node": ">=20.0.0"

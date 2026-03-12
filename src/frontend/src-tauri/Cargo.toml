@@ -3,8 +3,8 @@ name = "therese"
 version = "0.6.1"
 description = "THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français"
 authors = ["Ludo Sanchez <ludo@synoptia.fr>"]
-license = "MIT"
-repository = "https://github.com/ludovicsanchez38-creator/therese-v2"
+license = "AGPL-3.0-only"
+repository = "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE"
 edition = "2021"
 rust-version = "1.77"
 

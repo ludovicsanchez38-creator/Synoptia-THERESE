@@ -396,7 +396,7 @@ async def auth_middleware(request: Request, call_next):
 
     # Endpoints exemptés
     exempt_paths = [
-        "/api/health", "/api/auth/token", "/api/shutdown",
+        "/api/health", "/api/auth/token",
         "/api/email/auth/callback-redirect",
         "/api/crm/sync/callback",
         "/docs", "/redoc", "/openapi.json", "/health",
