@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint (Python)
@@ -51,13 +55,11 @@ jobs:
       - name: Tests unitaires (pytest)
         shell: bash
         run: |
-          set +e
           timeout 300 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
           EXIT_CODE=$?
-          set -e
           if [ $EXIT_CODE -eq 124 ]; then
-            echo "::warning::pytest process tué après 5 min (threads orphelins httpx/urllib3)"
-            exit 0
+            echo "::warning::pytest tué après 5 min (possible threads orphelins)"
+            exit 1
           fi
           exit $EXIT_CODE
         timeout-minutes: 10
@@ -94,3 +96,28 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  security-audit:
+    name: Audit sécurité (dépendances)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Audit NPM (high + critical)
+        working-directory: src/frontend
+        run: npm audit --audit-level=high || true
+
+      - name: Installer pip-audit
+        run: pip install pip-audit
+
+      - name: Audit Python
+        run: pip-audit -r <(pip install uv && uv export --no-hashes) || true
