@@ -307,35 +307,40 @@ export function ChatLayout() {
       />
 
       {/* Header with drag region for Tauri */}
-      <ChatHeader
-        onOpenSettings={handleOpenSettings}
-        onToggleEmailPanel={handleToggleEmailPanel}
-        onToggleCalendarPanel={handleToggleCalendarPanel}
-        onToggleTasksPanel={handleToggleTasksPanel}
-        onToggleInvoicesPanel={handleToggleInvoicesPanel}
-        onToggleCRMPanel={handleToggleCRMPanel}
-        onToggleMemoryPanel={() => openPanelWindow('memory')}
-        onToggleBoardPanel={handleToggleBoardPanel}
-        onToggleAtelierPanel={handleToggleAtelierPanel}
-      />
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-hidden">
-        <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
-      </div>
-
-      {/* Input area - masqué quand un panel guidé est actif */}
-      {!guidedPanelActive && (
-      <div className="border-t border-border">
-        <ChatInput
-          onOpenCommandPalette={handleOpenCommandPalette}
-          initialPrompt={guidedPrompt}
-          initialSkillId={guidedSkillId}
-          onInitialPromptConsumed={handleGuidedPromptConsumed}
-          userCommands={userSlashCommands}
+      <header role="banner" aria-label="Barre d'outils Therese">
+        <ChatHeader
+          onOpenSettings={handleOpenSettings}
+          onToggleEmailPanel={handleToggleEmailPanel}
+          onToggleCalendarPanel={handleToggleCalendarPanel}
+          onToggleTasksPanel={handleToggleTasksPanel}
+          onToggleInvoicesPanel={handleToggleInvoicesPanel}
+          onToggleCRMPanel={handleToggleCRMPanel}
+          onToggleMemoryPanel={() => openPanelWindow('memory')}
+          onToggleBoardPanel={handleToggleBoardPanel}
+          onToggleAtelierPanel={handleToggleAtelierPanel}
         />
-      </div>
-      )}
+      </header>
+
+      {/* Zone principale du chat */}
+      <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
+        {/* Messages area */}
+        <div className="flex-1 overflow-hidden">
+          <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
+        </div>
+
+        {/* Input area - masque quand un panel guide est actif */}
+        {!guidedPanelActive && (
+        <div className="border-t border-border">
+          <ChatInput
+            onOpenCommandPalette={handleOpenCommandPalette}
+            initialPrompt={guidedPrompt}
+            initialSkillId={guidedSkillId}
+            onInitialPromptConsumed={handleGuidedPromptConsumed}
+            userCommands={userSlashCommands}
+          />
+        </div>
+        )}
+      </main>
 
       {/* Command Palette (modal) */}
       <CommandPalette
@@ -365,10 +370,12 @@ export function ChatLayout() {
       />
 
       {/* Conversation Sidebar */}
-      <ConversationSidebar
-        isOpen={showConversationSidebar}
-        onClose={handleCloseConversationSidebar}
-      />
+      <aside role="complementary" aria-label="Conversations">
+        <ConversationSidebar
+          isOpen={showConversationSidebar}
+          onClose={handleCloseConversationSidebar}
+        />
+      </aside>
 
       {/* Lazy-loaded panels (charges a la demande) */}
       <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-text-muted">Chargement...</div></div>}>

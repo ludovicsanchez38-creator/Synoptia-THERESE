@@ -1,13 +1,16 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { ChatLayout } from './components/chat/ChatLayout';
-import { PanelWindow } from './components/panels/PanelWindow';
 import { Notifications } from './components/ui/Notifications';
-import { OnboardingWizard } from './components/onboarding';
-import { SplashScreen } from './components/SplashScreen';
+import { GlobalErrorBoundary } from './components/ui/GlobalErrorBoundary';
 import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
 import * as api from './services/api';
 import type { PanelType } from './services/windowManager';
+
+// Lazy-loaded : panneaux secondaires et ecrans non-critiques (UltraJury perf)
+const PanelWindow = lazy(() => import('./components/panels/PanelWindow').then(m => ({ default: m.PanelWindow })));
+const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
+const SplashScreen = lazy(() => import('./components/SplashScreen').then(m => ({ default: m.SplashScreen })));
 
 // Mode production Tauri (sidecar actif) : on attend que le backend soit prêt
 const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
@@ -95,14 +98,34 @@ function App() {
     localStorage.setItem('therese-onboarding-done', 'true');
   }
 
+  // Fallback de chargement pour les composants lazy
+  const lazyFallback = (
+    <div className="h-screen w-screen bg-bg flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
+          THERESE
+        </h1>
+        <p className="text-text-muted mt-2 text-sm">Chargement...</p>
+      </div>
+    </div>
+  );
+
   // Si on est dans une fenetre panel, afficher directement le panel
   if (activePanel) {
-    return <PanelWindow panel={activePanel} />;
+    return (
+      <Suspense fallback={lazyFallback}>
+        <PanelWindow panel={activePanel} />
+      </Suspense>
+    );
   }
 
   // En production Tauri : SplashScreen pendant le démarrage du sidecar
   if (!backendReady) {
-    return <SplashScreen onReady={handleBackendReady} />;
+    return (
+      <Suspense fallback={lazyFallback}>
+        <SplashScreen onReady={handleBackendReady} />
+      </Suspense>
+    );
   }
 
   if (!isReady) {
@@ -119,18 +142,29 @@ function App() {
   }
 
   return (
-    <div
-      className="h-screen w-screen bg-bg text-text overflow-hidden"
-      style={{ fontSize }}
-      data-high-contrast={highContrast ? 'true' : undefined}
-    >
-      <ChatLayout />
-      <Notifications />
-      <OnboardingWizard
-        isOpen={showOnboarding}
-        onComplete={handleOnboardingComplete}
-      />
-    </div>
+    <GlobalErrorBoundary>
+      <div
+        className="h-screen w-screen bg-bg text-text overflow-hidden"
+        style={{ fontSize }}
+        data-high-contrast={highContrast ? 'true' : undefined}
+      >
+        {/* Skip link accessibilite (visible uniquement au focus clavier) */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-accent-cyan focus:text-bg focus:rounded"
+        >
+          Aller au contenu principal
+        </a>
+        <ChatLayout />
+        <Notifications />
+        <Suspense fallback={null}>
+          <OnboardingWizard
+            isOpen={showOnboarding}
+            onComplete={handleOnboardingComplete}
+          />
+        </Suspense>
+      </div>
+    </GlobalErrorBoundary>
   );
 }
 

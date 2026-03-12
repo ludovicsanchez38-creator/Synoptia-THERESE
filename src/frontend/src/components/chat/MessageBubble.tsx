@@ -1,17 +1,18 @@
 import { memo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import python from 'react-syntax-highlighter/dist/esm/languages/prism/python';
-import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript';
-import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
-import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
-import json from 'react-syntax-highlighter/dist/esm/languages/prism/json';
-import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
-import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
-import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
-import sql from 'react-syntax-highlighter/dist/esm/languages/prism/sql';
+// hljs Light build : ~10x plus leger que Prism full (UltraJury perf)
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
+import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
+import bash from 'react-syntax-highlighter/dist/esm/languages/hljs/bash';
+import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
+import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
+import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
+import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
+import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql';
 import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, Image as ImageIcon } from 'lucide-react';
 
 SyntaxHighlighter.registerLanguage('python', python);
@@ -24,9 +25,9 @@ SyntaxHighlighter.registerLanguage('shell', bash);
 SyntaxHighlighter.registerLanguage('sh', bash);
 SyntaxHighlighter.registerLanguage('json', json);
 SyntaxHighlighter.registerLanguage('css', css);
-SyntaxHighlighter.registerLanguage('markup', markup);
-SyntaxHighlighter.registerLanguage('html', markup);
-SyntaxHighlighter.registerLanguage('xml', markup);
+SyntaxHighlighter.registerLanguage('xml', xml);
+SyntaxHighlighter.registerLanguage('html', xml);
+SyntaxHighlighter.registerLanguage('markup', xml);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 SyntaxHighlighter.registerLanguage('yml', yaml);
 SyntaxHighlighter.registerLanguage('sql', sql);
@@ -79,7 +80,7 @@ function CodeBlock({
         </button>
       </div>
       <SyntaxHighlighter
-        style={oneDark}
+        style={atomOneDark}
         language={language}
         PreTag="div"
         customStyle={{
