@@ -21,6 +21,24 @@
 - **Action** : Créer un fichier de constantes (backlog)
 - **Ne pas bloquer** : pas de conflit fonctionnel constaté
 
+### `|| true` sur audits CI (depuis v0.6.2)
+- **Contexte** : `npm audit` et `pip-audit` dans le job `security-audit` utilisent `|| true`
+- **Statut** : Intentionnel pour l'alpha (informatif, pas bloquant)
+- **Action** : Retirer `|| true` quand les dépendances sont assainies
+- **Ne pas bloquer** : choix conscient, planifié P1
+
+### hljs Light avec 9 langages (depuis v0.6.2)
+- **Contexte** : Migration de Prism (tous langages) vers hljs Light (python, js, ts, bash, json, css, xml, yaml, sql)
+- **Statut** : Gain -236KB bundle. Langages manquants : rust, go, markdown, dockerfile
+- **Action** : Ajouter les langages manquants au fur et à mesure (P1)
+- **Ne pas bloquer** : les langages principaux de la cible TPE/solopreneurs sont couverts
+
+### DialogShell overlay convention (depuis v0.6.2)
+- **Contexte** : Les modales utilisent `bg-black/60 backdrop-blur-sm` comme standard
+- **Statut** : DialogShell aligné sur cette convention
+- **Action** : Migrer progressivement les 13 modales restantes vers DialogShell
+- **Ne pas bloquer** : migration en cours, les attributs ARIA sont déjà ajoutés
+
 ## Anti-patterns à surveiller
 
 ### Excludes torch dans PyInstaller (v0.1.7 - CASSÉ)
