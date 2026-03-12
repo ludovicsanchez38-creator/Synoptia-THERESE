@@ -297,6 +297,9 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           />
 
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="CRM Pipeline"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -365,6 +368,9 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
     <div className="fixed inset-0 flex items-center justify-center z-[60]">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nouveau contact CRM"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -704,6 +710,9 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
     <div className="fixed inset-0 flex items-center justify-center z-[60]">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nouvelle activité CRM"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}

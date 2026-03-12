@@ -255,6 +255,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         />
 
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tâches"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}

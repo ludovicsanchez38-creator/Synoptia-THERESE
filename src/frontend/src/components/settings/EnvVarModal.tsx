@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ExternalLink, AlertCircle, Check } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { DialogShell } from '../ui/DialogShell';
 
 interface PresetMCP {
   id: string;
@@ -167,22 +168,12 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-
-      {/* Modal */}
+    <DialogShell open={true} onClose={onCancel} ariaLabel={`Configuration ${preset.name}`}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-surface border border-border rounded-xl p-6 max-w-lg w-full shadow-2xl max-h-[80vh] overflow-y-auto"
+        className="bg-surface border border-border rounded-xl p-6 max-w-lg w-full shadow-2xl max-h-[80vh] overflow-y-auto"
       >
         {/* Header */}
         <div className="mb-6">
@@ -305,6 +296,6 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
           </Button>
         </div>
       </motion.div>
-    </div>
+    </DialogShell>
   );
 }

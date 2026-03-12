@@ -567,6 +567,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Modal */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Paramètres"
             variants={modalVariants}
             initial="initial"
             animate="animate"
