@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { PanelWindow } from './components/panels/PanelWindow';
 import { Notifications } from './components/ui/Notifications';
+import { GlobalErrorBoundary } from './components/ui/GlobalErrorBoundary';
 import { OnboardingWizard } from './components/onboarding';
 import { SplashScreen } from './components/SplashScreen';
 import { useHealthCheck } from './hooks/useHealthCheck';
@@ -119,18 +120,27 @@ function App() {
   }
 
   return (
-    <div
-      className="h-screen w-screen bg-bg text-text overflow-hidden"
-      style={{ fontSize }}
-      data-high-contrast={highContrast ? 'true' : undefined}
-    >
-      <ChatLayout />
-      <Notifications />
-      <OnboardingWizard
-        isOpen={showOnboarding}
-        onComplete={handleOnboardingComplete}
-      />
-    </div>
+    <GlobalErrorBoundary>
+      <div
+        className="h-screen w-screen bg-bg text-text overflow-hidden"
+        style={{ fontSize }}
+        data-high-contrast={highContrast ? 'true' : undefined}
+      >
+        {/* Skip link accessibilité (visible uniquement au focus clavier) */}
+        <a
+          href="#chat-input"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-3 focus:bg-accent-cyan focus:text-bg focus:rounded"
+        >
+          Aller au chat
+        </a>
+        <ChatLayout />
+        <Notifications />
+        <OnboardingWizard
+          isOpen={showOnboarding}
+          onComplete={handleOnboardingComplete}
+        />
+      </div>
+    </GlobalErrorBoundary>
   );
 }
 
