@@ -116,8 +116,9 @@ jobs:
         working-directory: src/frontend
         run: npm audit --audit-level=high || true
 
-      - name: Installer pip-audit
-        run: pip install pip-audit
+      - name: Installer pip-audit et uv
+        run: pip install pip-audit uv
 
       - name: Audit Python
-        run: pip-audit -r <(pip install uv && uv export --no-hashes) || true
+        shell: bash
+        run: pip-audit -r <(uv export --no-hashes) || true
