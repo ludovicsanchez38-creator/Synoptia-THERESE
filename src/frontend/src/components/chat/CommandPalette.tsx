@@ -92,7 +92,7 @@ export function CommandPalette({
       {
         id: 'new-conversation',
         name: 'Nouvelle conversation',
-        description: 'Demarrer une nouvelle conversation',
+        description: 'Démarrer une nouvelle conversation',
         icon: <MessageSquarePlus className="w-4 h-4" />,
         shortcut: `${mod}N`,
         action: () => { createConversation(); onClose(); },
@@ -123,7 +123,7 @@ export function CommandPalette({
         action: () => { onClose(); onOpenGuided?.(); },
         category: 'chat',
       },
-      // -- Memoire --
+      // -- Mémoire --
       {
         id: 'memory',
         name: 'Espace de travail',
@@ -136,7 +136,7 @@ export function CommandPalette({
       {
         id: 'add-contact',
         name: 'Ajouter un contact',
-        description: 'Creer un nouveau contact en memoire',
+        description: 'Créer un nouveau contact en mémoire',
         icon: <UserPlus className="w-4 h-4" />,
         action: () => { onClose(); onNewContact?.(); },
         category: 'memory',
@@ -144,14 +144,14 @@ export function CommandPalette({
       {
         id: 'add-project',
         name: 'Ajouter un projet',
-        description: 'Creer un nouveau projet en memoire',
+        description: 'Créer un nouveau projet en mémoire',
         icon: <FolderPlus className="w-4 h-4" />,
         action: () => { onClose(); onNewProject?.(); },
         category: 'memory',
       },
       {
         id: 'search-memory',
-        name: 'Rechercher en memoire',
+        name: 'Rechercher en mémoire',
         description: 'Chercher dans contacts, projets, fichiers',
         icon: <SearchIcon className="w-4 h-4" />,
         shortcut: `${mod}⇧F`,
@@ -170,7 +170,7 @@ export function CommandPalette({
       // -- Panels --
       {
         id: 'board',
-        name: 'Board de decision',
+        name: 'Board de décision',
         description: 'Convoquer le board de conseillers IA',
         icon: <Gavel className="w-4 h-4" />,
         shortcut: `${mod}D`,
@@ -180,7 +180,7 @@ export function CommandPalette({
       {
         id: 'email',
         name: 'Email',
-        description: 'Ouvrir la boite email',
+        description: 'Ouvrir la boîte email',
         icon: <Mail className="w-4 h-4" />,
         shortcut: `${mod}E`,
         action: () => { onClose(); onToggleEmail?.(); },
@@ -197,8 +197,8 @@ export function CommandPalette({
       },
       {
         id: 'tasks',
-        name: 'Taches',
-        description: 'Ouvrir les taches et todos',
+        name: 'Tâches',
+        description: 'Ouvrir les tâches et todos',
         icon: <ListTodo className="w-4 h-4" />,
         shortcut: `${mod}T`,
         action: () => { onClose(); onToggleTasks?.(); },
@@ -225,16 +225,16 @@ export function CommandPalette({
       // -- Settings --
       {
         id: 'export-data',
-        name: 'Exporter les donnees',
-        description: 'Telecharger un backup de ta memoire',
+        name: 'Exporter les données',
+        description: 'Télécharger un backup de ta mémoire',
         icon: <Download className="w-4 h-4" />,
         action: () => { onClose(); onExportData?.(); },
         category: 'settings',
       },
       {
         id: 'settings',
-        name: 'Parametres',
-        description: 'Configurer THERESE',
+        name: 'Paramètres',
+        description: 'Configurer THÉRÈSE',
         icon: <Settings className="w-4 h-4" />,
         shortcut: `${mod},`,
         action: () => { onClose(); onOpenSettings?.(); },

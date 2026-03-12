@@ -133,13 +133,13 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       }
     }
 
-    // Priorite 1 : Si l'option a un skillId, utiliser le systeme enrichi
+    // Priorité 1 : Si l'option a un skillId, utiliser le système enrichi
     if (option.skillId) {
       setIsLoadingSchema(true);
       setSelectedAction(null);
 
       try {
-        // Recuperer le schema des inputs du skill
+        // Récupérer le schéma des inputs du skill
         const schema = await getSkillInputSchema(option.skillId);
 
         setPendingDynamicSkill({
@@ -159,17 +159,17 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         setIsLoadingSchema(false);
       }
     }
-    // Priorite 2 : Legacy - Si l'option genere un fichier, montrer le panel de prompting
+    // Priorité 2 : Legacy - Si l'option génère un fichier, montrer le panel de prompting
     else if (option.generatesFile) {
       setPendingSkillOption(option);
       setSelectedAction(null);
     }
-    // Priorite 3 : Si l'option genere une image, montrer le panel de prompting image
+    // Priorité 3 : Si l'option génère une image, montrer le panel de prompting image
     else if (option.generatesImage) {
       setPendingImageOption(option);
       setSelectedAction(null);
     }
-    // Priorite 4 : Comportement standard : remplir le prompt
+    // Priorité 4 : Comportement standard : remplir le prompt
     else {
       onPromptSelect(option.prompt);
       setSelectedAction(null);
@@ -183,7 +183,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     const { option, schema } = pendingDynamicSkill;
     const skillId = option.skillId!;
 
-    // Determiner si c'est un skill TEXT ou FILE
+    // Déterminer si c'est un skill TEXT ou FILE
     const isTextSkill = schema.output_type === 'text' || schema.output_type === 'analysis';
 
     if (isTextSkill) {
@@ -196,7 +196,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       onPromptSelect(prompt, skillId);
       setPendingDynamicSkill(null);
     } else {
-      // Skills FILE : montrer le panel d'execution
+      // Skills FILE : montrer le panel d'exécution
       const format = option.generatesFile?.format || 'docx';
 
       setSkillState({
@@ -246,7 +246,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setSelectedAction(null);
   }, []);
 
-  // Quand l'utilisateur a saisi son prompt et lance la generation (legacy FILE skills)
+  // Quand l'utilisateur a saisi son prompt et lance la génération (legacy FILE skills)
   const handleSkillGenerate = useCallback(async (customPrompt: string) => {
     if (!pendingSkillOption?.generatesFile) return;
 
@@ -311,7 +311,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     setSkillState(null);
   }, []);
 
-  // Handlers pour la generation d'images
+  // Handlers pour la génération d'images
   const handleImageGenerate = useCallback(async (customPrompt: string) => {
     if (!pendingImageOption?.generatesImage) return;
 
@@ -451,7 +451,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
           Comment puis-je t'aider ?
         </h2>
         <p className="text-sm text-text-muted">
-          Choisis une action ou ecris directement ton message
+          Choisis une action ou écris directement ton message
         </p>
       </motion.div>
 

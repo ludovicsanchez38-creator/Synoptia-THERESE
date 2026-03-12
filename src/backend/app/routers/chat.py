@@ -611,7 +611,7 @@ async def send_message(
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}")
-        assistant_content = f"Desolee, une erreur s'est produite: {str(e)}"
+        assistant_content = f"Désolée, une erreur s'est produite: {str(e)}"
 
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
