@@ -249,6 +249,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
           {/* Modal */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isEditing ? 'Modifier le projet' : 'Nouveau projet'}
             variants={modalVariants}
             initial="initial"
             animate="animate"

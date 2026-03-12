@@ -157,6 +157,9 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
           {/* Modal */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isEditing ? 'Modifier le contact' : 'Nouveau contact'}
             variants={modalVariants}
             initial="initial"
             animate="animate"

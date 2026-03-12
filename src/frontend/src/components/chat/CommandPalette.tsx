@@ -332,6 +332,9 @@ export function CommandPalette({
 
           {/* Palette with scale and fade animation */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Palette de commandes"
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}

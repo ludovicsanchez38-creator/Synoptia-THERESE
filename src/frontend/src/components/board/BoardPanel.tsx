@@ -309,6 +309,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
           {/* Panel */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Board de décision"
             variants={modalVariants}
             initial="initial"
             animate="animate"
