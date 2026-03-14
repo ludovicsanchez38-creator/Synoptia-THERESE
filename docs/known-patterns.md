@@ -46,10 +46,12 @@
 - torch les importe tous à l'init, l'exclusion casse le sidecar sur toutes les plateformes
 - Corrigé en v0.1.8
 
-### `confirm()` natif dans WebView (v0.2.10)
+### `confirm()` natif dans WebView (v0.2.10 - PARTIELLEMENT CORRIGÉ v0.6.4)
 - **NE PAS** utiliser `confirm()` ou `alert()` dans les composants React
 - Bloque la WebView Tauri sur certaines plateformes
 - Remplacer par des dialogs inline (mini-modal dans le composant)
+- Corrigé dans InvoicesPanel.tsx (v0.6.4, PR #45) : dialogue React avec state
+- Reste : `confirm()` dans `handleSendEmail` (InvoicesPanel L88), `handleMarkPaid` (InvoiceForm L153)
 
 ### Port hardcodé (v0.1.2)
 - Le port backend est fixé à 17293 depuis v0.1.19
@@ -70,3 +72,15 @@
 - **NE PLUS** utiliser `get_event_loop()` dans le backend
 - Remplacé par `get_running_loop()` dans imap_smtp_provider.py (PR #19) et caldav_provider.py (PR #23)
 - Test de régression scanne tout `src/backend/app/` pour empêcher toute régression
+
+### Dialogue suppression sans focus trap (v0.6.4 - DETTE)
+- `InvoicesPanel.tsx` : le dialogue de confirmation de suppression n'a pas de focus trap ni de handler Escape
+- Le composant `DialogShell.tsx` fournit ces fonctionnalités - à utiliser ou reproduire
+- Non bloquant fonctionnellement, mais manque WCAG 2.1 (SC 2.1.2 / SC 2.4.3)
+
+### Statuts projet front/back désalignés (v0.6.4 - DETTE)
+- `ProjectModal.tsx` propose 3 statuts (active, on_hold, completed)
+- `ProjectsKanban.tsx` affiche 4 colonnes (+ cancelled)
+- Backend accepte 4 statuts via `VALID_PROJECT_STATUSES`
+- Les projets existants "cancelled" apparaissent sans statut visible dans le formulaire d'édition
+- À harmoniser : soit garder "cancelled" dans le modal, soit le retirer du Kanban + migration
