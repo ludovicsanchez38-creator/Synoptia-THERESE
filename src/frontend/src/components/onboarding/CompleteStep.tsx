@@ -59,6 +59,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
     setError(null);
     try {
       await api.completeOnboarding();
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
       onComplete();
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
@@ -179,7 +180,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
           <span className="text-sm font-medium text-accent-cyan">Astuce</span>
         </div>
         <p className="text-xs text-text-muted">
-          Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci Cmd+,).
+          Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci {navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl'}+,).
         </p>
       </motion.div>
 

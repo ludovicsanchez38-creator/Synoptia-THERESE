@@ -115,7 +115,16 @@ export async function* streamAgentRequest(
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, errorText || undefined);
+    let message = errorText || undefined;
+    if (errorText) {
+      try {
+        const data = JSON.parse(errorText);
+        message = data.detail || data.message || errorText;
+      } catch {
+        // Garder le texte brut
+      }
+    }
+    throw new ApiError(response.status, response.statusText, message);
   }
 
   const reader = response.body?.getReader();

@@ -93,7 +93,7 @@ export async function listActivities(params: {
   if (params.skip) query.append('skip', params.skip.toString());
   if (params.limit) query.append('limit', params.limit.toString());
 
-  const response = await apiFetch(`${API_BASE}/crm/activities?${query}`);
+  const response = await apiFetch(`${API_BASE}/api/crm/activities?${query}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -105,7 +105,7 @@ export async function createActivity(data: {
   description?: string;
   extra_data?: string;
 }): Promise<ActivityResponse> {
-  const response = await apiFetch(`${API_BASE}/crm/activities`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/activities`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -115,7 +115,7 @@ export async function createActivity(data: {
 }
 
 export async function deleteActivity(activityId: string): Promise<void> {
-  const response = await apiFetch(`${API_BASE}/crm/activities/${activityId}`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/activities/${activityId}`, {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -130,7 +130,7 @@ export async function listDeliverables(params: {
   if (params.project_id) query.append('project_id', params.project_id);
   if (params.status) query.append('status', params.status);
 
-  const response = await apiFetch(`${API_BASE}/crm/deliverables?${query}`);
+  const response = await apiFetch(`${API_BASE}/api/crm/deliverables?${query}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -142,7 +142,7 @@ export async function createDeliverable(data: {
   status?: string;
   due_date?: string;
 }): Promise<DeliverableResponse> {
-  const response = await apiFetch(`${API_BASE}/crm/deliverables`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/deliverables`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -160,7 +160,7 @@ export async function updateDeliverable(
     due_date: string;
   }>
 ): Promise<DeliverableResponse> {
-  const response = await apiFetch(`${API_BASE}/crm/deliverables/${deliverableId}`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/deliverables/${deliverableId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -170,7 +170,7 @@ export async function updateDeliverable(
 }
 
 export async function deleteDeliverable(deliverableId: string): Promise<void> {
-  const response = await apiFetch(`${API_BASE}/crm/deliverables/${deliverableId}`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/deliverables/${deliverableId}`, {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -181,7 +181,7 @@ export async function updateContactStage(
   contactId: string,
   stage: string
 ): Promise<ContactResponse> {
-  const response = await apiFetch(`${API_BASE}/crm/contacts/${contactId}/stage`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/contacts/${contactId}/stage`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ stage }),
@@ -196,7 +196,7 @@ export async function recalculateContactScore(contactId: string): Promise<{
   new_score: number;
   reason: string;
 }> {
-  const response = await apiFetch(`${API_BASE}/crm/contacts/${contactId}/recalculate-score`, {
+  const response = await apiFetch(`${API_BASE}/api/crm/contacts/${contactId}/recalculate-score`, {
     method: 'POST',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -204,7 +204,7 @@ export async function recalculateContactScore(contactId: string): Promise<{
 }
 
 export async function getPipelineStats(): Promise<PipelineStats> {
-  const response = await apiFetch(`${API_BASE}/crm/pipeline/stats`);
+  const response = await apiFetch(`${API_BASE}/api/crm/pipeline/stats`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }

@@ -44,10 +44,17 @@ def validate_mcp_command(command: str, args: list[str] | None = None) -> None:
     else:
         cmd_name = Path(command).name
 
-    if cmd_name in BLOCKED_COMMANDS:
+    # Normaliser : retirer les extensions Windows (.cmd, .exe, .CMD, .EXE)
+    cmd_name_normalized = cmd_name
+    for ext in (".cmd", ".CMD", ".exe", ".EXE"):
+        if cmd_name_normalized.endswith(ext):
+            cmd_name_normalized = cmd_name_normalized[: -len(ext)]
+            break
+
+    if cmd_name_normalized in BLOCKED_COMMANDS:
         raise ValueError(f"Commande MCP bloquee : '{cmd_name}' est interdite pour des raisons de securite")
 
-    if cmd_name not in ALLOWED_MCP_COMMANDS:
+    if cmd_name_normalized not in ALLOWED_MCP_COMMANDS:
         logger.warning(f"Commande MCP non whitelistee : '{cmd_name}'. Autorisees : {ALLOWED_MCP_COMMANDS}")
         raise ValueError(
             f"Commande MCP non autorisee : '{cmd_name}'. "
