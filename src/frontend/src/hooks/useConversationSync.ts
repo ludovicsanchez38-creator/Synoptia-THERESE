@@ -45,12 +45,13 @@ export function useConversationSync() {
       // Get current local conversations (from Zustand state)
       const localConversations = useChatStore.getState().conversations;
 
-      // Préserver les messages locaux quand le backend n'en a pas (BUG-071/072)
+      // Préserver les messages locaux non encore synchronisés (BUG-068)
       // Ex: messages de génération d'image stockés uniquement en local
       const mergedSynced = syncedConversations.map((synced) => {
         const local = localConversations.find((l) => l.id === synced.id);
-        if (local && local.messages.length > 0 && (synced.messageCount === 0 || !synced.messageCount)) {
-          return { ...synced, messages: local.messages, messageCount: local.messages.length };
+        if (local && local.messages.length > 0) {
+          // Toujours préserver les messages locaux existants plutôt qu'un tableau vide du backend
+          return { ...synced, messages: local.messages, messageCount: Math.max(local.messages.length, synced.messageCount || 0) };
         }
         return synced;
       });
@@ -117,12 +118,12 @@ export function useConversationSync() {
     if (!currentConversationId) return;
     if (currentConversationId === lastLoadedConversationId.current) return;
 
-    // Check if conversation exists and needs messages loaded
+    // Charger les messages depuis le backend seulement si la conversation est vide localement (BUG-068)
     const conv = conversations.find((c) => c.id === currentConversationId);
     if (conv && conv.synced && (!conv.messages || conv.messages.length === 0)) {
       loadConversationMessages(currentConversationId);
-      lastLoadedConversationId.current = currentConversationId;
     }
+    lastLoadedConversationId.current = currentConversationId;
   }, [currentConversationId, conversations, loadConversationMessages]);
 
   return {

@@ -48,7 +48,11 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     - devis : DEV-YYYY-NNN
     - facture : FACT-YYYY-NNN
     - avoir : AV-YYYY-NNN
+
+    Utilise MAX() pour éviter les race conditions (BUG-073).
     """
+    from sqlalchemy import func
+
     prefix_map = {
         "devis": "DEV",
         "facture": "FACT",
@@ -57,21 +61,21 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     prefix = prefix_map.get(document_type, "FACT")
     current_year = datetime.now(UTC).year
 
-    # Trouver le dernier document de ce type pour l'année
+    # Utiliser MAX pour trouver le numéro le plus élevé (plus fiable que order_by created_at)
     statement = (
-        select(Invoice)
-        .where(Invoice.invoice_number.startswith(f"{prefix}-{current_year}-"))
-        .order_by(Invoice.created_at.desc())
+        select(func.max(Invoice.invoice_number))
+        .where(Invoice.invoice_number.like(f"{prefix}-{current_year}-%"))
     )
     result = await session.execute(statement)
-    last_invoice = result.scalar_one_or_none()
+    max_number = result.scalar_one_or_none()
 
-    if last_invoice:
-        # Extraire le numéro et incrémenter
-        last_number = int(last_invoice.invoice_number.split("-")[-1])
-        next_number = last_number + 1
+    if max_number:
+        try:
+            last_number = int(max_number.split("-")[-1])
+            next_number = last_number + 1
+        except ValueError:
+            next_number = 1
     else:
-        # Premier document de ce type pour l'année
         next_number = 1
 
     return f"{prefix}-{current_year}-{next_number:03d}"
