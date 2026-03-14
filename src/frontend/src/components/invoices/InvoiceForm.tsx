@@ -141,7 +141,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       onSave(savedInvoice);
     } catch (error) {
       console.error('Failed to save invoice:', error);
-      alert('Erreur lors de la sauvegarde');
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
+      alert(msg);
     } finally {
       setIsSaving(false);
     }
