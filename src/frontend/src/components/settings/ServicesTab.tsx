@@ -314,7 +314,7 @@ export function ServicesTab({
                 }}
                 className="text-accent-cyan hover:underline cursor-pointer bg-transparent border-none p-0 text-xs"
               >
-                Obtenir une clé gratuite
+                Obtenir une clé API
               </button>
             </p>
             {hasBraveKey && (

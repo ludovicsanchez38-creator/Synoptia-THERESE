@@ -342,7 +342,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           {hasApiKey ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">Clé API configurée</span>
+              <span className="text-sm text-green-400">Clé API configurée (chiffrée localement)</span>
             </div>
           ) : (
             <>

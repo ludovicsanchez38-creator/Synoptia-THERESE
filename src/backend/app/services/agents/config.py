@@ -20,6 +20,7 @@ AVAILABLE_MODELS = [
     # Anthropic
     {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic", "recommended": True},
     {"id": "claude-opus-4-6", "name": "Claude Opus 4.6", "provider": "anthropic"},
+    {"id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5", "provider": "anthropic"},
     # OpenAI
     {"id": "gpt-5.4", "name": "GPT-5.4", "provider": "openai"},
     {"id": "gpt-5.4-pro", "name": "GPT-5.4 Pro", "provider": "openai"},
@@ -32,9 +33,12 @@ AVAILABLE_MODELS = [
     # Mistral
     {"id": "mistral-large-latest", "name": "Mistral Large 3", "provider": "mistral"},
     {"id": "mistral-large-2512", "name": "Mistral Large 3 (fixé)", "provider": "mistral"},
+    {"id": "mistral-small-latest", "name": "Mistral Small 3", "provider": "mistral"},
     # OpenRouter (NVIDIA Nemotron 3)
     {"id": "nvidia/nemotron-3-super-120b-a12b", "name": "Nemotron 3 Super 120B", "provider": "openrouter"},
     {"id": "nvidia/nemotron-3-nano-30b-a3b", "name": "Nemotron 3 Nano 30B", "provider": "openrouter"},
+    # DeepSeek
+    {"id": "deepseek-chat", "name": "DeepSeek Chat", "provider": "deepseek"},
     # Local (Ollama)
     {"id": "qwen3:32b", "name": "Qwen 3 32B (local)", "provider": "ollama"},
     {"id": "mistral-nemo:12b", "name": "Mistral Nemo 12B (local)", "provider": "ollama"},

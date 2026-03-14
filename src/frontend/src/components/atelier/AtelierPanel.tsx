@@ -67,6 +67,33 @@ export function AtelierPanel() {
 
   if (!isOpen) return null;
 
+  if (!sourcePath) {
+    return (
+      <div
+        className="fixed right-0 top-0 z-50 flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl"
+        style={{ width: '480px' }}
+      >
+        <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
+              <Zap size={14} className="text-purple-400" />
+            </div>
+            <span className="text-sm font-semibold text-[#E6EDF7]">Atelier</span>
+          </div>
+          <button onClick={closePanel} className="rounded-lg p-1.5 text-[#B6C7DA] hover:bg-white/5">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+          <Wrench size={40} className="text-[#B6C7DA]/30" />
+          <p className="text-sm text-[#B6C7DA]">
+            Configure le chemin du code source dans <strong>Paramètres &gt; Agents</strong> pour utiliser l'Atelier.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed right-0 top-0 z-50 flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl"

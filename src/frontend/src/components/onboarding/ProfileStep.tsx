@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Upload, AlertCircle } from 'lucide-react';
+import { User, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
@@ -112,6 +112,11 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           Importer THÉRÈSE.md
         </Button>
       </div>
+
+      {/* Info stockage */}
+      <p className="text-xs text-text-muted/70 mb-4 px-1">
+        Ces informations sont stockées localement dans ~/.therese/ et ne quittent jamais ta machine.
+      </p>
 
       {/* Form */}
       <div className="space-y-4 flex-1 overflow-y-auto">
@@ -233,7 +238,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             onClick={handleSaveAndContinue}
             disabled={loading}
           >
-            {loading ? 'Enregistrement...' : 'Continuer'}
+            {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement en cours...</>) : 'Continuer'}
           </Button>
         </div>
       </div>

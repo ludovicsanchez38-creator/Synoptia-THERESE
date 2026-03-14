@@ -19,8 +19,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: '100% local',
-    description: 'Tes données restent sur ta machine. Vie privée garantie.',
+    title: 'Données locales',
+    description: 'Ton contexte reste sur ta machine. Les réponses passent par le provider IA de ton choix.',
   },
   {
     icon: Zap,
