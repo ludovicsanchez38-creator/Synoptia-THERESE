@@ -260,7 +260,7 @@ class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
     contact_id: str | None = None
-    status: Literal["active", "completed", "on_hold"] = "active"
+    status: Literal["active", "completed", "on_hold", "cancelled"] = "active"
     budget: float | None = None
     notes: str | None = None
     tags: list[str] | None = None
@@ -272,7 +272,7 @@ class ProjectUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     contact_id: str | None = None
-    status: Literal["active", "completed", "on_hold"] | None = None
+    status: Literal["active", "completed", "on_hold", "cancelled"] | None = None
     budget: float | None = None
     notes: str | None = None
     tags: list[str] | None = None
