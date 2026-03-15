@@ -774,8 +774,10 @@ async def _create_event_google(
         calendar_service = CalendarService(access_token)
 
         if request.start_datetime and request.end_datetime:
-            start = {"dateTime": request.start_datetime}
-            end = {"dateTime": request.end_datetime}
+            # BUG-082 : ajouter timeZone pour que Google Calendar interprète correctement
+            # Ne PAS ajouter de suffixe Z (UTC) car les heures sont locales
+            start = {"dateTime": request.start_datetime, "timeZone": "Europe/Paris"}
+            end = {"dateTime": request.end_datetime, "timeZone": "Europe/Paris"}
         elif request.start_date and request.end_date:
             start = {"date": request.start_date}
             end = {"date": request.end_date}
