@@ -16,8 +16,8 @@ from .base import (
     ToolResult,
 )
 from .deepseek import DeepSeekProvider
-from .infomaniak import InfomaniakProvider
 from .gemini import GeminiProvider
+from .infomaniak import InfomaniakProvider
 from .grok import GrokProvider
 from .mistral import MistralProvider
 from .ollama import OllamaProvider
