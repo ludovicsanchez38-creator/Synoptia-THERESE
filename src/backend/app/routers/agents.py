@@ -423,16 +423,16 @@ async def get_config(
 
     source_path = _get_source_path()
 
-    # Lire les modèles choisis en DB
+    # Lire les modèles choisis en DB (avec fallback sur les anciennes clés "therese")
     katia_model = "claude-sonnet-4-6"
     zezette_model = "claude-sonnet-4-6"
-    for key in ("agent_katia_model", "agent_zezette_model"):
+    for key in ("agent_katia_model", "agent_therese_model", "agent_zezette_model"):
         result = await session.execute(
             select(Preference).where(Preference.key == key)
         )
         pref = result.scalar_one_or_none()
         if pref and pref.value:
-            if key == "agent_katia_model":
+            if key in ("agent_katia_model", "agent_therese_model"):
                 katia_model = pref.value
             else:
                 zezette_model = pref.value
