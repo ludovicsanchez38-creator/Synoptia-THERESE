@@ -65,7 +65,7 @@ export function ProfileTab({
       const data = await api.getThereseMd();
       setMdContent(data.content);
       setMdPath(data.path);
-    } catch (err) {
+    } catch (_err) {
       setMdError('Impossible de charger THERESE.md');
     } finally {
       setMdLoading(false);
@@ -79,7 +79,7 @@ export function ProfileTab({
     try {
       await api.saveThereseMd(mdContent);
       setMdSaved(true);
-    } catch (err) {
+    } catch (_err) {
       setMdError('Erreur lors de la sauvegarde');
     } finally {
       setMdSaving(false);
