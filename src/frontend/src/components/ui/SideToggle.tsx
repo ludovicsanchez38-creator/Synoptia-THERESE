@@ -40,8 +40,8 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
         top: '56px',
         bottom: '0',
       }}
-      initial={{ width: 8 }}
-      animate={{ width: isHovered ? 32 : 8 }}
+      initial={{ width: 12 }}
+      animate={{ width: isHovered ? 32 : 12 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -53,9 +53,9 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
       <div
         className={`
           absolute inset-0
-          bg-gradient-to-b from-surface/40 via-surface/80 to-surface/40
-          backdrop-blur-sm
-          ${isLeft ? 'border-r' : 'border-l'} border-white/5
+          bg-gradient-to-b from-surface/60 via-surface/90 to-surface/60
+          backdrop-blur-md
+          ${isLeft ? 'border-r' : 'border-l'} border-white/10
           transition-colors duration-300
           ${isOpen ? 'bg-accent-cyan/10' : ''}
         `}

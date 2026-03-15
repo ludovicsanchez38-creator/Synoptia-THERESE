@@ -337,7 +337,8 @@ export const useChatStore = create<ChatStore>()(
       partialize: (state) => ({
         // Exclure les conversations éphémères de la persistance
         conversations: state.conversations.filter((c) => !c.ephemeral),
-        currentConversationId: state.currentConversationId,
+        // BUG-076 : ne pas restaurer la dernière conversation au lancement
+        // L'app démarre toujours sur l'écran d'accueil
       }),
     }
   )
