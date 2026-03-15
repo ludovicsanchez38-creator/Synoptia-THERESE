@@ -234,3 +234,15 @@ export async function hasGroqKey(): Promise<boolean> {
   const config = await request<{ has_groq_key: boolean }>('/api/config/');
   return config.has_groq_key;
 }
+
+// THERESE.md - Fichier de contexte personnel
+export async function getThereseMd(): Promise<{ content: string; path: string; exists: boolean }> {
+  return request('/api/config/therese-md');
+}
+
+export async function saveThereseMd(content: string): Promise<{ success: boolean; path: string }> {
+  return request('/api/config/therese-md', {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+}

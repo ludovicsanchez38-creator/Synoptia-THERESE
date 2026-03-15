@@ -95,6 +95,8 @@ export {
   getWebSearchStatus,
   setWebSearchEnabled,
   hasGroqKey,
+  getThereseMd,
+  saveThereseMd,
   type UserProfile,
   type UserProfileUpdate,
   type WorkingDirectory,

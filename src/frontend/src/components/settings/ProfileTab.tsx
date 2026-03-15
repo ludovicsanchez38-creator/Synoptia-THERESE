@@ -1,7 +1,8 @@
 // Onglet Profil utilisateur - Paramètres THÉRÈSE
 // Extraction depuis SettingsModal.tsx pour modularité
 
-import { User, Upload, Check, AlertCircle, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { User, Upload, Check, AlertCircle, Eye, FileText, X, Save, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
@@ -46,6 +47,45 @@ export function ProfileTab({
   void _saving;
   void _onSave;
 
+  // État modal THERESE.md
+  const [mdModalOpen, setMdModalOpen] = useState(false);
+  const [mdContent, setMdContent] = useState('');
+  const [mdPath, setMdPath] = useState('');
+  const [mdLoading, setMdLoading] = useState(false);
+  const [mdSaving, setMdSaving] = useState(false);
+  const [mdSaved, setMdSaved] = useState(false);
+  const [mdError, setMdError] = useState<string | null>(null);
+
+  const openMdModal = async () => {
+    setMdModalOpen(true);
+    setMdLoading(true);
+    setMdError(null);
+    setMdSaved(false);
+    try {
+      const data = await api.getThereseMd();
+      setMdContent(data.content);
+      setMdPath(data.path);
+    } catch (_err) {
+      setMdError('Impossible de charger THERESE.md');
+    } finally {
+      setMdLoading(false);
+    }
+  };
+
+  const saveMdContent = async () => {
+    setMdSaving(true);
+    setMdError(null);
+    setMdSaved(false);
+    try {
+      await api.saveThereseMd(mdContent);
+      setMdSaved(true);
+    } catch (_err) {
+      setMdError('Erreur lors de la sauvegarde');
+    } finally {
+      setMdSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -58,11 +98,99 @@ export function ProfileTab({
             <p className="text-xs text-text-muted">THÉRÈSE utilisera ces infos pour te répondre</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onImport}>
-          <Upload className="w-4 h-4 mr-2" />
-          Importer
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={openMdModal}>
+            <FileText className="w-4 h-4 mr-2" />
+            Voir THERESE.md
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onImport}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer
+          </Button>
+        </div>
       </div>
+
+      {/* Modal THERESE.md */}
+      {mdModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
+              <div>
+                <h3 className="font-medium text-text flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-accent-cyan" />
+                  THERESE.md
+                </h3>
+                {mdPath && (
+                  <p className="text-xs text-text-muted mt-0.5">{mdPath}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setMdModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-border/30 text-text-muted hover:text-text transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Corps */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {mdLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 text-accent-cyan animate-spin" />
+                  <span className="ml-2 text-text-muted">Chargement...</span>
+                </div>
+              ) : (
+                <textarea
+                  value={mdContent}
+                  onChange={(e) => {
+                    setMdContent(e.target.value);
+                    setMdSaved(false);
+                  }}
+                  className="w-full h-80 px-4 py-3 bg-background/80 border border-border/50 rounded-lg text-sm text-text font-mono resize-y focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                  placeholder="# Mon contexte personnel&#10;&#10;Écris ici les informations que THÉRÈSE doit connaître sur toi..."
+                />
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border/50">
+              <div className="flex items-center gap-2">
+                {mdError && (
+                  <span className="text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {mdError}
+                  </span>
+                )}
+                {mdSaved && (
+                  <span className="text-sm text-green-400 flex items-center gap-1">
+                    <Check className="w-3 h-3" />
+                    Sauvegardé
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setMdModalOpen(false)}>
+                  Fermer
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveMdContent}
+                  disabled={mdSaving || mdLoading}
+                >
+                  {mdSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Sauvegarder
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Statut du profil */}
       {profile ? (
