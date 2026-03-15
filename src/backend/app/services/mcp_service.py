@@ -275,8 +275,9 @@ class MCPService:
             # Validate command and args (SEC-001)
             validate_mcp_command(server.command, server.args)
 
-            # Build command
-            cmd = [server.command] + server.args
+            # Build command - résoudre le chemin complet (BUG-078 Windows : npx → npx.cmd)
+            resolved_cmd = shutil.which(server.command) or server.command
+            cmd = [resolved_cmd] + server.args
 
             # Merge environment et dechiffrer les env vars (Phase 5 - MCP Security)
             from app.services.encryption import decrypt_value, is_value_encrypted
@@ -307,14 +308,26 @@ class MCPService:
                             extra_paths.append(str(bin_dir))
                             break
 
-            # Construire le PATH enrichi
-            path_parts = base_path.split(":") if base_path else []
+            # BUG-078 : ajouter les chemins Windows courants pour Node.js/npx
+            import sys
+            if sys.platform == "win32":
+                appdata = os.environ.get("APPDATA", "")
+                localappdata = os.environ.get("LOCALAPPDATA", "")
+                extra_paths.extend([
+                    os.path.join(os.environ.get("ProgramFiles", ""), "nodejs"),
+                    os.path.join(appdata, "npm") if appdata else "",
+                    os.path.join(localappdata, "fnm") if localappdata else "",
+                ])
+
+            # Construire le PATH enrichi (séparateur : Unix, ; Windows)
+            path_sep = ";" if sys.platform == "win32" else ":"
+            path_parts = base_path.split(path_sep) if base_path else []
             for p in extra_paths:
                 if p and p not in path_parts and Path(p).exists():
                     path_parts.append(p)
 
             env = {
-                "PATH": ":".join(path_parts),
+                "PATH": path_sep.join(path_parts),
                 "HOME": home,
                 "USER": os.environ.get("USER", ""),
                 "LANG": os.environ.get("LANG", "en_US.UTF-8"),

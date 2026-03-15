@@ -223,11 +223,15 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
     await loadDirectory(path);
   }, [loadDirectory]);
 
-  // Go up one level
+  // Go up one level (BUG-086 : support backslashes Windows)
   const goUp = useCallback(async () => {
-    const parts = currentPath.split('/').filter(Boolean);
+    const normalized = currentPath.replace(/\\/g, '/');
+    const parts = normalized.split('/').filter(Boolean);
     if (parts.length > 1) {
-      const parentPath = '/' + parts.slice(0, -1).join('/');
+      const isWindows = /^[A-Z]:/.test(normalized);
+      const parentPath = isWindows
+        ? parts.slice(0, -1).join('/')
+        : '/' + parts.slice(0, -1).join('/');
       await navigateTo(parentPath);
     }
   }, [currentPath, navigateTo]);
@@ -284,8 +288,8 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
     e.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Breadcrumb parts
-  const pathParts = currentPath.split('/').filter(Boolean);
+  // Breadcrumb parts (normaliser backslashes Windows)
+  const pathParts = currentPath.replace(/\\/g, '/').split('/').filter(Boolean);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
