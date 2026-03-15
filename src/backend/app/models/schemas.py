@@ -493,6 +493,7 @@ class OllamaModelInfo(BaseModel):
     size: int | None = None
     modified_at: str | None = None
     digest: str | None = None
+    usage_type: str = "chat"  # chat, embedding, vision, transcription
 
 
 class OllamaModelRecommendation(BaseModel):

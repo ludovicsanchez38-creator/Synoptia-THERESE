@@ -902,7 +902,10 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             resp = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
             if resp.status_code == 200:
                 data = resp.json()
-                available_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+                available_models = [
+                    m.get("name", "") for m in data.get("models", [])
+                    if m.get("name") and _categorize_ollama_model(m["name"]) == "chat"
+                ]
         except Exception:
             # Ollama non disponible - liste vide, pas d'erreur
             available_models = []
@@ -1035,6 +1038,21 @@ async def set_llm_config(
 # ============================================================
 
 
+def _categorize_ollama_model(model_name: str) -> str:
+    """Catégorise un modèle Ollama par usage (BUG-075)."""
+    name = model_name.lower().split(":")[0]
+    # Embeddings
+    if any(x in name for x in ["bge-", "nomic-embed", "all-minilm", "mxbai-embed", "jina-embed", "snowflake-arctic-embed", "stella", "gte-", "e5-", "llama-embed"]):
+        return "embedding"
+    # Vision
+    if any(x in name for x in ["llava", "moondream", "minicpm-v", "cogvlm", "internvl", "bakllava"]):
+        return "vision"
+    # Transcription
+    if "whisper" in name:
+        return "transcription"
+    return "chat"
+
+
 def _recommend_ollama_models(model_names: list[str]) -> OllamaModelRecommendation:
     """Recommande le meilleur modèle Ollama installé selon la tâche."""
     # Priorité par catégorie (du meilleur au moins bon)
@@ -1081,6 +1099,7 @@ async def get_ollama_status():
                 size=m.get("size"),
                 modified_at=m.get("modified_at"),
                 digest=m.get("digest"),
+                usage_type=_categorize_ollama_model(m.get("name", "")),
             )
             for m in data.get("models", [])
         ]
