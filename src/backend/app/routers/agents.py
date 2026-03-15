@@ -424,22 +424,22 @@ async def get_config(
     source_path = _get_source_path()
 
     # Lire les modèles choisis en DB
-    therese_model = "claude-sonnet-4-6"
+    katia_model = "claude-sonnet-4-6"
     zezette_model = "claude-sonnet-4-6"
-    for key in ("agent_therese_model", "agent_zezette_model"):
+    for key in ("agent_katia_model", "agent_zezette_model"):
         result = await session.execute(
             select(Preference).where(Preference.key == key)
         )
         pref = result.scalar_one_or_none()
         if pref and pref.value:
-            if key == "agent_therese_model":
-                therese_model = pref.value
+            if key == "agent_katia_model":
+                katia_model = pref.value
             else:
                 zezette_model = pref.value
 
     return AgentConfigResponse(
         source_path=source_path,
-        therese_model=therese_model,
+        katia_model=katia_model,
         zezette_model=zezette_model,
         available_models=[AgentModelInfo(**m) for m in AVAILABLE_MODELS],
     )
@@ -457,8 +457,8 @@ async def update_config(
     updates = {}
     if config.source_path:
         updates["agent_source_path"] = config.source_path
-    if config.therese_model:
-        updates["agent_therese_model"] = config.therese_model
+    if config.katia_model:
+        updates["agent_katia_model"] = config.katia_model
     if config.zezette_model:
         updates["agent_zezette_model"] = config.zezette_model
 
@@ -510,12 +510,12 @@ async def get_status(
     active_tasks = result.scalar() or 0
 
     # Vérifier que les configs agents existent
-    therese_ready = False
+    katia_ready = False
     zezette_ready = False
     try:
         from app.services.agents.config import load_agent_config
-        load_agent_config("therese")
-        therese_ready = True
+        load_agent_config("katia")
+        katia_ready = True
     except Exception:
         pass
     try:
@@ -531,7 +531,7 @@ async def get_status(
         repo_path=source_path,
         current_branch=current_branch,
         active_tasks=active_tasks,
-        therese_ready=therese_ready,
+        katia_ready=katia_ready,
         zezette_ready=zezette_ready,
     )
 

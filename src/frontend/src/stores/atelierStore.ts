@@ -1,7 +1,7 @@
 /**
  * THÉRÈSE v2 - Atelier Store
  *
- * State management pour le panneau Atelier (agents Thérèse & Zézette).
+ * State management pour le panneau Atelier (agents Katia & Zézette).
  * Pattern Zustand identique à chatStore.ts.
  */
 
@@ -238,7 +238,7 @@ export const useAtelierStore = create<AtelierState>((set, get) => ({
 
     switch (chunk.type) {
       case 'agent_start': {
-        const agentId = chunk.agent || 'therese';
+        const agentId = chunk.agent || 'katia';
         state.startAgentStream(agentId);
         if (chunk.phase) state.updateMissionPhase(chunk.phase);
         break;

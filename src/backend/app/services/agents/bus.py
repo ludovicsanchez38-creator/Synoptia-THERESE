@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 class AgentMessage:
     """Message échangé entre agents ou avec l'utilisateur."""
 
-    sender: str  # "user", "therese", "zezette", "system"
-    recipient: str  # "user", "therese", "zezette", "swarm"
+    sender: str  # "user", "katia", "zezette", "system"
+    recipient: str  # "user", "katia", "zezette", "swarm"
     type: str  # "request", "spec", "implementation_result", "review", "feedback", "clarification"
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)

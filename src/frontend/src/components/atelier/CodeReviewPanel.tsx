@@ -73,11 +73,11 @@ export function CodeReviewPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Explication par Thérèse */}
+      {/* Explication par Katia */}
       {currentMission.explanation && (
         <div className="border-b border-white/5 px-4 py-3">
           <div className="mb-1 text-xs font-medium text-purple-400">
-            Explication de Thérèse
+            Explication de Katia
           </div>
           <div className="text-sm leading-relaxed text-[#E6EDF7]">
             {currentMission.explanation}

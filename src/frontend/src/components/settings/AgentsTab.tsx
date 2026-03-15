@@ -22,7 +22,7 @@ export function AgentsTab() {
   const [status, setStatus] = useState<AgentStatusResponse | null>(null);
   const [, setConfig] = useState<AgentConfigResponse | null>(null);
   const [sourcePath, setSourcePathInput] = useState('');
-  const [thereseModel, setThereseModel] = useState('claude-sonnet-4-6');
+  const [katiaModel, setThereseModel] = useState('claude-sonnet-4-6');
   const [zezetteModel, setZezetteModel] = useState('claude-sonnet-4-6');
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [saving, setSaving] = useState(false);
@@ -39,7 +39,7 @@ export function AgentsTab() {
       setStatus(s);
       setConfig(c);
       if (c?.source_path) setSourcePathInput(c.source_path);
-      if (c?.therese_model) setThereseModel(c.therese_model);
+      if (c?.katia_model) setThereseModel(c.katia_model);
       if (c?.zezette_model) setZezetteModel(c.zezette_model);
       if (c?.available_models) setModels(c.available_models);
       setLoading(false);
@@ -51,7 +51,7 @@ export function AgentsTab() {
     try {
       const updated = await updateAgentConfig({
         source_path: sourcePath.trim() || undefined,
-        therese_model: thereseModel,
+        katia_model: katiaModel,
         zezette_model: zezetteModel,
       });
       setConfig(updated);
@@ -101,7 +101,7 @@ export function AgentsTab() {
           Agents IA Embarqués
         </h3>
         <p className="mt-1 text-sm text-text-muted">
-          Thérèse (PM/Guide) et Zézette (Dev) peuvent améliorer l'app directement.
+          Katia (PM/Guide) et Zézette (Dev) peuvent améliorer l'app directement.
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export function AgentsTab() {
         <div className="space-y-2 text-sm">
           <StatusRow label="Git" ok={status?.git_available} />
           <StatusRow label="Dépôt détecté" ok={status?.repo_detected} />
-          <StatusRow label="Thérèse" ok={status?.therese_ready} />
+          <StatusRow label="Katia" ok={status?.katia_ready} />
           <StatusRow label="Zézette" ok={status?.zezette_ready} />
           {status?.current_branch && (
             <div className="flex items-center justify-between text-text-muted">
@@ -134,14 +134,14 @@ export function AgentsTab() {
       <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4">
         <h4 className="text-sm font-medium text-text mb-3">Modèle IA par agent</h4>
 
-        {/* Thérèse */}
+        {/* Katia */}
         <div className="mb-3">
           <label className="flex items-center gap-2 text-xs font-medium text-purple-400 mb-1.5">
             <Headphones size={12} />
-            Thérèse (PM/Guide)
+            Katia (PM/Guide)
           </label>
           <select
-            value={thereseModel}
+            value={katiaModel}
             onChange={(e) => setThereseModel(e.target.value)}
             className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
           >
@@ -195,7 +195,7 @@ export function AgentsTab() {
           Chemin du code source
         </h4>
         <p className="text-xs text-text-muted mb-3">
-          Chemin local vers votre clone/fork du repo Thérèse.
+          Chemin local vers votre clone/fork du repo THÉRÈSE.
         </p>
         <input
           type="text"

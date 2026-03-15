@@ -40,7 +40,7 @@ class AgentMessage(SQLModel, table=True):
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     task_id: str = Field(foreign_key="agent_tasks.id", index=True)
-    agent: str  # "therese", "zezette", "user", "system"
+    agent: str  # "katia", "zezette", "user", "system"
     role: str  # "user", "assistant", "system"
     content: str
     tool_calls: str | None = None  # JSON array

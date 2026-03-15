@@ -71,16 +71,16 @@ class SwarmOrchestrator:
         # --- Phase 1 : Thérèse analyse ---
         yield AgentStreamChunk(
             type="agent_start",
-            agent="therese",
+            agent="katia",
             content="Analyse de votre demande...",
             task_id=task_id,
             phase="spec",
         )
 
-        therese_config = get_agent_config("therese")
-        therese_tools = AgentToolExecutor(self.source_path)
-        therese_model = _get_agent_model("therese")
-        therese_runtime = AgentRuntime(therese_config, therese_tools, THERESE_TOOLS, model_override=therese_model)
+        katia_config = get_agent_config("katia")
+        katia_tools = AgentToolExecutor(self.source_path)
+        katia_model = _get_agent_model("katia")
+        katia_runtime = AgentRuntime(katia_config, katia_tools, THERESE_TOOLS, model_override=katia_model)
 
         # Thérèse traite le message
         spec_content = ""
@@ -89,19 +89,19 @@ class SwarmOrchestrator:
         explanation_content = ""
         full_response = ""
 
-        async for event in therese_runtime.run(user_message):
+        async for event in katia_runtime.run(user_message):
             if event.type == "chunk":
                 full_response += event.content
                 yield AgentStreamChunk(
                     type="agent_chunk",
-                    agent="therese",
+                    agent="katia",
                     content=event.content,
                     task_id=task_id,
                 )
             elif event.type == "tool_call":
                 yield AgentStreamChunk(
                     type="tool_use",
-                    agent="therese",
+                    agent="katia",
                     tool_name=event.tool_name,
                     task_id=task_id,
                 )
@@ -117,7 +117,7 @@ class SwarmOrchestrator:
             elif event.type == "error":
                 yield AgentStreamChunk(
                     type="error",
-                    agent="therese",
+                    agent="katia",
                     content=event.content,
                     task_id=task_id,
                 )
@@ -125,7 +125,7 @@ class SwarmOrchestrator:
 
         yield AgentStreamChunk(
             type="agent_done",
-            agent="therese",
+            agent="katia",
             content=full_response,
             task_id=task_id,
         )
@@ -153,7 +153,7 @@ class SwarmOrchestrator:
         # --- Phase 2 : Handoff Thérèse → Zézette ---
         yield AgentStreamChunk(
             type="handoff",
-            agent="therese",
+            agent="katia",
             content=spec_content,
             task_id=task_id,
             phase="analysis",
@@ -285,7 +285,7 @@ Tu es sur la branche `{branch_name}`. Implémente les changements demandés.
         # --- Phase 5 : Thérèse explique les changements ---
         yield AgentStreamChunk(
             type="agent_start",
-            agent="therese",
+            agent="katia",
             content="Explication des changements...",
             task_id=task_id,
             phase="review",
@@ -307,12 +307,12 @@ Utilise l'outil explain_change pour structurer ton explication.
 """
 
         explain_response = ""
-        async for event in therese_runtime.run(explain_prompt):
+        async for event in katia_runtime.run(explain_prompt):
             if event.type == "chunk":
                 explain_response += event.content
                 yield AgentStreamChunk(
                     type="explanation",
-                    agent="therese",
+                    agent="katia",
                     content=event.content,
                     task_id=task_id,
                 )
@@ -323,7 +323,7 @@ Utilise l'outil explain_change pour structurer ton explication.
 
         yield AgentStreamChunk(
             type="agent_done",
-            agent="therese",
+            agent="katia",
             content=explain_response,
             task_id=task_id,
         )

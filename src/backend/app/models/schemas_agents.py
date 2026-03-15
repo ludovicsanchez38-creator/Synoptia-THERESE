@@ -46,7 +46,7 @@ class AgentStreamChunk(BaseModel):
     """Chunk SSE envoyé pendant le traitement d'une demande agent."""
 
     type: str  # agent_start, agent_chunk, agent_done, handoff, tool_use, test_result, review_ready, explanation, done, error
-    agent: str | None = None  # "therese" ou "zezette"
+    agent: str | None = None  # "katia" ou "zezette"
     content: str = ""
     task_id: str | None = None
     phase: str | None = None  # spec, analysis, implementation, testing, review, done
@@ -90,9 +90,9 @@ class AgentModelInfo(BaseModel):
 class AgentConfigResponse(BaseModel):
     """Configuration des agents."""
 
-    therese_enabled: bool = True
+    katia_enabled: bool = True
     zezette_enabled: bool = True
-    therese_model: str = "claude-sonnet-4-6"
+    katia_model: str = "claude-sonnet-4-6"
     zezette_model: str = "claude-sonnet-4-6"
     source_path: str | None = None
     available_models: list[AgentModelInfo] = []
@@ -101,9 +101,9 @@ class AgentConfigResponse(BaseModel):
 class AgentConfigUpdate(BaseModel):
     """Mise à jour de la configuration des agents."""
 
-    therese_enabled: bool | None = None
+    katia_enabled: bool | None = None
     zezette_enabled: bool | None = None
-    therese_model: str | None = None
+    katia_model: str | None = None
     zezette_model: str | None = None
     source_path: str | None = None
 
@@ -116,5 +116,5 @@ class AgentStatusResponse(BaseModel):
     repo_path: str | None = None
     current_branch: str | None = None
     active_tasks: int = 0
-    therese_ready: bool = False
+    katia_ready: bool = False
     zezette_ready: bool = False

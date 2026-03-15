@@ -219,7 +219,7 @@ function EmptyState() {
           Bienvenue dans l'Atelier
         </h3>
         <p className="text-xs leading-relaxed text-[#6B7280]">
-          Thérèse vous guide et comprend vos besoins.
+          Katia vous guide et comprend vos besoins.
           Zézette implémente les changements.
           Posez une question ou demandez une amélioration.
         </p>

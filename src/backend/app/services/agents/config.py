@@ -79,13 +79,13 @@ def _resolve_agents_dir() -> Path:
     import sys
 
     # 1. Builtin (mode dev, __file__ pointe vers le vrai fichier)
-    if (_BUILTIN_AGENTS_DIR / "therese" / "agent.json").exists():
+    if (_BUILTIN_AGENTS_DIR / "katia" / "agent.json").exists():
         return _BUILTIN_AGENTS_DIR
 
     # 2. PyInstaller bundle (_MEIPASS)
     if hasattr(sys, "_MEIPASS"):
         meipass_agents = Path(sys._MEIPASS) / "app" / "agents"
-        if (meipass_agents / "therese" / "agent.json").exists():
+        if (meipass_agents / "katia" / "agent.json").exists():
             return meipass_agents
 
     # 3. Source path (env var ou DB, sans import circulaire)
@@ -118,13 +118,13 @@ def _resolve_agents_dir() -> Path:
             home / "Desktop" / "Dev Synoptia" / "THERESE V2",
             home / "repos" / "Synoptia-THERESE",
         ]:
-            if (candidate_root / "src" / "backend" / "app" / "agents" / "therese" / "agent.json").exists():
+            if (candidate_root / "src" / "backend" / "app" / "agents" / "katia" / "agent.json").exists():
                 source_path = str(candidate_root)
                 break
 
     if source_path:
         candidate = Path(source_path) / "src" / "backend" / "app" / "agents"
-        if (candidate / "therese" / "agent.json").exists():
+        if (candidate / "katia" / "agent.json").exists():
             return candidate
 
     # 4. Fallback (lèvera FileNotFoundError plus tard)

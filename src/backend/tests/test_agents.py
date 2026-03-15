@@ -15,12 +15,12 @@ import pytest
 class TestAgentConfig:
     """Tests pour le chargement de configuration des agents."""
 
-    def test_load_therese_config(self):
+    def test_load_katia_config(self):
         from app.services.agents.config import load_agent_config
 
-        config = load_agent_config("therese")
-        assert config.id == "therese"
-        assert config.name == "Thérèse"
+        config = load_agent_config("katia")
+        assert config.id == "katia"
+        assert config.name == "Katia"
         assert config.default_model == "claude-sonnet-4-6"
         assert len(config.tools) > 0
         assert config.system_prompt  # SOUL.md non vide
@@ -48,16 +48,16 @@ class TestAgentConfig:
         from app.services.agents.config import get_agent_config, reload_agent_configs
 
         reload_agent_configs()
-        c1 = get_agent_config("therese")
-        c2 = get_agent_config("therese")
+        c1 = get_agent_config("katia")
+        c2 = get_agent_config("katia")
         assert c1 is c2  # Même instance (cache)
 
     def test_reload_clears_cache(self):
         from app.services.agents.config import get_agent_config, reload_agent_configs
 
-        c1 = get_agent_config("therese")
+        c1 = get_agent_config("katia")
         reload_agent_configs()
-        c2 = get_agent_config("therese")
+        c2 = get_agent_config("katia")
         assert c1 is not c2  # Nouvelle instance après reload
 
 
@@ -75,7 +75,7 @@ class TestAgentMessageBus:
 
         bus = AgentMessageBus()
         msg = AgentMessage(
-            sender="therese",
+            sender="katia",
             recipient="zezette",
             type="spec",
             content="Implémenter X",
@@ -83,7 +83,7 @@ class TestAgentMessageBus:
         await bus.send(msg)
         received = await bus.receive("zezette", timeout=1.0)
         assert received is not None
-        assert received.sender == "therese"
+        assert received.sender == "katia"
         assert received.content == "Implémenter X"
 
     @pytest.mark.asyncio
@@ -99,8 +99,8 @@ class TestAgentMessageBus:
         from app.services.agents.bus import AgentMessageBus
 
         bus = AgentMessageBus()
-        await bus.stop("therese")
-        result = await bus.receive("therese", timeout=1.0)
+        await bus.stop("katia")
+        result = await bus.receive("katia", timeout=1.0)
         assert result is None
 
     def test_clear(self):
@@ -323,11 +323,11 @@ class TestAgentEntities:
 
         msg = AgentMessage(
             task_id="task-1",
-            agent="therese",
+            agent="katia",
             role="assistant",
             content="Bonjour",
         )
-        assert msg.agent == "therese"
+        assert msg.agent == "katia"
         assert msg.role == "assistant"
 
     def test_code_change_fields(self):
@@ -361,13 +361,13 @@ class TestAgentSchemas:
 
         chunk = AgentStreamChunk(
             type="agent_chunk",
-            agent="therese",
+            agent="katia",
             content="Analyse...",
             task_id="123",
         )
         data = chunk.model_dump(exclude_none=True)
         assert data["type"] == "agent_chunk"
-        assert data["agent"] == "therese"
+        assert data["agent"] == "katia"
         assert "content" in data
 
     def test_agent_status_response(self):
@@ -375,7 +375,7 @@ class TestAgentSchemas:
 
         status = AgentStatusResponse()
         assert status.git_available is False
-        assert status.therese_ready is False
+        assert status.katia_ready is False
 
 
 # ============================================================

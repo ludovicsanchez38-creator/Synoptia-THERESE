@@ -10,11 +10,11 @@ import { Headphones, Wrench, User, Info } from 'lucide-react';
 import type { AgentMessage } from '../../stores/atelierStore';
 
 const AGENT_STYLES: Record<string, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
-  therese: {
+  katia: {
     color: '#A855F7',
     bg: 'rgba(168, 85, 247, 0.1)',
     icon: <Headphones size={14} />,
-    label: 'Thérèse',
+    label: 'Katia',
   },
   zezette: {
     color: '#F59E0B',
@@ -68,7 +68,7 @@ export function AgentMessageBubble({ message }: Props) {
       >
         <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#B6C7DA]">
           <Headphones size={12} className="text-purple-400" />
-          <span>Thérèse transmet à Zézette</span>
+          <span>Katia transmet à Zézette</span>
           <Wrench size={12} className="text-amber-400" />
         </div>
         <div className="text-[#E6EDF7]">{message.content}</div>

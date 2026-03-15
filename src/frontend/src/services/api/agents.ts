@@ -11,7 +11,7 @@ import { API_BASE, apiFetch, ApiError, request } from './core';
 // Types
 // ============================================================
 
-export type AgentId = 'therese' | 'zezette';
+export type AgentId = 'katia' | 'zezette';
 
 export type MissionPhase = 'spec' | 'analysis' | 'implementation' | 'testing' | 'review' | 'done';
 
@@ -75,9 +75,9 @@ export interface AgentModelInfo {
 }
 
 export interface AgentConfigResponse {
-  therese_enabled: boolean;
+  katia_enabled: boolean;
   zezette_enabled: boolean;
-  therese_model: string;
+  katia_model: string;
   zezette_model: string;
   source_path?: string;
   available_models: AgentModelInfo[];
@@ -89,7 +89,7 @@ export interface AgentStatusResponse {
   repo_path?: string;
   current_branch?: string;
   active_tasks: number;
-  therese_ready: boolean;
+  katia_ready: boolean;
   zezette_ready: boolean;
 }
 
