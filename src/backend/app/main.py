@@ -125,6 +125,21 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
+    # Migration auto : ajouter les colonnes manquantes (desktop = pas d'alembic auto)
+    try:
+        import sqlite3
+        db_path = settings.db_path
+        if db_path and FilePath(str(db_path)).exists():
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.execute("PRAGMA table_info(invoices)")
+                columns = [row[1] for row in cursor.fetchall()]
+                if columns and "currency" not in columns:
+                    conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
+                    conn.commit()
+                    logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+    except Exception as e:
+        logger.warning(f"Migration auto ignorée : {e}")
+
     # En mode test (THERESE_SKIP_SERVICES=1), sauter les services externes
     # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
     skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"
