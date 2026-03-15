@@ -21,6 +21,7 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   contact_id: string;
+  currency: string;
   issue_date: string;
   due_date: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
@@ -43,6 +44,7 @@ export interface InvoiceLineRequest {
 
 export interface CreateInvoiceRequest {
   contact_id: string;
+  currency?: string;
   issue_date?: string;
   due_date?: string;
   lines: InvoiceLineRequest[];
@@ -51,6 +53,7 @@ export interface CreateInvoiceRequest {
 
 export interface UpdateInvoiceRequest {
   contact_id?: string;
+  currency?: string;
   issue_date?: string;
   due_date?: string;
   status?: string;

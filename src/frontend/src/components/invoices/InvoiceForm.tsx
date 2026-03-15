@@ -25,9 +25,24 @@ const TVA_RATES = [
   { value: 0.0, label: '0% (exonéré)' },
 ];
 
+const CURRENCIES = [
+  { value: 'EUR', label: 'EUR (\u20ac)' },
+  { value: 'CHF', label: 'CHF' },
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'GBP', label: 'GBP (\u00a3)' },
+];
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: '\u20ac',
+  CHF: 'CHF',
+  USD: '$',
+  GBP: '\u00a3',
+};
+
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
+  const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
   const [issueDate, setIssueDate] = useState(
     invoice?.issue_date.split('T')[0] || new Date().toISOString().split('T')[0]
   );
@@ -121,6 +136,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     try {
       const data = {
         contact_id: contactId,
+        currency,
         issue_date: issueDate,
         due_date: dueDate,
         lines,
@@ -262,6 +278,29 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             </div>
 
             <div>
+              <label htmlFor="currency" className="block text-sm font-medium text-text mb-2">
+                Devise
+              </label>
+              <select
+                id="currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className={cn(
+                  'w-full px-3 py-2 rounded-lg',
+                  'bg-bg border border-border/50',
+                  'text-text',
+                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                )}
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="issueDate" className="block text-sm font-medium text-text mb-2">
                 Date d'émission *
               </label>
@@ -368,7 +407,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       </div>
 
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">Prix HT (€)</label>
+                        <label className="block text-xs text-text-muted mb-1">Prix HT ({CURRENCY_SYMBOLS[currency] || currency})</label>
                         <input
                           type="number"
                           min="0"
@@ -408,7 +447,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Total HT</label>
                         <div className="px-3 py-2 rounded-lg bg-surface-elevated text-text font-medium">
-                          {totalHT.toFixed(2)} €
+                          {totalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}
                         </div>
                       </div>
                     </div>
@@ -443,16 +482,16 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
           <div className="p-4 rounded-lg bg-surface-elevated/50 border border-border/50 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-muted">Total HT</span>
-              <span className="font-medium text-text">{subtotalHT.toFixed(2)} €</span>
+              <span className="font-medium text-text">{subtotalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-muted">Total TVA</span>
-              <span className="font-medium text-text">{totalTax.toFixed(2)} €</span>
+              <span className="font-medium text-text">{totalTax.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
             </div>
             <div className="h-px bg-border/50" />
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text">Total TTC</span>
-              <span className="text-2xl font-bold text-accent-cyan">{totalTTC.toFixed(2)} €</span>
+              <span className="text-2xl font-bold text-accent-cyan">{totalTTC.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
             </div>
           </div>
         </form>

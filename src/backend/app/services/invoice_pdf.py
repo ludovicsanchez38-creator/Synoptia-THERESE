@@ -27,6 +27,14 @@ TVA_RATES = {
     0.0: "TVA à 0%",
 }
 
+# Mapping devise vers symbole d'affichage
+CURRENCY_SYMBOLS: dict[str, str] = {
+    "EUR": "\u20ac",
+    "CHF": "CHF",
+    "GBP": "\u00a3",
+    "USD": "$",
+}
+
 
 class InvoicePDFGenerator:
     """Générateur de factures PDF conformes France."""
@@ -46,6 +54,7 @@ class InvoicePDFGenerator:
         invoice_data: dict[str, Any],
         contact_data: dict[str, Any],
         user_profile: dict[str, Any],
+        currency: str = "EUR",
     ) -> str:
         """
         Génère une facture PDF.
@@ -54,10 +63,12 @@ class InvoicePDFGenerator:
             invoice_data: Données de la facture (invoice_number, lines, totals, etc.)
             contact_data: Données du client (name, email, company, address, etc.)
             user_profile: Données du profil utilisateur (nom, entreprise, SIREN, adresse)
+            currency: Code devise (EUR, CHF, USD, GBP)
 
         Returns:
             Chemin absolu du fichier PDF généré
         """
+        currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
         invoice_number = invoice_data["invoice_number"]
         filename = f"{invoice_number}.pdf"
         filepath = self.output_dir / filename
@@ -228,18 +239,18 @@ class InvoicePDFGenerator:
         for line in invoice_data["lines"]:
             if tva_applicable:
                 tva_display = f"{line['tva_rate']:.1f}%"
-                ttc_display = f"{line['total_ttc']:.2f} €"
+                ttc_display = f"{line['total_ttc']:.2f} {currency_symbol}"
             else:
                 tva_display = "0,0%"
-                ttc_display = f"{line['total_ht']:.2f} €"
+                ttc_display = f"{line['total_ht']:.2f} {currency_symbol}"
 
             lines_data.append(
                 [
                     line["description"],
                     str(line["quantity"]),
-                    f"{line['unit_price_ht']:.2f} €",
+                    f"{line['unit_price_ht']:.2f} {currency_symbol}",
                     tva_display,
-                    f"{line['total_ht']:.2f} €",
+                    f"{line['total_ht']:.2f} {currency_symbol}",
                     ttc_display,
                 ]
             )
@@ -278,15 +289,15 @@ class InvoicePDFGenerator:
 
         if tva_applicable:
             totals_data = [
-                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} €"],
-                ["Total TVA", f"{invoice_data['total_tax']:.2f} €"],
-                ["Total TTC", f"{invoice_data['total_ttc']:.2f} €"],
+                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"],
+                ["Total TVA", f"{invoice_data['total_tax']:.2f} {currency_symbol}"],
+                ["Total TTC", f"{invoice_data['total_ttc']:.2f} {currency_symbol}"],
             ]
         else:
             totals_data = [
-                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} €"],
-                ["Total TVA", "0,00 €"],
-                ["Total TTC", f"{invoice_data['subtotal_ht']:.2f} €"],
+                ["Total HT", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"],
+                ["Total TVA", f"0,00 {currency_symbol}"],
+                ["Total TTC", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"],
             ]
 
         totals_table = Table(totals_data, colWidths=[140 * mm, 30 * mm])
@@ -328,7 +339,7 @@ class InvoicePDFGenerator:
         <b>Conditions de paiement :</b><br/>
         Paiement à réception de facture, net à 30 jours.<br/>
         En cas de retard de paiement, application d'intérêts de retard au taux légal.<br/>
-        Indemnité forfaitaire pour frais de recouvrement : 40 €.<br/>
+        Indemnité forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>
         <br/>
         <b>Mentions légales :</b><br/>
         {tva_mention}<br/>

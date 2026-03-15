@@ -113,6 +113,7 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         contact_id=invoice.contact_id,
         document_type=invoice.document_type,
         tva_applicable=invoice.tva_applicable,
+        currency=invoice.currency,
         issue_date=invoice.issue_date.isoformat(),
         due_date=invoice.due_date.isoformat(),
         status=invoice.status,
@@ -212,6 +213,7 @@ async def create_invoice(
         contact_id=request.contact_id,
         document_type=document_type,
         tva_applicable=request.tva_applicable,
+        currency=request.currency,
         issue_date=issue_date,
         due_date=due_date,
         status="draft",
@@ -280,6 +282,9 @@ async def update_invoice(
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         invoice.contact_id = request.contact_id
+
+    if request.currency is not None:
+        invoice.currency = request.currency
 
     if request.issue_date is not None:
         invoice.issue_date = datetime.fromisoformat(request.issue_date.replace("Z", ""))
@@ -471,6 +476,7 @@ async def generate_invoice_pdf(
         invoice_data=invoice_data,
         contact_data=contact_data,
         user_profile=user_profile_data,
+        currency=invoice.currency,
     )
 
     logger.info(f"PDF generated for invoice: {invoice.invoice_number}")

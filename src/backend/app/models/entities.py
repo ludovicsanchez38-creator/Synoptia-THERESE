@@ -427,6 +427,7 @@ class Invoice(SQLModel, table=True):
     contact_id: str = Field(foreign_key="contacts.id", index=True)
     document_type: str = Field(default="facture", index=True)  # devis, facture, avoir
     tva_applicable: bool = Field(default=True)  # Si False: "TVA non applicable, art. 293 B du CGI"
+    currency: str = Field(default="EUR")  # EUR, CHF, USD, GBP
     issue_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
     due_date: datetime
     status: str = "draft"  # draft, sent, paid, overdue, cancelled
