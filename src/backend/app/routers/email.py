@@ -914,9 +914,9 @@ async def get_message(
 
     US-EMAIL-02: Lire emails
     """
-    # Check local cache first
+    # Check local cache first (BUG-081 : seulement si le body est présent)
     cached = await session.get(EmailMessage, message_id)
-    if cached and cached.account_id == account_id:
+    if cached and cached.account_id == account_id and (cached.body_plain or cached.body_html):
         return {
             'id': cached.id,
             'thread_id': cached.thread_id,

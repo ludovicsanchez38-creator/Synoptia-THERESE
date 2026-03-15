@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   ExternalLink,
   LogOut,
+  FileText,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-shell';
 import { useEmailStore } from '../../stores/emailStore';
@@ -226,6 +227,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const systemLabels = [
     { id: 'INBOX', name: 'Boite de réception', icon: Inbox },
     { id: 'SENT', name: 'Envoyés', icon: Send },
+    { id: 'DRAFT', name: 'Brouillons', icon: FileText },
     { id: 'STARRED', name: 'Suivis', icon: Star },
     { id: 'TRASH', name: 'Corbeille', icon: Trash2 },
   ];
