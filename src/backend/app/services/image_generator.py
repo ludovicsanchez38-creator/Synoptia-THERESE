@@ -245,15 +245,20 @@ class ImageGeneratorService:
                 ),
             )
 
-            # Extract image from response
+            # Extract image from response (BUG-085 : supporter plusieurs formats de réponse)
             image_bytes = None
             for part in response.candidates[0].content.parts:
                 if hasattr(part, "inline_data") and part.inline_data:
                     image_bytes = part.inline_data.data
                     break
+                elif hasattr(part, "data") and part.data:
+                    image_bytes = part.data
+                    break
 
             if not image_bytes:
-                raise ValueError("No image data in Gemini response")
+                part_types = [type(p).__name__ for p in response.candidates[0].content.parts]
+                logger.error(f"Gemini image: aucune donnée image. Parts: {part_types}")
+                raise ValueError(f"No image data in Gemini response (parts: {part_types})")
 
             return self._save_image(
                 image_bytes=image_bytes,

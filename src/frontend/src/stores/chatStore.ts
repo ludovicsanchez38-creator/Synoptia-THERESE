@@ -278,7 +278,11 @@ export const useChatStore = create<ChatStore>()(
 
       // Sync actions
       setConversations: (conversations) => {
-        set({ conversations });
+        // Tri par updatedAt desc (plus récentes en haut)
+        const sorted = [...conversations].sort(
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+        set({ conversations: sorted });
       },
 
       setConversationMessages: (conversationId, messages) => {
