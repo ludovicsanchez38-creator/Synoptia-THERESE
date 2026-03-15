@@ -424,7 +424,8 @@ pub fn run() {
                 }
 
                 // Étape 2 : Attendre le shutdown graceful (uvicorn + lifespan cleanup)
-                std::thread::sleep(std::time::Duration::from_secs(3));
+                // BUG-077 : augmenté de 3s à 5s pour laisser Windows libérer les handles
+                std::thread::sleep(std::time::Duration::from_secs(5));
 
                 // Étape 3 : Force kill si toujours vivant
                 let _ = child.kill();
@@ -441,8 +442,19 @@ pub fn run() {
                 }
                 #[cfg(windows)]
                 {
+                    // Kill par PID tree
                     let _ = std::process::Command::new("taskkill")
                         .args(["/T", "/F", "/PID", &pid.to_string()])
+                        .stdin(std::process::Stdio::null())
+                        .output();
+
+                    // BUG-077 : attendre que Windows libère les file handles
+                    std::thread::sleep(std::time::Duration::from_secs(2));
+
+                    // Fallback : kill par nom d'exécutable (couvre les processus orphelins)
+                    let _ = std::process::Command::new("taskkill")
+                        .args(["/IM", "backend.exe", "/F"])
+                        .stdin(std::process::Stdio::null())
                         .output();
                 }
 
