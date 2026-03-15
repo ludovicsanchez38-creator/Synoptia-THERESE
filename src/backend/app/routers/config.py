@@ -727,6 +727,29 @@ async def delete_profile(session: AsyncSession = Depends(get_session)):
     return {"deleted": deleted}
 
 
+@router.get("/therese-md")
+async def get_therese_md() -> dict[str, str | bool]:
+    """Lit le contenu de THERESE.md."""
+    from pathlib import Path
+
+    md_path = Path(settings.data_dir) / "THERESE.md"
+    if not md_path.exists():
+        return {"content": "", "path": str(md_path), "exists": False}
+    content = md_path.read_text(encoding="utf-8")
+    return {"content": content, "path": str(md_path), "exists": True}
+
+
+@router.post("/therese-md")
+async def save_therese_md(request: dict) -> dict[str, str | bool]:  # type: ignore[type-arg]
+    """Sauvegarde le contenu de THERESE.md."""
+    from pathlib import Path
+
+    md_path = Path(settings.data_dir) / "THERESE.md"
+    md_path.parent.mkdir(parents=True, exist_ok=True)
+    md_path.write_text(request.get("content", ""), encoding="utf-8")
+    return {"success": True, "path": str(md_path)}
+
+
 @router.post("/profile/import-claude-md", response_model=UserProfileResponse)
 async def import_claude_md(
     request: ImportClaudeMdRequest,
