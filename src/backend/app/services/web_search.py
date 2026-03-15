@@ -270,20 +270,96 @@ class WebSearchService:
             self._client = None
 
 
+# ============================================================
+# SearXNG Service (méta-moteur auto-hébergeable)
+# ============================================================
+
+
+class SearXNGService:
+    """
+    Web search service using a SearXNG instance.
+
+    SearXNG est un méta-moteur open source auto-hébergeable.
+    Aucune clé API requise - juste l'URL de l'instance.
+    """
+
+    def __init__(self, instance_url: str):
+        self._instance_url = instance_url.rstrip("/")
+        self._client: httpx.AsyncClient | None = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=15.0)
+        return self._client
+
+    async def search(self, query: str, max_results: int = 5, region: str = "fr") -> SearchResponse:
+        """Search using SearXNG JSON API."""
+        client = await self._get_client()
+
+        try:
+            response = await client.get(
+                f"{self._instance_url}/search",
+                params={
+                    "q": query,
+                    "format": "json",
+                    "language": region,
+                    "categories": "general",
+                    "pageno": 1,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            results = []
+            for item in data.get("results", [])[:max_results]:
+                results.append(SearchResult(
+                    title=item.get("title", ""),
+                    url=item.get("url", ""),
+                    snippet=item.get("content", ""),
+                    source="searxng",
+                ))
+
+            return SearchResponse(
+                query=query,
+                results=results,
+                total_results=data.get("number_of_results", len(results)),
+            )
+
+        except Exception as e:
+            logger.error(f"SearXNG search error: {e}")
+            return SearchResponse(query=query, results=[], total_results=0)
+
+    def format_results_for_llm(self, response: SearchResponse) -> str:
+        """Format search results for LLM consumption."""
+        if not response.results:
+            return f"Aucun résultat trouvé pour : {response.query}"
+
+        parts = [f"Résultats de recherche pour : {response.query}\n"]
+        for i, r in enumerate(response.results, 1):
+            parts.append(f"{i}. {r.title}\n   URL: {r.url}\n   {r.snippet}\n")
+        return "\n".join(parts)
+
+    async def close(self) -> None:
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+
 # Global instances
 _web_search_service: WebSearchService | None = None
 _brave_search_service: BraveSearchService | None = None
+_searxng_service: SearXNGService | None = None
 
 
-def get_web_search_service() -> WebSearchService | BraveSearchService:
+def get_web_search_service() -> WebSearchService | BraveSearchService | SearXNGService:
     """
     Get the global web search service instance.
 
-    Priorité : Brave Search (si clé API configurée) > DuckDuckGo (fallback).
+    Priorité : Brave Search (si clé API) > SearXNG (si URL configurée) > DuckDuckGo (fallback).
     """
-    global _web_search_service, _brave_search_service
+    global _web_search_service, _brave_search_service, _searxng_service
 
-    # Vérifier si Brave Search est configuré
+    # 1. Brave Search (si clé API configurée)
     brave_key = _get_brave_api_key()
     if brave_key:
         if _brave_search_service is None:
@@ -291,7 +367,15 @@ def get_web_search_service() -> WebSearchService | BraveSearchService:
             logger.info("Brave Search API activé")
         return _brave_search_service
 
-    # Fallback DuckDuckGo
+    # 2. SearXNG (si URL configurée)
+    searxng_url = _get_searxng_url()
+    if searxng_url:
+        if _searxng_service is None:
+            _searxng_service = SearXNGService(searxng_url)
+            logger.info(f"SearXNG activé : {searxng_url}")
+        return _searxng_service
+
+    # 3. Fallback DuckDuckGo
     if _web_search_service is None:
         _web_search_service = WebSearchService()
     return _web_search_service
@@ -334,6 +418,34 @@ def set_brave_api_key(key: str | None) -> None:
         except RuntimeError:
             pass
         _brave_search_service = None
+
+
+_searxng_url_cache: str | None = None
+
+
+def _get_searxng_url() -> str | None:
+    """Récupère l'URL SearXNG (env ou cache)."""
+    import os
+
+    env_url = os.environ.get("SEARXNG_URL")
+    if env_url:
+        return env_url
+
+    return _searxng_url_cache
+
+
+def set_searxng_url(url: str | None) -> None:
+    """Met à jour l'URL SearXNG en cache."""
+    global _searxng_url_cache, _searxng_service
+    _searxng_url_cache = url
+    if _searxng_service is not None:
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_searxng_service.close())
+        except RuntimeError:
+            pass
+        _searxng_service = None
 
 
 # Tool definition for LLM function calling

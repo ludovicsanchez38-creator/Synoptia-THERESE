@@ -29,6 +29,7 @@ class LLMProvider(str, Enum):
     OPENROUTER = "openrouter"
     PERPLEXITY = "perplexity"
     DEEPSEEK = "deepseek"
+    INFOMANIAK = "infomaniak"
 
 
 @dataclass

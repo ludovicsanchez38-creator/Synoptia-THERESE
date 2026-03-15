@@ -21,6 +21,7 @@ from app.services.providers import (
     AnthropicProvider,
     DeepSeekProvider,
     GeminiProvider,
+    InfomaniakProvider,
     GrokProvider,
     LLMConfig,
     LLMProvider,
@@ -319,6 +320,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
             "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", 200000),
             "deepseek": (LLMProvider.DEEPSEEK, "deepseek-chat", 128000),
+            "infomaniak": (LLMProvider.INFOMANIAK, "mix", 128000),
             "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
         }
 
@@ -342,6 +344,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     "openrouter": "OPENROUTER_API_KEY",
                     "perplexity": "PERPLEXITY_API_KEY",
                     "deepseek": "DEEPSEEK_API_KEY",
+                    "infomaniak": "INFOMANIAK_API_KEY",
                 }
                 api_key = os.getenv(env_map.get(selected_provider, ""))
 
@@ -394,6 +397,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 LLMProvider.OPENROUTER: OpenRouterProvider,
                 LLMProvider.PERPLEXITY: PerplexityProvider,
                 LLMProvider.DEEPSEEK: DeepSeekProvider,
+                LLMProvider.INFOMANIAK: InfomaniakProvider,
                 LLMProvider.OLLAMA: OllamaProvider,
             }
             provider_class = provider_map.get(self.config.provider)

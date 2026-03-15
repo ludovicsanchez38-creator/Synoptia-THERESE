@@ -386,7 +386,7 @@ class ConfigResponse(BaseModel):
 class ApiKeyUpdate(BaseModel):
     """API key update request."""
 
-    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal", "brave"]
+    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal", "brave", "infomaniak", "deepseek", "perplexity"]
     api_key: str
 
 

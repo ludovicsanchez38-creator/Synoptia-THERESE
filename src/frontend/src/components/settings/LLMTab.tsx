@@ -131,6 +131,17 @@ export const PROVIDERS: ProviderConfig[] = [
     ],
   },
   {
+    id: 'infomaniak',
+    name: 'Infomaniak AI',
+    description: 'IA souveraine suisse - serveurs en Suisse, RGPD',
+    keyPlaceholder: 'Votre token API Infomaniak...',
+    consoleUrl: 'https://www.infomaniak.com/fr/hebergement/ai-tools',
+    models: [
+      { id: 'mix', name: 'Mix', badge: 'Polyvalent' },
+      { id: 'mix-large', name: 'Mix Large', badge: 'Puissant' },
+    ],
+  },
+  {
     id: 'ollama',
     name: 'Ollama (Local)',
     description: '100% local - Aucune clé API requise',
