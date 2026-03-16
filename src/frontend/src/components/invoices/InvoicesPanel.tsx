@@ -170,6 +170,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={handleCreateNew}
           className={cn(
             'px-4 py-2 rounded-lg',
@@ -184,6 +185,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
         {!standalone && (
           <button
+            type="button"
             onClick={() => setIsInvoicePanelOpen(false)}
             className="p-2 rounded-lg hover:bg-surface-elevated transition-colors"
           >
@@ -200,6 +202,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       <div className="flex items-center gap-2">
         {(['all', 'draft', 'sent', 'paid', 'overdue', 'cancelled'] as const).map((status) => (
           <button
+            type="button"
             key={status}
             onClick={() => setFilters({ ...filters, status })}
             className={cn(
@@ -227,6 +230,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <FileText className="w-16 h-16 text-text-muted/30" />
           <p className="text-text-muted">Aucune facture</p>
           <button
+            type="button"
             onClick={handleCreateNew}
             className="px-4 py-2 rounded-lg bg-accent-cyan text-bg hover:bg-accent-cyan/90"
           >
@@ -277,7 +281,9 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleGeneratePDF(invoice);
                         }}
@@ -289,7 +295,9 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
                       {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
                         <button
+                          type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handleSendEmail(invoice);
                           }}
@@ -301,7 +309,9 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       )}
 
                       <button
+                        type="button"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleDeleteInvoice(invoice);
                         }}
@@ -345,14 +355,22 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         </p>
         <div className="flex items-center justify-end gap-3">
           <button
-            onClick={() => setDeletingInvoice(null)}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setDeletingInvoice(null);
+            }}
             disabled={isDeleting}
             className="px-4 py-2 rounded-lg bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
           >
             Annuler
           </button>
           <button
-            onClick={confirmDeleteInvoice}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              void confirmDeleteInvoice();
+            }}
             disabled={isDeleting}
             className={cn(
               'px-4 py-2 rounded-lg font-medium transition-colors',
