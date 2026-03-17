@@ -5,6 +5,8 @@ SQLite database setup with SQLModel.
 """
 
 import logging
+import sqlite3
+from pathlib import Path
 from typing import AsyncGenerator
 
 from app.config import settings
@@ -24,6 +26,23 @@ async_engine = None
 
 # Session factory
 AsyncSessionLocal = None
+
+
+def ensure_invoice_currency_column(db_path: Path | None) -> bool:
+    """Ajoute la colonne invoices.currency si elle manque sur une DB legacy."""
+    if db_path is None or not db_path.exists():
+        return False
+
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.execute("PRAGMA table_info(invoices)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if not columns or "currency" in columns:
+            return False
+
+        conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
+        conn.commit()
+        logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+        return True
 
 
 def get_database_url(async_mode: bool = True) -> str:
@@ -102,6 +121,8 @@ async def init_db() -> None:
     SQLModel.metadata.create_all(sync_engine)
 
     # Auto-migration : ajouter les colonnes manquantes aux tables existantes
+    ensure_invoice_currency_column(settings.db_path)
+
     with sync_engine.connect() as conn:
         alter_statements = [
             # BUG-068 : colonne mode ajoutée dans BoardDecisionDB mais absente des DB existantes
