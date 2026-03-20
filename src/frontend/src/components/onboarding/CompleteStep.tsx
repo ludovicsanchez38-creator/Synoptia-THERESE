@@ -99,6 +99,8 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
     handleComplete();
   }
 
+  const settingsShortcut = /Mac|iPhone|iPad/.test(navigator.platform) ? 'Cmd' : 'Ctrl';
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 50 }}
@@ -180,7 +182,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
           <span className="text-sm font-medium text-accent-cyan">Astuce</span>
         </div>
         <p className="text-xs text-text-muted">
-          Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci {navigator.platform.toUpperCase().includes('MAC') ? 'Cmd' : 'Ctrl'}+,).
+          Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci {settingsShortcut}+,).
         </p>
       </motion.div>
 
