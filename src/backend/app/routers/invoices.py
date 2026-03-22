@@ -475,13 +475,20 @@ async def generate_invoice_pdf(
     }
 
     # Générer le PDF
-    pdf_generator = InvoicePDFGenerator()
-    pdf_path = pdf_generator.generate_invoice_pdf(
-        invoice_data=invoice_data,
-        contact_data=contact_data,
-        user_profile=user_profile_data,
-        currency=invoice.currency,
-    )
+    try:
+        pdf_generator = InvoicePDFGenerator()
+        pdf_path = pdf_generator.generate_invoice_pdf(
+            invoice_data=invoice_data,
+            contact_data=contact_data,
+            user_profile=user_profile_data,
+            currency=invoice.currency,
+        )
+    except Exception as e:
+        logger.error(f"Erreur génération PDF facture {invoice_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la génération du PDF : {str(e)}",
+        )
 
     logger.info(f"PDF generated for invoice: {invoice.invoice_number}")
 

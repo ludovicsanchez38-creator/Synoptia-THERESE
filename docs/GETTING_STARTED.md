@@ -25,6 +25,12 @@ Avant de commencer, vérifiez que votre environnement remplit les conditions sui
 - **macOS** : [Homebrew](https://brew.sh) installé
 - **Windows** : [Winget](https://learn.microsoft.com/en-us/windows/package-manager/) ou [Scoop](https://scoop.sh)
 
+### Matériel recommandé
+
+- **RAM** : 8 Go minimum (16 Go recommandé avec modèles Ollama locaux)
+- **Stockage** : 2 Go minimum pour l'application + données
+- **SSD recommandé** : THÉRÈSE utilise des bases vectorielles (Qdrant) et SQLite avec des écritures fréquentes (embeddings, recherche sémantique, index). Sur un usage intensif avec IA locale, privilégier un SSD avec un bon indice d'endurance (TBW/DWPD) pour éviter l'usure prématurée. Les SSD grand public (DWPD < 0.3) conviennent pour un usage normal, les SSD datacenter/pro (DWPD >= 1) sont préférables pour un usage serveur 24/7.
+
 ### Outils à installer
 
 #### macOS

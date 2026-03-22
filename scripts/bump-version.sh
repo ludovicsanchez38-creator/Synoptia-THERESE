@@ -1,5 +1,5 @@
 #!/bin/bash
-# bump-version.sh - Met a jour la version dans les 6 fichiers du projet
+# bump-version.sh - Met a jour la version dans les 7 fichiers du projet
 # Usage: ./scripts/bump-version.sh 0.6.3
 
 set -euo pipefail
@@ -26,6 +26,7 @@ FILES=(
     "$ROOT/src/frontend/src-tauri/tauri.conf.json"
     "$ROOT/src/frontend/src-tauri/Cargo.toml"
     "$ROOT/src/backend/app/config.py"
+    "$ROOT/src/backend/app/__init__.py"
 )
 
 echo "Bump version -> $NEW"
@@ -59,6 +60,10 @@ for f in "${FILES[@]}"; do
             # Python: app_version: str = "X.Y.Z"
             sed -i '' -E 's/(app_version[[:space:]]*:[[:space:]]*str[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
+        src/backend/app/__init__.py)
+            # Python: __version__ = "X.Y.Z"
+            sed -i '' -E 's/(__version__[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            ;;
     esac
 
     echo "  OK  $REL"
@@ -87,4 +92,4 @@ if [ $ERRORS -gt 0 ] || [ $VERIFY_ERRORS -gt 0 ]; then
 fi
 
 echo ""
-echo "Version $NEW appliquee dans les 6 fichiers."
+echo "Version $NEW appliquee dans les 7 fichiers."

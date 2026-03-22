@@ -253,7 +253,8 @@ class TestMCPService:
         # Vérifie que subprocess a été appelé avec les bons arguments
         mock_subprocess.assert_called_once()
         call_args = mock_subprocess.call_args
-        assert call_args[0] == ("npx", "@test/mcp")  # commande + args
+        assert call_args[0][0].endswith("npx")  # commande (peut être résolue en chemin absolu)
+        assert call_args[0][1] == "@test/mcp"  # args
 
     @patch("app.services.mcp_service.asyncio.create_subprocess_exec")
     def test_stop_server_not_running(self, mock_subprocess, mcp_service, mock_save_config):

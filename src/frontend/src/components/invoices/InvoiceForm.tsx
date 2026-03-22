@@ -392,6 +392,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                         <label className="block text-xs text-text-muted mb-1">Quantité</label>
                         <input
                           type="number"
+                          lang="en"
                           min="1"
                           step="0.01"
                           value={line.quantity}
@@ -410,6 +411,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                         <label className="block text-xs text-text-muted mb-1">Prix HT ({CURRENCY_SYMBOLS[currency] || currency})</label>
                         <input
                           type="number"
+                          lang="en"
                           min="0"
                           step="0.01"
                           value={line.unit_price_ht}

@@ -4407,3 +4407,723 @@ class TestBUGOpenRouter403MessageErreur:
         err_event = events[0]
         assert err_event.type == "error"
         assert "invalid" in (err_event.content or "").lower() or "invalide" in (err_event.content or "").lower() or "clé" in (err_event.content or "").lower()
+
+
+# ============================================================
+# BUG-091 - Séparateur décimal dans InvoiceForm
+# lang="en" sur les inputs numériques pour forcer le point
+# comme séparateur décimal (pas la virgule en locales FR).
+# ============================================================
+
+INVOICE_FORM_TSX = FRONTEND / "components" / "invoices" / "InvoiceForm.tsx"
+
+
+class TestBUG091_DecimalSeparator:
+    """BUG-091 : les inputs numériques doivent avoir lang='en' pour le séparateur décimal."""
+
+    def test_quantity_input_has_lang_en(self):
+        """L'input de quantité doit avoir lang='en' pour forcer le point décimal."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        idx_qty = content.find("Quantité")
+        assert idx_qty != -1, "Le label 'Quantité' doit exister dans InvoiceForm.tsx"
+        block = content[idx_qty:idx_qty + 500]
+        assert 'lang="en"' in block, (
+            "L'input quantité doit avoir lang='en' pour forcer le point décimal (BUG-091)"
+        )
+
+    def test_unit_price_input_has_lang_en(self):
+        """L'input de prix unitaire doit avoir lang='en' pour forcer le point décimal."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        idx_price = content.find("Prix HT")
+        assert idx_price != -1, "Le label 'Prix HT' doit exister dans InvoiceForm.tsx"
+        block = content[idx_price:idx_price + 500]
+        assert 'lang="en"' in block, (
+            "L'input prix HT doit avoir lang='en' pour forcer le point décimal (BUG-091)"
+        )
+
+    def test_numeric_inputs_are_type_number(self):
+        """Les inputs numériques doivent rester type='number' (pas type='text')."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        assert content.count('type="number"') >= 2, (
+            "InvoiceForm doit avoir au moins 2 inputs type='number' (quantité et prix)"
+        )
+
+    def test_step_precision_present(self):
+        """Les inputs numériques doivent avoir step='0.01' pour la précision centimes."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        assert 'step="0.01"' in content, (
+            "InvoiceForm doit avoir step='0.01' pour la précision centimes (BUG-091)"
+        )
+        assert content.count('step="0.01"') >= 2, (
+            "step='0.01' doit être présent sur les 2 inputs numériques (quantité et prix)"
+        )
+
+    def test_no_onkeydown_hack(self):
+        """Aucun hack onKeyDown pour filtrer les virgules (la solution est lang='en')."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        assert "onKeyDown" not in content or "e.key === ','" not in content, (
+            "InvoiceForm ne doit pas utiliser un hack onKeyDown pour le séparateur décimal. "
+            "La solution correcte est lang='en' (BUG-091)"
+        )
+
+
+# ============================================================
+# BUG-092 - PDF error handling dans invoices.py
+# Le endpoint PDF doit capturer les erreurs avec try/except
+# et renvoyer une HTTPException 500 avec un message clair.
+# ============================================================
+
+INVOICES_PY = SRC / "app" / "routers" / "invoices.py"
+
+
+class TestBUG092_PDFErrorHandling:
+    """BUG-092 : le endpoint PDF doit capturer les erreurs de génération."""
+
+    def test_pdf_endpoint_has_try_except(self):
+        """La fonction generate_invoice_pdf doit contenir un try/except."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "try:" in func_source, (
+                    "generate_invoice_pdf doit contenir un bloc try (BUG-092)"
+                )
+                assert "except" in func_source, (
+                    "generate_invoice_pdf doit contenir un bloc except (BUG-092)"
+                )
+                break
+        else:
+            pytest.fail("Fonction generate_invoice_pdf non trouvée dans invoices.py")
+
+    def test_pdf_except_logs_error(self):
+        """Le bloc except doit logger l'erreur avec logger.error."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "logger.error" in func_source, (
+                    "Le bloc except de generate_invoice_pdf doit utiliser logger.error (BUG-092)"
+                )
+                break
+
+    def test_pdf_except_raises_http_500(self):
+        """Le bloc except doit lever une HTTPException avec status_code=500."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "status_code=500" in func_source, (
+                    "Le bloc except doit lever HTTPException(status_code=500) (BUG-092)"
+                )
+                assert "HTTPException" in func_source, (
+                    "Le bloc except doit utiliser HTTPException (BUG-092)"
+                )
+                break
+
+    def test_pdf_error_message_mentions_pdf(self):
+        """Le message d'erreur doit mentionner 'PDF'."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "PDF" in func_source, (
+                    "Le message d'erreur doit mentionner 'PDF' (BUG-092)"
+                )
+                break
+
+    def test_pdf_error_message_mentions_erreur(self):
+        """Le message d'erreur doit contenir le mot 'Erreur' (en français)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "Erreur" in func_source or "erreur" in func_source, (
+                    "Le message d'erreur doit contenir 'Erreur' (BUG-092)"
+                )
+                break
+
+    def test_invoice_pdf_generator_import_exists(self):
+        """L'import InvoicePDFGenerator doit exister dans invoices.py."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        assert "InvoicePDFGenerator" in content, (
+            "invoices.py doit importer InvoicePDFGenerator (BUG-092)"
+        )
+
+    def test_pdf_endpoint_function_name(self):
+        """Le endpoint PDF doit s'appeler generate_invoice_pdf."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        pdf_func_found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                pdf_func_found = True
+                break
+        assert pdf_func_found, (
+            "Le endpoint PDF doit être une fonction nommée generate_invoice_pdf (BUG-092)"
+        )
+
+    def test_pdf_endpoint_is_get(self):
+        """Le endpoint PDF doit être un GET (pas POST)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        idx_func = content.find("def generate_invoice_pdf")
+        assert idx_func != -1
+        block_before = content[max(0, idx_func - 200):idx_func]
+        assert "@router.get" in block_before, (
+            "Le endpoint PDF doit être un @router.get (BUG-092)"
+        )
+
+
+# ============================================================
+# Calendar Google sync fix
+# Le check provider doit accepter "gmail" et "google"
+# avec un fallback access_token + refresh_token.
+# ============================================================
+
+CALENDAR_PY = SRC / "app" / "routers" / "calendar.py"
+
+
+class TestCalendarGoogleSyncFix:
+    """Le provider check Google Calendar doit accepter 'gmail' et 'google'."""
+
+    def test_provider_accepts_gmail(self):
+        """Le check provider doit accepter 'gmail'."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert '"gmail"' in content, (
+            "calendar.py doit accepter le provider 'gmail' pour les comptes Google"
+        )
+
+    def test_provider_accepts_google(self):
+        """Le check provider doit accepter 'google'."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert '"google"' in content, (
+            "calendar.py doit accepter le provider 'google' pour les comptes Google"
+        )
+
+    def test_provider_check_includes_both_gmail_and_google(self):
+        """Le check is_google doit tester les deux valeurs dans un tuple/liste."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert '("gmail", "google")' in content or '("google", "gmail")' in content, (
+            "Le check is_google doit tester ('gmail', 'google') dans la même expression"
+        )
+
+    def test_fallback_access_token_refresh_token(self):
+        """Un fallback access_token + refresh_token doit exister."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert "access_token" in content and "refresh_token" in content, (
+            "calendar.py doit avoir un fallback access_token + refresh_token"
+        )
+        idx = content.find("is_google")
+        assert idx != -1, "La variable is_google doit exister dans calendar.py"
+        block = content[idx:idx + 300]
+        assert "access_token" in block and "refresh_token" in block, (
+            "Le fallback access_token/refresh_token doit être dans le bloc is_google"
+        )
+
+    def test_logger_warning_for_fallthrough(self):
+        """Un logger.warning doit exister pour les cas non-Google avec account_id."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert "logger.warning" in content, (
+            "calendar.py doit avoir un logger.warning pour les cas non-Google"
+        )
+        idx = content.find("logger.warning")
+        assert idx != -1
+        block = content[idx:idx + 200]
+        assert "fallthrough" in block.lower() or "provider" in block.lower(), (
+            "Le logger.warning doit mentionner le fallthrough ou le provider"
+        )
+
+    def test_list_google_calendars_function_exists(self):
+        """La fonction _list_google_calendars doit exister."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        func_found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "_list_google_calendars":
+                func_found = True
+                break
+        assert func_found, (
+            "_list_google_calendars doit exister dans calendar.py"
+        )
+
+    def test_list_google_calendars_called_for_google_accounts(self):
+        """_list_google_calendars doit être appelée quand is_google est True."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        idx = content.find("is_google")
+        assert idx != -1
+        block = content[idx:idx + 300]
+        assert "_list_google_calendars" in block, (
+            "_list_google_calendars doit être appelée quand is_google est True"
+        )
+
+    def test_sync_status_endpoint_exists(self):
+        """Le endpoint /sync/status doit exister."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert "sync/status" in content or "sync_status" in content, (
+            "calendar.py doit avoir un endpoint /sync/status"
+        )
+        tree = ast.parse(content)
+        func_found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "get_sync_status":
+                func_found = True
+                break
+        assert func_found, "La fonction get_sync_status doit exister"
+
+
+# ============================================================
+# Version consistency tests
+# __init__.py et config.py doivent avoir la même version.
+# bump-version.sh doit les mettre à jour tous les deux.
+# ============================================================
+
+INIT_PY = SRC / "app" / "__init__.py"
+CONFIG_PY = SRC / "app" / "config.py"
+BUMP_SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "bump-version.sh"
+
+
+class TestVersionConsistency:
+    """Les versions doivent être cohérentes entre __init__.py et config.py."""
+
+    def test_init_version_matches_config_version(self):
+        """__init__.py et config.py doivent avoir la même version."""
+        import re
+
+        init_content = INIT_PY.read_text(encoding="utf-8")
+        config_content = CONFIG_PY.read_text(encoding="utf-8")
+
+        init_match = re.search(r'__version__\s*=\s*"([^"]+)"', init_content)
+        config_match = re.search(r'app_version\s*:\s*str\s*=\s*"([^"]+)"', config_content)
+
+        assert init_match, "__init__.py doit avoir un __version__"
+        assert config_match, "config.py doit avoir un app_version"
+
+        assert init_match.group(1) == config_match.group(1), (
+            f"Version mismatch: __init__.py={init_match.group(1)} vs config.py={config_match.group(1)}"
+        )
+
+    def test_bump_script_includes_init_py(self):
+        """bump-version.sh doit inclure __init__.py dans sa liste de fichiers."""
+        content = BUMP_SCRIPT.read_text(encoding="utf-8")
+        assert "__init__.py" in content, (
+            "bump-version.sh doit mettre à jour __init__.py"
+        )
+
+    def test_bump_script_has_version_sed_pattern(self):
+        """bump-version.sh doit avoir un pattern sed pour __version__."""
+        content = BUMP_SCRIPT.read_text(encoding="utf-8")
+        assert "__version__" in content, (
+            "bump-version.sh doit avoir un pattern pour __version__"
+        )
+
+    def test_version_format_is_semver(self):
+        """La version doit être au format semver (X.Y.Z ou X.Y.Z-suffix)."""
+        import re
+
+        init_content = INIT_PY.read_text(encoding="utf-8")
+        match = re.search(r'__version__\s*=\s*"([^"]+)"', init_content)
+        assert match, "__init__.py doit avoir un __version__"
+
+        version = match.group(1)
+        assert re.match(r'^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$', version), (
+            f"Version '{version}' n'est pas au format semver (X.Y.Z ou X.Y.Z-suffix)"
+        )
+
+    def test_bump_script_validates_semver(self):
+        """bump-version.sh doit valider le format semver."""
+        content = BUMP_SCRIPT.read_text(encoding="utf-8")
+        assert "grep" in content and "qE" in content, (
+            "bump-version.sh doit valider le format semver avec grep -qE"
+        )
+
+
+# ============================================================
+# Invoice CRUD robustness tests
+# Analyse statique de invoices.py pour la robustesse.
+# ============================================================
+
+
+class TestInvoiceCRUDRobustness:
+    """Tests de robustesse statique sur invoices.py."""
+
+    def test_create_endpoint_checks_contact(self):
+        """Le endpoint create doit vérifier que le contact existe."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "create_invoice":
+                func_source = ast.get_source_segment(content, node)
+                assert "Contact" in func_source or "contact" in func_source, (
+                    "create_invoice doit vérifier le contact (contact_id FK)"
+                )
+                assert "404" in func_source, (
+                    "create_invoice doit lever 404 si le contact n'existe pas"
+                )
+                break
+        else:
+            pytest.fail("create_invoice non trouvée")
+
+    def test_update_endpoint_checks_invoice_exists(self):
+        """Le endpoint update doit vérifier que la facture existe."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "update_invoice":
+                func_source = ast.get_source_segment(content, node)
+                assert "404" in func_source, (
+                    "update_invoice doit lever 404 si la facture n'existe pas"
+                )
+                break
+        else:
+            pytest.fail("update_invoice non trouvée")
+
+    def test_delete_endpoint_checks_invoice_exists(self):
+        """Le endpoint delete doit vérifier que la facture existe."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "delete_invoice":
+                func_source = ast.get_source_segment(content, node)
+                assert "404" in func_source, (
+                    "delete_invoice doit lever 404 si la facture n'existe pas"
+                )
+                break
+        else:
+            pytest.fail("delete_invoice non trouvée")
+
+    def test_pdf_endpoint_returns_path_and_number(self):
+        """Le endpoint PDF doit retourner pdf_path et invoice_number."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
+                func_source = ast.get_source_segment(content, node)
+                assert "pdf_path" in func_source, (
+                    "Le endpoint PDF doit retourner pdf_path"
+                )
+                assert "invoice_number" in func_source, (
+                    "Le endpoint PDF doit retourner invoice_number"
+                )
+                break
+
+    def test_currency_support_eur_chf_usd_gbp(self):
+        """InvoiceForm.tsx doit supporter EUR, CHF, USD et GBP."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        for currency in ("EUR", "CHF", "USD", "GBP"):
+            assert currency in content, (
+                f"InvoiceForm doit supporter la devise {currency}"
+            )
+
+    def test_invoice_number_format_prefix(self):
+        """Les numéros de facture doivent utiliser un format préfixé (FACT-, DEV-, AV-)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        assert "FACT" in content, "Le format de numéro doit inclure le préfixe FACT"
+        assert "DEV" in content, "Le format de numéro doit inclure le préfixe DEV (devis)"
+        assert "AV" in content, "Le format de numéro doit inclure le préfixe AV (avoir)"
+
+    def test_invoice_number_uses_max_for_sequence(self):
+        """La génération de numéro doit utiliser MAX() pour éviter les doublons (BUG-073)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        assert "func.max" in content or "MAX" in content, (
+            "La génération de numéro doit utiliser MAX() (BUG-073)"
+        )
+
+    def test_mark_paid_endpoint_exists(self):
+        """Le endpoint mark-paid doit exister."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        func_found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "mark_invoice_paid":
+                func_found = True
+                break
+        assert func_found, "mark_invoice_paid doit exister dans invoices.py"
+
+    def test_send_endpoint_returns_501(self):
+        """Le endpoint send doit retourner 501 (pas encore implémenté)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "send_invoice_by_email":
+                func_source = ast.get_source_segment(content, node)
+                assert "501" in func_source, (
+                    "send_invoice_by_email doit retourner 501 (non implémenté)"
+                )
+                break
+        else:
+            pytest.fail("send_invoice_by_email non trouvée")
+
+    def test_create_validates_document_type(self):
+        """create_invoice doit valider le document_type (devis, facture, avoir)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "create_invoice":
+                func_source = ast.get_source_segment(content, node)
+                assert "document_type" in func_source, (
+                    "create_invoice doit valider le document_type"
+                )
+                assert "400" in func_source, (
+                    "create_invoice doit lever 400 pour un document_type invalide"
+                )
+                break
+
+
+# ============================================================
+# Calendar robustness tests
+# Analyse statique de calendar.py pour la robustesse.
+# ============================================================
+
+
+class TestCalendarRobustness:
+    """Tests de robustesse statique sur calendar.py."""
+
+    def test_get_provider_checks_account_for_google(self):
+        """_get_provider_for_calendar doit vérifier le compte pour Google."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "_get_provider_for_calendar":
+                func_source = ast.get_source_segment(content, node)
+                assert "account" in func_source, (
+                    "_get_provider_for_calendar doit vérifier le compte pour Google"
+                )
+                assert "404" in func_source, (
+                    "_get_provider_for_calendar doit lever 404 si le compte n'existe pas"
+                )
+                break
+        else:
+            pytest.fail("_get_provider_for_calendar non trouvée")
+
+    def test_caldav_setup_validates_connection(self):
+        """setup_caldav_calendar doit tester la connexion avant d'importer."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "setup_caldav_calendar":
+                func_source = ast.get_source_segment(content, node)
+                assert "test_caldav_connection" in func_source, (
+                    "setup_caldav_calendar doit tester la connexion CalDAV avant d'importer"
+                )
+                assert "400" in func_source, (
+                    "setup_caldav_calendar doit lever 400 si la connexion échoue"
+                )
+                break
+        else:
+            pytest.fail("setup_caldav_calendar non trouvée")
+
+    def test_sync_status_returns_providers_list(self):
+        """get_sync_status doit retourner la liste des providers."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "get_sync_status":
+                func_source = ast.get_source_segment(content, node)
+                assert "providers" in func_source, (
+                    "get_sync_status doit retourner la liste des providers"
+                )
+                break
+        else:
+            pytest.fail("get_sync_status non trouvée")
+
+    def test_event_creation_validates_calendar_id(self):
+        """create_event doit chercher le calendrier par ID pour déterminer le provider."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "create_event":
+                func_source = ast.get_source_segment(content, node)
+                assert "calendar_id" in func_source or "request.calendar_id" in func_source, (
+                    "create_event doit utiliser le calendar_id pour router le provider"
+                )
+                break
+        else:
+            pytest.fail("create_event non trouvée")
+
+    def test_provider_detection_handles_unknown(self):
+        """_get_provider_for_calendar doit gérer les providers inconnus."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "_get_provider_for_calendar":
+                func_source = ast.get_source_segment(content, node)
+                assert "400" in func_source, (
+                    "_get_provider_for_calendar doit lever 400 pour un provider inconnu"
+                )
+                assert "inconnu" in func_source.lower() or "unknown" in func_source.lower(), (
+                    "Le message d'erreur doit mentionner 'inconnu' ou 'unknown'"
+                )
+                break
+
+    def test_delete_event_endpoint_exists(self):
+        """Le endpoint de suppression d'événement doit exister."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        func_found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "delete_event":
+                func_found = True
+                break
+        assert func_found, "delete_event doit exister dans calendar.py"
+
+    def test_calendar_has_local_provider_support(self):
+        """calendar.py doit supporter le provider 'local'."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert '"local"' in content, (
+            "calendar.py doit supporter le provider 'local' (Local First)"
+        )
+
+    def test_calendar_has_caldav_provider_support(self):
+        """calendar.py doit supporter le provider 'caldav'."""
+        content = CALENDAR_PY.read_text(encoding="utf-8")
+        assert '"caldav"' in content, (
+            "calendar.py doit supporter le provider 'caldav'"
+        )
+
+
+# ============================================================
+# Security regression tests
+# Vérifications de sécurité sur le code source.
+# ============================================================
+
+APP_MAIN_PY_SEC = SRC / "app" / "main.py"
+
+
+class TestSecurityRegression:
+    """Tests de sécurité : pas de clés hardcodées, CORS, rate limiting."""
+
+    def test_no_hardcoded_api_keys_in_routers(self):
+        """Aucune clé API hardcodée dans les routers."""
+        import re
+
+        routers_dir = SRC / "app" / "routers"
+        for py_file in routers_dir.glob("*.py"):
+            content = py_file.read_text(encoding="utf-8")
+            matches = re.findall(r'["\'](?:sk-[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16}|AIza[a-zA-Z0-9_-]{35})["\']', content)
+            assert not matches, (
+                f"Clé API hardcodée trouvée dans {py_file.name}: {matches}"
+            )
+
+    def test_no_dangerous_builtins_in_routers(self):
+        """Aucun appel à des builtins dangereux (eval, compile) dans les routers."""
+        _dangerous = {"eval", "compile"}
+        routers_dir = SRC / "app" / "routers"
+        for py_file in routers_dir.glob("*.py"):
+            content = py_file.read_text(encoding="utf-8")
+            tree = ast.parse(content)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name) and node.func.id in _dangerous:
+                        pytest.fail(f"Appel dangereux {node.func.id}() trouvé dans {py_file.name}")
+
+    def test_httpexception_used_for_errors(self):
+        """Les routers doivent utiliser HTTPException (pas de raise générique)."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        assert "HTTPException" in content, (
+            "invoices.py doit utiliser HTTPException pour les erreurs"
+        )
+        content_cal = CALENDAR_PY.read_text(encoding="utf-8")
+        assert "HTTPException" in content_cal, (
+            "calendar.py doit utiliser HTTPException pour les erreurs"
+        )
+
+    def test_cors_settings_exist_in_main(self):
+        """Les settings CORS doivent exister dans main.py."""
+        content = APP_MAIN_PY_SEC.read_text(encoding="utf-8")
+        assert "CORSMiddleware" in content, (
+            "main.py doit utiliser CORSMiddleware"
+        )
+        assert "allow_origins" in content, (
+            "main.py doit configurer allow_origins dans CORSMiddleware"
+        )
+
+    def test_rate_limiting_configured(self):
+        """Le rate limiting doit être configuré dans main.py."""
+        content = APP_MAIN_PY_SEC.read_text(encoding="utf-8")
+        assert "Limiter" in content or "rate_limit" in content or "RATE_LIMIT" in content, (
+            "main.py doit configurer le rate limiting (SEC-015)"
+        )
+        assert "429" in content, (
+            "main.py doit retourner 429 en cas de rate limit dépassé"
+        )
+
+
+# ============================================================
+# Frontend regression tests
+# Analyse statique des fichiers TypeScript.
+# ============================================================
+
+
+class TestFrontendRegression:
+    """Tests de régression frontend (analyse statique TypeScript)."""
+
+    def test_no_alert_in_main_components(self):
+        """Pas de alert() dans les composants principaux (sauf ceux connus)."""
+        allowed_files = {"InvoicesPanel.tsx", "InvoiceForm.tsx", "MemoryPanel.tsx", "EventDetail.tsx"}
+        components_dir = FRONTEND / "components"
+        violations = []
+        for tsx_file in components_dir.rglob("*.tsx"):
+            if tsx_file.name in allowed_files:
+                continue
+            content = tsx_file.read_text(encoding="utf-8")
+            if "alert(" in content:
+                violations.append(tsx_file.name)
+        assert not violations, (
+            f"alert() trouvé dans des composants non autorisés : {violations}"
+        )
+
+    def test_api_calls_use_centralized_client(self):
+        """Les modules API doivent utiliser le client centralisé (fetchApi ou apiBase)."""
+        api_dir = FRONTEND / "services" / "api"
+        if not api_dir.exists():
+            pytest.skip("Le dossier services/api n'existe pas")
+        for ts_file in api_dir.glob("*.ts"):
+            if ts_file.name in ("core.ts", "index.ts", "types.ts"):
+                continue
+            content = ts_file.read_text(encoding="utf-8")
+            has_import = (
+                "from" in content and ("core" in content or "apiBase" in content)
+            ) or "fetchApi" in content or "apiBase" in content
+            assert has_import, (
+                f"{ts_file.name} doit utiliser le client centralisé (apiBase/fetchApi)"
+            )
+
+    def test_no_hardcoded_localhost_in_components(self):
+        """Pas d'URLs localhost hardcodées dans les composants (sauf patterns connus)."""
+        # BoardPanel.tsx et EmailConnect.tsx ont des URLs localhost pour des raisons légitimes
+        # (callback OAuth, liens de debug)
+        excluded = {"core.ts", "config.ts", "vite-env.d.ts", "BoardPanel.tsx", "EmailConnect.tsx"}
+        components_dir = FRONTEND / "components"
+        violations = []
+        for tsx_file in components_dir.rglob("*.tsx"):
+            if tsx_file.name in excluded:
+                continue
+            content = tsx_file.read_text(encoding="utf-8")
+            if "http://localhost:" in content or "http://127.0.0.1:" in content:
+                violations.append(tsx_file.name)
+        assert not violations, (
+            f"URLs localhost hardcodées trouvées dans : {violations}"
+        )
+
+    def test_invoice_form_has_currency_selector(self):
+        """InvoiceForm doit avoir un sélecteur de devise."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        assert "currency" in content.lower(), (
+            "InvoiceForm doit avoir un sélecteur de devise"
+        )
+        assert "CURRENCIES" in content, (
+            "InvoiceForm doit utiliser la constante CURRENCIES"
+        )
+
+    def test_invoice_form_has_tva_rates(self):
+        """InvoiceForm doit avoir les taux de TVA français."""
+        content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
+        assert "TVA_RATES" in content, (
+            "InvoiceForm doit utiliser la constante TVA_RATES"
+        )
+        assert "20" in content, "Le taux TVA 20% doit être présent"
+        assert "5.5" in content or "5,5" in content, "Le taux TVA 5,5% doit être présent"

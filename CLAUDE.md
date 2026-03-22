@@ -94,6 +94,23 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+## Backlog fonctionnel (suggestions testeurs 22/03/2026)
+
+### P1
+- [ ] Découplage données lourdes : retranscriptions hors champ description SQLite (stocker dans Qdrant ou fichiers, preview dans DB) - risque perf
+
+### P2
+- [ ] Export tâches en .ics (vEvent) + envoi par mail
+- [ ] Import/export contacts VCard (.vcf) depuis fichier local ou téléphone
+- [ ] UX CRM drag & drop : déplacer un contact ne doit pas forcer la création d'une activité
+- [ ] Doc : pré-requis matériels SSD (DWPD/TBW) pour IA locale
+
+### P3
+- [ ] Import .ics depuis mail ou fichier local (parser icalendar)
+
+### Refusé
+- BYOS (connexion via compte ChatGPT/Claude sans API) : violation ToS, fragile, non maintenable
+
 ## Tests de non-regression
 
 Avant chaque release :

@@ -107,8 +107,20 @@ async def list_calendars(
     # If account_id provided and it's a Google account, sync from Google
     if account_id:
         account = await session.get(EmailAccount, account_id)
-        if account and account.provider == "gmail":
-            return await _list_google_calendars(account_id, account, session)
+        if account:
+            is_google = (
+                account.provider in ("gmail", "google")
+                or (account.access_token and account.refresh_token)
+            )
+            if is_google:
+                return await _list_google_calendars(account_id, account, session)
+            else:
+                logger.warning(
+                    "list_calendars fallthrough: account %s has provider=%r, "
+                    "no Google sync performed",
+                    account_id,
+                    account.provider,
+                )
 
     # Otherwise, list from database (local + cached Google + CalDAV)
     statement = select(Calendar)
