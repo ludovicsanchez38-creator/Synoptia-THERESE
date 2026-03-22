@@ -35,21 +35,33 @@ BLOCKED_COMMANDS = {
 SHELL_OPERATORS = {";", "|", "&&", "||", "`", "$", ">", "<"}
 
 
+def _normalize_command_name(command: str) -> str:
+    """Normalise un nom de commande pour la whitelist Windows/Linux."""
+    normalized_path = command.replace("\\", "/")
+    cmd_name_normalized = normalized_path.rsplit("/", 1)[-1].casefold()
+    for ext in (".cmd", ".exe", ".bat", ".com"):
+        if cmd_name_normalized.endswith(ext):
+            cmd_name_normalized = cmd_name_normalized[: -len(ext)]
+            break
+    return cmd_name_normalized
+
+
+def resolve_mcp_command(command: str, path_env: str | None = None) -> str | None:
+    """Résout une commande MCP avec un PATH explicite si fourni."""
+    return shutil.which(command, path=path_env if path_env else None)
+
+
 def validate_mcp_command(command: str, args: list[str] | None = None) -> None:
     """Valide que la commande MCP est dans la whitelist et que les args sont surs."""
     # Resolve symlinks via shutil.which() (SEC-001)
-    resolved = shutil.which(command)
+    resolved = resolve_mcp_command(command)
     if resolved:
         cmd_name = Path(resolved).name
     else:
         cmd_name = Path(command).name
 
-    # Normaliser : retirer les extensions Windows (.cmd, .exe, .CMD, .EXE)
-    cmd_name_normalized = cmd_name
-    for ext in (".cmd", ".CMD", ".exe", ".EXE"):
-        if cmd_name_normalized.endswith(ext):
-            cmd_name_normalized = cmd_name_normalized[: -len(ext)]
-            break
+    # Normaliser le nom logique pour la whitelist Windows/Linux
+    cmd_name_normalized = _normalize_command_name(cmd_name)
 
     if cmd_name_normalized in BLOCKED_COMMANDS:
         raise ValueError(f"Commande MCP bloquee : '{cmd_name}' est interdite pour des raisons de securite")
@@ -275,10 +287,6 @@ class MCPService:
             # Validate command and args (SEC-001)
             validate_mcp_command(server.command, server.args)
 
-            # Build command - résoudre le chemin complet (BUG-078 Windows : npx → npx.cmd)
-            resolved_cmd = shutil.which(server.command) or server.command
-            cmd = [resolved_cmd] + server.args
-
             # Merge environment et dechiffrer les env vars (Phase 5 - MCP Security)
             from app.services.encryption import decrypt_value, is_value_encrypted
 
@@ -314,7 +322,7 @@ class MCPService:
                 appdata = os.environ.get("APPDATA", "")
                 localappdata = os.environ.get("LOCALAPPDATA", "")
                 extra_paths.extend([
-                    os.path.join(os.environ.get("ProgramFiles", ""), "nodejs"),
+                    os.path.join(os.environ.get("PROGRAMFILES", ""), "nodejs"),
                     os.path.join(appdata, "npm") if appdata else "",
                     os.path.join(localappdata, "fnm") if localappdata else "",
                 ])
@@ -350,6 +358,10 @@ class MCPService:
                 else:
                     decrypted_env[key] = value
             env.update(decrypted_env)
+
+            # Build command - résoudre le chemin complet avec le PATH enrichi
+            resolved_cmd = resolve_mcp_command(server.command, env.get("PATH")) or server.command
+            cmd = [resolved_cmd] + server.args
 
             # Start process with stdio transport
             process = await asyncio.create_subprocess_exec(
