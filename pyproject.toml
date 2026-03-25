@@ -1,6 +1,6 @@
 [project]
 name = "therese-backend"
-version = "0.7.4"
+version = "0.8.0"
 description = "Backend THÉRÈSE v2 - L'assistante souveraine des entrepreneurs français"
 readme = "README.md"
 requires-python = ">=3.11"
