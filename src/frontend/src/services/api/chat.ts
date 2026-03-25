@@ -56,12 +56,20 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing';
+  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file';
   content: string;
   conversation_id?: string;
   message_id?: string;
   entities?: DetectedEntities;
   tool_name?: string;
+  skill_file?: {
+    skill_id: string;
+    file_id: string;
+    file_name: string;
+    file_size: number;
+    download_url: string;
+    format: string;
+  };
   usage?: {
     input_tokens: number;
     output_tokens: number;

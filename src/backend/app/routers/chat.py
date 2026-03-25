@@ -42,12 +42,18 @@ from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_m
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
 from app.services.qdrant import get_qdrant_service
+from app.services.skills.base import SkillExecuteRequest
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.web_search import (
     BROWSER_TOOL,
     WEB_SEARCH_TOOL,
     execute_browser_action,
     execute_web_search,
+)
+from app.services.workspace_tools import (
+    WORKSPACE_TOOL_NAMES,
+    WORKSPACE_TOOLS,
+    execute_workspace_tool,
 )
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -668,6 +674,15 @@ async def _do_stream_response(
     file_paths: list[str] | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}
+    from app.services.skills.intent_detector import resolve_skill_from_message
+    resolved_skill_id, resolved_format, user_message = resolve_skill_from_message(
+        user_message, explicit_skill_id=skill_id
+    )
+    if resolved_skill_id and resolved_skill_id != skill_id:
+        logger.info(f"Skill auto-détecté : {resolved_skill_id} (format: {resolved_format})")
+    skill_id = resolved_skill_id
+
     # Sprint 2 - PERF-2.11: Check for prompt injection
     from app.services.prompt_security import check_prompt_safety
     security_check = check_prompt_safety(user_message)
@@ -777,6 +792,9 @@ async def _do_stream_response(
     # Add memory tools (create_contact, create_project)
     tools = MEMORY_TOOLS + tools
 
+    # Add workspace tools (email, calendar)
+    tools = WORKSPACE_TOOLS + tools
+
     # Add web_search + browser tools for non-Gemini providers (if enabled)
     if web_search_enabled and llm_service.config.provider.value != "gemini":
         tools = [WEB_SEARCH_TOOL, BROWSER_TOOL] + tools
@@ -794,7 +812,11 @@ async def _do_stream_response(
             capabilities += "- **browser_navigate** : Navigue sur une page web, extrait le contenu, interagit (clic, formulaire, liens, screenshot). Utilise-le quand l'utilisateur demande d'aller sur un site précis.\n"
         if "create_contact" in tool_names:
             capabilities += "- **create_contact** / **create_project** : Créer des contacts et projets en mémoire.\n"
-        mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", "create_contact", "create_project")]
+        if "read_emails" in tool_names:
+            capabilities += "- **read_emails** / **send_email** / **search_emails** : Lire, envoyer et chercher dans les emails de l'utilisateur.\n"
+        if "list_calendar_events" in tool_names:
+            capabilities += "- **list_calendar_events** / **create_calendar_event** : Consulter et creer des evenements dans le calendrier.\n"
+        mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", "create_contact", "create_project", *WORKSPACE_TOOL_NAMES)]
         if mcp_tools:
             capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
         context.system_prompt += capabilities
@@ -943,6 +965,40 @@ async def _do_stream_response(
     done_dict["uncertainty"] = uncertainty
     yield f"data: {json.dumps(done_dict)}\n\n"
 
+    # BUG-093 : Exécution automatique du skill si détecté
+    if skill_id and full_content:
+        try:
+            from app.services.skills import get_skills_registry
+            registry = get_skills_registry()
+            skill = registry.get(skill_id)
+            if skill and skill.output_type.value == "file":
+                logger.info(f"Auto-exécution du skill {skill_id} après streaming")
+                result = await registry.execute(
+                    skill_id,
+                    SkillExecuteRequest(prompt=user_message, title=None),
+                    full_content,
+                )
+                if result.success:
+                    skill_file_data = {
+                        "type": "skill_file",
+                        "content": f"Fichier {result.file_name} généré",
+                        "conversation_id": conversation_id,
+                        "skill_file": {
+                            "skill_id": skill_id,
+                            "file_id": result.file_id,
+                            "file_name": result.file_name,
+                            "file_size": result.file_size,
+                            "download_url": result.download_url,
+                            "format": skill.output_format.value,
+                        },
+                    }
+                    yield f"data: {json.dumps(skill_file_data)}\n\n"
+                    logger.info(f"Skill {skill_id} exécuté : {result.file_name}")
+                else:
+                    logger.warning(f"Échec auto-exécution skill {skill_id}: {result.error}")
+        except Exception as e:
+            logger.warning(f"Erreur auto-exécution skill {skill_id}: {e}")
+
     # Fire-and-forget entity extraction (PERF-001)
     # L'extraction continue en arrière-plan sans bloquer le stream SSE
     # NOTE: On ne passe PAS la session FastAPI car elle sera fermée après la requête.
@@ -1076,6 +1132,35 @@ async def _execute_tools_and_continue(
                         self.execution_time_ms = exec_time
 
                 result = MemoryToolError(str(e), execution_time)
+        elif tc.name in WORKSPACE_TOOL_NAMES:
+            # Built-in workspace tools (email, calendar)
+            import time
+            start_time = time.time()
+            try:
+                if session is None:
+                    raise RuntimeError("Database session not available for workspace tools")
+                tool_result_str = await execute_workspace_tool(tc.name, tc.arguments, session)
+                execution_time = (time.time() - start_time) * 1000
+
+                class WorkspaceToolResult:
+                    def __init__(self, result_text: str, exec_time: float):
+                        self.success = True
+                        self.result = result_text
+                        self.error = None
+                        self.execution_time_ms = exec_time
+
+                result = WorkspaceToolResult(tool_result_str, execution_time)
+            except Exception as e:
+                execution_time = (time.time() - start_time) * 1000
+
+                class WorkspaceToolError:
+                    def __init__(self, error_msg: str, exec_time: float):
+                        self.success = False
+                        self.result = None
+                        self.error = error_msg
+                        self.execution_time_ms = exec_time
+
+                result = WorkspaceToolError(str(e), execution_time)
         else:
             # Execute via MCP service
             result = await mcp_service.execute_tool_call(tc.name, tc.arguments)

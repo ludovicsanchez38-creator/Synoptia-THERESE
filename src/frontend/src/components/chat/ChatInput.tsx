@@ -381,6 +381,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         } else if (chunk.type === 'entities_detected' && chunk.entities) {
           // Entities detected - attach to the assistant message
           setMessageEntities(assistantMessageId, chunk.entities);
+        } else if (chunk.type === 'skill_file' && chunk.skill_file) {
+          // BUG-093 : Fichier généré automatiquement par un skill détecté
+          const sf = chunk.skill_file as {
+            skill_id: string;
+            file_id: string;
+            file_name: string;
+            file_size: number;
+            download_url: string;
+            format: string;
+          };
+          // Ajouter un message avec le lien de téléchargement
+          const downloadMsg = `\n\n📎 **${sf.file_name}** généré — [Télécharger](${sf.download_url})`;
+          accumulatedContent += downloadMsg;
+          pendingChunk += downloadMsg;
+          flushToDisplay();
         } else if (chunk.type === 'done') {
           // Store usage and uncertainty metadata (US-ESC-02, US-ESC-01)
           if (chunk.usage || chunk.uncertainty) {
