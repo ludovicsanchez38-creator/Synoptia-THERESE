@@ -34,7 +34,7 @@ from app.services.calendar.provider_factory import (
 )
 from app.services.calendar_service import CalendarService
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -1229,4 +1229,114 @@ async def get_sync_status(
         "events_count": len(events),
         "last_sync": last_sync,
         "providers": list(set(cal.provider for cal in calendars)),
+    }
+
+
+# ============================================================
+# Import ICS
+# ============================================================
+
+@router.post("/import-ics")
+async def import_ics_file(
+    file: UploadFile = File(..., description="Fichier .ics (calendrier)"),
+    calendar_id: str | None = Query(None, description="ID du calendrier cible (auto-detect sinon)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Importe des événements depuis un fichier .ics dans le calendrier local.
+
+    Si aucun calendar_id n'est fourni, utilise le premier calendrier local
+    ou en crée un ("Mon calendrier").
+    """
+    from app.services.import_service import parse_ics
+
+    # Validation fichier
+    if not file.filename or not file.filename.lower().endswith(".ics"):
+        raise HTTPException(status_code=400, detail="Le fichier doit être au format .ics")
+
+    content = await file.read()
+    if len(content) > 1_000_000:  # 1 Mo max
+        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
+
+    # Parser le fichier
+    try:
+        events = parse_ics(content)
+    except Exception as e:
+        logger.error(f"Erreur parsing ICS: {e}")
+        raise HTTPException(status_code=400, detail=f"Fichier ICS invalide : {e}")
+
+    if not events:
+        return {"imported": 0, "message": "Aucun événement trouvé dans le fichier"}
+
+    # Trouver ou créer le calendrier cible
+    if calendar_id:
+        cal = await session.get(Calendar, calendar_id)
+        if not cal:
+            raise HTTPException(status_code=404, detail="Calendrier non trouvé")
+    else:
+        # Chercher le premier calendrier local
+        result = await session.execute(
+            select(Calendar).where(Calendar.provider == "local").limit(1)
+        )
+        cal = result.scalar_one_or_none()
+        if not cal:
+            # Créer un calendrier local
+            cal = Calendar(
+                id=generate_uuid(),
+                name="Mon calendrier",
+                provider="local",
+                timezone="Europe/Paris",
+            )
+            session.add(cal)
+            await session.flush()
+
+    # Importer les événements
+    imported = 0
+    skipped = 0
+    for event_data in events:
+        # Vérifier si l'événement existe déjà (par UID)
+        uid = event_data.get("uid", "")
+        if uid:
+            existing = await session.execute(
+                select(CalendarEvent).where(
+                    CalendarEvent.calendar_id == cal.id,
+                    CalendarEvent.id == uid,
+                )
+            )
+            if existing.scalar_one_or_none():
+                skipped += 1
+                continue
+
+        event = CalendarEvent(
+            id=uid or generate_uuid(),
+            calendar_id=cal.id,
+            summary=event_data["summary"][:200],
+            description=event_data.get("description"),
+            location=event_data.get("location"),
+            all_day=event_data.get("all_day", False),
+            status=event_data.get("status", "confirmed"),
+            attendees=json.dumps(event_data.get("attendees", [])),
+            recurrence=json.dumps(event_data.get("recurrence")) if event_data.get("recurrence") else None,
+        )
+
+        if event_data["all_day"]:
+            event.start_date = event_data["start"]
+            event.end_date = event_data["end"]
+        else:
+            event.start_datetime = datetime.fromisoformat(event_data["start"])
+            event.end_datetime = datetime.fromisoformat(event_data["end"])
+
+        session.add(event)
+        imported += 1
+
+    await session.commit()
+
+    logger.info(f"ICS import: {imported} imported, {skipped} skipped (duplicates)")
+
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "calendar_id": cal.id,
+        "calendar_name": cal.name,
+        "message": f"{imported} événement(s) importé(s){f', {skipped} doublon(s) ignoré(s)' if skipped else ''}",
     }

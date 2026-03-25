@@ -717,6 +717,79 @@ async def import_contacts(
     )
 
 
+@router.post("/import/vcf")
+async def import_vcf_contacts(
+    file: UploadFile = File(..., description="Fichier .vcf (VCard)"),
+    update_existing: bool = Query(True, description="Mettre à jour les contacts existants (par email)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Importe des contacts depuis un fichier VCard (.vcf).
+
+    Les doublons sont détectés par email. Si update_existing=True,
+    les contacts existants sont mis à jour avec les nouvelles données.
+    """
+    from app.services.import_service import parse_vcf
+
+    if not file.filename or not file.filename.lower().endswith(".vcf"):
+        raise HTTPException(status_code=400, detail="Le fichier doit être au format .vcf")
+
+    content = await file.read()
+    if len(content) > 1_000_000:
+        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
+
+    try:
+        parsed_contacts = parse_vcf(content)
+    except Exception as e:
+        logger.error(f"Erreur parsing VCF: {e}")
+        raise HTTPException(status_code=400, detail=f"Fichier VCF invalide : {e}")
+
+    if not parsed_contacts:
+        return {"created": 0, "updated": 0, "message": "Aucun contact trouvé dans le fichier"}
+
+    created = 0
+    updated = 0
+
+    for contact_data in parsed_contacts:
+        existing = None
+        if contact_data.get("email"):
+            result = await session.execute(
+                select(Contact).where(Contact.email == contact_data["email"]).limit(1)
+            )
+            existing = result.scalar_one_or_none()
+
+        if existing and update_existing:
+            for field in ("first_name", "last_name", "company", "phone", "address", "notes"):
+                new_value = contact_data.get(field)
+                if new_value:
+                    setattr(existing, field, new_value)
+            existing.updated_at = datetime.now(UTC)
+            session.add(existing)
+            updated += 1
+        elif not existing:
+            contact = Contact(
+                first_name=contact_data.get("first_name", ""),
+                last_name=contact_data.get("last_name", ""),
+                company=contact_data.get("company"),
+                email=contact_data.get("email"),
+                phone=contact_data.get("phone"),
+                address=contact_data.get("address"),
+                notes=contact_data.get("notes"),
+            )
+            session.add(contact)
+            created += 1
+
+    await session.commit()
+    logger.info(f"VCF import: {created} created, {updated} updated")
+
+    return {
+        "created": created,
+        "updated": updated,
+        "total": len(parsed_contacts),
+        "message": f"{created} contact(s) créé(s){f', {updated} mis à jour' if updated else ''}",
+    }
+
+
 @router.post("/import/projects", response_model=CRMImportResultSchema)
 async def import_projects(
     file: UploadFile = File(..., description="Fichier CSV, Excel ou JSON"),
