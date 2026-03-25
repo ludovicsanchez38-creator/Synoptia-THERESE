@@ -428,8 +428,9 @@ async def generate_invoice_pdf(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
-    # Récupérer le profil utilisateur
-    user_profile = get_cached_profile()
+    # Récupérer le profil utilisateur (dataclass → dict pour .get())
+    _profile = get_cached_profile()
+    user_profile = _profile.to_dict() if _profile else {}
 
     # Préparer les données pour le PDF
     invoice_data = {
