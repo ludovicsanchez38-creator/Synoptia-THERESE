@@ -9,7 +9,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session
-from app.models.entities import Contact, Invoice, InvoiceLine
+from app.models.entities import Contact, Invoice, InvoiceLine, Preference
 from app.models.schemas import (
     CreateInvoiceRequest,
     InvoiceLineResponse,
@@ -27,6 +27,18 @@ from sqlmodel import select
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["invoices"])
+
+
+async def _get_invoice_output_dir(session: AsyncSession) -> str:
+    """Résout le répertoire de sortie des PDFs factures (dossier de travail ou défaut)."""
+    import os
+    result = await session.execute(
+        select(Preference).where(Preference.key == "working_directory")
+    )
+    pref = result.scalar_one_or_none()
+    if pref and pref.value:
+        return os.path.join(pref.value, "factures")
+    return os.path.expanduser("~/.therese/invoices")
 
 
 async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Invoice | None:
@@ -362,7 +374,8 @@ async def delete_invoice(
     invoice_number = invoice.invoice_number
 
     # Supprimer le PDF si existant
-    pdf_generator = InvoicePDFGenerator()
+    output_dir = await _get_invoice_output_dir(session)
+    pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
     pdf_generator.delete_invoice_pdf(invoice_number)
 
     # Supprimer la facture (cascade sur lignes)
@@ -542,9 +555,10 @@ async def generate_invoice_pdf(
         "tva_intra": user_profile.get("tva_intra", ""),
     }
 
-    # Générer le PDF
+    # Générer le PDF (dans le dossier de travail si configuré)
     try:
-        pdf_generator = InvoicePDFGenerator()
+        output_dir = await _get_invoice_output_dir(session)
+        pdf_generator = InvoicePDFGenerator(output_dir=output_dir)
         pdf_path = pdf_generator.generate_invoice_pdf(
             invoice_data=invoice_data,
             contact_data=contact_data,
