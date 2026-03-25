@@ -20,6 +20,7 @@ export interface ChatRequest {
   stream?: boolean;
   skill_id?: string;
   file_paths?: string[];
+  disable_tools?: boolean;  // BUG-097 : RFC mini-chat - pas d'outils pour éviter les boucles
 }
 
 export interface ChatResponse {

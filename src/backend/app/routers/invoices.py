@@ -30,15 +30,23 @@ router = APIRouter(tags=["invoices"])
 
 
 async def _get_invoice_output_dir(session: AsyncSession) -> str:
-    """Résout le répertoire de sortie des PDFs factures (dossier de travail ou défaut)."""
+    """Résout le répertoire de sortie des PDFs factures (dossier de travail ou défaut).
+
+    Priorité : dossier de travail configuré + sous-dossier 'factures'.
+    Fallback : ~/.therese/invoices (BUG-094).
+    """
     import os
     result = await session.execute(
         select(Preference).where(Preference.key == "working_directory")
     )
     pref = result.scalar_one_or_none()
     if pref and pref.value:
-        return os.path.join(pref.value, "factures")
-    return os.path.expanduser("~/.therese/invoices")
+        output_dir = os.path.join(pref.value, "factures")
+        logger.info("Répertoire factures résolu depuis les préférences : %s", output_dir)
+        return output_dir
+    fallback = os.path.expanduser("~/.therese/invoices")
+    logger.info("Répertoire factures : aucun dossier de travail configuré, fallback %s", fallback)
+    return fallback
 
 
 async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Invoice | None:

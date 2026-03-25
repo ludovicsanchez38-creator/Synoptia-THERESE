@@ -4578,6 +4578,88 @@ class TestBUG092_PDFErrorHandling:
         )
 
 
+INVOICE_PDF_PY = SRC / "app" / "services" / "invoice_pdf.py"
+
+
+class TestBUG094_PDFWorkingDirectory:
+    """BUG-094 : les PDFs factures doivent utiliser le dossier de travail configuré,
+    pas ~/.therese/invoices en dur."""
+
+    def test_no_hardcoded_default_in_init(self):
+        """InvoicePDFGenerator.__init__ ne doit PAS avoir ~/.therese/invoices comme défaut."""
+        content = INVOICE_PDF_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "InvoicePDFGenerator":
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and item.name == "__init__":
+                        init_source = ast.get_source_segment(content, item)
+                        assert '= "~/.therese/invoices"' not in init_source, (
+                            "InvoicePDFGenerator.__init__ ne doit plus avoir "
+                            "~/.therese/invoices en valeur par défaut (BUG-094)"
+                        )
+                        break
+                break
+        else:
+            pytest.fail("Classe InvoicePDFGenerator non trouvée dans invoice_pdf.py")
+
+    def test_resolve_function_exists(self):
+        """La fonction resolve_invoice_output_dir doit exister dans invoice_pdf.py."""
+        content = INVOICE_PDF_PY.read_text(encoding="utf-8")
+        assert "def resolve_invoice_output_dir" in content, (
+            "invoice_pdf.py doit contenir resolve_invoice_output_dir (BUG-094)"
+        )
+
+    def test_resolve_queries_working_directory(self):
+        """resolve_invoice_output_dir doit chercher la clé 'working_directory' en DB."""
+        content = INVOICE_PDF_PY.read_text(encoding="utf-8")
+        assert 'working_directory' in content, (
+            "resolve_invoice_output_dir doit requêter la Preference 'working_directory' (BUG-094)"
+        )
+
+    def test_resolve_returns_factures_subfolder(self):
+        """Le résultat doit contenir 'factures' comme sous-dossier."""
+        content = INVOICE_PDF_PY.read_text(encoding="utf-8")
+        assert '"factures"' in content, (
+            "Le répertoire résolu doit inclure un sous-dossier 'factures' (BUG-094)"
+        )
+
+    def test_router_uses_get_invoice_output_dir(self):
+        """Le router invoices.py doit utiliser _get_invoice_output_dir pour chaque appel PDF."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        # Doit apparaître au moins 2 fois (generate_invoice_pdf + delete_invoice)
+        count = content.count("_get_invoice_output_dir")
+        assert count >= 3, (  # 1 def + 2 appels minimum
+            f"_get_invoice_output_dir doit être appelé dans generate_invoice_pdf ET delete_invoice "
+            f"(trouvé {count} occurrences, attendu >= 3) (BUG-094)"
+        )
+
+    def test_no_bare_instantiation(self):
+        """Aucun InvoicePDFGenerator() sans output_dir dans invoices.py."""
+        content = INVOICES_PY.read_text(encoding="utf-8")
+        import re
+        bare_calls = re.findall(r'InvoicePDFGenerator\(\s*\)', content)
+        assert not bare_calls, (
+            "invoices.py ne doit pas instancier InvoicePDFGenerator() sans output_dir (BUG-094)"
+        )
+
+    def test_init_accepts_none_output_dir(self):
+        """InvoicePDFGenerator.__init__ doit accepter output_dir=None."""
+        content = INVOICE_PDF_PY.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "InvoicePDFGenerator":
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and item.name == "__init__":
+                        # Vérifier que output_dir a une valeur par défaut None
+                        init_source = ast.get_source_segment(content, item)
+                        assert "None" in init_source, (
+                            "InvoicePDFGenerator.__init__(output_dir) doit accepter None (BUG-094)"
+                        )
+                        break
+                break
+
+
 # ============================================================
 # Calendar Google sync fix
 # Le check provider doit accepter "gmail" et "google"

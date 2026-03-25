@@ -805,7 +805,7 @@ async def _list_messages_imap(
     max_results: int,
     query: str | None,
 ) -> dict:
-    """List messages via IMAP provider."""
+    """List messages via IMAP provider with proper error handling."""
     provider = get_email_provider(
         provider_type="imap",
         email_address=account.email,
@@ -817,10 +817,24 @@ async def _list_messages_imap(
         smtp_use_tls=account.smtp_use_tls,
     )
 
-    messages = await provider.list_messages(
-        max_results=max_results,
-        query=query,
-    )
+    try:
+        # BUG-095: list_messages returns a tuple (messages, next_token)
+        messages, next_token = await provider.list_messages(
+            max_results=max_results,
+            query=query,
+        )
+    except TimeoutError as e:
+        logger.error(f"IMAP timeout for account {account.email}: {e}")
+        raise HTTPException(
+            status_code=504,
+            detail=f"Delai de connexion IMAP depasse pour {account.imap_host}",
+        )
+    except Exception as e:
+        logger.error(f"IMAP list_messages failed for {account.email}: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Erreur IMAP: {e}",
+        )
 
     # Convert DTOs to same format as Gmail endpoint
     enriched = []
@@ -833,11 +847,13 @@ async def _list_messages_imap(
             'from': f"{msg.from_name or ''} <{msg.from_email}>".strip(),
             'date': msg.date.isoformat() if msg.date else '',
             'labelIds': msg.labels or [],
+            'is_read': msg.is_read,
+            'is_starred': msg.is_starred,
         })
 
     return {
         'messages': enriched,
-        'nextPageToken': None,
+        'nextPageToken': next_token,
         'resultSizeEstimate': len(enriched),
     }
 

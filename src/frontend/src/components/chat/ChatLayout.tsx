@@ -24,6 +24,7 @@ import { useDemoStore } from '../../stores/demoStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { openPanelWindow } from '../../services/windowManager';
 import * as api from '../../services/api';
+import { apiFetch, API_BASE } from '../../services/api/core';
 import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
 import { CreateCommandForm } from '../guided/CreateCommandForm';
 import type { SlashCommand } from './SlashCommandsMenu';
@@ -258,6 +259,37 @@ export function ChatLayout() {
     toggleAtelier();
   }, [toggleAtelier]);
 
+  // BUG-096 : Export RGPD des donnees (telecharge un JSON complet)
+  const handleExportData = useCallback(async () => {
+    try {
+      const response = await apiFetch(`${API_BASE}/api/data/export`);
+      if (!response.ok) throw new Error(`Export echoue : ${response.statusText}`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const disposition = response.headers.get('Content-Disposition');
+      const match = disposition?.match(/filename="(.+)"/);
+      a.download = match?.[1] || `therese-export-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[Export] Echec export donnees:', err);
+    }
+  }, []);
+
+  // BUG-096 : Ouvrir le panneau guide (nouvelle conversation pour afficher l'ecran d'accueil)
+  const handleOpenGuided = useCallback(() => {
+    createConversation();
+  }, [createConversation]);
+
+  // BUG-096 : Ouvrir un fichier = ouvrir le panneau memoire (contient le file browser)
+  const handleOpenFile = useCallback(() => {
+    setShowMemoryPanel(true);
+  }, []);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     onCommandPalette: handleOpenCommandPalette,
@@ -280,9 +312,7 @@ export function ChatLayout() {
     onSearch: () => {
       setShowMemoryPanel(true);
     },
-    onOpenFile: () => {
-      console.log('Open file');
-    },
+    onOpenFile: handleOpenFile,
   });
 
   return (
@@ -359,8 +389,9 @@ export function ChatLayout() {
         onToggleInvoices={handleToggleInvoicesPanel}
         onToggleCRM={handleToggleCRMPanel}
         onSearch={() => setShowMemoryPanel(true)}
-        onOpenFile={() => console.log('Open file')}
-        onOpenGuided={() => setGuidedPanelActive(false)}
+        onOpenFile={handleOpenFile}
+        onOpenGuided={handleOpenGuided}
+        onExportData={handleExportData}
       />
 
       {/* Shortcuts Modal */}

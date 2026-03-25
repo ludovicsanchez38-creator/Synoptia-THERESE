@@ -6,6 +6,7 @@ Phase 4 - Invoicing
 """
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -35,19 +36,58 @@ CURRENCY_SYMBOLS: dict[str, str] = {
     "USD": "$",
 }
 
+# Fallback par défaut (utilisé uniquement si aucun dossier de travail configuré)
+_DEFAULT_INVOICE_DIR = "~/.therese/invoices"
+
+
+def resolve_invoice_output_dir() -> str:
+    """
+    Résout le répertoire de sortie des PDFs factures depuis la base de données.
+
+    Utilise le dossier de travail configuré (Preference working_directory) + sous-dossier
+    'factures'. Fallback sur ~/.therese/invoices si pas de dossier configuré.
+
+    Returns:
+        Chemin absolu du répertoire de sortie
+    """
+    try:
+        from app.models.database import get_sync_session
+        from app.models.entities import Preference
+        from sqlmodel import select
+
+        with get_sync_session() as session:
+            result = session.execute(
+                select(Preference).where(Preference.key == "working_directory")
+            )
+            pref = result.scalar_one_or_none()
+            if pref and pref.value:
+                resolved = os.path.join(pref.value, "factures")
+                logger.debug("Répertoire factures résolu depuis les préférences : %s", resolved)
+                return resolved
+    except Exception as exc:
+        logger.warning("Impossible de résoudre le dossier de travail depuis la DB : %s", exc)
+
+    fallback = os.path.expanduser(_DEFAULT_INVOICE_DIR)
+    logger.debug("Répertoire factures : fallback par défaut %s", fallback)
+    return fallback
+
 
 class InvoicePDFGenerator:
     """Générateur de factures PDF conformes France."""
 
-    def __init__(self, output_dir: str = "~/.therese/invoices"):
+    def __init__(self, output_dir: str | None = None):
         """
         Initialise le générateur.
 
         Args:
-            output_dir: Répertoire de sortie des PDFs
+            output_dir: Répertoire de sortie des PDFs. Si None, résolu automatiquement
+                        depuis le dossier de travail configuré (BUG-094).
         """
+        if output_dir is None:
+            output_dir = resolve_invoice_output_dir()
         self.output_dir = Path(output_dir).expanduser()
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("InvoicePDFGenerator initialisé : output_dir=%s", self.output_dir)
 
     def generate_invoice_pdf(
         self,

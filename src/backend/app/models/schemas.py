@@ -30,6 +30,7 @@ class ChatRequest(BaseModel):
     stream: bool = True
     skill_id: str | None = None
     file_paths: list[str] | None = None
+    disable_tools: bool = False  # BUG-097 : RFC mini-chat - désactiver les outils pour éviter les boucles
 
 
 class ChatResponse(BaseModel):

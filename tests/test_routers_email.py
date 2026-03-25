@@ -216,7 +216,7 @@ class TestEmailMessages:
         # Mock IMAP provider
         with patch("app.routers.email.get_email_provider") as mock_provider:
             mock_instance = MagicMock()
-            mock_instance.list_messages = AsyncMock(return_value=[])
+            mock_instance.list_messages = AsyncMock(return_value=([], None))
             mock_provider.return_value = mock_instance
 
             response = await client.get(f"/api/email/messages?account_id={account_id}")
@@ -245,7 +245,7 @@ class TestEmailMessages:
 
         with patch("app.routers.email.get_email_provider") as mock_provider:
             mock_instance = MagicMock()
-            mock_instance.list_messages = AsyncMock(return_value=[mock_msg])
+            mock_instance.list_messages = AsyncMock(return_value=([mock_msg], None))
             mock_provider.return_value = mock_instance
 
             response = await client.get(f"/api/email/messages?account_id={account_id}")

@@ -565,7 +565,11 @@ async def send_message(
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
-            _stream_response(conversation.id, request.message, session, history, skill_id=request.skill_id, file_paths=request.file_paths),
+            _stream_response(
+                conversation.id, request.message, session, history,
+                skill_id=request.skill_id, file_paths=request.file_paths,
+                disable_tools=request.disable_tools,
+            ),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
@@ -647,6 +651,7 @@ async def _stream_response(
     history: list[LLMMessage] | None = None,
     skill_id: str | None = None,
     file_paths: list[str] | None = None,
+    disable_tools: bool = False,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -654,7 +659,9 @@ async def _stream_response(
 
     try:
         async for chunk in _do_stream_response(
-            conversation_id, user_message, session, history, skill_id=skill_id, file_paths=file_paths
+            conversation_id, user_message, session, history,
+            skill_id=skill_id, file_paths=file_paths,
+            disable_tools=disable_tools,
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -672,6 +679,7 @@ async def _do_stream_response(
     history: list[LLMMessage] | None = None,
     skill_id: str | None = None,
     file_paths: list[str] | None = None,
+    disable_tools: bool = False,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}
@@ -777,27 +785,32 @@ async def _do_stream_response(
         except Exception as e:
             logger.warning(f"Failed to inject skill context for {skill_id}: {e}")
 
-    # Check if web search is enabled
-    from app.models.entities import Preference
-    result = await session.execute(
-        select(Preference).where(Preference.key == "web_search_enabled")
-    )
-    web_search_pref = result.scalar_one_or_none()
-    web_search_enabled = web_search_pref.value.lower() == "true" if web_search_pref else True
+    # BUG-097 : disable_tools pour le mini-chat RFC (pas d'outils = pas de boucle)
+    if disable_tools:
+        tools: list[dict] = []
+        logger.info("Tools disabled for this request (RFC mini-chat)")
+    else:
+        # Check if web search is enabled
+        from app.models.entities import Preference
+        result = await session.execute(
+            select(Preference).where(Preference.key == "web_search_enabled")
+        )
+        web_search_pref = result.scalar_one_or_none()
+        web_search_enabled = web_search_pref.value.lower() == "true" if web_search_pref else True
 
-    # Get available tools: MCP tools + built-in web search + memory tools
-    # Note: For Gemini, web search is handled via native grounding (not tool calling)
-    tools = mcp_service.get_tools_for_llm() or []
+        # Get available tools: MCP tools + built-in web search + memory tools
+        # Note: For Gemini, web search is handled via native grounding (not tool calling)
+        tools = mcp_service.get_tools_for_llm() or []
 
-    # Add memory tools (create_contact, create_project)
-    tools = MEMORY_TOOLS + tools
+        # Add memory tools (create_contact, create_project)
+        tools = MEMORY_TOOLS + tools
 
-    # Add workspace tools (email, calendar)
-    tools = WORKSPACE_TOOLS + tools
+        # Add workspace tools (email, calendar)
+        tools = WORKSPACE_TOOLS + tools
 
-    # Add web_search + browser tools for non-Gemini providers (if enabled)
-    if web_search_enabled and llm_service.config.provider.value != "gemini":
-        tools = [WEB_SEARCH_TOOL, BROWSER_TOOL] + tools
+        # Add web_search + browser tools for non-Gemini providers (if enabled)
+        if web_search_enabled and llm_service.config.provider.value != "gemini":
+            tools = [WEB_SEARCH_TOOL, BROWSER_TOOL] + tools
 
     if tools:
         logger.info(f"Providing {len(tools)} tools to LLM")
