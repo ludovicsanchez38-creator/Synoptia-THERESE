@@ -11,6 +11,7 @@ import type { Invoice, InvoiceLineRequest } from '../services/api';
 
 interface InvoiceFilters {
   status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'all';
+  document_type?: 'devis' | 'facture' | 'avoir';
   contact_id?: string;
 }
 
@@ -98,6 +99,11 @@ export const useInvoiceStore = create<InvoiceStore>()(
         return invoices.filter((invoice) => {
           // Filter by status
           if (filters.status && filters.status !== 'all' && invoice.status !== filters.status) {
+            return false;
+          }
+
+          // Filter by document type
+          if (filters.document_type && invoice.document_type !== filters.document_type) {
             return false;
           }
 

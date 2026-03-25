@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
-  Filter,
 } from 'lucide-react';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import { listInvoices, deleteInvoice, generateInvoicePDF, sendInvoiceByEmail, type Invoice } from '../../services/api';
@@ -163,8 +162,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <FileText className="w-5 h-5 text-accent-cyan" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Factures</h2>
-          <p className="text-sm text-text-muted">{filteredInvoices.length} facture{filteredInvoices.length > 1 ? 's' : ''}</p>
+          <h2 className="text-lg font-semibold text-text">Facturation</h2>
+          <p className="text-sm text-text-muted">{filteredInvoices.length} document{filteredInvoices.length > 1 ? 's' : ''}</p>
         </div>
       </div>
 
@@ -197,8 +196,29 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   );
 
   const invoicesFilters = (
-    <div className="px-6 py-3 border-b border-border/50 flex items-center gap-2">
-      <Filter className="w-4 h-4 text-text-muted" />
+    <div className="px-6 py-3 border-b border-border/50 space-y-2">
+      {/* Filtre par type de document */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-text-muted w-10">Type</span>
+        {([['all', 'Tout'], ['devis', 'Devis'], ['facture', 'Factures'], ['avoir', 'Avoirs']] as const).map(([type, label]) => (
+          <button
+            type="button"
+            key={type}
+            onClick={() => setFilters({ ...filters, document_type: type === 'all' ? undefined : type })}
+            className={cn(
+              'px-3 py-1 rounded-lg text-sm transition-colors',
+              (type === 'all' && !filters.document_type) || filters.document_type === type
+                ? 'bg-accent-cyan/20 text-accent-cyan'
+                : 'text-text-muted hover:bg-surface-elevated'
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {/* Filtre par statut */}
+      <div className="flex items-center gap-2">
+      <span className="text-xs text-text-muted w-10">Statut</span>
       <div className="flex items-center gap-2">
         {(['all', 'draft', 'sent', 'paid', 'overdue', 'cancelled'] as const).map((status) => (
           <button
@@ -215,6 +235,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             {status === 'all' ? 'Toutes' : STATUS_CONFIG[status].label}
           </button>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -258,6 +279,14 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-medium text-text">{invoice.invoice_number}</h3>
+                      {invoice.document_type && invoice.document_type !== 'facture' && (
+                        <span className={cn(
+                          'px-2 py-0.5 rounded text-xs font-medium',
+                          invoice.document_type === 'devis' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'
+                        )}>
+                          {invoice.document_type === 'devis' ? 'Devis' : 'Avoir'}
+                        </span>
+                      )}
                       <div className={cn('flex items-center gap-1.5', STATUS_CONFIG[invoice.status].color)}>
                         <StatusIcon className="w-4 h-4" />
                         <span className="text-sm">{STATUS_CONFIG[invoice.status].label}</span>

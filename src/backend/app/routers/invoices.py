@@ -406,6 +406,73 @@ async def mark_invoice_paid(
     return _invoice_to_response(invoice)
 
 
+@router.post("/{invoice_id}/convert")
+async def convert_invoice(
+    invoice_id: str,
+    request: dict,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Convertit un document (ex: devis → facture).
+
+    Crée une copie du document avec le nouveau type et un nouveau numéro.
+    Le document original est conservé.
+    """
+    target_type = request.get("target_type", "")
+    if target_type not in ("devis", "facture", "avoir"):
+        raise HTTPException(status_code=400, detail="target_type doit être 'devis', 'facture' ou 'avoir'")
+
+    source = await _get_invoice_with_lines(session, invoice_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if source.document_type == target_type:
+        raise HTTPException(status_code=400, detail=f"Le document est déjà de type '{target_type}'")
+
+    # Générer un nouveau numéro pour le type cible
+    new_number = await _generate_invoice_number(session, target_type)
+
+    # Créer la copie
+    new_invoice = Invoice(
+        invoice_number=new_number,
+        document_type=target_type,
+        contact_id=source.contact_id,
+        currency=source.currency,
+        issue_date=datetime.now(UTC),
+        due_date=source.due_date,
+        status="draft",
+        subtotal_ht=source.subtotal_ht,
+        total_tax=source.total_tax,
+        total_ttc=source.total_ttc,
+        tva_applicable=source.tva_applicable,
+        notes=source.notes or "",
+    )
+    session.add(new_invoice)
+    await session.flush()
+
+    # Copier les lignes
+    for line in source.lines:
+        new_line = InvoiceLine(
+            invoice_id=new_invoice.id,
+            description=line.description,
+            quantity=line.quantity,
+            unit_price_ht=line.unit_price_ht,
+            tva_rate=line.tva_rate,
+            total_ht=line.total_ht,
+            total_ttc=line.total_ttc,
+        )
+        session.add(new_line)
+
+    await session.commit()
+
+    # Recharger avec eager loading
+    new_invoice = await _get_invoice_with_lines(session, new_invoice.id)
+
+    logger.info(f"Converted {source.invoice_number} ({source.document_type}) → {new_invoice.invoice_number} ({target_type})")
+
+    return _invoice_to_response(new_invoice)
+
+
 @router.get("/{invoice_id}/pdf")
 async def generate_invoice_pdf(
     invoice_id: str,

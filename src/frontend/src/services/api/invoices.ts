@@ -17,10 +17,13 @@ export interface InvoiceLine {
   total_ttc: number;
 }
 
+export type DocumentType = 'devis' | 'facture' | 'avoir';
+
 export interface Invoice {
   id: string;
   invoice_number: string;
   contact_id: string;
+  document_type: DocumentType;
   currency: string;
   issue_date: string;
   due_date: string;
@@ -44,6 +47,7 @@ export interface InvoiceLineRequest {
 
 export interface CreateInvoiceRequest {
   contact_id: string;
+  document_type?: DocumentType;
   currency?: string;
   issue_date?: string;
   due_date?: string;
@@ -64,10 +68,12 @@ export interface UpdateInvoiceRequest {
 export async function listInvoices(params?: {
   status?: string;
   contact_id?: string;
+  document_type?: DocumentType;
 }): Promise<Invoice[]> {
   const queryParams = new URLSearchParams();
   if (params?.status) queryParams.set('status', params.status);
   if (params?.contact_id) queryParams.set('contact_id', params.contact_id);
+  if (params?.document_type) queryParams.set('document_type', params.document_type);
 
   const response = await apiFetch(`${API_BASE}/api/invoices?${queryParams}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -127,6 +133,16 @@ export async function generateInvoicePDF(invoiceId: string): Promise<{ pdf_path:
 export async function sendInvoiceByEmail(invoiceId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/send`, {
     method: 'POST',
+  });
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  return response.json();
+}
+
+export async function convertInvoice(invoiceId: string, targetType: DocumentType): Promise<Invoice> {
+  const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/convert`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ target_type: targetType }),
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();

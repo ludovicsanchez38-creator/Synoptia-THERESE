@@ -41,6 +41,9 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [documentType, setDocumentType] = useState<'devis' | 'facture' | 'avoir'>(
+    (invoice?.document_type as 'devis' | 'facture' | 'avoir') || 'facture'
+  );
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
   const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
   const [issueDate, setIssueDate] = useState(
@@ -136,6 +139,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     try {
       const data = {
         contact_id: contactId,
+        document_type: documentType,
         currency,
         issue_date: issueDate,
         due_date: dueDate,
@@ -214,7 +218,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <h2 className="text-lg font-semibold text-text">
-            {invoice ? `Modifier ${invoice.invoice_number}` : 'Nouvelle facture'}
+            {invoice ? `Modifier ${invoice.invoice_number}` : `${documentType === 'devis' ? 'Nouveau devis' : documentType === 'avoir' ? 'Nouvel avoir' : 'Nouvelle facture'}`}
           </h2>
 
           <button
@@ -227,6 +231,30 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Type de document */}
+          {!invoice && (
+            <div>
+              <label className="block text-sm font-medium text-text mb-2">Type de document</label>
+              <div className="flex gap-2">
+                {([['devis', 'Devis'], ['facture', 'Facture'], ['avoir', 'Avoir']] as const).map(([type, label]) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setDocumentType(type)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      documentType === type
+                        ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50'
+                        : 'bg-surface border border-border/50 text-text-muted hover:bg-surface-elevated'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contact & Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
