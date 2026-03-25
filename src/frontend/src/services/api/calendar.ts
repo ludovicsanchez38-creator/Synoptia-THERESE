@@ -195,3 +195,15 @@ export async function getCalendarSyncStatus(accountId: string): Promise<any> {
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
+
+export async function importICSFile(file: File, calendarId?: string): Promise<{ imported: number; skipped: number; message: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const params = calendarId ? `?calendar_id=${calendarId}` : '';
+  const response = await apiFetch(`${API_BASE}/api/calendar/import-ics${params}`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  return response.json();
+}

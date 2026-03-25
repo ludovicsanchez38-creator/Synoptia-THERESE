@@ -8,12 +8,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutDashboard, Users, Activity, UserPlus, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
+import { X, LayoutDashboard, Users, Activity, UserPlus, Upload, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { useCRMStore } from '../../stores/crmStore';
 import { listContacts, listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
-import { createCRMContact, type CreateCRMContactRequest } from '../../services/api/crm';
+import { createCRMContact, importVCFContacts, type CreateCRMContactRequest } from '../../services/api/crm';
 import { useDemoMask } from '../../hooks';
 
 interface CRMPanelProps {
@@ -94,6 +94,19 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     setActiveTab('activities');
   };
 
+  const handleImportVCF = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await importVCFContacts(file);
+      alert(result.message);
+      await loadContacts();
+    } catch (err: any) {
+      alert(`Erreur d'import : ${err.message}`);
+    }
+    e.target.value = '';
+  };
+
   const handleCreateContact = async (data: CreateCRMContactRequest) => {
     try {
       setError(null);
@@ -134,6 +147,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       </div>
 
       <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-lg transition-colors text-sm text-text-muted cursor-pointer">
+          <Upload className="w-4 h-4" />
+          <span className="hidden sm:inline">Import .vcf</span>
+          <input type="file" accept=".vcf" className="hidden" onChange={handleImportVCF} />
+        </label>
+
         <button
           onClick={() => setShowCreateForm(true)}
           className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-lg transition-colors text-sm font-medium"

@@ -344,6 +344,7 @@ export {
   quickAddEvent,
   syncCalendar,
   getCalendarSyncStatus,
+  importICSFile,
   type Calendar,
   type CalendarEvent,
   type CreateEventRequest,
@@ -385,6 +386,7 @@ export {
 // CRM - Contact creation + push
 export {
   createCRMContact,
+  importVCFContacts,
   type CreateCRMContactRequest,
 } from './crm';
 

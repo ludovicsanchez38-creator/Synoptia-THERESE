@@ -11,6 +11,7 @@ import {
   X,
   Calendar as CalendarIcon,
   Plus,
+  Upload,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -56,6 +57,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reauthing, setReauthing] = useState(false);
+  const icsInputRef = { current: null as HTMLInputElement | null };
 
   const currentAccount = accounts.find((acc) => acc.id === currentAccountId);
 
@@ -195,6 +197,22 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setIsEventFormOpen(true);
   }
 
+  async function handleImportICS(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await api.importICSFile(file);
+      alert(result.message);
+      // Recharger les événements
+      await loadCalendars();
+      if (currentCalendarId) await loadEvents();
+    } catch (err: any) {
+      alert(`Erreur d'import : ${err.message}`);
+    }
+    // Reset l'input pour permettre de reimporter le même fichier
+    e.target.value = '';
+  }
+
   function handlePrevious() {
     const newDate = new Date(selectedDate);
     if (viewMode === 'day') {
@@ -330,6 +348,17 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
         </Button>
+
+        <Button variant="ghost" size="sm" onClick={() => icsInputRef.current?.click()}>
+          <Upload className="w-4 h-4" />
+        </Button>
+        <input
+          ref={(el) => { icsInputRef.current = el; }}
+          type="file"
+          accept=".ics"
+          className="hidden"
+          onChange={handleImportICS}
+        />
 
         <Button variant="primary" size="sm" onClick={handleNewEvent}>
           <Plus className="w-4 h-4 mr-2" />
