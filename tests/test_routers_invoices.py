@@ -5,6 +5,7 @@ Tests pour le CRUD de facturation (Phase 4).
 """
 
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient
@@ -269,6 +270,20 @@ class TestInvoicesCRUD:
         # Verifier qu'elle n'existe plus
         get_response = await client.get(f"/api/invoices/{invoice['id']}")
         assert get_response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_generate_invoice_pdf_without_cached_profile(self, client: AsyncClient):
+        """GET /api/invoices/{id}/pdf reste robuste si le profil cache est absent."""
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+
+        with patch("app.routers.invoices.get_cached_profile", return_value=None):
+            response = await client.get(f"/api/invoices/{invoice['id']}/pdf")
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["invoice_number"] == invoice["invoice_number"]
+        assert data["pdf_path"].endswith(".pdf")
 
     @pytest.mark.asyncio
     async def test_create_invoice_invalid_contact(self, client: AsyncClient):
