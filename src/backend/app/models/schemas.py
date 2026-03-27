@@ -915,3 +915,29 @@ class CreateCRMContactRequest(BaseModel):
     phone: str | None = None
     source: str | None = None
     stage: str = "contact"
+
+
+# ============================================================
+# Notification Schemas (US-004 - v0.9.0)
+# ============================================================
+
+
+class NotificationResponse(BaseModel):
+    """Response schema pour une notification."""
+
+    id: str
+    title: str
+    message: str
+    type: str  # info, warning, action, reminder
+    source: str  # crm, invoice, calendar, task, agent, system
+    action_url: str | None = None
+    action_label: str | None = None
+    is_read: bool
+    created_at: str  # ISO datetime
+    read_at: str | None = None
+
+
+class NotificationCountResponse(BaseModel):
+    """Response pour le compteur de notifications non lues."""
+
+    unread_count: int

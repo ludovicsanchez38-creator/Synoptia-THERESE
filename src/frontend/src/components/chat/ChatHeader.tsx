@@ -1,5 +1,6 @@
 import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { NotificationCenter } from '../ui/NotificationCenter';
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -198,6 +199,7 @@ export function ChatHeader({
         >
           <Zap className="w-4 h-4 text-purple-400" />
         </Button>
+        <NotificationCenter />
         <Button variant="ghost" size="icon" title="Paramètres" onClick={onOpenSettings}>
           <Settings className="w-5 h-5" />
         </Button>

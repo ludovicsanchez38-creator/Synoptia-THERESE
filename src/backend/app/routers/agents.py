@@ -9,7 +9,7 @@ import logging
 from datetime import UTC, datetime
 
 from app.models.database import get_session
-from app.models.entities_agents import AgentMessage, AgentTask
+from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
 from app.models.schemas_agents import (
     AgentConfigResponse,
     AgentConfigUpdate,
@@ -20,6 +20,12 @@ from app.models.schemas_agents import (
     AgentTaskResponse,
     DiffFileResponse,
     DiffResponse,
+    DispatchRequest,
+    SendMessageRequest,
+    AgentSessionResponse,
+    AgentSessionListResponse,
+    SessionMessageResponse,
+    OpenClawStatusResponse,
 )
 from app.services.agents.git_service import GitService
 from app.services.agents.swarm import SwarmOrchestrator
@@ -565,4 +571,289 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
         created_at=task.created_at,
         updated_at=task.updated_at,
         merged_at=task.merged_at,
+    )
+
+
+# ============================================================
+# OpenClaw Integration (US-001)
+# ============================================================
+
+
+@router.post("/dispatch")
+async def dispatch_to_openclaw(
+    request: DispatchRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Lance un agent OpenClaw depuis l Atelier.
+
+    Crée une AgentSession en DB et spawn une session OpenClaw.
+    """
+    from app.models.entities_agents import AgentSession
+    from app.models.schemas_agents import AgentSessionResponse, DispatchRequest
+    from app.services.openclaw_bridge import spawn_session
+
+    # Vérifier la connexion OpenClaw
+    from app.services.openclaw_bridge import check_connection
+
+    connected = await check_connection()
+    if not connected:
+        raise HTTPException(
+            status_code=503,
+            detail="OpenClaw n est pas accessible. Vérifiez que le gateway tourne sur le port 18789.",
+        )
+
+    # Créer la session en DB
+    agent_session = AgentSession(
+        agent_name=request.agent_name,
+        instruction=request.instruction,
+    )
+    session.add(agent_session)
+    await session.commit()
+    await session.refresh(agent_session)
+
+    # Spawn la session OpenClaw avec le MCP bridge
+    mcp_config = {
+        "therese-bridge": {
+            "command": "python3",
+            "args": ["-m", "app.services.mcp_therese_server"],
+            "env": {
+                "THERESE_API_URL": "http://127.0.0.1:17293",
+            },
+        }
+    }
+
+    result = await spawn_session(
+        agent_name=request.agent_name,
+        instruction=request.instruction,
+        mcp_config=mcp_config,
+    )
+
+    if "error" in result:
+        agent_session.status = "error"
+        agent_session.result_summary = result["error"]
+        session.add(agent_session)
+        await session.commit()
+        raise HTTPException(status_code=502, detail=result["error"])
+
+    # Mettre à jour avec l ID de session OpenClaw
+    openclaw_id = result.get("session_id") or result.get("id", "")
+    agent_session.openclaw_session_id = openclaw_id
+    session.add(agent_session)
+    await session.commit()
+    await session.refresh(agent_session)
+
+    return AgentSessionResponse(
+        id=agent_session.id,
+        agent_name=agent_session.agent_name,
+        instruction=agent_session.instruction,
+        status=agent_session.status,
+        openclaw_session_id=agent_session.openclaw_session_id,
+        created_at=agent_session.created_at,
+        finished_at=agent_session.finished_at,
+        result_summary=agent_session.result_summary,
+        actions_count=agent_session.actions_count,
+    )
+
+
+@router.get("/sessions")
+async def list_openclaw_sessions(
+    limit: int = 50,
+    status: str | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    """Liste les sessions OpenClaw."""
+    from app.models.entities_agents import AgentSession
+    from app.models.schemas_agents import AgentSessionListResponse, AgentSessionResponse
+
+    query = select(AgentSession).order_by(AgentSession.created_at.desc()).limit(limit)
+    if status:
+        query = query.where(AgentSession.status == status)
+
+    result = await session.execute(query)
+    sessions_list = result.scalars().all()
+
+    count_result = await session.execute(select(func.count(AgentSession.id)))
+    total = count_result.scalar() or 0
+
+    return AgentSessionListResponse(
+        sessions=[
+            AgentSessionResponse(
+                id=s.id,
+                agent_name=s.agent_name,
+                instruction=s.instruction,
+                status=s.status,
+                openclaw_session_id=s.openclaw_session_id,
+                created_at=s.created_at,
+                finished_at=s.finished_at,
+                result_summary=s.result_summary,
+                actions_count=s.actions_count,
+            )
+            for s in sessions_list
+        ],
+        total=total,
+    )
+
+
+@router.get("/sessions/{session_id}")
+async def get_openclaw_session(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Détail d une session OpenClaw."""
+    from app.models.entities_agents import AgentSession
+    from app.models.schemas_agents import AgentSessionResponse
+
+    result = await session.execute(
+        select(AgentSession).where(AgentSession.id == session_id)
+    )
+    agent_session = result.scalar_one_or_none()
+    if not agent_session:
+        raise HTTPException(status_code=404, detail="Session introuvable")
+
+    # Synchroniser le statut avec OpenClaw si running
+    if agent_session.openclaw_session_id and agent_session.status == "running":
+        from app.services.openclaw_bridge import get_session_status
+
+        oc_status = await get_session_status(agent_session.openclaw_session_id)
+        if "error" not in oc_status:
+            new_status = oc_status.get("status", agent_session.status)
+            if new_status != agent_session.status:
+                agent_session.status = new_status
+                if new_status in ("done", "error"):
+                    from datetime import UTC, datetime
+
+                    agent_session.finished_at = datetime.now(UTC)
+                session.add(agent_session)
+                await session.commit()
+                await session.refresh(agent_session)
+
+    return AgentSessionResponse(
+        id=agent_session.id,
+        agent_name=agent_session.agent_name,
+        instruction=agent_session.instruction,
+        status=agent_session.status,
+        openclaw_session_id=agent_session.openclaw_session_id,
+        created_at=agent_session.created_at,
+        finished_at=agent_session.finished_at,
+        result_summary=agent_session.result_summary,
+        actions_count=agent_session.actions_count,
+    )
+
+
+@router.get("/sessions/{session_id}/messages")
+async def get_openclaw_session_messages(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Messages d une session OpenClaw."""
+    from app.models.entities_agents import AgentSession
+    from app.models.schemas_agents import SessionMessageResponse
+
+    result = await session.execute(
+        select(AgentSession).where(AgentSession.id == session_id)
+    )
+    agent_session = result.scalar_one_or_none()
+    if not agent_session:
+        raise HTTPException(status_code=404, detail="Session introuvable")
+
+    if not agent_session.openclaw_session_id:
+        return []
+
+    from app.services.openclaw_bridge import get_session_messages
+
+    messages = await get_session_messages(agent_session.openclaw_session_id)
+    return [
+        SessionMessageResponse(
+            role=m.get("role", "assistant"),
+            content=m.get("content", ""),
+            timestamp=m.get("timestamp") or m.get("created_at"),
+        )
+        for m in messages
+    ]
+
+
+@router.post("/sessions/{session_id}/send")
+async def send_to_openclaw_session(
+    session_id: str,
+    request: SendMessageRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Envoie un message à un agent dans une session OpenClaw."""
+    from app.models.entities_agents import AgentSession
+    from app.models.schemas_agents import SendMessageRequest
+
+    result = await session.execute(
+        select(AgentSession).where(AgentSession.id == session_id)
+    )
+    agent_session = result.scalar_one_or_none()
+    if not agent_session:
+        raise HTTPException(status_code=404, detail="Session introuvable")
+    if agent_session.status != "running":
+        raise HTTPException(status_code=400, detail=f"Session en statut {agent_session.status}, pas running")
+    if not agent_session.openclaw_session_id:
+        raise HTTPException(status_code=400, detail="Pas de session OpenClaw associée")
+
+    from app.services.openclaw_bridge import send_message
+
+    response = await send_message(agent_session.openclaw_session_id, request.content)
+
+    if "error" in response:
+        raise HTTPException(status_code=502, detail=response["error"])
+
+    # Incrémenter le compteur d actions
+    agent_session.actions_count += 1
+    session.add(agent_session)
+    await session.commit()
+
+    return response
+
+
+@router.post("/sessions/{session_id}/cancel")
+async def cancel_openclaw_session(
+    session_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Annule une session OpenClaw."""
+    from app.models.entities_agents import AgentSession
+
+    result = await session.execute(
+        select(AgentSession).where(AgentSession.id == session_id)
+    )
+    agent_session = result.scalar_one_or_none()
+    if not agent_session:
+        raise HTTPException(status_code=404, detail="Session introuvable")
+    if agent_session.status != "running":
+        raise HTTPException(status_code=400, detail=f"Session en statut {agent_session.status}, pas running")
+
+    # Annuler dans OpenClaw
+    if agent_session.openclaw_session_id:
+        from app.services.openclaw_bridge import cancel_session
+
+        await cancel_session(agent_session.openclaw_session_id)
+
+    from datetime import UTC, datetime
+
+    agent_session.status = "cancelled"
+    agent_session.finished_at = datetime.now(UTC)
+    session.add(agent_session)
+    await session.commit()
+
+    return {"status": "cancelled", "session_id": session_id}
+
+
+@router.get("/openclaw/status")
+async def get_openclaw_status():
+    """Vérifie la connexion OpenClaw et liste les agents disponibles."""
+    from app.models.schemas_agents import OpenClawStatusResponse
+    from app.services.openclaw_bridge import OPENCLAW_API_URL, check_connection, list_agents
+
+    connected = await check_connection()
+    agents = []
+    if connected:
+        agents = await list_agents()
+
+    return OpenClawStatusResponse(
+        connected=connected,
+        agents=agents,
+        url=OPENCLAW_API_URL,
     )

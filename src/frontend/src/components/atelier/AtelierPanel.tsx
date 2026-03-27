@@ -2,17 +2,27 @@
  * THÉRÈSE v2 - Atelier Panel
  *
  * Panneau coulissant pour les agents IA embarqués.
- * Contient : chat agents, mission timeline, code review.
+ * US-001 : Ajout intégration OpenClaw avec SessionList + AgentChat.
+ *
+ * Vues :
+ *   - chat : swarm agents embarqués (existant)
+ *   - mission : mission timeline (existant)
+ *   - review : code review (existant)
+ *   - openclaw : sessions OpenClaw (nouveau US-001)
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
-import { X, Headphones, Wrench, MessageSquare, Zap, Eye } from 'lucide-react';
-import { useAtelierStore } from '../../stores/atelierStore';
-import { streamAgentRequest } from '../../services/api/agents';
-import { AgentMessageBubble } from './AgentMessageBubble';
-import { AgentInput } from './AgentInput';
-import { MissionStepper } from './MissionStepper';
-import { CodeReviewPanel } from './CodeReviewPanel';
+import React, { useRef, useEffect, useCallback } from "react";
+import { X, Headphones, Wrench, MessageSquare, Zap, Eye, Radio } from "lucide-react";
+import { useAtelierStore } from "../../stores/atelierStore";
+import { useOpenClawStore } from "../../stores/openclawStore";
+import { streamAgentRequest } from "../../services/api/agents";
+import { AgentMessageBubble } from "./AgentMessageBubble";
+import { AgentInput } from "./AgentInput";
+import { MissionStepper } from "./MissionStepper";
+import { CodeReviewPanel } from "./CodeReviewPanel";
+import { SessionList } from "./SessionList";
+import { AgentChat } from "./AgentChat";
+import { NewTaskDialog } from "./NewTaskDialog";
 
 export function AtelierPanel() {
   const {
@@ -28,8 +38,17 @@ export function AtelierPanel() {
     addUserMessage,
   } = useAtelierStore();
 
+  const { checkOpenClawStatus, openclawConnected, isNewTaskOpen } = useOpenClawStore();
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Vérifier la connexion OpenClaw au montage
+  useEffect(() => {
+    if (isOpen) {
+      checkOpenClawStatus();
+    }
+  }, [isOpen, checkOpenClawStatus]);
 
   // Auto-scroll
   useEffect(() => {
@@ -38,28 +57,31 @@ export function AtelierPanel() {
     }
   }, [messages]);
 
-  const handleSend = useCallback(async (message: string) => {
-    addUserMessage(message);
+  const handleSend = useCallback(
+    async (message: string) => {
+      addUserMessage(message);
 
-    abortRef.current = new AbortController();
+      abortRef.current = new AbortController();
 
-    try {
-      for await (const chunk of streamAgentRequest(
-        message,
-        sourcePath || undefined,
-        abortRef.current.signal,
-      )) {
-        processChunk(chunk);
+      try {
+        for await (const chunk of streamAgentRequest(
+          message,
+          sourcePath || undefined,
+          abortRef.current.signal
+        )) {
+          processChunk(chunk);
+        }
+      } catch (e: any) {
+        if (e.name !== "AbortError") {
+          processChunk({
+            type: "error",
+            content: e.message || "Erreur de connexion",
+          });
+        }
       }
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
-        processChunk({
-          type: 'error',
-          content: e.message || 'Erreur de connexion',
-        });
-      }
-    }
-  }, [sourcePath, processChunk, addUserMessage]);
+    },
+    [sourcePath, processChunk, addUserMessage]
+  );
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -71,7 +93,7 @@ export function AtelierPanel() {
     return (
       <div
         className="fixed right-0 top-0 z-50 flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl"
-        style={{ width: '480px' }}
+        style={{ width: "480px" }}
       >
         <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -80,14 +102,18 @@ export function AtelierPanel() {
             </div>
             <span className="text-sm font-semibold text-[#E6EDF7]">Atelier</span>
           </div>
-          <button onClick={closePanel} className="rounded-lg p-1.5 text-[#B6C7DA] hover:bg-white/5">
+          <button
+            onClick={closePanel}
+            className="rounded-lg p-1.5 text-[#B6C7DA] hover:bg-white/5"
+          >
             <X size={16} />
           </button>
         </div>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
           <Wrench size={40} className="text-[#B6C7DA]/30" />
           <p className="text-sm text-[#B6C7DA]">
-            Configure le chemin du code source dans <strong>Paramètres &gt; Agents</strong> pour utiliser l'Atelier.
+            Configure le chemin du code source dans{" "}
+            <strong>Paramètres &gt; Agents</strong> pour utiliser l&apos;Atelier.
           </p>
         </div>
       </div>
@@ -97,7 +123,7 @@ export function AtelierPanel() {
   return (
     <div
       className="fixed right-0 top-0 z-50 flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl"
-      style={{ width: '480px' }}
+      style={{ width: activeView === "openclaw" ? "720px" : "480px" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
@@ -111,28 +137,38 @@ export function AtelierPanel() {
         {/* Navigation */}
         <div className="flex items-center gap-1">
           <NavButton
-            active={activeView === 'chat'}
-            onClick={() => setActiveView('chat')}
+            active={activeView === "chat"}
+            onClick={() => setActiveView("chat")}
             icon={<MessageSquare size={14} />}
             label="Chat"
           />
           {currentMission && (
             <>
               <NavButton
-                active={activeView === 'mission'}
-                onClick={() => setActiveView('mission')}
+                active={activeView === "mission"}
+                onClick={() => setActiveView("mission")}
                 icon={<Zap size={14} />}
                 label="Mission"
-                pulse={currentMission.phase !== 'done' && currentMission.phase !== 'review'}
+                pulse={
+                  currentMission.phase !== "done" &&
+                  currentMission.phase !== "review"
+                }
               />
               <NavButton
-                active={activeView === 'review'}
-                onClick={() => setActiveView('review')}
+                active={activeView === "review"}
+                onClick={() => setActiveView("review")}
                 icon={<Eye size={14} />}
                 label="Review"
               />
             </>
           )}
+          <NavButton
+            active={activeView === "openclaw"}
+            onClick={() => setActiveView("openclaw")}
+            icon={<Radio size={14} />}
+            label="Katia"
+            pulse={openclawConnected}
+          />
         </div>
 
         <button
@@ -144,13 +180,14 @@ export function AtelierPanel() {
       </div>
 
       {/* Mission stepper (visible en mode mission et review) */}
-      {currentMission && (activeView === 'mission' || activeView === 'review') && (
-        <MissionStepper currentPhase={currentMission.phase} />
-      )}
+      {currentMission &&
+        (activeView === "mission" || activeView === "review") && (
+          <MissionStepper currentPhase={currentMission.phase} />
+        )}
 
       {/* Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {activeView === 'chat' && (
+        {activeView === "chat" && (
           <>
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
@@ -173,7 +210,7 @@ export function AtelierPanel() {
           </>
         )}
 
-        {activeView === 'mission' && (
+        {activeView === "mission" && (
           <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
             {messages.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-[#6B7280]">
@@ -187,10 +224,18 @@ export function AtelierPanel() {
           </div>
         )}
 
-        {activeView === 'review' && (
-          <CodeReviewPanel />
+        {activeView === "review" && <CodeReviewPanel />}
+
+        {activeView === "openclaw" && (
+          <div className="flex flex-1 overflow-hidden">
+            <SessionList />
+            <AgentChat />
+          </div>
         )}
       </div>
+
+      {/* NewTaskDialog (modal) */}
+      {isNewTaskOpen && <NewTaskDialog />}
     </div>
   );
 }
@@ -217,8 +262,8 @@ function NavButton({
       onClick={onClick}
       className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${
         active
-          ? 'bg-purple-500/20 text-purple-400'
-          : 'text-[#6B7280] hover:bg-white/5 hover:text-[#B6C7DA]'
+          ? "bg-purple-500/20 text-purple-400"
+          : "text-[#6B7280] hover:bg-white/5 hover:text-[#B6C7DA]"
       }`}
     >
       {icon}
@@ -243,12 +288,11 @@ function EmptyState() {
       </div>
       <div>
         <h3 className="mb-1 text-sm font-semibold text-[#E6EDF7]">
-          Bienvenue dans l'Atelier
+          Bienvenue dans l&apos;Atelier
         </h3>
         <p className="text-xs leading-relaxed text-[#6B7280]">
-          Katia te guide et comprend tes besoins.
-          Zézette implémente les changements.
-          Posez une question ou demandez une amélioration.
+          Katia te guide et comprend tes besoins. Zézette implémente les
+          changements. Posez une question ou demandez une amélioration.
         </p>
       </div>
     </div>

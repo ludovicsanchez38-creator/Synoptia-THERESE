@@ -226,3 +226,110 @@ export async function updateAgentConfig(
 export async function getAgentStatus(): Promise<AgentStatusResponse> {
   return request<AgentStatusResponse>('/api/agents/status');
 }
+
+// ============================================================
+// OpenClaw Integration (US-001)
+// ============================================================
+
+export interface AgentSessionResponse {
+  id: string;
+  agent_name: string;
+  instruction: string;
+  status: running | done | error | cancelled;
+  openclaw_session_id?: string;
+  created_at: string;
+  finished_at?: string;
+  result_summary?: string;
+  actions_count: number;
+}
+
+export interface AgentSessionListResponse {
+  sessions: AgentSessionResponse[];
+  total: number;
+}
+
+export interface SessionMessageResponse {
+  role: string;
+  content: string;
+  timestamp?: string;
+}
+
+export interface OpenClawStatusResponse {
+  connected: boolean;
+  agents: Array<{ id?: string; name?: string; status?: string }>;
+  url: string;
+}
+
+/**
+ * Lance un agent OpenClaw depuis l Atelier.
+ */
+export async function dispatchToOpenClaw(
+  instruction: string,
+  agentName: string = katia,
+): Promise<AgentSessionResponse> {
+  return request<AgentSessionResponse>(/api/agents/dispatch, {
+    method: POST,
+    body: JSON.stringify({ instruction, agent_name: agentName }),
+  });
+}
+
+/**
+ * Liste les sessions OpenClaw.
+ */
+export async function listOpenClawSessions(
+  limit = 50,
+  status?: string,
+): Promise<AgentSessionListResponse> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (status) params.set(status, status);
+  return request<AgentSessionListResponse>(`/api/agents/sessions?${params}`);
+}
+
+/**
+ * Detail d une session OpenClaw.
+ */
+export async function getOpenClawSession(
+  sessionId: string,
+): Promise<AgentSessionResponse> {
+  return request<AgentSessionResponse>(`/api/agents/sessions/${sessionId}`);
+}
+
+/**
+ * Messages d une session OpenClaw.
+ */
+export async function getOpenClawSessionMessages(
+  sessionId: string,
+): Promise<SessionMessageResponse[]> {
+  return request<SessionMessageResponse[]>(`/api/agents/sessions/${sessionId}/messages`);
+}
+
+/**
+ * Envoie un message a un agent dans une session.
+ */
+export async function sendToOpenClawSession(
+  sessionId: string,
+  content: string,
+): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>(`/api/agents/sessions/${sessionId}/send`, {
+    method: POST,
+    body: JSON.stringify({ content }),
+  });
+}
+
+/**
+ * Annule une session OpenClaw.
+ */
+export async function cancelOpenClawSession(
+  sessionId: string,
+): Promise<{ status: string }> {
+  return request<{ status: string }>(`/api/agents/sessions/${sessionId}/cancel`, {
+    method: POST,
+  });
+}
+
+/**
+ * Statut de la connexion OpenClaw.
+ */
+export async function getOpenClawStatus(): Promise<OpenClawStatusResponse> {
+  return request<OpenClawStatusResponse>(/api/agents/openclaw/status);
+}

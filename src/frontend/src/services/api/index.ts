@@ -478,3 +478,14 @@ export {
   type RGPDStatsResponse,
   type RGPDInferResponse,
 } from './rgpd';
+
+// Notifications - Push in-app (US-004)
+export {
+  listNotifications,
+  getUnreadCount,
+  markNotificationRead,
+  markAllNotificationsRead,
+  generateNotifications,
+  type AppNotification,
+  type NotificationCount,
+} from "./notifications";

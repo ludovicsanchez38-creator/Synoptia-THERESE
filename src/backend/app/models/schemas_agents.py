@@ -118,3 +118,58 @@ class AgentStatusResponse(BaseModel):
     active_tasks: int = 0
     katia_ready: bool = False
     zezette_ready: bool = False
+
+
+# ============================================================
+# OpenClaw Integration (US-001)
+# ============================================================
+
+
+class DispatchRequest(BaseModel):
+    """Requête pour lancer un agent OpenClaw depuis l Atelier."""
+
+    instruction: str
+    agent_name: str = "katia"
+
+
+class AgentSessionResponse(BaseModel):
+    """Réponse d une session OpenClaw."""
+
+    id: str
+    agent_name: str
+    instruction: str
+    status: str
+    openclaw_session_id: str | None = None
+    created_at: datetime
+    finished_at: datetime | None = None
+    result_summary: str | None = None
+    actions_count: int = 0
+
+
+class AgentSessionListResponse(BaseModel):
+    """Liste de sessions OpenClaw."""
+
+    sessions: list[AgentSessionResponse]
+    total: int
+
+
+class SessionMessageResponse(BaseModel):
+    """Message dans une session OpenClaw."""
+
+    role: str
+    content: str
+    timestamp: str | None = None
+
+
+class SendMessageRequest(BaseModel):
+    """Requête pour envoyer un message à une session OpenClaw."""
+
+    content: str
+
+
+class OpenClawStatusResponse(BaseModel):
+    """Statut de la connexion OpenClaw."""
+
+    connected: bool
+    agents: list[dict] = []
+    url: str = ""

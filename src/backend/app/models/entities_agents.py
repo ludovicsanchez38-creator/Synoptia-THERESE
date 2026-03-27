@@ -60,3 +60,22 @@ class CodeChange(SQLModel, table=True):
     explanation: str | None = None
     approved: bool | None = None  # None = en attente, True = approuvé, False = rejeté
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class AgentSession(SQLModel, table=True):
+    """Session OpenClaw pilotée depuis l Atelier.
+
+    Représente une mission déléguée à un agent externe (Katia via OpenClaw).
+    """
+
+    __tablename__ = "agent_sessions"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    agent_name: str = Field(default="katia", index=True)
+    instruction: str
+    status: str = Field(default="running", index=True)  # running, done, error, cancelled
+    openclaw_session_id: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    finished_at: datetime | None = None
+    result_summary: str | None = None
+    actions_count: int = Field(default=0)

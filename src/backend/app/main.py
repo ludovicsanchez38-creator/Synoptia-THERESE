@@ -58,6 +58,7 @@ from app.routers import (
     skills_router,
     tasks_router,  # Phase 3 - ACTIVATED
     tools_router,  # V3 - Installed Tools
+    notifications_router,  # US-004 - Notifications push in-app
     voice_router,
 )
 from app.services import close_qdrant, init_qdrant
@@ -188,6 +189,27 @@ async def lifespan(app: FastAPI):
         # Start OAuth cleanup background task
         from app.services.oauth import cleanup_expired_flows_periodically
         oauth_cleanup_task = asyncio.create_task(cleanup_expired_flows_periodically())
+
+        # US-004 - Notification scheduler (generation auto toutes les heures)
+        from app.services.notification_service import generate_automatic_notifications
+
+        async def _notification_scheduler():
+            """Genere les notifications automatiques au demarrage puis toutes les heures."""
+            # Generation initiale au demarrage
+            try:
+                await generate_automatic_notifications()
+                logger.info("Notifications initiales generees")
+            except Exception as e:
+                logger.error(f"Erreur generation notifications initiale: {e}")
+            # Boucle horaire
+            while True:
+                await asyncio.sleep(3600)
+                try:
+                    await generate_automatic_notifications()
+                except Exception as e:
+                    logger.error(f"Notification scheduler error: {e}")
+
+        notification_task = asyncio.create_task(_notification_scheduler())
     else:
         logger.info("Mode test : services externes ignorés (THERESE_SKIP_SERVICES=1)")
         oauth_cleanup_task = None
@@ -224,6 +246,13 @@ async def lifespan(app: FastAPI):
             await oauth_cleanup_task
         except asyncio.CancelledError:
             pass
+
+    # Cancel notification scheduler
+    try:
+        notification_task.cancel()
+        await notification_task
+    except (asyncio.CancelledError, NameError):
+        pass
 
     # Cleanup session token
     try:
@@ -546,6 +575,9 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 
 # v0.6 - Browser Automation (Manus-inspired)
 app.include_router(browser_router, prefix="/api/browser", tags=["Browser"])
+
+# US-004 - Notifications push in-app (v0.9.0)
+app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
 
 
 # Health endpoints

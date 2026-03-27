@@ -512,3 +512,25 @@ Contact.invoices = Relationship(back_populates="contact")
 
 # Update Project model to have deliverables relationship
 Project.deliverables = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+
+
+# =============================================================================
+# NOTIFICATION MODELS (US-004 - v0.9.0)
+# =============================================================================
+
+
+class Notification(SQLModel, table=True):
+    """Notifications push in-app avec rappels automatiques."""
+
+    __tablename__ = "notifications"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    title: str
+    message: str
+    type: str = Field(default="info", index=True)  # info, warning, action, reminder
+    source: str = Field(default="system", index=True)  # crm, invoice, calendar, task, agent, system
+    action_url: str | None = None  # ex: "/crm/contacts/123" pour navigation
+    action_label: str | None = None  # ex: "Relancer"
+    is_read: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    read_at: datetime | None = None
