@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { initApiBase, getApiBase } from '../services/api/core';
+import { prefersReducedMotion } from '../lib/accessibility';
 
 type UnlistenFn = () => void;
 
@@ -88,6 +89,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [progress, setProgress] = useState(0);
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const apiBaseReady = useRef(false);
+  const reducedMotion = prefersReducedMotion();
 
   // Charger la version de l'app (tauri.conf.json)
   useEffect(() => {
@@ -213,7 +215,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         {/* Logo animé */}
         <h1
           className="text-5xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent mb-2"
-          style={{
+          style={reducedMotion ? {} : {
             animation: 'pulse 2s ease-in-out infinite',
           }}
         >
@@ -238,7 +240,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
             borderTopColor: 'var(--color-accent-cyan, #00d4ff)',
             borderRightColor: 'var(--color-accent-magenta, #ff00aa)',
             borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
+            animation: reducedMotion ? 'none' : 'spin 0.8s linear infinite',
           }}
           role="status"
           aria-label="Chargement en cours"

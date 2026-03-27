@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../stores/chatStore';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { announceToScreenReader } from '../../lib/accessibility';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
 import { HomeCommands } from '../home';
@@ -20,6 +22,9 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
   const isStreaming = useChatStore((state) => state.isStreaming);
   const clearMessageEntities = useChatStore((state) => state.clearMessageEntities);
   const { enabled: demoEnabled, maskText } = useDemoMask();
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
+  const announceMessages = useAccessibilityStore((s) => s.announceMessages);
+  const prevMsgCountRef = useRef(0);
 
   // Compute current conversation from subscribed state
   const conversation = conversations.find((c) => c.id === currentConversationId) || null;
@@ -79,12 +84,25 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     }
   }, [conversation?.messages, isStreaming]);
 
-  // Quand un nouveau message utilisateur est envoyé, reset le flag
+  // Quand un nouveau message utilisateur est envoye, reset le flag
   useEffect(() => {
     userScrolledUp.current = false;
   }, [conversation?.messages?.length]);
 
-  // Mode démo : masquer le contenu des messages avant rendu
+  // US-012 : Annoncer les nouveaux messages assistant au lecteur d'ecran
+  useEffect(() => {
+    if (!conversation || !announceMessages) return;
+    const msgCount = conversation.messages.length;
+    if (msgCount > prevMsgCountRef.current && msgCount > 0) {
+      const lastMsg = conversation.messages[msgCount - 1];
+      if (lastMsg.role === 'assistant' && !lastMsg.isStreaming) {
+        announceToScreenReader('Nouveau message de Therese');
+      }
+    }
+    prevMsgCountRef.current = msgCount;
+  }, [conversation?.messages, announceMessages]);
+
+  // Mode demo : masquer le contenu des messages avant rendu
   const displayMessages = useMemo(() => {
     if (!conversation) return [];
     if (!demoEnabled) return conversation.messages;
@@ -104,16 +122,16 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
   }
 
   return (
-    <div ref={scrollContainerRef} onScroll={handleScroll} className="h-full overflow-y-auto px-4 py-6" style={{ overflowAnchor: 'none' }}>
+    <div ref={scrollContainerRef} onScroll={handleScroll} className="h-full overflow-y-auto px-4 py-6" style={{ overflowAnchor: 'none' }} aria-live="polite" aria-label="Messages de la conversation">
       <div className="max-w-3xl mx-auto space-y-4">
         <AnimatePresence initial={false}>
           {displayMessages.map((message, index) => (
             <motion.div
               key={message.id}
-              initial={{ opacity: 0, y: 10 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
+              transition={reduceMotion ? { duration: 0 } : {
                 duration: 0.2,
                 delay: index * 0.03,
               }}

@@ -22,93 +22,157 @@
     "shell:allow-open",
     {
       "identifier": "shell:allow-execute",
-      "allow": [{ "name": "backend", "sidecar": true }]
+      "allow": [
+        {
+          "name": "backend",
+          "sidecar": true
+        }
+      ]
     },
     {
       "identifier": "shell:allow-spawn",
-      "allow": [{ "name": "backend", "sidecar": true }]
+      "allow": [
+        {
+          "name": "backend",
+          "sidecar": true
+        }
+      ]
     },
     "fs:default",
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-write-text-file",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-read-file",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-write-file",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-exists",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-mkdir",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-remove",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-rename",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-copy-file",
       "allow": [
-        { "path": "$HOME/.therese/**" },
-        { "path": "$APPDATA/**" },
-        { "path": "$DOWNLOAD/**" }
+        {
+          "path": "$HOME/.therese/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-read-dir",
       "allow": [
-        { "path": "$HOME" },
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     {
       "identifier": "fs:allow-stat",
       "allow": [
-        { "path": "$HOME" },
-        { "path": "$HOME/**" },
-        { "path": "$APPDATA/**" }
+        {
+          "path": "$HOME"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        }
       ]
     },
     "dialog:default",
@@ -117,6 +181,7 @@
     "dialog:allow-message",
     "dialog:allow-ask",
     "dialog:allow-confirm",
-    "mic-recorder:default"
+    "mic-recorder:default",
+    "updater:default"
   ]
 }

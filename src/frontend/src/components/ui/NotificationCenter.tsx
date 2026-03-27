@@ -18,6 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { useNotificationStore } from "../../stores/notificationStore";
+import { useAccessibilityStore } from "../../stores/accessibilityStore";
+import { announceToScreenReader } from "../../lib/accessibility";
 import { cn } from "../../lib/utils";
 import type { AppNotification } from "../../services/api/notifications";
 
@@ -84,20 +86,22 @@ function SourceBadge({ source }: { source: string }) {
 // Element de notification individuel
 function NotificationItem({ notification }: { notification: AppNotification }) {
   const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
 
   const handleClick = () => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-    // Si action_url, on pourrait naviguer - pour l'instant juste marquer comme lu
+    // Annoncer le contenu au lecteur d'ecran
+    announceToScreenReader(`${notification.title} : ${notification.message || ''}`);
   };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
+      initial={reduceMotion ? false : { opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+      transition={{ duration: reduceMotion ? 0 : 0.15 }}
       onClick={handleClick}
       className={cn(
         "flex gap-3 p-3 rounded-lg cursor-pointer transition-colors border",
@@ -171,6 +175,7 @@ export function NotificationCenter() {
     stopPolling,
   } = useNotificationStore();
 
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Demarrer le polling au montage
@@ -201,7 +206,11 @@ export function NotificationCenter() {
       >
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]">
+          <span
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+            aria-live="polite"
+            aria-label={`${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`}
+          >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
@@ -211,11 +220,12 @@ export function NotificationCenter() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            initial={reduceMotion ? false : { opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
             className="absolute right-0 top-full mt-2 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col"
+            aria-live="polite"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">

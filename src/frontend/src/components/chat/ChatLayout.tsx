@@ -22,6 +22,7 @@ import { useKeyboardShortcuts, useConversationSync, useFileDrop } from '../../ho
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useAtelierStore } from '../../stores/atelierStore';
+import { useOpenClawStore } from '../../stores/openclawStore';
 import { openPanelWindow } from '../../services/windowManager';
 import * as api from '../../services/api';
 import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
@@ -49,6 +50,9 @@ export function ChatLayout() {
   const { createConversation, currentConversationId } = useChatStore();
   const toggleDemo = useDemoStore((s) => s.toggle);
   const toggleAtelier = useAtelierStore((s) => s.togglePanel);
+  const openAtelierPanel = useAtelierStore((s) => s.openPanel);
+  const setAtelierView = useAtelierStore((s) => s.setActiveView);
+  const openNewTask = useOpenClawStore((s) => s.openNewTask);
 
   // Reset guidedPanelActive quand la conversation change (BUG-070)
   useEffect(() => {
@@ -258,6 +262,12 @@ export function ChatLayout() {
     toggleAtelier();
   }, [toggleAtelier]);
 
+  const handleOpenKatiaNewTask = useCallback(() => {
+    openAtelierPanel();
+    setAtelierView('openclaw');
+    openNewTask();
+  }, [openAtelierPanel, setAtelierView, openNewTask]);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts({
     onCommandPalette: handleOpenCommandPalette,
@@ -277,6 +287,7 @@ export function ChatLayout() {
     onToggleCRMPanel: handleToggleCRMPanel,
     onToggleAtelierPanel: handleToggleAtelierPanel,
     onToggleDemoMode: handleToggleDemoMode,
+    onOpenKatiaNewTask: handleOpenKatiaNewTask,
     onSearch: () => {
       setShowMemoryPanel(true);
     },

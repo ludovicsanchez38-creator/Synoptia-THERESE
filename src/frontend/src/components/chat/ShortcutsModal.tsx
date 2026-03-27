@@ -46,9 +46,11 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Outils',
     shortcuts: [
+      { keys: '⌘ + ⇧ + A', description: 'Atelier (agents IA)' },
+      { keys: '⌘ + ⇧ + K', description: 'Katia - nouvelle tache' },
       { keys: '⌘ + ⇧ + C', description: 'Calendrier (Google Calendar)' },
       { keys: '⌘ + ⇧ + P', description: 'Nouveau projet' },
-      { keys: '⌘ + ⇧ + F', description: 'Rechercher en mémoire' },
+      { keys: '⌘ + ⇧ + F', description: 'Rechercher en memoire' },
     ],
   },
   {

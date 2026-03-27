@@ -28,7 +28,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.anthropic.com https://api.github.com; img-src 'self' data: https: http://localhost:* http://127.0.0.1:*; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.anthropic.com https://api.github.com https://github.com https://objects.githubusercontent.com; img-src 'self' data: https: http://localhost:* http://127.0.0.1:*; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
@@ -64,6 +64,13 @@
     },
     "fs": {
       "requireLiteralLeadingDot": false
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": ""
     }
   }
 }

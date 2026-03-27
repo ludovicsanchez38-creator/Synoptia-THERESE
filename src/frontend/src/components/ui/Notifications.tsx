@@ -1,10 +1,29 @@
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useStatusStore } from '../../stores/statusStore';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { announceToScreenReader } from '../../lib/accessibility';
 import { cn } from '../../lib/utils';
 
 export function Notifications() {
   const { notifications, dismissNotification } = useStatusStore();
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
+  const prevCountRef = useRef(notifications.length);
+
+  // Annoncer les nouvelles notifications aux lecteurs d'ecran
+  useEffect(() => {
+    if (notifications.length > prevCountRef.current) {
+      const latest = notifications[notifications.length - 1];
+      if (latest) {
+        const text = latest.message
+          ? `${latest.title} : ${latest.message}`
+          : latest.title;
+        announceToScreenReader(text, { assertive: latest.type === 'error' });
+      }
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications]);
 
   const icons = {
     success: CheckCircle,
@@ -28,7 +47,12 @@ export function Notifications() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    <div
+      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
+      role="status"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
       <AnimatePresence>
         {notifications.map((notification) => {
           const Icon = icons[notification.type];
@@ -36,10 +60,10 @@ export function Notifications() {
           return (
             <motion.div
               key={notification.id}
-              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              initial={reduceMotion ? false : { opacity: 0, x: 50, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 50, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 50, scale: 0.9 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
               className={cn(
                 'flex items-start gap-3 p-4 rounded-xl border shadow-lg backdrop-blur-sm',
                 colors[notification.type]

@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { Notifications } from './components/ui/Notifications';
+import { UpdateBanner } from './components/ui/UpdateBanner';
 import { GlobalErrorBoundary } from './components/ui/GlobalErrorBoundary';
 import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
+import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
 import type { PanelType } from './services/windowManager';
 
@@ -33,11 +35,30 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
-  // Accessibilité : taille de police et contraste élevé
+  // Accessibilite : taille de police et contraste eleve
   const fontSize = useFontSize();
   const highContrast = useAccessibilityStore((state) => state.highContrast);
+  const setReduceMotion = useAccessibilityStore((state) => state.setReduceMotion);
 
-  // Health check du backend (seulement quand le backend est confirmé prêt)
+  // US-012 : Detecter la preference systeme reduced-motion au premier lancement
+  // et synchroniser avec le store. Ecoute aussi les changements en temps reel.
+  useEffect(() => {
+    // Initialiser avec la preference systeme si le store n'a pas ete modifie manuellement
+    const stored = localStorage.getItem('therese-accessibility');
+    if (!stored) {
+      // Premier lancement : utiliser la preference systeme
+      setReduceMotion(prefersReducedMotion());
+    }
+
+    // Ecouter les changements systeme en temps reel
+    const unsubscribe = onReducedMotionChange((reduced) => {
+      setReduceMotion(reduced);
+    });
+
+    return unsubscribe;
+  }, [setReduceMotion]);
+
+  // Health check du backend (seulement quand le backend est confirme pret)
   useHealthCheck(backendReady);
 
   // Callback quand le SplashScreen détecte le backend prêt
@@ -144,6 +165,7 @@ function App() {
         style={{ fontSize }}
         data-high-contrast={highContrast ? 'true' : undefined}
       >
+        <UpdateBanner />
         {/* Skip link accessibilite (visible uniquement au focus clavier) */}
         <a
           href="#main-content"

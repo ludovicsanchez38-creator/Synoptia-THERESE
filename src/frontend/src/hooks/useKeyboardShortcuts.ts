@@ -20,6 +20,7 @@ interface ShortcutHandlers {
   onEscape?: () => void;
   onToggleDemoMode?: () => void;
   onToggleAtelierPanel?: () => void;
+  onOpenKatiaNewTask?: () => void;
 }
 
 /**
@@ -51,8 +52,15 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // These shortcuts only work with modifier key
       if (!modKey) return;
 
+      // Cmd+Shift+K - Ouvrir Atelier en mode Katia + focus nouvelle tache
+      if (key === 'k' && event.shiftKey) {
+        event.preventDefault();
+        handlers.onOpenKatiaNewTask?.();
+        return;
+      }
+
       // Cmd+K - Command palette (works even in inputs)
-      if (key === 'k') {
+      if (key === 'k' && !event.shiftKey) {
         event.preventDefault();
         handlers.onCommandPalette?.();
         return;
@@ -65,7 +73,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         return;
       }
 
-      // Cmd+N - Nouvelle conversation (fonctionne même si le focus est dans le textarea)
+      // Cmd+N - Nouvelle conversation (fonctionne meme si le focus est dans le textarea)
       if (key === 'n' && !event.shiftKey) {
         event.preventDefault();
         handlers.onNewConversation?.();

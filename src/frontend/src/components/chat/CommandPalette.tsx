@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import {
   Search,
   MessageSquarePlus,
@@ -80,6 +81,7 @@ export function CommandPalette({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
 
   const { createConversation, clearCurrentConversation } = useChatStore();
 
@@ -323,10 +325,10 @@ export function CommandPalette({
         >
           {/* Backdrop with fade animation */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reduceMotion ? 0 : 0.15 }}
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
           />
 
@@ -335,10 +337,10 @@ export function CommandPalette({
             role="dialog"
             aria-modal="true"
             aria-label="Palette de commandes"
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               'relative w-full max-w-lg',
               'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
@@ -384,9 +386,9 @@ export function CommandPalette({
             filteredCommands.map((cmd, index) => (
               <motion.button
                 key={cmd.id}
-                initial={{ opacity: 0, x: -10 }}
+                initial={reduceMotion ? false : { opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
+                transition={reduceMotion ? { duration: 0 } : { delay: index * 0.03 }}
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-2.5',
                   'text-left transition-all duration-150',
