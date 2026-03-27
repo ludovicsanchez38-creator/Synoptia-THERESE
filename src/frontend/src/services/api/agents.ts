@@ -235,7 +235,7 @@ export interface AgentSessionResponse {
   id: string;
   agent_name: string;
   instruction: string;
-  status: running | done | error | cancelled;
+  status: 'running' | 'done' | 'error' | 'cancelled';
   openclaw_session_id?: string;
   created_at: string;
   finished_at?: string;
@@ -265,10 +265,10 @@ export interface OpenClawStatusResponse {
  */
 export async function dispatchToOpenClaw(
   instruction: string,
-  agentName: string = katia,
+  agentName: string = 'katia',
 ): Promise<AgentSessionResponse> {
-  return request<AgentSessionResponse>(/api/agents/dispatch, {
-    method: POST,
+  return request<AgentSessionResponse>('/api/agents/dispatch', {
+    method: 'POST',
     body: JSON.stringify({ instruction, agent_name: agentName }),
   });
 }
@@ -311,7 +311,7 @@ export async function sendToOpenClawSession(
   content: string,
 ): Promise<Record<string, unknown>> {
   return request<Record<string, unknown>>(`/api/agents/sessions/${sessionId}/send`, {
-    method: POST,
+    method: 'POST',
     body: JSON.stringify({ content }),
   });
 }
@@ -323,7 +323,7 @@ export async function cancelOpenClawSession(
   sessionId: string,
 ): Promise<{ status: string }> {
   return request<{ status: string }>(`/api/agents/sessions/${sessionId}/cancel`, {
-    method: POST,
+    method: 'POST',
   });
 }
 
@@ -331,5 +331,5 @@ export async function cancelOpenClawSession(
  * Statut de la connexion OpenClaw.
  */
 export async function getOpenClawStatus(): Promise<OpenClawStatusResponse> {
-  return request<OpenClawStatusResponse>(/api/agents/openclaw/status);
+  return request<OpenClawStatusResponse>('/api/agents/openclaw/status');
 }

@@ -124,9 +124,9 @@ export function UpdateBanner() {
 
   return (
     <div
-      role=status
-      aria-live=polite
-      className=relative flex items-center justify-center gap-3 px-4 py-2 text-sm
+      role="status"
+      aria-live="polite"
+      className="relative flex items-center justify-center gap-3 px-4 py-2 text-sm"
       style={{
         background: state.phase === 'error'
           ? 'rgba(225, 29, 141, 0.15)'
@@ -140,13 +140,13 @@ export function UpdateBanner() {
       {/* Contenu selon la phase */}
       {state.phase === 'available' && (
         <>
-          <Download size={16} className=text-accent-cyan shrink-0 />
-          <span className=text-text>
-            Nouvelle version <strong className=text-accent-cyan>{state.version}</strong> disponible
+          <Download size={16} className="text-accent-cyan shrink-0" />
+          <span className="text-text">
+            Nouvelle version <strong className="text-accent-cyan">{state.version}</strong> disponible
           </span>
           <button
             onClick={handleDownloadAndInstall}
-            className=ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors
+            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
               color: '#22D3EE',
@@ -166,11 +166,11 @@ export function UpdateBanner() {
 
       {state.phase === 'downloading' && (
         <>
-          <RefreshCw size={16} className=text-accent-cyan shrink-0 animate-spin />
-          <span className=text-text>
+          <RefreshCw size={16} className="text-accent-cyan shrink-0 animate-spin" />
+          <span className="text-text">
             Telechargement de la v{state.version}...
             {state.progress > 0 && (
-              <span className=text-text-muted ml-1>({state.progress}%)</span>
+              <span className="text-text-muted ml-1">({state.progress}%)</span>
             )}
           </span>
         </>
@@ -178,13 +178,13 @@ export function UpdateBanner() {
 
       {state.phase === 'ready' && (
         <>
-          <RefreshCw size={16} className=text-accent-cyan shrink-0 />
-          <span className=text-text>
-            Mise a jour <strong className=text-accent-cyan>v{state.version}</strong> prete
+          <RefreshCw size={16} className="text-accent-cyan shrink-0" />
+          <span className="text-text">
+            Mise a jour <strong className="text-accent-cyan">v{state.version}</strong> prete
           </span>
           <button
             onClick={handleRestart}
-            className=ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors
+            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
               color: '#22D3EE',
@@ -204,7 +204,7 @@ export function UpdateBanner() {
 
       {state.phase === 'error' && (
         <>
-          <span className=text-accent-magenta>{state.message}</span>
+          <span className="text-accent-magenta">{state.message}</span>
         </>
       )}
 
@@ -212,8 +212,8 @@ export function UpdateBanner() {
       {state.phase !== 'downloading' && (
         <button
           onClick={() => setDismissed(true)}
-          className=absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text transition-colors
-          aria-label=Fermer le bandeau de mise a jour
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text transition-colors"
+          aria-label="Fermer le bandeau de mise a jour"
         >
           <X size={14} />
         </button>

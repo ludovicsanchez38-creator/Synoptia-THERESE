@@ -152,12 +152,16 @@ function StartupBehavior() {
         </div>
         <button
           onClick={handleToggle}
-          className={}
+          className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+            skipDashboard ? 'bg-accent-cyan' : 'bg-border'
+          }`}
           role="switch"
           aria-checked={skipDashboard}
         >
           <span
-            className={}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              skipDashboard ? 'translate-x-6' : 'translate-x-1'
+            }`}
           />
         </button>
       </div>

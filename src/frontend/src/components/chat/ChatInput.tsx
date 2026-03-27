@@ -800,7 +800,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                   ? 'Ajouter un message à la file...'
                   : isOffline
                     ? 'En attente de connexion...'
-                    : 'Comment puis-je t'aider ?'
+                    : "Comment puis-je t'aider ?"
             }
             disabled={isDisabled}
             rows={MIN_ROWS}

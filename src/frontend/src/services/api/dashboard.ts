@@ -4,7 +4,7 @@
  * Client API pour le tableau de bord "Ma journée".
  */
 
-import { apiFetch } from './core';
+import { request } from './core';
 
 // ============================================================
 // Types
@@ -73,5 +73,5 @@ export interface TodayDashboard {
  * Données 100% locales, se charge en <500ms.
  */
 export async function fetchTodayDashboard(): Promise<TodayDashboard> {
-  return apiFetch('/api/dashboard/today');
+  return request<TodayDashboard>('/api/dashboard/today');
 }
