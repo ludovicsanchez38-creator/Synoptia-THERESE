@@ -18,6 +18,7 @@ import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import { useGhostText } from '../../hooks/useGhostText';
+import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 
 const MIN_ROWS = 2;
@@ -29,6 +30,30 @@ interface ChatInputProps {
   initialSkillId?: string;
   onInitialPromptConsumed?: () => void;
   userCommands?: import('./SlashCommandsMenu').SlashCommand[];
+}
+
+
+// US-007 : Indicateur de dernière sauvegarde
+function SavedIndicator({ savedAt }: { savedAt: Date }) {
+  const [label, setLabel] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const seconds = Math.floor((Date.now() - savedAt.getTime()) / 1000);
+      if (seconds < 5) setLabel('Sauvegardé');
+      else if (seconds < 60) setLabel(`Sauvegardé il y a ${seconds}s`);
+      else setLabel(`Sauvegardé il y a ${Math.floor(seconds / 60)}min`);
+    };
+    update();
+    const interval = setInterval(update, 5000);
+    return () => clearInterval(interval);
+  }, [savedAt]);
+
+  return (
+    <p className="text-xs text-text-muted/50">
+      {label}
+    </p>
+  );
 }
 
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands }: ChatInputProps) {
@@ -59,6 +84,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     setQueuedPrompt,
   } = useChatStore();
   const { connectionState, setActivity } = useStatusStore();
+
+  // US-007 : Autosave brouillon
+  const { saveDraft, restoreDraft, clearDraft, lastSavedAt } = useAutosave(currentConversationId);
 
   const isOffline = connectionState !== 'connected';
   const hasQueuedPrompt = queuedPrompt !== null;
@@ -249,13 +277,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     const textarea = e.target;
     setInput(textarea.value);
 
+    // US-007 : Autosave brouillon (debounced)
+    saveDraft(textarea.value);
+
     // Reset height to calculate new height
     textarea.style.height = 'auto';
     const lineHeight = 24;
     const maxHeight = lineHeight * MAX_ROWS;
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
-  }, []);
+  }, [saveDraft]);
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
@@ -286,6 +317,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // Add user message
     addMessage({ role: 'user', content: messageContent });
     setInput('');
+    clearDraft(); // US-007 : Supprimer le brouillon après envoi
     setAttachedFiles([]); // Clear attached files after sending
 
     // Reset textarea height
@@ -589,6 +621,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     textareaRef.current?.focus();
   }, []);
 
+  // US-007 : Restaurer le brouillon au chargement d'une conversation
+  useEffect(() => {
+    const draft = restoreDraft();
+    if (draft && !input) {
+      setInput(draft);
+      // Resize textarea pour le brouillon restauré
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          const lineHeight = 24;
+          const maxHeight = lineHeight * MAX_ROWS;
+          const newHeight = Math.min(textareaRef.current.scrollHeight, maxHeight);
+          textareaRef.current.style.height = `${newHeight}px`;
+        }
+      }, 0);
+    }
+  }, [currentConversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Consume initial prompt from guided prompts
   useEffect(() => {
     if (initialPrompt) {
@@ -843,7 +893,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         onChange={handleBrowserFileChange}
       />
 
-      {/* Hints */}
+      {/* Hints + indicateur sauvegarde */}
       <div className="flex items-center justify-center gap-4 mt-2">
         <p className="text-xs text-text-muted">
           <kbd className="px-1 rounded bg-surface-elevated">⇧</kbd>+
@@ -857,6 +907,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <p className="text-xs text-accent-cyan/60">
             <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd> accepter
           </p>
+        )}
+        {lastSavedAt && (
+          <SavedIndicator savedAt={lastSavedAt} />
         )}
       </div>
     </div>

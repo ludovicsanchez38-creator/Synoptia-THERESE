@@ -59,6 +59,7 @@ from app.routers import (
     tasks_router,  # Phase 3 - ACTIVATED
     tools_router,  # V3 - Installed Tools
     notifications_router,  # US-004 - Notifications push in-app
+    dashboard_router,  # US-005 - Dashboard Ma journée
     voice_router,
 )
 from app.services import close_qdrant, init_qdrant
@@ -578,6 +579,8 @@ app.include_router(browser_router, prefix="/api/browser", tags=["Browser"])
 
 # US-004 - Notifications push in-app (v0.9.0)
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])
+n# US-005 - Dashboard Ma journée (v0.9.0)
+app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 
 
 # Health endpoints

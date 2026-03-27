@@ -489,3 +489,14 @@ export {
   type AppNotification,
   type NotificationCount,
 } from "./notifications";
+
+// Dashboard - Tableau de bord Ma journée (US-005)
+export {
+  fetchTodayDashboard,
+  type DashboardEvent,
+  type DashboardTask,
+  type DashboardInvoice,
+  type DashboardProspect,
+  type DashboardSummary,
+  type TodayDashboard,
+} from './dashboard';

@@ -12,3 +12,5 @@ export { useReducedMotion, getMotionVariants } from './useReducedMotion';
 export { useDemoMask } from './useDemoMask';
 export { useGhostText } from './useGhostText';
 export { useMotionConfig, useMotionVariants } from './useMotionConfig';
+export { useOnlineStatus } from './useOnlineStatus';
+export { useAutosave } from './useAutosave';

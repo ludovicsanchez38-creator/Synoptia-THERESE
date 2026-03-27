@@ -55,6 +55,11 @@ export function AdvancedTab({
 }: AdvancedTabProps) {
   return (
     <div className="space-y-3">
+      {/* Comportement au lancement (US-005) */}
+      <CollapsibleSection title="Comportement au lancement">
+        <StartupBehavior />
+      </CollapsibleSection>
+
       {/* Stockage */}
       <CollapsibleSection title="Stockage des données" defaultOpen>
         <div className="space-y-4">
@@ -121,6 +126,41 @@ export function AdvancedTab({
       <CollapsibleSection title="Synchronisation CRM">
         <CRMSyncPanel onSyncComplete={onRefreshStats} />
       </CollapsibleSection>
+    </div>
+  );
+}
+
+function StartupBehavior() {
+  const [skipDashboard, setSkipDashboard] = useState(() => {
+    return localStorage.getItem('therese-skip-dashboard') === 'true';
+  });
+
+  const handleToggle = () => {
+    const newValue = !skipDashboard;
+    setSkipDashboard(newValue);
+    localStorage.setItem('therese-skip-dashboard', newValue ? 'true' : 'false');
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-text">Ouvrir sur le chat directement</p>
+          <p className="text-xs text-text-muted mt-0.5">
+            Masquer le tableau de bord "Ma journée" au lancement
+          </p>
+        </div>
+        <button
+          onClick={handleToggle}
+          className={}
+          role="switch"
+          aria-checked={skipDashboard}
+        >
+          <span
+            className={}
+          />
+        </button>
+      </div>
     </div>
   );
 }

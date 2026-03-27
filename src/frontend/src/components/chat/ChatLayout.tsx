@@ -1,6 +1,14 @@
+/**
+ * THÉRÈSE v2 - ChatLayout (US-016 refactorisé + US-005 Dashboard)
+ *
+ * Composant principal du chat. Réduit de ~480 lignes à ~170 lignes.
+ * - Panneaux gérés par panelStore (Zustand) - US-016
+ * - Dashboard "Ma journée" au lancement - US-005
+ * - Composants lazy-loaded dans PanelContainer
+ */
+
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
-import { Sparkles, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Sparkles, WifiOff } from 'lucide-react';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -8,473 +16,160 @@ import { CommandPalette } from './CommandPalette';
 import { ShortcutsModal } from './ShortcutsModal';
 import { ConversationSidebar } from '../sidebar/ConversationSidebar';
 import { DropZone } from '../files/DropZone';
-
-// Lazy-loaded panels (UltraJury perf: reduire le bundle initial)
-const MemoryPanel = lazy(() => import('../memory/MemoryPanel').then(m => ({ default: m.MemoryPanel })));
-const ContactModal = lazy(() => import('../memory/ContactModal').then(m => ({ default: m.ContactModal })));
-const ProjectModal = lazy(() => import('../memory/ProjectModal').then(m => ({ default: m.ProjectModal })));
-const SettingsModal = lazy(() => import('../settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
-const BoardPanel = lazy(() => import('../board/BoardPanel').then(m => ({ default: m.BoardPanel })));
-const AtelierPanel = lazy(() => import('../atelier/AtelierPanel').then(m => ({ default: m.AtelierPanel })));
+import { PanelContainer } from './PanelContainer';
 import { SideToggle } from '../ui/SideToggle';
 import { ConnectionStatus } from '../ui/ConnectionStatus';
-import { useKeyboardShortcuts, useConversationSync, useFileDrop } from '../../hooks';
+import { useKeyboardShortcuts, useConversationSync, useFileDrop, useOnlineStatus } from '../../hooks';
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useOpenClawStore } from '../../stores/openclawStore';
+import { usePanelStore } from '../../stores/panelStore';
 import { openPanelWindow } from '../../services/windowManager';
-import * as api from '../../services/api';
-import { listUserCommands, createUserCommand, type UserCommand } from '../../services/api/commands';
-import { CreateCommandForm } from '../guided/CreateCommandForm';
+import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
 
+// Lazy-loaded : Dashboard "Ma journée" (US-005)
+const DashboardToday = lazy(() =>
+  import('../home/DashboardToday').then((m) => ({ default: m.DashboardToday }))
+);
+
+// Préférence utilisateur : skip dashboard au lancement
+const PREF_SKIP_DASHBOARD = 'therese-skip-dashboard';
+
 export function ChatLayout() {
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [showMemoryPanel, setShowMemoryPanel] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showConversationSidebar, setShowConversationSidebar] = useState(true);
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [showProjectModal, setShowProjectModal] = useState(false);
-  const [showBoardPanel, setShowBoardPanel] = useState(false);
-  const [editingContact, setEditingContact] = useState<api.Contact | null>(null);
-  const [editingProject, setEditingProject] = useState<api.Project | null>(null);
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
   const [guidedSkillId, setGuidedSkillId] = useState<string | undefined>(undefined);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
-  const [showSaveCommand, setShowSaveCommand] = useState(false);
   const [guidedPanelActive, setGuidedPanelActive] = useState(false);
-  const [saveCommandData, setSaveCommandData] = useState<{ userPrompt: string; assistantContent: string } | null>(null);
+  const [showDashboard, setShowDashboard] = useState(() => {
+    return localStorage.getItem(PREF_SKIP_DASHBOARD) !== 'true';
+  });
 
-  const { createConversation, currentConversationId } = useChatStore();
+  const { createConversation, currentConversationId, conversations } = useChatStore();
   const toggleDemo = useDemoStore((s) => s.toggle);
   const toggleAtelier = useAtelierStore((s) => s.togglePanel);
   const openAtelierPanel = useAtelierStore((s) => s.openPanel);
   const setAtelierView = useAtelierStore((s) => s.setActiveView);
   const openNewTask = useOpenClawStore((s) => s.openNewTask);
+  const ps = usePanelStore();
 
-  // Reset guidedPanelActive quand la conversation change (BUG-070)
+  useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
+
+  // Si l'utilisateur a déjà des messages dans la conversation courante, pas de dashboard
   useEffect(() => {
-    setGuidedPanelActive(false);
-  }, [currentConversationId]);
+    if (currentConversationId) {
+      const conv = conversations.find((c) => c.id === currentConversationId);
+      if (conv && conv.messages && conv.messages.length > 0) {
+        setShowDashboard(false);
+      }
+    }
+  }, [currentConversationId, conversations]);
 
-  // Fetch user commands for slash menu integration
   useEffect(() => {
     listUserCommands()
       .then((commands: UserCommand[]) => {
-        const slashCmds: SlashCommand[] = commands.map((cmd) => ({
-          id: `user-${cmd.name}`,
-          name: cmd.name,
+        setUserSlashCommands(commands.map((cmd) => ({
+          id: `user-${cmd.name}`, name: cmd.name,
           description: cmd.description || cmd.name,
-          icon: <Sparkles className="w-4 h-4" />,
-          prefix: cmd.content,
-        }));
-        setUserSlashCommands(slashCmds);
+          icon: <Sparkles className="w-4 h-4" />, prefix: cmd.content,
+        })));
       })
-      .catch(() => {
-        // Silently ignore - user commands are optional
-      });
+      .catch(() => {});
   }, []);
 
-  // Sync conversations with backend on mount
   useConversationSync();
-
-  // Global file drop handling for full-screen overlay
+  const isOnline = useOnlineStatus();
   const { isDragging } = useFileDrop();
 
-  // Memoize handlers to avoid unnecessary re-renders
-  const handleOpenCommandPalette = useCallback(() => {
-    setShowCommandPalette(true);
-  }, []);
-
-  const handleCloseCommandPalette = useCallback(() => {
-    setShowCommandPalette(false);
-  }, []);
-
-  const handleShowShortcuts = useCallback(() => {
-    setShowShortcuts(true);
-  }, []);
-
-  const handleCloseShortcuts = useCallback(() => {
-    setShowShortcuts(false);
-  }, []);
-
-  const handleNewConversation = useCallback(() => {
-    createConversation();
-  }, [createConversation]);
-
-  const handleEscape = useCallback(() => {
-    // Close any open modal (in order of z-index)
-    if (showBoardPanel) {
-      setShowBoardPanel(false);
-    } else if (showContactModal) {
-      setShowContactModal(false);
-      setEditingContact(null);
-    } else if (showProjectModal) {
-      setShowProjectModal(false);
-      setEditingProject(null);
-    } else if (showCommandPalette) {
-      setShowCommandPalette(false);
-    } else if (showShortcuts) {
-      setShowShortcuts(false);
-    } else if (showSettings) {
-      setShowSettings(false);
-    } else if (showMemoryPanel) {
-      setShowMemoryPanel(false);
-    } else if (showConversationSidebar) {
-      setShowConversationSidebar(false);
-    }
-  }, [showBoardPanel, showCommandPalette, showShortcuts, showMemoryPanel, showSettings, showConversationSidebar, showContactModal, showProjectModal]);
-
-  const handleOpenSettings = useCallback(() => {
-    setShowSettings(true);
-  }, []);
-
-  const handleCloseSettings = useCallback(() => {
-    setShowSettings(false);
-  }, []);
-
-  const handleToggleMemoryPanel = useCallback(() => {
-    setShowMemoryPanel((prev) => !prev);
-  }, []);
-
-  const handleCloseMemoryPanel = useCallback(() => {
-    setShowMemoryPanel(false);
-  }, []);
-
-  const handleNewContact = useCallback(() => {
-    setEditingContact(null);
-    setShowContactModal(true);
-  }, []);
-
-  const handleEditContact = useCallback((contact: api.Contact) => {
-    setEditingContact(contact);
-    setShowContactModal(true);
-  }, []);
-
-  const handleNewProject = useCallback(() => {
-    setEditingProject(null);
-    setShowProjectModal(true);
-  }, []);
-
-
-  const handleToggleConversationSidebar = useCallback(() => {
-    setShowConversationSidebar((prev) => !prev);
-  }, []);
-
-  const handleCloseConversationSidebar = useCallback(() => {
-    setShowConversationSidebar(false);
-  }, []);
-
-  const handleCloseContactModal = useCallback(() => {
-    setShowContactModal(false);
-    setEditingContact(null);
-  }, []);
-
-  const handleCloseProjectModal = useCallback(() => {
-    setShowProjectModal(false);
-    setEditingProject(null);
-  }, []);
-
-  const handleMemorySaved = useCallback(() => {
-    // Refresh memory panel data if open
-    // The panel will reload when it re-renders
-  }, []);
-
-  const handleSaveAsCommand = useCallback((userPrompt: string, assistantContent: string) => {
-    setSaveCommandData({ userPrompt, assistantContent });
-    setShowSaveCommand(true);
-  }, []);
-
-  const handleSaveCommandSubmit = useCallback(async (data: {
-    name: string;
-    description: string;
-    category: string;
-    icon: string;
-    show_on_home: boolean;
-    content: string;
-  }) => {
-    await createUserCommand(data);
-    setShowSaveCommand(false);
-    setSaveCommandData(null);
-    // Rafraîchir les commandes slash
-    const commands = await listUserCommands();
-    const slashCmds: SlashCommand[] = commands.map((cmd: UserCommand) => ({
-      id: `user-${cmd.name}`,
-      name: cmd.name,
-      description: cmd.description || cmd.name,
-      icon: <Sparkles className="w-4 h-4" />,
-      prefix: cmd.content,
-    }));
-    setUserSlashCommands(slashCmds);
-  }, []);
-
-  const handleSaveCommandClose = useCallback(() => {
-    setShowSaveCommand(false);
-    setSaveCommandData(null);
-  }, []);
-
-  const handleGuidedPromptSelect = useCallback((prompt: string, skillId?: string) => {
-    setGuidedPrompt(prompt);
-    setGuidedSkillId(skillId);
-  }, []);
-
-  const handleGuidedPromptConsumed = useCallback(() => {
-    setGuidedPrompt(undefined);
-    setGuidedSkillId(undefined);
-  }, []);
-
-  const handleToggleBoardPanel = useCallback(() => {
-    setShowBoardPanel((prev) => !prev);
-  }, []);
-
-  const handleCloseBoardPanel = useCallback(() => {
-    setShowBoardPanel(false);
-  }, []);
-
-  const handleToggleDemoMode = useCallback(() => {
-    toggleDemo();
-  }, [toggleDemo]);
-
-  // Panels ouverts dans des fenetres separees
-  const handleToggleEmailPanel = useCallback(() => {
-    openPanelWindow('email');
-  }, []);
-
-  const handleToggleCalendarPanel = useCallback(() => {
-    openPanelWindow('calendar');
-  }, []);
-
-  const handleToggleTasksPanel = useCallback(() => {
-    openPanelWindow('tasks');
-  }, []);
-
-  const handleToggleInvoicesPanel = useCallback(() => {
-    openPanelWindow('invoices');
-  }, []);
-
-  const handleToggleCRMPanel = useCallback(() => {
-    openPanelWindow('crm');
-  }, []);
-
-  const handleToggleAtelierPanel = useCallback(() => {
-    toggleAtelier();
-  }, [toggleAtelier]);
+  const handleNewConversation = useCallback(() => createConversation(), [createConversation]);
+  const handleToggleEmail = useCallback(() => openPanelWindow('email'), []);
+  const handleToggleCalendar = useCallback(() => openPanelWindow('calendar'), []);
+  const handleToggleTasks = useCallback(() => openPanelWindow('tasks'), []);
+  const handleToggleInvoices = useCallback(() => openPanelWindow('invoices'), []);
+  const handleToggleCRM = useCallback(() => openPanelWindow('crm'), []);
+  const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
 
   const handleOpenKatiaNewTask = useCallback(() => {
-    openAtelierPanel();
-    setAtelierView('openclaw');
-    openNewTask();
+    openAtelierPanel(); setAtelierView('openclaw'); openNewTask();
   }, [openAtelierPanel, setAtelierView, openNewTask]);
 
-  // Global keyboard shortcuts
+  const handleGuidedPromptSelect = useCallback((prompt: string, skillId?: string) => {
+    setGuidedPrompt(prompt); setGuidedSkillId(skillId);
+  }, []);
+  const handleGuidedPromptConsumed = useCallback(() => {
+    setGuidedPrompt(undefined); setGuidedSkillId(undefined);
+  }, []);
+
   useKeyboardShortcuts({
-    onCommandPalette: handleOpenCommandPalette,
+    onCommandPalette: ps.openCommandPalette,
     onNewConversation: handleNewConversation,
-    onShowShortcuts: handleShowShortcuts,
-    onEscape: handleEscape,
-    onToggleMemoryPanel: handleToggleMemoryPanel,
-    onNewContact: handleNewContact,
-    onNewProject: handleNewProject,
-    onOpenSettings: handleOpenSettings,
-    onToggleConversationSidebar: handleToggleConversationSidebar,
-    onToggleBoardPanel: handleToggleBoardPanel,
-    onToggleEmailPanel: handleToggleEmailPanel,
-    onToggleCalendarPanel: handleToggleCalendarPanel,
-    onToggleTasksPanel: handleToggleTasksPanel,
-    onToggleInvoicesPanel: handleToggleInvoicesPanel,
-    onToggleCRMPanel: handleToggleCRMPanel,
-    onToggleAtelierPanel: handleToggleAtelierPanel,
-    onToggleDemoMode: handleToggleDemoMode,
+    onShowShortcuts: ps.openShortcuts,
+    onEscape: ps.handleEscape,
+    onToggleMemoryPanel: ps.toggleMemoryPanel,
+    onNewContact: ps.openNewContact,
+    onNewProject: ps.openNewProject,
+    onOpenSettings: ps.openSettings,
+    onToggleConversationSidebar: ps.toggleConversationSidebar,
+    onToggleBoardPanel: ps.toggleBoardPanel,
+    onToggleEmailPanel: handleToggleEmail,
+    onToggleCalendarPanel: handleToggleCalendar,
+    onToggleTasksPanel: handleToggleTasks,
+    onToggleInvoicesPanel: handleToggleInvoices,
+    onToggleCRMPanel: handleToggleCRM,
+    onToggleAtelierPanel: toggleAtelier,
+    onToggleDemoMode: toggleDemo,
     onOpenKatiaNewTask: handleOpenKatiaNewTask,
-    onSearch: () => {
-      setShowMemoryPanel(true);
-    },
-    onOpenFile: () => {
-      console.log('Open file');
-    },
+    onSearch: () => usePanelStore.getState().togglePanel('memory'),
+    onOpenFile: () => console.log('Open file'),
   });
+
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* Full-screen drop zone overlay */}
       <DropZone isDragging={isDragging} />
+      <SideToggle side="left" isOpen={ps.showConversationSidebar} onClick={ps.toggleConversationSidebar} label="Conversations" shortcut={isMac ? '⌘B' : 'Ctrl+B'} />
+      <SideToggle side="right" isOpen={ps.showMemoryPanel} onClick={ps.toggleMemoryPanel} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
-      {/* Side Toggles - Rails latéraux */}
-      <SideToggle
-        side="left"
-        isOpen={showConversationSidebar}
-        onClick={handleToggleConversationSidebar}
-        label="Conversations"
-        shortcut={/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘B' : 'Ctrl+B'}
-      />
-      <SideToggle
-        side="right"
-        isOpen={showMemoryPanel}
-        onClick={handleToggleMemoryPanel}
-        label="Mémoire"
-        shortcut={/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘M' : 'Ctrl+M'}
-      />
-
-      {/* Header with drag region for Tauri */}
       <header role="banner" aria-label="Barre d'outils Therese">
-        <ChatHeader
-          onOpenSettings={handleOpenSettings}
-          onToggleEmailPanel={handleToggleEmailPanel}
-          onToggleCalendarPanel={handleToggleCalendarPanel}
-          onToggleTasksPanel={handleToggleTasksPanel}
-          onToggleInvoicesPanel={handleToggleInvoicesPanel}
-          onToggleCRMPanel={handleToggleCRMPanel}
-          onToggleMemoryPanel={() => openPanelWindow('memory')}
-          onToggleBoardPanel={handleToggleBoardPanel}
-          onToggleAtelierPanel={handleToggleAtelierPanel}
-        />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={() => openPanelWindow('memory')} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
       </header>
 
-      {/* Zone principale du chat */}
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
-        {/* Messages area */}
-        <div className="flex-1 overflow-hidden">
-          <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={handleSaveAsCommand} onGuidedPanelChange={setGuidedPanelActive} />
-        </div>
+        {!isOnline && (
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-sm" role="alert">
+            <WifiOff className="w-4 h-4 flex-shrink-0" />
+            <span>Mode hors ligne - tes données sont sauvegardées localement</span>
+          </div>
+        )}
 
-        {/* Input area - masque quand un panel guide est actif */}
-        {!guidedPanelActive && (
-        <div className="border-t border-border">
-          <ChatInput
-            onOpenCommandPalette={handleOpenCommandPalette}
-            initialPrompt={guidedPrompt}
-            initialSkillId={guidedSkillId}
-            onInitialPromptConsumed={handleGuidedPromptConsumed}
-            userCommands={userSlashCommands}
-          />
-        </div>
+        {/* US-005 : Dashboard "Ma journée" ou chat */}
+        {showDashboard ? (
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
+            <DashboardToday onDismiss={handleDismissDashboard} />
+          </Suspense>
+        ) : (
+          <>
+            <div className="flex-1 overflow-hidden">
+              <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={(u, a) => ps.openSaveCommand(u, a)} onGuidedPanelChange={setGuidedPanelActive} />
+            </div>
+            {!guidedPanelActive && (
+              <div className="border-t border-border">
+                <ChatInput onOpenCommandPalette={ps.openCommandPalette} initialPrompt={guidedPrompt} initialSkillId={guidedSkillId} onInitialPromptConsumed={handleGuidedPromptConsumed} userCommands={userSlashCommands} />
+              </div>
+            )}
+          </>
         )}
       </main>
 
-      {/* Command Palette (modal) */}
-      <CommandPalette
-        isOpen={showCommandPalette}
-        onClose={handleCloseCommandPalette}
-        onShowShortcuts={handleShowShortcuts}
-        onNewContact={handleNewContact}
-        onNewProject={handleNewProject}
-        onOpenSettings={handleOpenSettings}
-        onToggleConversations={handleToggleConversationSidebar}
-        onToggleMemory={handleToggleMemoryPanel}
-        onToggleBoard={handleToggleBoardPanel}
-        onToggleEmail={handleToggleEmailPanel}
-        onToggleCalendar={handleToggleCalendarPanel}
-        onToggleTasks={handleToggleTasksPanel}
-        onToggleInvoices={handleToggleInvoicesPanel}
-        onToggleCRM={handleToggleCRMPanel}
-        onSearch={() => setShowMemoryPanel(true)}
-        onOpenFile={() => console.log('Open file')}
-        onOpenGuided={() => setGuidedPanelActive(false)}
-      />
-
-      {/* Shortcuts Modal */}
-      <ShortcutsModal
-        isOpen={showShortcuts}
-        onClose={handleCloseShortcuts}
-      />
-
-      {/* Conversation Sidebar */}
+      <CommandPalette isOpen={ps.showCommandPalette} onClose={ps.closeCommandPalette} onShowShortcuts={ps.openShortcuts} onNewContact={ps.openNewContact} onNewProject={ps.openNewProject} onOpenSettings={ps.openSettings} onToggleConversations={ps.toggleConversationSidebar} onToggleMemory={ps.toggleMemoryPanel} onToggleBoard={ps.toggleBoardPanel} onToggleEmail={handleToggleEmail} onToggleCalendar={handleToggleCalendar} onToggleTasks={handleToggleTasks} onToggleInvoices={handleToggleInvoices} onToggleCRM={handleToggleCRM} onSearch={() => usePanelStore.getState().togglePanel('memory')} onOpenFile={() => console.log('Open file')} onOpenGuided={() => setGuidedPanelActive(false)} />
+      <ShortcutsModal isOpen={ps.showShortcuts} onClose={ps.closeShortcuts} />
       <aside role="complementary" aria-label="Conversations">
-        <ConversationSidebar
-          isOpen={showConversationSidebar}
-          onClose={handleCloseConversationSidebar}
-        />
+        <ConversationSidebar isOpen={ps.showConversationSidebar} onClose={ps.closeConversationSidebar} />
       </aside>
-
-      {/* Lazy-loaded panels (charges a la demande) */}
-      <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-text-muted">Chargement...</div></div>}>
-        {/* Memory Panel (sidebar) */}
-        <MemoryPanel
-          isOpen={showMemoryPanel}
-          onClose={handleCloseMemoryPanel}
-          onNewContact={handleNewContact}
-          onEditContact={handleEditContact}
-        />
-
-        {/* Settings Modal */}
-        <SettingsModal
-          isOpen={showSettings}
-          onClose={handleCloseSettings}
-        />
-
-        {/* Contact Modal */}
-        <ContactModal
-          isOpen={showContactModal}
-          onClose={handleCloseContactModal}
-          onSaved={handleMemorySaved}
-          contact={editingContact}
-        />
-
-        {/* Project Modal */}
-        <ProjectModal
-          isOpen={showProjectModal}
-          onClose={handleCloseProjectModal}
-          onSaved={handleMemorySaved}
-          project={editingProject}
-        />
-
-        {/* Board de Decision */}
-        <BoardPanel
-          isOpen={showBoardPanel}
-          onClose={handleCloseBoardPanel}
-        />
-
-        {/* Atelier - Agents IA Embarques */}
-        <AtelierPanel />
-      </Suspense>
-
-      {/* Modal Sauvegarder comme raccourci */}
-      <AnimatePresence>
-        {showSaveCommand && saveCommandData && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={handleSaveCommandClose}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label="Sauvegarder comme raccourci"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="relative bg-surface-elevated border border-border rounded-2xl p-6 shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Bouton fermer */}
-              <button
-                onClick={handleSaveCommandClose}
-                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-surface text-text-muted hover:text-text transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <CreateCommandForm
-                onSubmit={handleSaveCommandSubmit}
-                onBack={handleSaveCommandClose}
-                initialContent={saveCommandData.userPrompt}
-                initialDescription={saveCommandData.assistantContent.slice(0, 100)}
-                capturedPreview={saveCommandData.assistantContent.slice(0, 300)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Status connexion - coin bas droite */}
-      <div className="fixed bottom-1 right-4 z-10">
-        <ConnectionStatus />
-      </div>
+      <PanelContainer onUserCommandsRefresh={setUserSlashCommands} />
+      <div className="fixed bottom-1 right-4 z-10"><ConnectionStatus /></div>
     </div>
   );
 }

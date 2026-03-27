@@ -37,7 +37,8 @@
     "tauri-plugin-mic-recorder-api": "^2.0.0",
     "zustand": "^5.0.0",
     "@tauri-apps/plugin-updater": "^2.0.0",
-    "@tauri-apps/plugin-process": "^2.0.0"
+    "@tauri-apps/plugin-process": "^2.0.0",
+    "react-virtuoso": "^4.12.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

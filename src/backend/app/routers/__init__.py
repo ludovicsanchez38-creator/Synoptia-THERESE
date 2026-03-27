@@ -50,6 +50,8 @@ from app.routers.voice import router as voice_router
 
 # US-004 - Notifications push in-app (v0.9.0)
 from app.routers.notifications import router as notifications_router
+n# US-005 - Dashboard "Ma journée" (v0.9.0)
+from app.routers.dashboard import router as dashboard_router
 
 __all__ = [
     "chat_router",
@@ -79,4 +81,5 @@ __all__ = [
     "agents_router",  # v0.5 - Agents IA Embarqués (Atelier)
     "browser_router",  # v0.6 - Browser Automation
     "notifications_router",  # US-004 - Notifications push in-app
+    "dashboard_router",  # US-005 - Dashboard Ma journée
 ]
