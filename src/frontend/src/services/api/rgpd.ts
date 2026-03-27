@@ -116,3 +116,50 @@ export async function inferContactRGPD(contactId: string): Promise<RGPDInferResp
   }
   return response.json();
 }
+
+
+// ============================================================
+// Purge RGPD automatique (US-017)
+// ============================================================
+
+export interface PurgeSettingsResponse {
+  enabled: boolean;
+  months: number;
+}
+
+export async function getPurgeSettings(): Promise<PurgeSettingsResponse> {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/purge/settings`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || `Purge settings failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function updatePurgeSettings(
+  enabled: boolean,
+  months: number,
+): Promise<PurgeSettingsResponse> {
+  const response = await apiFetch(
+    `${API_BASE}/api/rgpd/purge/settings?enabled=${enabled}&months=${months}`,
+    { method: 'PUT' },
+  );
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || `Purge settings update failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function togglePurgeExclude(
+  contactId: string,
+): Promise<{ success: boolean; purge_excluded: boolean; message: string }> {
+  const response = await apiFetch(`${API_BASE}/api/rgpd/contacts/${contactId}/purge-exclude`, {
+    method: 'PATCH',
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || `Toggle purge exclude failed: ${response.statusText}`);
+  }
+  return response.json();
+}

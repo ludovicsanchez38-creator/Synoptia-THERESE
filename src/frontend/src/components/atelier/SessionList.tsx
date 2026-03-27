@@ -60,6 +60,8 @@ export function SessionList() {
     cancelSession,
     dispatchTask,
     openclawConnected,
+    runningCount,
+    maxAgents,
   } = useOpenClawStore();
 
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
@@ -114,14 +116,24 @@ export function SessionList() {
           </button>
           <button
             onClick={openNewTask}
-            disabled={!openclawConnected}
-            className="rounded p-1 text-purple-400 transition hover:bg-purple-500/10 disabled:opacity-30"
-            title="Nouvelle tache"
-            aria-label="Lancer une nouvelle tache"
+            disabled={!openclawConnected || runningCount >= maxAgents}
+            className="rounded p-1 text-purple-400 transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tache"}
+            aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tache"}
           >
             <Plus size={14} />
           </button>
         </div>
+      </div>
+
+      {/* US-003 : Compteur agents actifs */}
+      <div className="flex items-center justify-between border-b border-white/5 px-3 py-1.5">
+        <span className="text-[10px] text-[#6B7280]">
+          <span className={runningCount >= maxAgents ? "text-amber-400 font-medium" : "text-purple-400"}>
+            {runningCount}/{maxAgents}
+          </span>
+          {" agents actifs"}
+        </span>
       </div>
 
       {/* Connexion status */}
@@ -143,10 +155,11 @@ export function SessionList() {
             <span className="text-xs text-[#6B7280]">Aucune session</span>
             <button
               onClick={openNewTask}
-              disabled={!openclawConnected}
-              className="rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-30"
+              disabled={!openclawConnected || runningCount >= maxAgents}
+              className="rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+              title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
             >
-              Lancer une tache
+              {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}
             </button>
           </div>
         ) : (

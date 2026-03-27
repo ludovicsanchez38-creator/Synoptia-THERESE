@@ -1,14 +1,16 @@
 /**
- * THÉRÈSE v2 - Invoice Form
+ * THERESE v2 - Invoice Form
  *
- * Formulaire de création/édition de facture.
+ * Formulaire de creation/edition de facture.
  * Phase 4 - Invoicing
+ * US-018 : Conversion devis -> facture + conditions de paiement
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Plus, Trash2, Save } from 'lucide-react';
-import { createInvoice, updateInvoice, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { X, Plus, Trash2, Save, FileCheck } from 'lucide-react';
+import { createInvoice, updateInvoice, convertDevisToInvoice, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { useStatusStore } from '../../stores/statusStore';
 import { cn } from '../../lib/utils';
 
 interface InvoiceFormProps {
@@ -19,10 +21,10 @@ interface InvoiceFormProps {
 
 const TVA_RATES = [
   { value: 20.0, label: '20% (normale)' },
-  { value: 10.0, label: '10% (intermédiaire)' },
-  { value: 5.5, label: '5,5% (réduite)' },
-  { value: 2.1, label: '2,1% (super réduite)' },
-  { value: 0.0, label: '0% (exonéré)' },
+  { value: 10.0, label: '10% (intermediaire)' },
+  { value: 5.5, label: '5,5% (reduite)' },
+  { value: 2.1, label: '2,1% (super reduite)' },
+  { value: 0.0, label: '0% (exonere)' },
 ];
 
 const CURRENCIES = [
@@ -40,6 +42,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
+  const addNotification = useStatusStore((s) => s.addNotification);
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
   const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
@@ -68,6 +72,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   );
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [showConvertDialog, setShowConvertDialog] = useState(false);
 
   // Charger les contacts
   useEffect(() => {
@@ -122,12 +128,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     e.preventDefault();
 
     if (!contactId) {
-      alert('Veuillez sélectionner un contact');
+      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez selectionner un contact' });
       return;
     }
 
     if (lines.length === 0 || lines.every((line) => !line.description)) {
-      alert('Veuillez ajouter au moins une ligne de facturation');
+      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez ajouter au moins une ligne de facturation' });
       return;
     }
 
@@ -147,18 +153,20 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       let savedInvoice: Invoice;
 
       if (invoice) {
-        // Mise à jour
+        // Mise a jour
         savedInvoice = await updateInvoice(invoice.id, data);
+        addNotification({ type: 'success', title: 'Facture mise a jour', message: savedInvoice.invoice_number });
       } else {
-        // Création
+        // Creation
         savedInvoice = await createInvoice(data);
+        addNotification({ type: 'success', title: 'Facture creee', message: savedInvoice.invoice_number });
       }
 
       onSave(savedInvoice);
     } catch (error) {
       console.error('Failed to save invoice:', error);
       const msg = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
-      alert(msg);
+      addNotification({ type: 'error', title: 'Erreur', message: msg });
     } finally {
       setIsSaving(false);
     }
@@ -166,19 +174,46 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
   async function handleMarkPaid() {
     if (!invoice) return;
-
-    if (!confirm('Marquer cette facture comme payée ?')) {
-      return;
-    }
-
     try {
       const updatedInvoice = await markInvoicePaid(invoice.id);
+      addNotification({ type: 'success', title: 'Facture payee', message: `${invoice.invoice_number} marquee comme payee` });
       onSave(updatedInvoice);
     } catch (error) {
       console.error('Failed to mark paid:', error);
-      alert('Erreur lors de la mise à jour');
+      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payee' });
     }
   }
+
+  async function handleConvertToInvoice() {
+    if (!invoice) return;
+    setIsConverting(true);
+    setShowConvertDialog(false);
+
+    try {
+      const newInvoice = await convertDevisToInvoice(invoice.id, {
+        payment_terms: '30 jours',
+        payment_method: 'Virement bancaire',
+      });
+      addNotification({
+        type: 'success',
+        title: 'Devis converti en facture',
+        message: `Facture ${newInvoice.invoice_number} creee a partir du devis ${invoice.invoice_number}`,
+      });
+      onSave(newInvoice);
+    } catch (error) {
+      console.error('Failed to convert devis:', error);
+      const msg = error instanceof Error ? error.message : 'Erreur lors de la conversion';
+      addNotification({ type: 'error', title: 'Conversion echouee', message: msg });
+    } finally {
+      setIsConverting(false);
+    }
+  }
+
+  // Peut-on convertir ce devis ?
+  const canConvert = invoice
+    && invoice.document_type === 'devis'
+    && invoice.status !== 'converted'
+    && invoice.status !== 'cancelled';
 
   const { subtotalHT, totalTax, totalTTC } = calculateInvoiceTotals();
 
@@ -245,7 +280,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 )}
                 required
               >
-                <option value="">Sélectionner un contact</option>
+                <option value="">Selectionner un contact</option>
                 {contacts.map((contact) => (
                   <option key={contact.id} value={contact.id}>
                     {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || contact.id}
@@ -270,10 +305,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 )}
               >
                 <option value="draft">Brouillon</option>
-                <option value="sent">Envoyée</option>
-                <option value="paid">Payée</option>
+                <option value="sent">Envoyee</option>
+                <option value="accepted">Accepte</option>
+                <option value="paid">Payee</option>
                 <option value="overdue">En retard</option>
-                <option value="cancelled">Annulée</option>
+                <option value="cancelled">Annulee</option>
               </select>
             </div>
 
@@ -302,7 +338,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div>
               <label htmlFor="issueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'émission *
+                Date d'emission *
               </label>
               <input
                 type="date"
@@ -321,7 +357,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div>
               <label htmlFor="dueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'échéance *
+                Date d'echeance *
               </label>
               <input
                 type="date"
@@ -389,7 +425,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
                     <div className="grid grid-cols-4 gap-3">
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">Quantité</label>
+                        <label className="block text-xs text-text-muted mb-1">Quantite</label>
                         <input
                           type="number"
                           min="1"
@@ -474,9 +510,37 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 'focus:outline-none focus:ring-2 focus:ring-accent-cyan',
                 'resize-none'
               )}
-              placeholder="Notes internes ou mentions spécifiques..."
+              placeholder="Notes internes ou mentions specifiques..."
             />
           </div>
+
+          {/* Payment info (read-only if present from conversion) */}
+          {invoice?.payment_terms && (
+            <div className="p-4 rounded-lg bg-surface-elevated/30 border border-border/50 space-y-2">
+              <h3 className="text-sm font-medium text-text mb-2">Conditions de paiement</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-text-muted">Delai :</span>{' '}
+                  <span className="text-text">{invoice.payment_terms}</span>
+                </div>
+                <div>
+                  <span className="text-text-muted">Mode :</span>{' '}
+                  <span className="text-text">{invoice.payment_method}</span>
+                </div>
+                {invoice.late_penalty_rate && (
+                  <div>
+                    <span className="text-text-muted">Penalites de retard :</span>{' '}
+                    <span className="text-text">{invoice.late_penalty_rate}% annuel</span>
+                  </div>
+                )}
+              </div>
+              {invoice.legal_mentions && (
+                <div className="mt-2 pt-2 border-t border-border/30">
+                  <p className="text-xs text-text-muted whitespace-pre-line">{invoice.legal_mentions}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Totals */}
           <div className="p-4 rounded-lg bg-surface-elevated/50 border border-border/50 space-y-2">
@@ -498,14 +562,32 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
-          <div>
-            {invoice && invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+          <div className="flex items-center gap-2">
+            {invoice && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
               <button
                 type="button"
                 onClick={handleMarkPaid}
                 className="px-4 py-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
               >
-                Marquer comme payée
+                Marquer comme payee
+              </button>
+            )}
+
+            {/* Bouton Convertir en facture (devis uniquement) */}
+            {canConvert && (
+              <button
+                type="button"
+                onClick={() => setShowConvertDialog(true)}
+                disabled={isConverting}
+                className={cn(
+                  'px-4 py-2 rounded-lg font-medium transition-colors',
+                  'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+                  'flex items-center gap-2',
+                  isConverting && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <FileCheck className="w-4 h-4" />
+                {isConverting ? 'Conversion...' : 'Convertir en facture'}
               </button>
             )}
           </div>
@@ -530,10 +612,64 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               )}
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Sauvegarde...' : invoice ? 'Mettre à jour' : 'Créer'}
+              {isSaving ? 'Sauvegarde...' : invoice ? 'Mettre a jour' : 'Creer'}
             </button>
           </div>
         </div>
+
+        {/* Confirm convert dialog */}
+        {showConvertDialog && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            onClick={() => setShowConvertDialog(false)}
+          >
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl" />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Confirmer la conversion"
+              className={cn(
+                'relative w-full max-w-md mx-4 p-6',
+                'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+                'shadow-2xl space-y-4'
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-text">Convertir en facture ?</h3>
+              <p className="text-sm text-text-muted">
+                Une facture sera creee a partir du devis <strong>{invoice?.invoice_number}</strong> avec
+                les memes lignes et montants. Le devis sera marque comme converti.
+              </p>
+              <div className="p-3 rounded-lg bg-surface-elevated/50 border border-border/30 text-sm space-y-1">
+                <p className="text-text-muted">
+                  <span className="font-medium text-text">Conditions :</span> 30 jours, virement bancaire
+                </p>
+                <p className="text-text-muted">
+                  <span className="font-medium text-text">Mentions legales :</span> ajoutees automatiquement
+                </p>
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowConvertDialog(false)}
+                  className="px-4 py-2 rounded-lg bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleConvertToInvoice}
+                  className={cn(
+                    'px-4 py-2 rounded-lg font-medium transition-colors',
+                    'bg-purple-500 text-white hover:bg-purple-600',
+                    'flex items-center gap-2'
+                  )}
+                >
+                  <FileCheck className="w-4 h-4" />
+                  Convertir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 from app.models.database import get_session
 from app.models.entities import Contact, Invoice, InvoiceLine
 from app.models.schemas import (
+    ConvertDevisRequest,
     CreateInvoiceRequest,
     InvoiceLineResponse,
     InvoiceResponse,
@@ -125,6 +126,11 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         total_tax=invoice.total_tax,
         total_ttc=invoice.total_ttc,
         notes=invoice.notes,
+        payment_terms=invoice.payment_terms,
+        payment_method=invoice.payment_method,
+        late_penalty_rate=invoice.late_penalty_rate,
+        legal_mentions=invoice.legal_mentions,
+        converted_from_id=invoice.converted_from_id,
         payment_date=invoice.payment_date.isoformat() if invoice.payment_date else None,
         created_at=invoice.created_at.isoformat(),
         updated_at=invoice.updated_at.isoformat(),
@@ -486,6 +492,143 @@ async def generate_invoice_pdf(
     logger.info(f"PDF generated for invoice: {invoice.invoice_number}")
 
     return {"pdf_path": pdf_path, "invoice_number": invoice.invoice_number}
+
+
+def generate_legal_mentions(
+    late_penalty_rate: float = 11.62,
+    due_date_str: str = "",
+) -> str:
+    """
+    Genere les mentions legales obligatoires pour une facture francaise.
+
+    Args:
+        late_penalty_rate: Taux de penalite de retard (defaut: 3x taux BCE ~3.87% = 11.62%)
+        due_date_str: Date d'echeance formatee
+    """
+    lines = [
+        f"Date d'echeance : {due_date_str}." if due_date_str else "",
+        f"En cas de retard de paiement, une penalite de {late_penalty_rate:.2f}% annuel sera appliquee "
+        "(3 fois le taux d'interet legal en vigueur).",
+        "Une indemnite forfaitaire de 40 EUR pour frais de recouvrement sera exigee "
+        "(art. L441-10 du Code de commerce).",
+        "Escompte pour paiement anticipe : neant.",
+    ]
+    return "\n".join(line for line in lines if line)
+
+
+def _parse_payment_terms_days(payment_terms: str) -> int:
+    """Extrait le nombre de jours depuis une chaine comme '30 jours'."""
+    import re
+
+    match = re.search(r"(\d+)", payment_terms)
+    return int(match.group(1)) if match else 30
+
+
+@router.post("/{invoice_id}/convert-to-invoice", response_model=InvoiceResponse)
+async def convert_devis_to_invoice(
+    invoice_id: str,
+    request: ConvertDevisRequest | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Convertit un devis accepte en facture.
+
+    - Copie toutes les lignes du devis
+    - Genere un nouveau numero FACT-YYYY-NNN
+    - Ajoute conditions de paiement et mentions legales
+    - Marque le devis source comme "converted"
+    """
+    # 1. Recuperer le devis
+    devis = await _get_invoice_with_lines(session, invoice_id)
+    if not devis:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
+
+    # 2. Verifier que c'est un devis
+    if devis.document_type != "devis":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ce document est un(e) {devis.document_type}, pas un devis",
+        )
+
+    # 3. Verifier le statut (accepted ou sent, pas deja converti)
+    if devis.status == "converted":
+        raise HTTPException(status_code=400, detail="Ce devis a deja ete converti en facture")
+    if devis.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Impossible de convertir un devis annule")
+
+    # Parametres de conversion
+    req = request or ConvertDevisRequest()
+    payment_terms = req.payment_terms
+    payment_method = req.payment_method
+    payment_days = _parse_payment_terms_days(payment_terms)
+    late_penalty_rate = 11.62  # 3x taux BCE approximatif
+
+    # 4. Creer la facture
+    invoice_number = await _generate_invoice_number(session, "facture")
+    issue_date = datetime.now(UTC)
+    due_date = issue_date + timedelta(days=payment_days)
+
+    legal_mentions = generate_legal_mentions(
+        late_penalty_rate=late_penalty_rate,
+        due_date_str=due_date.strftime("%d/%m/%Y"),
+    )
+
+    new_invoice = Invoice(
+        invoice_number=invoice_number,
+        contact_id=devis.contact_id,
+        document_type="facture",
+        tva_applicable=devis.tva_applicable,
+        currency=devis.currency,
+        issue_date=issue_date,
+        due_date=due_date,
+        status="draft",
+        notes=devis.notes,
+        payment_terms=payment_terms,
+        payment_method=payment_method,
+        late_penalty_rate=late_penalty_rate,
+        legal_mentions=legal_mentions,
+        converted_from_id=devis.id,
+    )
+
+    session.add(new_invoice)
+    await session.flush()
+
+    # 5. Copier les lignes
+    db_lines = []
+    for line in devis.lines:
+        new_line = InvoiceLine(
+            invoice_id=new_invoice.id,
+            description=line.description,
+            quantity=line.quantity,
+            unit_price_ht=line.unit_price_ht,
+            tva_rate=line.tva_rate,
+            total_ht=line.total_ht,
+            total_ttc=line.total_ttc,
+        )
+        session.add(new_line)
+        db_lines.append(new_line)
+
+    # 6. Calculer les totaux
+    subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)
+    new_invoice.subtotal_ht = subtotal_ht
+    new_invoice.total_tax = total_tax
+    new_invoice.total_ttc = total_ttc
+    new_invoice.updated_at = datetime.now(UTC)
+
+    # 7. Marquer le devis comme converti
+    devis.status = "converted"
+    devis.updated_at = datetime.now(UTC)
+
+    session.add(new_invoice)
+    session.add(devis)
+    await session.commit()
+
+    # Recharger avec eager loading
+    new_invoice = await _get_invoice_with_lines(session, new_invoice.id)
+
+    logger.info(f"Devis {devis.invoice_number} converti en facture {invoice_number}")
+
+    return _invoice_to_response(new_invoice)
 
 
 @router.post("/{invoice_id}/send")

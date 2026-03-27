@@ -582,15 +582,29 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
 @router.post("/dispatch")
 async def dispatch_to_openclaw(
     request: DispatchRequest,
+    max_agents: int = 3,
     session: AsyncSession = Depends(get_session),
 ):
     """Lance un agent OpenClaw depuis l Atelier.
 
     Crée une AgentSession en DB et spawn une session OpenClaw.
+    Limite le nombre d agents en parallèle (US-003).
     """
     from app.models.entities_agents import AgentSession
     from app.models.schemas_agents import AgentSessionResponse, DispatchRequest
     from app.services.openclaw_bridge import spawn_session
+
+    # US-003 : vérifier la limite d agents en parallèle
+    running_count_result = await session.execute(
+        select(func.count(AgentSession.id)).where(AgentSession.status == "running")
+    )
+    running_count = running_count_result.scalar() or 0
+
+    if running_count >= max_agents:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Tu as déjà {running_count} agents en cours. Attends qu un se termine ou annule-en un.",
+        )
 
     # Vérifier la connexion OpenClaw
     from app.services.openclaw_bridge import check_connection
@@ -839,6 +853,21 @@ async def cancel_openclaw_session(
     await session.commit()
 
     return {"status": "cancelled", "session_id": session_id}
+
+
+
+@router.get("/sessions/running/count")
+async def get_running_sessions_count(
+    session: AsyncSession = Depends(get_session),
+):
+    """Retourne le nombre de sessions en cours (US-003)."""
+    from app.models.entities_agents import AgentSession
+
+    result = await session.execute(
+        select(func.count(AgentSession.id)).where(AgentSession.status == "running")
+    )
+    count = result.scalar() or 0
+    return {"running_count": count, "max_agents": 3}
 
 
 @router.get("/openclaw/status")

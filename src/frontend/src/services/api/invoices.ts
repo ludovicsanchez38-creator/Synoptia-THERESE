@@ -21,14 +21,21 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   contact_id: string;
+  document_type: 'devis' | 'facture' | 'avoir';
+  tva_applicable: boolean;
   currency: string;
   issue_date: string;
   due_date: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'converted' | 'accepted';
   subtotal_ht: number;
   total_tax: number;
   total_ttc: number;
   notes: string | null;
+  payment_terms: string | null;
+  payment_method: string | null;
+  late_penalty_rate: number | null;
+  legal_mentions: string | null;
+  converted_from_id: string | null;
   payment_date: string | null;
   created_at: string;
   updated_at: string;
@@ -42,8 +49,15 @@ export interface InvoiceLineRequest {
   tva_rate: number;
 }
 
+export interface ConvertDevisRequest {
+  payment_terms?: string;
+  payment_method?: string;
+}
+
 export interface CreateInvoiceRequest {
   contact_id: string;
+  document_type?: 'devis' | 'facture' | 'avoir';
+  tva_applicable?: boolean;
   currency?: string;
   issue_date?: string;
   due_date?: string;
@@ -127,6 +141,20 @@ export async function generateInvoicePDF(invoiceId: string): Promise<{ pdf_path:
 export async function sendInvoiceByEmail(invoiceId: string): Promise<any> {
   const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/send`, {
     method: 'POST',
+  });
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  return response.json();
+}
+
+
+export async function convertDevisToInvoice(
+  invoiceId: string,
+  req?: ConvertDevisRequest
+): Promise<Invoice> {
+  const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/convert-to-invoice`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req || {}),
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();

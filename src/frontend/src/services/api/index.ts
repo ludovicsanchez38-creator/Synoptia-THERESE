@@ -375,11 +375,13 @@ export {
   markInvoicePaid,
   generateInvoicePDF,
   sendInvoiceByEmail,
+  convertDevisToInvoice,
   type InvoiceLine,
   type Invoice,
   type InvoiceLineRequest,
   type CreateInvoiceRequest,
   type UpdateInvoiceRequest,
+  type ConvertDevisRequest,
 } from './invoices';
 
 // CRM - Contact creation + push

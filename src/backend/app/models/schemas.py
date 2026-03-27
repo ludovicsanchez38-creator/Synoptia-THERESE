@@ -703,6 +703,11 @@ class InvoiceResponse(BaseModel):
     total_tax: float
     total_ttc: float
     notes: str | None
+    payment_terms: str | None = None
+    payment_method: str | None = None
+    late_penalty_rate: float | None = None
+    legal_mentions: str | None = None
+    converted_from_id: str | None = None
     payment_date: str | None  # ISO datetime
     created_at: str  # ISO datetime
     updated_at: str  # ISO datetime
@@ -747,6 +752,14 @@ class MarkPaidRequest(BaseModel):
     """Request pour marquer une facture comme payée."""
 
     payment_date: str | None = None  # ISO datetime, default today
+
+
+class ConvertDevisRequest(BaseModel):
+    """Request pour convertir un devis en facture."""
+
+    payment_terms: str = "30 jours"
+    payment_method: str = "Virement bancaire"
+
 
 
 # =============================================================================

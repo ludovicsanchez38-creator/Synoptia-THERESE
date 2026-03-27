@@ -348,6 +348,126 @@ async def update_rgpd_fields(
     return {"success": True, "message": "Champs RGPD mis à jour"}
 
 
+
+# ============================================================
+# RGPD Purge Exclude (US-017)
+# ============================================================
+
+
+@router.patch("/contacts/{contact_id}/purge-exclude")
+async def toggle_purge_exclude(
+    contact_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Active/désactive l'exclusion de la purge automatique RGPD pour un contact.
+
+    Toggle : si purge_excluded est True, passe à False et vice versa.
+    """
+    result = await session.execute(
+        select(Contact).where(Contact.id == contact_id)
+    )
+    contact = result.scalar_one_or_none()
+
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact non trouvé")
+
+    contact.purge_excluded = not contact.purge_excluded
+    contact.updated_at = datetime.now(UTC)
+    await session.commit()
+
+    logger.info(
+        f"RGPD purge_excluded toggled for contact {contact_id}: {contact.purge_excluded}"
+    )
+
+    return {
+        "success": True,
+        "purge_excluded": contact.purge_excluded,
+        "message": (
+            "Contact exclu de la purge automatique"
+            if contact.purge_excluded
+            else "Contact inclus dans la purge automatique"
+        ),
+    }
+
+
+# ============================================================
+# RGPD Purge Settings (US-017)
+# ============================================================
+
+
+@router.get("/purge/settings")
+async def get_purge_settings(
+    session: AsyncSession = Depends(get_session),
+):
+    """Récupère les paramètres de purge RGPD automatique."""
+    from app.models.entities import Preference
+
+    enabled = True
+    months = 36
+
+    result = await session.execute(
+        select(Preference).where(Preference.key == "rgpd_purge_enabled")
+    )
+    pref = result.scalar_one_or_none()
+    if pref:
+        enabled = pref.value.lower() in ("true", "1", "yes")
+
+    result = await session.execute(
+        select(Preference).where(Preference.key == "rgpd_purge_months")
+    )
+    pref = result.scalar_one_or_none()
+    if pref and pref.value:
+        try:
+            months = int(pref.value)
+        except ValueError:
+            pass
+
+    return {"enabled": enabled, "months": months}
+
+
+@router.put("/purge/settings")
+async def update_purge_settings(
+    enabled: bool = True,
+    months: int = 36,
+    session: AsyncSession = Depends(get_session),
+):
+    """Met à jour les paramètres de purge RGPD automatique."""
+    from app.models.entities import Preference
+
+    if months < 12 or months > 60:
+        raise HTTPException(
+            status_code=400,
+            detail="La durée de rétention doit être entre 12 et 60 mois"
+        )
+
+    # Sauvegarder enabled
+    result = await session.execute(
+        select(Preference).where(Preference.key == "rgpd_purge_enabled")
+    )
+    pref = result.scalar_one_or_none()
+    if pref:
+        pref.value = str(enabled).lower()
+    else:
+        session.add(Preference(key="rgpd_purge_enabled", value=str(enabled).lower(), category="rgpd"))
+
+    # Sauvegarder months
+    result = await session.execute(
+        select(Preference).where(Preference.key == "rgpd_purge_months")
+    )
+    pref = result.scalar_one_or_none()
+    if pref:
+        pref.value = str(months)
+    else:
+        session.add(Preference(key="rgpd_purge_months", value=str(months), category="rgpd"))
+
+    await session.commit()
+
+    logger.info(f"RGPD purge settings updated: enabled={enabled}, months={months}")
+
+    return {"success": True, "enabled": enabled, "months": months}
+
+
 # ============================================================
 # RGPD Statistiques
 # ============================================================

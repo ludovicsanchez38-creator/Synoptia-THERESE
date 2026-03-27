@@ -144,6 +144,13 @@ async def lifespan(app: FastAPI):
                     conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
                     conn.commit()
                     logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+                # US-017 : purge_excluded sur contacts
+                cursor = conn.execute("PRAGMA table_info(contacts)")
+                contact_columns = [row[1] for row in cursor.fetchall()]
+                if contact_columns and "purge_excluded" not in contact_columns:
+                    conn.execute("ALTER TABLE contacts ADD COLUMN purge_excluded BOOLEAN DEFAULT 0")
+                    conn.commit()
+                    logger.info("Migration auto : colonne 'purge_excluded' ajoutée à la table contacts")
     except Exception as e:
         logger.warning(f"Migration auto ignorée : {e}")
 
@@ -211,6 +218,25 @@ async def lifespan(app: FastAPI):
                     logger.error(f"Notification scheduler error: {e}")
 
         notification_task = asyncio.create_task(_notification_scheduler())
+
+        # US-017 - Purge RGPD automatique (une fois par jour)
+        from app.services.rgpd_auto import auto_purge_expired_contacts
+
+        async def _rgpd_purge_scheduler():
+            """Purge RGPD automatique au demarrage puis toutes les 24h."""
+            try:
+                await auto_purge_expired_contacts()
+                logger.info("Purge RGPD initiale executee")
+            except Exception as e:
+                logger.error(f"Erreur purge RGPD initiale: {e}")
+            while True:
+                await asyncio.sleep(86400)  # 24 heures
+                try:
+                    await auto_purge_expired_contacts()
+                except Exception as e:
+                    logger.error(f"RGPD purge scheduler error: {e}")
+
+        rgpd_purge_task = asyncio.create_task(_rgpd_purge_scheduler())
     else:
         logger.info("Mode test : services externes ignorés (THERESE_SKIP_SERVICES=1)")
         oauth_cleanup_task = None
@@ -252,6 +278,13 @@ async def lifespan(app: FastAPI):
     try:
         notification_task.cancel()
         await notification_task
+    except (asyncio.CancelledError, NameError):
+        pass
+
+    # Cancel RGPD purge scheduler
+    try:
+        rgpd_purge_task.cancel()
+        await rgpd_purge_task
     except (asyncio.CancelledError, NameError):
         pass
 

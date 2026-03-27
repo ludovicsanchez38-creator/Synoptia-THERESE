@@ -43,6 +43,7 @@ class Contact(SQLModel, table=True):
     rgpd_date_collecte: datetime | None = None  # Date de collecte des données
     rgpd_date_expiration: datetime | None = None  # Date d'expiration (collecte + 3 ans par défaut)
     rgpd_consentement: bool = Field(default=False)  # Consentement explicite obtenu
+    purge_excluded: bool = Field(default=False)  # US-017 : exclure de la purge automatique RGPD
 
     # Scope fields (E3-05)
     scope: str = Field(default="global", index=True)  # global, project, conversation
@@ -435,6 +436,11 @@ class Invoice(SQLModel, table=True):
     total_tax: float = 0.0
     total_ttc: float = 0.0  # Toutes taxes comprises
     notes: str | None = None
+    payment_terms: str | None = None  # "30 jours", "60 jours", etc.
+    payment_method: str | None = None  # "Virement bancaire", "Chèque", etc.
+    late_penalty_rate: float | None = None  # Taux de pénalité de retard (ex: 3x taux BCE)
+    legal_mentions: str | None = None  # Mentions légales auto-générées
+    converted_from_id: str | None = Field(default=None, index=True)  # ID du devis source si conversion
     payment_date: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

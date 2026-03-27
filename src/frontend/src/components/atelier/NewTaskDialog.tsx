@@ -10,10 +10,11 @@ import { X, Zap, Loader2 } from "lucide-react";
 import { useOpenClawStore } from "../../stores/openclawStore";
 
 export function NewTaskDialog() {
-  const { isNewTaskOpen, closeNewTask, dispatchTask, isDispatching, openclawConnected } =
+  const { isNewTaskOpen, closeNewTask, dispatchTask, isDispatching, openclawConnected, runningCount, maxAgents } =
     useOpenClawStore();
   const [instruction, setInstruction] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isMaxReached = runningCount >= maxAgents;
 
   useEffect(() => {
     if (isNewTaskOpen && textareaRef.current) {
@@ -89,6 +90,12 @@ export function NewTaskDialog() {
             Katia peut envoyer des emails, créer des factures, gérer le CRM et plus encore.
             <span className="ml-1 text-[#B6C7DA]">Cmd+Entrée</span> pour lancer.
           </p>
+
+          {isMaxReached && (
+            <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+              Tu as déjà {maxAgents} agents en cours. Attends qu&apos;un se termine ou annule-en un.
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -102,7 +109,7 @@ export function NewTaskDialog() {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!instruction.trim() || isDispatching || !openclawConnected}
+            disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
             className="flex items-center gap-1.5 rounded-lg bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (

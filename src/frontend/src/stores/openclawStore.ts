@@ -37,6 +37,10 @@ interface OpenClawState {
   activeSessionId: string | null;
   activeSessionMessages: SessionMessageResponse[];
 
+  // Multi-agents (US-003)
+  maxAgents: number;
+  runningCount: number;
+
   // UI
   isDispatching: boolean;
   isSending: boolean;
@@ -55,6 +59,9 @@ interface OpenClawState {
   sendMessage: (sessionId: string, content: string) => Promise<void>;
   cancelSession: (sessionId: string) => Promise<void>;
 
+  // Actions - Multi-agents (US-003)
+  updateRunningCount: () => void;
+
   // Actions - UI
   openNewTask: () => void;
   closeNewTask: () => void;
@@ -70,6 +77,8 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
   sessionsTotal: 0,
   activeSessionId: null,
   activeSessionMessages: [],
+  maxAgents: 3,
+  runningCount: 0,
   isDispatching: false,
   isSending: false,
   isNewTaskOpen: false,
@@ -97,9 +106,11 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
   fetchSessions: async (limit = 50, status?: string) => {
     try {
       const result = await listOpenClawSessions(limit, status);
+      const running = result.sessions.filter((s) => s.status === "running").length;
       set({
         sessions: result.sessions,
         sessionsTotal: result.total,
+        runningCount: running,
         error: null,
       });
     } catch (e: any) {
@@ -108,6 +119,12 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
   },
 
   dispatchTask: async (instruction: string, agentName = "katia") => {
+    // US-003 : vérifier la limite côté store
+    const { runningCount, maxAgents } = get();
+    if (runningCount >= maxAgents) {
+      set({ error: `Tu as déjà ${maxAgents} agents en cours. Attends qu'un se termine ou annule-en un.` });
+      return null;
+    }
     set({ isDispatching: true, error: null });
     try {
       const session = await dispatchToOpenClaw(instruction, agentName);
@@ -119,6 +136,7 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
         activeSessionMessages: [],
         isDispatching: false,
         isNewTaskOpen: false,
+        runningCount: s.runningCount + 1,
       }));
       return session;
     } catch (e: any) {
@@ -190,6 +208,13 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
     } catch (e: any) {
       set({ error: e.message || "Erreur annulation" });
     }
+  },
+
+  // Multi-agents (US-003)
+  updateRunningCount: () => {
+    const { sessions } = get();
+    const running = sessions.filter((s) => s.status === "running").length;
+    set({ runningCount: running });
   },
 
   // UI

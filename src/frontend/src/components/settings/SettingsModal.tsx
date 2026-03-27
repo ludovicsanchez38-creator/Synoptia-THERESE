@@ -2,7 +2,7 @@
 // Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
 import { useState, useEffect } from 'react';
-import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap } from 'lucide-react';
+import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -17,13 +17,14 @@ import { ToolsPanel } from './ToolsPanel';
 import { AdvancedTab } from './AdvancedTab';
 import { AboutTab } from './AboutTab';
 import { AgentsTab } from './AgentsTab';
+import { PrivacyTab } from './PrivacyTab';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Tab = 'profile' | 'ai' | 'services' | 'tools' | 'agents' | 'advanced' | 'about';
+type Tab = 'profile' | 'ai' | 'services' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
 
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: 'profile', label: 'Profil', icon: User },
@@ -31,6 +32,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: 'services', label: 'Services', icon: Layers },
   { id: 'tools', label: 'Outils', icon: Wrench },
   { id: 'agents', label: 'Agents', icon: Zap },
+  { id: 'privacy', label: 'Confidentialité', icon: Shield },
   { id: 'advanced', label: 'Avancé', icon: SlidersHorizontal },
   { id: 'about', label: 'À propos', icon: Info },
 ];
@@ -545,6 +547,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         );
       case 'agents':
         return <AgentsTab />;
+      case 'privacy':
+        return <PrivacyTab />;
       case 'about':
         return <AboutTab />;
     }
