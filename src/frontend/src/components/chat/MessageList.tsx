@@ -79,10 +79,6 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
       <div
         className="py-2"
         data-testid="chat-message-item"
-        style={{
-          contentVisibility: message.isStreaming ? 'visible' : 'auto',
-          containIntrinsicSize: 'auto 80px',
-        }}
       >
         <MessageBubble
           message={message}
@@ -133,6 +129,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     <div className="h-full" aria-live="polite" aria-label="Messages de la conversation" data-testid="chat-message-list">
       <Virtuoso
         ref={virtuosoRef}
+        key={`virtuoso-${currentConversationId}`}
         data={displayMessages}
         totalCount={displayMessages.length}
         overscan={200}
@@ -140,7 +137,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
         initialTopMostItemIndex={displayMessages.length - 1}
         alignToBottom
         itemContent={itemContent}
-        className="h-full"
+        className="h-full [&_[data-testid=virtuoso-item-list]]:!visible"
         style={{ height: '100%' }}
         components={{
           // Wrapper pour le contenu scrollable avec le bon max-width
