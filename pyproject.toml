@@ -87,6 +87,7 @@ ignore = [
     "SIM105", # contextlib.suppress - preference equipe
     "SIM108", # ternary operator - if/else souvent plus lisible
     "SIM102", # combined if - nested ifs parfois plus lisibles
+    "BLE001", # bare except Exception - 246 occurrences, nettoyage US-101
 ]
 
 [tool.pytest.ini_options]

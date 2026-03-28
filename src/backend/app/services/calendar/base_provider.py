@@ -5,10 +5,13 @@ Defines the contract for calendar providers (Local, Google, CalDAV).
 Part of the "Local First" architecture.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass

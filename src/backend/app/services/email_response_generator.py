@@ -5,8 +5,12 @@ Génère des brouillons de réponse intelligents via LLM.
 US-EMAIL-09
 """
 
+import logging
+
 from app.services.llm import get_llm_service
 from app.services.user_profile import get_cached_profile
+
+logger = logging.getLogger(__name__)
 
 
 class EmailResponseGenerator:

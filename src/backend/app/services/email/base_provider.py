@@ -5,10 +5,13 @@ Defines the contract for email providers (Gmail, IMAP/SMTP).
 Part of the "Local First" architecture.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
