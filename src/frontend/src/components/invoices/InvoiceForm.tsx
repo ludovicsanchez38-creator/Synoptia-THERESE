@@ -19,6 +19,11 @@ interface InvoiceFormProps {
   onSave: (invoice: Invoice) => void;
 }
 
+interface InvoiceLineInputState {
+  quantity: string;
+  unit_price_ht: string;
+}
+
 const TVA_RATES = [
   { value: 20.0, label: '20% (normale)' },
   { value: 10.0, label: '10% (intermediaire)' },
@@ -40,6 +45,22 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   GBP: '\u00a3',
 };
+
+function formatDecimalInput(value: number) {
+  return String(value);
+}
+
+function isValidDecimalDraft(value: string) {
+  return /^\d*([.,]\d*)?$/.test(value);
+}
+
+function parseDecimalDraft(value: string) {
+  if (!value.trim()) return null;
+  const normalized = value.replace(',', '.').trim();
+  if (!/^\d*(\.\d*)?$/.test(normalized)) return null;
+  const parsed = Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+}
 
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const addNotification = useStatusStore((s) => s.addNotification);
@@ -73,6 +94,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       { description: '', quantity: 1, unit_price_ht: 0, tva_rate: 20.0 },
     ]
   );
+  const [lineInputs, setLineInputs] = useState<InvoiceLineInputState[]>(
+    invoice?.lines.map((line) => ({
+      quantity: formatDecimalInput(line.quantity),
+      unit_price_ht: formatDecimalInput(line.unit_price_ht),
+    })) || [
+      { quantity: '1', unit_price_ht: '0' },
+    ]
+  );
 
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
@@ -94,10 +123,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
   function addLine() {
     setLines([...lines, { description: '', quantity: 1, unit_price_ht: 0, tva_rate: 20.0 }]);
+    setLineInputs([...lineInputs, { quantity: '1', unit_price_ht: '0' }]);
   }
 
   function removeLine(index: number) {
     setLines(lines.filter((_, i) => i !== index));
+    setLineInputs(lineInputs.filter((_, i) => i !== index));
   }
 
   function updateLine(index: number, field: keyof InvoiceLineRequest, value: any) {
@@ -106,8 +137,25 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     setLines(newLines);
   }
 
-  function calculateLineTotals(line: InvoiceLineRequest) {
-    const totalHT = line.quantity * line.unit_price_ht;
+  function updateDecimalLineInput(index: number, field: keyof InvoiceLineInputState, rawValue: string) {
+    if (!isValidDecimalDraft(rawValue)) {
+      return;
+    }
+
+    const newInputs = [...lineInputs];
+    newInputs[index] = { ...newInputs[index], [field]: rawValue };
+    setLineInputs(newInputs);
+  }
+
+  function getLineNumericValues(index: number) {
+    const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '') ?? 0;
+    const unitPrice = parseDecimalDraft(lineInputs[index]?.unit_price_ht ?? '') ?? 0;
+    return { quantity, unitPrice };
+  }
+
+  function calculateLineTotals(line: InvoiceLineRequest, index: number) {
+    const { quantity, unitPrice } = getLineNumericValues(index);
+    const totalHT = quantity * unitPrice;
     const totalTTC = totalHT * (1 + line.tva_rate / 100);
     return { totalHT, totalTTC };
   }
@@ -116,8 +164,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     let subtotalHT = 0;
     let totalTax = 0;
 
-    for (const line of lines) {
-      const { totalHT, totalTTC } = calculateLineTotals(line);
+    for (const [index, line] of lines.entries()) {
+      const { totalHT, totalTTC } = calculateLineTotals(line, index);
       subtotalHT += totalHT;
       totalTax += (totalTTC - totalHT);
     }
@@ -140,6 +188,26 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       return;
     }
 
+    const normalizedLines = lines.map((line, index) => {
+      const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '');
+      const unitPrice = parseDecimalDraft(lineInputs[index]?.unit_price_ht ?? '');
+      return {
+        ...line,
+        quantity,
+        unit_price_ht: unitPrice,
+      };
+    });
+
+    if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
+      alert('Veuillez saisir des nombres valides pour les quantités et montants');
+      return;
+    }
+
+    if (normalizedLines.some((line) => line.quantity < 1 || line.unit_price_ht < 0)) {
+      alert('Veuillez saisir une quantité supérieure ou égale à 1 et un prix positif ou nul');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -149,7 +217,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         currency,
         issue_date: issueDate,
         due_date: dueDate,
-        lines,
+        lines: normalizedLines,
         notes: notes || undefined,
         status: status !== 'draft' ? status : undefined,
       };
@@ -421,7 +489,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div className="space-y-2">
               {lines.map((line, index) => {
-                const { totalHT } = calculateLineTotals(line);
+                const { totalHT } = calculateLineTotals(line, index);
 
                 return (
                   <div key={index} className="p-4 rounded-lg bg-bg border border-border/50 space-y-3">
@@ -455,12 +523,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Quantite</label>
                         <input
-                          type="number"
-                          lang="en"
-                          min="1"
-                          step="0.01"
-                          value={line.quantity}
-                          onChange={(e) => updateLine(index, 'quantity', parseFloat(e.target.value))}
+                          aria-label={`Quantité ligne ${index + 1}`}
+                          type="text"
+                          inputMode="decimal"
+                          value={lineInputs[index]?.quantity ?? formatDecimalInput(line.quantity)}
+                          onChange={(e) => updateDecimalLineInput(index, 'quantity', e.target.value)}
                           className={cn(
                             'w-full px-3 py-2 rounded-lg',
                             'bg-surface border border-border/50',
@@ -474,12 +541,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Prix HT ({CURRENCY_SYMBOLS[currency] || currency})</label>
                         <input
-                          type="number"
-                          lang="en"
-                          min="0"
-                          step="0.01"
-                          value={line.unit_price_ht}
-                          onChange={(e) => updateLine(index, 'unit_price_ht', parseFloat(e.target.value))}
+                          aria-label={`Prix HT ligne ${index + 1}`}
+                          type="text"
+                          inputMode="decimal"
+                          value={lineInputs[index]?.unit_price_ht ?? formatDecimalInput(line.unit_price_ht)}
+                          onChange={(e) => updateDecimalLineInput(index, 'unit_price_ht', e.target.value)}
                           className={cn(
                             'w-full px-3 py-2 rounded-lg',
                             'bg-surface border border-border/50',

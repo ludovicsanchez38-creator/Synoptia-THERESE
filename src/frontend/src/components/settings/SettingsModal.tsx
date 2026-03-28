@@ -18,6 +18,7 @@ import { AdvancedTab } from './AdvancedTab';
 import { AboutTab } from './AboutTab';
 import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
+import { resolveModelForProvider } from './modelResolution';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -139,8 +140,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       const keys = keysResult.keys;
       setApiKeys(keys);
       setCorruptedKeys(keysResult.corrupted);
-      setSelectedProvider(llmConfig.provider as api.LLMProvider);
-      setSelectedModel(llmConfig.model);
+
+      const loadedProvider = llmConfig.provider as api.LLMProvider;
+      const resolvedModel = resolveModelForProvider(loadedProvider, llmConfig.model, ollamaStatusData);
+
+      setSelectedProvider(loadedProvider);
+      setSelectedModel(resolvedModel);
       setStats(statsData);
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
