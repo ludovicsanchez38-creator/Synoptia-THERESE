@@ -64,7 +64,7 @@ describe('InvoiceForm décimaux', () => {
     fireEvent.change(screen.getByPlaceholderText('Description'), { target: { value: 'Prestation' } });
     fireEvent.change(screen.getByLabelText('Quantité ligne 1'), { target: { value: '' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Cre/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalled();
