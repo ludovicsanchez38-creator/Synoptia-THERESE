@@ -177,7 +177,7 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
     try {
       const messages = await getOpenClawSessionMessages(sessionId);
       set({ activeSessionMessages: messages });
-    } catch (e: any) {
+    } catch (_e: any) {
       // Silencieux - les messages peuvent ne pas encore exister
     }
   },
