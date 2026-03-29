@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, Save, Loader2 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
+import { useGuardedAction } from '../../hooks/useGuardedAction';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -36,8 +37,15 @@ export function EventForm() {
   const [endTime, setEndTime] = useState('');
   const [allDay, setAllDay] = useState(false);
   const [attendeesInput, setAttendeesInput] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const { execute, error: guardError, loading: guardLoading, clearError } = useGuardedAction([
+    { check: currentAccountId, message: 'Aucun compte configuré. Ajoute un compte email dans les paramètres.' },
+    { check: currentCalendarId, message: 'Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.' },
+  ]);
+
+  const error = formError || guardError;
+  const saving = guardLoading;
 
   const isEditing = !!currentEventId;
   const event = events.find((evt) => evt.id === currentEventId);
@@ -79,34 +87,26 @@ export function EventForm() {
   }, [isEditing, event]);
 
   async function handleSave() {
-    if (!currentAccountId) {
-      setError('Aucun compte configuré. Ajoute un compte email dans les paramètres.');
-      return;
-    }
-    if (!currentCalendarId) {
-      setError('Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.');
-      return;
-    }
-
+    // Validation formulaire (avant les guards)
     if (!summary.trim()) {
-      setError('Ajoute un titre');
+      setFormError('Ajoute un titre');
       return;
     }
 
     if (!startDate || (!allDay && !startTime)) {
-      setError('Définis la date et heure de début');
+      setFormError('Définis la date et heure de début');
       return;
     }
 
     if (!endDate || (!allDay && !endTime)) {
-      setError('Définis la date et heure de fin');
+      setFormError('Définis la date et heure de fin');
       return;
     }
 
-    setSaving(true);
-    setError(null);
+    setFormError(null);
+    clearError();
 
-    try {
+    await execute(async () => {
       const attendees = attendeesInput
         .split(',')
         .map((e) => e.trim())
@@ -132,15 +132,15 @@ export function EventForm() {
         const updated = await api.updateEvent(
           event.id,
           request,
-          currentCalendarId,
-          currentAccountId
+          currentCalendarId!,
+          currentAccountId!
         );
         updateEventInStore(event.id, updated);
         setCurrentEvent(event.id);
       } else {
         // Create new event
         const request: api.CreateEventRequest = {
-          calendar_id: currentCalendarId,
+          calendar_id: currentCalendarId!,
           summary,
           description: description || undefined,
           location: location || undefined,
@@ -155,19 +155,14 @@ export function EventForm() {
           request.end_datetime = `${endDate}T${endTime}:00`;
         }
 
-        const created = await api.createEvent(request, currentAccountId);
+        const created = await api.createEvent(request, currentAccountId!);
         addEvent(created);
         setCurrentEvent(created.id);
       }
 
       clearDraft();
       setIsEventFormOpen(false);
-    } catch (err) {
-      console.error('Failed to save event:', err);
-      setError(err instanceof Error ? err.message : 'Échec de la sauvegarde');
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   function handleCancel() {

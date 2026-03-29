@@ -90,7 +90,7 @@ export function EmailCompose() {
 
   async function handleSaveDraft() {
     if (!currentAccountId) {
-      setError('Aucun compte email configuré.');
+      setError('Aucun compte email configuré. Ajoute un compte dans les paramètres.');
       return;
     }
 

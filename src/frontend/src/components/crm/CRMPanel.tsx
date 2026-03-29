@@ -374,11 +374,16 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
     stage: 'contact',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.first_name.trim()) return;
+    if (!form.first_name.trim()) {
+      setFormError('Le prénom est obligatoire.');
+      return;
+    }
 
+    setFormError(null);
     setSubmitting(true);
     try {
       await onCreate(form);
@@ -407,6 +412,11 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400">{formError}</p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-text-muted mb-1">Prénom *</label>
@@ -707,11 +717,16 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setActivityError('Le titre est obligatoire.');
+      return;
+    }
 
+    setActivityError(null);
     setSubmitting(true);
     try {
       const { createActivity } = await import('../../services/api');
@@ -749,6 +764,11 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {activityError && (
+            <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400">{activityError}</p>
+            </div>
+          )}
           <div>
             <label className="block text-xs text-text-muted mb-2">Type</label>
             <div className="flex gap-2">

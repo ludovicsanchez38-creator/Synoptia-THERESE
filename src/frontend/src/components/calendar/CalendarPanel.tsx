@@ -166,7 +166,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   }
 
   async function handleSync() {
-    if (!currentAccountId) return;
+    if (!currentAccountId) {
+      setError('Aucun compte configuré. Ajoute un compte dans les paramètres.');
+      return;
+    }
 
     setSyncing(true);
     setError(null);

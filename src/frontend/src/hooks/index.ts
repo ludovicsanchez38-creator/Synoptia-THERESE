@@ -14,3 +14,4 @@ export { useGhostText } from './useGhostText';
 export { useMotionConfig, useMotionVariants } from './useMotionConfig';
 export { useOnlineStatus } from './useOnlineStatus';
 export { useAutosave } from './useAutosave';
+export { useGuardedAction } from './useGuardedAction';

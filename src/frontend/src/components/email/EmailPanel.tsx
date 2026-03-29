@@ -130,7 +130,10 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   }
 
   async function handleSync() {
-    if (!currentAccountId) return;
+    if (!currentAccountId) {
+      setError('Aucun compte email configuré. Ajoute un compte dans les paramètres.');
+      return;
+    }
     setSyncing(true);
     try {
       await loadLabels(currentAccountId);
