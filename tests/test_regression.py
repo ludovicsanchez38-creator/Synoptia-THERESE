@@ -455,24 +455,23 @@ class TestBUG009RustTasklistFallback:
 
 
 class TestScrollStreaming:
-    """Scroll automatique via react-virtuoso pendant le streaming."""
+    """Scroll automatique via div scrollable + scrollIntoView pendant le streaming."""
 
     def test_virtuoso_handles_scroll(self):
-        """MessageList doit utiliser Virtuoso pour gérer le scroll automatique."""
+        """MessageList doit utiliser overflow-y-auto et scrollIntoView pour le scroll automatique."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "Virtuoso" in content, (
-            "MessageList doit utiliser le composant Virtuoso pour la virtualisation et le scroll"
+        assert "overflow-y-auto" in content, (
+            "MessageList doit utiliser overflow-y-auto pour le conteneur scrollable"
         )
-        assert "followOutput" in content, (
-            "MessageList doit utiliser followOutput de Virtuoso pour le scroll automatique"
+        assert "scrollIntoView" in content, (
+            "MessageList doit utiliser scrollIntoView pour le scroll automatique"
         )
 
     def test_user_scroll_detection(self):
-        """MessageList doit détecter quand l'utilisateur scrolle vers le haut via followOutput."""
+        """MessageList doit utiliser un ref bottomRef comme ancre de scroll."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        # followOutput reçoit isAtBottom : si false, pas de scroll auto (l'utilisateur a scrollé)
-        assert "isAtBottom" in content, (
-            "MessageList doit utiliser isAtBottom (via followOutput) pour détecter le scroll utilisateur"
+        assert "bottomRef" in content, (
+            "MessageList doit utiliser bottomRef comme ancre de scroll en bas de la liste"
         )
 
     def test_smooth_scroll_only_when_at_bottom(self):
@@ -660,23 +659,26 @@ class TestBUG020LazyLoading:
 
 
 class TestBUG021StreamingScroll:
-    """Scroll géré nativement par react-virtuoso (plus besoin de rAF manuel)."""
+    """Scroll géré nativement par scrollIntoView + bottomRef (plus besoin de rAF manuel)."""
 
     def test_virtuoso_replaces_raf_scroll(self):
-        """MessageList doit utiliser Virtuoso au lieu de requestAnimationFrame manuel."""
+        """MessageList doit utiliser scrollIntoView au lieu de requestAnimationFrame manuel."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "Virtuoso" in content, (
-            "MessageList doit utiliser Virtuoso qui gère le scroll nativement (remplace rAF)"
+        assert "scrollIntoView" in content, (
+            "MessageList doit utiliser scrollIntoView pour le scroll natif (remplace rAF)"
         )
-        assert "followOutput" in content, (
-            "MessageList doit utiliser followOutput de Virtuoso pour le scroll streaming"
+        assert "bottomRef" in content, (
+            "MessageList doit utiliser bottomRef comme ancre pour le scroll streaming"
         )
 
     def test_virtuoso_ref_present(self):
-        """MessageList doit avoir un ref VirtuosoHandle pour le contrôle programmatique."""
+        """MessageList doit avoir un ref bottomRef pour l'ancre de scroll."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "VirtuosoHandle" in content, (
-            "MessageList doit avoir un ref VirtuosoHandle pour le contrôle du scroll"
+        assert "bottomRef" in content, (
+            "MessageList doit avoir un ref bottomRef pour l'ancre de scroll"
+        )
+        assert "useRef" in content, (
+            "MessageList doit utiliser useRef pour le ref bottomRef"
         )
 
 
@@ -2010,25 +2012,25 @@ class TestBUG026_EmailUtiliserButton:
 # ─── BUG-037 Saut scroll résiduel en fin de streaming ────────────────────
 
 class TestBUG037_ScrollJumpStreaming:
-    """MessageList doit éviter les sauts de scroll en fin de streaming via Virtuoso."""
+    """MessageList doit éviter les sauts de scroll en fin de streaming via scrollIntoView."""
 
     MSG_LIST = Path("src/frontend/src/components/chat/MessageList.tsx")
 
     def test_virtuoso_follow_output_present(self):
-        """followOutput de Virtuoso doit gérer la transition fin-streaming sans saut."""
+        """scrollIntoView avec behavior conditionnel doit gérer la transition fin-streaming sans saut."""
         content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "followOutput" in content, (
-            "MessageList doit utiliser followOutput de Virtuoso pour éviter les sauts de scroll"
+        assert "scrollIntoView" in content, (
+            "MessageList doit utiliser scrollIntoView pour éviter les sauts de scroll"
         )
 
     def test_align_to_bottom_prevents_jump(self):
-        """alignToBottom de Virtuoso doit être activé pour éviter les sauts en fin de streaming."""
+        """bottomRef + scrollIntoView avec behavior auto/smooth doit éviter les sauts en fin de streaming."""
         content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "alignToBottom" in content, (
-            "MessageList doit utiliser alignToBottom de Virtuoso pour un scroll stable en fin de streaming"
+        assert "bottomRef" in content, (
+            "MessageList doit utiliser bottomRef pour un scroll stable en fin de streaming"
         )
-        assert "Virtuoso" in content, (
-            "MessageList doit utiliser Virtuoso pour gérer le scroll sans saut"
+        assert "behavior" in content, (
+            "MessageList doit utiliser behavior auto/smooth dans scrollIntoView pour un scroll sans saut"
         )
 
 
@@ -4432,43 +4434,47 @@ INVOICE_FORM_TSX = FRONTEND / "components" / "invoices" / "InvoiceForm.tsx"
 
 
 class TestBUG091_DecimalSeparator:
-    """BUG-091 : les inputs numériques doivent avoir lang='en' pour le séparateur décimal."""
+    """BUG-091 : les inputs numériques doivent utiliser type='text' + inputMode='decimal' pour le séparateur."""
 
     def test_quantity_input_has_lang_en(self):
-        """L'input de quantité doit avoir lang='en' pour forcer le point décimal."""
+        """L'input de quantité doit avoir inputMode='decimal' pour accepter les décimaux."""
         content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
-        idx_qty = content.find("Quantité")
+        idx_qty = content.find("Quantit")
         assert idx_qty != -1, "Le label 'Quantité' doit exister dans InvoiceForm.tsx"
         block = content[idx_qty:idx_qty + 500]
-        assert 'lang="en"' in block, (
-            "L'input quantité doit avoir lang='en' pour forcer le point décimal (BUG-091)"
+        assert 'inputMode="decimal"' in block, (
+            "L'input quantité doit avoir inputMode='decimal' pour le clavier numérique mobile (BUG-091)"
         )
 
     def test_unit_price_input_has_lang_en(self):
-        """L'input de prix unitaire doit avoir lang='en' pour forcer le point décimal."""
+        """L'input de prix unitaire doit avoir inputMode='decimal' pour accepter les décimaux."""
         content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
         idx_price = content.find("Prix HT")
         assert idx_price != -1, "Le label 'Prix HT' doit exister dans InvoiceForm.tsx"
         block = content[idx_price:idx_price + 500]
-        assert 'lang="en"' in block, (
-            "L'input prix HT doit avoir lang='en' pour forcer le point décimal (BUG-091)"
+        assert 'inputMode="decimal"' in block, (
+            "L'input prix HT doit avoir inputMode='decimal' pour le clavier numérique mobile (BUG-091)"
         )
 
     def test_numeric_inputs_are_type_number(self):
-        """Les inputs numériques doivent rester type='number' (pas type='text')."""
+        """Les inputs numériques doivent être type='text' + inputMode='decimal' (pas type='number')."""
         content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
-        assert content.count('type="number"') >= 2, (
-            "InvoiceForm doit avoir au moins 2 inputs type='number' (quantité et prix)"
+        assert 'type="text"' in content, (
+            "InvoiceForm doit utiliser type='text' pour les inputs décimaux (BUG-091)"
+        )
+        assert 'inputMode="decimal"' in content, (
+            "InvoiceForm doit utiliser inputMode='decimal' pour le clavier numérique mobile (BUG-091)"
         )
 
     def test_step_precision_present(self):
-        """Les inputs numériques doivent avoir step='0.01' pour la précision centimes."""
+        """Les inputs décimaux doivent avoir une validation de format dans le code."""
         content = INVOICE_FORM_TSX.read_text(encoding="utf-8")
-        assert 'step="0.01"' in content, (
-            "InvoiceForm doit avoir step='0.01' pour la précision centimes (BUG-091)"
+        assert "isValidDecimalDraft" in content or "parseDecimalDraft" in content, (
+            "InvoiceForm doit valider le format décimal via isValidDecimalDraft ou parseDecimalDraft (BUG-091)"
         )
-        assert content.count('step="0.01"') >= 2, (
-            "step='0.01' doit être présent sur les 2 inputs numériques (quantité et prix)"
+        # Vérifier que la regex accepte virgule et point
+        assert ".,]" in content or "[.,]" in content, (
+            "La validation décimale doit accepter virgule et point comme séparateur (BUG-091)"
         )
 
     def test_no_onkeydown_hack(self):
