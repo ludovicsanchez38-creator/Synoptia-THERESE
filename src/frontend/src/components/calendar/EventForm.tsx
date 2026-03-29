@@ -79,7 +79,14 @@ export function EventForm() {
   }, [isEditing, event]);
 
   async function handleSave() {
-    if (!currentAccountId || !currentCalendarId) return;
+    if (!currentAccountId) {
+      setError('Aucun compte configuré. Ajoute un compte email dans les paramètres.');
+      return;
+    }
+    if (!currentCalendarId) {
+      setError('Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.');
+      return;
+    }
 
     if (!summary.trim()) {
       setError('Ajoute un titre');

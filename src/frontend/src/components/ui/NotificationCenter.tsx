@@ -224,7 +224,7 @@ export function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: reduceMotion ? 0 : 0.15 }}
-            className="absolute right-0 top-full mt-2 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="absolute right-0 top-full mt-2 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl z-[70] overflow-hidden flex flex-col"
             aria-live="polite"
           >
             {/* Header */}
