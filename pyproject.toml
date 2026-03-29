@@ -57,6 +57,8 @@ dependencies = [
     # Security - Rate limiting (SEC-015)
     "slowapi>=0.1.9",
     "vobject>=0.9.9",
+    # Security - HTML sanitization (email signatures, user content)
+    "nh3>=0.2.14",
 ]
 
 [project.optional-dependencies]

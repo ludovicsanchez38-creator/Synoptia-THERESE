@@ -231,6 +231,9 @@ class EmailAccount(SQLModel, table=True):
     smtp_port: int = 587
     smtp_use_tls: bool = True
 
+    # Signature HTML (email backlog)
+    signature_html: str | None = None
+
     # Metadata
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -287,6 +290,9 @@ class EmailMessage(SQLModel, table=True):
 
     # Sync metadata
     synced_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    # Email-CRM linking (email backlog)
+    contact_id: str | None = Field(default=None, foreign_key="contacts.id", index=True)
 
     # Smart Email Features (US-EMAIL-08, US-EMAIL-10)
     priority: str | None = Field(default=None, index=True)  # 'high' | 'medium' | 'low'
@@ -540,3 +546,22 @@ class Notification(SQLModel, table=True):
     is_read: bool = Field(default=False, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     read_at: datetime | None = None
+
+
+# =============================================================================
+# EMAIL FOLLOW-UP MODELS (Email Backlog)
+# =============================================================================
+
+
+class EmailFollowUp(SQLModel, table=True):
+    """Suivi métier lié aux emails (relances, rappels)."""
+
+    __tablename__ = "email_follow_ups"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    email_message_id: str = Field(foreign_key="email_messages.id", index=True)
+    contact_id: str | None = Field(default=None, foreign_key="contacts.id", index=True)
+    due_date: str  # ISO 8601
+    note: str | None = None
+    status: str = Field(default="pending", index=True)  # pending, done, cancelled
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())

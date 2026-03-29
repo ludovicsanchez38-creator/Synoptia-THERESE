@@ -35,6 +35,9 @@ from app.routers.email import router as email_router
 from app.routers.email_setup import router as email_setup_router
 from app.routers.escalation import router as escalation_router
 from app.routers.files import router as files_router
+
+# Email Follow-Ups (Email Backlog)
+from app.routers.follow_ups import router as follow_ups_router
 from app.routers.images import router as images_router
 from app.routers.invoices import router as invoices_router
 from app.routers.mcp import router as mcp_router
@@ -83,4 +86,5 @@ __all__ = [
     "browser_router",  # v0.6 - Browser Automation
     "notifications_router",  # US-004 - Notifications push in-app
     "dashboard_router",  # US-005 - Dashboard Ma journée
+    "follow_ups_router",  # Email Backlog - Follow-ups
 ]

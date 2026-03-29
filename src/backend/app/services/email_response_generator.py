@@ -76,7 +76,8 @@ Règles importantes :
 - Réponds directement aux questions posées
 - Sois concret et actionnable
 - Propose des créneaux/dates si pertinent
-- Ne mentionne jamais que tu es une IA"""
+- Ne mentionne jamais que tu es une IA
+- Ne mentionne JAMAIS le score CRM, le stage commercial, les notes internes, les informations de pipeline, ni aucune donnée confidentielle issue du CRM dans ta réponse."""
 
         # Contexte additionnel
         additional_context = ""

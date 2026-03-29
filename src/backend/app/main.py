@@ -51,6 +51,7 @@ from app.routers import (
     email_setup_router,  # Phase 1.2 - Email Setup Wizard
     escalation_router,
     files_router,
+    follow_ups_router,  # Email Backlog - Follow-ups
     images_router,
     invoices_router,  # Phase 4 - ACTIVATED
     mcp_router,
@@ -151,6 +152,40 @@ async def lifespan(app: FastAPI):
                     conn.execute("ALTER TABLE contacts ADD COLUMN purge_excluded BOOLEAN DEFAULT 0")
                     conn.commit()
                     logger.info("Migration auto : colonne 'purge_excluded' ajoutée à la table contacts")
+                # Email Backlog : signature_html sur email_accounts
+                cursor = conn.execute("PRAGMA table_info(email_accounts)")
+                ea_columns = [row[1] for row in cursor.fetchall()]
+                if ea_columns and "signature_html" not in ea_columns:
+                    conn.execute("ALTER TABLE email_accounts ADD COLUMN signature_html TEXT")
+                    conn.commit()
+                    logger.info("Migration auto : colonne 'signature_html' ajoutée à email_accounts")
+                # Email Backlog : contact_id sur email_messages
+                cursor = conn.execute("PRAGMA table_info(email_messages)")
+                em_columns = [row[1] for row in cursor.fetchall()]
+                if em_columns and "contact_id" not in em_columns:
+                    conn.execute("ALTER TABLE email_messages ADD COLUMN contact_id TEXT REFERENCES contacts(id)")
+                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_messages_contact_id ON email_messages(contact_id)")
+                    conn.commit()
+                    logger.info("Migration auto : colonne 'contact_id' ajoutée à email_messages")
+                # Email Backlog : table email_follow_ups
+                cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_follow_ups'")
+                if not cursor.fetchone():
+                    conn.execute("""
+                        CREATE TABLE email_follow_ups (
+                            id VARCHAR NOT NULL PRIMARY KEY,
+                            email_message_id VARCHAR NOT NULL REFERENCES email_messages(id),
+                            contact_id VARCHAR REFERENCES contacts(id),
+                            due_date VARCHAR NOT NULL,
+                            note VARCHAR,
+                            status VARCHAR NOT NULL DEFAULT 'pending',
+                            created_at VARCHAR NOT NULL
+                        )
+                    """)
+                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_email_message_id ON email_follow_ups(email_message_id)")
+                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_contact_id ON email_follow_ups(contact_id)")
+                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_status ON email_follow_ups(status)")
+                    conn.commit()
+                    logger.info("Migration auto : table 'email_follow_ups' créée")
     except Exception as e:
         logger.warning(f"Migration auto ignorée : {e}")
 
@@ -609,6 +644,9 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 
 # v0.6 - Browser Automation (Manus-inspired)
 app.include_router(browser_router, prefix="/api/browser", tags=["Browser"])
+
+# Email Backlog - Follow-ups
+app.include_router(follow_ups_router, prefix="/api/follow-ups", tags=["Follow-Ups"])
 
 # US-004 - Notifications push in-app (v0.9.0)
 app.include_router(notifications_router, prefix="/api/notifications", tags=["Notifications"])

@@ -20,6 +20,9 @@ from app.config import settings  # noqa: E402
 from app.models.entities import (  # noqa: F401, E402
     Contact,
     Conversation,
+    EmailAccount,
+    EmailFollowUp,
+    EmailMessage,
     FileMetadata,
     Message,
     Preference,

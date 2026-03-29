@@ -22,12 +22,14 @@ from app.models.schemas_email import (
     ImapSetupRequest,
     ImapTestRequest,
     LabelCreateRequest,
+    LinkContactRequest,
     ModifyMessageRequest,
     OAuthCallbackRequest,
     OAuthInitiateRequest,
     OAuthInitiateResponse,
     SendEmailRequest,
     UpdatePriorityRequest,
+    UpdateSignatureRequest,
 )
 from app.services.email.provider_factory import (
     get_email_provider,
@@ -978,6 +980,17 @@ async def send_email(
     if not account:
         raise HTTPException(status_code=404, detail="Email account not found")
 
+    # Injection de la signature HTML si le compte en a une
+    body = request.body
+    is_html = request.html
+    if account.signature_html:
+        if is_html:
+            body = body + "<br><br>" + account.signature_html
+        else:
+            # Convertir le body texte en HTML pour ajouter la signature
+            body = f"<p>{body}</p><br>" + account.signature_html
+            is_html = True
+
     if account.provider == "imap":
         provider = get_email_provider(
             provider_type="imap",
@@ -993,10 +1006,10 @@ async def send_email(
         send_req = ProviderSendRequest(
             to=request.to,
             subject=request.subject,
-            body=request.body,
+            body=body,
             cc=request.cc or [],
             bcc=request.bcc or [],
-            is_html=request.html,
+            is_html=is_html,
         )
         message_id = await provider.send_message(send_req)
         return {"id": message_id, "labelIds": ["SENT"]}
@@ -1005,10 +1018,10 @@ async def send_email(
         result = await gmail.send_message(
             to=request.to,
             subject=request.subject,
-            body=request.body,
+            body=body,
             cc=request.cc,
             bcc=request.bcc,
-            html=request.html,
+            html=is_html,
         )
         return result
 
@@ -1422,3 +1435,89 @@ async def update_message_priority(
 
 # NOTE: get_email_stats (GET /messages/stats) has been moved above
 # get_message (GET /messages/{message_id}) to avoid FastAPI route shadowing.
+
+
+# ============================================================
+# Signature HTML Endpoints (Email Backlog)
+# ============================================================
+
+
+@router.get("/accounts/{account_id}/signature")
+async def get_signature(
+    account_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Retourne la signature HTML d'un compte email.
+    """
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+
+    return {
+        "account_id": account_id,
+        "signature_html": account.signature_html,
+    }
+
+
+@router.put("/accounts/{account_id}/signature")
+async def update_signature(
+    account_id: str,
+    request: UpdateSignatureRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Met à jour la signature HTML d'un compte email.
+
+    Le HTML est sanitisé avec nh3 avant sauvegarde.
+    """
+    from app.services.html_sanitizer import sanitize_html
+
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+
+    account.signature_html = sanitize_html(request.signature_html)
+    account.updated_at = _utcnow()
+    session.add(account)
+    await session.commit()
+
+    return {
+        "account_id": account_id,
+        "signature_html": account.signature_html,
+    }
+
+
+# ============================================================
+# Email-Contact Linking Endpoints (Email Backlog)
+# ============================================================
+
+
+@router.put("/messages/{message_id}/link-contact")
+async def link_message_to_contact(
+    message_id: str,
+    request: LinkContactRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """
+    Associe manuellement un email à un contact CRM.
+    """
+    from app.models.entities import Contact
+
+    message = await session.get(EmailMessage, message_id)
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    # Vérifier que le contact existe
+    contact = await session.get(Contact, request.contact_id)
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    message.contact_id = request.contact_id
+    session.add(message)
+    await session.commit()
+
+    return {
+        "message_id": message_id,
+        "contact_id": request.contact_id,
+    }

@@ -104,8 +104,10 @@ class EmailClassifierV2:
     ]
 
     HIGH_VALUE_SENDERS = [
-        # Clients (domaines pro)
-        '.gouv.fr', '.fr', '.com', '.io',
+        # Domaines institutionnels et publics
+        '.gouv.fr', '.education.fr', '.sante.fr', '.cnrs.fr',
+        # Domaines entreprises significatifs
+        '.cci.fr', '.chambre-agriculture.fr',
     ]
 
     # 4. PROMOTIONAL - Marketing, ventes

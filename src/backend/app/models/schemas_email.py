@@ -178,3 +178,60 @@ class GenerateGuideResponse(BaseModel):
     """Generate setup guide response."""
 
     message: str
+
+
+# ============================================================
+# Signature HTML
+# ============================================================
+
+
+class UpdateSignatureRequest(BaseModel):
+    """Update email signature request."""
+
+    signature_html: str
+
+
+# ============================================================
+# Email-Contact Linking
+# ============================================================
+
+
+class LinkContactRequest(BaseModel):
+    """Link email message to a CRM contact."""
+
+    contact_id: str
+
+
+# ============================================================
+# Follow-Up (suivi métier)
+# ============================================================
+
+
+class CreateFollowUpRequest(BaseModel):
+    """Create follow-up request."""
+
+    email_message_id: str
+    contact_id: str | None = None
+    due_date: str  # ISO 8601
+    note: str | None = None
+
+
+class UpdateFollowUpRequest(BaseModel):
+    """Update follow-up request."""
+
+    due_date: str | None = None
+    note: str | None = None
+    status: str | None = None  # pending, done, cancelled
+    contact_id: str | None = None
+
+
+class FollowUpResponse(BaseModel):
+    """Follow-up response."""
+
+    id: str
+    email_message_id: str
+    contact_id: str | None = None
+    due_date: str
+    note: str | None = None
+    status: str
+    created_at: str
