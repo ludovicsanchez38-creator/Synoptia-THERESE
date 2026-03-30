@@ -16,7 +16,7 @@ export interface Contact {
   email: string | null;
   phone: string | null;
   notes: string | null;
-  tags: string | null;
+  tags: string[] | null;
   stage: string;
   score: number;
   source: string | null;
@@ -38,7 +38,7 @@ export interface Project {
   status: string;
   budget: number | null;
   notes: string | null;
-  tags: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
 }

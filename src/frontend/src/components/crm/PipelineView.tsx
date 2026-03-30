@@ -11,7 +11,7 @@ import { User, Building2, Mail, TrendingUp, GripVertical } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  rectIntersection,
   useSensor,
   useSensors,
   PointerSensor,
@@ -104,7 +104,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={rectIntersection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -199,11 +199,10 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <ContactCard
         contact={contact}
         onClick={onClick}
-        dragListeners={listeners}
       />
     </div>
   );

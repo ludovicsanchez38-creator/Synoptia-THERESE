@@ -112,9 +112,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const cals = await api.listCalendars(currentAccountId);
       setCalendars(cals);
 
-      // Auto-select primary calendar
+      // Auto-select primary calendar (ou re-sélectionner si l'ID persisté est stale)
       const primary = cals.find((c) => c.primary);
-      if (primary && !currentCalendarId) {
+      const currentStillExists = cals.some((c) => c.id === currentCalendarId);
+      if (primary && (!currentCalendarId || !currentStillExists)) {
         setCurrentCalendar(primary.id);
       }
 

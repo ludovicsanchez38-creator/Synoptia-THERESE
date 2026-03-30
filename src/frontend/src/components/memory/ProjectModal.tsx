@@ -137,7 +137,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         status: project.status || 'active',
         budget: project.budget?.toString() || '',
         notes: project.notes || '',
-        tags: project.tags || '',
+        tags: Array.isArray(project.tags) ? project.tags.join(', ') : (project.tags || ''),
       });
     } else if (isOpen) {
       setFormData(initialFormData);
@@ -175,7 +175,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         status: formData.status,
         budget: formData.budget ? parseFloat(formData.budget) : null,
         notes: formData.notes.trim() || null,
-        tags: formData.tags.trim() || null,
+        tags: formData.tags.trim()
+          ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+          : null,
       };
 
       if (isEditing && project) {
