@@ -503,6 +503,15 @@ async def delete_contact(
 
     cascade_deleted: dict[str, int] = {}
 
+    # Toujours supprimer les activités liées (FK non-nullable sur Activity.contact_id)
+    from app.models.entities import Activity
+    activities = (await session.execute(
+        select(Activity).where(Activity.contact_id == contact_id)
+    )).scalars().all()
+    for act in activities:
+        await session.delete(act)
+    cascade_deleted["activities"] = len(activities)
+
     if cascade:
         # Delete related projects (E3-06)
         projects_result = await session.execute(
