@@ -32,6 +32,7 @@ import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { indexFile, getWorkingDirectory, type FileMetadata } from '../../services/api';
 import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
+import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
 
 export interface FileEntry {
   name: string;
@@ -225,13 +226,8 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
 
   // Go up one level (BUG-086 : support backslashes Windows)
   const goUp = useCallback(async () => {
-    const normalized = currentPath.replace(/\\/g, '/');
-    const parts = normalized.split('/').filter(Boolean);
-    if (parts.length > 1) {
-      const isWindows = /^[A-Z]:/.test(normalized);
-      const parentPath = isWindows
-        ? parts.slice(0, -1).join('/')
-        : '/' + parts.slice(0, -1).join('/');
+    const parentPath = getParentBrowserPath(currentPath);
+    if (parentPath) {
       await navigateTo(parentPath);
     }
   }, [currentPath, navigateTo]);
@@ -289,7 +285,9 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   );
 
   // Breadcrumb parts (normaliser backslashes Windows)
-  const pathParts = currentPath.replace(/\\/g, '/').split('/').filter(Boolean);
+  const normalizedPath = normalizeBrowserPath(currentPath);
+  const pathParts = normalizedPath.split('/').filter(Boolean);
+  const isWindowsCurrentPath = isWindowsPath(currentPath);
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -311,7 +309,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           onClick={goUp}
           title="Remonter"
           className="h-8 w-8"
-          disabled={pathParts.length <= 1}
+          disabled={!getParentBrowserPath(currentPath)}
         >
           <FolderUp className="w-4 h-4" />
         </Button>
@@ -363,7 +361,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           <span key={index} className="flex items-center">
             <ChevronRight className="w-3 h-3 mx-1 flex-shrink-0" />
             <button
-              onClick={() => navigateTo('/' + pathParts.slice(0, index + 1).join('/'))}
+              onClick={() => navigateTo(buildBrowserPathFromParts(pathParts.slice(0, index + 1), isWindowsCurrentPath))}
               className="hover:text-accent-cyan transition-colors truncate max-w-[100px]"
               title={part}
             >
