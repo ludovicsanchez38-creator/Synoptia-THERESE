@@ -13,6 +13,7 @@ from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
 from app.models.schemas_agents import (
     AgentConfigResponse,
     AgentConfigUpdate,
+    AgentProfileResponse,
     AgentRequest,
     AgentSessionListResponse,
     AgentSessionResponse,
@@ -26,6 +27,7 @@ from app.models.schemas_agents import (
     OpenClawStatusResponse,
     SendMessageRequest,
     SessionMessageResponse,
+    SpawnAgentRequest,
 )
 from app.services.agents.git_service import GitService
 from app.services.agents.swarm import SwarmOrchestrator
@@ -56,9 +58,7 @@ def _get_source_path() -> str | None:
         db_path = settings.db_path
         if db_path and Path(db_path).exists():
             conn = sqlite3.connect(str(db_path))
-            cursor = conn.execute(
-                "SELECT value FROM preferences WHERE key = 'agent_source_path'"
-            )
+            cursor = conn.execute("SELECT value FROM preferences WHERE key = 'agent_source_path'")
             row = cursor.fetchone()
             conn.close()
             if row and row[0]:
@@ -88,7 +88,11 @@ def _get_source_path() -> str | None:
         home / "Documents" / "Synoptia-THERESE",
     ]
     for candidate in known_paths:
-        if candidate.exists() and (candidate / ".git").exists() and (candidate / "src" / "backend").exists():
+        if (
+            candidate.exists()
+            and (candidate / ".git").exists()
+            and (candidate / "src" / "backend").exists()
+        ):
             return str(candidate)
 
     return None
@@ -184,6 +188,7 @@ async def agent_request(
         # Mettre à jour la tâche finale
         try:
             from app.models.database import get_session_context
+
             async with get_session_context() as update_session:
                 result = await update_session.execute(
                     select(AgentTask).where(AgentTask.id == task.id)
@@ -192,12 +197,149 @@ async def agent_request(
                 if db_task:
                     db_task.status = final_status
                     db_task.branch_name = branch_name
-                    db_task.files_changed = json.dumps(files_changed, ensure_ascii=False) if files_changed else None
+                    db_task.files_changed = (
+                        json.dumps(files_changed, ensure_ascii=False) if files_changed else None
+                    )
                     db_task.diff_summary = diff_summary
                     db_task.updated_at = datetime.now(UTC)
                     await update_session.commit()
         except Exception as e:
             logger.error(f"Erreur mise à jour tâche: {e}")
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+# ============================================================
+# Agent Profiles & Spawn (agents locaux preconfigures)
+# ============================================================
+
+
+@router.get("/profiles")
+async def list_profiles() -> list[AgentProfileResponse]:
+    """Liste les profils d'agents preconfigures disponibles dans l'Atelier."""
+    from app.services.agents.profiles import get_profiles
+
+    profiles = get_profiles()
+    return [
+        AgentProfileResponse(
+            id=p["id"],
+            name=p["name"],
+            icon=p["icon"],
+            description=p["description"],
+            color=p["color"],
+            tools=p["tools"],
+        )
+        for p in profiles
+    ]
+
+
+@router.post("/spawn")
+async def spawn_agent(request: SpawnAgentRequest):
+    """Lance un agent local avec un profil preconfigure. Retourne un stream SSE.
+
+    L'agent utilise le system_prompt du profil et uniquement les outils autorises
+    par ce profil. Pas de flow Katia/Zezette (agent autonome, pas de handoff).
+    """
+    from app.services.agents.config import AgentConfig
+    from app.services.agents.profiles import get_profile
+    from app.services.agents.runtime import AgentRuntime
+    from app.services.agents.tools import (
+        THERESE_TOOLS,
+        ZEZETTE_TOOLS,
+        AgentToolExecutor,
+    )
+
+    # Charger le profil
+    profile = get_profile(request.profile_id)
+    if not profile:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Profil d'agent introuvable : {request.profile_id}",
+        )
+
+    # Determiner le source_path (pour les outils fichiers/git)
+    source_path = request.source_path or _get_source_path()
+
+    # Creer la config d'agent a partir du profil
+    config = AgentConfig(
+        id=profile["id"],
+        name=profile["name"],
+        description=profile["description"],
+        system_prompt=profile["system_prompt"],
+        tools=profile["tools"],
+        max_iterations=10,
+    )
+
+    # Creer le tool executor (sans git guard - pas de branche agent requise)
+    tool_executor = AgentToolExecutor(
+        source_path=source_path or ".",
+    )
+
+    # Filtrer les outils selon le profil
+    allowed_tools = set(profile["tools"])
+    all_tools = {t["function"]["name"]: t for t in THERESE_TOOLS + ZEZETTE_TOOLS}
+
+    # Ajouter web_search si demande par le profil
+    if "web_search" in allowed_tools:
+        all_tools["web_search"] = {
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": "Recherche sur le web via Brave Search ou DuckDuckGo",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Requete de recherche",
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": "Nombre max de resultats (defaut: 5)",
+                        },
+                    },
+                    "required": ["query"],
+                },
+            },
+        }
+
+    tools_schema = [all_tools[name] for name in allowed_tools if name in all_tools]
+
+    # Creer le runtime
+    runtime = AgentRuntime(
+        config=config,
+        tool_executor=tool_executor,
+        tools_schema=tools_schema,
+    )
+
+    async def event_stream():
+        try:
+            async for event in runtime.run(request.instruction):
+                chunk = AgentStreamChunk(
+                    type=event.type,
+                    agent=profile["id"],
+                    content=event.content,
+                    tool_name=event.tool_name,
+                )
+                data = chunk.model_dump(exclude_none=True)
+                yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            logger.error(f"Erreur agent spawn {profile['id']}: {e}", exc_info=True)
+            error_chunk = AgentStreamChunk(
+                type="error",
+                agent=profile["id"],
+                content=f"Erreur inattendue : {e}",
+            )
+            yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         event_stream(),
@@ -244,9 +386,7 @@ async def get_task(
     session: AsyncSession = Depends(get_session),
 ) -> AgentTaskResponse:
     """Détail d'une tâche agent."""
-    result = await session.execute(
-        select(AgentTask).where(AgentTask.id == task_id)
-    )
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
@@ -259,9 +399,7 @@ async def get_task_diff(
     session: AsyncSession = Depends(get_session),
 ) -> DiffResponse:
     """Récupère le diff complet d'une tâche pour review."""
-    result = await session.execute(
-        select(AgentTask).where(AgentTask.id == task_id)
-    )
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
@@ -279,18 +417,28 @@ async def get_task_diff(
     for f in files:
         file_diff = await git.diff_file(f["file_path"], base="main")
         # Compter les lignes ajoutées/supprimées
-        adds = sum(1 for line in file_diff.split("\n") if line.startswith("+") and not line.startswith("+++"))
-        dels = sum(1 for line in file_diff.split("\n") if line.startswith("-") and not line.startswith("---"))
+        adds = sum(
+            1
+            for line in file_diff.split("\n")
+            if line.startswith("+") and not line.startswith("+++")
+        )
+        dels = sum(
+            1
+            for line in file_diff.split("\n")
+            if line.startswith("-") and not line.startswith("---")
+        )
         total_add += adds
         total_del += dels
 
-        diff_files.append(DiffFileResponse(
-            file_path=f["file_path"],
-            change_type=f["change_type"],
-            diff_hunk=file_diff,
-            additions=adds,
-            deletions=dels,
-        ))
+        diff_files.append(
+            DiffFileResponse(
+                file_path=f["file_path"],
+                change_type=f["change_type"],
+                diff_hunk=file_diff,
+                additions=adds,
+                deletions=dels,
+            )
+        )
 
     return DiffResponse(
         task_id=task_id,
@@ -313,14 +461,14 @@ async def approve_task(
     session: AsyncSession = Depends(get_session),
 ):
     """Approuve et merge la branche d'une tâche."""
-    result = await session.execute(
-        select(AgentTask).where(AgentTask.id == task_id)
-    )
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     if task.status != "review":
-        raise HTTPException(status_code=400, detail=f"Tâche en statut '{task.status}', attendu 'review'")
+        raise HTTPException(
+            status_code=400, detail=f"Tâche en statut '{task.status}', attendu 'review'"
+        )
     if not task.branch_name or not task.source_path:
         raise HTTPException(status_code=400, detail="Pas de branche à merger")
 
@@ -349,9 +497,7 @@ async def reject_task(
     session: AsyncSession = Depends(get_session),
 ):
     """Rejette et supprime la branche d'une tâche."""
-    result = await session.execute(
-        select(AgentTask).where(AgentTask.id == task_id)
-    )
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
@@ -378,14 +524,14 @@ async def rollback_task(
     session: AsyncSession = Depends(get_session),
 ):
     """Annule un merge précédent via git revert."""
-    result = await session.execute(
-        select(AgentTask).where(AgentTask.id == task_id)
-    )
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     if task.status != "merged":
-        raise HTTPException(status_code=400, detail="Seules les tâches mergées peuvent être annulées")
+        raise HTTPException(
+            status_code=400, detail="Seules les tâches mergées peuvent être annulées"
+        )
     if not task.source_path:
         raise HTTPException(status_code=400, detail="Chemin source manquant")
 
@@ -433,9 +579,7 @@ async def get_config(
     katia_model = "claude-sonnet-4-6"
     zezette_model = "claude-sonnet-4-6"
     for key in ("agent_katia_model", "agent_therese_model", "agent_zezette_model"):
-        result = await session.execute(
-            select(Preference).where(Preference.key == key)
-        )
+        result = await session.execute(select(Preference).where(Preference.key == key))
         pref = result.scalar_one_or_none()
         if pref and pref.value:
             if key in ("agent_katia_model", "agent_therese_model"):
@@ -469,9 +613,7 @@ async def update_config(
         updates["agent_zezette_model"] = config.zezette_model
 
     for key, value in updates.items():
-        result = await session.execute(
-            select(Preference).where(Preference.key == key)
-        )
+        result = await session.execute(select(Preference).where(Preference.key == key))
         pref = result.scalar_one_or_none()
         if pref:
             pref.value = value
@@ -520,12 +662,14 @@ async def get_status(
     zezette_ready = False
     try:
         from app.services.agents.config import load_agent_config
+
         load_agent_config("katia")
         katia_ready = True
     except Exception as e:
         logger.debug("Agent config non disponible: %s", e)
     try:
         from app.services.agents.config import load_agent_config
+
         load_agent_config("zezette")
         zezette_ready = True
     except Exception as e:
@@ -711,9 +855,7 @@ async def get_openclaw_session(
 ):
     """Détail d une session OpenClaw."""
 
-    result = await session.execute(
-        select(AgentSession).where(AgentSession.id == session_id)
-    )
+    result = await session.execute(select(AgentSession).where(AgentSession.id == session_id))
     agent_session = result.scalar_one_or_none()
     if not agent_session:
         raise HTTPException(status_code=404, detail="Session introuvable")
@@ -755,9 +897,7 @@ async def get_openclaw_session_messages(
 ):
     """Messages d une session OpenClaw."""
 
-    result = await session.execute(
-        select(AgentSession).where(AgentSession.id == session_id)
-    )
+    result = await session.execute(select(AgentSession).where(AgentSession.id == session_id))
     agent_session = result.scalar_one_or_none()
     if not agent_session:
         raise HTTPException(status_code=404, detail="Session introuvable")
@@ -786,14 +926,14 @@ async def send_to_openclaw_session(
 ):
     """Envoie un message à un agent dans une session OpenClaw."""
 
-    result = await session.execute(
-        select(AgentSession).where(AgentSession.id == session_id)
-    )
+    result = await session.execute(select(AgentSession).where(AgentSession.id == session_id))
     agent_session = result.scalar_one_or_none()
     if not agent_session:
         raise HTTPException(status_code=404, detail="Session introuvable")
     if agent_session.status != "running":
-        raise HTTPException(status_code=400, detail=f"Session en statut {agent_session.status}, pas running")
+        raise HTTPException(
+            status_code=400, detail=f"Session en statut {agent_session.status}, pas running"
+        )
     if not agent_session.openclaw_session_id:
         raise HTTPException(status_code=400, detail="Pas de session OpenClaw associée")
 
@@ -819,14 +959,14 @@ async def cancel_openclaw_session(
 ):
     """Annule une session OpenClaw."""
 
-    result = await session.execute(
-        select(AgentSession).where(AgentSession.id == session_id)
-    )
+    result = await session.execute(select(AgentSession).where(AgentSession.id == session_id))
     agent_session = result.scalar_one_or_none()
     if not agent_session:
         raise HTTPException(status_code=404, detail="Session introuvable")
     if agent_session.status != "running":
-        raise HTTPException(status_code=400, detail=f"Session en statut {agent_session.status}, pas running")
+        raise HTTPException(
+            status_code=400, detail=f"Session en statut {agent_session.status}, pas running"
+        )
 
     # Annuler dans OpenClaw
     if agent_session.openclaw_session_id:
@@ -842,7 +982,6 @@ async def cancel_openclaw_session(
     await session.commit()
 
     return {"status": "cancelled", "session_id": session_id}
-
 
 
 @router.get("/sessions/running/count")

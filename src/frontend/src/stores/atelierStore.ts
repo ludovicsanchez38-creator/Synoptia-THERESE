@@ -36,7 +36,7 @@ export interface Mission {
   error?: string;
 }
 
-export type AtelierView = 'chat' | 'mission' | 'review';
+export type AtelierView = 'chat' | 'mission' | 'review' | 'agents';
 
 // ============================================================
 // Store

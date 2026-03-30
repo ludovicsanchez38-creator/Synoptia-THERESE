@@ -5,17 +5,20 @@
  *
  * Vues :
  *   - chat : swarm agents embarqués Katia + Zézette
+ *   - agents : agents métier préconfigurés (catalogue + session)
  *   - mission : mission timeline
  *   - review : code review
  */
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { X, Headphones, Wrench, MessageSquare, Zap, Eye } from "lucide-react";
+import { X, Headphones, Wrench, MessageSquare, Zap, Eye, Bot } from "lucide-react";
 import { useAtelierStore } from "../../stores/atelierStore";
 import { streamAgentRequest, getAgentConfig } from "../../services/api/agents";
 import type { AgentConfigResponse } from "../../services/api/agents";
 import { AgentMessageBubble } from "./AgentMessageBubble";
 import { AgentInput } from "./AgentInput";
+import { AgentCatalog } from "./AgentCatalog";
+import { AgentSession } from "./AgentSession";
 import { MissionStepper } from "./MissionStepper";
 import { CodeReviewPanel } from "./CodeReviewPanel";
 import { Z_LAYER } from "../../styles/z-layers";
@@ -36,6 +39,7 @@ export function AtelierPanel() {
   } = useAtelierStore();
 
   const [agentConfig, setAgentConfig] = useState<AgentConfigResponse | null>(null);
+  const [activeAgentProfile, setActiveAgentProfile] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -123,6 +127,12 @@ export function AtelierPanel() {
               icon={<MessageSquare size={14} />}
               label="Chat"
             />
+            <NavButton
+              active={activeView === "agents"}
+              onClick={() => setActiveView("agents")}
+              icon={<Bot size={14} />}
+              label="Agents"
+            />
             {currentMission && (
               <>
                 <NavButton
@@ -153,8 +163,8 @@ export function AtelierPanel() {
           </button>
         </div>
 
-        {/* BUG-111 : Badges modèles Katia & Zézette */}
-        {showModelBadge && (
+        {/* BUG-111 : Badges modèles Katia & Zézette (masqués en vue Agents) */}
+        {showModelBadge && activeView !== "agents" && (
           <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-[#6B7280]">
             {katiaModel && (
               <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
@@ -216,6 +226,19 @@ export function AtelierPanel() {
         )}
 
         {activeView === "review" && <CodeReviewPanel />}
+
+        {activeView === "agents" && (
+          activeAgentProfile ? (
+            <AgentSession
+              profileId={activeAgentProfile}
+              onBack={() => setActiveAgentProfile(null)}
+            />
+          ) : (
+            <AgentCatalog
+              onSelectAgent={(profileId) => setActiveAgentProfile(profileId)}
+            />
+          )
+        )}
       </div>
     </div>
   );

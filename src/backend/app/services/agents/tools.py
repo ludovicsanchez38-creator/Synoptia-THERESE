@@ -14,7 +14,13 @@ logger = logging.getLogger(__name__)
 
 # Commandes autorisées pour run_command
 ALLOWED_COMMANDS = {
-    "pytest", "python", "npm", "npx", "vitest", "ruff", "make",
+    "pytest",
+    "python",
+    "npm",
+    "npx",
+    "vitest",
+    "ruff",
+    "make",
 }
 
 # Sous-commandes autorisées pour des commandes spécifiques
@@ -70,7 +76,10 @@ class AgentToolExecutor:
             content = resolved.read_text(encoding="utf-8", errors="replace")
             lines = content.split("\n")
             if len(lines) > max_lines:
-                return "\n".join(lines[:max_lines]) + f"\n\n[... tronqué à {max_lines} lignes, total: {len(lines)}]"
+                return (
+                    "\n".join(lines[:max_lines])
+                    + f"\n\n[... tronqué à {max_lines} lignes, total: {len(lines)}]"
+                )
             return content
         except Exception as e:
             return f"Erreur de lecture : {e}"
@@ -97,12 +106,20 @@ class AgentToolExecutor:
         except Exception as e:
             return f"Erreur : {e}"
 
-    async def search_codebase(self, pattern: str, glob_filter: str = "*.py", max_results: int = 20) -> str:
+    async def search_codebase(
+        self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
+    ) -> str:
         """Recherche un pattern dans le code source via grep."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "grep", "-rn", "--include", glob_filter,
-                "-m", str(max_results), pattern, str(self.source_path),
+                "grep",
+                "-rn",
+                "--include",
+                glob_filter,
+                "-m",
+                str(max_results),
+                pattern,
+                str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -207,6 +224,29 @@ class AgentToolExecutor:
             return diff[:10000] + f"\n\n... diff tronqué ({len(diff)} chars total)"
         return diff or "Aucun diff"
 
+    # --- Outil recherche web (agents preconfigures) ---
+
+    async def web_search(self, query: str, max_results: int = 5) -> str:
+        """Recherche sur le web via Brave Search ou DuckDuckGo."""
+        try:
+            from app.services.web_search import get_web_search_service
+
+            search_service = get_web_search_service()
+
+            response = await search_service.search(query, max_results=max_results)
+            if not response.results:
+                return f"Aucun resultat pour '{query}'"
+
+            lines = [f"Resultats pour : {query}\n"]
+            for i, r in enumerate(response.results, 1):
+                lines.append(f"{i}. **{r.title}**")
+                lines.append(f"   {r.url}")
+                lines.append(f"   {r.snippet}\n")
+            return "\n".join(lines)
+        except Exception as e:
+            logger.error(f"Erreur web_search: {e}", exc_info=True)
+            return f"Erreur de recherche web : {e}"
+
     # --- Outils Thérèse ---
 
     async def clarify(self, question: str) -> str:
@@ -214,7 +254,9 @@ class AgentToolExecutor:
         # Le swarm intercepte cet appel et le transmet à l'utilisateur via SSE
         return f"[CLARIFY]{question}"
 
-    async def create_spec(self, title: str, description: str, files_to_change: str = "", acceptance_criteria: str = "") -> str:
+    async def create_spec(
+        self, title: str, description: str, files_to_change: str = "", acceptance_criteria: str = ""
+    ) -> str:
         """Crée une spécification pour Zézette."""
         spec = f"# Spec : {title}\n\n"
         spec += f"## Description\n{description}\n\n"
@@ -257,9 +299,18 @@ THERESE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "title": {"type": "string", "description": "Titre court de la spec"},
-                    "description": {"type": "string", "description": "Description détaillée du changement"},
-                    "files_to_change": {"type": "string", "description": "Liste des fichiers à modifier"},
-                    "acceptance_criteria": {"type": "string", "description": "Critères pour valider le changement"},
+                    "description": {
+                        "type": "string",
+                        "description": "Description détaillée du changement",
+                    },
+                    "files_to_change": {
+                        "type": "string",
+                        "description": "Liste des fichiers à modifier",
+                    },
+                    "acceptance_criteria": {
+                        "type": "string",
+                        "description": "Critères pour valider le changement",
+                    },
                 },
                 "required": ["title", "description"],
             },
@@ -274,7 +325,10 @@ THERESE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "summary": {"type": "string", "description": "Résumé en 1-2 phrases"},
-                    "details": {"type": "string", "description": "Détails supplémentaires (optionnel)"},
+                    "details": {
+                        "type": "string",
+                        "description": "Détails supplémentaires (optionnel)",
+                    },
                 },
                 "required": ["summary"],
             },
@@ -289,7 +343,10 @@ THERESE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "file_path": {"type": "string", "description": "Chemin relatif du fichier"},
-                    "max_lines": {"type": "integer", "description": "Nombre max de lignes (défaut: 500)"},
+                    "max_lines": {
+                        "type": "integer",
+                        "description": "Nombre max de lignes (défaut: 500)",
+                    },
                 },
                 "required": ["file_path"],
             },
@@ -303,7 +360,10 @@ THERESE_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "dir_path": {"type": "string", "description": "Chemin relatif du répertoire (défaut: racine)"},
+                    "dir_path": {
+                        "type": "string",
+                        "description": "Chemin relatif du répertoire (défaut: racine)",
+                    },
                 },
                 "required": [],
             },
@@ -318,7 +378,10 @@ THERESE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "pattern": {"type": "string", "description": "Pattern à rechercher (regex)"},
-                    "glob_filter": {"type": "string", "description": "Filtre de fichiers (défaut: *.py)"},
+                    "glob_filter": {
+                        "type": "string",
+                        "description": "Filtre de fichiers (défaut: *.py)",
+                    },
                 },
                 "required": ["pattern"],
             },
@@ -336,7 +399,10 @@ ZEZETTE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "file_path": {"type": "string", "description": "Chemin relatif du fichier"},
-                    "max_lines": {"type": "integer", "description": "Nombre max de lignes (défaut: 500)"},
+                    "max_lines": {
+                        "type": "integer",
+                        "description": "Nombre max de lignes (défaut: 500)",
+                    },
                 },
                 "required": ["file_path"],
             },
@@ -365,7 +431,10 @@ ZEZETTE_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "dir_path": {"type": "string", "description": "Chemin relatif (défaut: racine)"},
+                    "dir_path": {
+                        "type": "string",
+                        "description": "Chemin relatif (défaut: racine)",
+                    },
                 },
                 "required": [],
             },
@@ -380,7 +449,10 @@ ZEZETTE_TOOLS = [
                 "type": "object",
                 "properties": {
                     "pattern": {"type": "string", "description": "Pattern à rechercher (regex)"},
-                    "glob_filter": {"type": "string", "description": "Filtre de fichiers (défaut: *.py)"},
+                    "glob_filter": {
+                        "type": "string",
+                        "description": "Filtre de fichiers (défaut: *.py)",
+                    },
                 },
                 "required": ["pattern"],
             },
@@ -394,7 +466,10 @@ ZEZETTE_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "command": {"type": "string", "description": "Commande à exécuter (ex: make test-backend, pytest tests/)"},
+                    "command": {
+                        "type": "string",
+                        "description": "Commande à exécuter (ex: make test-backend, pytest tests/)",
+                    },
                 },
                 "required": ["command"],
             },

@@ -13,6 +13,33 @@ import { API_BASE, apiFetch, ApiError, request } from './core';
 
 export type AgentId = 'katia' | 'zezette';
 
+// ============================================================
+// Agent Profiles (Agents locaux - Tache 3/4/5)
+// ============================================================
+
+export interface AgentProfile {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  tools: string[];
+  default_model: string;
+}
+
+export interface AgentProfilesResponse {
+  profiles: AgentProfile[];
+}
+
+export interface SpawnAgentStreamChunk {
+  type: 'agent_start' | 'chunk' | 'tool_call' | 'tool_result' | 'done' | 'error';
+  content: string;
+  tool_name?: string;
+  tool_args?: Record<string, unknown>;
+  tool_result?: string;
+  model?: string;
+}
+
 export type MissionPhase = 'spec' | 'analysis' | 'implementation' | 'testing' | 'review' | 'done';
 
 export interface AgentStreamChunk {
@@ -332,4 +359,83 @@ export async function cancelOpenClawSession(
  */
 export async function getOpenClawStatus(): Promise<OpenClawStatusResponse> {
   return request<OpenClawStatusResponse>('/api/agents/openclaw/status');
+}
+
+// ============================================================
+// Agent Profiles & Spawn (Agents locaux)
+// ============================================================
+
+/**
+ * Liste les profils d'agents disponibles.
+ */
+export async function getAgentProfiles(): Promise<AgentProfilesResponse> {
+  return request<AgentProfilesResponse>('/api/agents/profiles');
+}
+
+/**
+ * Spawn un agent avec un profil et une instruction.
+ * Retourne un stream SSE (meme pattern que streamAgentRequest).
+ */
+export async function* streamAgentSpawn(
+  profileId: string,
+  instruction: string,
+  signal?: AbortSignal,
+): AsyncGenerator<SpawnAgentStreamChunk> {
+  const url = `${API_BASE}/api/agents/spawn`;
+
+  const response = await apiFetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile_id: profileId, instruction }),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => null);
+    let message = errorText || undefined;
+    if (errorText) {
+      try {
+        const data = JSON.parse(errorText);
+        message = data.detail || data.message || errorText;
+      } catch {
+        // Garder le texte brut
+      }
+    }
+    throw new ApiError(response.status, response.statusText, message);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (!data || data === '[DONE]') continue;
+          try {
+            const chunk = JSON.parse(data) as SpawnAgentStreamChunk;
+            yield chunk;
+            if (chunk.type === 'done' || chunk.type === 'error') {
+              return;
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }

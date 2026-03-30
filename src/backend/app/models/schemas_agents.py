@@ -161,6 +161,25 @@ class SessionMessageResponse(BaseModel):
     timestamp: str | None = None
 
 
+class SpawnAgentRequest(BaseModel):
+    """Requête pour lancer un agent local avec un profil preconfigure."""
+
+    profile_id: str
+    instruction: str
+    source_path: str | None = None
+
+
+class AgentProfileResponse(BaseModel):
+    """Profil d'agent preconfigure."""
+
+    id: str
+    name: str
+    icon: str
+    description: str
+    color: str
+    tools: list[str]
+
+
 class SendMessageRequest(BaseModel):
     """Requête pour envoyer un message à une session OpenClaw."""
 

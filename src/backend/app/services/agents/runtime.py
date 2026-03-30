@@ -86,7 +86,9 @@ class AgentRuntime:
         """Exécute un outil et retourne le résultat."""
         executor = self.tool_executor
         try:
-            if name == "read_file":
+            if name == "web_search":
+                return await executor.web_search(**args)
+            elif name == "read_file":
                 return await executor.read_file(**args)
             elif name == "write_file":
                 return await executor.write_file(**args)
@@ -131,10 +133,15 @@ class AgentRuntime:
         model_id = self.model_override or self.config.default_model
         llm_service = _get_llm_for_model(model_id)
         if not llm_service:
-            yield AgentEvent(type="error", content="Aucun service LLM configuré. Vérifiez votre clé API dans les paramètres.")
+            yield AgentEvent(
+                type="error",
+                content="Aucun service LLM configuré. Vérifiez votre clé API dans les paramètres.",
+            )
             return
 
-        logger.info(f"Agent {self.config.id} utilise le modèle {model_id} (provider: {llm_service.config.provider.value})")
+        logger.info(
+            f"Agent {self.config.id} utilise le modèle {model_id} (provider: {llm_service.config.provider.value})"
+        )
 
         # Construire le system prompt
         system_prompt = self.config.system_prompt
@@ -172,11 +179,13 @@ class AgentRuntime:
                             yield AgentEvent(type="chunk", content=event.content)
                         elif event.type == "tool_call" and event.tool_call:
                             tc = event.tool_call
-                            tool_calls_raw.append({
-                                "id": tc.id,
-                                "name": tc.name,
-                                "arguments": tc.arguments,
-                            })
+                            tool_calls_raw.append(
+                                {
+                                    "id": tc.id,
+                                    "name": tc.name,
+                                    "arguments": tc.arguments,
+                                }
+                            )
                         elif event.type == "error":
                             yield AgentEvent(type="error", content=event.content or "Erreur LLM")
                             return
@@ -223,10 +232,12 @@ class AgentRuntime:
                 )
 
                 # Ajouter le résultat à l'historique pour la prochaine itération
-                messages.append(LLMMessage(
-                    role="user",
-                    content=f"[Résultat de {tool_name}]\n{result}",
-                ))
+                messages.append(
+                    LLMMessage(
+                        role="user",
+                        content=f"[Résultat de {tool_name}]\n{result}",
+                    )
+                )
 
         # Max iterations atteint
         yield AgentEvent(
