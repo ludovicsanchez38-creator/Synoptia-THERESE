@@ -1,28 +1,23 @@
 /**
  * THÉRÈSE v2 - Atelier Panel
  *
- * Panneau coulissant pour les agents IA embarqués.
- * US-001 : Ajout intégration OpenClaw avec SessionList + AgentChat.
+ * Panneau coulissant pour les agents IA embarqués (swarm local).
  *
  * Vues :
- *   - chat : swarm agents embarqués (existant)
- *   - mission : mission timeline (existant)
- *   - review : code review (existant)
- *   - openclaw : sessions OpenClaw (nouveau US-001)
+ *   - chat : swarm agents embarqués Katia + Zézette
+ *   - mission : mission timeline
+ *   - review : code review
  */
 
-import React, { useRef, useEffect, useCallback } from "react";
-import { X, Headphones, Wrench, MessageSquare, Zap, Eye, Radio } from "lucide-react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
+import { X, Headphones, Wrench, MessageSquare, Zap, Eye } from "lucide-react";
 import { useAtelierStore } from "../../stores/atelierStore";
-import { useOpenClawStore } from "../../stores/openclawStore";
-import { streamAgentRequest } from "../../services/api/agents";
+import { streamAgentRequest, getAgentConfig } from "../../services/api/agents";
+import type { AgentConfigResponse } from "../../services/api/agents";
 import { AgentMessageBubble } from "./AgentMessageBubble";
 import { AgentInput } from "./AgentInput";
 import { MissionStepper } from "./MissionStepper";
 import { CodeReviewPanel } from "./CodeReviewPanel";
-import { SessionList } from "./SessionList";
-import { AgentChat } from "./AgentChat";
-import { NewTaskDialog } from "./NewTaskDialog";
 import { Z_LAYER } from "../../styles/z-layers";
 
 export function AtelierPanel() {
@@ -35,21 +30,31 @@ export function AtelierPanel() {
     isStreaming,
     currentMission,
     sourcePath,
+    setSourcePath,
     processChunk,
     addUserMessage,
   } = useAtelierStore();
 
-  const { checkOpenClawStatus, openclawConnected, isNewTaskOpen } = useOpenClawStore();
+  const [agentConfig, setAgentConfig] = useState<AgentConfigResponse | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Vérifier la connexion OpenClaw au montage
+  // BUG-110 : Charger la config agents (source_path, modèles) au montage
   useEffect(() => {
     if (isOpen) {
-      checkOpenClawStatus();
+      getAgentConfig()
+        .then((config) => {
+          setAgentConfig(config);
+          if (config.source_path && !sourcePath) {
+            setSourcePath(config.source_path);
+          }
+        })
+        .catch(() => {
+          // Silencieux - le backend peut ne pas répondre
+        });
     }
-  }, [isOpen, checkOpenClawStatus]);
+  }, [isOpen, sourcePath, setSourcePath]);
 
   // Auto-scroll
   useEffect(() => {
@@ -90,94 +95,79 @@ export function AtelierPanel() {
 
   if (!isOpen) return null;
 
-  if (!sourcePath) {
-    return (
-      <div
-        className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl`}
-        style={{ width: "480px" }}
-      >
-        <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+  // Raccourci pour afficher les modèles dans le header
+  const katiaModel = agentConfig?.katia_model || "";
+  const zezetteModel = agentConfig?.zezette_model || "";
+  const showModelBadge = katiaModel || zezetteModel;
+
+  return (
+    <div
+      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl`}
+      style={{ width: "480px" }}
+    >
+      {/* Header */}
+      <div className="flex flex-col border-b border-white/5">
+        <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
               <Zap size={14} className="text-purple-400" />
             </div>
             <span className="text-sm font-semibold text-[#E6EDF7]">Atelier</span>
           </div>
+
+          {/* Navigation */}
+          <div className="flex items-center gap-1">
+            <NavButton
+              active={activeView === "chat"}
+              onClick={() => setActiveView("chat")}
+              icon={<MessageSquare size={14} />}
+              label="Chat"
+            />
+            {currentMission && (
+              <>
+                <NavButton
+                  active={activeView === "mission"}
+                  onClick={() => setActiveView("mission")}
+                  icon={<Zap size={14} />}
+                  label="Mission"
+                  pulse={
+                    currentMission.phase !== "done" &&
+                    currentMission.phase !== "review"
+                  }
+                />
+                <NavButton
+                  active={activeView === "review"}
+                  onClick={() => setActiveView("review")}
+                  icon={<Eye size={14} />}
+                  label="Review"
+                />
+              </>
+            )}
+          </div>
+
           <button
             onClick={closePanel}
-            className="rounded-lg p-1.5 text-[#B6C7DA] hover:bg-white/5"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B7280] transition hover:bg-white/5 hover:text-[#E6EDF7]"
           >
             <X size={16} />
           </button>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-          <Wrench size={40} className="text-[#B6C7DA]/30" />
-          <p className="text-sm text-[#B6C7DA]">
-            Configure le chemin du code source dans{" "}
-            <strong>Paramètres &gt; Agents</strong> pour utiliser l&apos;Atelier.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div
-      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl`}
-      style={{ width: activeView === "openclaw" ? "720px" : "480px" }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
-            <Zap size={14} className="text-purple-400" />
+        {/* BUG-111 : Badges modèles Katia & Zézette */}
+        {showModelBadge && (
+          <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-[#6B7280]">
+            {katiaModel && (
+              <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
+                Katia: {katiaModel}
+              </span>
+            )}
+            {zezetteModel && (
+              <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-400">
+                Zézette: {zezetteModel}
+              </span>
+            )}
           </div>
-          <span className="text-sm font-semibold text-[#E6EDF7]">Atelier</span>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center gap-1">
-          <NavButton
-            active={activeView === "chat"}
-            onClick={() => setActiveView("chat")}
-            icon={<MessageSquare size={14} />}
-            label="Chat"
-          />
-          {currentMission && (
-            <>
-              <NavButton
-                active={activeView === "mission"}
-                onClick={() => setActiveView("mission")}
-                icon={<Zap size={14} />}
-                label="Mission"
-                pulse={
-                  currentMission.phase !== "done" &&
-                  currentMission.phase !== "review"
-                }
-              />
-              <NavButton
-                active={activeView === "review"}
-                onClick={() => setActiveView("review")}
-                icon={<Eye size={14} />}
-                label="Review"
-              />
-            </>
-          )}
-          <NavButton
-            active={activeView === "openclaw"}
-            onClick={() => setActiveView("openclaw")}
-            icon={<Radio size={14} />}
-            label="Katia"
-            pulse={openclawConnected}
-          />
-        </div>
-
-        <button
-          onClick={closePanel}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B7280] transition hover:bg-white/5 hover:text-[#E6EDF7]"
-        >
-          <X size={16} />
-        </button>
+        )}
       </div>
 
       {/* Mission stepper (visible en mode mission et review) */}
@@ -226,17 +216,7 @@ export function AtelierPanel() {
         )}
 
         {activeView === "review" && <CodeReviewPanel />}
-
-        {activeView === "openclaw" && (
-          <div className="flex flex-1 overflow-hidden">
-            <SessionList />
-            <AgentChat />
-          </div>
-        )}
       </div>
-
-      {/* NewTaskDialog (modal) */}
-      {isNewTaskOpen && <NewTaskDialog />}
     </div>
   );
 }

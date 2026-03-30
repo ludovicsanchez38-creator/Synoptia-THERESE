@@ -23,7 +23,7 @@ import { useKeyboardShortcuts, useConversationSync, useFileDrop, useOnlineStatus
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useAtelierStore } from '../../stores/atelierStore';
-import { useOpenClawStore } from '../../stores/openclawStore';
+// OpenClaw store : conservé mais plus utilisé dans ChatLayout
 import { usePanelStore } from '../../stores/panelStore';
 import { openPanelWindow } from '../../services/windowManager';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
@@ -50,8 +50,6 @@ export function ChatLayout() {
   const toggleDemo = useDemoStore((s) => s.toggle);
   const toggleAtelier = useAtelierStore((s) => s.togglePanel);
   const openAtelierPanel = useAtelierStore((s) => s.openPanel);
-  const setAtelierView = useAtelierStore((s) => s.setActiveView);
-  const openNewTask = useOpenClawStore((s) => s.openNewTask);
   const ps = usePanelStore();
 
   useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
@@ -90,9 +88,10 @@ export function ChatLayout() {
   const handleToggleCRM = useCallback(() => openPanelWindow('crm'), []);
   const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
 
-  const handleOpenKatiaNewTask = useCallback(() => {
-    openAtelierPanel(); setAtelierView('openclaw'); openNewTask();
-  }, [openAtelierPanel, setAtelierView, openNewTask]);
+  // Cmd+Shift+K : ouvrir l'Atelier en mode chat local
+  const handleOpenAtelierChat = useCallback(() => {
+    openAtelierPanel();
+  }, [openAtelierPanel]);
 
   const handleGuidedPromptSelect = useCallback((prompt: string, skillId?: string) => {
     setGuidedPrompt(prompt); setGuidedSkillId(skillId);
@@ -119,7 +118,7 @@ export function ChatLayout() {
     onToggleCRMPanel: handleToggleCRM,
     onToggleAtelierPanel: toggleAtelier,
     onToggleDemoMode: toggleDemo,
-    onOpenKatiaNewTask: handleOpenKatiaNewTask,
+    onOpenKatiaNewTask: handleOpenAtelierChat,
     onSearch: () => usePanelStore.getState().togglePanel('memory'),
     onOpenFile: () => console.log('Open file'),
   });
