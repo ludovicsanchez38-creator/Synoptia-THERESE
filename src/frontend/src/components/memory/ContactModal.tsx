@@ -52,7 +52,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         email: contact.email || '',
         phone: contact.phone || '',
         notes: contact.notes || '',
-        tags: contact.tags || '',
+        tags: Array.isArray(contact.tags) ? contact.tags.join(', ') : (contact.tags || ''),
       });
     } else if (isOpen) {
       setFormData(initialFormData);
@@ -90,7 +90,9 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         email: formData.email.trim() || null,
         phone: formData.phone.trim() || null,
         notes: formData.notes.trim() || null,
-        tags: formData.tags.trim() || null,
+        tags: formData.tags.trim()
+          ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+          : null,
       };
 
       if (isEditing && contact) {
