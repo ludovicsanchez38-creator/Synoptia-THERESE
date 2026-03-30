@@ -776,11 +776,8 @@ async def _create_event_google(
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
-    access_token = (
-        decrypt_value(account.access_token)
-        if account.access_token and is_value_encrypted(account.access_token)
-        else account.access_token
-    )
+    # BUG-105 : rafraîchir le token OAuth si expiré (comme _get_provider_for_calendar)
+    access_token = await ensure_valid_access_token(account, session)
 
     try:
         calendar_service = CalendarService(access_token)
