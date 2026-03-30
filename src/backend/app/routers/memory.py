@@ -542,14 +542,17 @@ async def delete_contact(
     # Remove from Qdrant
     await _delete_embedding(contact_id)
 
-    # Audit log (US-SEC-05)
-    await log_activity(
-        session,
-        AuditAction.CONTACT_DELETED,
-        resource_type="contact",
-        resource_id=contact_id,
-        details=json.dumps({"name": contact_name, "cascade": cascade, "cascade_deleted": cascade_deleted}),
-    )
+    # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
+    try:
+        await log_activity(
+            session,
+            AuditAction.CONTACT_DELETED,
+            resource_type="contact",
+            resource_id=contact_id,
+            details=json.dumps({"name": contact_name, "cascade": cascade, "cascade_deleted": cascade_deleted}),
+        )
+    except Exception as e:
+        logger.warning("Audit log failed after contact delete: %s", e)
 
     return {"deleted": True, "id": contact_id, "cascade_deleted": cascade_deleted}
 
@@ -804,13 +807,16 @@ async def delete_project(
     # Remove from Qdrant
     await _delete_embedding(project_id)
 
-    # Audit log (US-SEC-05)
-    await log_activity(
-        session,
-        AuditAction.PROJECT_DELETED,
-        resource_type="project",
-        resource_id=project_id,
-        details=json.dumps({"name": project_name, "cascade": cascade, "cascade_deleted": cascade_deleted}),
-    )
+    # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
+    try:
+        await log_activity(
+            session,
+            AuditAction.PROJECT_DELETED,
+            resource_type="project",
+            resource_id=project_id,
+            details=json.dumps({"name": project_name, "cascade": cascade, "cascade_deleted": cascade_deleted}),
+        )
+    except Exception as e:
+        logger.warning("Audit log failed after project delete: %s", e)
 
     return {"deleted": True, "id": project_id, "cascade_deleted": cascade_deleted}

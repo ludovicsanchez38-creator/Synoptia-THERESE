@@ -29,6 +29,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
   // E3-06: Delete state
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'contact'; id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // RGPD state (Phase 6)
   const [rgpdStats, setRgpdStats] = useState<RGPDStatsResponse | null>(null);
@@ -133,12 +134,14 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
     if (!deleteConfirm) return;
 
     setDeleting(true);
+    setDeleteError(null);
     try {
       await api.deleteContactWithCascade(deleteConfirm.id, true);
       setContacts(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Failed to delete:', error);
+      setDeleteError(error instanceof Error ? error.message : 'Erreur lors de la suppression');
     } finally {
       setDeleting(false);
     }
@@ -283,11 +286,14 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                 <ContactsList
                   contacts={displayContacts}
                   onSelect={(c) => onEditContact?.(c)}
-                  onDelete={(c) => setDeleteConfirm({
-                    type: 'contact',
-                    id: c.id,
-                    name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || 'Contact'
-                  })}
+                  onDelete={(c) => {
+                    setDeleteError(null);
+                    setDeleteConfirm({
+                      type: 'contact',
+                      id: c.id,
+                      name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || 'Contact'
+                    });
+                  }}
                   onRGPDAction={(type, contact) => setRgpdAction({ type, contact })}
                 />
               ) : (
@@ -305,8 +311,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/60 flex items-center justify-center p-4 z-10"
-                  onClick={() => setDeleteConfirm(null)}
+                  className={`absolute inset-0 bg-black/60 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
+                  onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
                 >
                   <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
@@ -327,23 +333,29 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                     <p className="text-sm text-text-muted mb-4">
                       Les projets et fichiers associés seront aussi supprimés.
                     </p>
+                    {deleteError && (
+                      <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <span className="text-sm text-red-400">{deleteError}</span>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Button
                         variant="ghost"
                         className="flex-1"
-                        onClick={() => setDeleteConfirm(null)}
+                        onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
                         disabled={deleting}
                       >
                         Annuler
                       </Button>
                       <Button
-                        variant="primary"
-                        className="flex-1 bg-red-500 hover:bg-red-600"
+                        variant="danger"
+                        className="flex-1"
                         onClick={handleDelete}
                         disabled={deleting}
                       >
                         {deleting ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -364,7 +376,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/60 flex items-center justify-center p-4 z-10"
+                  className={`absolute inset-0 bg-black/60 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
                   onClick={() => { setRgpdAction(null); setAnonymizeReason(''); }}
                 >
                   <motion.div
