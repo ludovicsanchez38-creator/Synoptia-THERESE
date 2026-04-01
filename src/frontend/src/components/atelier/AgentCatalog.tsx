@@ -130,18 +130,18 @@ export function AgentCatalog({ onSelectAgent }: Props) {
 
     async function loadProfiles() {
       try {
-        const [profilesResp, configResp] = await Promise.all([
+        const [profilesData, configResp] = await Promise.all([
           getAgentProfiles(),
           getAgentConfig().catch(() => null),
         ]);
         if (!cancelled) {
-          setProfiles(profilesResp.profiles);
+          setProfiles(profilesData);
           if (configResp?.available_models) {
             setAvailableModels(configResp.available_models);
           }
           // Si pas de modele selectionne, utiliser le defaut du profil
-          if (!selectedModel && profilesResp.profiles[0]?.default_model) {
-            const defaultModel = profilesResp.profiles[0].default_model;
+          if (!selectedModel && profilesData[0]?.default_model) {
+            const defaultModel = profilesData[0].default_model;
             setSelectedModel(defaultModel);
             localStorage.setItem(STORAGE_KEY, defaultModel);
           }

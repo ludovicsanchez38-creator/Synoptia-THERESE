@@ -88,6 +88,7 @@ def _get_source_path() -> str | None:
     home = Path.home()
     known_paths = [
         home / "Developer" / "Synoptia-THERESE",
+        home / "Desktop" / "Dev Synoptia" / "Synoptia-THERESE",
         home / "Desktop" / "Dev Synoptia" / "THERESE V2",
         home / "repos" / "Synoptia-THERESE",
         home / "Documents" / "Synoptia-THERESE",
@@ -297,9 +298,13 @@ async def spawn_agent(request: SpawnAgentRequest):
         max_iterations=10,
     )
 
-    # Creer le tool executor (sans git guard - pas de branche agent requise)
+    # Creer le tool executor avec git si le source path existe
+    git_svc = None
+    if source_path:
+        git_svc = GitService(source_path)
     tool_executor = AgentToolExecutor(
         source_path=source_path or ".",
+        git_service=git_svc,
     )
 
     # Filtrer les outils selon le profil (exclure les outils swarm internes)
@@ -623,11 +628,41 @@ async def get_config(
             else:
                 zezette_model = pref.value
 
+    # Filtrer les modeles par providers ayant une cle API configuree
+    import os
+    import shutil
+
+    from app.services.llm import _get_api_key_from_db
+
+    configured_providers: set[str] = set()
+    provider_env_map = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+        "mistral": "MISTRAL_API_KEY",
+        "grok": "GROK_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+    }
+    for provider_name, env_var in provider_env_map.items():
+        if _get_api_key_from_db(provider_name) or os.environ.get(env_var):
+            configured_providers.add(provider_name)
+
+    # Ollama toujours disponible si le binaire existe
+    if shutil.which("ollama"):
+        configured_providers.add("ollama")
+
+    # Si aucun provider configure, montrer tous les modeles (premier lancement)
+    if configured_providers:
+        filtered_models = [m for m in AVAILABLE_MODELS if m["provider"] in configured_providers]
+    else:
+        filtered_models = AVAILABLE_MODELS
+
     return AgentConfigResponse(
         source_path=source_path,
         katia_model=katia_model,
         zezette_model=zezette_model,
-        available_models=[AgentModelInfo(**m) for m in AVAILABLE_MODELS],
+        available_models=[AgentModelInfo(**m) for m in filtered_models],
     )
 
 

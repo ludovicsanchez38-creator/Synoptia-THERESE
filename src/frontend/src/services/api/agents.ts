@@ -27,10 +27,6 @@ export interface AgentProfile {
   default_model: string;
 }
 
-export interface AgentProfilesResponse {
-  profiles: AgentProfile[];
-}
-
 export interface SpawnAgentStreamChunk {
   type: 'agent_start' | 'chunk' | 'tool_call' | 'tool_result' | 'done' | 'error';
   content: string;
@@ -368,8 +364,8 @@ export async function getOpenClawStatus(): Promise<OpenClawStatusResponse> {
 /**
  * Liste les profils d'agents disponibles.
  */
-export async function getAgentProfiles(): Promise<AgentProfilesResponse> {
-  return request<AgentProfilesResponse>('/api/agents/profiles');
+export async function getAgentProfiles(): Promise<AgentProfile[]> {
+  return request<AgentProfile[]>('/api/agents/profiles');
 }
 
 /**

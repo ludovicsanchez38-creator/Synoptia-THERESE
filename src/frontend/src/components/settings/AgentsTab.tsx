@@ -89,6 +89,8 @@ export function AgentsTab() {
     gemini: 'Google',
     grok: 'xAI',
     mistral: 'Mistral',
+    openrouter: 'OpenRouter',
+    deepseek: 'DeepSeek',
     ollama: 'Local (Ollama)',
   };
 

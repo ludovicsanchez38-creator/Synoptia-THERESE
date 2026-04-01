@@ -99,7 +99,11 @@ function DashboardCard({
         <p className="text-sm text-text-muted italic py-2">{emptyMessage}</p>
       ) : (
         <div className="space-y-2">
-          {items.slice(0, 3).map((item, idx) => renderItem(item, idx))}
+          {items.slice(0, 3).map((item, idx) => (
+            <div key={idx} onClick={onViewAll} className="cursor-pointer">
+              {renderItem(item, idx)}
+            </div>
+          ))}
           {items.length > 3 && (
             <button
               onClick={onViewAll}
@@ -126,7 +130,7 @@ function EventItem({ event }: { event: DashboardEvent }) {
       : '';
 
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors cursor-pointer">
+    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors">
       <Clock className="w-4 h-4 text-accent-cyan mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-text truncate">{event.summary}</p>
@@ -154,7 +158,7 @@ function TaskItem({ task }: { task: DashboardTask }) {
   };
 
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors cursor-pointer">
+    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors">
       <CheckSquare className="w-4 h-4 mt-0.5 shrink-0" style={{ color: priorityColors[task.priority] || '#6B7280' }} />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-text truncate">{task.title}</p>
@@ -176,7 +180,7 @@ function TaskItem({ task }: { task: DashboardTask }) {
 
 function InvoiceItem({ invoice }: { invoice: DashboardInvoice }) {
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors cursor-pointer">
+    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors">
       <FileText className="w-4 h-4 text-accent-magenta mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-text truncate">{invoice.invoice_number}</p>
@@ -201,7 +205,7 @@ function ProspectItem({ prospect }: { prospect: DashboardProspect }) {
     : null;
 
   return (
-    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors cursor-pointer">
+    <div className="flex items-start gap-3 p-2.5 rounded-xl bg-surface-elevated/50 hover:bg-surface-elevated transition-colors">
       <Users className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm text-text truncate">{prospect.name}</p>

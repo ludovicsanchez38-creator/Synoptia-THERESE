@@ -121,6 +121,7 @@ def _resolve_agents_dir() -> Path:
         home = Path.home()
         for candidate_root in [
             home / "Developer" / "Synoptia-THERESE",
+            home / "Desktop" / "Dev Synoptia" / "Synoptia-THERESE",
             home / "Desktop" / "Dev Synoptia" / "THERESE V2",
             home / "repos" / "Synoptia-THERESE",
         ]:
