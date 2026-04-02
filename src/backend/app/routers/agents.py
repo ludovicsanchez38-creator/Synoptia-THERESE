@@ -87,11 +87,17 @@ def _get_source_path() -> str | None:
     # 4. Emplacements connus (build empaquété, les chemins __file__ ne marchent plus)
     home = Path.home()
     known_paths = [
+        # macOS / Linux
         home / "Developer" / "Synoptia-THERESE",
         home / "Desktop" / "Dev Synoptia" / "Synoptia-THERESE",
         home / "Desktop" / "Dev Synoptia" / "THERESE V2",
         home / "repos" / "Synoptia-THERESE",
         home / "Documents" / "Synoptia-THERESE",
+        # Windows (Path.home() = C:\Users\<username>)
+        home / "Desktop" / "Synoptia-THERESE",
+        home / "source" / "repos" / "Synoptia-THERESE",  # Visual Studio default
+        home / "Projects" / "Synoptia-THERESE",
+        home / "GitHub" / "Synoptia-THERESE",  # GitHub Desktop default
     ]
     for candidate in known_paths:
         if (
@@ -303,7 +309,7 @@ async def spawn_agent(request: SpawnAgentRequest):
     if source_path:
         git_svc = GitService(source_path)
     tool_executor = AgentToolExecutor(
-        source_path=source_path or ".",
+        source_path=source_path,
         git_service=git_svc,
     )
 

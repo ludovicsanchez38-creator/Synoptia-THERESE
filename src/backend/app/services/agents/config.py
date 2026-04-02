@@ -120,10 +120,17 @@ def _resolve_agents_dir() -> Path:
         # Emplacements connus
         home = Path.home()
         for candidate_root in [
+            # macOS / Linux
             home / "Developer" / "Synoptia-THERESE",
             home / "Desktop" / "Dev Synoptia" / "Synoptia-THERESE",
             home / "Desktop" / "Dev Synoptia" / "THERESE V2",
             home / "repos" / "Synoptia-THERESE",
+            home / "Documents" / "Synoptia-THERESE",
+            # Windows (Path.home() = C:\Users\<username>)
+            home / "Desktop" / "Synoptia-THERESE",
+            home / "source" / "repos" / "Synoptia-THERESE",  # Visual Studio default
+            home / "Projects" / "Synoptia-THERESE",
+            home / "GitHub" / "Synoptia-THERESE",  # GitHub Desktop default
         ]:
             if (candidate_root / "src" / "backend" / "app" / "agents" / "katia" / "agent.json").exists():
                 source_path = str(candidate_root)

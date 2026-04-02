@@ -50,13 +50,20 @@ class BranchGuard:
 class AgentToolExecutor:
     """Exécute les outils pour un agent donné."""
 
-    def __init__(self, source_path: str, git_service=None) -> None:
-        self.source_path = Path(source_path)
+    _NO_SOURCE_MSG = (
+        "Dépôt non configuré. Le code source de THÉRÈSE n'est pas disponible localement. "
+        "L'utilisateur peut configurer le chemin dans Paramètres > Agents > Chemin du code source."
+    )
+
+    def __init__(self, source_path: str | None, git_service=None) -> None:
+        self.source_path = Path(source_path) if source_path else None
         self._git = git_service
         self._guard = BranchGuard(git_service) if git_service else None
 
     def _validate_path(self, file_path: str) -> Path:
         """Valide et résout un chemin de fichier dans le source tree."""
+        if not self.source_path:
+            raise FileNotFoundError(self._NO_SOURCE_MSG)
         resolved = (self.source_path / file_path).resolve()
         if not str(resolved).startswith(str(self.source_path.resolve())):
             raise PermissionError(f"Chemin hors du source tree : {file_path}")
@@ -66,6 +73,8 @@ class AgentToolExecutor:
 
     async def read_file(self, file_path: str, max_lines: int = 500) -> str:
         """Lit un fichier du source tree."""
+        if not self.source_path:
+            return self._NO_SOURCE_MSG
         resolved = self._validate_path(file_path)
         if not resolved.exists():
             return f"Erreur : fichier introuvable : {file_path}"
@@ -86,6 +95,8 @@ class AgentToolExecutor:
 
     async def list_directory(self, dir_path: str = ".", max_entries: int = 100) -> str:
         """Liste le contenu d'un répertoire."""
+        if not self.source_path:
+            return self._NO_SOURCE_MSG
         resolved = self._validate_path(dir_path)
         if not resolved.exists():
             return f"Erreur : répertoire introuvable : {dir_path}"
@@ -110,6 +121,8 @@ class AgentToolExecutor:
         self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
     ) -> str:
         """Recherche un pattern dans le code source via grep."""
+        if not self.source_path:
+            return self._NO_SOURCE_MSG
         try:
             proc = await asyncio.create_subprocess_exec(
                 "grep",
@@ -142,6 +155,8 @@ class AgentToolExecutor:
 
     async def write_file(self, file_path: str, content: str) -> str:
         """Écrit ou modifie un fichier (branche agent uniquement)."""
+        if not self.source_path:
+            return self._NO_SOURCE_MSG
         try:
             if self._guard:
                 await self._guard.check()
@@ -157,6 +172,8 @@ class AgentToolExecutor:
 
     async def run_command(self, command: str) -> str:
         """Exécute une commande autorisée (tests, lint)."""
+        if not self.source_path:
+            return self._NO_SOURCE_MSG
         try:
             if self._guard:
                 await self._guard.check()

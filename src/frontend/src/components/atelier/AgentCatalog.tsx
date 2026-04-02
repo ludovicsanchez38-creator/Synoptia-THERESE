@@ -7,7 +7,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { Bot, Loader2, AlertCircle, Brain } from "lucide-react";
+import {
+  Bot, Loader2, AlertCircle, Brain,
+  Search, PenTool, BarChart3, CalendarDays, Code2, Palette,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAgentProfiles, getAgentConfig } from "../../services/api/agents";
 import type { AgentProfile, AgentModelInfo } from "../../services/api/agents";
@@ -110,7 +114,17 @@ const FALLBACK_PROFILES: AgentProfile[] = [
   },
 ];
 
+const PROFILE_ICONS: Record<string, LucideIcon> = {
+  researcher: Search,
+  writer: PenTool,
+  analyst: BarChart3,
+  planner: CalendarDays,
+  coder: Code2,
+  creative: Palette,
+};
+
 const STORAGE_KEY = "therese-agent-model";
+const CUSTOM_MODEL_STORAGE_KEY = "therese-agent-custom-model";
 
 interface Props {
   onSelectAgent: (profileId: string, model?: string) => void;
@@ -121,6 +135,9 @@ export function AgentCatalog({ onSelectAgent }: Props) {
   const [availableModels, setAvailableModels] = useState<AgentModelInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>(() =>
     localStorage.getItem(STORAGE_KEY) || "",
+  );
+  const [customModel, setCustomModel] = useState<string>(() =>
+    localStorage.getItem(CUSTOM_MODEL_STORAGE_KEY) || "",
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -196,31 +213,73 @@ export function AgentCatalog({ onSelectAgent }: Props) {
 
       {/* Selecteur de modele LLM */}
       {availableModels.length > 0 && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-white/5 bg-[#131B35] px-3 py-2">
-          <Brain size={14} className="shrink-0 text-cyan-400" />
-          <select
-            value={selectedModel}
-            onChange={(e) => {
-              setSelectedModel(e.target.value);
-              localStorage.setItem(STORAGE_KEY, e.target.value);
-            }}
-            className="flex-1 bg-transparent text-xs text-[#E6EDF7] outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
-          >
-            {Object.entries(
-              availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
-                (acc[m.provider] ??= []).push(m);
-                return acc;
-              }, {}),
-            ).map(([provider, models]) => (
-              <optgroup key={provider} label={provider}>
-                {models.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-[#131B35] px-3 py-2">
+            <Brain size={14} className="shrink-0 text-cyan-400" />
+            <select
+              value={selectedModel}
+              onChange={(e) => {
+                setSelectedModel(e.target.value);
+                localStorage.setItem(STORAGE_KEY, e.target.value);
+                // Vider le champ custom quand on choisit dans la liste
+                setCustomModel("");
+                localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
+              }}
+              className="flex-1 bg-transparent text-xs text-[#E6EDF7] outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
+            >
+              {Object.entries(
+                availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
+                  (acc[m.provider] ??= []).push(m);
+                  return acc;
+                }, {}),
+              ).map(([provider, models]) => (
+                <optgroup key={provider} label={provider}>
+                  {models.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
+          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-[#131B35] px-3 py-2">
+            <span className="shrink-0 text-[10px] text-cyan-400/70">OR</span>
+            <input
+              type="text"
+              value={customModel}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCustomModel(val);
+                if (val.trim()) {
+                  localStorage.setItem(CUSTOM_MODEL_STORAGE_KEY, val.trim());
+                } else {
+                  localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
+                }
+              }}
+              placeholder="ex: meta-llama/llama-4-maverick:free"
+              className="flex-1 bg-transparent text-xs text-[#E6EDF7] placeholder-[#6B7280]/50 outline-none"
+            />
+            {customModel.trim() && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomModel("");
+                  localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
+                }}
+                className="shrink-0 text-[10px] text-[#6B7280] hover:text-red-400 transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {customModel.trim() && (
+            <p className="text-[10px] text-cyan-400/60 px-1">
+              Modele personnalise actif - prioritaire sur la liste
+            </p>
+          )}
         </div>
       )}
 
@@ -235,14 +294,19 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.06 }}
-              onClick={() => onSelectAgent(profile.id, selectedModel || undefined)}
+              onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
               className={`group flex flex-col items-center gap-2 rounded-xl border ${colors.border} bg-[#131B35] p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-[#1a2340]`}
             >
               {/* Icone */}
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg ${colors.bg} text-lg transition-transform group-hover:scale-110`}
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${colors.bg} transition-transform group-hover:scale-110`}
               >
-                {profile.icon}
+                {(() => {
+                  const IconComponent = PROFILE_ICONS[profile.id];
+                  return IconComponent
+                    ? <IconComponent className={`w-5 h-5 ${colors.text}`} />
+                    : <span className="text-lg">{profile.icon}</span>;
+                })()}
               </div>
 
               {/* Nom */}

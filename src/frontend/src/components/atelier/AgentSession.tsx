@@ -362,6 +362,13 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
+    // Failsafe : forcer le reset de l'UI même si le stream ne se termine pas proprement
+    setIsStreaming(false);
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.isStreaming ? { ...m, isStreaming: false } : m,
+      ),
+    );
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

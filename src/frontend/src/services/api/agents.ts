@@ -182,6 +182,7 @@ export async function* streamAgentRequest(
       }
     }
   } finally {
+    try { reader.cancel(); } catch { /* already cancelled */ }
     reader.releaseLock();
   }
 }
@@ -436,6 +437,7 @@ export async function* streamAgentSpawn(
       }
     }
   } finally {
+    try { reader.cancel(); } catch { /* already cancelled */ }
     reader.releaseLock();
   }
 }

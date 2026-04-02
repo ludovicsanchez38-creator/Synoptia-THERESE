@@ -203,7 +203,7 @@ export function AgentsTab() {
           type="text"
           value={sourcePath}
           onChange={(e) => setSourcePathInput(e.target.value)}
-          placeholder="/chemin/vers/Synoptia-THERESE"
+          placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE ou /chemin/vers/Synoptia-THERESE"
           className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
         />
       </div>
