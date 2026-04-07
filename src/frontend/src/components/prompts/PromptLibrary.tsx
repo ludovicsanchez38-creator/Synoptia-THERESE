@@ -15,10 +15,8 @@ import {
   type PromptCategory,
   type PromptItem,
 } from '../../services/api';
-import { cn } from '../../lib/utils';
-
 // SVG inline pour les ic\u00f4nes de cat\u00e9gories (jamais d'emoji)
-const CATEGORY_ICONS: Record<string, JSX.Element> = {
+const CATEGORY_ICONS: Record<string, React.JSX.Element> = {
   email: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
       <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -263,7 +261,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   const [searchResults, setSearchResults] = useState<PromptCategory[] | null>(null);
   const [totalResults, setTotalResults] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Chargement initial
   useEffect(() => {

@@ -235,7 +235,6 @@ function TaskProgress({
   const isRunning = task.status === 'running' || task.status === 'pending';
   const isDone = task.status === 'completed';
   const isError = task.status === 'error';
-  const isCancelled = task.status === 'cancelled';
 
   const statusLabel = {
     pending: 'En attente...',
@@ -318,7 +317,7 @@ function TaskProgress({
   );
 }
 
-function StepItem({ step, index }: { step: TaskStep; index: number }) {
+function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
   const [expanded, setExpanded] = useState(
     step.status === 'running' || step.status === 'completed',
   );

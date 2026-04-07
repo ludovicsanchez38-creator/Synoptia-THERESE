@@ -46,7 +46,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { uxMode, isContributeur, setUXMode } = useUXMode();
+  const { isContributeur, setUXMode } = useUXMode();
 
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');

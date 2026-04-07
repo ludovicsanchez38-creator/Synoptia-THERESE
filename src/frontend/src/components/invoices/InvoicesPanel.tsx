@@ -16,9 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
-  Clock,
-  ThumbsDown,
-  ArrowRightLeft,
 } from 'lucide-react';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -27,7 +24,7 @@ import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badgeBg?: string }> = {
   draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted' },
   sent: { label: 'Envoyée', icon: Mail, color: 'text-blue-500' },
   accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-emerald-500' },

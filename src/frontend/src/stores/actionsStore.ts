@@ -51,6 +51,9 @@ interface ActionsState {
 
   /** Definit la tache active */
   setActiveTask: (task: TaskState | null) => void;
+
+  /** Polling interne */
+  _startPolling: (taskId: string) => void;
 }
 
 export const useActionsStore = create<ActionsState>((set, get) => ({

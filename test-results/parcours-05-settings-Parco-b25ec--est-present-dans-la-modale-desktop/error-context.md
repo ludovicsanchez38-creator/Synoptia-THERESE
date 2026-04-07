@@ -1,0 +1,291 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - link "Aller au contenu principal" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - button "Fermer Conversations" [ref=e6] [cursor=pointer]
+    - button "Ouvrir Mémoire" [ref=e9] [cursor=pointer]
+    - banner "Barre d'outils Therese" [ref=e12]:
+      - banner [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - button "Fermer" [ref=e16]
+            - button "Réduire" [ref=e17]
+            - button "Agrandir" [ref=e18]
+          - button "THÉRÈSE" [ref=e20]:
+            - heading "THÉRÈSE" [level=1] [ref=e22]
+        - generic [ref=e23]:
+          - button "Mail (⌘E)" [ref=e24]:
+            - img [ref=e25]
+          - button "Calendrier (⌘⇧C)" [ref=e28]:
+            - img [ref=e29]
+          - button "Tâches (⌘T)" [ref=e31]:
+            - img [ref=e32]
+          - button "Board (⌘D)" [ref=e35]:
+            - img [ref=e36]
+          - button "Projet (⌘M)" [ref=e43]:
+            - img [ref=e44]
+          - button "CRM (⌘P)" [ref=e47]:
+            - img [ref=e48]
+          - button "Facture (⌘I)" [ref=e53]:
+            - img [ref=e54]
+        - generic [ref=e57]:
+          - button "Atelier (⌘⇧A)" [ref=e58]:
+            - img [ref=e59]
+          - button "Notifications" [ref=e62]:
+            - img [ref=e63]
+          - button "Paramètres" [ref=e66]:
+            - img [ref=e67]
+    - main "Conversation" [ref=e70]:
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - img "THÉRÈSE" [ref=e78]
+          - heading "Comment puis-je t'aider ?" [level=2] [ref=e79]
+          - paragraph [ref=e80]: Choisis une action ou écris directement ton message
+        - generic [ref=e81]:
+          - button "Produire Créer du contenu nouveau" [ref=e82]:
+            - img [ref=e85]
+            - heading "Produire" [level=3] [ref=e87]
+            - paragraph [ref=e88]: Créer du contenu nouveau
+          - button "Comprendre Analyser et apprendre" [ref=e89]:
+            - img [ref=e92]
+            - heading "Comprendre" [level=3] [ref=e102]
+            - paragraph [ref=e103]: Analyser et apprendre
+          - button "Organiser Planifier et automatiser" [ref=e104]:
+            - img [ref=e107]
+            - heading "Organiser" [level=3] [ref=e111]
+            - paragraph [ref=e112]: Planifier et automatiser
+      - generic [ref=e114]:
+        - generic [ref=e116]:
+          - img [ref=e117]
+          - combobox [ref=e120] [cursor=pointer]:
+            - option "mistral-large-latest"
+            - option "codestral-latest"
+            - option "devstral-small-latest"
+            - option "mistral-small-latest" [selected]
+        - generic [ref=e121]:
+          - button "Joindre un fichier (⌘O)" [ref=e122]:
+            - img [ref=e123]
+          - generic [ref=e125]:
+            - generic [ref=e126]: Message à THÉRÈSE
+            - textbox "Message à THÉRÈSE" [active] [ref=e127]:
+              - /placeholder: Comment puis-je t'aider ?
+          - button "Message vocal" [ref=e128]:
+            - img [ref=e129]
+          - button "Envoyer (↵)" [disabled] [ref=e132]:
+            - img [ref=e133]
+        - generic [ref=e136]:
+          - paragraph [ref=e137]: ⇧+↵ nouvelle ligne
+          - paragraph [ref=e138]: ⌘+K commandes
+    - complementary "Conversations":
+      - generic [ref=e140]:
+        - generic [ref=e141]:
+          - heading "Conversations" [level=2] [ref=e142]
+          - generic [ref=e143]:
+            - button "Nouvelle conversation" [ref=e144]:
+              - img [ref=e145]
+            - button [ref=e146]:
+              - img [ref=e147]
+        - generic [ref=e150]:
+          - img [ref=e151]
+          - textbox "Rechercher..." [ref=e154]
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - img [ref=e159]
+              - text: Aujourd'hui
+            - button "ca marche ou quoi? Pas de messages 2 messages • 2h" [ref=e163] [cursor=pointer]:
+              - img [ref=e165]
+              - generic [ref=e167]:
+                - paragraph [ref=e168]: ca marche ou quoi?
+                - paragraph [ref=e169]: Pas de messages
+                - generic [ref=e170]:
+                  - generic [ref=e171]: 2 messages
+                  - generic [ref=e172]: •
+                  - generic [ref=e173]: 2h
+              - button [ref=e174]:
+                - img [ref=e175]
+            - button "test Pas de messages 2 messages • 2h" [ref=e181] [cursor=pointer]:
+              - img [ref=e183]
+              - generic [ref=e185]:
+                - paragraph [ref=e186]: test
+                - paragraph [ref=e187]: Pas de messages
+                - generic [ref=e188]:
+                  - generic [ref=e189]: 2 messages
+                  - generic [ref=e190]: •
+                  - generic [ref=e191]: 2h
+              - button [ref=e192]:
+                - img [ref=e193]
+          - generic [ref=e197]:
+            - generic [ref=e198]:
+              - img [ref=e199]
+              - text: Hier
+            - button "<script>alert(1)</script> Pas de messages 0 messages • 17h" [ref=e203] [cursor=pointer]:
+              - img [ref=e205]
+              - generic [ref=e207]:
+                - paragraph [ref=e208]: <script>alert(1)</script>
+                - paragraph [ref=e209]: Pas de messages
+                - generic [ref=e210]:
+                  - generic [ref=e211]: 0 messages
+                  - generic [ref=e212]: •
+                  - generic [ref=e213]: 17h
+              - button [ref=e214]:
+                - img [ref=e215]
+            - button "Test smoke P0 Pas de messages 2 messages • 17h" [ref=e221] [cursor=pointer]:
+              - img [ref=e223]
+              - generic [ref=e225]:
+                - paragraph [ref=e226]: Test smoke P0
+                - paragraph [ref=e227]: Pas de messages
+                - generic [ref=e228]:
+                  - generic [ref=e229]: 2 messages
+                  - generic [ref=e230]: •
+                  - generic [ref=e231]: 17h
+              - button [ref=e232]:
+                - img [ref=e233]
+            - button "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA Pas de messages 4 messages • 1j" [ref=e239] [cursor=pointer]:
+              - img [ref=e241]
+              - generic [ref=e243]:
+                - paragraph [ref=e244]: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                - paragraph [ref=e245]: Pas de messages
+                - generic [ref=e246]:
+                  - generic [ref=e247]: 4 messages
+                  - generic [ref=e248]: •
+                  - generic [ref=e249]: 1j
+              - button [ref=e250]:
+                - img [ref=e251]
+            - button "<script>document.title='HACKED'</script> Pas de messages 2 messages • 1j" [ref=e257] [cursor=pointer]:
+              - img [ref=e259]
+              - generic [ref=e261]:
+                - paragraph [ref=e262]: <script>document.title='HACKED'</script>
+                - paragraph [ref=e263]: Pas de messages
+                - generic [ref=e264]:
+                  - generic [ref=e265]: 2 messages
+                  - generic [ref=e266]: •
+                  - generic [ref=e267]: 1j
+              - button [ref=e268]:
+                - img [ref=e269]
+          - generic [ref=e273]:
+            - generic [ref=e274]:
+              - img [ref=e275]
+              - text: Cette semaine
+            - button "Maintenant redis-le en majuscules Pas de messages 2 messages • 1j" [ref=e279] [cursor=pointer]:
+              - img [ref=e281]
+              - generic [ref=e283]:
+                - paragraph [ref=e284]: Maintenant redis-le en majuscules
+                - paragraph [ref=e285]: Pas de messages
+                - generic [ref=e286]:
+                  - generic [ref=e287]: 2 messages
+                  - generic [ref=e288]: •
+                  - generic [ref=e289]: 1j
+              - button [ref=e290]:
+                - img [ref=e291]
+            - button "Salut, dis OK Pas de messages 2 messages • 1j" [ref=e297] [cursor=pointer]:
+              - img [ref=e299]
+              - generic [ref=e301]:
+                - paragraph [ref=e302]: Salut, dis OK
+                - paragraph [ref=e303]: Pas de messages
+                - generic [ref=e304]:
+                  - generic [ref=e305]: 2 messages
+                  - generic [ref=e306]: •
+                  - generic [ref=e307]: 1j
+              - button [ref=e308]:
+                - img [ref=e309]
+            - button "Dis bonjour Pas de messages 2 messages • 1j" [ref=e315] [cursor=pointer]:
+              - img [ref=e317]
+              - generic [ref=e319]:
+                - paragraph [ref=e320]: Dis bonjour
+                - paragraph [ref=e321]: Pas de messages
+                - generic [ref=e322]:
+                  - generic [ref=e323]: 2 messages
+                  - generic [ref=e324]: •
+                  - generic [ref=e325]: 1j
+              - button [ref=e326]:
+                - img [ref=e327]
+            - button "Dis juste \"1 2 3\" Pas de messages 2 messages • 1j" [ref=e333] [cursor=pointer]:
+              - img [ref=e335]
+              - generic [ref=e337]:
+                - paragraph [ref=e338]: Dis juste "1 2 3"
+                - paragraph [ref=e339]: Pas de messages
+                - generic [ref=e340]:
+                  - generic [ref=e341]: 2 messages
+                  - generic [ref=e342]: •
+                  - generic [ref=e343]: 1j
+              - button [ref=e344]:
+                - img [ref=e345]
+            - button "dis juste ok Pas de messages 2 messages • 1j" [ref=e351] [cursor=pointer]:
+              - img [ref=e353]
+              - generic [ref=e355]:
+                - paragraph [ref=e356]: dis juste ok
+                - paragraph [ref=e357]: Pas de messages
+                - generic [ref=e358]:
+                  - generic [ref=e359]: 2 messages
+                  - generic [ref=e360]: •
+                  - generic [ref=e361]: 1j
+              - button [ref=e362]:
+                - img [ref=e363]
+            - button "test rapide Pas de messages 2 messages • 1j" [ref=e369] [cursor=pointer]:
+              - img [ref=e371]
+              - generic [ref=e373]:
+                - paragraph [ref=e374]: test rapide
+                - paragraph [ref=e375]: Pas de messages
+                - generic [ref=e376]:
+                  - generic [ref=e377]: 2 messages
+                  - generic [ref=e378]: •
+                  - generic [ref=e379]: 1j
+              - button [ref=e380]:
+                - img [ref=e381]
+            - button "Bonjour, dis-moi juste \"test ok\" en une phrase Pas de messages 2 messages • 1j" [ref=e387] [cursor=pointer]:
+              - img [ref=e389]
+              - generic [ref=e391]:
+                - paragraph [ref=e392]: Bonjour, dis-moi juste "test ok" en une phrase
+                - paragraph [ref=e393]: Pas de messages
+                - generic [ref=e394]:
+                  - generic [ref=e395]: 2 messages
+                  - generic [ref=e396]: •
+                  - generic [ref=e397]: 1j
+              - button [ref=e398]:
+                - img [ref=e399]
+            - button "Rédige un email de relance pour le client Durand q Pas de messages 2 messages • 1j" [ref=e405] [cursor=pointer]:
+              - img [ref=e407]
+              - generic [ref=e409]:
+                - paragraph [ref=e410]: Rédige un email de relance pour le client Durand q
+                - paragraph [ref=e411]: Pas de messages
+                - generic [ref=e412]:
+                  - generic [ref=e413]: 2 messages
+                  - generic [ref=e414]: •
+                  - generic [ref=e415]: 1j
+              - button [ref=e416]:
+                - img [ref=e417]
+            - button "Rédige un email de relance pour le client Durand q Pas de messages 4 messages • 1j" [ref=e423] [cursor=pointer]:
+              - img [ref=e425]
+              - generic [ref=e427]:
+                - paragraph [ref=e428]: Rédige un email de relance pour le client Durand q
+                - paragraph [ref=e429]: Pas de messages
+                - generic [ref=e430]:
+                  - generic [ref=e431]: 4 messages
+                  - generic [ref=e432]: •
+                  - generic [ref=e433]: 1j
+              - button [ref=e434]:
+                - img [ref=e435]
+            - button "Test smoke v0.9.0 Pas de messages 4 messages • 1j" [ref=e441] [cursor=pointer]:
+              - img [ref=e443]
+              - generic [ref=e445]:
+                - paragraph [ref=e446]: Test smoke v0.9.0
+                - paragraph [ref=e447]: Pas de messages
+                - generic [ref=e448]:
+                  - generic [ref=e449]: 4 messages
+                  - generic [ref=e450]: •
+                  - generic [ref=e451]: 1j
+              - button [ref=e452]:
+                - img [ref=e453]
+        - button "Nouvelle conversation" [ref=e458]:
+          - img [ref=e459]
+          - text: Nouvelle conversation
+    - generic [ref=e461]:
+      - img [ref=e462]
+      - generic [ref=e466]: Connecté
+      - generic [ref=e467]: 15ms
+  - status "Notifications"
+```

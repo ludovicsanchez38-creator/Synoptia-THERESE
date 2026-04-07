@@ -39,6 +39,7 @@ export interface Command {
   shortcut?: string;
   action: () => void;
   category: 'chat' | 'memory' | 'panels' | 'settings';
+  contributeurOnly?: boolean;
 }
 
 interface CommandPaletteProps {
@@ -59,6 +60,7 @@ interface CommandPaletteProps {
   onSearch?: () => void;
   onOpenFile?: () => void;
   onOpenGuided?: () => void;
+  onOpenPromptLibrary?: () => void;
   onExportData?: () => void;
 }
 
@@ -80,6 +82,7 @@ export function CommandPalette({
   onSearch,
   onOpenFile,
   onOpenGuided,
+  onOpenPromptLibrary,
   onExportData,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');

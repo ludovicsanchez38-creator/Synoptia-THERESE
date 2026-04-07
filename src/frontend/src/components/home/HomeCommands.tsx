@@ -77,8 +77,6 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
     return () => window.removeEventListener('therese:open-prompt-library', handler);
   }, []);
 
-  // Écouter l'événement d'ouverture de la bibliothèque de prompts (depuis CommandPalette)
-  useEffect(() => {
   const homeCommands = useMemo(() => {
     return commands.filter((c) => c.show_on_home);
   }, [commands]);
