@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import { Send, Square, Paperclip, Mic, MicOff, Loader2, X, Cpu, Search } from 'lucide-react';
+import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -291,6 +292,28 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline) return;
+
+    // Detection {{action: agent_id}} -> rediriger vers le panneau Actions
+    const actionMatch = trimmed.match(/\{\{action\s*:\s*([a-zA-Z0-9_-]+)\s*\}\}/i);
+    if (actionMatch) {
+      const agentId = actionMatch[1];
+      const actionsStore = useActionsStore.getState();
+      // Charger les agents si pas encore fait
+      if (actionsStore.agents.length === 0) {
+        await actionsStore.loadAgents();
+      }
+      const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
+      if (agent) {
+        setInput('');
+        actionsStore.openPanel();
+        if (agent.params.length > 0) {
+          actionsStore.selectAgent(agent);
+        } else {
+          actionsStore.launchAction(agentId);
+        }
+        return;
+      }
+    }
 
     // Si streaming en cours, mettre en file d'attente (1 seul)
     if (isStreaming) {

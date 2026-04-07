@@ -151,3 +151,33 @@ def resolve_skill_from_message(
         return detected_skill_id, file_format, message
 
     return None, None, message
+
+
+def resolve_action_agent_from_message(
+    message: str,
+) -> tuple[str | None, str]:
+    """
+    Detecte si le message contient {{action: xxx}} pointant vers un action agent.
+
+    Returns:
+        Tuple (agent_id ou None, message nettoye)
+    """
+    match = ACTION_PATTERN.search(message)
+    if not match:
+        return None, message
+
+    candidate_id = match.group(1).strip()
+
+    # Verifier si c'est un action agent (pas un skill)
+    try:
+        from app.services.action_agents import get_agent_definitions
+
+        defs = get_agent_definitions()
+        if candidate_id in defs:
+            clean_message = ACTION_PATTERN.sub("", message).strip()
+            logger.info(f"Action agent detecte : {{{{action: {candidate_id}}}}}")
+            return candidate_id, clean_message
+    except Exception as e:
+        logger.debug("Impossible de verifier les action agents : %s", e)
+
+    return None, message

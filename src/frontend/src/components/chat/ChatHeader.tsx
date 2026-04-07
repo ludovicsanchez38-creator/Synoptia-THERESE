@@ -1,8 +1,9 @@
-import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap } from 'lucide-react';
+import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap, Play } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
+import { useActionsStore } from '../../stores/actionsStore';
 import { useUXMode } from '../../hooks/useUXMode';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -32,6 +33,7 @@ export function ChatHeader({
   const { createConversation, currentConversation } = useChatStore();
   const demoEnabled = useDemoStore((s) => s.enabled);
   const { isContributeur } = useUXMode();
+  const toggleActionsPanel = useActionsStore((s) => s.togglePanel);
   const conversation = currentConversation();
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
@@ -194,6 +196,15 @@ export function ChatHeader({
 
       {/* Droite: Atelier + Paramètres + Window controls */}
       <div className="flex-1 flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleActionsPanel}
+          className="w-8 h-8 hover:bg-cyan-500/15"
+          title="Actions"
+        >
+          <Play className="w-4 h-4 text-cyan-400" />
+        </Button>
         {isContributeur && (
           <Button
             variant="ghost"

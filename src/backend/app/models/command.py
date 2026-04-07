@@ -25,6 +25,7 @@ class CommandAction(str, Enum):
     IMAGE = "image"                        # Génère une image
     NAVIGATE = "navigate"                  # Ouvre un panel (email, calendrier...)
     RFC = "rfc"                            # Lance le workflow Réfléchir-Faire-Capturer
+    ACTION_AGENT = "action_agent"          # Lance un agent actionnable multi-etapes
 
 
 class CommandDefinition(BaseModel):

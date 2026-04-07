@@ -53,6 +53,7 @@ from app.routers import (
     files_router,
     follow_ups_router,  # Email Backlog - Follow-ups
     prompts_router,  # Bibliothèque de prompts
+    actions_router,  # Action Agents multi-etapes
     images_router,
     invoices_router,  # Phase 4 - ACTIVATED
     mcp_router,
@@ -654,6 +655,7 @@ app.include_router(notifications_router, prefix="/api/notifications", tags=["Not
 #  US-005 - Dashboard Ma journée (v0.9.0)
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(prompts_router, prefix="/api/prompts", tags=["Prompts"])
+app.include_router(actions_router, prefix="/api/actions", tags=["Actions"])
 
 
 # Health endpoints

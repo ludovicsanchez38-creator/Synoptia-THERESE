@@ -333,6 +333,30 @@ class CommandRegistry:
             )
             self._commands[cmd.id] = cmd
 
+    def _register_action_agents(self) -> None:
+        """Enregistre les agents actionnables comme commandes."""
+        try:
+            from app.services.action_agents import get_agent_definitions
+
+            defs = get_agent_definitions()
+            for agent in defs.values():
+                cmd = CommandDefinition(
+                    id=f"action-{agent.id}",
+                    name=agent.name,
+                    description=agent.description,
+                    icon=agent.icon,
+                    category=agent.category,
+                    source=CommandSource.BUILTIN,
+                    action=CommandAction.ACTION_AGENT,
+                    show_on_home=True,
+                    show_in_slash=True,
+                    sort_order=300,
+                )
+                self._commands[cmd.id] = cmd
+            logger.info(f"Enregistre {len(defs)} action agents")
+        except Exception as e:
+            logger.warning(f"Impossible de charger les action agents : {e}")
+
     async def _load_user_commands(self) -> None:
         """Charge les commandes utilisateur depuis ~/.therese/commands/user/."""
         service = UserCommandsService.get_instance()

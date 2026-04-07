@@ -23,8 +23,10 @@ import {
   Search as SearchIcon,
   Sparkles,
   BookOpen,
+  Play,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useActionsStore } from '../../stores/actionsStore';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useChatStore } from '../../stores/chatStore';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -262,6 +264,15 @@ export function CommandPalette({
         shortcut: `${mod}/`,
         action: () => { onClose(); onShowShortcuts(); },
         category: 'settings',
+      },
+      // -- Actions --
+      {
+        id: 'actions',
+        name: 'Actions',
+        description: 'Lancer un agent actionnable (rapport, relance, audit...)',
+        icon: <Play className="w-4 h-4 text-cyan-400" />,
+        action: () => { onClose(); useActionsStore.getState().openPanel(); },
+        category: 'panels',
       },
     ],
     [createConversation, clearCurrentConversation, onClose, onShowShortcuts,

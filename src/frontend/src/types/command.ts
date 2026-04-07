@@ -12,7 +12,8 @@ export type CommandAction =
   | 'form_then_file'
   | 'image'
   | 'navigate'
-  | 'rfc';
+  | 'rfc'
+  | 'action_agent';
 
 export interface CommandDefinition {
   id: string;

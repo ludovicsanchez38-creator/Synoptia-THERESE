@@ -1,0 +1,206 @@
+[
+  {
+    "id": "rapport-hebdo",
+    "name": "Rapport hebdomadaire",
+    "description": "Genere un rapport d'activite de la semaine : emails, reunions, taches, CRM.",
+    "icon": "FileBarChart",
+    "category": "organisation",
+    "steps": [
+      {
+        "id": "emails",
+        "label": "Analyse des emails de la semaine",
+        "prompt": "Liste les emails importants recus et envoyes cette semaine. Resume les sujets principaux, les actions demandees et les reponses donnees. Concentre-toi sur les emails professionnels significatifs."
+      },
+      {
+        "id": "calendar",
+        "label": "Reunions et rendez-vous",
+        "prompt": "Resume les reunions et rendez-vous de cette semaine : participants, sujets abordes, decisions prises. Si des reunions sont prevues la semaine prochaine, mentionne-les."
+      },
+      {
+        "id": "crm",
+        "label": "Activite CRM et clients",
+        "prompt": "Analyse l'activite CRM de la semaine : nouveaux contacts, opportunites en cours, relances effectuees, montants en jeu. Identifie les deals qui avancent et ceux qui stagnent."
+      },
+      {
+        "id": "tasks",
+        "label": "Taches completees et en cours",
+        "prompt": "Fais le point sur les taches : completees cette semaine, en cours, en retard. Priorise celles de la semaine prochaine."
+      },
+      {
+        "id": "synthese",
+        "label": "Synthese et recommandations",
+        "prompt": "A partir des analyses precedentes (emails, calendrier, CRM, taches), redige un rapport hebdomadaire structure avec : faits marquants, indicateurs cles, points d'attention, actions prioritaires pour la semaine prochaine."
+      }
+    ],
+    "tools": ["email", "calendar", "crm", "tasks"]
+  },
+  {
+    "id": "relance-clients",
+    "name": "Relance clients",
+    "description": "Identifie les clients et prospects a relancer, avec un plan d'action.",
+    "icon": "UserCheck",
+    "category": "commercial",
+    "steps": [
+      {
+        "id": "scan-crm",
+        "label": "Scan du CRM",
+        "prompt": "Analyse le CRM et identifie : les prospects sans activite depuis plus de 7 jours, les devis envoyes sans reponse, les clients avec des factures en attente. Pour chacun, note le dernier contact et le montant en jeu."
+      },
+      {
+        "id": "historique",
+        "label": "Historique des echanges",
+        "prompt": "Pour chaque contact identifie, resume l'historique recent : derniers emails echanges, derniere reunion, derniere action. Identifie le ton de la relation (chaud, tiede, froid)."
+      },
+      {
+        "id": "plan-relance",
+        "label": "Plan de relance",
+        "prompt": "Propose un plan de relance personnalise pour chaque contact : canal recommande (email, telephone, LinkedIn), ton adapte, message cle, meilleur moment. Priorise par montant en jeu et urgence."
+      }
+    ],
+    "tools": ["crm", "email"]
+  },
+  {
+    "id": "prep-rdv",
+    "name": "Preparation RDV",
+    "description": "Prepare un brief complet avant un rendez-vous client ou prospect.",
+    "icon": "CalendarCheck",
+    "category": "commercial",
+    "params": [
+      {
+        "id": "contact_name",
+        "label": "Nom du contact",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Jean Dupont, ACME Corp"
+      }
+    ],
+    "steps": [
+      {
+        "id": "recherche-contact",
+        "label": "Recherche du contact",
+        "prompt": "Recherche toutes les informations disponibles sur {{contact_name}} : fiche CRM, emails echanges, notes de reunion, projets en commun. Synthetise le profil."
+      },
+      {
+        "id": "recherche-web",
+        "label": "Recherche web",
+        "prompt": "Recherche des informations publiques recentes sur {{contact_name}} et son entreprise : actualites, reseaux sociaux, site web. Identifie les sujets d'actualite qui pourraient alimenter la conversation."
+      },
+      {
+        "id": "brief",
+        "label": "Brief de rendez-vous",
+        "prompt": "Redige un brief de preparation structure : contexte de la relation, historique des echanges, points a aborder, questions a poser, objectifs du rendez-vous, pieges a eviter."
+      }
+    ],
+    "tools": ["crm", "email", "web_search"]
+  },
+  {
+    "id": "audit-tresorerie",
+    "name": "Audit tresorerie",
+    "description": "Analyse les factures et la tresorerie : payes, en retard, previsions.",
+    "icon": "Wallet",
+    "category": "finance",
+    "steps": [
+      {
+        "id": "factures-payees",
+        "label": "Factures payees",
+        "prompt": "Liste les factures payees ce mois-ci et le mois dernier. Calcule le total encaisse, le delai moyen de paiement, les meilleurs et pires payeurs."
+      },
+      {
+        "id": "factures-retard",
+        "label": "Factures en retard",
+        "prompt": "Identifie toutes les factures en retard de paiement. Pour chacune : montant, client, nombre de jours de retard, relances deja envoyees. Classe par urgence."
+      },
+      {
+        "id": "previsions",
+        "label": "Previsions",
+        "prompt": "A partir des factures emises et des devis acceptes, projette la tresorerie sur les 30 prochains jours. Identifie les periodes de tension et les rentrées attendues."
+      },
+      {
+        "id": "synthese",
+        "label": "Synthese tresorerie",
+        "prompt": "Redige une synthese de la situation de tresorerie : solde actuel, tendance, alertes, recommandations (relances prioritaires, depenses a reporter, etc.)."
+      }
+    ],
+    "tools": ["invoices", "crm"]
+  },
+  {
+    "id": "veille-concurrent",
+    "name": "Veille concurrentielle",
+    "description": "Recherche et analyse un concurrent : offres, positionnement, actualites.",
+    "icon": "Radar",
+    "category": "strategie",
+    "params": [
+      {
+        "id": "competitor_name",
+        "label": "Nom du concurrent",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: NomEntreprise ou nomdomaine.fr"
+      }
+    ],
+    "steps": [
+      {
+        "id": "site-web",
+        "label": "Analyse du site web",
+        "prompt": "Analyse le site web de {{competitor_name}} : offres proposees, positionnement prix, cibles visees, arguments commerciaux, elements differenciants."
+      },
+      {
+        "id": "actualites",
+        "label": "Actualites recentes",
+        "prompt": "Recherche les actualites recentes concernant {{competitor_name}} : levees de fonds, recrutements, nouveaux produits, partenariats, articles de presse."
+      },
+      {
+        "id": "reseaux-sociaux",
+        "label": "Presence sociale",
+        "prompt": "Analyse la presence de {{competitor_name}} sur les reseaux sociaux (LinkedIn, X) : frequence de publication, engagement, sujets abordes, taille de communaute."
+      },
+      {
+        "id": "synthese",
+        "label": "Synthese concurrentielle",
+        "prompt": "Redige une fiche concurrentielle structuree : forces, faiblesses, menaces, opportunites. Compare avec notre positionnement et propose des axes de differenciation."
+      }
+    ],
+    "tools": ["web_search"]
+  },
+  {
+    "id": "onboarding-client",
+    "name": "Onboarding client",
+    "description": "Prepare l'accueil d'un nouveau client : checklist, documents, communication.",
+    "icon": "Handshake",
+    "category": "commercial",
+    "params": [
+      {
+        "id": "client_name",
+        "label": "Nom du client",
+        "type": "text",
+        "required": true,
+        "placeholder": "Ex: Marie Martin, SARL Exemple"
+      },
+      {
+        "id": "offer",
+        "label": "Offre souscrite",
+        "type": "select",
+        "required": true,
+        "options": ["FORGER", "PROPULSER", "ANCRER", "RAYONNER"]
+      }
+    ],
+    "steps": [
+      {
+        "id": "checklist",
+        "label": "Checklist d'onboarding",
+        "prompt": "Genere une checklist d'onboarding pour {{client_name}} ayant souscrit l'offre {{offer}}. Inclus : documents a envoyer, accès a creer, rendez-vous a planifier, outils a configurer."
+      },
+      {
+        "id": "email-bienvenue",
+        "label": "Email de bienvenue",
+        "prompt": "Redige un email de bienvenue chaleureux et professionnel pour {{client_name}}. Presente les prochaines etapes, les moyens de contact, et fixe les attentes pour l'offre {{offer}}."
+      },
+      {
+        "id": "planning",
+        "label": "Planning previsionnel",
+        "prompt": "Propose un planning previsionnel pour l'accompagnement de {{client_name}} dans le cadre de l'offre {{offer}} : jalons, livrables, points d'etape."
+      }
+    ],
+    "tools": ["crm", "email", "calendar"]
+  }
+]

@@ -24,6 +24,7 @@ import {
   type ImageResponse,
 } from '../../services/api';
 import { fetchCommandSchema } from '../../services/api/commands-v3';
+import { useActionsStore } from '../../stores/actionsStore';
 
 interface SkillState {
   skillId: string;
@@ -107,6 +108,37 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
 
       case 'rfc': {
         onStartRFC();
+        onClose();
+        break;
+      }
+
+      case 'action_agent': {
+        // Extraire l'agent_id depuis le command_id (format: "action-{agent_id}")
+        const agentId = cmd.id.replace(/^action-/, '');
+        const actionsStore = useActionsStore.getState();
+        if (actionsStore.agents.length === 0) {
+          actionsStore.loadAgents().then(() => {
+            const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
+            if (agent) {
+              actionsStore.openPanel();
+              if (agent.params.length > 0) {
+                actionsStore.selectAgent(agent);
+              } else {
+                actionsStore.launchAction(agentId);
+              }
+            }
+          });
+        } else {
+          const agent = actionsStore.agents.find((a) => a.id === agentId);
+          if (agent) {
+            actionsStore.openPanel();
+            if (agent.params.length > 0) {
+              actionsStore.selectAgent(agent);
+            } else {
+              actionsStore.launchAction(agentId);
+            }
+          }
+        }
         onClose();
         break;
       }

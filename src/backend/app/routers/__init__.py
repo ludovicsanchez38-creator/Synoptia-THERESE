@@ -60,6 +60,9 @@ from app.routers.tasks import router as tasks_router
 from app.routers.tools import router as tools_router
 from app.routers.voice import router as voice_router
 
+# Action Agents (agents actionnables multi-etapes)
+from app.routers.actions import router as actions_router
+
 __all__ = [
     "chat_router",
     "memory_router",
@@ -90,5 +93,6 @@ __all__ = [
     "notifications_router",  # US-004 - Notifications push in-app
     "dashboard_router",  # US-005 - Dashboard Ma journée
     "follow_ups_router",  # Email Backlog - Follow-ups
-    "prompts_router",  # Bibliothèque de prompts
+    "prompts_router",  # Bibliotheque de prompts
+    "actions_router",  # Action Agents multi-etapes
 ]

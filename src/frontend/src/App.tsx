@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { ChatLayout } from './components/chat/ChatLayout';
+import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
 import { GlobalErrorBoundary } from './components/ui/GlobalErrorBoundary';
@@ -176,6 +177,7 @@ function App() {
           Aller au contenu principal
         </a>
         <ChatLayout />
+        <ActionPanel />
         <Notifications />
         <Suspense fallback={null}>
           <OnboardingWizard
