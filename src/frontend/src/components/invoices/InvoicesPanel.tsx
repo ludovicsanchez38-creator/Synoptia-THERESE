@@ -27,14 +27,16 @@ import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted' },
-  sent: { label: 'Envoyée', icon: Mail, color: 'text-blue-500' },
-  accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-emerald-500' },
-  paid: { label: 'Payée', icon: CheckCircle2, color: 'text-green-500' },
-  overdue: { label: 'En retard', icon: AlertCircle, color: 'text-red-500' },
-  converted: { label: 'Converti', icon: FileText, color: 'text-purple-500' },
-  cancelled: { label: 'Annulée', icon: Ban, color: 'text-text-muted' },
+const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badgeBg?: string }> = {
+  draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
+  sent: { label: 'Envoyée', icon: Mail, color: 'text-blue-500', badgeBg: 'bg-blue-500/20' },
+  accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-emerald-500', badgeBg: 'bg-emerald-500/20' },
+  refused: { label: 'Refusé', icon: ThumbsDown, color: 'text-orange-500', badgeBg: 'bg-orange-500/20' },
+  expired: { label: 'Expiré', icon: Clock, color: 'text-amber-500', badgeBg: 'bg-amber-500/20' },
+  paid: { label: 'Payée', icon: CheckCircle2, color: 'text-green-500', badgeBg: 'bg-green-500/20' },
+  overdue: { label: 'En retard', icon: AlertCircle, color: 'text-red-500', badgeBg: 'bg-red-500/20' },
+  converted: { label: 'Converti', icon: ArrowRightLeft, color: 'text-purple-500', badgeBg: 'bg-purple-500/20' },
+  cancelled: { label: 'Annulée', icon: Ban, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
 };
 
 interface InvoicesPanelProps {
