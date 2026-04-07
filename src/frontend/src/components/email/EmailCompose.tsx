@@ -106,6 +106,7 @@ export function EmailCompose() {
     } finally {
       setSending(false);
     }
+  }
 
   async function handleSaveDraft() {
     if (!currentAccountId) {
