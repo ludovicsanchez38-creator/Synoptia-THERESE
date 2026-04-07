@@ -147,6 +147,17 @@ export async function listMCPPresets(): Promise<MCPPreset[]> {
   return request<MCPPreset[]>('/api/mcp/presets');
 }
 
+// BUG-083 : Verification des prerequis systeme (npx, python, etc.)
+export interface MCPRequirementsCheck {
+  commands: Record<string, { available: boolean; path: string | null }>;
+  all_satisfied: boolean;
+  help_message: string | null;
+}
+
+export async function checkMCPPresetRequirements(): Promise<MCPRequirementsCheck> {
+  return request<MCPRequirementsCheck>('/api/mcp/presets/check-requirements');
+}
+
 export async function installMCPPreset(
   presetId: string,
   env?: Record<string, string>

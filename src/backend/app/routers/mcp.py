@@ -505,6 +505,69 @@ async def list_presets():
     ]
 
 
+@router.get("/presets/check-requirements")
+async def check_preset_requirements():
+    """
+    Vérifie si les prérequis système pour les presets MCP sont satisfaits.
+
+    BUG-083 : npx propose dans les presets mais absent du systeme.
+    Retourne la disponibilite de chaque commande utilisee par les presets.
+    """
+    import os
+    import shutil
+
+    # Construire un PATH enrichi (meme logique que MCPService.start_server)
+    home = os.environ.get("HOME", "")
+    base_path = os.environ.get("PATH", "")
+    extra_paths = [
+        "/usr/local/bin",
+        "/opt/homebrew/bin",
+    ]
+    for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
+        from pathlib import Path as PPath
+        base_obj = PPath(base)
+        if base_obj.exists():
+            versions = sorted(base_obj.iterdir(), reverse=True)
+            for v in versions:
+                bin_dir = v / "bin"
+                if bin_dir.exists():
+                    extra_paths.append(str(bin_dir))
+                    break
+
+    enriched_path = base_path
+    for p in extra_paths:
+        if p and p not in enriched_path and os.path.isdir(p):
+            enriched_path = enriched_path + ":" + p
+
+    # Collecter les commandes uniques utilisees par les presets
+    commands_needed = {p["command"] for p in PRESET_SERVERS}
+    results: dict[str, dict] = {}
+
+    for cmd in sorted(commands_needed):
+        resolved = shutil.which(cmd, path=enriched_path)
+        results[cmd] = {
+            "available": resolved is not None,
+            "path": resolved,
+        }
+
+    # Message d'aide pour npx si absent
+    npx_available = results.get("npx", {}).get("available", False)
+    help_message = None
+    if not npx_available:
+        help_message = (
+            "npx n'est pas disponible sur ce systeme. "
+            "La plupart des serveurs MCP en ont besoin. "
+            "Installe Node.js depuis https://nodejs.org/ "
+            "ou via un gestionnaire (nvm, fnm, volta)."
+        )
+
+    return {
+        "commands": results,
+        "all_satisfied": all(r["available"] for r in results.values()),
+        "help_message": help_message,
+    }
+
+
 @router.post("/presets/{preset_id}/install")
 async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> MCPServerResponse:
     """Install a preset MCP server."""
@@ -515,10 +578,57 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
 
     service = get_mcp_service()
 
-    # Replace placeholders in args (SEC-006)
+    # BUG-083 : Verifier que la commande est disponible AVANT d'installer
     import os
+    import shutil
+
+    from app.services.mcp_service import resolve_mcp_command
+
     home_dir = os.path.expanduser("~")
 
+    # Construire un PATH enrichi (meme logique que MCPService.start_server)
+    base_path = os.environ.get("PATH", "")
+    extra_paths = ["/usr/local/bin", "/opt/homebrew/bin"]
+    for base in [f"{home_dir}/.nvm/versions/node", f"{home_dir}/.fnm/node-versions"]:
+        from pathlib import Path as PPath
+        base_obj = PPath(base)
+        if base_obj.exists():
+            versions = sorted(base_obj.iterdir(), reverse=True)
+            for v in versions:
+                bin_dir = v / "bin"
+                if bin_dir.exists():
+                    extra_paths.append(str(bin_dir))
+                    break
+    enriched_path = base_path
+    for p in extra_paths:
+        if p and p not in enriched_path and os.path.isdir(p):
+            enriched_path = enriched_path + ":" + p
+
+    cmd = preset["command"]
+    resolved = shutil.which(cmd, path=enriched_path) or resolve_mcp_command(cmd, enriched_path)
+    if not resolved:
+        install_hint = ""
+        if cmd in ("npx", "node", "npm"):
+            install_hint = (
+                " Installe Node.js depuis https://nodejs.org/ "
+                "ou via un gestionnaire de versions (nvm, fnm, volta), "
+                "puis relance THERESE."
+            )
+        elif cmd in ("python", "python3"):
+            install_hint = " Installe Python depuis https://python.org/."
+        elif cmd == "docker":
+            install_hint = " Installe Docker depuis https://docker.com/."
+
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"La commande '{cmd}' n'est pas disponible sur ce systeme. "
+                f"Le serveur MCP '{preset['name']}' ne peut pas etre installe "
+                f"sans ce prérequis.{install_hint}"
+            ),
+        )
+
+    # Replace placeholders in args (SEC-006)
     # Resolve WORKING_DIRECTORY from DB preference, fallback to HOME/Documents
     working_directory = os.path.join(home_dir, "Documents")
     try:

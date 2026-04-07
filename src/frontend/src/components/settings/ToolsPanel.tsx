@@ -190,6 +190,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   const [installingPreset, setInstallingPreset] = useState<string | null>(null);
   const [presetToConfig, setPresetToConfig] = useState<api.MCPPreset | null>(null);
   const [presetFilter, setPresetFilter] = useState('');
+  // BUG-083 : vérification des prérequis système (npx, etc.)
+  const [requirementsCheck, setRequirementsCheck] = useState<api.MCPRequirementsCheck | null>(null);
 
   // New server form
   const [newServer, setNewServer] = useState({
@@ -243,6 +245,14 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       setServers(serversData);
       setPresets(presetsData);
       setStatus(statusData);
+
+      // BUG-083 : vérifier les prérequis système en parallèle
+      try {
+        const reqCheck = await api.checkMCPPresetRequirements();
+        setRequirementsCheck(reqCheck);
+      } catch {
+        // Silencieux si le check échoue (endpoint optionnel)
+      }
     } catch (err) {
       console.error('Failed to load MCP data:', err);
       onError('Erreur lors du chargement des serveurs MCP');
@@ -494,6 +504,26 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   </span>
                 </div>
               </div>
+
+              {/* BUG-083 : Avertissement si npx manquant */}
+              {requirementsCheck && !requirementsCheck.all_satisfied && (
+                <div className="flex items-start gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-yellow-300">
+                    <p className="font-medium mb-1">Prérequis manquants</p>
+                    {Object.entries(requirementsCheck.commands)
+                      .filter(([, v]) => !(v as { available: boolean }).available)
+                      .map(([cmd]) => (
+                        <p key={cmd} className="text-yellow-400">
+                          <code className="bg-yellow-500/20 px-1 rounded">{cmd}</code> non trouvé sur le système
+                        </p>
+                      ))}
+                    {requirementsCheck.help_message && (
+                      <p className="mt-1 text-yellow-400/80">{requirementsCheck.help_message}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Barre de recherche */}
               <input

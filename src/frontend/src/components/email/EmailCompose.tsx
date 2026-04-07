@@ -60,6 +60,14 @@ export function EmailCompose() {
       return;
     }
 
+    // BUG-085 : validation email basique côté frontend (feedback immédiat)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidRecipients = recipients.filter(r => !emailRegex.test(r));
+    if (invalidRecipients.length > 0) {
+      setError(`Adresse(s) invalide(s) : ${invalidRecipients.join(', ')}`);
+      return;
+    }
+
     if (!draftSubject.trim()) {
       setError('Ajoute un objet');
       return;
@@ -69,24 +77,35 @@ export function EmailCompose() {
     setError(null);
 
     try {
-      await api.sendEmail(currentAccountId, {
-        to: recipients,
-        cc: ccList.length > 0 ? ccList : undefined,
-        bcc: bccList.length > 0 ? bccList : undefined,
-        subject: draftSubject,
-        body: draftBody,
-        html: draftIsHtml,
-      });
+      // BUG-085 : timeout client (35s) pour ne pas bloquer le spinner
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 35000)
+      );
+
+      await Promise.race([
+        api.sendEmail(currentAccountId, {
+          to: recipients,
+          cc: ccList.length > 0 ? ccList : undefined,
+          bcc: bccList.length > 0 ? bccList : undefined,
+          subject: draftSubject,
+          body: draftBody,
+          html: draftIsHtml,
+        }),
+        timeoutPromise,
+      ]);
 
       clearDraft();
       setIsComposing(false);
     } catch (err) {
       console.error('Failed to send email:', err);
-      setError(err instanceof Error ? err.message : 'Échec de l\'envoi');
+      if (err instanceof Error && err.message === 'TIMEOUT') {
+        setError("L'envoi a expiré. Vérifie ta connexion et la configuration email.");
+      } else {
+        setError(err instanceof Error ? err.message : "Échec de l'envoi");
+      }
     } finally {
       setSending(false);
     }
-  }
 
   async function handleSaveDraft() {
     if (!currentAccountId) {

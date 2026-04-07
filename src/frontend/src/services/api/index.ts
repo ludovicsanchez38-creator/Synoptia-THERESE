@@ -212,6 +212,7 @@ export {
   callMCPTool,
   getMCPStatus,
   listMCPPresets,
+  checkMCPPresetRequirements,
   installMCPPreset,
   type MCPServerStatus,
   type MCPTool,
@@ -219,6 +220,7 @@ export {
   type MCPServerCreate,
   type MCPPreset,
   type MCPStatus,
+  type MCPRequirementsCheck,
   type ToolCallResult,
 } from './mcp';
 

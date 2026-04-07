@@ -1,7 +1,8 @@
-// Onglet configuration LLM - Paramètres THÉRÈSE
+// Onglet configuration LLM - Paramètres THERESE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -470,25 +471,125 @@ export function LLMTab({
         </div>
       )}
 
-      {/* Sélection du modèle */}
-      {availableModels.length > 0 && (
-        <div className="space-y-3 pt-4 border-t border-border/30">
-          <label className="text-sm text-text-muted">Modèle</label>
-          <select
-            value={selectedModel}
-            onChange={(e) => onSelectModel(e.target.value)}
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-[#0B1226] [&>option]:text-[#E6EDF7]"
-            style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
+      {/* Sélection du modèle - BUG-084 : ajout modèle custom */}
+      <ModelSelector
+        availableModels={availableModels}
+        selectedModel={selectedModel}
+        onSelectModel={onSelectModel}
+        selectedProvider={selectedProvider}
+      />
+
+    </div>
+  );
+}
+
+
+// BUG-084 : Composant séparé pour la sélection de modèle avec option custom
+function ModelSelector({
+  availableModels,
+  selectedModel,
+  onSelectModel,
+  selectedProvider,
+}: {
+  availableModels: { id: string; name: string; badge?: string }[];
+  selectedModel: string;
+  onSelectModel: (modelId: string) => void;
+  selectedProvider: string;
+}) {
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customModelId, setCustomModelId] = useState('');
+
+  // Vérifier si le modèle sélectionné est dans la liste prédéfinie
+  const isCustomModel = selectedModel && !availableModels.some(m => m.id === selectedModel);
+
+  function handleAddCustomModel() {
+    const trimmed = customModelId.trim();
+    if (!trimmed) return;
+    onSelectModel(trimmed);
+    setCustomModelId('');
+    setShowCustomInput(false);
+  }
+
+  if (availableModels.length === 0 && selectedProvider !== 'ollama') {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3 pt-4 border-t border-border/30">
+      <div className="flex items-center justify-between">
+        <label className="text-sm text-text-muted">Modèle</label>
+        {selectedProvider !== 'ollama' && (
+          <button
+            onClick={() => setShowCustomInput(!showCustomInput)}
+            className="flex items-center gap-1 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+            title="Utiliser un identifiant de modèle personnalisé"
           >
-            {availableModels.map((model) => (
-              <option key={model.id} value={model.id} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
-                {model.name} {model.badge ? `(${model.badge})` : ''}
-              </option>
-            ))}
-          </select>
+            <Plus className="w-3 h-3" />
+            Custom
+          </button>
+        )}
+      </div>
+
+      <select
+        value={selectedModel}
+        onChange={(e) => onSelectModel(e.target.value)}
+        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-[#0B1226] [&>option]:text-[#E6EDF7]"
+        style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
+      >
+        {availableModels.map((model) => (
+          <option key={model.id} value={model.id} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+            {model.name} {model.badge ? `(${model.badge})` : ''}
+          </option>
+        ))}
+        {isCustomModel && (
+          <option value={selectedModel} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+            {selectedModel} (personnalisé)
+          </option>
+        )}
+      </select>
+
+      {/* Champ de saisie modèle personnalisé */}
+      {showCustomInput && (
+        <div className="space-y-2">
+          <p className="text-xs text-text-muted">
+            Saisis l'identifiant exact du modèle tel qu'il apparait dans l'API du fournisseur.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customModelId}
+              onChange={(e) => setCustomModelId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && customModelId.trim()) {
+                  handleAddCustomModel();
+                }
+              }}
+              placeholder={
+                selectedProvider === 'anthropic' ? 'claude-sonnet-4-6-20260407' :
+                selectedProvider === 'openai' ? 'gpt-5.2-turbo' :
+                selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-6' :
+                'identifiant-du-modele'
+              }
+              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAddCustomModel}
+              disabled={!customModelId.trim()}
+            >
+              Utiliser
+            </Button>
+          </div>
         </div>
       )}
 
+      {isCustomModel && (
+        <p className="text-xs text-accent-cyan flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          Modèle personnalisé actif : {selectedModel}
+        </p>
+      )}
     </div>
   );
 }

@@ -302,21 +302,37 @@ async def _read_emails(args: dict, session: AsyncSession) -> str:
 
 
 async def _send_email(args: dict, session: AsyncSession) -> str:
-    """Send an email."""
+    """Send an email.
+
+    BUG-085 : Validation rapide des parametres et du provider AVANT
+    de tenter l'envoi, pour eviter un spinner long suivi d'une erreur.
+    """
+    import asyncio
+    import re
+
     from app.services.email.base_provider import SendEmailRequest
 
-    provider, error = await _get_email_provider(session)
-    if error:
-        return error
-
-    to_addr = args.get("to", "")
-    subject = args.get("subject", "")
+    to_addr = args.get("to", "").strip()
+    subject = args.get("subject", "").strip()
     body = args.get("body", "")
     cc = [addr.strip() for addr in args.get("cc", "").split(",") if addr.strip()] if args.get("cc") else []
     is_html = args.get("is_html", False)
 
-    if not to_addr or not subject:
-        return "Erreur : destinataire et sujet sont obligatoires."
+    # Validation rapide des parametres (pas d'appel reseau)
+    if not to_addr:
+        return "Erreur : le destinataire est obligatoire."
+    if not subject:
+        return "Erreur : le sujet est obligatoire."
+
+    # Validation basique du format email
+    email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    if not email_pattern.match(to_addr):
+        return f"Erreur : l'adresse '{to_addr}' ne semble pas etre un email valide."
+
+    # Recuperer le provider (verifie la config, le token, etc.)
+    provider, error = await _get_email_provider(session)
+    if error:
+        return error
 
     try:
         request = SendEmailRequest(
@@ -326,10 +342,29 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
             cc=cc,
             is_html=is_html,
         )
-        await provider.send_message(request)
+        # BUG-085 : timeout de 30s pour l'envoi (evite les spinners infinis)
+        await asyncio.wait_for(provider.send_message(request), timeout=30.0)
         return f"Email envoye avec succes a {to_addr} (sujet: {subject})"
+    except asyncio.TimeoutError:
+        logger.error("Timeout envoi email a %s", to_addr)
+        return (
+            f"Erreur : l'envoi de l'email a {to_addr} a expiré après 30 secondes. "
+            "Vérifie la configuration de ton compte email (serveur SMTP, identifiants)."
+        )
     except Exception as e:
         logger.exception("Erreur envoi email")
+        error_msg = str(e)
+        # Messages d'erreur plus clairs pour les cas courants
+        if "authentication" in error_msg.lower() or "login" in error_msg.lower():
+            return (
+                f"Erreur d'authentification lors de l'envoi a {to_addr}. "
+                "Vérifie tes identifiants email dans les parametres."
+            )
+        if "connection" in error_msg.lower() or "connect" in error_msg.lower():
+            return (
+                f"Impossible de se connecter au serveur d'envoi pour {to_addr}. "
+                "Vérifie ta connexion internet et la configuration SMTP."
+            )
         return f"Erreur lors de l'envoi de l'email : {e}"
 
 
