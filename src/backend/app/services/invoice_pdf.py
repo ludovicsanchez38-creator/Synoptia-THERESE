@@ -339,6 +339,11 @@ class InvoicePDFGenerator:
             ["Statut", status_raw],
         ]
 
+        # Ajouter la duree de validite pour les devis
+        validite = invoice_data.get("validite_jours")
+        if document_type == "devis" and validite:
+            info_data.insert(3, ["Validite", f"{validite} jours"])
+
         cell_label = ParagraphStyle(
             "InfoLabel",
             fontName=theme.font_bold,
@@ -561,7 +566,7 @@ class InvoicePDFGenerator:
             tva_mention = "TVA non applicable, art. 293 B du CGI."
 
         heading = Paragraph(
-            "CONDITIONS DE PAIEMENT",
+            "CONDITIONS" if self._current_document_type == "devis" else "CONDITIONS DE PAIEMENT",
             ParagraphStyle(
                 "ConditionsHeading",
                 fontName=theme.font_bold,
@@ -633,6 +638,9 @@ class InvoicePDFGenerator:
             topMargin=(theme.margin_top + theme.header_height) * mm,
             bottomMargin=(theme.margin_bottom + 10) * mm,
         )
+
+        # Store document_type for use in conditions block
+        self._current_document_type = document_type
 
         # Story
         story: list[Any] = []

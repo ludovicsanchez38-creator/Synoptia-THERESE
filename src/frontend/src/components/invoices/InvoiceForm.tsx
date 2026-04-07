@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck } from 'lucide-react';
-import { createInvoice, updateInvoice, convertDevisToInvoice, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -85,6 +85,9 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   });
   const [status, setStatus] = useState(invoice?.status || 'draft');
   const [notes, setNotes] = useState(invoice?.notes || '');
+  const [validiteJours, setValiditeJours] = useState<number>(
+    invoice?.validite_jours ?? 30
+  );
   const [lines, setLines] = useState<InvoiceLineRequest[]>(
     invoice?.lines.map((line) => ({
       description: line.description,
@@ -228,6 +231,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         lines: validLines,
         notes: notes || undefined,
         status: status !== 'draft' ? status : undefined,
+        validite_jours: documentType === 'devis' ? validiteJours : undefined,
       };
 
       let savedInvoice: Invoice;
@@ -409,11 +413,22 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 )}
               >
                 <option value="draft">Brouillon</option>
-                <option value="sent">Envoyee</option>
-                <option value="accepted">Accepte</option>
-                <option value="paid">Payee</option>
-                <option value="overdue">En retard</option>
-                <option value="cancelled">Annulee</option>
+                <option value="sent">Envoy\u00e9</option>
+                {documentType === 'devis' ? (
+                  <>
+                    <option value="accepted">Accept\u00e9</option>
+                    <option value="refused">Refus\u00e9</option>
+                    <option value="expired">Expir\u00e9</option>
+                    <option value="converted">Converti en facture</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="accepted">Accept\u00e9</option>
+                    <option value="paid">Pay\u00e9e</option>
+                    <option value="overdue">En retard</option>
+                  </>
+                )}
+                <option value="cancelled">Annul\u00e9e</option>
               </select>
             </div>
 
@@ -461,7 +476,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div>
               <label htmlFor="dueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'echeance *
+                Date d'\u00e9ch\u00e9ance *
               </label>
               <input
                 type="date"
@@ -477,6 +492,28 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 required
               />
             </div>
+
+            {documentType === 'devis' && (
+              <div>
+                <label htmlFor="validiteJours" className="block text-sm font-medium text-text mb-2">
+                  Validit\u00e9 (jours)
+                </label>
+                <input
+                  type="number"
+                  id="validiteJours"
+                  min={1}
+                  max={365}
+                  value={validiteJours}
+                  onChange={(e) => setValiditeJours(parseInt(e.target.value, 10) || 30)}
+                  className={cn(
+                    'w-full px-3 py-2 rounded-lg',
+                    'bg-bg border border-border/50',
+                    'text-text',
+                    'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  )}
+                />
+              </div>
+            )}
           </div>
 
           {/* Lines */}
@@ -667,14 +704,49 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {invoice && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
+            {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
               <button
                 type="button"
                 onClick={handleMarkPaid}
                 className="px-4 py-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
               >
-                Marquer comme payee
+                Marquer comme pay\u00e9e
               </button>
+            )}
+
+            {invoice && invoice.document_type === 'devis' && invoice.status !== 'accepted' && invoice.status !== 'refused' && invoice.status !== 'converted' && invoice.status !== 'cancelled' && invoice.status !== 'expired' && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const updated = await updateDevisStatus(invoice.id, 'accepted');
+                      addNotification({ type: 'success', title: 'Devis accept\u00e9', message: invoice.invoice_number });
+                      onSave(updated);
+                    } catch (err) {
+                      addNotification({ type: 'error', title: 'Erreur', message: String(err) });
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
+                >
+                  Accepter
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const updated = await updateDevisStatus(invoice.id, 'refused');
+                      addNotification({ type: 'success', title: 'Devis refus\u00e9', message: invoice.invoice_number });
+                      onSave(updated);
+                    } catch (err) {
+                      addNotification({ type: 'error', title: 'Erreur', message: String(err) });
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors text-sm font-medium"
+                >
+                  Refuser
+                </button>
+              </div>
             )}
 
             {/* Bouton Convertir en facture (devis uniquement) */}

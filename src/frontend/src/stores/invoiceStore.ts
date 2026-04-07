@@ -10,7 +10,7 @@ import { persist } from 'zustand/middleware';
 import type { Invoice, InvoiceLineRequest } from '../services/api';
 
 interface InvoiceFilters {
-  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'all';
+  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'accepted' | 'refused' | 'expired' | 'converted' | 'all';
   document_type?: 'devis' | 'facture' | 'avoir';
   contact_id?: string;
 }

@@ -447,6 +447,7 @@ class Invoice(SQLModel, table=True):
     late_penalty_rate: float | None = None  # Taux de pénalité de retard (ex: 3x taux BCE)
     legal_mentions: str | None = None  # Mentions légales auto-générées
     converted_from_id: str | None = Field(default=None, index=True)  # ID du devis source si conversion
+    validite_jours: int | None = Field(default=None)  # Duree de validite en jours (devis uniquement, defaut 30)
     payment_date: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

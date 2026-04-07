@@ -151,6 +151,7 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         late_penalty_rate=invoice.late_penalty_rate,
         legal_mentions=invoice.legal_mentions,
         converted_from_id=invoice.converted_from_id,
+        validite_jours=invoice.validite_jours,
         payment_date=invoice.payment_date.isoformat() if invoice.payment_date else None,
         created_at=invoice.created_at.isoformat(),
         updated_at=invoice.updated_at.isoformat(),
@@ -237,6 +238,11 @@ async def create_invoice(
     issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.now(UTC)
     due_date = datetime.fromisoformat(request.due_date.replace("Z", "")) if request.due_date else issue_date + timedelta(days=30)
 
+    # Validité par défaut pour les devis
+    validite_jours = request.validite_jours
+    if document_type == "devis" and validite_jours is None:
+        validite_jours = 30
+
     # Créer la facture
     invoice = Invoice(
         invoice_number=invoice_number,
@@ -248,6 +254,7 @@ async def create_invoice(
         due_date=due_date,
         status="draft",
         notes=request.notes,
+        validite_jours=validite_jours,
     )
 
     session.add(invoice)
@@ -327,6 +334,9 @@ async def update_invoice(
 
     if request.notes is not None:
         invoice.notes = request.notes
+
+    if request.validite_jours is not None:
+        invoice.validite_jours = request.validite_jours
 
     # Mise à jour des lignes
     if request.lines is not None:
@@ -531,6 +541,7 @@ async def generate_invoice_pdf(
         "invoice_number": invoice.invoice_number,
         "document_type": invoice.document_type,
         "tva_applicable": invoice.tva_applicable,
+        "validite_jours": invoice.validite_jours,
         "issue_date": invoice.issue_date.isoformat(),
         "due_date": invoice.due_date.isoformat(),
         "status": invoice.status,
@@ -726,6 +737,45 @@ async def convert_devis_to_invoice(
     logger.info(f"Devis {devis.invoice_number} converti en facture {invoice_number}")
 
     return _invoice_to_response(new_invoice)
+
+
+@router.patch("/{invoice_id}/devis-status", response_model=InvoiceResponse)
+async def update_devis_status(
+    invoice_id: str,
+    request: dict,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Met a jour le statut d'un devis (accepte, refuse, expire).
+
+    Statuts valides pour un devis : draft, sent, accepted, refused, expired, converted, cancelled.
+    """
+    new_status = request.get("status", "")
+    valid_devis_statuses = {"draft", "sent", "accepted", "refused", "expired", "converted", "cancelled"}
+
+    if new_status not in valid_devis_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Statut invalide pour un devis. Valeurs acceptees : {', '.join(sorted(valid_devis_statuses))}",
+        )
+
+    invoice = await _get_invoice_with_lines(session, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Devis non trouve")
+
+    if invoice.document_type != "devis":
+        raise HTTPException(status_code=400, detail="Ce document n'est pas un devis")
+
+    invoice.status = new_status
+    invoice.updated_at = datetime.now(UTC)
+
+    session.add(invoice)
+    await session.commit()
+
+    invoice = await _get_invoice_with_lines(session, invoice.id)
+    logger.info(f"Devis {invoice.invoice_number} : statut mis a jour -> {new_status}")
+
+    return _invoice_to_response(invoice)
 
 
 @router.post("/{invoice_id}/send")

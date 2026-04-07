@@ -382,6 +382,7 @@ export {
   generateInvoicePDF,
   sendInvoiceByEmail,
   convertDevisToInvoice,
+  updateDevisStatus,
   type InvoiceLine,
   type Invoice,
   type InvoiceLineRequest,

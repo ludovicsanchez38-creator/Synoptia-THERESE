@@ -710,6 +710,7 @@ class InvoiceResponse(BaseModel):
     late_penalty_rate: float | None = None
     legal_mentions: str | None = None
     converted_from_id: str | None = None
+    validite_jours: int | None = None  # Duree de validite en jours (devis)
     payment_date: str | None  # ISO datetime
     created_at: str  # ISO datetime
     updated_at: str  # ISO datetime
@@ -736,6 +737,7 @@ class CreateInvoiceRequest(BaseModel):
     due_date: str | None = None  # ISO datetime, default +30 days
     lines: list[InvoiceLineRequest]
     notes: str | None = None
+    validite_jours: int | None = None  # Duree de validite en jours (devis, defaut 30)
 
 
 class UpdateInvoiceRequest(BaseModel):
@@ -748,6 +750,7 @@ class UpdateInvoiceRequest(BaseModel):
     status: str | None = None
     lines: list[InvoiceLineRequest] | None = None
     notes: str | None = None
+    validite_jours: int | None = None  # Duree de validite en jours (devis)
 
 
 class MarkPaidRequest(BaseModel):

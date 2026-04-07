@@ -26,7 +26,7 @@ export interface Invoice {
   currency: string;
   issue_date: string;
   due_date: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'converted' | 'accepted';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'converted' | 'accepted' | 'refused' | 'expired';
   subtotal_ht: number;
   total_tax: number;
   total_ttc: number;
@@ -36,6 +36,7 @@ export interface Invoice {
   late_penalty_rate: number | null;
   legal_mentions: string | null;
   converted_from_id: string | null;
+  validite_jours: number | null;
   payment_date: string | null;
   created_at: string;
   updated_at: string;
@@ -63,6 +64,7 @@ export interface CreateInvoiceRequest {
   due_date?: string;
   lines: InvoiceLineRequest[];
   notes?: string;
+  validite_jours?: number;
 }
 
 export interface UpdateInvoiceRequest {
@@ -73,6 +75,7 @@ export interface UpdateInvoiceRequest {
   status?: string;
   lines?: InvoiceLineRequest[];
   notes?: string;
+  validite_jours?: number;
 }
 
 export async function listInvoices(params?: {
@@ -155,6 +158,20 @@ export async function convertDevisToInvoice(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req || {}),
+  });
+  if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
+  return response.json();
+}
+
+
+export async function updateDevisStatus(
+  invoiceId: string,
+  status: string
+): Promise<Invoice> {
+  const response = await apiFetch(`${API_BASE}/api/invoices/${invoiceId}/devis-status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();

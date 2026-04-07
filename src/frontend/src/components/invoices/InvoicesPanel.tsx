@@ -16,6 +16,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
+  Clock,
+  ThumbsDown,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -185,7 +188,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           )}
         >
           <Plus className="w-4 h-4" />
-          Nouvelle facture
+          {filters.document_type === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}
         </button>
 
         {!standalone && (
@@ -225,8 +228,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       {/* Filtre par statut */}
       <div className="flex items-center gap-2">
       <span className="text-xs text-text-muted w-10">Statut</span>
-      <div className="flex items-center gap-2">
-        {(['all', 'draft', 'sent', 'paid', 'overdue', 'cancelled'] as const).map((status) => (
+      <div className="flex items-center gap-2 flex-wrap">
+        {(filters.document_type === 'devis'
+          ? ['all', 'draft', 'sent', 'accepted', 'refused', 'expired', 'converted'] as const
+          : ['all', 'draft', 'sent', 'paid', 'overdue', 'cancelled'] as const
+        ).map((status) => (
           <button
             type="button"
             key={status}
@@ -293,15 +299,22 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                           {invoice.document_type === 'devis' ? 'Devis' : 'Avoir'}
                         </span>
                       )}
-                      <div className={cn('flex items-center gap-1.5', STATUS_CONFIG[invoice.status].color)}>
-                        <StatusIcon className="w-4 h-4" />
-                        <span className="text-sm">{STATUS_CONFIG[invoice.status].label}</span>
+                      <div className={cn(
+                        'flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium',
+                        STATUS_CONFIG[invoice.status]?.color || 'text-text-muted',
+                        STATUS_CONFIG[invoice.status]?.badgeBg || 'bg-gray-500/20'
+                      )}>
+                        <StatusIcon className="w-3.5 h-3.5" />
+                        <span>{STATUS_CONFIG[invoice.status]?.label || invoice.status}</span>
                       </div>
                     </div>
 
                     <div className="text-sm text-text-muted space-y-1">
-                      <p>Emise le {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</p>
-                      <p>Echeance le {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</p>
+                      <p>{invoice.document_type === 'devis' ? '\u00c9mis' : '\u00c9mise'} le {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</p>
+                      <p>\u00c9ch\u00e9ance le {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</p>
+                      {invoice.document_type === 'devis' && invoice.validite_jours && (
+                        <p>Validit\u00e9 : {invoice.validite_jours} jours</p>
+                      )}
                       {invoice.payment_date && (
                         <p>Payée le {new Date(invoice.payment_date).toLocaleDateString('fr-FR')}</p>
                       )}
