@@ -1280,7 +1280,7 @@ async def import_ics_file(
             # Créer un calendrier local
             cal = Calendar(
                 id=generate_uuid(),
-                name="Mon calendrier",
+                summary="Mon calendrier",
                 provider="local",
                 timezone="Europe/Paris",
             )
@@ -1334,6 +1334,88 @@ async def import_ics_file(
         "imported": imported,
         "skipped": skipped,
         "calendar_id": cal.id,
-        "calendar_name": cal.name,
+        "calendar_name": cal.summary,
         "message": f"{imported} événement(s) importé(s){f', {skipped} doublon(s) ignoré(s)' if skipped else ''}",
     }
+
+
+@router.get("/export-ics")
+async def export_ics_file(
+    calendar_id: str | None = Query(None, description="ID du calendrier a exporter (tous sinon)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Exporte les evenements d'un calendrier au format .ics.
+
+    Si aucun calendar_id n'est fourni, exporte tous les evenements locaux.
+    """
+    from datetime import date as date_type
+
+    from fastapi.responses import Response as RawResponse
+    from icalendar import Calendar as ICalCalendar
+    from icalendar import Event as ICalEvent
+
+    # Requete : evenements du calendrier specifie ou tous
+    query = select(CalendarEvent)
+    if calendar_id:
+        cal = await session.get(Calendar, calendar_id)
+        if not cal:
+            raise HTTPException(status_code=404, detail="Calendrier non trouve")
+        query = query.where(CalendarEvent.calendar_id == calendar_id)
+
+    result = await session.execute(query)
+    events = result.scalars().all()
+
+    # Construire le fichier ICS
+    ical = ICalCalendar()
+    ical.add("prodid", "-//THERESE v2//FR")
+    ical.add("version", "2.0")
+    ical.add("calscale", "GREGORIAN")
+
+    for evt in events:
+        ie = ICalEvent()
+        ie.add("uid", evt.id)
+        ie.add("summary", evt.summary)
+        if evt.description:
+            ie.add("description", evt.description)
+        if evt.location:
+            ie.add("location", evt.location)
+        ie.add("status", evt.status.upper() if evt.status else "CONFIRMED")
+
+        if evt.all_day and evt.start_date:
+            ie.add("dtstart", date_type.fromisoformat(evt.start_date))
+            if evt.end_date:
+                ie.add("dtend", date_type.fromisoformat(evt.end_date))
+        elif evt.start_datetime:
+            ie.add("dtstart", evt.start_datetime)
+            if evt.end_datetime:
+                ie.add("dtend", evt.end_datetime)
+
+        if evt.attendees:
+            try:
+                att_list = json.loads(evt.attendees)
+                for att in att_list:
+                    ie.add("attendee", f"mailto:{att}")
+            except (ValueError, TypeError):
+                pass
+
+        if evt.recurrence:
+            try:
+                rrules = json.loads(evt.recurrence)
+                for rule in rrules:
+                    if rule.startswith("RRULE:"):
+                        ie.add("rrule", rule[6:])
+            except (ValueError, TypeError):
+                pass
+
+        ical.add_component(ie)
+
+    ics_bytes = ical.to_ical()
+
+    return RawResponse(
+        content=ics_bytes,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": "attachment; filename=therese-calendrier.ics",
+        },
+    )

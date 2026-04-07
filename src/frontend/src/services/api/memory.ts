@@ -221,3 +221,33 @@ export async function searchMemory(
     body: JSON.stringify({ query, types }),
   });
 }
+
+// Import/Export VCF Contacts
+export async function importVCFFile(
+  file: File,
+  updateExisting = true,
+): Promise<{ created: number; updated: number; skipped: number; message: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { API_BASE, apiFetch } = await import('./core');
+  const response = await apiFetch(
+    `${API_BASE}/api/memory/contacts/import?update_existing=${updateExisting}`,
+    { method: 'POST', body: formData },
+  );
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function exportVCFFile(): Promise<Blob> {
+  const { API_BASE, apiFetch } = await import('./core');
+  const response = await apiFetch(`${API_BASE}/api/memory/contacts/export`);
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  return response.blob();
+}

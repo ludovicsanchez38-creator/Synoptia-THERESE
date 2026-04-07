@@ -207,3 +207,14 @@ export async function importICSFile(file: File, calendarId?: string): Promise<{ 
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
+
+// Export ICS
+export async function exportICSFile(calendarId?: string): Promise<Blob> {
+  const params = calendarId ? `?calendar_id=${calendarId}` : '';
+  const response = await apiFetch(`${API_BASE}/api/calendar/export-ics${params}`);
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  return response.blob();
+}

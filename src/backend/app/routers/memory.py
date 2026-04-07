@@ -25,7 +25,7 @@ from app.models.schemas import (
 from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -413,6 +413,164 @@ async def create_contact(
     logger.info(f"Contact created: {contact.id} with stage={contact.stage}, score={contact.score}")
 
     return _contact_to_response(contact)
+
+
+
+# ============================================================
+# Import / Export Contacts (VCF)
+# ============================================================
+
+
+@router.post("/contacts/import")
+async def import_vcf_contacts(
+    file: UploadFile = File(..., description="Fichier .vcf (VCard)"),
+    update_existing: bool = Query(True, description="Mettre a jour les contacts existants (par email)"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Importe des contacts depuis un fichier VCard (.vcf).
+
+    Les doublons sont detectes par email ou nom complet.
+    """
+    from datetime import UTC, datetime
+
+    from app.services.import_service import parse_vcf
+
+    if not file.filename or not file.filename.lower().endswith(".vcf"):
+        raise HTTPException(status_code=400, detail="Le fichier doit etre au format .vcf")
+
+    content = await file.read()
+    if len(content) > 1_000_000:
+        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
+
+    try:
+        parsed_contacts = parse_vcf(content)
+    except Exception as e:
+        logger.error(f"Erreur parsing VCF: {e}")
+        raise HTTPException(status_code=400, detail=f"Fichier VCF invalide : {e}")
+
+    if not parsed_contacts:
+        return {"created": 0, "updated": 0, "skipped": 0, "message": "Aucun contact trouve dans le fichier"}
+
+    created = 0
+    updated = 0
+    skipped = 0
+
+    for contact_data in parsed_contacts:
+        existing = None
+        if contact_data.get("email"):
+            result = await session.execute(
+                select(Contact).where(Contact.email == contact_data["email"]).limit(1)
+            )
+            existing = result.scalar_one_or_none()
+
+        if not existing and contact_data.get("first_name") and contact_data.get("last_name"):
+            result = await session.execute(
+                select(Contact).where(
+                    Contact.first_name == contact_data["first_name"],
+                    Contact.last_name == contact_data["last_name"],
+                ).limit(1)
+            )
+            existing = result.scalar_one_or_none()
+
+        if existing and update_existing:
+            for field in ("first_name", "last_name", "company", "phone", "address", "notes"):
+                new_value = contact_data.get(field)
+                if new_value:
+                    setattr(existing, field, new_value)
+            existing.updated_at = datetime.now(UTC)
+            session.add(existing)
+            updated += 1
+        elif existing:
+            skipped += 1
+        else:
+            contact = Contact(
+                first_name=contact_data.get("first_name", ""),
+                last_name=contact_data.get("last_name", ""),
+                company=contact_data.get("company"),
+                email=contact_data.get("email"),
+                phone=contact_data.get("phone"),
+                address=contact_data.get("address"),
+                notes=contact_data.get("notes"),
+            )
+            session.add(contact)
+            created += 1
+
+    await session.commit()
+    logger.info(f"VCF import (memory): {created} created, {updated} updated, {skipped} skipped")
+
+    parts = [f"{created} contact(s) cree(s)"]
+    if updated:
+        parts.append(f"{updated} mis a jour")
+    if skipped:
+        parts.append(f"{skipped} doublon(s) ignore(s)")
+    return {
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "total": len(parsed_contacts),
+        "message": ", ".join(parts),
+    }
+
+
+@router.get("/contacts/export")
+async def export_vcf_contacts(
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Exporte tous les contacts au format VCard (.vcf).
+    """
+    import vobject
+    from fastapi.responses import Response as RawResponse
+
+    result = await session.execute(select(Contact).order_by(Contact.last_name, Contact.first_name))
+    contacts = result.scalars().all()
+
+    vcf_parts: list[str] = []
+
+    for c in contacts:
+        vcard = vobject.vCard()
+
+        n = vcard.add("n")
+        n.value = vobject.vcard.Name(family=c.last_name or "", given=c.first_name or "")
+
+        fn = vcard.add("fn")
+        fn.value = c.display_name
+
+        if c.company:
+            org = vcard.add("org")
+            org.value = [c.company]
+
+        if c.email:
+            email_prop = vcard.add("email")
+            email_prop.value = c.email
+            email_prop.type_param = "INTERNET"
+
+        if c.phone:
+            tel = vcard.add("tel")
+            tel.value = c.phone
+            tel.type_param = "CELL"
+
+        if c.address:
+            adr = vcard.add("adr")
+            adr.value = vobject.vcard.Address(street=c.address)
+
+        if c.notes:
+            note = vcard.add("note")
+            note.value = c.notes
+
+        vcf_parts.append(vcard.serialize())
+
+    vcf_content = "\n".join(vcf_parts)
+
+    return RawResponse(
+        content=vcf_content.encode("utf-8"),
+        media_type="text/vcard",
+        headers={
+            "Content-Disposition": "attachment; filename=therese-contacts.vcf",
+        },
+    )
+
 
 
 @router.get("/contacts/{contact_id}", response_model=ContactResponse)

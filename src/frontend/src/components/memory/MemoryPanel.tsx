@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Plus, Search, ChevronRight, FolderOpen, Trash2, AlertCircle, Shield, Download, UserX, RefreshCw } from 'lucide-react';
+import { X, Users, Plus, Search, ChevronRight, FolderOpen, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
@@ -40,6 +40,37 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
   const [rgpdActionLoading, setRgpdActionLoading] = useState(false);
   const [anonymizeReason, setAnonymizeReason] = useState('');
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
+  const vcfInputRef = { current: null as HTMLInputElement | null };
+
+  async function handleImportVCF(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await api.importVCFFile(file);
+      console.log('VCF import:', result.message);
+      await loadData();
+      alert(result.message);
+    } catch (err: any) {
+      alert('Erreur import VCF : ' + err.message);
+    }
+    e.target.value = '';
+  }
+
+  async function handleExportVCF() {
+    try {
+      const blob = await api.exportVCFFile();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'therese-contacts.vcf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Erreur export VCF : ' + err.message);
+    }
+  }
 
   // Load data when panel opens or scope changes
   useEffect(() => {
@@ -513,7 +544,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
 
             {/* Footer - Add button (contacts only) */}
             {activeTab === 'contacts' && (
-              <div className="p-3 border-t border-border/50">
+              <div className="p-3 border-t border-border/50 space-y-2">
                 <Button
                   variant="primary"
                   className="w-full"
@@ -523,6 +554,33 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                   <Plus className="w-4 h-4 mr-2" />
                   Nouveau contact
                 </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => vcfInputRef.current?.click()}
+                    title="Importer des contacts (.vcf)"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Importer
+                  </Button>
+                  <input
+                    ref={(el) => { vcfInputRef.current = el; }}
+                    type="file"
+                    accept=".vcf"
+                    className="hidden"
+                    onChange={handleImportVCF}
+                  />
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={handleExportVCF}
+                    title="Exporter les contacts (.vcf)"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter
+                  </Button>
+                </div>
               </div>
             )}
           </motion.div>

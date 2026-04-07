@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Loader2,
+  Download,
 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
@@ -220,6 +221,24 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     e.target.value = '';
   }
 
+  async function handleExportICS() {
+    const addNotification = useStatusStore.getState().addNotification;
+    try {
+      const blob = await api.exportICSFile(currentCalendarId || undefined);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'therese-calendrier.ics';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addNotification({ type: 'success', title: 'Export ICS', message: 'Calendrier exporte avec succes' });
+    } catch (err: any) {
+      addNotification({ type: 'error', title: 'Erreur export', message: err.message });
+    }
+  }
+
   function handlePrevious() {
     const newDate = new Date(selectedDate);
     if (viewMode === 'day') {
@@ -366,6 +385,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           className="hidden"
           onChange={handleImportICS}
         />
+
+        <Button variant="ghost" size="sm" onClick={handleExportICS} title="Exporter en .ics">
+          <Download className="w-4 h-4" />
+        </Button>
 
         <Button variant="primary" size="sm" onClick={handleNewEvent}>
           <Plus className="w-4 h-4 mr-2" />
