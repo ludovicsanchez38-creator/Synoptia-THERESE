@@ -2,7 +2,7 @@
   {
     "id": "rapport-hebdo",
     "name": "Rapport hebdomadaire",
-    "description": "Genere un rapport d'activite de la semaine : emails, reunions, taches, CRM.",
+    "description": "Génère un rapport d'activite de la semaine : emails, reunions, taches, CRM.",
     "icon": "FileBarChart",
     "category": "organisation",
     "steps": [
@@ -13,12 +13,12 @@
       },
       {
         "id": "calendar",
-        "label": "Reunions et rendez-vous",
+        "label": "Réunions et rendez-vous",
         "prompt": "Resume les reunions et rendez-vous de cette semaine : participants, sujets abordes, decisions prises. Si des reunions sont prevues la semaine prochaine, mentionne-les."
       },
       {
         "id": "crm",
-        "label": "Activite CRM et clients",
+        "label": "Activité CRM et clients",
         "prompt": "Analyse l'activite CRM de la semaine : nouveaux contacts, opportunites en cours, relances effectuees, montants en jeu. Identifie les deals qui avancent et ceux qui stagnent."
       },
       {
@@ -32,7 +32,12 @@
         "prompt": "A partir des analyses precedentes (emails, calendrier, CRM, taches), redige un rapport hebdomadaire structure avec : faits marquants, indicateurs cles, points d'attention, actions prioritaires pour la semaine prochaine."
       }
     ],
-    "tools": ["email", "calendar", "crm", "tasks"]
+    "tools": [
+      "email",
+      "calendar",
+      "crm",
+      "tasks"
+    ]
   },
   {
     "id": "relance-clients",
@@ -57,12 +62,15 @@
         "prompt": "Propose un plan de relance personnalise pour chaque contact : canal recommande (email, telephone, LinkedIn), ton adapte, message cle, meilleur moment. Priorise par montant en jeu et urgence."
       }
     ],
-    "tools": ["crm", "email"]
+    "tools": [
+      "crm",
+      "email"
+    ]
   },
   {
     "id": "prep-rdv",
-    "name": "Preparation RDV",
-    "description": "Prepare un brief complet avant un rendez-vous client ou prospect.",
+    "name": "Préparation RDV",
+    "description": "Prépare un brief complet avant un rendez-vous client ou prospect.",
     "icon": "CalendarCheck",
     "category": "commercial",
     "params": [
@@ -91,7 +99,11 @@
         "prompt": "Redige un brief de preparation structure : contexte de la relation, historique des echanges, points a aborder, questions a poser, objectifs du rendez-vous, pieges a eviter."
       }
     ],
-    "tools": ["crm", "email", "web_search"]
+    "tools": [
+      "crm",
+      "email",
+      "web_search"
+    ]
   },
   {
     "id": "audit-tresorerie",
@@ -117,11 +129,14 @@
       },
       {
         "id": "synthese",
-        "label": "Synthese tresorerie",
+        "label": "Synthese trésorerie",
         "prompt": "Redige une synthese de la situation de tresorerie : solde actuel, tendance, alertes, recommandations (relances prioritaires, depenses a reporter, etc.)."
       }
     ],
-    "tools": ["invoices", "crm"]
+    "tools": [
+      "invoices",
+      "crm"
+    ]
   },
   {
     "id": "veille-concurrent",
@@ -160,12 +175,14 @@
         "prompt": "Redige une fiche concurrentielle structuree : forces, faiblesses, menaces, opportunites. Compare avec notre positionnement et propose des axes de differenciation."
       }
     ],
-    "tools": ["web_search"]
+    "tools": [
+      "web_search"
+    ]
   },
   {
     "id": "onboarding-client",
     "name": "Onboarding client",
-    "description": "Prepare l'accueil d'un nouveau client : checklist, documents, communication.",
+    "description": "Prépare l'accueil d'un nouveau client : checklist, documents, communication.",
     "icon": "Handshake",
     "category": "commercial",
     "params": [
@@ -181,7 +198,12 @@
         "label": "Offre souscrite",
         "type": "select",
         "required": true,
-        "options": ["FORGER", "PROPULSER", "ANCRER", "RAYONNER"]
+        "options": [
+          "FORGER",
+          "PROPULSER",
+          "ANCRER",
+          "RAYONNER"
+        ]
       }
     ],
     "steps": [
@@ -201,6 +223,10 @@
         "prompt": "Propose un planning previsionnel pour l'accompagnement de {{client_name}} dans le cadre de l'offre {{offer}} : jalons, livrables, points d'etape."
       }
     ],
-    "tools": ["crm", "email", "calendar"]
+    "tools": [
+      "crm",
+      "email",
+      "calendar"
+    ]
   }
 ]
