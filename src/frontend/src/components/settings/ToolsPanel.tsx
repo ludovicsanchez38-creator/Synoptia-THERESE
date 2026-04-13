@@ -353,6 +353,15 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       return;
     }
 
+    // Verifier les prerequis avant installation
+    if (requirementsCheck && !requirementsCheck.all_satisfied) {
+      const cmdCheck = requirementsCheck.commands[preset.command];
+      if (cmdCheck && !cmdCheck.available) {
+        onError(`Impossible d'installer ${preset.name} : la commande '${preset.command}' n'est pas disponible. ${requirementsCheck.help_message || 'Installez Node.js pour continuer.'}`);
+        return;
+      }
+    }
+
     // Check for required env vars - ouvrir modal si nécessaire
     if (preset.env_required && preset.env_required.length > 0) {
       setPresetToConfig(preset);
@@ -380,12 +389,16 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
         prev.map((p) => (p.id === presetId ? { ...p, installed: true } : p))
       );
 
-      // Auto-start after installation
-      try {
-        await handleStartServer(installed.id);
-      } catch (startErr) {
-        console.error('Failed to auto-start server:', startErr);
-        // Don't show error, server is installed, user can start manually
+      // Verifier si le serveur a demarre correctement
+      if (installed.status === 'error') {
+        onError(installed.name + ' installe mais erreur au demarrage : ' + (installed.error || 'Erreur inconnue. Verifiez que Node.js est installe.'));
+      } else if (installed.status !== 'running') {
+        // Auto-start seulement si pas deja running (le backend demarre deja)
+        try {
+          await handleStartServer(installed.id);
+        } catch (startErr) {
+          console.error('Failed to auto-start server:', startErr);
+        }
       }
 
       await refreshStatus();

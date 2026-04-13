@@ -110,6 +110,7 @@ export interface AgentStatusResponse {
   git_available: boolean;
   repo_detected: boolean;
   repo_path?: string;
+  repo_error?: string;
   current_branch?: string;
   active_tasks: number;
   katia_ready: boolean;

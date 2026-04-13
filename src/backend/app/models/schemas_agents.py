@@ -114,6 +114,7 @@ class AgentStatusResponse(BaseModel):
     git_available: bool = False
     repo_detected: bool = False
     repo_path: str | None = None
+    repo_error: str | None = None
     current_branch: str | None = None
     active_tasks: int = 0
     katia_ready: bool = False

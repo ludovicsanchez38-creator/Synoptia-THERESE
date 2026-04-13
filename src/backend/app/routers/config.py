@@ -922,7 +922,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         ]
         try:
             from app.services.llm import _get_api_key_from_db
-            or_key = await _get_api_key_from_db("openrouter") or os.environ.get("OPENROUTER_API_KEY", "")
+            or_key = _get_api_key_from_db("openrouter") or os.environ.get("OPENROUTER_API_KEY", "")
             if or_key:
                 client = await get_http_client()
                 resp = await client.get(
@@ -962,6 +962,10 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         except Exception:
             # Ollama non disponible - liste vide, pas d'erreur
             available_models = []
+
+    # Inclure le modele actif dans la liste s il est custom
+    if config.model and config.model not in available_models:
+        available_models.append(config.model)
 
     return LLMConfigResponse(
         provider=config.provider.value,
@@ -1078,6 +1082,10 @@ async def set_llm_config(
                 post_available_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
         except Exception as e:
             logger.debug("Service non disponible: %s", e)
+
+    # Inclure le modele custom dans la reponse POST aussi
+    if request.model and request.model not in post_available_models:
+        post_available_models.append(request.model)
 
     return LLMConfigResponse(
         provider=request.provider,

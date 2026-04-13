@@ -60,7 +60,9 @@ async def create_server(request: MCPServerCreate) -> MCPServerResponse:
 
     # Auto-start if enabled
     if request.enabled:
-        await service.start_server(server.id)
+        success = await service.start_server(server.id)
+        if not success:
+            logger.warning("Serveur %s cree mais demarrage echoue", server.name)
 
     return MCPServerResponse(**server.to_dict())
 
@@ -681,6 +683,9 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
         enabled=True,
     )
 
-    await service.start_server(server.id)
+    success = await service.start_server(server.id)
+    if not success:
+        error_detail = getattr(server, "error", None) or "Echec du demarrage"
+        logger.warning("Preset %s installe mais demarrage echoue : %s", preset_id, error_detail)
 
     return MCPServerResponse(**server.to_dict())

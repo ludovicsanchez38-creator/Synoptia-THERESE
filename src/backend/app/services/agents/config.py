@@ -112,7 +112,15 @@ def _resolve_agents_dir() -> Path:
                 row = cursor.fetchone()
                 conn.close()
                 if row and row[0]:
-                    source_path = row[0]
+                    raw = row[0].strip().strip('"').strip("'")
+                    resolved = Path(raw).expanduser().resolve()
+                    if resolved.exists():
+                        source_path = str(resolved)
+                    else:
+                        logger.warning(
+                            "agent_source_path DB '%s' (resolu: '%s') n'existe pas",
+                            row[0], resolved,
+                        )
         except Exception as e:
             logger.debug("Impossible de lire agent_source_path depuis DB: %s", e)
 

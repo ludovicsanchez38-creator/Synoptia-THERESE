@@ -412,6 +412,7 @@ export function ActionPanel() {
     launchAction,
     cancelTask: cancelAction,
     closePanel,
+    openPanel,
     setActiveTask,
   } = useActionsStore();
 
@@ -463,7 +464,32 @@ export function ActionPanel() {
   const showForm = selectedAgent && !showTask;
   const showList = !showTask && !showForm;
 
-  if (!isPanelOpen) return null;
+  if (!isPanelOpen) {
+    if (activeTask && (activeTask.status === 'running' || activeTask.status === 'pending')) {
+      return (
+        <button
+          onClick={() => openPanel()}
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-[#131B35] border border-cyan-400/30 text-sm text-cyan-400 shadow-lg shadow-cyan-400/10 hover:bg-[#1A2340] transition-colors animate-pulse"
+        >
+          <Loader2 size={14} className="animate-spin" />
+          {activeTask.agent_name || 'Action'} en cours...
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.stopPropagation();
+              cancelAction(activeTask.task_id);
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
+            className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+          >
+            <Square size={10} />
+          </span>
+        </button>
+      );
+    }
+    return null;
+  }
 
   return (
     <AnimatePresence>

@@ -6,10 +6,11 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Zap, RefreshCw, CheckCircle, XCircle, AlertCircle, Headphones, Wrench } from 'lucide-react';
+import { Zap, RefreshCw, CheckCircle, XCircle, AlertCircle, Headphones, Wrench, FolderOpen } from 'lucide-react';
 import { getAgentStatus, getAgentConfig, updateAgentConfig } from '../../services/api/agents';
 import type { AgentStatusResponse, AgentConfigResponse } from '../../services/api/agents';
 import { useAtelierStore } from '../../stores/atelierStore';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
 
 interface ModelInfo {
   id: string;
@@ -121,6 +122,11 @@ export function AgentsTab() {
         <div className="space-y-2 text-sm">
           <StatusRow label="Git" ok={status?.git_available} />
           <StatusRow label="Dépôt détecté" ok={status?.repo_detected} />
+          {status?.repo_error && !status?.repo_detected && (
+            <div className="mt-1 ml-1 text-xs text-red-400/80">
+              {status.repo_error}
+            </div>
+          )}
           <StatusRow label="Katia" ok={status?.katia_ready} />
           <StatusRow label="Zézette" ok={status?.zezette_ready} />
           {status?.current_branch && (
@@ -160,6 +166,9 @@ export function AgentsTab() {
                 </optgroup>
               );
             })}
+            {katiaModel && !models.some((m) => m.id === katiaModel) && (
+              <option value={katiaModel}>{katiaModel} (personnalisé)</option>
+            )}
           </select>
         </div>
 
@@ -187,6 +196,9 @@ export function AgentsTab() {
                 </optgroup>
               );
             })}
+            {zezetteModel && !models.some((m) => m.id === zezetteModel) && (
+              <option value={zezetteModel}>{zezetteModel} (personnalisé)</option>
+            )}
           </select>
         </div>
       </div>
@@ -199,13 +211,36 @@ export function AgentsTab() {
         <p className="text-xs text-text-muted mb-3">
           Chemin local vers ton clone/fork du repo THÉRÈSE.
         </p>
-        <input
-          type="text"
-          value={sourcePath}
-          onChange={(e) => setSourcePathInput(e.target.value)}
-          placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE ou /chemin/vers/Synoptia-THERESE"
-          className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
-        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={sourcePath}
+            onChange={(e) => setSourcePathInput(e.target.value)}
+            placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE"
+            className="flex-1 rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const selected = await openDialog({
+                  directory: true,
+                  multiple: false,
+                  title: 'Sélectionner le dossier du code source THÉRÈSE',
+                });
+                if (selected && typeof selected === 'string') {
+                  setSourcePathInput(selected);
+                }
+              } catch {
+                // Annulation utilisateur
+              }
+            }}
+            className="shrink-0 rounded-lg border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-purple-500/50 transition"
+            title="Parcourir..."
+          >
+            <FolderOpen size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Bouton sauver global */}
