@@ -64,10 +64,17 @@ def _get_source_path() -> str | None:
             if row and row[0]:
                 raw = row[0].strip().strip('"').strip("'")
                 p = Path(raw).expanduser().resolve()
-                if p.exists() and ((p / ".git").exists() or (p / ".git").is_file()):
+                if p.exists():
+                    has_git = (p / ".git").exists() or (p / ".git").is_file()
+                    if not has_git:
+                        logger.warning(
+                            "Chemin configure '%s' (resolu: '%s') existe mais .git non trouve. "
+                            "Le chemin est quand meme utilise (priorite config utilisateur).",
+                            row[0], p,
+                        )
                     return str(p)
                 logger.warning(
-                    "Agent source_path configure '%s' (resolu: '%s') mais .git non trouve",
+                    "Chemin configure '%s' (resolu: '%s') n'existe pas, fallback auto-detection.",
                     row[0], p,
                 )
     except Exception as e:
@@ -719,12 +726,20 @@ async def get_status(
     source_path = _get_source_path()
     repo_detected = False
     current_branch = None
+    repo_error = None
 
     if source_path and git_available:
         git = GitService(source_path)
         repo_detected = await git.is_repo()
         if repo_detected:
             current_branch = await git.current_branch()
+        else:
+            repo_error = f"Le dossier '{source_path}' existe mais n'est pas un depot Git (.git absent)"
+    elif source_path and not git_available:
+        repo_error = "Git n'est pas installe ou introuvable dans le PATH"
+    elif not source_path:
+        repo_error = "Aucun chemin de code source configure"
+
 
     # Compter les tâches actives
     result = await session.execute(
@@ -756,6 +771,7 @@ async def get_status(
         git_available=git_available,
         repo_detected=repo_detected,
         repo_path=source_path,
+        repo_error=repo_error,
         current_branch=current_branch,
         active_tasks=active_tasks,
         katia_ready=katia_ready,

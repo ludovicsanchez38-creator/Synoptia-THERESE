@@ -393,12 +393,20 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           </div>
         ) : displayedCategories.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-sm text-text-muted">
-              Aucun prompt trouv\u00e9 pour "{searchQuery}"
-            </p>
-            <p className="text-xs text-text-muted/60 mt-1">
-              Essaie avec d'autres mots-cl\u00e9s
-            </p>
+            {searchQuery.trim() ? (
+              <>
+                <p className="text-sm text-text-muted">
+                  Aucun prompt trouv\u00e9 pour "{searchQuery}"
+                </p>
+                <p className="text-xs text-text-muted/60 mt-1">
+                  Essaie avec d'autres mots-cl\u00e9s
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-text-muted">
+                La biblioth\u00e8que de prompts est vide ou indisponible.
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid gap-4">

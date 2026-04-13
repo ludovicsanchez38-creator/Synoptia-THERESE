@@ -95,6 +95,8 @@ datas = [
     (os.path.join(backend_dir, "alembic.ini"), "."),
     # v0.5 : configs agents IA (SOUL.md + agent.json)
     (os.path.join(backend_dir, "app", "agents"), os.path.join("app", "agents")),
+    # v0.12 : bibliotheque de prompts
+    (os.path.join(backend_dir, "app", "data"), os.path.join("app", "data")),
 ]
 
 # Collecter les data files des bibliothèques qui en ont besoin

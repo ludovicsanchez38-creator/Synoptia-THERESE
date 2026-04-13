@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -18,7 +19,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Chargement des donnees au demarrage du module
-_LIBRARY_PATH = Path(__file__).resolve().parent.parent / "data" / "prompt_library.json"
+# PyInstaller : __file__ pointe vers _MEIPASS, on adapte le chemin
+if hasattr(sys, "_MEIPASS"):
+    _LIBRARY_PATH = Path(sys._MEIPASS) / "app" / "data" / "prompt_library.json"
+else:
+    _LIBRARY_PATH = Path(__file__).resolve().parent.parent / "data" / "prompt_library.json"
 _prompts: list[dict[str, Any]] = []
 _categories_order = ["email", "commercial", "admin", "redaction", "organisation", "juridique"]
 _categories_labels: dict[str, str] = {
