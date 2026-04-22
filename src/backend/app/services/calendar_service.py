@@ -151,10 +151,21 @@ class CalendarService:
             "orderBy": "startTime",
         }
 
+        # BUG #73 v0.11.5 : Google Calendar API exige un format RFC 3339.
+        # "2026-04-22T10:00:00+02:00Z" (offset + Z) etait envoye pour les
+        # datetime tz-aware, ce qui renvoyait un 400 silencieux ou une liste
+        # vide. On force une conversion en UTC naif avant d ajouter "Z".
+        from datetime import UTC as _UTC
+
+        def _to_rfc3339_z(dt: datetime) -> str:
+            if dt.tzinfo is not None:
+                dt = dt.astimezone(_UTC).replace(tzinfo=None)
+            return dt.isoformat() + "Z"
+
         if time_min:
-            params["timeMin"] = time_min.isoformat() + "Z"
+            params["timeMin"] = _to_rfc3339_z(time_min)
         if time_max:
-            params["timeMax"] = time_max.isoformat() + "Z"
+            params["timeMax"] = _to_rfc3339_z(time_max)
         if page_token:
             params["pageToken"] = page_token
 

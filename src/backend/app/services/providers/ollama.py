@@ -118,11 +118,12 @@ class OllamaProvider(BaseProvider):
         # Le catch ReadTimeout a été retiré — l'arrêt de génération se fait via AbortController
         except httpx.HTTPStatusError as e:
             status = e.response.status_code
+            detail = ""
             try:
                 body = e.response.json()
                 detail = body.get("error", str(e))
-            except Exception as e:
-                logger.debug("Impossible de parser le body erreur Ollama: %s", e)
+            except Exception as body_err:
+                logger.debug("Impossible de parser le body erreur Ollama: %s", body_err)
                 detail = str(e)
             logger.error(f"Ollama HTTP {status}: {detail}")
             if status == 404:

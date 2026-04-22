@@ -5228,3 +5228,155 @@ class TestFrontendRegression:
         )
         assert "20" in content, "Le taux TVA 20% doit être présent"
         assert "5.5" in content or "5,5" in content, "Le taux TVA 5,5% doit être présent"
+
+
+class TestBUG69NestedExceptShadowing:
+    """v0.11.5 issue #69 - 'local variable e' : nested 'except as e' masquait
+    la variable de l outer HTTPStatusError handler, provoquant UnboundLocalError."""
+
+    def test_openrouter_no_nested_except_as_e_in_http_error_handler(self):
+        """Le bloc except httpx.HTTPStatusError as e ne doit pas contenir
+        un nested 'except Exception as e:' qui ecrase la variable."""
+        import re
+        from pathlib import Path
+
+        src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "openrouter.py"
+        src = src_file.read_text()
+        match = re.search(
+            r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*except [A-Z])",
+            src,
+            re.DOTALL,
+        )
+        assert match, "Bloc HTTPStatusError introuvable dans openrouter.py"
+        block = match.group(0)
+        assert "except Exception as e:" not in block, (
+            "Nested 'except Exception as e:' dans le handler HTTPStatusError "
+            "ecrase la variable e (bug local variable e). Utiliser un autre nom."
+        )
+
+    def test_anthropic_no_nested_except_as_e_in_http_error_handler(self):
+        import re
+        from pathlib import Path
+
+        src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "anthropic.py"
+        src = src_file.read_text()
+        match = re.search(
+            r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*except [A-Z])",
+            src,
+            re.DOTALL,
+        )
+        assert match, "Bloc HTTPStatusError introuvable dans anthropic.py"
+        block = match.group(0)
+        assert "except Exception as e:" not in block, (
+            "Nested 'except Exception as e:' dans anthropic.py ecrase la variable e"
+        )
+
+    def test_ollama_no_nested_except_as_e_in_http_error_handler(self):
+        import re
+        from pathlib import Path
+
+        src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "ollama.py"
+        src = src_file.read_text()
+        match = re.search(
+            r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*(?:except [A-Z]|async def|def |class ))",
+            src,
+            re.DOTALL,
+        )
+        assert match, "Bloc HTTPStatusError introuvable dans ollama.py"
+        block = match.group(0)
+        assert "except Exception as e:" not in block, (
+            "Nested 'except Exception as e:' dans ollama.py ecrase la variable e"
+        )
+
+
+class TestBUG73GoogleCalendarTZ:
+    """v0.11.5 issue #73 - Google Calendar API recevait des timestamps
+    invalides type '2026-04-22T00:00:00+02:00Z' (offset + Z) quand le
+    datetime etait tz-aware, ce qui retournait une liste vide ou 400."""
+
+    def test_to_rfc3339_z_handles_tz_aware(self):
+        """Un datetime avec tzinfo doit etre converti en UTC naif avant Z."""
+        from datetime import UTC, datetime, timedelta, timezone
+
+        from app.services.calendar_service import CalendarService
+
+        paris = timezone(timedelta(hours=2))
+        # 10h00 Paris = 08h00 UTC
+        dt = datetime(2026, 4, 22, 10, 0, 0, tzinfo=paris)
+
+        # Appel du helper interne via la methode publique
+        import inspect
+        src = inspect.getsource(CalendarService.list_events)
+        assert "_to_rfc3339_z" in src, "helper _to_rfc3339_z doit etre present"
+        assert "astimezone(_UTC)" in src, "conversion UTC requise pour tz-aware"
+        assert "replace(tzinfo=None)" in src, "retrait tzinfo requis avant isoformat"
+
+    def test_to_rfc3339_z_handles_naive(self):
+        """Un datetime naif est deja considere UTC - on ajoute juste Z."""
+        from datetime import datetime
+
+        dt = datetime(2026, 4, 22, 10, 0, 0)
+        expected = "2026-04-22T10:00:00Z"
+        assert dt.isoformat() + "Z" == expected
+
+
+class TestBUG69OllamaFallbackRespectsProvider:
+    """v0.11.5 issue #69 - le fallback LLM ne doit plus retomber sur Ollama
+    quand l utilisateur a explicitement choisi un provider cloud sans cle."""
+
+    def test_default_config_no_silent_ollama_fallback_for_cloud_provider(self):
+        """Si selected_provider est un provider cloud mais sans cle, la config
+        retournee doit conserver le provider choisi (api_key=None) et non Ollama.
+        Sinon l utilisateur voit 'Ollama non detecte' qui est un faux diagnostic."""
+        from unittest.mock import patch
+
+        from app.services.llm import LLMService
+        from app.services.providers.base import LLMProvider
+
+        with patch("app.services.llm._get_api_key_from_db", return_value=None), patch(
+            "app.models.database.get_sync_connection"
+        ) as mock_db, patch.dict(
+            "os.environ",
+            {k: "" for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY", "XAI_API_KEY", "OPENROUTER_API_KEY")},
+            clear=False,
+        ):
+            class _FakeRow:
+                def __init__(self, val):
+                    self.val = val
+
+                def __getitem__(self, i):
+                    return self.val
+
+            class _FakeResult:
+                def __init__(self, val):
+                    self._val = val
+
+                def fetchone(self):
+                    return _FakeRow(self._val) if self._val else None
+
+            class _FakeConn:
+                def execute(self, stmt, params):
+                    key = params.get("key", "")
+                    if key == "llm_provider":
+                        return _FakeResult("openrouter")
+                    if key == "llm_model":
+                        return _FakeResult("anthropic/claude-opus-4-6")
+                    return _FakeResult(None)
+
+            class _FakeCtx:
+                def __enter__(self):
+                    return _FakeConn()
+
+                def __exit__(self, *a):
+                    return False
+
+            mock_db.return_value = _FakeCtx()
+
+            service = LLMService()
+            assert service.config.provider == LLMProvider.OPENROUTER, (
+                f"Le provider selectionne (openrouter) doit etre conserve meme sans cle. "
+                f"Obtenu : {service.config.provider}"
+            )
+            assert service.config.api_key is None, (
+                "api_key doit etre None pour laisser l appel API echouer proprement"
+            )

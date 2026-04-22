@@ -173,8 +173,8 @@ class OpenRouterProvider(BaseProvider):
             error_body = ""
             try:
                 error_body = e.response.text
-            except Exception as e:
-                logger.debug("Impossible de lire le body erreur OpenRouter: %s", e)
+            except Exception as body_err:
+                logger.debug("Impossible de lire le body erreur OpenRouter: %s", body_err)
             logger.error(f"OpenRouter API error: {e.response.status_code} - {error_body}")
 
             # BUG-openrouter-403 : parser le body JSON pour un message d'erreur lisible

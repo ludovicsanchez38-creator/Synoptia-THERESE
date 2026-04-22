@@ -141,11 +141,12 @@ class AnthropicProvider(BaseProvider):
                             continue
 
         except httpx.HTTPStatusError as e:
+            error_text = ""
             try:
                 error_body = await e.response.aread()
                 error_text = error_body.decode() if error_body else str(e)
-            except Exception as e:
-                logger.debug("Impossible de lire le body erreur Anthropic: %s", e)
+            except Exception as body_err:
+                logger.debug("Impossible de lire le body erreur Anthropic: %s", body_err)
                 error_text = str(e)
             logger.error(f"Anthropic API error: {e.response.status_code} - {error_text}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")

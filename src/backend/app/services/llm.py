@@ -369,6 +369,19 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         elif mistral_key:
             return LLMConfig(LLMProvider.MISTRAL, "mistral-large-latest", api_key=mistral_key, context_window=256000)
         else:
+            # BUG #69 v0.11.5 : ne PAS retomber silencieusement sur Ollama quand
+            # l utilisateur a explicitement choisi un provider cloud. Sinon il
+            # voit "Ollama non disponible" alors qu il a configure OpenRouter,
+            # ce qui est un faux diagnostic trompeur.
+            if selected_provider and selected_provider != "ollama" and selected_provider in provider_configs:
+                provider_enum, default_model, ctx_window = provider_configs[selected_provider]
+                model = selected_model or default_model
+                logger.warning(
+                    f"Aucune cle API trouvee pour {selected_provider}. "
+                    "Retour de la config sans cle - l'appel API echouera avec un message "
+                    f"explicite sur le provider selectionne ({selected_provider})."
+                )
+                return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
             fallback_model = selected_model or "mistral-nemo"
             logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
             return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url="http://localhost:11434", context_window=32000)
