@@ -10,6 +10,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -49,6 +50,58 @@ def _normalize_command_name(command: str) -> str:
 def resolve_mcp_command(command: str, path_env: str | None = None) -> str | None:
     """Résout une commande MCP avec un PATH explicite si fourni."""
     return shutil.which(command, path=path_env if path_env else None)
+
+
+def build_mcp_enriched_path() -> str:
+    """Construit un PATH enrichi pour retrouver Node/npx/uvx sur macOS/Linux/Windows.
+
+    Unifie la logique utilisée par start_server, check_preset_requirements et
+    install_preset (BUG R3 v0.11.4). Utilise os.pathsep pour le séparateur, et
+    inclut les chemins Windows (Program Files, AppData\\npm, LocalAppData\\fnm).
+    """
+    home = os.path.expanduser("~")
+    base_path = os.environ.get("PATH", "")
+
+    extra_paths: list[str] = [
+        "/usr/local/bin",
+        "/opt/homebrew/bin",
+        f"{home}/.volta/bin",
+    ]
+
+    for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
+        base_obj = Path(base)
+        if base_obj.exists():
+            try:
+                versions = sorted(base_obj.iterdir(), reverse=True)
+            except OSError:
+                versions = []
+            for v in versions:
+                bin_dir = v / "bin"
+                if bin_dir.exists():
+                    extra_paths.append(str(bin_dir))
+                    break
+
+    if sys.platform == "win32":
+        program_files = os.environ.get("PROGRAMFILES", "")
+        program_files_x86 = os.environ.get("PROGRAMFILES(X86)", "")
+        appdata = os.environ.get("APPDATA", "")
+        local_appdata = os.environ.get("LOCALAPPDATA", "")
+        if program_files:
+            extra_paths.append(os.path.join(program_files, "nodejs"))
+        if program_files_x86:
+            extra_paths.append(os.path.join(program_files_x86, "nodejs"))
+        if appdata:
+            extra_paths.append(os.path.join(appdata, "npm"))
+        if local_appdata:
+            extra_paths.append(os.path.join(local_appdata, "fnm"))
+            extra_paths.append(os.path.join(local_appdata, "Programs", "nodejs"))
+
+    path_parts = base_path.split(os.pathsep) if base_path else []
+    for p in extra_paths:
+        if p and p not in path_parts and Path(p).exists():
+            path_parts.append(p)
+
+    return os.pathsep.join(path_parts)
 
 
 def validate_mcp_command(command: str, args: list[str] | None = None) -> None:
@@ -292,50 +345,14 @@ class MCPService:
 
             # Env minimal pour subprocess MCP (SEC-005)
             # Ne PAS copier tout os.environ pour eviter de leaker les cles API
-            home = os.environ.get("HOME", "")
-            base_path = os.environ.get("PATH", "")
+            home = os.environ.get("HOME", os.path.expanduser("~"))
 
-            # BUG-062 : Dans l'app packagée (sidecar PyInstaller), le PATH est
-            # restreint et n'inclut pas les emplacements courants de Node.js/npx.
-            # On injecte les chemins les plus courants pour macOS/Linux.
-            extra_paths = [
-                "/usr/local/bin",
-                "/opt/homebrew/bin",
-                f"{home}/.nvm/versions/node",  # NVM - résolu dynamiquement ci-dessous
-                f"{home}/.fnm/node-versions",  # FNM
-                f"{home}/.volta/bin",  # Volta
-            ]
-            # Résoudre le chemin NVM/FNM vers la version active (le plus récent)
-            for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
-                base_path_obj = Path(base)
-                if base_path_obj.exists():
-                    versions = sorted(base_path_obj.iterdir(), reverse=True)
-                    for v in versions:
-                        bin_dir = v / "bin"
-                        if bin_dir.exists():
-                            extra_paths.append(str(bin_dir))
-                            break
-
-            # BUG-078 : ajouter les chemins Windows courants pour Node.js/npx
-            import sys
-            if sys.platform == "win32":
-                appdata = os.environ.get("APPDATA", "")
-                localappdata = os.environ.get("LOCALAPPDATA", "")
-                extra_paths.extend([
-                    os.path.join(os.environ.get("PROGRAMFILES", ""), "nodejs"),
-                    os.path.join(appdata, "npm") if appdata else "",
-                    os.path.join(localappdata, "fnm") if localappdata else "",
-                ])
-
-            # Construire le PATH enrichi (séparateur : Unix, ; Windows)
-            path_sep = ";" if sys.platform == "win32" else ":"
-            path_parts = base_path.split(path_sep) if base_path else []
-            for p in extra_paths:
-                if p and p not in path_parts and Path(p).exists():
-                    path_parts.append(p)
+            # BUG-062, BUG-078, R3 v0.11.4 : PATH enrichi unifié
+            # (macOS/Linux/Windows, factorisé via build_mcp_enriched_path)
+            enriched_path = build_mcp_enriched_path()
 
             env = {
-                "PATH": path_sep.join(path_parts),
+                "PATH": enriched_path,
                 "HOME": home,
                 "USER": os.environ.get("USER", ""),
                 "LANG": os.environ.get("LANG", "en_US.UTF-8"),

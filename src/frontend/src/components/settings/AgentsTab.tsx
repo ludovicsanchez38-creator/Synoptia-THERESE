@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Zap, RefreshCw, CheckCircle, XCircle, AlertCircle, Headphones, Wrench, FolderOpen } from 'lucide-react';
+import { Zap, RefreshCw, CheckCircle, XCircle, AlertCircle, Headphones, Wrench, FolderOpen, Plus } from 'lucide-react';
 import { getAgentStatus, getAgentConfig, updateAgentConfig } from '../../services/api/agents';
 import type { AgentStatusResponse, AgentConfigResponse } from '../../services/api/agents';
 import { useAtelierStore } from '../../stores/atelierStore';
@@ -17,6 +17,124 @@ interface ModelInfo {
   name: string;
   provider: string;
   recommended?: boolean;
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: 'Anthropic',
+  openai: 'OpenAI',
+  gemini: 'Google',
+  grok: 'xAI',
+  mistral: 'Mistral',
+  openrouter: 'OpenRouter',
+  deepseek: 'DeepSeek',
+  ollama: 'Local (Ollama)',
+};
+
+function AgentModelSelect({
+  label,
+  icon,
+  accentClass,
+  value,
+  onChange,
+  models,
+  placeholder,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  accentClass: string;
+  value: string;
+  onChange: (next: string) => void;
+  models: ModelInfo[];
+  placeholder: string;
+}) {
+  const [showCustom, setShowCustom] = useState(false);
+  const [customInput, setCustomInput] = useState('');
+  const isCustom = !!value && !models.some((m) => m.id === value);
+
+  const handleUseCustom = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed) return;
+    onChange(trimmed);
+    setCustomInput('');
+    setShowCustom(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className={`flex items-center gap-2 text-xs font-medium ${accentClass}`}>
+          {icon}
+          {label}
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowCustom((v) => !v)}
+          className="flex items-center gap-1 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+          title="Saisir un identifiant de modèle personnalisé"
+        >
+          <Plus size={12} />
+          Personnalisé
+        </button>
+      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
+      >
+        {Object.entries(PROVIDER_LABELS).map(([provider, providerLabel]) => {
+          const providerModels = models.filter((m) => m.provider === provider);
+          if (providerModels.length === 0) return null;
+          return (
+            <optgroup key={provider} label={providerLabel}>
+              {providerModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}{m.recommended ? ' (recommandé)' : ''}
+                </option>
+              ))}
+            </optgroup>
+          );
+        })}
+        {isCustom && <option value={value}>{value} (personnalisé)</option>}
+      </select>
+
+      {showCustom && (
+        <div className="mt-2 space-y-2">
+          <p className="text-xs text-text-muted">
+            Saisis l'identifiant exact du modèle tel qu'il apparait dans l'API du fournisseur.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && customInput.trim()) {
+                  handleUseCustom();
+                }
+              }}
+              placeholder={placeholder}
+              className="flex-1 rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50 font-mono"
+            />
+            <button
+              type="button"
+              onClick={handleUseCustom}
+              disabled={!customInput.trim()}
+              className="shrink-0 rounded-lg bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
+            >
+              Utiliser
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isCustom && (
+        <p className="mt-1.5 text-xs text-accent-cyan flex items-center gap-1">
+          <AlertCircle size={12} />
+          Modèle personnalisé actif : {value}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function AgentsTab() {
@@ -83,18 +201,6 @@ export function AgentsTab() {
     );
   }
 
-  // Grouper les modèles par provider
-  const providerLabels: Record<string, string> = {
-    anthropic: 'Anthropic',
-    openai: 'OpenAI',
-    gemini: 'Google',
-    grok: 'xAI',
-    mistral: 'Mistral',
-    openrouter: 'OpenRouter',
-    deepseek: 'DeepSeek',
-    ollama: 'Local (Ollama)',
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -139,68 +245,28 @@ export function AgentsTab() {
       </div>
 
       {/* Choix du modèle par agent */}
-      <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4">
-        <h4 className="text-sm font-medium text-text mb-3">Modèle IA par agent</h4>
+      <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4 space-y-4">
+        <h4 className="text-sm font-medium text-text">Modèle IA par agent</h4>
 
-        {/* Katia */}
-        <div className="mb-3">
-          <label className="flex items-center gap-2 text-xs font-medium text-purple-400 mb-1.5">
-            <Headphones size={12} />
-            Katia (PM/Guide)
-          </label>
-          <select
-            value={katiaModel}
-            onChange={(e) => setThereseModel(e.target.value)}
-            className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
-          >
-            {Object.entries(providerLabels).map(([provider, label]) => {
-              const providerModels = models.filter((m) => m.provider === provider);
-              if (providerModels.length === 0) return null;
-              return (
-                <optgroup key={provider} label={label}>
-                  {providerModels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}{m.recommended ? ' (recommandé)' : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-            {katiaModel && !models.some((m) => m.id === katiaModel) && (
-              <option value={katiaModel}>{katiaModel} (personnalisé)</option>
-            )}
-          </select>
-        </div>
+        <AgentModelSelect
+          label="Katia (PM/Guide)"
+          icon={<Headphones size={12} />}
+          accentClass="text-purple-400"
+          value={katiaModel}
+          onChange={setThereseModel}
+          models={models}
+          placeholder="anthropic/claude-opus-4-6"
+        />
 
-        {/* Zézette */}
-        <div>
-          <label className="flex items-center gap-2 text-xs font-medium text-amber-400 mb-1.5">
-            <Wrench size={12} />
-            Zézette (Dev)
-          </label>
-          <select
-            value={zezetteModel}
-            onChange={(e) => setZezetteModel(e.target.value)}
-            className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
-          >
-            {Object.entries(providerLabels).map(([provider, label]) => {
-              const providerModels = models.filter((m) => m.provider === provider);
-              if (providerModels.length === 0) return null;
-              return (
-                <optgroup key={provider} label={label}>
-                  {providerModels.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}{m.recommended ? ' (recommandé)' : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              );
-            })}
-            {zezetteModel && !models.some((m) => m.id === zezetteModel) && (
-              <option value={zezetteModel}>{zezetteModel} (personnalisé)</option>
-            )}
-          </select>
-        </div>
+        <AgentModelSelect
+          label="Zézette (Dev)"
+          icon={<Wrench size={12} />}
+          accentClass="text-amber-400"
+          value={zezetteModel}
+          onChange={setZezetteModel}
+          models={models}
+          placeholder="anthropic/claude-opus-4-6"
+        />
       </div>
 
       {/* Chemin du source */}

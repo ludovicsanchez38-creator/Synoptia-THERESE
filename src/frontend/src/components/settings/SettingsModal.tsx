@@ -145,7 +145,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setCorruptedKeys(keysResult.corrupted);
 
       const loadedProvider = llmConfig.provider as api.LLMProvider;
-      const resolvedModel = resolveModelForProvider(loadedProvider, llmConfig.model, ollamaStatusData);
+      const resolvedModel = resolveModelForProvider(
+        loadedProvider,
+        llmConfig.model,
+        ollamaStatusData,
+        llmConfig.available_models || [],
+      );
 
       setSelectedProvider(loadedProvider);
       setSelectedModel(resolvedModel);
