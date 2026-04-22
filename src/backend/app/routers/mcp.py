@@ -513,33 +513,15 @@ async def check_preset_requirements():
     Vérifie si les prérequis système pour les presets MCP sont satisfaits.
 
     BUG-083 : npx propose dans les presets mais absent du systeme.
+    R3 v0.11.4 : PATH enrichi unifié via build_mcp_enriched_path (Windows-aware).
     Retourne la disponibilite de chaque commande utilisee par les presets.
     """
-    import os
     import shutil
+    import sys
 
-    # Construire un PATH enrichi (meme logique que MCPService.start_server)
-    home = os.environ.get("HOME", "")
-    base_path = os.environ.get("PATH", "")
-    extra_paths = [
-        "/usr/local/bin",
-        "/opt/homebrew/bin",
-    ]
-    for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
-        from pathlib import Path as PPath
-        base_obj = PPath(base)
-        if base_obj.exists():
-            versions = sorted(base_obj.iterdir(), reverse=True)
-            for v in versions:
-                bin_dir = v / "bin"
-                if bin_dir.exists():
-                    extra_paths.append(str(bin_dir))
-                    break
+    from app.services.mcp_service import build_mcp_enriched_path
 
-    enriched_path = base_path
-    for p in extra_paths:
-        if p and p not in enriched_path and os.path.isdir(p):
-            enriched_path = enriched_path + ":" + p
+    enriched_path = build_mcp_enriched_path()
 
     # Collecter les commandes uniques utilisees par les presets
     commands_needed = {p["command"] for p in PRESET_SERVERS}
@@ -567,6 +549,8 @@ async def check_preset_requirements():
         "commands": results,
         "all_satisfied": all(r["available"] for r in results.values()),
         "help_message": help_message,
+        "platform": sys.platform,
+        "enriched_path": enriched_path,
     }
 
 
@@ -580,31 +564,14 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
 
     service = get_mcp_service()
 
-    # BUG-083 : Verifier que la commande est disponible AVANT d'installer
+    # BUG-083, R3 v0.11.4 : PATH enrichi unifié (Windows-aware)
     import os
     import shutil
 
-    from app.services.mcp_service import resolve_mcp_command
+    from app.services.mcp_service import build_mcp_enriched_path, resolve_mcp_command
 
     home_dir = os.path.expanduser("~")
-
-    # Construire un PATH enrichi (meme logique que MCPService.start_server)
-    base_path = os.environ.get("PATH", "")
-    extra_paths = ["/usr/local/bin", "/opt/homebrew/bin"]
-    for base in [f"{home_dir}/.nvm/versions/node", f"{home_dir}/.fnm/node-versions"]:
-        from pathlib import Path as PPath
-        base_obj = PPath(base)
-        if base_obj.exists():
-            versions = sorted(base_obj.iterdir(), reverse=True)
-            for v in versions:
-                bin_dir = v / "bin"
-                if bin_dir.exists():
-                    extra_paths.append(str(bin_dir))
-                    break
-    enriched_path = base_path
-    for p in extra_paths:
-        if p and p not in enriched_path and os.path.isdir(p):
-            enriched_path = enriched_path + ":" + p
+    enriched_path = build_mcp_enriched_path()
 
     cmd = preset["command"]
     resolved = shutil.which(cmd, path=enriched_path) or resolve_mcp_command(cmd, enriched_path)
