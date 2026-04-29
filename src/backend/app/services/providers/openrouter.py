@@ -169,13 +169,15 @@ class OpenRouterProvider(BaseProvider):
                         except json.JSONDecodeError:
                             continue
 
-        except httpx.HTTPStatusError as e:
+        except httpx.HTTPStatusError as http_error:
+            response = http_error.response
+            status = response.status_code
             error_body = ""
             try:
-                error_body = e.response.text
+                error_body = response.text
             except Exception as body_err:
                 logger.debug("Impossible de lire le body erreur OpenRouter: %s", body_err)
-            logger.error(f"OpenRouter API error: {e.response.status_code} - {error_body}")
+            logger.error(f"OpenRouter API error: {status} - {error_body}")
 
             # BUG-openrouter-403 : parser le body JSON pour un message d'erreur lisible
             api_error_msg = ""
@@ -189,7 +191,6 @@ class OpenRouterProvider(BaseProvider):
             # Borne la longueur pour éviter de flooder l'UI avec un message très long
             api_error_msg = api_error_msg[:200]
 
-            status = e.response.status_code
             if status == 401:
                 yield StreamEvent(type="error", content="Clé API OpenRouter invalide ou expirée.")
             elif status == 402:

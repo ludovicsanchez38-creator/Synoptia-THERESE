@@ -28,21 +28,56 @@ async_engine = None
 AsyncSessionLocal = None
 
 
+INVOICE_LEGACY_COLUMN_DEFINITIONS: dict[str, str] = {
+    "currency": "TEXT DEFAULT 'EUR'",
+    "payment_terms": "TEXT",
+    "payment_method": "TEXT",
+    "late_penalty_rate": "REAL",
+    "legal_mentions": "TEXT",
+    "converted_from_id": "TEXT",
+    "validite_jours": "INTEGER",
+    "payment_date": "TIMESTAMP",
+}
+
+
 def ensure_invoice_currency_column(db_path: Path | None) -> bool:
     """Ajoute la colonne invoices.currency si elle manque sur une DB legacy."""
+    return "currency" in ensure_invoice_legacy_columns(db_path, columns=("currency",))
+
+
+def ensure_invoice_legacy_columns(
+    db_path: Path | None,
+    columns: tuple[str, ...] | None = None,
+) -> list[str]:
+    """Ajoute les colonnes invoices manquantes sur une DB legacy."""
     if db_path is None or not db_path.exists():
-        return False
+        return []
+
+    target_columns = columns or tuple(INVOICE_LEGACY_COLUMN_DEFINITIONS.keys())
+    added_columns: list[str] = []
 
     with sqlite3.connect(str(db_path)) as conn:
         cursor = conn.execute("PRAGMA table_info(invoices)")
-        columns = [row[1] for row in cursor.fetchall()]
-        if not columns or "currency" in columns:
-            return False
+        existing_columns = {row[1] for row in cursor.fetchall()}
+        if not existing_columns:
+            return []
 
-        conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
-        conn.commit()
-        logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
-        return True
+        for column_name in target_columns:
+            if column_name in existing_columns:
+                continue
+
+            column_definition = INVOICE_LEGACY_COLUMN_DEFINITIONS[column_name]
+            conn.execute(f"ALTER TABLE invoices ADD COLUMN {column_name} {column_definition}")
+            added_columns.append(column_name)
+
+        if added_columns:
+            conn.commit()
+            logger.info(
+                "Migration auto : colonnes invoices ajoutées (%s)",
+                ", ".join(added_columns),
+            )
+
+    return added_columns
 
 
 def get_database_url(async_mode: bool = True) -> str:
@@ -121,7 +156,7 @@ async def init_db() -> None:
     SQLModel.metadata.create_all(sync_engine)
 
     # Auto-migration : ajouter les colonnes manquantes aux tables existantes
-    ensure_invoice_currency_column(settings.db_path)
+    ensure_invoice_legacy_columns(settings.db_path)
 
     with sync_engine.connect() as conn:
         alter_statements = [
@@ -145,6 +180,7 @@ async def init_db() -> None:
             # PERF audit - index sur les FK frequemment filtrees
             "CREATE INDEX IF NOT EXISTS ix_tasks_project_id ON tasks (project_id)",
             "CREATE INDEX IF NOT EXISTS ix_invoice_lines_invoice_id ON invoice_lines (invoice_id)",
+            "CREATE INDEX IF NOT EXISTS ix_invoices_converted_from_id ON invoices (converted_from_id)",
             "CREATE INDEX IF NOT EXISTS ix_activities_contact_id ON activities (contact_id)",
             "CREATE INDEX IF NOT EXISTS ix_deliverables_project_id ON deliverables (project_id)",
             "CREATE INDEX IF NOT EXISTS ix_calendar_events_calendar_id ON calendar_events (calendar_id)",

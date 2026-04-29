@@ -4423,6 +4423,38 @@ class TestBUGOpenRouter403MessageErreur:
         assert err_event.type == "error"
         assert "invalid" in (err_event.content or "").lower() or "invalide" in (err_event.content or "").lower() or "clé" in (err_event.content or "").lower()
 
+    def test_openrouter_429_rate_limit_message_without_unboundlocalerror(self):
+        """Une 429 doit rester lisible et ne jamais se transformer en UnboundLocalError."""
+        import asyncio
+        from unittest.mock import MagicMock, patch
+        import httpx
+
+        provider = self._make_provider()
+
+        mock_response = MagicMock()
+        mock_response.status_code = 429
+        mock_response.text = '{"error":{"message":"Rate limit exceeded"}}'
+        error = httpx.HTTPStatusError("429 Too Many Requests", request=MagicMock(), response=mock_response)
+
+        async def run():
+            with patch.object(provider.client, "stream", side_effect=error):
+                events = []
+                async for event in provider.stream(None, [{"role": "user", "content": "test"}]):
+                    events.append(event)
+                return events
+
+        events = asyncio.new_event_loop().run_until_complete(run())
+        assert events, "Une 429 doit produire un événement d erreur exploitable"
+        err_event = events[0]
+        assert err_event.type == "error"
+        msg = err_event.content or ""
+        assert "trop de requêtes" in msg.lower() or "429" in msg, (
+            f"Message 429 non informatif : {msg!r}"
+        )
+        assert "unboundlocalerror" not in msg.lower(), (
+            f"La 429 ne doit plus être masquée par une erreur locale : {msg!r}"
+        )
+
 
 # ============================================================
 # BUG-091 - Séparateur décimal dans InvoiceForm
@@ -5235,15 +5267,14 @@ class TestBUG69NestedExceptShadowing:
     la variable de l outer HTTPStatusError handler, provoquant UnboundLocalError."""
 
     def test_openrouter_no_nested_except_as_e_in_http_error_handler(self):
-        """Le bloc except httpx.HTTPStatusError as e ne doit pas contenir
-        un nested 'except Exception as e:' qui ecrase la variable."""
+        """Le bloc HTTPStatusError ne doit pas réutiliser `e` dans un nested except."""
         import re
         from pathlib import Path
 
         src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "openrouter.py"
         src = src_file.read_text()
         match = re.search(
-            r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*except [A-Z])",
+            r"except httpx\.HTTPStatusError as \w+:.*?(?=\n\s*except [A-Z])",
             src,
             re.DOTALL,
         )
@@ -5251,7 +5282,7 @@ class TestBUG69NestedExceptShadowing:
         block = match.group(0)
         assert "except Exception as e:" not in block, (
             "Nested 'except Exception as e:' dans le handler HTTPStatusError "
-            "ecrase la variable e (bug local variable e). Utiliser un autre nom."
+            "réintroduit le bug local variable e. Utiliser un autre nom."
         )
 
     def test_anthropic_no_nested_except_as_e_in_http_error_handler(self):
@@ -5380,3 +5411,30 @@ class TestBUG69OllamaFallbackRespectsProvider:
             assert service.config.api_key is None, (
                 "api_key doit etre None pour laisser l appel API echouer proprement"
             )
+
+
+class TestBUG090VCFExport:
+    """Export VCF visible et compatible avec les scopes Tauri desktop."""
+
+    def test_memory_api_uses_downloads_scope_for_tauri_export(self):
+        """Le helper VCF desktop doit écrire dans Téléchargements, pas un chemin arbitraire."""
+        content = (FRONTEND / "services" / "api" / "memory.ts").read_text(encoding="utf-8")
+        assert "downloadDir" in content, (
+            "downloadVCFFile() doit résoudre le dossier Téléchargements en runtime Tauri"
+        )
+        assert "saveVCFFileInDownloads" in content, (
+            "downloadVCFFile() doit utiliser un helper dédié pour l écriture desktop"
+        )
+        assert "writeFile(targetPath" in content, (
+            "Le VCF doit être écrit explicitement via writeFile() dans un chemin autorisé"
+        )
+
+    def test_memory_panel_uses_download_helper_for_visible_export(self):
+        """MemoryPanel doit passer par le helper desktop et notifier le succès."""
+        content = (FRONTEND / "components" / "memory" / "MemoryPanel.tsx").read_text(encoding="utf-8")
+        assert "await api.downloadVCFFile()" in content, (
+            "MemoryPanel doit utiliser downloadVCFFile() plutôt qu un blob URL direct"
+        )
+        assert "Contacts exportés dans Téléchargements" in content, (
+            "Le succès doit indiquer à l utilisateur où retrouver le fichier exporté"
+        )

@@ -7,6 +7,7 @@ import { FileBrowser } from '../files/FileBrowser';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface MemoryPanelProps {
@@ -19,6 +20,7 @@ interface MemoryPanelProps {
 type Tab = 'contacts' | 'files';
 
 export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: MemoryPanelProps) {
+  const addNotification = useStatusStore((state) => state.addNotification);
   const [activeTab, setActiveTab] = useState<Tab>('contacts');
   const [contacts, setContacts] = useState<api.Contact[]>([]);
   const [indexedFiles, setIndexedFiles] = useState<api.FileMetadata[]>([]);
@@ -58,16 +60,21 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
 
   async function handleExportVCF() {
     try {
-      const blob = await api.exportVCFFile();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'therese-contacts.vcf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const result = await api.downloadVCFFile();
+      addNotification({
+        type: 'success',
+        title: 'Export VCF',
+        message:
+          result === 'desktop_saved'
+            ? 'Contacts exportés dans Téléchargements'
+            : 'Téléchargement du fichier VCF démarré',
+      });
     } catch (err: any) {
+      addNotification({
+        type: 'error',
+        title: 'Erreur export VCF',
+        message: err.message,
+      });
       alert('Erreur export VCF : ' + err.message);
     }
   }
@@ -562,7 +569,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                     title="Importer des contacts (.vcf)"
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Importer
+                    Importer VCF
                   </Button>
                   <input
                     ref={(el) => { vcfInputRef.current = el; }}
@@ -578,7 +585,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                     title="Exporter les contacts (.vcf)"
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Exporter
+                    Exporter VCF
                   </Button>
                 </div>
               </div>

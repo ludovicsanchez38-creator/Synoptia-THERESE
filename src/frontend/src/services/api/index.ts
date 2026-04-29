@@ -69,6 +69,8 @@ export {
   searchMemory,
   importVCFFile,
   exportVCFFile,
+  downloadVCFFile,
+  type VCFDownloadResult,
   type Contact,
   type Project,
   type MemoryScope,

@@ -1147,13 +1147,22 @@ async def list_labels(
             smtp_use_tls=account.smtp_use_tls,
         )
         folders = await provider.list_folders()
+
+        def _get_folder_counter(folder, primary_attr: str, fallback_attr: str) -> int:
+            primary_value = getattr(folder, primary_attr, None)
+            if type(primary_value) is int:
+                return primary_value
+
+            fallback_value = getattr(folder, fallback_attr, 0)
+            return fallback_value if type(fallback_value) is int else 0
+
         return [
             {
                 "id": f.id,
                 "name": f.name,
                 "type": f.type,
-                "messagesTotal": f.messages_total,
-                "messagesUnread": f.messages_unread,
+                "messagesTotal": _get_folder_counter(f, "message_count", "messages_total"),
+                "messagesUnread": _get_folder_counter(f, "unread_count", "messages_unread"),
             }
             for f in folders
         ]
