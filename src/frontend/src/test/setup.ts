@@ -9,11 +9,27 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
   open: vi.fn(),
+  save: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/api/path', () => ({
+  downloadDir: vi.fn(),
+  homeDir: vi.fn(),
+  join: vi.fn((...parts: string[]) => parts.join('/')),
+  resolve: vi.fn((...parts: string[]) => parts.join('/')),
 }));
 
 vi.mock('@tauri-apps/plugin-fs', () => ({
+  exists: vi.fn(),
+  readDir: vi.fn(),
   readFile: vi.fn(),
   readTextFile: vi.fn(),
+  stat: vi.fn(),
+  writeFile: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/plugin-shell', () => ({
+  open: vi.fn(),
 }));
 
 // Mock fetch for API calls

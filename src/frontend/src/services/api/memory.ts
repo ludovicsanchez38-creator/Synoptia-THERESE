@@ -5,7 +5,7 @@
  * Sprint 2 - PERF-2.2: Extracted from monolithic api.ts
  */
 
-import { request } from './core';
+import { ApiError, request } from './core';
 
 // Types
 export interface Contact {
@@ -250,4 +250,75 @@ export async function exportVCFFile(): Promise<Blob> {
     throw new Error(d.detail || d.message || `Erreur ${response.status}`);
   }
   return response.blob();
+}
+
+export type VCFDownloadResult = 'desktop_saved' | 'browser_download_started';
+
+function getVCFFilenameFromDisposition(disposition: string | null): string {
+  if (!disposition) {
+    return 'therese-contacts.vcf';
+  }
+
+  const match = disposition.match(/filename="?([^";\n]+)"?/);
+  return match?.[1] || 'therese-contacts.vcf';
+}
+
+function buildVCFVariantFilename(filename: string, index: number): string {
+  const dotIndex = filename.lastIndexOf('.');
+  if (dotIndex <= 0) {
+    return `${filename}-${index}`;
+  }
+
+  const base = filename.slice(0, dotIndex);
+  const extension = filename.slice(dotIndex);
+  return `${base}-${index}${extension}`;
+}
+
+async function saveVCFFileInDownloads(blob: Blob, filename: string): Promise<void> {
+  const [{ downloadDir, join }, { exists, writeFile }] = await Promise.all([
+    import('@tauri-apps/api/path'),
+    import('@tauri-apps/plugin-fs'),
+  ]);
+
+  const downloadsPath = await downloadDir();
+  let candidateFilename = filename;
+  let targetPath = await join(downloadsPath, candidateFilename);
+  let suffix = 2;
+
+  while (await exists(targetPath)) {
+    candidateFilename = buildVCFVariantFilename(filename, suffix);
+    targetPath = await join(downloadsPath, candidateFilename);
+    suffix += 1;
+  }
+
+  const arrayBuffer = await blob.arrayBuffer();
+  await writeFile(targetPath, new Uint8Array(arrayBuffer));
+}
+
+export async function downloadVCFFile(): Promise<VCFDownloadResult> {
+  const { API_BASE, apiFetch } = await import('./core');
+  const response = await apiFetch(`${API_BASE}/api/memory/contacts/export`);
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, response.statusText, d.detail || d.message || `Erreur ${response.status}`);
+  }
+
+  const filename = getVCFFilenameFromDisposition(response.headers.get('Content-Disposition'));
+  const blob = await response.blob();
+  const isTauriRuntime = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+
+  if (isTauriRuntime) {
+    await saveVCFFileInDownloads(blob, filename);
+    return 'desktop_saved';
+  }
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+  return 'browser_download_started';
 }
