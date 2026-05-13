@@ -34,17 +34,17 @@ const TVA_RATES = [
 ];
 
 const CURRENCIES = [
-  { value: 'EUR', label: 'EUR (\u20ac)' },
+  { value: 'EUR', label: 'EUR (€)' },
   { value: 'CHF', label: 'CHF' },
   { value: 'USD', label: 'USD ($)' },
-  { value: 'GBP', label: 'GBP (\u00a3)' },
+  { value: 'GBP', label: 'GBP (£)' },
 ];
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  EUR: '\u20ac',
+  EUR: '€',
   CHF: 'CHF',
   USD: '$',
-  GBP: '\u00a3',
+  GBP: '£',
 };
 
 function formatDecimalInput(value: number) {
@@ -413,22 +413,22 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 )}
               >
                 <option value="draft">Brouillon</option>
-                <option value="sent">Envoy\u00e9</option>
+                <option value="sent">Envoyé</option>
                 {documentType === 'devis' ? (
                   <>
-                    <option value="accepted">Accept\u00e9</option>
-                    <option value="refused">Refus\u00e9</option>
-                    <option value="expired">Expir\u00e9</option>
+                    <option value="accepted">Accepté</option>
+                    <option value="refused">Refusé</option>
+                    <option value="expired">Expiré</option>
                     <option value="converted">Converti en facture</option>
                   </>
                 ) : (
                   <>
-                    <option value="accepted">Accept\u00e9</option>
-                    <option value="paid">Pay\u00e9e</option>
+                    <option value="accepted">Accepté</option>
+                    <option value="paid">Payée</option>
                     <option value="overdue">En retard</option>
                   </>
                 )}
-                <option value="cancelled">Annul\u00e9e</option>
+                <option value="cancelled">Annulée</option>
               </select>
             </div>
 
@@ -476,7 +476,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div>
               <label htmlFor="dueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'\u00e9ch\u00e9ance *
+                Date d'échéance *
               </label>
               <input
                 type="date"
@@ -496,7 +496,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             {documentType === 'devis' && (
               <div>
                 <label htmlFor="validiteJours" className="block text-sm font-medium text-text mb-2">
-                  Validit\u00e9 (jours)
+                  Validité (jours)
                 </label>
                 <input
                   type="number"
@@ -710,7 +710,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 onClick={handleMarkPaid}
                 className="px-4 py-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
               >
-                Marquer comme pay\u00e9e
+                Marquer comme payée
               </button>
             )}
 
@@ -721,7 +721,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   onClick={async () => {
                     try {
                       const updated = await updateDevisStatus(invoice.id, 'accepted');
-                      addNotification({ type: 'success', title: 'Devis accept\u00e9', message: invoice.invoice_number });
+                      addNotification({ type: 'success', title: 'Devis accepté', message: invoice.invoice_number });
                       onSave(updated);
                     } catch (err) {
                       addNotification({ type: 'error', title: 'Erreur', message: String(err) });
@@ -736,7 +736,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   onClick={async () => {
                     try {
                       const updated = await updateDevisStatus(invoice.id, 'refused');
-                      addNotification({ type: 'success', title: 'Devis refus\u00e9', message: invoice.invoice_number });
+                      addNotification({ type: 'success', title: 'Devis refusé', message: invoice.invoice_number });
                       onSave(updated);
                     } catch (err) {
                       addNotification({ type: 'error', title: 'Erreur', message: String(err) });

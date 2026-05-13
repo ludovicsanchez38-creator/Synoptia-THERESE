@@ -5438,3 +5438,46 @@ class TestBUG090VCFExport:
         assert "Contacts exportés dans Téléchargements" in content, (
             "Le succès doit indiquer à l utilisateur où retrouver le fichier exporté"
         )
+
+    def test_no_unicode_escape_in_jsx_text_nodes(self):
+        """
+        BUG-096 (Smileshoot, v0.11.6) : `\\u00XX` en littéral dans du JSX text node
+        s'affiche tel quel ("Pay\\u00e9e" au lieu de "Payée") car JSX ne décode pas
+        les échappements JS entre les balises. Aucun fichier frontend ne doit
+        contenir de séquence `\\u00XX` (couvre les caractères latin-1 accentués).
+        """
+        import re
+
+        pattern = re.compile(r"\\u00[0-9a-fA-F]{2}")
+        offenders: list[str] = []
+        for path in FRONTEND.rglob("*"):
+            if path.suffix not in {".ts", ".tsx"}:
+                continue
+            if path.name.endswith(".test.ts") or path.name.endswith(".test.tsx"):
+                # Les tests peuvent légitimement contenir des chaînes \\u00XX
+                continue
+            text = path.read_text(encoding="utf-8")
+            if pattern.search(text):
+                offenders.append(str(path.relative_to(FRONTEND)))
+        assert not offenders, (
+            "Caractères Unicode échappés (\\u00XX) trouvés dans : "
+            f"{offenders}. Remplacer par leurs caractères UTF-8 réels."
+        )
+
+    def test_actions_store_inserts_result_in_chat_on_completion(self):
+        """
+        BUG-097 (Smileshoot, v0.11.6) : ActionPanel affichait "Resultat insere
+        dans le chat" mais aucun code ne réalisait l'insertion. Le store
+        actionsStore doit importer chatStore et appeler addMessage() quand
+        une tâche transite vers status `completed`.
+        """
+        content = (FRONTEND / "stores" / "actionsStore.ts").read_text(encoding="utf-8")
+        assert "from './chatStore'" in content or 'from "./chatStore"' in content, (
+            "actionsStore doit importer useChatStore pour insérer le résultat"
+        )
+        assert "useChatStore.getState().addMessage" in content, (
+            "actionsStore doit appeler addMessage() sur transition vers completed"
+        )
+        assert "BUG-097" in content, (
+            "Le fix doit être commenté BUG-097 pour faciliter la traçabilité"
+        )

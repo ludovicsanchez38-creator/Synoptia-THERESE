@@ -1,7 +1,7 @@
 /**
- * TH\u00c9R\u00c8SE - API Biblioth\u00e8que de prompts
+ * THÉRÈSE - API Bibliothèque de prompts
  *
- * Service d'acc\u00e8s \u00e0 la biblioth\u00e8que de prompts pr\u00eats \u00e0 l'emploi.
+ * Service d'accès à la bibliothèque de prompts prêts à l'emploi.
  */
 
 import { request } from './core';
@@ -33,14 +33,14 @@ export interface PromptSearchResponse {
 }
 
 /**
- * R\u00e9cup\u00e8re la biblioth\u00e8que compl\u00e8te group\u00e9e par cat\u00e9gorie.
+ * Récupère la bibliothèque complète groupée par catégorie.
  */
 export async function getPromptLibrary(): Promise<PromptLibraryResponse> {
   return request<PromptLibraryResponse>('/api/prompts/library');
 }
 
 /**
- * Recherche dans la biblioth\u00e8que par mots-cl\u00e9s.
+ * Recherche dans la bibliothèque par mots-clés.
  */
 export async function searchPromptLibrary(query: string): Promise<PromptSearchResponse> {
   return request<PromptSearchResponse>(

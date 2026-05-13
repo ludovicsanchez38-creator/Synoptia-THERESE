@@ -312,10 +312,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                     </div>
 
                     <div className="text-sm text-text-muted space-y-1">
-                      <p>{invoice.document_type === 'devis' ? '\u00c9mis' : '\u00c9mise'} le {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</p>
-                      <p>\u00c9ch\u00e9ance le {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</p>
+                      <p>{invoice.document_type === 'devis' ? 'Émis' : 'Émise'} le {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</p>
+                      <p>Échéance le {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</p>
                       {invoice.document_type === 'devis' && invoice.validite_jours && (
-                        <p>Validit\u00e9 : {invoice.validite_jours} jours</p>
+                        <p>Validité : {invoice.validite_jours} jours</p>
                       )}
                       {invoice.payment_date && (
                         <p>Payée le {new Date(invoice.payment_date).toLocaleDateString('fr-FR')}</p>

@@ -12,6 +12,42 @@ import {
   fetchTask,
   cancelTask,
 } from '../services/api/actions';
+import { useChatStore } from './chatStore';
+
+/**
+ * Set d'idempotence : empeche d'inserer plusieurs fois le resultat
+ * d'une meme tache (defense en profondeur contre les re-poll concurrents
+ * ou un futur re-fetch de taches historiques).
+ */
+const insertedTaskIds = new Set<string>();
+
+/**
+ * Insere le resultat d'une action terminee dans le chat actif.
+ * BUG-097 (Smileshoot) : l'UI annoncait "Resultat insere dans le chat"
+ * mais aucun code ne realisait l'insertion.
+ *
+ * Pour status `completed` : insere le resultat avec header agent.
+ * Pour status `error` : insere un message d'erreur clair (resultat
+ * partiel inclus s'il existe).
+ */
+function insertResultInChat(task: TaskState): void {
+  if (insertedTaskIds.has(task.task_id)) return;
+
+  const header = task.agent_name ? `**${task.agent_name}**\n\n` : '';
+  let content: string | null = null;
+
+  if (task.status === 'completed' && task.result?.trim()) {
+    content = `${header}${task.result}`;
+  } else if (task.status === 'error') {
+    const partial = task.result?.trim() ? `\n\n${task.result}` : '';
+    const errMsg = task.error?.trim() || 'tache echouee';
+    content = `${header}Erreur : ${errMsg}${partial}`;
+  }
+
+  if (!content) return;
+  insertedTaskIds.add(task.task_id);
+  useChatStore.getState().addMessage({ role: 'assistant', content });
+}
 
 interface ActionsState {
   /** Liste des agents disponibles */
@@ -109,11 +145,22 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
   refreshTask: async (taskId) => {
     try {
       const updated = await fetchTask(taskId);
+      const previous = get().tasks.find((t) => t.task_id === taskId);
+
       set((state) => ({
         tasks: state.tasks.map((t) => (t.task_id === taskId ? updated : t)),
         activeTask:
           state.activeTask?.task_id === taskId ? updated : state.activeTask,
       }));
+
+      // BUG-097 : transition vers completed ou error -> injecter dans le chat
+      // Le Set insertedTaskIds garantit l'idempotence (pas de doublon)
+      const becameFinal =
+        previous?.status !== updated.status &&
+        (updated.status === 'completed' || updated.status === 'error');
+      if (becameFinal) {
+        insertResultInChat(updated);
+      }
     } catch {
       // Silencieux en cas d'erreur de polling
     }
