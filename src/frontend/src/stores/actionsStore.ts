@@ -12,6 +12,21 @@ import {
   fetchTask,
   cancelTask,
 } from '../services/api/actions';
+import { useChatStore } from './chatStore';
+
+/**
+ * Insere le resultat d'une action terminee dans le chat actif.
+ * BUG-097 (Smileshoot) : l'UI annoncait "Resultat insere dans le chat"
+ * mais aucun code ne realisait l'insertion.
+ */
+function insertResultInChat(task: TaskState): void {
+  if (!task.result?.trim()) return;
+  const header = task.agent_name ? `**${task.agent_name}**\n\n` : '';
+  useChatStore.getState().addMessage({
+    role: 'assistant',
+    content: `${header}${task.result}`,
+  });
+}
 
 interface ActionsState {
   /** Liste des agents disponibles */
@@ -109,11 +124,18 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
   refreshTask: async (taskId) => {
     try {
       const updated = await fetchTask(taskId);
+      const previous = get().tasks.find((t) => t.task_id === taskId);
+
       set((state) => ({
         tasks: state.tasks.map((t) => (t.task_id === taskId ? updated : t)),
         activeTask:
           state.activeTask?.task_id === taskId ? updated : state.activeTask,
       }));
+
+      // BUG-097 : transition vers completed -> injecter le resultat dans le chat
+      if (previous?.status !== 'completed' && updated.status === 'completed') {
+        insertResultInChat(updated);
+      }
     } catch {
       // Silencieux en cas d'erreur de polling
     }

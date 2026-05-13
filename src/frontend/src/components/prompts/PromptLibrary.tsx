@@ -1,7 +1,7 @@
 /**
- * TH\u00c9R\u00c8SE - Biblioth\u00e8que de prompts pr\u00eats \u00e0 l'emploi
+ * THÉRÈSE - Bibliothèque de prompts prêts à l'emploi
  *
- * Affiche les prompts class\u00e9s par cat\u00e9gorie avec accord\u00e9ons,
+ * Affiche les prompts classés par catégorie avec accordéons,
  * recherche et insertion dans le ChatInput.
  */
 
@@ -15,7 +15,7 @@ import {
   type PromptCategory,
   type PromptItem,
 } from '../../services/api';
-// SVG inline pour les ic\u00f4nes de cat\u00e9gories (jamais d'emoji)
+// SVG inline pour les icônes de catégories (jamais d'emoji)
 const CATEGORY_ICONS: Record<string, React.JSX.Element> = {
   email: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
@@ -176,7 +176,7 @@ function PromptCard({
                   onSelect(prompt);
                 }}
               >
-                Ins\u00e9rer dans le chat
+                Insérer dans le chat
               </Button>
             </div>
           </motion.div>
@@ -187,7 +187,7 @@ function PromptCard({
 }
 
 /**
- * Accord\u00e9on de cat\u00e9gorie.
+ * Accordéon de catégorie.
  */
 function CategoryAccordion({
   category,
@@ -244,12 +244,12 @@ function CategoryAccordion({
 }
 
 /**
- * Composant principal : Biblioth\u00e8que de prompts.
+ * Composant principal : Bibliothèque de prompts.
  */
 export interface PromptLibraryProps {
-  /** Appel\u00e9 quand l'utilisateur s\u00e9lectionne un prompt. */
+  /** Appelé quand l'utilisateur sélectionne un prompt. */
   onSelectPrompt: (promptText: string) => void;
-  /** Appel\u00e9 pour fermer la biblioth\u00e8que. */
+  /** Appelé pour fermer la bibliothèque. */
   onClose: () => void;
 }
 
@@ -271,7 +271,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message || 'Impossible de charger la biblioth\u00e8que');
+        setError(err.message || 'Impossible de charger la bibliothèque');
         setLoading(false);
       });
   }, []);
@@ -308,7 +308,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
     }, 300);
   }, []);
 
-  // S\u00e9lection d'un prompt
+  // Sélection d'un prompt
   const handleSelect = useCallback(
     (prompt: PromptItem) => {
       onSelectPrompt(prompt.prompt);
@@ -337,13 +337,13 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-text">Biblioth\u00e8que de prompts</h2>
+          <h2 className="text-lg font-semibold text-text">Bibliothèque de prompts</h2>
           <p className="text-xs text-text-muted mt-0.5">
             {loading
               ? 'Chargement...'
               : searchResults !== null
-                ? `${totalResults} r\u00e9sultat${totalResults !== 1 ? 's' : ''} pour "${searchQuery}"`
-                : `${categories.reduce((acc, c) => acc + c.prompts.length, 0)} prompts pr\u00eats \u00e0 l'emploi`}
+                ? `${totalResults} résultat${totalResults !== 1 ? 's' : ''} pour "${searchQuery}"`
+                : `${categories.reduce((acc, c) => acc + c.prompts.length, 0)} prompts prêts à l'emploi`}
           </p>
         </div>
       </div>
@@ -386,7 +386,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
               className="mt-4"
               onClick={() => window.location.reload()}
             >
-              R\u00e9essayer
+              Réessayer
             </Button>
           </div>
         ) : displayedCategories.length === 0 ? (
@@ -394,15 +394,15 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
             {searchQuery.trim() ? (
               <>
                 <p className="text-sm text-text-muted">
-                  Aucun prompt trouv\u00e9 pour "{searchQuery}"
+                  Aucun prompt trouvé pour "{searchQuery}"
                 </p>
                 <p className="text-xs text-text-muted/60 mt-1">
-                  Essaie avec d'autres mots-cl\u00e9s
+                  Essaie avec d'autres mots-clés
                 </p>
               </>
             ) : (
               <p className="text-sm text-text-muted">
-                La biblioth\u00e8que de prompts est vide ou indisponible.
+                La bibliothèque de prompts est vide ou indisponible.
               </p>
             )}
           </div>
