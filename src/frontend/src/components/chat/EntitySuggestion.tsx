@@ -58,7 +58,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#1a2444] border border-[#2a3654]"
+      className="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
         <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-cyan-500/20' : 'bg-magenta-500/20'}`}>
@@ -67,14 +67,14 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#E6EDF7] truncate">{name}</p>
+        <p className="text-sm font-medium text-text truncate">{name}</p>
         {subtitle && (
-          <p className="text-xs text-[#B6C7DA] truncate">{subtitle}</p>
+          <p className="text-xs text-text-muted truncate">{subtitle}</p>
         )}
       </div>
 
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-[#B6C7DA]/60">{confidencePercent}%</span>
+        <span className="text-xs text-text-muted/60">{confidencePercent}%</span>
 
         {status === 'saving' ? (
           <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
@@ -89,7 +89,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
             </button>
             <button
               onClick={handleIgnore}
-              className="p-1 rounded hover:bg-red-500/20 text-[#B6C7DA] hover:text-red-400 transition-colors"
+              className="p-1 rounded hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
               title="Ignorer"
             >
               <X className="w-4 h-4" />
@@ -169,15 +169,15 @@ export function EntitySuggestion({
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="mt-2 ml-10 overflow-hidden"
     >
-      <div className="p-3 rounded-xl bg-[#131B35] border border-[#2a3654]/50">
+      <div className="p-3 rounded-xl bg-surface border border-border/50">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-medium text-[#B6C7DA]">
+          <p className="text-xs font-medium text-text-muted">
             {totalCount === 1 ? "J'ai detecte une entite" : `J'ai detecte ${totalCount} entites`}
           </p>
           <button
             onClick={onDismiss}
-            className="text-xs text-[#B6C7DA]/60 hover:text-[#B6C7DA] transition-colors"
+            className="text-xs text-text-muted/60 hover:text-text-muted transition-colors"
           >
             Tout ignorer
           </button>

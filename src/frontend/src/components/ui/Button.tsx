@@ -19,7 +19,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'active:scale-[0.98]',
           // Variants with premium glow effects
           variant === 'primary' &&
-            'bg-accent-cyan text-bg hover:bg-accent-cyan/90 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:-translate-y-0.5',
+            'bg-accent-fill text-accent-ink hover:brightness-105 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:-translate-y-0.5',
           variant === 'secondary' &&
             'bg-surface-elevated text-text border border-border hover:bg-surface hover:border-accent-cyan/50 hover:shadow-[0_0_15px_rgba(34,211,238,0.1)]',
           variant === 'ghost' &&

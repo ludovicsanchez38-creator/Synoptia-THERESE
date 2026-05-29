@@ -117,8 +117,8 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
               onClick={() => setExpanded(isExpanded ? null : index)}
               className={cn(
                 'w-full text-left p-3 rounded-xl border transition-all',
-                'hover:bg-white/5',
-                isExpanded ? 'bg-white/5' : 'bg-transparent',
+                'hover:bg-surface-2',
+                isExpanded ? 'bg-surface-2' : 'bg-transparent',
                 'border-border'
               )}
               initial={false}

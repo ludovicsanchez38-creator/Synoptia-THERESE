@@ -153,7 +153,7 @@ export function ChatHeader({
             title={isMac ? 'Board (⌘D)' : 'Board (Ctrl+D)'}
           >
             <svg width="24" height="24" viewBox="0 0 40 40" fill="none" className="shrink-0">
-              <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
+              <circle cx="20" cy="20" r="5.5" fill="currentColor" />
               <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
               <circle cx="31.4" cy="16.3" r="3" stroke="#A855F7" strokeWidth="1.5" />
               <circle cx="27.1" cy="29.7" r="3" stroke="#EF4444" strokeWidth="1.5" />

@@ -54,11 +54,11 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         isPersonnaliser ? 'opacity-50' : 'group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30',
         'transition-all duration-200'
       )}>
-        <Icon className={cn('w-5 h-5 transition-colors duration-200', isPersonnaliser ? 'text-text-muted' : 'text-accent-cyan group-hover:text-white')} />
+        <Icon className={cn('w-5 h-5 transition-colors duration-200', isPersonnaliser ? 'text-text-muted' : 'text-accent-cyan group-hover:text-text')} />
       </div>
 
       {/* Title */}
-      <h3 className={cn('relative text-sm font-semibold transition-colors duration-200', isPersonnaliser ? 'text-text-muted' : 'text-text group-hover:text-white')}>
+      <h3 className={cn('relative text-sm font-semibold transition-colors duration-200', isPersonnaliser ? 'text-text-muted' : 'text-text group-hover:text-text')}>
         {title}
       </h3>
 

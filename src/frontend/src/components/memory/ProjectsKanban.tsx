@@ -38,8 +38,8 @@ import type { Project } from '../../services/api';
 const STATUS_COLUMNS = [
   { id: 'active', label: 'Actif', icon: Circle, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
   { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-  { id: 'completed', label: 'Termine', icon: CheckCircle2, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  { id: 'cancelled', label: 'Annule', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+  { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
 ] as const;
 
 const COLUMN_IDS = STATUS_COLUMNS.map((c) => c.id);

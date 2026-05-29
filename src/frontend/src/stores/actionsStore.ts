@@ -40,7 +40,7 @@ function insertResultInChat(task: TaskState): void {
     content = `${header}${task.result}`;
   } else if (task.status === 'error') {
     const partial = task.result?.trim() ? `\n\n${task.result}` : '';
-    const errMsg = task.error?.trim() || 'tache echouee';
+    const errMsg = task.error?.trim() || 'tâche échouée';
     content = `${header}Erreur : ${errMsg}${partial}`;
   }
 

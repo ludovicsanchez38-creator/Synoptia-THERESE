@@ -34,7 +34,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
   };
 
   return (
-    <div className="flex items-end gap-2 border-t border-white/5 bg-[#0B1226] px-3 py-2.5">
+    <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
       <textarea
         ref={inputRef}
         value={value}
@@ -43,7 +43,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
         placeholder={placeholder || 'Décris ce que tu veux...'}
         disabled={isStreaming}
         rows={1}
-        className="flex-1 resize-none rounded-lg border border-white/10 bg-[#131B35] px-3 py-2 text-sm text-[#E6EDF7] placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
+        className="flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
         style={{ minHeight: '38px', maxHeight: '120px' }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;

@@ -1,7 +1,7 @@
 // Onglet Accessibilité (A11Y) - Paramètres THÉRÈSE
 // Animations réduites, taille de police, contraste élevé, raccourcis clavier
 
-import { Accessibility } from 'lucide-react';
+import { Accessibility, Sun, Moon } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
 export function AccessibilityTab() {
@@ -15,6 +15,8 @@ export function AccessibilityTab() {
     setHighContrast,
     showKeyboardHints,
     setShowKeyboardHints,
+    theme,
+    setTheme,
   } = useAccessibilityStore();
 
   return (
@@ -29,6 +31,33 @@ export function AccessibilityTab() {
           <p className="text-xs text-text-muted">
             Personnalise l'interface selon tes besoins
           </p>
+        </div>
+      </div>
+
+      {/* Thème clair / sombre (Refonte DA) */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-text">Apparence</label>
+        <p className="text-xs text-text-muted">Clair (Équilibre) par défaut, ou sombre (Signature)</p>
+        <div className="flex gap-2" role="radiogroup" aria-label="Thème de l'interface">
+          {([
+            { v: 'light' as const, label: 'Clair', Icon: Sun },
+            { v: 'dark' as const, label: 'Sombre', Icon: Moon },
+          ]).map(({ v, label, Icon }) => (
+            <button
+              key={v}
+              role="radio"
+              aria-checked={theme === v}
+              onClick={() => setTheme(v)}
+              className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
+                theme === v
+                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'
+                  : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 

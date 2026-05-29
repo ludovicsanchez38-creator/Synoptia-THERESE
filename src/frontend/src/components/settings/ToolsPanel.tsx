@@ -391,7 +391,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
       // Verifier si le serveur a demarre correctement
       if (installed.status === 'error') {
-        onError(installed.name + ' installe mais erreur au demarrage : ' + (installed.error || 'Erreur inconnue. Verifiez que Node.js est installe.'));
+        onError(installed.name + ' installé mais erreur au démarrage : ' + (installed.error || 'Erreur inconnue. Vérifiez que Node.js est installé.'));
       } else if (installed.status !== 'running') {
         // Auto-start seulement si pas deja running (le backend demarre deja)
         try {

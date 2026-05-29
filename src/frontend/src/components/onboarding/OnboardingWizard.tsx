@@ -181,7 +181,11 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                       }}
                       transition={{ duration: 0.2 }}
                       className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                        index <= currentStep ? 'text-white' : 'text-text-muted'
+                        index < currentStep
+                          ? 'text-white' // sur le fond cyan vif plein : blanc lisible dans les 2 themes
+                          : index === currentStep
+                          ? 'text-text' // sur le fond cyan teinte (20%) : texte token lisible (clair/sombre)
+                          : 'text-text-muted'
                       }`}
                     >
                       {index < currentStep ? (

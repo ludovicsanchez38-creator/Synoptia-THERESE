@@ -51,9 +51,9 @@ const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = 
 };
 
 const DEFAULT_COLOR = {
-  border: "border-white/10",
-  bg: "bg-white/5",
-  text: "text-[#B6C7DA]",
+  border: "border-border",
+  bg: "bg-surface-2",
+  text: "text-text-muted",
 };
 
 /** Profils par defaut si le backend ne repond pas */
@@ -79,7 +79,7 @@ const FALLBACK_PROFILES: AgentProfile[] = [
   {
     id: "analyst",
     name: "Analyste",
-    description: "Analyse de donnees, code et documents",
+    description: "Analyse de données, code et documents",
     icon: "\uD83D\uDCCA",
     color: "blue",
     tools: ["read_file", "search_codebase", "run_command"],
@@ -181,8 +181,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
   if (loading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <Loader2 size={24} className="animate-spin text-[#6B7280]" />
-        <p className="text-xs text-[#6B7280]">Chargement des agents...</p>
+        <Loader2 size={24} className="animate-spin text-text-muted" />
+        <p className="text-xs text-text-muted">Chargement des agents...</p>
       </div>
     );
   }
@@ -203,10 +203,10 @@ export function AgentCatalog({ onSelectAgent }: Props) {
         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
           <Bot size={20} className="text-cyan-400" />
         </div>
-        <h3 className="mb-1 text-sm font-semibold text-[#E6EDF7]">
+        <h3 className="mb-1 text-sm font-semibold text-text">
           Choisis un agent
         </h3>
-        <p className="text-xs text-[#6B7280]">
+        <p className="text-xs text-text-muted">
           Chaque agent est specialise dans un domaine. Selectionne celui qui correspond a ta tache.
         </p>
       </div>
@@ -214,7 +214,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
       {/* Selecteur de modele LLM */}
       {availableModels.length > 0 && (
         <div className="mb-4 space-y-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-[#131B35] px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
             <Brain size={14} className="shrink-0 text-cyan-400" />
             <select
               value={selectedModel}
@@ -225,7 +225,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                 setCustomModel("");
                 localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
               }}
-              className="flex-1 bg-transparent text-xs text-[#E6EDF7] outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
+              className="flex-1 bg-transparent text-xs text-text outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
             >
               {Object.entries(
                 availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
@@ -245,7 +245,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           </div>
 
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
-          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-[#131B35] px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
             <span className="shrink-0 text-[10px] text-cyan-400/70">OR</span>
             <input
               type="text"
@@ -260,7 +260,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                 }
               }}
               placeholder="ex: meta-llama/llama-4-maverick:free"
-              className="flex-1 bg-transparent text-xs text-[#E6EDF7] placeholder-[#6B7280]/50 outline-none"
+              className="flex-1 bg-transparent text-xs text-text placeholder-[#6B7280]/50 outline-none"
             />
             {customModel.trim() && (
               <button
@@ -269,7 +269,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                   setCustomModel("");
                   localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
                 }}
-                className="shrink-0 text-[10px] text-[#6B7280] hover:text-red-400 transition-colors"
+                className="shrink-0 text-[10px] text-text-muted hover:text-red-400 transition-colors"
               >
                 ✕
               </button>
@@ -277,7 +277,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           </div>
           {customModel.trim() && (
             <p className="text-[10px] text-cyan-400/60 px-1">
-              Modele personnalise actif - prioritaire sur la liste
+              Modèle personnalisé actif - prioritaire sur la liste
             </p>
           )}
         </div>
@@ -295,7 +295,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.06 }}
               onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
-              className={`group flex flex-col items-center gap-2 rounded-xl border ${colors.border} bg-[#131B35] p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-[#1a2340]`}
+              className={`group flex flex-col items-center gap-2 rounded-xl border ${colors.border} bg-surface p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-surface-elevated`}
             >
               {/* Icone */}
               <div
@@ -315,12 +315,12 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               </span>
 
               {/* Description */}
-              <span className="text-[10px] leading-snug text-[#6B7280]">
+              <span className="text-[10px] leading-snug text-text-muted">
                 {profile.description}
               </span>
 
               {/* Nombre d'outils */}
-              <span className="mt-auto text-[9px] text-[#6B7280]/60">
+              <span className="mt-auto text-[9px] text-text-muted/60">
                 {profile.tools.length} outil{profile.tools.length > 1 ? "s" : ""}
               </span>
             </motion.button>

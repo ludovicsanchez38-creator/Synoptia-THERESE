@@ -107,17 +107,17 @@ export function AtelierPanel() {
 
   return (
     <div
-      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-white/5 bg-[#0B1226] shadow-2xl`}
+      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-border bg-bg shadow-2xl`}
       style={{ width: "480px" }}
     >
       {/* Header */}
-      <div className="flex flex-col border-b border-white/5">
+      <div className="flex flex-col border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
               <Zap size={14} className="text-purple-400" />
             </div>
-            <span className="text-sm font-semibold text-[#E6EDF7]">Atelier</span>
+            <span className="text-sm font-semibold text-text">Atelier</span>
           </div>
 
           {/* Navigation */}
@@ -158,7 +158,7 @@ export function AtelierPanel() {
 
           <button
             onClick={closePanel}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B7280] transition hover:bg-white/5 hover:text-[#E6EDF7]"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
           </button>
@@ -166,7 +166,7 @@ export function AtelierPanel() {
 
         {/* BUG-111 : Badges modèles Katia & Zézette (masqués en vue Agents) */}
         {showModelBadge && activeView !== "agents" && (
-          <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-[#6B7280]">
+          <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-text-muted">
             {katiaModel && (
               <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
                 Katia: {katiaModel}
@@ -215,7 +215,7 @@ export function AtelierPanel() {
         {activeView === "mission" && (
           <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
             {messages.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-[#6B7280]">
+              <div className="flex h-full items-center justify-center text-sm text-text-muted">
                 Aucune mission en cours
               </div>
             ) : (
@@ -269,7 +269,7 @@ function NavButton({
       className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${
         active
           ? "bg-purple-500/20 text-purple-400"
-          : "text-[#6B7280] hover:bg-white/5 hover:text-[#B6C7DA]"
+          : "text-text-muted hover:bg-surface-2 hover:text-text-muted"
       }`}
     >
       {icon}
@@ -293,10 +293,10 @@ function EmptyState() {
         </div>
       </div>
       <div>
-        <h3 className="mb-1 text-sm font-semibold text-[#E6EDF7]">
+        <h3 className="mb-1 text-sm font-semibold text-text">
           Bienvenue dans l&apos;Atelier
         </h3>
-        <p className="text-xs leading-relaxed text-[#6B7280]">
+        <p className="text-xs leading-relaxed text-text-muted">
           Katia te guide et comprend tes besoins. Zézette implémente les
           changements. Posez une question ou demandez une amélioration.
         </p>

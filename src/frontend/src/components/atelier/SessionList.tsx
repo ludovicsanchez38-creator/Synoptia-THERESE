@@ -14,7 +14,7 @@ import { useAccessibilityStore } from "../../stores/accessibilityStore";
 
 const STATUS_COLORS: Record<string, { dot: string; text: string; label: string }> = {
   running: { dot: "bg-green-400", text: "text-green-400", label: "En cours" },
-  done: { dot: "bg-gray-400", text: "text-gray-400", label: "Terminée" },
+  done: { dot: "bg-text-muted", text: "text-text-muted", label: "Terminée" },
   error: { dot: "bg-red-400", text: "text-red-400", label: "Erreur" },
   cancelled: { dot: "bg-amber-400", text: "text-amber-400", label: "Annulée" },
 };
@@ -34,7 +34,7 @@ function formatDuration(startStr: string, endStr?: string): string {
 /** Barre de progression animée pour sessions running */
 function RunningProgressBar() {
   return (
-    <div className="mt-1.5 ml-4 h-1 w-full overflow-hidden rounded-full bg-white/5">
+    <div className="mt-1.5 ml-4 h-1 w-full overflow-hidden rounded-full bg-surface-2">
       <motion.div
         className="h-full rounded-full bg-gradient-to-r from-purple-500 to-green-400"
         initial={{ x: "-100%" }}
@@ -101,14 +101,14 @@ export function SessionList() {
       };
 
   return (
-    <div className="flex h-full flex-col border-r border-white/5" style={{ width: "250px" }}>
+    <div className="flex h-full flex-col border-r border-border" style={{ width: "250px" }}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
-        <span className="text-xs font-semibold text-[#B6C7DA]">Sessions</span>
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <span className="text-xs font-semibold text-text-muted">Sessions</span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => fetchSessions()}
-            className="rounded p-1 text-[#6B7280] transition hover:bg-white/5 hover:text-[#B6C7DA]"
+            className="rounded p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
             title="Rafraichir"
             aria-label="Rafraichir les sessions"
           >
@@ -127,8 +127,8 @@ export function SessionList() {
       </div>
 
       {/* US-003 : Compteur agents actifs */}
-      <div className="flex items-center justify-between border-b border-white/5 px-3 py-1.5">
-        <span className="text-[10px] text-[#6B7280]">
+      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
+        <span className="text-[10px] text-text-muted">
           <span className={runningCount >= maxAgents ? "text-amber-400 font-medium" : "text-purple-400"}>
             {runningCount}/{maxAgents}
           </span>
@@ -137,14 +137,14 @@ export function SessionList() {
       </div>
 
       {/* Connexion status */}
-      <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5">
+      <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5">
         <span
           className={`h-1.5 w-1.5 rounded-full ${
             openclawConnected ? "bg-green-400" : "bg-red-400"
           }`}
         />
-        <span className="text-[10px] text-[#6B7280]">
-          {openclawConnected ? "OpenClaw connecte" : "OpenClaw deconnecte"}
+        <span className="text-[10px] text-text-muted">
+          {openclawConnected ? "OpenClaw connecté" : "OpenClaw déconnecté"}
         </span>
       </div>
 
@@ -152,7 +152,7 @@ export function SessionList() {
       <div className="flex-1 overflow-y-auto">
         {visibleSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-            <span className="text-xs text-[#6B7280]">Aucune session</span>
+            <span className="text-xs text-text-muted">Aucune session</span>
             <button
               onClick={openNewTask}
               disabled={!openclawConnected || runningCount >= maxAgents}
@@ -175,10 +175,10 @@ export function SessionList() {
                   transition={{ duration: reduceMotion ? 0 : 0.25 }}
                   layout={!reduceMotion}
                   onClick={() => selectSession(session.id)}
-                  className={`w-full border-b border-white/5 px-3 py-2.5 text-left transition ${
+                  className={`w-full border-b border-border px-3 py-2.5 text-left transition ${
                     isActive
                       ? "bg-purple-500/10 border-l-2 border-l-purple-400"
-                      : "hover:bg-white/5"
+                      : "hover:bg-surface-2"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export function SessionList() {
                         session.status === "running" ? "animate-pulse" : ""
                       }`}
                     />
-                    <span className="flex-1 truncate text-xs font-medium text-[#E6EDF7]">
+                    <span className="flex-1 truncate text-xs font-medium text-text">
                       {session.instruction.length > 60
                         ? session.instruction.slice(0, 60) + "..."
                         : session.instruction}
@@ -222,11 +222,11 @@ export function SessionList() {
                     <span className={`text-[10px] ${statusStyle.text}`}>
                       {statusStyle.label}
                     </span>
-                    <span className="text-[10px] text-[#6B7280]">
+                    <span className="text-[10px] text-text-muted">
                       {formatDuration(session.created_at, session.finished_at)}
                     </span>
                     {session.actions_count > 0 && (
-                      <span className="text-[10px] text-[#6B7280]">
+                      <span className="text-[10px] text-text-muted">
                         {session.actions_count} action{session.actions_count > 1 ? "s" : ""}
                       </span>
                     )}
@@ -238,7 +238,7 @@ export function SessionList() {
                   {/* Result summary pour les sessions terminées */}
                   {session.status === "done" && session.result_summary && (
                     <div className="mt-1 pl-4" title={session.result_summary}>
-                      <span className="text-[10px] leading-tight text-[#6B7280] line-clamp-2">
+                      <span className="text-[10px] leading-tight text-text-muted line-clamp-2">
                         {session.result_summary}
                       </span>
                     </div>

@@ -91,7 +91,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="rounded p-0.5 text-[#6B7280] transition hover:bg-white/5 hover:text-[#B6C7DA]"
+      className="rounded p-0.5 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
       title="Copier le message"
       aria-label="Copier le message"
     >
@@ -186,7 +186,7 @@ export function AgentChat() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
         <Headphones size={32} className="text-purple-400/30" />
-        <p className="text-xs text-[#6B7280]">
+        <p className="text-xs text-text-muted">
           Selectionnez une session ou lancez une nouvelle tache.
         </p>
       </div>
@@ -204,14 +204,14 @@ export function AgentChat() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Session header */}
-      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex-1 min-w-0">
-          <p className="truncate text-xs font-medium text-[#E6EDF7]">
+          <p className="truncate text-xs font-medium text-text">
             {activeSession.instruction.length > 80
               ? activeSession.instruction.slice(0, 80) + "..."
               : activeSession.instruction}
           </p>
-          <p className="text-[10px] text-[#6B7280]">
+          <p className="text-[10px] text-text-muted">
             Agent : {activeSession.agent_name} - {activeSession.status}
             {activeSession.actions_count > 0 && (
               <> - {activeSession.actions_count} action{activeSession.actions_count > 1 ? "s" : ""}</>
@@ -221,7 +221,7 @@ export function AgentChat() {
         <div className="flex items-center gap-1 ml-2">
           <button
             onClick={refreshActiveSession}
-            className="rounded p-1 text-[#6B7280] transition hover:bg-white/5 hover:text-[#B6C7DA]"
+            className="rounded p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
             title="Rafraichir"
             aria-label="Rafraichir la session"
           >
@@ -254,10 +254,10 @@ export function AgentChat() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10">
                   <Headphones size={20} className="animate-pulse text-purple-400" />
                 </div>
-                <p className="text-xs text-[#6B7280]">Katia travaille sur la tache...</p>
+                <p className="text-xs text-text-muted">Katia travaille sur la tache...</p>
               </>
             ) : (
-              <p className="text-xs text-[#6B7280]">Aucun message dans cette session.</p>
+              <p className="text-xs text-text-muted">Aucun message dans cette session.</p>
             )}
           </div>
         ) : (
@@ -328,7 +328,7 @@ export function AgentChat() {
                       </div>
                       {msg.timestamp && (
                         <div className="mt-0.5 flex items-center gap-1.5">
-                          <span className="text-[10px] text-[#6B7280]">
+                          <span className="text-[10px] text-text-muted">
                             {new Date(msg.timestamp).toLocaleTimeString("fr-FR", {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -351,7 +351,7 @@ export function AgentChat() {
 
       {/* Input (only if session is running) */}
       {activeSession.status === "running" && (
-        <div className="flex items-end gap-2 border-t border-white/5 bg-[#0B1226] px-3 py-2.5">
+        <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
           <textarea
             ref={inputRef}
             value={input}
@@ -360,7 +360,7 @@ export function AgentChat() {
             placeholder="Envoyer un message a Katia..."
             disabled={isSending}
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-white/10 bg-[#131B35] px-3 py-2 text-sm text-[#E6EDF7] placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
+            className="flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
             style={{ minHeight: "38px", maxHeight: "120px" }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -370,7 +370,7 @@ export function AgentChat() {
           />
           {isSending ? (
             <button
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-500/20 text-gray-400"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-text-muted"
               disabled
             >
               <Square size={16} className="animate-pulse" />
@@ -391,9 +391,9 @@ export function AgentChat() {
 
       {/* Session terminee */}
       {activeSession.status !== "running" && (
-        <div className="border-t border-white/5 px-3 py-2 text-center">
-          <span className="text-xs text-[#6B7280]">
-            Session {activeSession.status === "done" ? "terminee" : activeSession.status === "error" ? "en erreur" : "annulee"}
+        <div className="border-t border-border px-3 py-2 text-center">
+          <span className="text-xs text-text-muted">
+            Session {activeSession.status === "done" ? "terminée" : activeSession.status === "error" ? "en erreur" : "annulée"}
             {activeSession.result_summary && (
               <span title={activeSession.result_summary}>
                 {" "}- {activeSession.result_summary.length > 80

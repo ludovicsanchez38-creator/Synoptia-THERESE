@@ -33,9 +33,9 @@ import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 
 const COLUMNS = [
-  { id: 'todo', label: 'A faire', icon: Circle, color: 'text-text-muted' },
+  { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
   { id: 'in_progress', label: 'En cours', icon: Clock, color: 'text-blue-400' },
-  { id: 'done', label: 'Termine', icon: CheckCircle2, color: 'text-green-400' },
+  { id: 'done', label: 'Terminé', icon: CheckCircle2, color: 'text-green-400' },
 ];
 
 export function TaskKanban() {
@@ -269,7 +269,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, mas
     urgent: 'bg-red-500/10 text-red-400 border-red-500/20',
     high: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
     medium: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    low: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
   };
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
@@ -371,7 +371,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, mas
             <button
               onClick={() => onStatusChange('done')}
               className="p-1 hover:bg-green-500/20 rounded transition-colors"
-              title="Marquer termine"
+              title="Marquer terminé"
             >
               <CheckCircle2 className="w-3 h-3 text-green-400" />
             </button>

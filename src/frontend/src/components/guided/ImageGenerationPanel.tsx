@@ -112,7 +112,7 @@ export function ImageGenerationPanel({
             className={cn(
               'absolute top-4 right-4 p-1.5 rounded-lg z-10',
               'text-text-muted hover:text-text',
-              'hover:bg-white/5 transition-colors'
+              'hover:bg-surface-2 transition-colors'
             )}
           >
             <X className="w-4 h-4" />
@@ -195,19 +195,19 @@ export function ImageGenerationPanel({
             animate={{ opacity: 1, y: 0 }}
             className={cn(
               'mb-6 rounded-xl overflow-hidden',
-              'bg-black/20 border border-white/10'
+              'bg-surface-2 border border-border'
             )}
           >
             {/* Loading placeholder */}
             {!imageLoaded && !imageError && (
-              <div className="w-full h-48 flex items-center justify-center bg-black/30">
+              <div className="w-full h-48 flex items-center justify-center bg-surface-2">
                 <Loader2 className="w-8 h-8 text-text-muted animate-spin" />
               </div>
             )}
 
             {/* Error placeholder */}
             {imageError && (
-              <div className="w-full h-48 flex flex-col items-center justify-center bg-black/30 gap-2">
+              <div className="w-full h-48 flex flex-col items-center justify-center bg-surface-2 gap-2">
                 <ImageOff className="w-12 h-12 text-text-muted" />
                 <p className="text-sm text-text-muted">Impossible de charger l'image</p>
                 <p className="text-xs text-text-muted/60 max-w-xs text-center truncate">
@@ -229,7 +229,7 @@ export function ImageGenerationPanel({
             />
 
             {(fileName || fileSize) && (
-              <div className="p-3 bg-black/30 flex items-center justify-between">
+              <div className="p-3 bg-surface-2 flex items-center justify-between">
                 <span className="text-sm text-text-muted truncate">
                   {fileName || 'image.png'}
                 </span>
@@ -250,7 +250,7 @@ export function ImageGenerationPanel({
             animate={{ opacity: 1 }}
             className={cn(
               'mb-6 p-3 rounded-lg',
-              'bg-white/5 border border-white/10'
+              'bg-surface-2 border border-border'
             )}
           >
             <p className="text-xs text-text-muted line-clamp-2 italic">
@@ -266,7 +266,7 @@ export function ImageGenerationPanel({
             animate={{ opacity: 1 }}
             className="mb-6"
           >
-            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
                 initial={{ x: '-100%' }}
