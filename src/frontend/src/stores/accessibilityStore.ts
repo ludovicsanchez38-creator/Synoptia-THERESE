@@ -28,6 +28,11 @@ interface AccessibilityState {
   // Keyboard navigation hints
   showKeyboardHints: boolean;
   setShowKeyboardHints: (show: boolean) => void;
+
+  // Thème clair / sombre (Refonte DA : clair "Équilibre" par défaut, sombre "Signature")
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
 }
 
 export const useAccessibilityStore = create<AccessibilityState>()(
@@ -51,6 +56,11 @@ export const useAccessibilityStore = create<AccessibilityState>()(
 
       showKeyboardHints: true,
       setShowKeyboardHints: (show) => set({ showKeyboardHints: show }),
+
+      // Clair par défaut (Équilibre). Sombre = Signature.
+      theme: 'light',
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
     }),
     {
       name: 'therese-accessibility',

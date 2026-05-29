@@ -40,7 +40,14 @@ function App() {
   // Accessibilite : taille de police et contraste eleve
   const fontSize = useFontSize();
   const highContrast = useAccessibilityStore((state) => state.highContrast);
+  const theme = useAccessibilityStore((state) => state.theme);
   const setReduceMotion = useAccessibilityStore((state) => state.setReduceMotion);
+
+  // Refonte DA : applique le theme clair/sombre sur <html> pour que tout le
+  // document (body, #root, chrome de fenetre) suive les variables de couleur.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // US-012 : Detecter la preference systeme reduced-motion au premier lancement
   // et synchroniser avec le store. Ecoute aussi les changements en temps reel.
@@ -166,6 +173,7 @@ function App() {
         className="h-screen w-screen bg-bg text-text overflow-hidden"
         style={{ fontSize }}
         data-testid="app-main"
+        data-theme={theme}
         data-high-contrast={highContrast ? 'true' : undefined}
       >
         <UpdateBanner />
