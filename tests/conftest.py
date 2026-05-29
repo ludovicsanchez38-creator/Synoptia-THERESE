@@ -285,3 +285,25 @@ def assert_contains_keys(data: dict, keys: list):
     """Assert dictionary contains expected keys."""
     for key in keys:
         assert key in data, f"Missing key: {key}"
+
+
+# ============================================================
+# Sortie propre : éviter le hang post-suite (threads orphelins)
+# ============================================================
+# Certains tests async (TestClient + appels réseau) laissent des threads
+# non-daemon ouverts : pytest affiche bien "N passed" mais le process ne rend
+# pas la main, et la CI le tue après 5 min (exit 124) -> job rouge à tort
+# (cf. warning "threads orphelins" du workflow CI). On force la sortie juste
+# après la fin de session en préservant le code de sortie pytest. On ne
+# court-circuite pas pytest-cov (qui écrit ses rapports en sessionfinish).
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    import sys
+
+    if any(arg.startswith("--cov") for arg in sys.argv):
+        return
+    import os
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(int(exitstatus))
