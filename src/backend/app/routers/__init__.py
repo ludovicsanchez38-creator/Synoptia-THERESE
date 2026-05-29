@@ -5,6 +5,8 @@ FastAPI router modules for each feature area.
 """
 
 # v0.5 - Agents IA Embarqués (Atelier)
+# Action Agents (agents actionnables multi-etapes)
+from app.routers.actions import router as actions_router
 from app.routers.agents import router as agents_router
 from app.routers.board import router as board_router
 
@@ -59,9 +61,6 @@ from app.routers.tasks import router as tasks_router
 # V3 - Installed Tools
 from app.routers.tools import router as tools_router
 from app.routers.voice import router as voice_router
-
-# Action Agents (agents actionnables multi-etapes)
-from app.routers.actions import router as actions_router
 
 __all__ = [
     "chat_router",

@@ -2215,8 +2215,9 @@ class TestBUG026_BoutonUtiliserEmail:
     def test_modal_z_index_above_email_panel(self):
         """Le modal doit avoir un z-index supérieur à z-50 (l'email panel)."""
         content = RESPONSE_GENERATOR_MODAL.read_text(encoding="utf-8")
-        assert "z-[60]" in content, (
-            "Le modal doit utiliser z-[60] pour passer au-dessus de l'email panel (z-50)"
+        # Refacto : le z-index passe désormais par la constante Z_LAYER.MODAL_NESTED (= z-[60])
+        assert "Z_LAYER.MODAL_NESTED" in content, (
+            "Le modal doit utiliser Z_LAYER.MODAL_NESTED (z-[60]) pour passer au-dessus de l'email panel (z-50)"
         )
 
     def test_handle_use_stops_propagation(self):
@@ -2322,7 +2323,8 @@ class TestBatchV0211_EmailWizardPortal:
 
     def test_higher_z_index(self):
         content = self.WIZARD_TSX.read_text(encoding="utf-8")
-        assert "z-[70]" in content, "Wizard doit avoir z-[70] pour passer au-dessus des overlays z-50"
+        # Refacto : le z-index passe désormais par la constante Z_LAYER.WIZARD (= z-[70])
+        assert "Z_LAYER.WIZARD" in content, "Wizard doit utiliser Z_LAYER.WIZARD (z-[70]) pour passer au-dessus des overlays z-50"
 
     def test_portal_to_body(self):
         content = self.WIZARD_TSX.read_text(encoding="utf-8")

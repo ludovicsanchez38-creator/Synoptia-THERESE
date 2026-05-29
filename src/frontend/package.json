@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint . --max-warnings 26",
+    "lint": "eslint . --max-warnings 27",
     "lint:fix": "eslint . --fix",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

@@ -7,14 +7,12 @@ Routes les demandes vers des agents multi-etapes avec suivi de progression.
 
 import logging
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-
 from app.services.action_agents import (
     ActionRunner,
-    TaskStatus,
     get_agent_definitions,
 )
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
