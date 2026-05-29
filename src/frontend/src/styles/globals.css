@@ -18,6 +18,11 @@
   --color-text: #101C36;
   --color-text-muted: #5B6A82;
 
+  /* Alias de compatibilité (historiques, ~188 usages) : background = fond appli, text-primary = texte principal.
+     Mêmes valeurs que bg/text, déclinés dans chaque thème ci-dessous. */
+  --color-background: #F3F6FC;
+  --color-text-primary: #101C36;
+
   /* Accents de marque (constants dans les deux modes) */
   --color-accent-cyan: #22D3EE;
   --color-accent-magenta: #E11D8D;
@@ -79,6 +84,10 @@
 
   --color-text: #E6EDF7;
   --color-text-muted: #B6C7DA;
+
+  /* Alias de compatibilité (cf. @theme) */
+  --color-background: #0B1226;
+  --color-text-primary: #E6EDF7;
 
   --color-accent: #22D3EE;
   --color-accent-fill: #22D3EE;
@@ -313,6 +322,10 @@ p, span, div:not(:hover), section { transition: none; }
 
   --color-text: #FFFFFF;
   --color-text-muted: #E0E0E0;
+
+  /* Alias de compatibilité (cf. @theme) */
+  --color-background: #000000;
+  --color-text-primary: #FFFFFF;
 
   --color-accent: #00FFFF;
   --color-accent-fill: #00FFFF;
