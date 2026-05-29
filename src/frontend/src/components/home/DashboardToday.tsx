@@ -31,6 +31,7 @@ import {
   type DashboardProspect,
 } from '../../services/api/dashboard';
 import { openPanelWindow } from '../../services/windowManager';
+import { useReducedMotion } from '../../stores/accessibilityStore';
 
 interface DashboardTodayProps {
   onDismiss: () => void;
@@ -55,13 +56,14 @@ function Kpi({
   sub: string;
   onClick: () => void;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduced ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: k * 0.04 }}
+      transition={reduced ? { duration: 0 } : { duration: 0.3, delay: k * 0.04 }}
       className="text-left bg-surface border border-border rounded-xl p-[18px] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-shadow"
     >
       <div
