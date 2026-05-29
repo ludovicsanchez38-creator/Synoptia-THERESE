@@ -106,3 +106,9 @@
 - Fragile si provider renvoie des messages en français ou si les messages changent entre versions
 - Préférer le catch de `smtplib.SMTPAuthenticationError` ou les codes SMTP (535, 530)
 - **Ne pas bloquer** : le fallback est un message générique, pas de crash
+
+### Fix d'accent sur un libellé peut casser un test (v0.12.0)
+- **Contexte** : ajouter un accent à un libellé affiché (ex. `Creer` → `Créer`) change l'accessible name. Un test qui requête par `getByRole('button', { name: /Cre/i })` ne matche plus (`é` casse la séquence `Cre`).
+- **Cas réel** : `InvoiceForm.test.tsx` requête `/Cre/i` → corrigé en `/Créer/i`.
+- **Action** : après tout fix d'accent sur un libellé, grep les tests pour les requêtes `getByRole/getByText/findBy*` ciblant l'ancien texte et les aligner.
+- **Ne pas bloquer** : c'est une conséquence attendue, pas un anti-pattern du code source.
