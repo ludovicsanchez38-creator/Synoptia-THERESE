@@ -94,6 +94,13 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis v0.11.8-alpha (29/05/2026)
+- [ ] **Mocker** `test_select_openai_provider` / `test_select_gemini_provider` (`tests/test_routers_images.py`, actuellement `@pytest.mark.skip`) : ils déclenchaient une génération d'image réelle (appel externe) -> hang/timeout CI. Rétablir la couverture provider via un mock du service `image_generator`.
+- [ ] **27 warnings ESLint** préexistants (`react-hooks/exhaustive-deps`, `react-refresh/only-export-components`) : seuil `--max-warnings` rehaussé 26 -> 27 dans `src/frontend/package.json`. Correction = revue des dépendances de hooks composant par composant (risque de régression, à faire posément).
+- [ ] Harmoniser le ton du message de confirmation `/rdv` (délègue à `execute_workspace_tool` -> format "Evenement cree : ..." sans accent et différent de `/contact`/`/projet`). Idéalement wrapper le retour calendrier + accentuer dans `workspace_tools.py`.
+- [ ] Découvrabilité de la syntaxe `clé=valeur` des commandes déterministes : `handleSlashCommandSelect` (ChatInput.tsx) n'insère que le préfixe ; envisager un template/placeholder.
+- Note infra : hook `pytest_sessionfinish` ajouté dans `tests/conftest.py` (force `os._exit` après la suite) pour contrer le hang de sortie dû aux threads orphelins des tests async (CI tuée à 5 min sinon).
+
 ## Backlog fonctionnel (suggestions testeurs 22/03/2026)
 
 ### P1
