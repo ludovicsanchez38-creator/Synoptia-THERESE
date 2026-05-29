@@ -49,6 +49,7 @@ class TestImageReference:
 class TestImageProviders:
     """Tests for US-IMG-03: Provider selection."""
 
+    @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
     async def test_select_openai_provider(self, client: AsyncClient):
         """Test selecting OpenAI (GPT Image 1.5) provider."""
@@ -61,6 +62,7 @@ class TestImageProviders:
         # Will fail without key, but validates request structure
         assert response.status_code in [200, 400, 422, 500, 503]
 
+    @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
     async def test_select_gemini_provider(self, client: AsyncClient):
         """Test selecting Gemini (Nano Banana Pro) provider."""

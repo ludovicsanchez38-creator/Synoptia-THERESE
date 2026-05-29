@@ -116,8 +116,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     from app.models import database as db_module
 
-    # S'assurer que la DB est initialisée
-    if db_module.AsyncSessionLocal is None:
+    # S'assurer que la DB est initialisée. NB : close_db() (shutdown du lifespan
+    # d'un test HTTP anterieur) remet async_engine a None SANS reinitialiser
+    # AsyncSessionLocal -> on teste les deux pour eviter un async_engine None ici.
+    if db_module.async_engine is None or db_module.AsyncSessionLocal is None:
         await db_module.init_db()
 
     # Créer les tables
@@ -283,3 +285,25 @@ def assert_contains_keys(data: dict, keys: list):
     """Assert dictionary contains expected keys."""
     for key in keys:
         assert key in data, f"Missing key: {key}"
+
+
+# ============================================================
+# Sortie propre : éviter le hang post-suite (threads orphelins)
+# ============================================================
+# Certains tests async (TestClient + appels réseau) laissent des threads
+# non-daemon ouverts : pytest affiche bien "N passed" mais le process ne rend
+# pas la main, et la CI le tue après 5 min (exit 124) -> job rouge à tort
+# (cf. warning "threads orphelins" du workflow CI). On force la sortie juste
+# après la fin de session en préservant le code de sortie pytest. On ne
+# court-circuite pas pytest-cov (qui écrit ses rapports en sessionfinish).
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    import sys
+
+    if any(arg.startswith("--cov") for arg in sys.argv):
+        return
+    import os
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(int(exitstatus))
