@@ -56,7 +56,7 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
           absolute inset-0
           bg-gradient-to-b from-surface/60 via-surface/90 to-surface/60
           backdrop-blur-md
-          ${isLeft ? 'border-r' : 'border-l'} border-white/10
+          ${isLeft ? 'border-r' : 'border-l'} border-border
           transition-colors duration-300
           ${isOpen ? 'bg-accent-cyan/10' : ''}
         `}

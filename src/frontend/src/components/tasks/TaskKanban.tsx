@@ -269,7 +269,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, mas
     urgent: 'bg-red-500/10 text-red-400 border-red-500/20',
     high: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
     medium: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    low: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
   };
 
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';

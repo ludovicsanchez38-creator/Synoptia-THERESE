@@ -67,7 +67,7 @@ export function TaskList() {
     urgent: 'text-red-400',
     high: 'text-orange-400',
     medium: 'text-blue-400',
-    low: 'text-gray-400',
+    low: 'text-text-muted',
   };
 
   if (filteredTasks.length === 0) {

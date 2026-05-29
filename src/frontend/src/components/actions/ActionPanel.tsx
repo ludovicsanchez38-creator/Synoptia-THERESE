@@ -79,14 +79,14 @@ function AgentCard({
             </h3>
             <ChevronRight
               size={16}
-              className="text-white/20 group-hover:text-white/50 transition-colors flex-shrink-0"
+              className="text-text-muted group-hover:text-text transition-colors flex-shrink-0"
             />
           </div>
-          <p className="text-xs text-white/40 mt-1 line-clamp-2">
+          <p className="text-xs text-text-muted mt-1 line-clamp-2">
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-white/30 bg-surface-2 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-full">
               {agent.steps_count} etapes
             </span>
             <span className={cn('text-[10px] px-2 py-0.5 rounded-full bg-surface-2', colorClass)}>
@@ -133,7 +133,7 @@ function ParamsForm({
       <div className="flex items-center gap-3 p-4 border-b border-border">
         <button
           onClick={onBack}
-          className="p-1 rounded hover:bg-surface-2 text-white/40 hover:text-white/70"
+          className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text"
         >
           <ChevronRight size={16} className="rotate-180" />
         </button>
@@ -142,13 +142,13 @@ function ParamsForm({
         </div>
         <div>
           <h3 className="text-sm font-medium text-text">{agent.name}</h3>
-          <p className="text-xs text-white/40">{agent.steps_count} etapes</p>
+          <p className="text-xs text-text-muted">{agent.steps_count} etapes</p>
         </div>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4 gap-4">
-        <p className="text-xs text-white/50">{agent.description}</p>
+        <p className="text-xs text-text-muted">{agent.description}</p>
 
         {agent.params.map((param) => (
           <div key={param.id} className="space-y-1.5">
@@ -186,7 +186,7 @@ function ParamsForm({
                 className={cn(
                   'w-full px-3 py-2 rounded-lg text-sm',
                   'bg-bg border border-border text-text',
-                  'placeholder:text-white/20',
+                  'placeholder:text-text-muted',
                   'focus:border-[#2451FF] focus:outline-none',
                 )}
               />
@@ -248,7 +248,7 @@ function TaskProgress({
     pending: 'text-yellow-400',
     running: 'text-cyan-400',
     completed: 'text-emerald-400',
-    cancelled: 'text-white/40',
+    cancelled: 'text-text-muted',
     error: 'text-red-400',
   }[task.status];
 
@@ -257,7 +257,7 @@ function TaskProgress({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div>
-          <h3 className="text-sm font-medium text-white/90">{task.agent_name}</h3>
+          <h3 className="text-sm font-medium text-text">{task.agent_name}</h3>
           <span className={cn('text-xs', statusColor)}>{statusLabel}</span>
         </div>
         {isRunning ? (
@@ -275,7 +275,7 @@ function TaskProgress({
         ) : (
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-2 text-white/40"
+            className="p-1 rounded hover:bg-surface-2 text-text-muted"
           >
             <X size={16} />
           </button>
@@ -295,7 +295,7 @@ function TaskProgress({
             transition={{ duration: 0.3 }}
           />
         </div>
-        <p className="text-[10px] text-white/30 mt-1 text-right">
+        <p className="text-[10px] text-text-muted mt-1 text-right">
           {Math.round(task.progress * 100)}%
         </p>
       </div>
@@ -310,7 +310,7 @@ function TaskProgress({
       {/* Resultat final */}
       {isDone && task.result && (
         <div className="border-t border-border p-4">
-          <p className="text-xs text-white/50 mb-2">Resultat insere dans le chat.</p>
+          <p className="text-xs text-text-muted mb-2">Resultat insere dans le chat.</p>
         </div>
       )}
     </div>
@@ -323,10 +323,10 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
   );
 
   const statusIcon = {
-    pending: <Clock size={14} className="text-white/20" />,
+    pending: <Clock size={14} className="text-text-muted" />,
     running: <Loader2 size={14} className="text-cyan-400 animate-spin" />,
     completed: <CheckCircle2 size={14} className="text-emerald-400" />,
-    skipped: <Clock size={14} className="text-white/20" />,
+    skipped: <Clock size={14} className="text-text-muted" />,
     error: <AlertCircle size={14} className="text-red-400" />,
   }[step.status];
 
@@ -359,7 +359,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
         <ChevronRight
           size={12}
           className={cn(
-            'text-white/20 transition-transform',
+            'text-text-muted transition-transform',
             expanded && 'rotate-90',
           )}
         />
@@ -376,7 +376,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
             <div className="px-3 pb-3 pt-0">
               <div
                 className={cn(
-                  'text-xs text-white/50 whitespace-pre-wrap',
+                  'text-xs text-text-muted whitespace-pre-wrap',
                   'max-h-40 overflow-y-auto',
                   'bg-bg/50 rounded-lg p-2',
                 )}
@@ -514,7 +514,7 @@ export function ActionPanel() {
             </div>
             <button
               onClick={closePanel}
-              className="p-1 rounded hover:bg-surface-2 text-white/40 hover:text-white/70"
+              className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text"
             >
               <X size={16} />
             </button>
@@ -527,7 +527,7 @@ export function ActionPanel() {
             <div className="h-full overflow-y-auto p-4 space-y-6">
               {Object.entries(grouped).map(([category, catAgents]) => (
                 <div key={category}>
-                  <h3 className={cn('text-xs font-semibold uppercase tracking-wider mb-3', CATEGORY_COLORS[category] || 'text-white/40')}>
+                  <h3 className={cn('text-xs font-semibold uppercase tracking-wider mb-3', CATEGORY_COLORS[category] || 'text-text-muted')}>
                     {CATEGORY_LABELS[category] || category}
                   </h3>
                   <div className="space-y-2">
@@ -543,14 +543,14 @@ export function ActionPanel() {
               ))}
 
               {agents.length === 0 && !isLoading && (
-                <p className="text-sm text-white/30 text-center py-8">
+                <p className="text-sm text-text-muted text-center py-8">
                   Aucune action disponible.
                 </p>
               )}
 
               {isLoading && (
                 <div className="flex justify-center py-8">
-                  <Loader2 size={24} className="text-white/20 animate-spin" />
+                  <Loader2 size={24} className="text-text-muted animate-spin" />
                 </div>
               )}
             </div>

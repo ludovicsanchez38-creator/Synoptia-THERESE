@@ -384,11 +384,11 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
 
                   {/* Icon container */}
                   <div className="relative flex items-center justify-center w-10 h-10 rounded-lg mb-3 bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30 transition-all duration-200">
-                    <cat.icon className="w-5 h-5 text-accent-cyan group-hover:text-white transition-colors duration-200" />
+                    <cat.icon className="w-5 h-5 text-accent-cyan group-hover:text-text transition-colors duration-200" />
                   </div>
 
                   {/* Title */}
-                  <h3 className="relative text-sm font-semibold text-text group-hover:text-white transition-colors duration-200">
+                  <h3 className="relative text-sm font-semibold text-text group-hover:text-text transition-colors duration-200">
                     {cat.title}
                   </h3>
 
@@ -420,9 +420,9 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
               >
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-cyan/5 to-accent-magenta/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative flex items-center justify-center w-10 h-10 rounded-lg mb-3 bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30 transition-all duration-200">
-                  <BookOpen className="w-5 h-5 text-accent-cyan group-hover:text-white transition-colors duration-200" />
+                  <BookOpen className="w-5 h-5 text-accent-cyan group-hover:text-text transition-colors duration-200" />
                 </div>
-                <h3 className="relative text-sm font-semibold text-text group-hover:text-white transition-colors duration-200">
+                <h3 className="relative text-sm font-semibold text-text group-hover:text-text transition-colors duration-200">
                   Prompts
                 </h3>
                 <p className="relative text-xs mt-1 text-text-muted line-clamp-2">

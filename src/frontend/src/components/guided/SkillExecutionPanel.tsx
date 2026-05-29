@@ -123,7 +123,7 @@ export function SkillExecutionPanel({
             className={cn(
               'absolute top-4 right-4 p-1.5 rounded-lg',
               'text-text-muted hover:text-text',
-              'hover:bg-white/5 transition-colors'
+              'hover:bg-surface-2 transition-colors'
             )}
           >
             <X className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function SkillExecutionPanel({
             animate={{ opacity: 1, y: 0 }}
             className={cn(
               'mb-6 p-4 rounded-xl',
-              'bg-white/5 border border-white/10'
+              'bg-surface-2 border border-border'
             )}
           >
             <div className="flex items-center gap-3">
@@ -233,7 +233,7 @@ export function SkillExecutionPanel({
             animate={{ opacity: 1 }}
             className="mb-6"
           >
-            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
                 initial={{ x: '-100%' }}
