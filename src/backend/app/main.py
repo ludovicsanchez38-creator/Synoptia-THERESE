@@ -35,6 +35,7 @@ except ImportError:
 from app.core.logging_config import setup_logging
 from app.models.database import close_db, init_db
 from app.routers import (
+    actions_router,  # Action Agents multi-etapes
     agents_router,  # v0.5 - Agents IA Embarqués (Atelier)
     board_router,
     browser_router,  # v0.6 - Browser Automation (Manus-inspired)
@@ -52,8 +53,6 @@ from app.routers import (
     escalation_router,
     files_router,
     follow_ups_router,  # Email Backlog - Follow-ups
-    prompts_router,  # Bibliothèque de prompts
-    actions_router,  # Action Agents multi-etapes
     images_router,
     invoices_router,  # Phase 4 - ACTIVATED
     mcp_router,
@@ -61,6 +60,7 @@ from app.routers import (
     notifications_router,  # US-004 - Notifications push in-app
     perf_router,
     personalisation_router,
+    prompts_router,  # Bibliothèque de prompts
     rgpd_router,  # Phase 6 - RGPD Compliance
     skills_router,
     tasks_router,  # Phase 3 - ACTIVATED

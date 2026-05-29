@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Download, RefreshCw, X } from 'lucide-react';
+import { API_BASE } from '../../services/api/core';
 
 /** Intervalle entre les checks auto (6 heures en ms) */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -77,14 +78,14 @@ export function UpdateBanner() {
       // BUG-099 : Arrêter le backend sidecar AVANT l'installation
       // pour éviter le verrou backend.exe sur Windows
       try {
-        await fetch('http://localhost:17293/api/shutdown', { method: 'POST' });
+        await fetch(`${API_BASE}/api/shutdown`, { method: 'POST' });
         // Health check poll : attendre que le backend soit vraiment mort
         const MAX_WAIT = 10_000;
         const POLL_INTERVAL = 500;
         let waited = 0;
         while (waited < MAX_WAIT) {
           try {
-            await fetch('http://localhost:17293/health');
+            await fetch(`${API_BASE}/health`);
             // Backend répond encore, on attend
             await new Promise(r => setTimeout(r, POLL_INTERVAL));
             waited += POLL_INTERVAL;

@@ -226,7 +226,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       stopPolling();
     }
     return stopPolling;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [servers, stopPolling]);
 
   useEffect(() => {
