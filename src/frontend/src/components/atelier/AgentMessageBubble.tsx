@@ -48,7 +48,7 @@ export function AgentMessageBubble({ message }: Props) {
   // Messages système compacts (tool_use, test_result)
   if (isSystem && (message.type === 'tool_use' || message.type === 'test_result')) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#B6C7DA] opacity-70">
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-text-muted opacity-70">
         <span style={{ color: style.color }}>{style.icon}</span>
         <span>{message.content}</span>
       </div>
@@ -66,12 +66,12 @@ export function AgentMessageBubble({ message }: Props) {
           borderImage: 'linear-gradient(to bottom, #A855F7, #F59E0B) 1',
         }}
       >
-        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[#B6C7DA]">
+        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-text-muted">
           <Headphones size={12} className="text-purple-400" />
           <span>Katia transmet à Zézette</span>
           <Wrench size={12} className="text-amber-400" />
         </div>
-        <div className="text-[#E6EDF7]">{message.content}</div>
+        <div className="text-text">{message.content}</div>
       </div>
     );
   }

@@ -111,7 +111,7 @@ function PromptCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-[#131B35] border border-border/30 rounded-lg p-4 hover:border-accent-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.08)] transition-all duration-200 cursor-pointer"
+      className="group bg-surface border border-border/30 rounded-lg p-4 hover:border-accent-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.08)] transition-all duration-200 cursor-pointer"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -201,7 +201,7 @@ function CategoryAccordion({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-border/20 rounded-xl overflow-hidden bg-[#0B1226]/80">
+    <div className="border border-border/20 rounded-xl overflow-hidden bg-bg/80">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
@@ -325,7 +325,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.25 }}
-      className="flex flex-col h-full bg-[#0B1226]"
+      className="flex flex-col h-full bg-bg"
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30">

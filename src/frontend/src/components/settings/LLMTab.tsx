@@ -533,7 +533,7 @@ function ModelSelector({
       <select
         value={selectedModel}
         onChange={(e) => onSelectModel(e.target.value)}
-        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-[#0B1226] [&>option]:text-[#E6EDF7]"
+        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-bg [&>option]:text-text"
         style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
       >
         {availableModels.map((model) => (

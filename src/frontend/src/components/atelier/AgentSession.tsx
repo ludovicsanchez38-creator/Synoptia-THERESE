@@ -46,7 +46,7 @@ const COLOR_MAP: Record<string, { accent: string; bg: string }> = {
   amber: { accent: "text-amber-400", bg: "bg-amber-500/10" },
 };
 
-const DEFAULT_COLOR = { accent: "text-[#B6C7DA]", bg: "bg-white/5" };
+const DEFAULT_COLOR = { accent: "text-text-muted", bg: "bg-surface-2" };
 
 /** Profils par defaut (identiques a AgentCatalog) */
 const PROFILE_MAP: Record<string, AgentProfile> = {
@@ -141,18 +141,18 @@ function ToolCallBlock({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="mx-3 my-1.5 rounded-lg border border-white/5 bg-[#0e1529]">
+    <div className="mx-3 my-1.5 rounded-lg border border-border bg-surface-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-[#B6C7DA] transition hover:bg-white/5"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-muted transition hover:bg-surface-elevated"
       >
         <Wrench size={12} className="flex-shrink-0 text-amber-400/70" />
         <span className="flex-1 truncate font-medium">{toolName}</span>
         {toolResult && (
           expanded ? (
-            <ChevronDown size={12} className="flex-shrink-0 text-[#6B7280]" />
+            <ChevronDown size={12} className="flex-shrink-0 text-text-muted" />
           ) : (
-            <ChevronRight size={12} className="flex-shrink-0 text-[#6B7280]" />
+            <ChevronRight size={12} className="flex-shrink-0 text-text-muted" />
           )
         )}
       </button>
@@ -165,7 +165,7 @@ function ToolCallBlock({
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <pre className="border-t border-white/5 px-3 py-2 text-[10px] leading-relaxed text-[#6B7280] overflow-x-auto max-h-40 overflow-y-auto">
+            <pre className="border-t border-border px-3 py-2 text-[10px] leading-relaxed text-text-muted overflow-x-auto max-h-40 overflow-y-auto">
               {toolResult}
             </pre>
           </motion.div>
@@ -381,10 +381,10 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-white/5 px-3 py-2.5">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <button
           onClick={onBack}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#6B7280] transition hover:bg-white/5 hover:text-[#E6EDF7]"
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-2 hover:text-text"
           title="Retour au catalogue"
         >
           <ArrowLeft size={16} />
@@ -404,7 +404,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
         {/* Badge modele */}
         {activeModel && (
-          <span className="ml-auto rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-[#6B7280]">
+          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">
             {activeModel}
           </span>
         )}
@@ -522,7 +522,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       </div>
 
       {/* Input */}
-      <div className="flex items-end gap-2 border-t border-white/5 bg-[#0B1226] px-3 py-2.5">
+      <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
         <textarea
           ref={inputRef}
           value={inputValue}
@@ -535,7 +535,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           }
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-white/10 bg-[#131B35] px-3 py-2 text-sm text-[#E6EDF7] placeholder-[#6B7280] outline-none transition focus:border-cyan-500/50 disabled:opacity-50"
+          className="flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-cyan-500/50 disabled:opacity-50"
           style={{ minHeight: "38px", maxHeight: "120px" }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
@@ -596,7 +596,7 @@ function InitialPrompt({
         <h3 className={`mb-1 text-sm font-semibold ${colors.accent}`}>
           {profile.name}
         </h3>
-        <p className="text-xs leading-relaxed text-[#6B7280]">
+        <p className="text-xs leading-relaxed text-text-muted">
           {profile.description}
         </p>
       </div>
@@ -604,7 +604,7 @@ function InitialPrompt({
         {profile.tools.map((tool) => (
           <span
             key={tool}
-            className="rounded bg-white/5 px-2 py-0.5 text-[10px] text-[#6B7280]"
+            className="rounded bg-surface-2 px-2 py-0.5 text-[10px] text-text-muted"
           >
             {tool}
           </span>

@@ -65,7 +65,7 @@ export function CodeReviewPanel() {
 
   if (!currentMission) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-[#6B7280]">
+      <div className="flex h-full items-center justify-center text-sm text-text-muted">
         Aucune mission en cours
       </div>
     );
@@ -75,19 +75,19 @@ export function CodeReviewPanel() {
     <div className="flex h-full flex-col">
       {/* Explication par Katia */}
       {currentMission.explanation && (
-        <div className="border-b border-white/5 px-4 py-3">
+        <div className="border-b border-border px-4 py-3">
           <div className="mb-1 text-xs font-medium text-purple-400">
             Explication de Katia
           </div>
-          <div className="text-sm leading-relaxed text-[#E6EDF7]">
+          <div className="text-sm leading-relaxed text-text">
             {currentMission.explanation}
           </div>
         </div>
       )}
 
       {/* Résumé des changements */}
-      <div className="border-b border-white/5 px-4 py-2">
-        <div className="flex items-center gap-3 text-xs text-[#B6C7DA]">
+      <div className="border-b border-border px-4 py-2">
+        <div className="flex items-center gap-3 text-xs text-text-muted">
           <span className="flex items-center gap-1 text-green-400">
             <Plus size={12} /> {totalAdd} ajouts
           </span>
@@ -101,25 +101,25 @@ export function CodeReviewPanel() {
       {/* Liste des fichiers */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8 text-sm text-[#6B7280]">
+          <div className="flex items-center justify-center py-8 text-sm text-text-muted">
             Chargement des modifications...
           </div>
         ) : (
           diffFiles.map((file) => (
-            <div key={file.file_path} className="border-b border-white/5">
+            <div key={file.file_path} className="border-b border-border">
               <button
                 onClick={() => setExpandedFile(
                   expandedFile === file.file_path ? null : file.file_path
                 )}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition hover:bg-white/5"
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition hover:bg-surface-2"
               >
                 {expandedFile === file.file_path ? (
-                  <ChevronDown size={14} className="text-[#6B7280]" />
+                  <ChevronDown size={14} className="text-text-muted" />
                 ) : (
-                  <ChevronRight size={14} className="text-[#6B7280]" />
+                  <ChevronRight size={14} className="text-text-muted" />
                 )}
-                <FileText size={14} className="text-[#B6C7DA]" />
-                <span className="flex-1 truncate text-[#E6EDF7]">
+                <FileText size={14} className="text-text-muted" />
+                <span className="flex-1 truncate text-text">
                   {file.file_path}
                 </span>
                 <span className={`text-xs ${
@@ -167,11 +167,11 @@ export function CodeReviewPanel() {
 
       {/* Actions */}
       {actionDone ? (
-        <div className="border-t border-white/5 px-4 py-3 text-center text-sm text-[#B6C7DA]">
+        <div className="border-t border-border px-4 py-3 text-center text-sm text-text-muted">
           {actionDone}
         </div>
       ) : (
-        <div className="flex gap-3 border-t border-white/5 px-4 py-3">
+        <div className="flex gap-3 border-t border-border px-4 py-3">
           <button
             onClick={handleApprove}
             disabled={actionPending !== null}

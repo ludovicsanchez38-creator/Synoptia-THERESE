@@ -45,22 +45,22 @@ export function NewTaskDialog() {
   return (
     <div className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center bg-black/50 backdrop-blur-sm`}>
       <div
-        className="mx-4 w-full max-w-lg rounded-xl border border-white/10 bg-[#0F172A] shadow-2xl"
+        className="mx-4 w-full max-w-lg rounded-xl border border-border bg-bg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
               <Zap size={14} className="text-purple-400" />
             </div>
-            <span className="text-sm font-semibold text-[#E6EDF7]">
+            <span className="text-sm font-semibold text-text">
               Nouvelle tâche pour Katia
             </span>
           </div>
           <button
             onClick={closeNewTask}
-            className="rounded-lg p-1.5 text-[#6B7280] transition hover:bg-white/5 hover:text-[#E6EDF7]"
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
           </button>
@@ -74,7 +74,7 @@ export function NewTaskDialog() {
             </div>
           )}
 
-          <label className="mb-2 block text-xs font-medium text-[#B6C7DA]">
+          <label className="mb-2 block text-xs font-medium text-text-muted">
             Que veux-tu que Katia fasse ?
           </label>
           <textarea
@@ -84,12 +84,12 @@ export function NewTaskDialog() {
             onKeyDown={handleKeyDown}
             placeholder="Ex: Envoie un email de relance à Jean Dupont pour la facture F-2024-042..."
             rows={4}
-            className="w-full resize-none rounded-lg border border-white/10 bg-[#131B35] px-3 py-2.5 text-sm text-[#E6EDF7] placeholder-[#6B7280] outline-none transition focus:border-purple-500/50"
+            className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50"
             disabled={isDispatching}
           />
-          <p className="mt-1.5 text-xs text-[#6B7280]">
+          <p className="mt-1.5 text-xs text-text-muted">
             Katia peut envoyer des emails, créer des factures, gérer le CRM et plus encore.
-            <span className="ml-1 text-[#B6C7DA]">Cmd+Entrée</span> pour lancer.
+            <span className="ml-1 text-text-muted">Cmd+Entrée</span> pour lancer.
           </p>
 
           {isMaxReached && (
@@ -100,10 +100,10 @@ export function NewTaskDialog() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-white/5 px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
           <button
             onClick={closeNewTask}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#B6C7DA] transition hover:bg-white/5"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-text-muted transition hover:bg-surface-2"
             disabled={isDispatching}
           >
             Annuler
