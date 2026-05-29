@@ -59,6 +59,12 @@
   --glass-border: var(--color-border);
   --glow-cyan-shadow: 0 1px 2px rgba(16, 28, 54, 0.06);
   --glow-magenta-shadow: 0 1px 2px rgba(16, 28, 54, 0.06);
+
+  /* Accents KPI / catégories (clair Équilibre) */
+  --k1: #0F8FB3; --k1bg: #DEF4F9;
+  --k2: #B45309; --k2bg: #FAEFDC;
+  --k3: #BE1A72; --k3bg: #FBE3F0;
+  --k4: #7C3AED; --k4bg: #F0E9FC;
 }
 
 /* ============================================================
@@ -89,6 +95,12 @@
   --glass-border: #2A3550;
   --glow-cyan-shadow: 0 0 20px rgba(34, 211, 238, 0.15), 0 0 40px rgba(34, 211, 238, 0.1), inset 0 0 20px rgba(34, 211, 238, 0.05);
   --glow-magenta-shadow: 0 0 20px rgba(225, 29, 141, 0.15), 0 0 40px rgba(225, 29, 141, 0.1), inset 0 0 20px rgba(225, 29, 141, 0.05);
+
+  /* Accents KPI / catégories (sombre Signature) */
+  --k1: #22D3EE; --k1bg: rgba(34, 211, 238, 0.13);
+  --k2: #F59E0B; --k2bg: rgba(245, 158, 11, 0.13);
+  --k3: #E11D8D; --k3bg: rgba(225, 29, 141, 0.13);
+  --k4: #A855F7; --k4bg: rgba(168, 85, 247, 0.13);
 }
 
 /* Base styles - fenêtre avec coins arrondis */
