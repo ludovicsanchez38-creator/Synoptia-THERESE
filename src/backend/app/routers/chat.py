@@ -43,6 +43,7 @@ from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
+from app.services.slash_commands import execute_slash_command, parse_slash_command
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.web_search import (
     BROWSER_TOOL,
@@ -561,6 +562,53 @@ async def send_message(
     )
     session.add(user_message)
     await session.commit()
+
+    # Court-circuit deterministe : /contact, /projet, /rdv s'executent en CRUD
+    # direct, sans LLM ni boucle d'outils (regression #bugs-21052026 : creation
+    # de projets EN MASSE via interpretation LLM des commandes /).
+    parsed_cmd = parse_slash_command(request.message)
+    if parsed_cmd is not None:
+        cmd_name, cmd_rest = parsed_cmd
+        confirmation = await execute_slash_command(cmd_name, cmd_rest, session)
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=confirmation,
+            model="commande-deterministe",
+        )
+        session.add(assistant_message)
+        await session.commit()
+
+        if request.stream:
+            async def _command_stream() -> AsyncGenerator[str, None]:
+                text_chunk = StreamChunk(
+                    type="text", content=confirmation, conversation_id=conversation.id
+                )
+                yield f"data: {json.dumps(text_chunk.model_dump())}\n\n"
+                done_chunk = StreamChunk(
+                    type="done",
+                    content="",
+                    conversation_id=conversation.id,
+                    message_id=assistant_message.id,
+                )
+                yield f"data: {json.dumps(done_chunk.model_dump())}\n\n"
+
+            return StreamingResponse(
+                _command_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
+        return ChatResponse(
+            id=assistant_message.id,
+            conversation_id=conversation.id,
+            content=confirmation,
+            created_at=assistant_message.created_at,
+        )
 
     # Handle streaming response
     if request.stream:

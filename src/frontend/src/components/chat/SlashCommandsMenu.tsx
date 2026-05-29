@@ -37,14 +37,14 @@ const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: 'contact',
     name: 'contact',
-    description: 'Mentionner ou créer un contact',
+    description: 'Créer un contact : Prénom Nom (email=… tel=…)',
     icon: <UserPlus className="w-4 h-4" />,
     prefix: '/contact ',
   },
   {
     id: 'projet',
     name: 'projet',
-    description: 'Mentionner ou créer un projet',
+    description: 'Créer un projet : Nom (budget=… statut=…)',
     icon: <FolderPlus className="w-4 h-4" />,
     prefix: '/projet ',
   },
@@ -86,7 +86,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: 'rdv',
     name: 'rdv',
-    description: 'Préparer un rendez-vous',
+    description: 'Créer un rendez-vous : Titre (date=2026-06-03T14:00)',
     icon: <Calendar className="w-4 h-4" />,
     prefix: '/rdv ',
   },
