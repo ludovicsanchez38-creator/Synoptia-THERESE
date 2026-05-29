@@ -12,7 +12,9 @@ from typing import Any
 
 from app.models.entities import Contact, Project
 from app.services.qdrant import get_qdrant_service
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +28,10 @@ CREATE_CONTACT_TOOL = {
     "function": {
         "name": "create_contact",
         "description": (
-            "Cree un nouveau contact dans la memoire de THERESE. "
-            "Utilise cet outil quand l'utilisateur mentionne une nouvelle personne "
-            "et souhaite l'enregistrer comme contact."
+            "Cree un contact dans la memoire de THERESE (ou le reutilise s'il existe deja). "
+            "Utilise cet outil UNE SEULE FOIS par personne mentionnee. "
+            "Ne cree jamais de doublon : si le contact existe deja, il est reutilise automatiquement. "
+            "Le nom de famille est optionnel."
         ),
         "parameters": {
             "type": "object",
@@ -62,7 +65,7 @@ CREATE_CONTACT_TOOL = {
                     "description": "Notes supplementaires sur le contact (optionnel)",
                 },
             },
-            "required": ["first_name", "last_name"],
+            "required": ["first_name"],
         },
     },
 }
@@ -72,9 +75,9 @@ CREATE_PROJECT_TOOL = {
     "function": {
         "name": "create_project",
         "description": (
-            "Cree un nouveau projet dans la memoire de THERESE. "
-            "Utilise cet outil quand l'utilisateur mentionne un nouveau projet "
-            "et souhaite l'enregistrer."
+            "Cree un projet dans la memoire de THERESE (ou le reutilise s'il existe deja). "
+            "Utilise cet outil UNE SEULE FOIS par projet mentionne. "
+            "Ne cree jamais de doublon : si un projet du meme nom existe deja, il est reutilise."
         ),
         "parameters": {
             "type": "object",
@@ -106,6 +109,47 @@ MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL]
 
 
 # ============================================================
+# Deduplication helpers (anti creation en masse)
+# ============================================================
+
+async def _find_existing_project(session: AsyncSession, name: str) -> Project | None:
+    """Retourne un projet existant de meme nom (insensible casse/espaces)."""
+    norm = name.strip().lower()
+    if not norm:
+        return None
+    result = await session.execute(
+        select(Project).where(func.lower(func.trim(Project.name)) == norm)
+    )
+    return result.scalars().first()
+
+
+async def _find_existing_contact(
+    session: AsyncSession,
+    first_name: str,
+    last_name: str,
+    email: str | None,
+) -> Contact | None:
+    """Retourne un contact existant (par email, sinon par prenom+nom)."""
+    if email:
+        result = await session.execute(
+            select(Contact).where(func.lower(Contact.email) == email.lower())
+        )
+        match = result.scalars().first()
+        if match is not None:
+            return match
+
+    fn = first_name.strip().lower()
+    ln = last_name.strip().lower()
+    if not fn and not ln:
+        return None
+    result = await session.execute(select(Contact))
+    for c in result.scalars().all():
+        if (c.first_name or "").strip().lower() == fn and (c.last_name or "").strip().lower() == ln:
+            return c
+    return None
+
+
+# ============================================================
 # Tool Execution
 # ============================================================
 
@@ -121,19 +165,33 @@ async def execute_create_contact(
     Returns:
         JSON string with the result for the LLM.
     """
-    first_name = arguments.get("first_name", "").strip()
-    last_name = arguments.get("last_name", "").strip()
+    first_name = (arguments.get("first_name") or "").strip()
+    last_name = (arguments.get("last_name") or "").strip()
+    email = (arguments.get("email") or "").strip() or None
 
-    if not first_name or not last_name:
-        return json.dumps({"error": "Prenom et nom requis"}, ensure_ascii=False)
+    # Le nom de famille est optionnel : un prenom (ou une entreprise) suffit.
+    company = (arguments.get("company") or "").strip() or None
+    if not first_name and not last_name and not company:
+        return json.dumps({"error": "Au moins un nom ou une entreprise est requis"}, ensure_ascii=False)
+
+    # Deduplication : si un contact equivalent existe deja, on le reutilise
+    # plutot que de creer un doublon (regression "creation en masse").
+    existing = await _find_existing_contact(session, first_name, last_name, email)
+    if existing is not None:
+        return json.dumps({
+            "success": True,
+            "contact_id": existing.id,
+            "display_name": existing.display_name,
+            "already_existed": True,
+            "message": f"Contact '{existing.display_name}' existe deja, je le reutilise.",
+        }, ensure_ascii=False)
 
     try:
         contact = Contact(
-            first_name=first_name,
-            last_name=last_name,
-            display_name=f"{first_name} {last_name}",
-            company=arguments.get("company"),
-            email=arguments.get("email"),
+            first_name=first_name or None,
+            last_name=last_name or None,
+            company=company,
+            email=email,
             phone=arguments.get("phone"),
             role=arguments.get("role"),
             notes=arguments.get("notes"),
@@ -200,10 +258,22 @@ async def execute_create_project(
     Returns:
         JSON string with the result for the LLM.
     """
-    name = arguments.get("name", "").strip()
+    name = (arguments.get("name") or "").strip()
 
     if not name:
         return json.dumps({"error": "Nom du projet requis"}, ensure_ascii=False)
+
+    # Deduplication : reutilise un projet de meme nom au lieu de creer un doublon
+    # (regression "creation en masse" via les commandes / interpretees par le LLM).
+    existing = await _find_existing_project(session, name)
+    if existing is not None:
+        return json.dumps({
+            "success": True,
+            "project_id": existing.id,
+            "name": existing.name,
+            "already_existed": True,
+            "message": f"Projet '{existing.name}' existe deja, je le reutilise.",
+        }, ensure_ascii=False)
 
     try:
         project = Project(

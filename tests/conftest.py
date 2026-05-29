@@ -116,8 +116,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     from app.models import database as db_module
 
-    # S'assurer que la DB est initialisée
-    if db_module.AsyncSessionLocal is None:
+    # S'assurer que la DB est initialisée. NB : close_db() (shutdown du lifespan
+    # d'un test HTTP anterieur) remet async_engine a None SANS reinitialiser
+    # AsyncSessionLocal -> on teste les deux pour eviter un async_engine None ici.
+    if db_module.async_engine is None or db_module.AsyncSessionLocal is None:
         await db_module.init_db()
 
     # Créer les tables
