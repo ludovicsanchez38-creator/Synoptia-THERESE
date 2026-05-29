@@ -397,7 +397,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           <div className="flex flex-col items-center justify-center h-32 text-text-muted">
             <Folder className="w-8 h-8 mb-2 opacity-50" />
             <p className="text-sm">
-              {searchQuery ? 'Aucun resultat' : 'Dossier vide'}
+              {searchQuery ? 'Aucun résultat' : 'Dossier vide'}
             </p>
           </div>
         ) : (

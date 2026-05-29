@@ -432,11 +432,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Export RGPD</h3>
-                            <p className="text-sm text-text-muted">Droit de portabilite (Art. 20)</p>
+                            <p className="text-sm text-text-muted">Droit de portabilité (Art. 20)</p>
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Exporter toutes les donnees de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> au format JSON.
+                          Exporter toutes les données de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> au format JSON.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)}>
@@ -469,11 +469,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Anonymisation RGPD</h3>
-                            <p className="text-sm text-text-muted">Droit a l'oubli (Art. 17)</p>
+                            <p className="text-sm text-text-muted">Droit à l'oubli (Art. 17)</p>
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-3">
-                          Cette action est <strong>irreversible</strong>. Toutes les donnees personnelles seront remplacees par [ANONYMISE].
+                          Cette action est <strong>irréversible</strong>. Toutes les données personnelles seront remplacées par [ANONYMISE].
                         </p>
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-text mb-1">Raison de l'anonymisation *</label>
@@ -520,7 +520,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                           </div>
                         </div>
                         <p className="text-sm text-text-muted mb-4">
-                          Le consentement de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> sera prolonge de 3 ans a partir d'aujourd'hui.
+                          Le consentement de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
                         </p>
                         <div className="flex gap-2">
                           <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)}>

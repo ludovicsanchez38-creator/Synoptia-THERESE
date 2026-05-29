@@ -71,7 +71,7 @@ const PROFILE_MAP: Record<string, AgentProfile> = {
   analyst: {
     id: "analyst",
     name: "Analyste",
-    description: "Analyse de donnees, code et documents",
+    description: "Analyse de données, code et documents",
     icon: "\uD83D\uDCCA",
     color: "blue",
     tools: ["read_file", "search_codebase", "run_command"],

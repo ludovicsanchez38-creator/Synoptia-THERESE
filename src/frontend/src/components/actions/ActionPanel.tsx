@@ -87,7 +87,7 @@ function AgentCard({
           </p>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-full">
-              {agent.steps_count} etapes
+              {agent.steps_count} étapes
             </span>
             <span className={cn('text-[10px] px-2 py-0.5 rounded-full bg-surface-2', colorClass)}>
               {CATEGORY_LABELS[agent.category] || agent.category}
@@ -142,7 +142,7 @@ function ParamsForm({
         </div>
         <div>
           <h3 className="text-sm font-medium text-text">{agent.name}</h3>
-          <p className="text-xs text-text-muted">{agent.steps_count} etapes</p>
+          <p className="text-xs text-text-muted">{agent.steps_count} étapes</p>
         </div>
       </div>
 
@@ -239,8 +239,8 @@ function TaskProgress({
   const statusLabel = {
     pending: 'En attente...',
     running: 'En cours...',
-    completed: 'Termine',
-    cancelled: 'Annule',
+    completed: 'Terminé',
+    cancelled: 'Annulé',
     error: 'Erreur',
   }[task.status];
 
@@ -310,7 +310,7 @@ function TaskProgress({
       {/* Resultat final */}
       {isDone && task.result && (
         <div className="border-t border-border p-4">
-          <p className="text-xs text-text-muted mb-2">Resultat insere dans le chat.</p>
+          <p className="text-xs text-text-muted mb-2">Résultat inséré dans le chat.</p>
         </div>
       )}
     </div>

@@ -33,9 +33,9 @@ import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 
 const COLUMNS = [
-  { id: 'todo', label: 'A faire', icon: Circle, color: 'text-text-muted' },
+  { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
   { id: 'in_progress', label: 'En cours', icon: Clock, color: 'text-blue-400' },
-  { id: 'done', label: 'Termine', icon: CheckCircle2, color: 'text-green-400' },
+  { id: 'done', label: 'Terminé', icon: CheckCircle2, color: 'text-green-400' },
 ];
 
 export function TaskKanban() {
@@ -371,7 +371,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, mas
             <button
               onClick={() => onStatusChange('done')}
               className="p-1 hover:bg-green-500/20 rounded transition-colors"
-              title="Marquer termine"
+              title="Marquer terminé"
             >
               <CheckCircle2 className="w-3 h-3 text-green-400" />
             </button>

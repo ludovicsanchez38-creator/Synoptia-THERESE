@@ -183,7 +183,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     e.preventDefault();
 
     if (!contactId) {
-      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez selectionner un contact' });
+      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez sélectionner un contact' });
       return;
     }
 
@@ -239,11 +239,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       if (invoice) {
         // Mise a jour
         savedInvoice = await updateInvoice(invoice.id, data);
-        addNotification({ type: 'success', title: 'Facture mise a jour', message: savedInvoice.invoice_number });
+        addNotification({ type: 'success', title: 'Facture mise à jour', message: savedInvoice.invoice_number });
       } else {
         // Creation
         savedInvoice = await createInvoice(data);
-        addNotification({ type: 'success', title: 'Facture creee', message: savedInvoice.invoice_number });
+        addNotification({ type: 'success', title: 'Facture créée', message: savedInvoice.invoice_number });
       }
 
       onSave(savedInvoice);
@@ -260,11 +260,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     if (!invoice) return;
     try {
       const updatedInvoice = await markInvoicePaid(invoice.id);
-      addNotification({ type: 'success', title: 'Facture payee', message: `${invoice.invoice_number} marquee comme payee` });
+      addNotification({ type: 'success', title: 'Facture payée', message: `${invoice.invoice_number} marquée comme payée` });
       onSave(updatedInvoice);
     } catch (error) {
       console.error('Failed to mark paid:', error);
-      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payee' });
+      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payée' });
     }
   }
 
@@ -281,13 +281,13 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       addNotification({
         type: 'success',
         title: 'Devis converti en facture',
-        message: `Facture ${newInvoice.invoice_number} creee a partir du devis ${invoice.invoice_number}`,
+        message: `Facture ${newInvoice.invoice_number} créée à partir du devis ${invoice.invoice_number}`,
       });
       onSave(newInvoice);
     } catch (error) {
       console.error('Failed to convert devis:', error);
       const msg = error instanceof Error ? error.message : 'Erreur lors de la conversion';
-      addNotification({ type: 'error', title: 'Conversion echouee', message: msg });
+      addNotification({ type: 'error', title: 'Conversion échouée', message: msg });
     } finally {
       setIsConverting(false);
     }
@@ -651,7 +651,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 'focus:outline-none focus:ring-2 focus:ring-accent-cyan',
                 'resize-none'
               )}
-              placeholder="Notes internes ou mentions specifiques..."
+              placeholder="Notes internes ou mentions spécifiques..."
             />
           </div>
 
@@ -788,7 +788,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               )}
             >
               <Save className="w-4 h-4" />
-              {isSaving ? 'Sauvegarde...' : invoice ? 'Mettre a jour' : 'Creer'}
+              {isSaving ? 'Sauvegarde...' : invoice ? 'Mettre à jour' : 'Créer'}
             </button>
           </div>
         </div>
@@ -813,8 +813,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             >
               <h3 className="text-lg font-semibold text-text">Convertir en facture ?</h3>
               <p className="text-sm text-text-muted">
-                Une facture sera creee a partir du devis <strong>{invoice?.invoice_number}</strong> avec
-                les memes lignes et montants. Le devis sera marque comme converti.
+                Une facture sera créée à partir du devis <strong>{invoice?.invoice_number}</strong> avec
+                les mêmes lignes et montants. Le devis sera marqué comme converti.
               </p>
               <div className="p-3 rounded-lg bg-surface-elevated/50 border border-border/30 text-sm space-y-1">
                 <p className="text-text-muted">

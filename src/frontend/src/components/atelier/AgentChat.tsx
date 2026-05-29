@@ -393,7 +393,7 @@ export function AgentChat() {
       {activeSession.status !== "running" && (
         <div className="border-t border-border px-3 py-2 text-center">
           <span className="text-xs text-text-muted">
-            Session {activeSession.status === "done" ? "terminee" : activeSession.status === "error" ? "en erreur" : "annulee"}
+            Session {activeSession.status === "done" ? "terminée" : activeSession.status === "error" ? "en erreur" : "annulée"}
             {activeSession.result_summary && (
               <span title={activeSession.result_summary}>
                 {" "}- {activeSession.result_summary.length > 80

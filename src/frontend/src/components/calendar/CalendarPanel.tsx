@@ -233,7 +233,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      addNotification({ type: 'success', title: 'Export ICS', message: 'Calendrier exporte avec succes' });
+      addNotification({ type: 'success', title: 'Export ICS', message: 'Calendrier exporté avec succès' });
     } catch (err: any) {
       addNotification({ type: 'error', title: 'Erreur export', message: err.message });
     }

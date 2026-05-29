@@ -144,7 +144,7 @@ export function SessionList() {
           }`}
         />
         <span className="text-[10px] text-text-muted">
-          {openclawConnected ? "OpenClaw connecte" : "OpenClaw deconnecte"}
+          {openclawConnected ? "OpenClaw connecté" : "OpenClaw déconnecté"}
         </span>
       </div>
 

@@ -136,7 +136,7 @@ export function UpdateBanner() {
       // Fallback : demander un redemarrage manuel
       setState({
         phase: 'error',
-        message: 'Veuillez redemarrer THERESE manuellement pour appliquer la mise a jour.',
+        message: 'Veuillez redémarrer THERESE manuellement pour appliquer la mise à jour.',
       });
     }
   }, []);

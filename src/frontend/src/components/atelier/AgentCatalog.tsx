@@ -79,7 +79,7 @@ const FALLBACK_PROFILES: AgentProfile[] = [
   {
     id: "analyst",
     name: "Analyste",
-    description: "Analyse de donnees, code et documents",
+    description: "Analyse de données, code et documents",
     icon: "\uD83D\uDCCA",
     color: "blue",
     tools: ["read_file", "search_codebase", "run_command"],
@@ -277,7 +277,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           </div>
           {customModel.trim() && (
             <p className="text-[10px] text-cyan-400/60 px-1">
-              Modele personnalise actif - prioritaire sur la liste
+              Modèle personnalisé actif - prioritaire sur la liste
             </p>
           )}
         </div>

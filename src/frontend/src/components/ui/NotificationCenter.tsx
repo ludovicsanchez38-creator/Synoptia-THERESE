@@ -67,9 +67,9 @@ function SourceBadge({ source }: { source: string }) {
     crm: "CRM",
     invoice: "Facture",
     calendar: "Agenda",
-    task: "Tache",
+    task: "Tâche",
     agent: "Agent",
-    system: "Systeme",
+    system: "Système",
   };
   return (
     <span

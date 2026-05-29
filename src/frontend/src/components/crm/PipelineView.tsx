@@ -31,7 +31,7 @@ import type { ContactResponse } from '../../services/api';
 // Les 7 stages du pipeline
 const PIPELINE_STAGES = [
   { id: 'contact', label: 'Contact', color: 'bg-gray-500' },
-  { id: 'discovery', label: 'Decouverte', color: 'bg-blue-500' },
+  { id: 'discovery', label: 'Découverte', color: 'bg-blue-500' },
   { id: 'proposition', label: 'Proposition', color: 'bg-purple-500' },
   { id: 'signature', label: 'Signature', color: 'bg-yellow-500' },
   { id: 'delivery', label: 'Livraison', color: 'bg-orange-500' },
