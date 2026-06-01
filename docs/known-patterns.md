@@ -112,3 +112,9 @@
 - **Cas réel** : `InvoiceForm.test.tsx` requête `/Cre/i` → corrigé en `/Créer/i`.
 - **Action** : après tout fix d'accent sur un libellé, grep les tests pour les requêtes `getByRole/getByText/findBy*` ciblant l'ancien texte et les aligner.
 - **Ne pas bloquer** : c'est une conséquence attendue, pas un anti-pattern du code source.
+
+### La CI backend exécute le répertoire `tests/` RACINE, pas `src/backend/tests/` (v0.13.0)
+- **Contexte** : le job `Tests Backend (Python)` de `ci.yml` n'a PAS de `working-directory` → il tourne depuis la racine du repo et lance `pytest tests/` = le `tests/` racine (~1063 tests, dont `test_regression.py`, `test_services_llm.py`, `test_routers_*`). Le dossier `src/backend/tests/` (~149 tests) n'est PAS exécuté par ce job.
+- **Piège** : modifier/valider `src/backend/tests/` ne reflète pas la CI. Toujours viser `tests/` (racine) pour reproduire les échecs CI backend.
+- **Reproduire en local** : `cd <repo> && THERESE_ENV=test TRANSFORMERS_OFFLINE=1 uv run pytest tests/ --ignore=tests/e2e -q` (les tests `async_client` peuvent demander des services ; les tests unitaires purs tournent seuls).
+- **Aggravant** : le job est parfois tué au teardown (threads orphelins) AVANT d'imprimer la section FAILURES + le résumé → les échecs sont invisibles dans le log. Un hook `pytest_runtest_logreport` qui imprime `[TEST-FAILED] <nodeid>` sur stderr (flush) aide (présent dans `src/backend/tests/conftest.py`, à ajouter aussi côté racine si besoin).
