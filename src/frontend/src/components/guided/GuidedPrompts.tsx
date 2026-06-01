@@ -329,7 +329,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
     });
 
     // BUG-056 : Message loading visible pendant la génération
-    const providerLabel = provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
+    const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
     const loadingId = addMessage({
       role: 'assistant',
       content: `Génération de l'image en cours avec ${providerLabel}...`,
@@ -350,7 +350,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         quality: defaultQuality,
       };
 
-      if (provider === 'gpt-image-1.5' && defaultSize) {
+      if (provider === 'gpt-image-2' && defaultSize) {
         request.size = defaultSize as '1024x1024' | '1536x1024' | '1024x1536';
       } else if (provider === 'nanobanan-pro' && defaultSize) {
         request.image_size = defaultSize as '1K' | '2K' | '4K';

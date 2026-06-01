@@ -18,7 +18,7 @@ export type FileFormat = 'docx' | 'pptx' | 'xlsx' | 'html' | 'pdf';
 /**
  * Provider de génération d'images
  */
-export type ImageProvider = 'gpt-image-1.5' | 'nanobanan-pro' | 'fal-flux-pro';
+export type ImageProvider = 'gpt-image-2' | 'nanobanan-pro' | 'fal-flux-pro';
 
 /**
  * Configuration de génération de fichier pour une sous-option
@@ -141,7 +141,7 @@ export const GUIDED_ACTIONS: GuidedAction[] = [
         label: 'Image IA (GPT)',
         prompt: 'Génère une image de [description détaillée]. Style : [réaliste, illustration, artistique].',
         generatesImage: {
-          provider: 'gpt-image-1.5',
+          provider: 'gpt-image-2',
           defaultSize: '1024x1024',
           defaultQuality: 'high',
         },

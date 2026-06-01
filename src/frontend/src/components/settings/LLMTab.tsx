@@ -160,9 +160,9 @@ export interface ImageProviderConfig {
 
 export const IMAGE_PROVIDERS: ImageProviderConfig[] = [
   {
-    id: 'gpt-image-1.5',
-    name: 'GPT Image 1.5',
-    description: 'Génération d\'images OpenAI (gpt-image-1.5)',
+    id: 'gpt-image-2',
+    name: 'GPT Image 2',
+    description: 'Génération d\'images OpenAI (gpt-image-2)',
     apiKeyId: 'openai_image',
     keyName: 'OpenAI (Image)',
     keyPrefix: 'sk-',

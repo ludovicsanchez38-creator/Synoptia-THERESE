@@ -1,7 +1,7 @@
 """
 THÉRÈSE v2 - Tests E2E Images
 
-Test de la génération d'images IA (GPT Image 1.5 et Gemini Nano Banana Pro).
+Test de la génération d'images IA (GPT Image 2 et Gemini Nano Banana Pro).
 """
 
 from playwright.sync_api import Page, expect
@@ -11,7 +11,7 @@ from .conftest import take_screenshot
 
 def test_image_generation_openai(page: Page, skip_onboarding):
     """
-    US-IMAGE-01: Générer une image avec GPT Image 1.5 (OpenAI).
+    US-IMAGE-01: Générer une image avec GPT Image 2 (OpenAI).
     """
     # Naviguer vers "Produire" → "Image IA (GPT)"
     page.click("button:has-text('Produire')")

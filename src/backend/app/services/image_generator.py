@@ -1,7 +1,7 @@
 """
 THÉRÈSE v2 - Image Generation Service
 
-Supports GPT Image 1.5 (OpenAI) and Nano Banana 2 (Google Gemini).
+Supports GPT Image 2 (OpenAI) and Nano Banana 2 (Google Gemini).
 """
 
 import base64
@@ -53,7 +53,7 @@ def _get_api_key_from_db(provider: str) -> str | None:
 class ImageProvider(str, Enum):
     """Supported image generation providers."""
 
-    OPENAI = "gpt-image-1.5"
+    OPENAI = "gpt-image-2"
     GEMINI = "nanobanan-pro"
     FAL = "fal-flux-pro"
 
@@ -131,7 +131,7 @@ class ImageGeneratorService:
         config: ImageConfig,
         reference_image_path: str | None = None,
     ) -> GeneratedImage:
-        """Generate image with OpenAI GPT Image 1.5."""
+        """Generate image with OpenAI GPT Image 2."""
         try:
             from openai import OpenAI
         except ImportError:
@@ -154,7 +154,7 @@ class ImageGeneratorService:
                 # Edit mode with reference image
                 with open(reference_image_path, "rb") as ref_file:
                     result = client.images.edit(
-                        model="gpt-image-1.5",
+                        model="gpt-image-2",
                         image=ref_file,
                         prompt=prompt,
                         size=config.size,
@@ -163,9 +163,9 @@ class ImageGeneratorService:
                     )
             else:
                 # Generation mode without reference
-                # Note: gpt-image-1.5 n'accepte plus response_format, retourne URL par défaut
+                # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
                 result = client.images.generate(
-                    model="gpt-image-1.5",
+                    model="gpt-image-2",
                     prompt=prompt,
                     size=config.size,
                     quality=config.quality,

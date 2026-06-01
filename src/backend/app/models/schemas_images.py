@@ -13,7 +13,7 @@ class ImageGenerateRequest(BaseModel):
     """Request to generate an image."""
 
     prompt: str
-    provider: Literal["gpt-image-1.5", "nanobanan-pro", "fal-flux-pro"] = "gpt-image-1.5"
+    provider: Literal["gpt-image-2", "nanobanan-pro", "fal-flux-pro"] = "gpt-image-2"
     # Options OpenAI
     size: Literal["1024x1024", "1536x1024", "1024x1536"] = "1024x1024"
     quality: Literal["low", "medium", "high"] = "high"

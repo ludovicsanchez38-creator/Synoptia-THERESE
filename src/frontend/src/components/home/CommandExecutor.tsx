@@ -215,7 +215,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     addMessage({ role: 'user', content: `Génère une image : ${customPrompt}` });
 
     // BUG-056 : Message loading visible pendant la génération
-    const providerLabel = provider === 'gpt-image-1.5' ? 'GPT Image 1.5' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
+    const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
     const loadingId = addMessage({
       role: 'assistant',
       content: `Génération de l'image en cours avec ${providerLabel}...`,
@@ -232,7 +232,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
         quality: config.default_quality as 'low' | 'medium' | 'high' | undefined,
       };
 
-      if (provider === 'gpt-image-1.5' && config.default_size) {
+      if (provider === 'gpt-image-2' && config.default_size) {
         req.size = config.default_size as '1024x1024' | '1536x1024' | '1024x1536';
       } else if (provider === 'nanobanan-pro' && config.default_size) {
         req.image_size = config.default_size as '1K' | '2K' | '4K';
@@ -304,7 +304,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
             label: imagePromptCommand.name,
             prompt: imagePromptCommand.prompt_template || `Décris l'image que tu veux générer`,
             generatesImage: {
-              provider: (imagePromptCommand.image_config?.provider || 'gpt-image-1.5') as ImageProvider,
+              provider: (imagePromptCommand.image_config?.provider || 'gpt-image-2') as ImageProvider,
               defaultSize: imagePromptCommand.image_config?.default_size,
               defaultQuality: imagePromptCommand.image_config?.default_quality as 'low' | 'medium' | 'high' | undefined,
             },

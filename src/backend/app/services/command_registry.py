@@ -255,7 +255,7 @@ class CommandRegistry:
                 show_in_slash=True,
                 sort_order=70,
                 image_config={
-                    "provider": "gpt-image-1.5",
+                    "provider": "gpt-image-2",
                     "default_size": "1024x1024",
                     "default_quality": "high",
                 },

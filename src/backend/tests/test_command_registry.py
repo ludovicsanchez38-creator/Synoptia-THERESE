@@ -73,7 +73,7 @@ class TestCommandRegistry:
         assert gpt.action == CommandAction.IMAGE
         assert gpt.show_on_home is True
         assert gpt.image_config is not None
-        assert gpt.image_config["provider"] == "gpt-image-1.5"
+        assert gpt.image_config["provider"] == "gpt-image-2"
 
     def test_list_with_category_filter(self, registry):
         registry._register_builtin_commands()

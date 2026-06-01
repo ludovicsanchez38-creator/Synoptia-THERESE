@@ -6,7 +6,7 @@
 
 import { API_BASE, apiFetch, ApiError, request, getSessionToken } from './core';
 
-export type ImageProvider = 'gpt-image-1.5' | 'nanobanan-pro' | 'fal-flux-pro';
+export type ImageProvider = 'gpt-image-2' | 'nanobanan-pro' | 'fal-flux-pro';
 
 export interface ImageGenerateRequest {
   prompt: string;

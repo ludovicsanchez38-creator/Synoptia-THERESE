@@ -1,7 +1,7 @@
 """
 THÉRÈSE v2 - Images Router
 
-API endpoints for image generation with GPT Image 1.5 and Nano Banana 2.
+API endpoints for image generation with GPT Image 2 and Nano Banana 2.
 """
 
 import logging
@@ -48,7 +48,7 @@ async def get_image_status() -> ImageProviderStatus:
 
     active = None
     if openai_key:
-        active = "gpt-image-1.5"
+        active = "gpt-image-2"
     elif gemini_key:
         active = "nanobanan-pro"
     elif fal_key:
@@ -68,7 +68,7 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
     Generate an image from a text prompt.
 
     Supports:
-    - GPT Image 1.5 (OpenAI): High quality, good for portraits
+    - GPT Image 2 (OpenAI): High quality, good for portraits
     - Nano Banana 2 (Gemini): Up to 4K, good with reference images
     """
     try:
@@ -121,7 +121,7 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
 @router.post("/generate-with-reference")
 async def generate_with_reference(
     prompt: str = Form(...),
-    provider: Literal["gpt-image-1.5", "nanobanan-pro", "fal-flux-pro"] = Form("gpt-image-1.5"),
+    provider: Literal["gpt-image-2", "nanobanan-pro", "fal-flux-pro"] = Form("gpt-image-2"),
     size: Literal["1024x1024", "1536x1024", "1024x1536"] = Form("1024x1024"),
     quality: Literal["low", "medium", "high"] = Form("high"),
     aspect_ratio: str = Form("1:1"),

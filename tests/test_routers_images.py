@@ -16,7 +16,7 @@ class TestImageGeneration:
         """Test image generation without API key configured."""
         response = await client.post("/api/images/generate", json={
             "prompt": "Un chat mignon dans un jardin",
-            "provider": "gpt-image-1.5",
+            "provider": "gpt-image-2",
         })
 
         # Should fail gracefully without API key (400, 500, or 503)
@@ -27,7 +27,7 @@ class TestImageGeneration:
         """Test image generation with empty prompt."""
         response = await client.post("/api/images/generate", json={
             "prompt": "",
-            "provider": "gpt-image-1.5",
+            "provider": "gpt-image-2",
         })
 
         assert response.status_code in [400, 422, 500]
@@ -52,10 +52,10 @@ class TestImageProviders:
     @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
     async def test_select_openai_provider(self, client: AsyncClient):
-        """Test selecting OpenAI (GPT Image 1.5) provider."""
+        """Test selecting OpenAI (GPT Image 2) provider."""
         response = await client.post("/api/images/generate", json={
             "prompt": "Test image",
-            "provider": "gpt-image-1.5",
+            "provider": "gpt-image-2",
             "size": "1024x1024",
         })
 
@@ -143,7 +143,7 @@ class TestImageOptions:
         """Test generating with custom size."""
         response = await client.post("/api/images/generate", json={
             "prompt": "Test image",
-            "provider": "gpt-image-1.5",
+            "provider": "gpt-image-2",
             "size": "1536x1024",
         })
 
@@ -154,7 +154,7 @@ class TestImageOptions:
         """Test generating with invalid size."""
         response = await client.post("/api/images/generate", json={
             "prompt": "Test image",
-            "provider": "gpt-image-1.5",
+            "provider": "gpt-image-2",
             "size": "100x100",  # Invalid size (not in Literal)
         })
 

@@ -68,7 +68,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [groqSaved, setGroqSaved] = useState(false);
 
   // Génération d'images
-  const [selectedImageProvider, setSelectedImageProvider] = useState('gpt-image-1.5');
+  const [selectedImageProvider, setSelectedImageProvider] = useState('gpt-image-2');
   const [imageKeyInputs, setImageKeyInputs] = useState<Record<string, string>>({});
   const [imageKeySaving, setImageKeySaving] = useState<string | null>(null);
   const [imageKeySaved, setImageKeySaved] = useState<string | null>(null);

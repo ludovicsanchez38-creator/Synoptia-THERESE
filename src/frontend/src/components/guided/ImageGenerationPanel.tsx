@@ -36,10 +36,10 @@ const providerConfig: Record<ImageProvider, {
   label: string;
   description: string;
 }> = {
-  'gpt-image-1.5': {
+  'gpt-image-2': {
     color: 'text-emerald-400',
     bgGradient: 'from-emerald-500/20 to-teal-600/10',
-    label: 'GPT Image 1.5',
+    label: 'GPT Image 2',
     description: 'Image générée par OpenAI'
   },
   'nanobanan-pro': {
