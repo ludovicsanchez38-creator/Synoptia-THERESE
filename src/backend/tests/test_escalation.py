@@ -226,7 +226,7 @@ class TestContextTruncation:
         # Check some models have context limits
         limits = data["context_limits"]
         assert "claude-sonnet-4-6" in limits
-        assert limits["claude-sonnet-4-6"] == 200000
+        assert limits["claude-sonnet-4-6"] == 1000000
 
 
 class TestEscalationStatus:

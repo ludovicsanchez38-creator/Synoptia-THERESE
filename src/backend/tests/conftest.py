@@ -6,6 +6,7 @@ Pytest fixtures and configuration for backend tests.
 
 import asyncio
 import os
+import sys
 from typing import AsyncGenerator
 
 import pytest
@@ -15,6 +16,20 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
+
+
+def pytest_runtest_logreport(report):
+    """Imprime chaque échec/erreur DÈS qu'il survient.
+
+    Filet de sécurité : la suite peut être tuée pendant le teardown (threads
+    orphelins) avant que pytest n'imprime sa section FAILURES + le résumé final.
+    On écrit donc les nodeids fautifs immédiatement sur stderr pour qu'ils
+    restent visibles dans les logs CI même en cas de kill.
+    """
+    if report.when == "call" and report.outcome == "failed":
+        print(f"\n[TEST-FAILED] {report.nodeid}", file=sys.stderr, flush=True)
+    elif report.outcome == "failed":  # erreur de setup/teardown
+        print(f"\n[TEST-ERROR:{report.when}] {report.nodeid}", file=sys.stderr, flush=True)
 
 # Set test environment before importing app
 os.environ["THERESE_ENV"] = "test"
