@@ -36,8 +36,8 @@ AVAILABLE_MODELS = [
     {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
     {"id": "mistral-small-latest", "name": "Mistral Small", "provider": "mistral"},
     # OpenRouter (fallback statique - le sélecteur principal fetch dynamiquement)
-    {"id": "anthropic/claude-opus-4-8", "name": "Claude Opus 4.8 (OR)", "provider": "openrouter"},
     {"id": "anthropic/claude-sonnet-4-6", "name": "Claude Sonnet 4.6 (OR)", "provider": "openrouter"},
+    {"id": "anthropic/claude-opus-4-8", "name": "Claude Opus 4.8 (OR)", "provider": "openrouter"},
     {"id": "openai/gpt-5.5", "name": "GPT-5.5 (OR)", "provider": "openrouter"},
     {"id": "google/gemini-3.5-flash", "name": "Gemini 3.5 Flash (OR)", "provider": "openrouter"},
     {"id": "meta-llama/llama-4-maverick", "name": "Llama 4 Maverick (OR)", "provider": "openrouter"},

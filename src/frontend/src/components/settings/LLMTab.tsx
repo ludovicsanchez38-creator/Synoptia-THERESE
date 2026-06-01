@@ -93,8 +93,8 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
     models: [
-      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Premium' },
       { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
+      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Premium' },
       { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
       { id: 'google/gemini-3.1-pro', name: 'Gemini 3.1 Pro' },
       { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash' },

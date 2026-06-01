@@ -44,7 +44,7 @@ class TestCostEstimation:
         # Check some models have pricing
         prices = data["prices"]
         assert "claude-sonnet-4-6" in prices
-        assert "gpt-4o" in prices
+        assert "gpt-5.5" in prices
 
 
 class TestTokenLimits:
@@ -271,7 +271,7 @@ class TestTokenTrackerUnit:
 
         record = tracker.record_usage(
             conversation_id="test-conv",
-            model="gpt-4o",
+            model="gpt-5.5",
             provider="openai",
             input_tokens=1000,
             output_tokens=500,

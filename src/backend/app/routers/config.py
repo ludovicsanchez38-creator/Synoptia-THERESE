@@ -911,8 +911,8 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     elif config.provider.value == "openrouter":
         # OpenRouter : fetch dynamique des modèles disponibles
         fallback_models = [
-            "anthropic/claude-opus-4-8",
             "anthropic/claude-sonnet-4-6",
+            "anthropic/claude-opus-4-8",
             "openai/gpt-5.5",
             "google/gemini-3.1-pro",
             "google/gemini-3.5-flash",
