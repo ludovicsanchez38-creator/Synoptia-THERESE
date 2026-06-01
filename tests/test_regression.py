@@ -1685,7 +1685,7 @@ class TestBUG028PricingEUR:
         content = TOKEN_TRACKER_PY.read_text(encoding="utf-8")
         assert 'model.split("/", 1)' in content, (
             "estimate_cost() doit essayer de supprimer le préfixe provider "
-            "(ex: 'anthropic/claude-opus-4-6' → 'claude-opus-4-6')"
+            "(ex: 'anthropic/claude-opus-4-8' → 'claude-opus-4-8')"
         )
 
     def test_estimate_cost_returns_nonzero_for_known_models(self):
@@ -1694,14 +1694,14 @@ class TestBUG028PricingEUR:
 
         tracker = TokenTracker()
         # Modèle direct
-        cost_direct = tracker.estimate_cost("claude-opus-4-6", 1000, 500)
+        cost_direct = tracker.estimate_cost("claude-opus-4-8", 1000, 500)
         assert cost_direct > 0, (
-            "Le prix doit être > 0 pour claude-opus-4-6"
+            "Le prix doit être > 0 pour claude-opus-4-8"
         )
         # Modèle avec préfixe OpenRouter
-        cost_openrouter = tracker.estimate_cost("anthropic/claude-opus-4-6", 1000, 500)
+        cost_openrouter = tracker.estimate_cost("anthropic/claude-opus-4-8", 1000, 500)
         assert cost_openrouter > 0, (
-            "Le prix doit être > 0 pour anthropic/claude-opus-4-6 (OpenRouter)"
+            "Le prix doit être > 0 pour anthropic/claude-opus-4-8 (OpenRouter)"
         )
         # Les deux doivent être identiques
         assert cost_direct == cost_openrouter, (
@@ -1723,9 +1723,9 @@ class TestBUG028PricingEUR:
         from app.services.token_tracker import TOKEN_PRICES
 
         required = [
-            "claude-opus-4-6",
+            "claude-opus-4-8",
             "claude-sonnet-4-6",
-            "gpt-5.2",
+            "gpt-5.5",
             "gemini-3.1-pro-preview",
             "mistral-large-latest",
         ]
