@@ -255,7 +255,7 @@ export function AgentsTab() {
           value={katiaModel}
           onChange={setThereseModel}
           models={models}
-          placeholder="anthropic/claude-opus-4-6"
+          placeholder="anthropic/claude-opus-4-8"
         />
 
         <AgentModelSelect
@@ -265,7 +265,7 @@ export function AgentsTab() {
           value={zezetteModel}
           onChange={setZezetteModel}
           models={models}
-          placeholder="anthropic/claude-opus-4-6"
+          placeholder="anthropic/claude-opus-4-8"
         />
       </div>
 

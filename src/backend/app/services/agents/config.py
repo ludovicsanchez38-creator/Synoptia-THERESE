@@ -19,28 +19,31 @@ _BUILTIN_AGENTS_DIR = Path(__file__).parent.parent.parent / "agents"
 AVAILABLE_MODELS = [
     # Anthropic
     {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic", "recommended": True},
-    {"id": "claude-opus-4-6", "name": "Claude Opus 4.6", "provider": "anthropic"},
+    {"id": "claude-opus-4-8", "name": "Claude Opus 4.8", "provider": "anthropic"},
     {"id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5", "provider": "anthropic"},
     # OpenAI
+    {"id": "gpt-5.5", "name": "GPT-5.5", "provider": "openai"},
     {"id": "gpt-5.4", "name": "GPT-5.4", "provider": "openai"},
-    {"id": "gpt-5.4-pro", "name": "GPT-5.4 Pro", "provider": "openai"},
+    {"id": "gpt-5.3-codex", "name": "GPT-5.3 Codex", "provider": "openai"},
     # Google
-    {"id": "gemini-3.1-pro", "name": "Gemini 3.1 Pro", "provider": "gemini"},
-    {"id": "gemini-3.1-flash", "name": "Gemini 3.1 Flash", "provider": "gemini"},
-    {"id": "gemini-3.1-flash-lite-preview", "name": "Gemini 3.1 Flash Lite", "provider": "gemini"},
+    {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro", "provider": "gemini"},
+    {"id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "provider": "gemini"},
+    {"id": "gemini-3.1-flash-lite", "name": "Gemini 3.1 Flash Lite", "provider": "gemini"},
     # xAI
-    {"id": "grok-4-1-fast-reasoning", "name": "Grok 4.1 Fast", "provider": "grok"},
+    {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},
+    {"id": "grok-4.20-0309-reasoning", "name": "Grok 4.20 Reasoning", "provider": "grok"},
     # Mistral
-    {"id": "mistral-large-latest", "name": "Mistral Large 3", "provider": "mistral"},
-    {"id": "mistral-large-2512", "name": "Mistral Large 3 (fixé)", "provider": "mistral"},
-    {"id": "mistral-small-latest", "name": "Mistral Small 3", "provider": "mistral"},
+    {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
+    {"id": "mistral-small-latest", "name": "Mistral Small", "provider": "mistral"},
     # OpenRouter (fallback statique - le sélecteur principal fetch dynamiquement)
+    {"id": "anthropic/claude-opus-4-8", "name": "Claude Opus 4.8 (OR)", "provider": "openrouter"},
     {"id": "anthropic/claude-sonnet-4-6", "name": "Claude Sonnet 4.6 (OR)", "provider": "openrouter"},
-    {"id": "openai/gpt-5.2", "name": "GPT-5.2 (OR)", "provider": "openrouter"},
-    {"id": "google/gemini-3.1-pro", "name": "Gemini 3.1 Pro (OR)", "provider": "openrouter"},
+    {"id": "openai/gpt-5.5", "name": "GPT-5.5 (OR)", "provider": "openrouter"},
+    {"id": "google/gemini-3.5-flash", "name": "Gemini 3.5 Flash (OR)", "provider": "openrouter"},
     {"id": "meta-llama/llama-4-maverick", "name": "Llama 4 Maverick (OR)", "provider": "openrouter"},
     # DeepSeek
-    {"id": "deepseek-chat", "name": "DeepSeek Chat", "provider": "deepseek"},
+    {"id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "provider": "deepseek"},
+    {"id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "provider": "deepseek"},
     # Local (Ollama)
     {"id": "qwen3:32b", "name": "Qwen 3 32B (local)", "provider": "ollama"},
     {"id": "mistral-nemo:12b", "name": "Mistral Nemo 12B (local)", "provider": "ollama"},

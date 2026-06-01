@@ -26,7 +26,7 @@ def get_model_capability(provider: LLMProvider, model: str) -> str:
 
     Args:
         provider: Provider LLM (anthropic, openai, gemini, etc.)
-        model: Identifiant du modèle (ex: "gemini-3-flash-preview")
+        model: Identifiant du modèle (ex: "gemini-3.5-flash")
 
     Returns:
         "code" si le modèle peut générer du code Python fiable,

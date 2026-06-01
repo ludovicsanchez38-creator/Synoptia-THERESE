@@ -26,7 +26,7 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     models: [
-      { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Flagship' },
+      { id: 'claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Flagship' },
       { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
     ],
@@ -34,31 +34,28 @@ export const PROVIDERS: ProviderConfig[] = [
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-5 series - Polyvalent et puissant',
+    description: 'GPT-5.5 series - Polyvalent et puissant',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
     models: [
-      { id: 'gpt-5.2', name: 'GPT-5.2', badge: 'Flagship' },
-      { id: 'gpt-5', name: 'GPT-5' },
-      { id: 'gpt-4.1', name: 'GPT-4.1', badge: 'Coding' },
-      { id: 'gpt-4o', name: 'GPT-4o', badge: 'Rapide' },
-      { id: 'o3', name: 'o3', badge: 'Reasoning' },
-      { id: 'o4-mini', name: 'o4-mini', badge: 'Économique' },
+      { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Flagship' },
+      { id: 'gpt-5.4', name: 'GPT-5.4', badge: 'Équilibré' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', badge: 'Rapide' },
+      { id: 'gpt-5.3-codex', name: 'GPT-5.3 Codex', badge: 'Coding' },
+      { id: 'gpt-5.5-pro', name: 'GPT-5.5 pro', badge: 'Raisonnement' },
     ],
   },
   {
     id: 'gemini',
     name: 'Gemini (Google)',
-    description: 'Gemini 3.1 - Contexte 1M tokens',
+    description: 'Gemini 3.x - Contexte 1M tokens',
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
     models: [
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
-      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', badge: 'Rapide' },
-      { id: 'gemini-3.1-flash-lite-preview', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
-      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', badge: 'Recommandé' },
-      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', badge: 'Recommandé' },
+      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
     ],
   },
   {
@@ -78,14 +75,14 @@ export const PROVIDERS: ProviderConfig[] = [
   {
     id: 'grok',
     name: 'Grok (xAI)',
-    description: 'Grok 4 - Most intelligent model',
+    description: 'Grok 4.3 - le plus intelligent',
     keyPrefix: 'xai-',
     keyPlaceholder: 'xai-...',
     consoleUrl: 'https://console.x.ai',
     models: [
-      { id: 'grok-4', name: 'Grok 4', badge: 'Flagship' },
-      { id: 'grok-4.1-fast', name: 'Grok 4.1 Fast', badge: 'Rapide' },
-      { id: 'grok-3', name: 'Grok 3' },
+      { id: 'grok-4.3', name: 'Grok 4.3', badge: 'Flagship' },
+      { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
+      { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },
     ],
   },
   {
@@ -96,12 +93,11 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
     models: [
+      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Premium' },
       { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
-      { id: 'anthropic/claude-opus-4-6', name: 'Claude Opus 4.6', badge: 'Premium' },
-      { id: 'openai/gpt-5.2', name: 'GPT-5.2' },
+      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
       { id: 'google/gemini-3.1-pro', name: 'Gemini 3.1 Pro' },
-      { id: 'nvidia/nemotron-3-super-120b-a12b', name: 'Nemotron 3 Super 120B', badge: 'NVIDIA' },
-      { id: 'nvidia/nemotron-3-nano-30b-a3b', name: 'Nemotron 3 Nano 30B', badge: 'Économique' },
+      { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
       { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
     ],
   },
@@ -116,19 +112,19 @@ export const PROVIDERS: ProviderConfig[] = [
       { id: 'sonar-pro', name: 'Sonar Pro', badge: 'Recherche' },
       { id: 'sonar', name: 'Sonar', badge: 'Rapide' },
       { id: 'sonar-reasoning-pro', name: 'Sonar Reasoning Pro', badge: 'Raisonnement' },
-      { id: 'sonar-reasoning', name: 'Sonar Reasoning' },
+      { id: 'sonar-deep-research', name: 'Sonar Deep Research', badge: 'Recherche+' },
     ],
   },
   {
     id: 'deepseek',
     name: 'DeepSeek',
-    description: 'DeepSeek V3 et R1 (raisonnement)',
+    description: 'DeepSeek V4 (Pro et Flash)',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.deepseek.com/api_keys',
     models: [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat', badge: 'V3' },
-      { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', badge: 'R1' },
+      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', badge: 'Flagship' },
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', badge: 'Rapide' },
     ],
   },
   {
@@ -565,9 +561,9 @@ function ModelSelector({
                 }
               }}
               placeholder={
-                selectedProvider === 'anthropic' ? 'claude-sonnet-4-6-20260407' :
-                selectedProvider === 'openai' ? 'gpt-5.2-turbo' :
-                selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-6' :
+                selectedProvider === 'anthropic' ? 'claude-opus-4-8' :
+                selectedProvider === 'openai' ? 'gpt-5.5' :
+                selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-8' :
                 'identifiant-du-modele'
               }
               className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"

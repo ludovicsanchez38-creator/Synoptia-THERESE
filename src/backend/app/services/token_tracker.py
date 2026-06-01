@@ -17,31 +17,32 @@ logger = logging.getLogger(__name__)
 # ============================================================
 
 TOKEN_PRICES = {
-    # Anthropic (février 2026)
+    # Anthropic (juin 2026) - USD / 1M tokens
+    "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
-    "claude-opus-4-6": {"input": 5.00, "output": 25.00},
-    # OpenAI (février 2026)
-    "gpt-5.2": {"input": 1.75, "output": 14.00},
-    "gpt-5": {"input": 2.00, "output": 8.00},
-    "gpt-4.1": {"input": 2.00, "output": 8.00},
-    "o3": {"input": 15.00, "output": 60.00},
-    "o3-mini": {"input": 1.10, "output": 4.40},
-    # Gemini (février 2026)
-    "gemini-3.1-pro-preview": {"input": 1.25, "output": 5.00},
-    "gemini-3-flash-preview": {"input": 0.075, "output": 0.30},
-    "gemini-3.1-flash-lite-preview": {"input": 0.25, "output": 1.50},
-    "gemini-2.5-pro": {"input": 1.25, "output": 10.00},
-    "gemini-2.5-flash": {"input": 0.075, "output": 0.30},
-    # Mistral (février 2026)
+    # OpenAI (juin 2026)
+    "gpt-5.5": {"input": 5.00, "output": 30.00},
+    "gpt-5.5-pro": {"input": 30.00, "output": 180.00},
+    "gpt-5.4": {"input": 2.50, "output": 15.00},
+    "gpt-5.4-mini": {"input": 0.75, "output": 4.50},
+    "gpt-5.3-codex": {"input": 1.75, "output": 14.00},
+    # Gemini (juin 2026)
+    "gemini-3.1-pro-preview": {"input": 2.00, "output": 12.00},
+    "gemini-3.5-flash": {"input": 1.50, "output": 9.00},
+    "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
+    # Mistral (alias evergreen)
     "mistral-large-latest": {"input": 2.00, "output": 6.00},
     "codestral-latest": {"input": 0.30, "output": 0.90},
     "mistral-small-latest": {"input": 0.20, "output": 0.60},
-    # Grok (février 2026)
-    "grok-4": {"input": 3.00, "output": 9.00},
-    "grok-4-1-fast-non-reasoning": {"input": 1.50, "output": 4.50},
-    "grok-3-beta": {"input": 5.00, "output": 15.00},
-    # Ollama (local, no cost)
+    # Grok (juin 2026)
+    "grok-4.3": {"input": 1.25, "output": 2.50},
+    "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
+    "grok-4.20-0309-non-reasoning": {"input": 1.25, "output": 2.50},
+    # DeepSeek (juin 2026)
+    "deepseek-v4-pro": {"input": 0.435, "output": 0.87},
+    "deepseek-v4-flash": {"input": 0.14, "output": 0.28},
+    # Ollama (local, no cost) + fallback
     "default": {"input": 0.0, "output": 0.0},
 }
 

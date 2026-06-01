@@ -303,7 +303,7 @@ export function DashboardToday({ onDismiss }: DashboardTodayProps) {
         >
           <MessageSquare className="w-4 h-4 text-accent" />
           <span className="flex-1 text-sm text-text-muted">Demandez à Thérèse…</span>
-          <span className="text-xs text-text-muted hidden sm:flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5" /> Claude Opus</span>
+          <span className="text-xs text-text-muted hidden sm:flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5" /> Claude Opus 4.8</span>
           <span className="w-9 h-9 rounded-full grid place-items-center bg-accent-fill text-accent-ink shadow-[var(--glow)]">
             <Send className="w-4 h-4" />
           </span>

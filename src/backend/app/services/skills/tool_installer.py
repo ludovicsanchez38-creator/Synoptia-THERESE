@@ -48,7 +48,7 @@ class ToolInstaller:
     """
 
     MAX_ATTEMPTS = 3
-    ESCALATION_MODELS = ["claude-sonnet-4-6", "claude-opus-4-6"]
+    ESCALATION_MODELS = ["claude-sonnet-4-6", "claude-opus-4-8"]
 
     def __init__(self):
         self._tools_dir = Path(settings.data_dir) / "tools"

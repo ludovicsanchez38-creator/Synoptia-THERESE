@@ -313,14 +313,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         # Provider configs: (enum, default_model, context_window)
         provider_configs = {
-            "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", 200000),
-            "openai": (LLMProvider.OPENAI, "gpt-5.2", 200000),
+            "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-8", 200000),
+            "openai": (LLMProvider.OPENAI, "gpt-5.5", 200000),
             "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", 1000000),
             "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
-            "grok": (LLMProvider.GROK, "grok-4", 131072),
+            "grok": (LLMProvider.GROK, "grok-4.3", 131072),
             "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
             "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", 200000),
-            "deepseek": (LLMProvider.DEEPSEEK, "deepseek-chat", 128000),
+            "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", 128000),
             "infomaniak": (LLMProvider.INFOMANIAK, "mix", 128000),
             "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
         }
@@ -361,9 +361,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         mistral_key = _get_api_key_from_db("mistral") or os.getenv("MISTRAL_API_KEY")
 
         if anthropic_key:
-            return LLMConfig(LLMProvider.ANTHROPIC, "claude-opus-4-6", api_key=anthropic_key, context_window=200000)
+            return LLMConfig(LLMProvider.ANTHROPIC, "claude-opus-4-8", api_key=anthropic_key, context_window=200000)
         elif openai_key:
-            return LLMConfig(LLMProvider.OPENAI, "gpt-5.2", api_key=openai_key, context_window=200000)
+            return LLMConfig(LLMProvider.OPENAI, "gpt-5.5", api_key=openai_key, context_window=200000)
         elif gemini_key:
             return LLMConfig(LLMProvider.GEMINI, "gemini-3.1-pro-preview", api_key=gemini_key, context_window=1000000)
         elif mistral_key:
@@ -433,13 +433,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         from app.services.providers import LLMConfig, LLMProvider
 
         fallback_candidates = [
-            ("anthropic", LLMProvider.ANTHROPIC, "claude-opus-4-6", 200000),
-            ("openai", LLMProvider.OPENAI, "gpt-5.2", 200000),
+            ("anthropic", LLMProvider.ANTHROPIC, "claude-opus-4-8", 200000),
+            ("openai", LLMProvider.OPENAI, "gpt-5.5", 200000),
             ("gemini", LLMProvider.GEMINI, "gemini-3.1-pro-preview", 1000000),
             ("mistral", LLMProvider.MISTRAL, "mistral-large-latest", 256000),
-            ("grok", LLMProvider.GROK, "grok-4", 131072),
+            ("grok", LLMProvider.GROK, "grok-4.3", 131072),
             ("openrouter", LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
-            ("deepseek", LLMProvider.DEEPSEEK, "deepseek-chat", 128000),
+            ("deepseek", LLMProvider.DEEPSEEK, "deepseek-v4-pro", 128000),
         ]
 
         current_provider_name = self.config.provider.value
@@ -730,14 +730,14 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
     provider_name = provider_name.lower()
 
     provider_configs = {
-        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-6", "ANTHROPIC_API_KEY", 200000),
-        "openai": (LLMProvider.OPENAI, "gpt-5.2", "OPENAI_API_KEY", 200000),
+        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-8", "ANTHROPIC_API_KEY", 200000),
+        "openai": (LLMProvider.OPENAI, "gpt-5.5", "OPENAI_API_KEY", 200000),
         "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
         "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
-        "grok": (LLMProvider.GROK, "grok-4", "XAI_API_KEY", 131072),
+        "grok": (LLMProvider.GROK, "grok-4.3", "XAI_API_KEY", 131072),
         "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),
         "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", "PERPLEXITY_API_KEY", 200000),
-        "deepseek": (LLMProvider.DEEPSEEK, "deepseek-chat", "DEEPSEEK_API_KEY", 128000),
+        "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", "DEEPSEEK_API_KEY", 128000),
         "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
     }
 
@@ -748,7 +748,7 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
 
     # BUG-052 : lire le modèle sélectionné par l'utilisateur depuis la DB
     # Uniquement si le provider demandé correspond au provider principal de l'utilisateur
-    # (sinon on enverrait "claude-opus-4-6" à GPT/Gemini/Grok → crash Board cloud)
+    # (sinon on enverrait "claude-opus-4-8" à GPT/Gemini/Grok → crash Board cloud)
     user_model = None
     try:
         from app.models.database import get_sync_connection

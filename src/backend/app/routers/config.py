@@ -871,32 +871,30 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     # Get available models for the provider
     available_models = []
     if config.provider.value == "anthropic":
-        # Claude 4.5/4.6 series (février 2026)
+        # Claude 4.x series (juin 2026)
         available_models = [
-            "claude-opus-4-6",               # Flagship, best overall
-            "claude-sonnet-4-6",             # Best coding model
-            "claude-haiku-4-5-20251001",     # Fast & cost-efficient
+            "claude-opus-4-8",               # Flagship (lancé 28/05/2026)
+            "claude-sonnet-4-6",             # Équilibré, défaut recommandé
+            "claude-haiku-4-5-20251001",     # Rapide & économique
         ]
     elif config.provider.value == "openai":
-        # GPT-5 series (février 2026)
+        # GPT-5.x series (juin 2026)
         available_models = [
-            "gpt-5.2",           # Latest flagship
-            "gpt-5",             # Previous flagship
-            "gpt-4.1",           # Coding specialist
-            "o3",                # Reasoning model
-            "o3-mini",           # Fast reasoning
+            "gpt-5.5",           # Flagship
+            "gpt-5.4",           # Équilibré
+            "gpt-5.4-mini",      # Rapide & économique
+            "gpt-5.3-codex",     # Spécialiste code
+            "gpt-5.5-pro",       # Raisonnement avancé
         ]
     elif config.provider.value == "gemini":
-        # Gemini 3 + 2.5 series (janvier 2026)
+        # Gemini 3.x series (juin 2026)
         available_models = [
-            "gemini-3.1-pro-preview",   # Latest flagship
-            "gemini-3-flash-preview", # Fast Gemini 3
-            "gemini-2.5-pro",         # High capability
-            "gemini-3.1-flash-lite-preview",  # Ultra-rapide, économique
-            "gemini-2.5-flash",       # Fast & capable
+            "gemini-3.1-pro-preview",     # Flagship, haute capacité
+            "gemini-3.5-flash",           # Rapide & puissant (recommandé)
+            "gemini-3.1-flash-lite",      # Ultra-rapide, économique
         ]
     elif config.provider.value == "mistral":
-        # Mistral latest (janvier 2026)
+        # Mistral latest (alias evergreen)
         available_models = [
             "mistral-large-latest",   # Top-tier
             "codestral-latest",       # Coding specialist
@@ -904,20 +902,20 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "mistral-small-latest",   # Fast & efficient
         ]
     elif config.provider.value == "grok":
-        # Grok 4 series (février 2026)
+        # Grok 4.x series (juin 2026)
         available_models = [
-            "grok-4",                       # Flagship
-            "grok-4-1-fast-non-reasoning",  # Fast variant
-            "grok-3-beta",                  # Previous gen
+            "grok-4.3",                      # Flagship (recommandé)
+            "grok-4.20-0309-reasoning",      # Raisonnement
+            "grok-4.20-0309-non-reasoning",  # Équilibré
         ]
     elif config.provider.value == "openrouter":
         # OpenRouter : fetch dynamique des modèles disponibles
         fallback_models = [
+            "anthropic/claude-opus-4-8",
             "anthropic/claude-sonnet-4-6",
-            "anthropic/claude-opus-4-6",
-            "openai/gpt-5.2",
+            "openai/gpt-5.5",
             "google/gemini-3.1-pro",
-            "google/gemini-3.1-flash-lite-preview",
+            "google/gemini-3.5-flash",
             "meta-llama/llama-4-maverick",
         ]
         try:

@@ -238,28 +238,30 @@ async def get_context_info():
     """
     context_limits = {
         # Anthropic
-        "claude-sonnet-4-6": 200000,
+        "claude-opus-4-8": 1000000,
+        "claude-sonnet-4-6": 1000000,
         "claude-haiku-4-5-20251001": 200000,
-        "claude-opus-4-6": 200000,
         # OpenAI
-        "gpt-5.2": 128000,
-        "gpt-5": 128000,
-        "gpt-4.1": 1000000,
-        "o3": 200000,
-        "o3-mini": 200000,
+        "gpt-5.5": 1050000,
+        "gpt-5.5-pro": 1050000,
+        "gpt-5.4": 1050000,
+        "gpt-5.4-mini": 400000,
+        "gpt-5.3-codex": 400000,
         # Gemini
-        "gemini-3.1-pro-preview": 1000000,
-        "gemini-3-flash-preview": 1000000,
-        "gemini-2.5-pro": 1000000,
-        "gemini-2.5-flash": 1000000,
+        "gemini-3.1-pro-preview": 1048576,
+        "gemini-3.5-flash": 1048576,
+        "gemini-3.1-flash-lite": 1048576,
         # Mistral
         "mistral-large-latest": 128000,
-        "codestral-latest": 32000,
-        "mistral-small-latest": 32000,
+        "codestral-latest": 256000,
+        "mistral-small-latest": 128000,
         # Grok
-        "grok-4": 131072,
-        "grok-4-1-fast-non-reasoning": 2000000,
-        "grok-3-beta": 131072,
+        "grok-4.3": 1000000,
+        "grok-4.20-0309-reasoning": 1000000,
+        "grok-4.20-0309-non-reasoning": 1000000,
+        # DeepSeek
+        "deepseek-v4-pro": 1000000,
+        "deepseek-v4-flash": 1000000,
     }
 
     truncation_policy = {
