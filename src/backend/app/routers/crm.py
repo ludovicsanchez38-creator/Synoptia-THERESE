@@ -360,6 +360,11 @@ async def create_crm_contact(
     await session.commit()
     await session.refresh(contact)
 
+    # BUG-102 : indexer le contact CRM dans Qdrant pour la recherche sémantique unifiée
+    # (le contact créé côté Mémoire l'est déjà ; sans ça les contacts CRM sont introuvables).
+    from app.routers.memory import _embed_contact
+    await _embed_contact(contact)
+
     logger.info(f"CRM contact created: {contact.id} ({contact.first_name} {contact.last_name})")
 
     # Try to push to Google Sheets

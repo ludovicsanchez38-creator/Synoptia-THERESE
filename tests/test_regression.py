@@ -3344,6 +3344,37 @@ class TestBUG100_OnboardingProviderListVisible:
 
 
 # ============================================================
+# BUG-102 (revue produit Chantier B - donnée unifiée) - Contact CRM indexé Qdrant
+# Un contact créé via le CRM doit aussi être embarqué dans Qdrant, sinon il est
+# invisible à la recherche sémantique unifiée (le contact mémoire l'est déjà).
+# ============================================================
+
+
+class TestBUG102_UnifiedContactQdrantEmbed:
+    """Les contacts créés côté CRM doivent être indexés dans Qdrant ; l'update doit ré-indexer."""
+
+    CRM_PY = SRC / "app" / "routers" / "crm.py"
+    MEMORY_PY = SRC / "app" / "routers" / "memory.py"
+
+    def test_crm_create_embeds_qdrant(self):
+        content = self.CRM_PY.read_text(encoding="utf-8")
+        assert "_embed_contact" in content, (
+            "routers/crm.py doit embarquer le contact créé dans Qdrant (_embed_contact) ; "
+            "sinon les contacts CRM sont invisibles à la recherche sémantique unifiée (BUG-102)"
+        )
+
+    def test_update_contact_reembeds(self):
+        content = self.MEMORY_PY.read_text(encoding="utf-8")
+        fn_start = content.find("async def update_contact")
+        assert fn_start > 0, "update_contact doit exister"
+        fn_body = content[fn_start:fn_start + 1800]
+        assert "_embed_contact" in fn_body, (
+            "update_contact (PATCH /memory/contacts/{id}) doit ré-indexer le contact dans "
+            "Qdrant après mise à jour, sinon la recherche sémantique reste sur l'ancienne version"
+        )
+
+
+# ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
 # ============================================================
