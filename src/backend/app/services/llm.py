@@ -181,6 +181,51 @@ def reload_therese_md() -> str | None:
 
 
 # -----------------------------------------------------------------------------
+# Détection du modèle Ollama par défaut (BUG-098)
+# -----------------------------------------------------------------------------
+
+# Indices de modèles Ollama NON conversationnels, à exclure du choix par défaut
+# (embeddings utilisés par Qdrant, modèles de vision ou de transcription).
+_OLLAMA_NON_CHAT_HINTS = (
+    "embed", "bge", "nomic", "minilm", "arctic", "gte-", "e5-",
+    "llava", "moondream", "minicpm-v", "bakllava", "internvl", "cogvlm",
+    "whisper",
+)
+
+
+def _is_ollama_chat_model(name: str) -> bool:
+    """Vrai si le modèle Ollama est conversationnel (ni embedding, ni vision, ni STT)."""
+    lowered = name.lower()
+    return bool(name) and not any(hint in lowered for hint in _OLLAMA_NON_CHAT_HINTS)
+
+
+def detect_default_ollama_model(
+    base_url: str = "http://localhost:11434",
+    fallback: str = "mistral-nemo",
+) -> str:
+    """Retourne le premier modèle Ollama conversationnel réellement installé.
+
+    Interroge `GET /api/tags`. Évite ainsi de réclamer un `ollama pull mistral-nemo`
+    alors que l'utilisateur a déjà un autre modèle (ex: gemma:2b) installé (BUG-098).
+
+    Si Ollama est injoignable ou qu'aucun modèle de chat n'est installé, retourne
+    `fallback` (une suggestion de modèle à installer).
+    """
+    try:
+        import httpx
+
+        resp = httpx.get(f"{base_url}/api/tags", timeout=2.0)
+        if resp.status_code == 200:
+            for model in resp.json().get("models", []):
+                name = model.get("name", "")
+                if _is_ollama_chat_model(name):
+                    return name
+    except Exception as e:  # noqa: BLE001 - détection best-effort, jamais bloquante
+        logger.debug(f"Détection du modèle Ollama installé impossible: {e}")
+    return fallback
+
+
+# -----------------------------------------------------------------------------
 # LLM Service (Facade)
 # -----------------------------------------------------------------------------
 
@@ -331,7 +376,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             model = selected_model or default_model
 
             if selected_provider == "ollama":
-                logger.info(f"Ollama config: model={model} (selected={selected_model}, default={default_model})")
+                # BUG-098 : si aucun modèle n'est sélectionné, prendre le premier
+                # modèle réellement installé plutôt que "mistral-nemo" codé en dur.
+                model = selected_model or detect_default_ollama_model()
+                logger.info(f"Ollama config: model={model} (selected={selected_model})")
                 return LLMConfig(provider_enum, model, base_url="http://localhost:11434", context_window=ctx_window)
 
             api_key = _get_api_key_from_db(selected_provider)
@@ -382,7 +430,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     f"explicite sur le provider selectionne ({selected_provider})."
                 )
                 return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
-            fallback_model = selected_model or "mistral-nemo"
+            fallback_model = selected_model or detect_default_ollama_model()
             logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
             return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url="http://localhost:11434", context_window=32000)
 
@@ -474,10 +522,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 )
 
         # Ollama en dernier recours (pas besoin de clé API)
+        # BUG-098 : détecter le modèle installé au lieu de "mistral-nemo" en dur.
         fallbacks.append(
             LLMConfig(
                 provider=LLMProvider.OLLAMA,
-                model="mistral-nemo",
+                model=detect_default_ollama_model(),
                 base_url="http://localhost:11434",
                 context_window=32000,
             )
@@ -772,6 +821,9 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
     except Exception as e:
         logger.debug("Erreur LLM service (non critique): %s", e)
     model = model_override or user_model or default_model
+    # BUG-098 : pour Ollama sans modèle explicite, prendre le 1er modèle installé.
+    if provider_name == "ollama" and not model_override and not user_model:
+        model = detect_default_ollama_model()
 
     api_key = None
     if env_vars:

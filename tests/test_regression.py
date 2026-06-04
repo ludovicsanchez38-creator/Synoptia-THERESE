@@ -3192,10 +3192,11 @@ class TestBUG052_OllamaModelPreference:
     LLM_PY = Path("src/backend/app/services/llm.py")
 
     def test_fallback_uses_selected_model(self):
-        """Le fallback Ollama doit utiliser selected_model or 'mistral-nemo'."""
+        """Le fallback Ollama doit respecter selected_model puis détecter le modèle installé (BUG-052 + BUG-098)."""
         content = self.LLM_PY.read_text(encoding="utf-8")
-        assert 'selected_model or "mistral-nemo"' in content, (
-            "Le fallback Ollama doit respecter selected_model (BUG-052)"
+        assert "selected_model or detect_default_ollama_model()" in content, (
+            "Le fallback Ollama doit respecter selected_model, puis détecter le "
+            "premier modèle réellement installé au lieu de 'mistral-nemo' codé en dur (BUG-052/BUG-098)"
         )
 
     def test_get_llm_service_reads_db_model(self):
@@ -3207,6 +3208,138 @@ class TestBUG052_OllamaModelPreference:
         fn_body = content[fn_start:fn_start + 3000]
         assert "llm_model" in fn_body, (
             "get_llm_service_for_provider doit lire llm_model depuis la DB (BUG-052)"
+        )
+
+
+# ============================================================
+# BUG-098 (lcjp, 04/06/2026) - Défaut Ollama "mistral-nemo" codé en dur
+# Le défaut Ollama doit être le 1er modèle chat réellement installé
+# (via GET /api/tags), pas "mistral-nemo" qui n'est souvent pas installé.
+# ============================================================
+
+
+class TestBUG098_OllamaDefaultModelDetection:
+    """Le défaut Ollama doit être détecté parmi les modèles installés, pas 'mistral-nemo' codé en dur."""
+
+    LLM_PY = SRC / "app" / "services" / "llm.py"
+    BOARD_PY = SRC / "app" / "services" / "board.py"
+
+    @staticmethod
+    def _fake_httpx_get(models):
+        class _Resp:
+            status_code = 200
+
+            @staticmethod
+            def json():
+                return {"models": [{"name": m} for m in models]}
+
+        def _get(url, timeout=None):
+            return _Resp()
+
+        return _get
+
+    def test_detect_returns_first_installed_chat_model(self, monkeypatch):
+        import httpx
+
+        from app.services.llm import detect_default_ollama_model
+
+        monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["gemma:2b", "llama3:8b"]))
+        assert detect_default_ollama_model() == "gemma:2b"
+
+    def test_detect_prefers_installed_over_mistral_nemo(self, monkeypatch):
+        """Scénario exact lcjp : gemma:2b installé, mistral-nemo absent."""
+        import httpx
+
+        from app.services.llm import detect_default_ollama_model
+
+        monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["gemma:2b"]))
+        assert detect_default_ollama_model() == "gemma:2b"
+        assert detect_default_ollama_model() != "mistral-nemo"
+
+    def test_detect_skips_embedding_models(self, monkeypatch):
+        """Un modèle d'embedding (ex: nomic-embed-text, utilisé par Qdrant) ne doit pas être choisi comme modèle de chat."""
+        import httpx
+
+        from app.services.llm import detect_default_ollama_model
+
+        monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["nomic-embed-text:latest"]))
+        assert detect_default_ollama_model(fallback="mistral-nemo") == "mistral-nemo"
+
+    def test_detect_fallback_when_ollama_unreachable(self, monkeypatch):
+        import httpx
+
+        from app.services.llm import detect_default_ollama_model
+
+        def _boom(url, timeout=None):
+            raise httpx.ConnectError("connexion refusée")
+
+        monkeypatch.setattr(httpx, "get", _boom)
+        assert detect_default_ollama_model(fallback="mistral-nemo") == "mistral-nemo"
+
+    def test_llm_fallbacks_use_detection_not_hardcoded(self):
+        content = self.LLM_PY.read_text(encoding="utf-8")
+        assert content.count("detect_default_ollama_model(") >= 4, (
+            "Tous les points de fallback Ollama de llm.py doivent passer par "
+            "detect_default_ollama_model() au lieu de 'mistral-nemo' codé en dur"
+        )
+
+    def test_board_sovereign_uses_detection(self):
+        content = self.BOARD_PY.read_text(encoding="utf-8")
+        assert "detect_default_ollama_model" in content, (
+            "Le mode souverain du Board doit détecter le modèle Ollama installé"
+        )
+        assert 'default_ollama_model = "mistral-nemo:12b"' not in content, (
+            "board.py ne doit plus coder en dur 'mistral-nemo:12b' comme défaut souverain"
+        )
+
+
+# ============================================================
+# BUG-099 (lcjp, 04/06/2026) - Clé API Gemini 'AQ.' refusée
+# Google émet désormais des clés commençant par 'AQ.' (avant 'AIza').
+# La validation ne doit plus exiger le préfixe 'AIza'.
+# ============================================================
+
+
+class TestBUG099_GeminiKeyPrefixRelaxed:
+    """Les nouvelles clés Gemini 'AQ.' ne doivent plus être bloquées par un contrôle de préfixe 'AIza'."""
+
+    CONFIG_PY = SRC / "app" / "routers" / "config.py"
+    LLM_TAB = FRONTEND / "components" / "settings" / "LLMTab.tsx"
+
+    def test_backend_no_longer_requires_aiza_prefix(self):
+        content = self.CONFIG_PY.read_text(encoding="utf-8")
+        assert 'provider == "gemini" and not key.startswith("AIza")' not in content, (
+            "Le backend ne doit plus exiger le préfixe 'AIza' pour les clés Gemini (format 'AQ' désormais émis par Google)"
+        )
+        assert 'provider == "gemini_image" and not key.startswith("AIza")' not in content, (
+            "Le backend ne doit plus exiger le préfixe 'AIza' pour les clés Gemini Image"
+        )
+
+    def test_frontend_image_gemini_no_aiza_prefix(self):
+        content = self.LLM_TAB.read_text(encoding="utf-8")
+        assert "keyPrefix: 'AIza'" not in content, (
+            "LLMTab.tsx ne doit plus imposer le préfixe client 'AIza' (clé image Gemini)"
+        )
+
+
+# ============================================================
+# BUG-100 (lcjp, macOS Tahoe, 04/06/2026) - Ollama invisible à l'onboarding
+# La liste des providers est plafonnée en hauteur (max-h-48) : Ollama, 10e et
+# dernier provider, sort de la vue, et sur macOS la scrollbar est masquée.
+# ============================================================
+
+
+class TestBUG100_OnboardingProviderListVisible:
+    """La liste des providers de l'onboarding ne doit pas être tronquée en hauteur (Ollama = dernier, invisible sur macOS)."""
+
+    LLM_STEP = FRONTEND / "components" / "onboarding" / "LLMStep.tsx"
+
+    def test_provider_list_not_height_capped(self):
+        content = self.LLM_STEP.read_text(encoding="utf-8")
+        assert "max-h-48" not in content, (
+            "La liste des providers de l'onboarding (LLMStep.tsx) ne doit pas être "
+            "plafonnée par max-h-48 : cela masque Ollama (dernier provider) sur macOS "
+            "où la barre de défilement est invisible par défaut"
         )
 
 

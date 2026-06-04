@@ -286,10 +286,13 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       </div>
 
       {/* Provider Selection */}
+      {/* BUG-100 : pas de plafond de hauteur sur cette liste. Avec 10 providers et la
+          barre de défilement masquée par défaut sur macOS, un conteneur trop court
+          cachait Ollama (le dernier provider). */}
       <div
         role="radiogroup"
         aria-label="Sélection du provider LLM"
-        className="space-y-2 mb-6 max-h-48 overflow-y-auto"
+        className="space-y-2 mb-6"
       >
         {PROVIDERS.map((provider) => {
           const isAvailable = provider.id === 'ollama' ? ollamaStatus?.available : true;

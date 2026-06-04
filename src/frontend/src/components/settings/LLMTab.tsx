@@ -175,8 +175,9 @@ export const IMAGE_PROVIDERS: ImageProviderConfig[] = [
     description: 'Génération d\'images Google Gemini',
     apiKeyId: 'gemini_image',
     keyName: 'Gemini (Image)',
-    keyPrefix: 'AIza',
-    keyPlaceholder: 'AIza...',
+    // BUG-099 : pas de préfixe imposé (les clés Gemini peuvent commencer par 'AIza' ou 'AQ')
+    keyPrefix: '',
+    keyPlaceholder: 'Clé API Gemini...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
   },
   {

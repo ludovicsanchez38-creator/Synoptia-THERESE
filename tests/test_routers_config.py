@@ -181,6 +181,36 @@ class TestAPIKeys:
         assert response.status_code in [200, 400, 422]
 
     @pytest.mark.asyncio
+    async def test_set_gemini_key_aiza_prefix(self, client: AsyncClient):
+        """BUG-099 : les anciennes clés Gemini 'AIza...' restent acceptées."""
+        response = await client.post("/api/config/api-key", json={
+            "provider": "gemini",
+            "api_key": "AIzaSyA-ancienne-cle-gemini-de-test-1234567",
+        })
+
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_set_gemini_key_aq_prefix(self, client: AsyncClient):
+        """BUG-099 (lcjp) : les nouvelles clés Gemini 'AQ.' doivent être acceptées."""
+        response = await client.post("/api/config/api-key", json={
+            "provider": "gemini",
+            "api_key": "AQ.Ab8RN6Jnouvelle-cle-gemini-format-2026-xyz",
+        })
+
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_set_gemini_key_too_short_rejected(self, client: AsyncClient):
+        """BUG-099 : une clé Gemini manifestement invalide (trop courte) reste refusée."""
+        response = await client.post("/api/config/api-key", json={
+            "provider": "gemini",
+            "api_key": "AQ",
+        })
+
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
     async def test_get_api_keys_status(self, client: AsyncClient):
         """Test getting API keys status (via config endpoint)."""
         response = await client.get("/api/config/")

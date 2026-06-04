@@ -212,15 +212,17 @@ async def set_api_key(
             status_code=400,
             detail="La clé API OpenAI (Image) doit commencer par 'sk-'"
         )
-    elif provider == "gemini" and not key.startswith("AIza"):
+    elif provider == "gemini" and len(key) < 10:
+        # BUG-099 : Google émet désormais des clés en 'AQ.' (avant 'AIza').
+        # On ne valide plus le préfixe, juste une longueur minimale ; l'API tranche.
         raise HTTPException(
             status_code=400,
-            detail="La clé API Gemini doit commencer par 'AIza'"
+            detail="La clé API Gemini semble invalide (trop courte)"
         )
-    elif provider == "gemini_image" and not key.startswith("AIza"):
+    elif provider == "gemini_image" and len(key) < 10:
         raise HTTPException(
             status_code=400,
-            detail="La clé API Gemini (Image) doit commencer par 'AIza'"
+            detail="La clé API Gemini (Image) semble invalide (trop courte)"
         )
     elif provider == "groq" and not key.startswith("gsk_"):
         raise HTTPException(

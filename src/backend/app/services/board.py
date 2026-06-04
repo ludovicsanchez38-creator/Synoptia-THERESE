@@ -176,25 +176,20 @@ class BoardService:
             # --- MODE SOUVERAIN : séquentiel via Ollama ---
             logger.info("Board en mode souverain (Ollama séquentiel)")
 
-            # Déterminer le modèle Ollama par défaut (celui sélectionné par l'utilisateur)
-            default_ollama_model = "mistral-nemo:12b"
+            # Déterminer le modèle Ollama par défaut (celui sélectionné par l'utilisateur).
+            # BUG-098 : ne plus coder "mistral-nemo:12b" en dur. Si l'utilisateur n'a
+            # pas choisi de modèle, détecter le 1er modèle conversationnel installé
+            # (en excluant les modèles d'embedding utilisés par Qdrant).
+            default_ollama_model = None
             try:
                 user_llm = get_llm_service()
                 if user_llm and user_llm.config.provider == LLMProvider.OLLAMA:
                     default_ollama_model = user_llm.config.model
             except Exception as e:
                 logger.debug("LLM service non disponible pour Board: %s", e)
-            # Fallback : utiliser le premier modèle disponible via Ollama API
-            if not default_ollama_model or ":" not in default_ollama_model:
-                try:
-                    import httpx
-                    resp = httpx.get("http://localhost:11434/api/tags", timeout=3.0)
-                    if resp.status_code == 200:
-                        models = resp.json().get("models", [])
-                        if models:
-                            default_ollama_model = models[0]["name"]
-                except Exception as e:
-                    logger.debug("Ollama API non disponible: %s", e)
+            if not default_ollama_model:
+                from app.services.llm import detect_default_ollama_model
+                default_ollama_model = detect_default_ollama_model()
 
             for role in advisors:
                 config = ADVISOR_CONFIG[role]
