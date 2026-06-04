@@ -29,6 +29,7 @@ P9, P10, P15, P16 : peu coûteux, très visibles, bons pour le moral et les test
 ## État d'avancement
 - [x] Étape 0 périmètre · [x] Étape 1 état des lieux · [x] Étape 2 pistes · [x] Étape 3 roadmap validée
 - [x] Phase 0 — cadrage Chantier B (brainstorm + spec + plan)
-- [x] **Phase 0 — Chantier B (Donnée unifiée) IMPLÉMENTÉ en TDD** (P3+P4+P5+B6), 6 lots commités, tous tests verts, build OK. Voir `B-rapport-implementation.md`. Test human-like navigateur confié à Syn (`B-test-script-syn.md`).
-- [ ] Phase 0 — Chantier A (Confiance : P1 vérité d'exécution, P2 erreurs honnêtes) ← prochain sous-chantier
-- [ ] Phase 1 (refonte navigation), Phase 2 (parcours), Phase 3 (visibilité/providers)
+- [x] **Phase 0 — Chantier B (Donnée unifiée) IMPLÉMENTÉ en TDD** (P3+P4+P5+B6), 6 lots commités, tests verts, build OK, test navigateur human-like déroulé (P3/P4/P5). Voir `B-rapport-implementation.md`. Vue croisée CRM confiée à Syn (`B-test-script-syn.md`).
+- [x] **Phase 0 — Chantier A (Confiance) DURCI** : constat = l'essentiel (déduplication des créations + erreurs honnêtes des outils) était déjà en place depuis les retours de Dr_logic. Ajouté en défense en profondeur : `enforce_create_cap` (cap créations par tour) + `summarize_executions` (résumé déterministe), câblés dans chat.py, + garde-fous de régression. 448 tests backend verts.
+- [ ] **Phase 1 — refonte navigation** (P6 surfaces 1 fenêtre + panneaux, P7 pile Échap, P8 ⌘K) ← prochaine phase
+- [ ] Phase 2 (parcours), Phase 3 (visibilité/providers)
