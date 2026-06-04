@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
+import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface ContactModalProps {
@@ -95,10 +96,11 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
           : null,
       };
 
+      // Via le store unique : la création/édition se reflète aussitôt Mémoire ET CRM (P4).
       if (isEditing && contact) {
-        await api.updateContact(contact.id, payload);
+        await useContactsStore.getState().updateContact(contact.id, payload);
       } else {
-        await api.createContact(payload);
+        await useContactsStore.getState().createContact(payload);
       }
 
       onSaved?.();
@@ -117,7 +119,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
     setError(null);
 
     try {
-      await api.deleteContact(contact.id);
+      await useContactsStore.getState().deleteContact(contact.id);
       onSaved?.();
       onClose();
     } catch (err) {

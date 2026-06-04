@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, FolderPlus, Check, X, Loader2 } from 'lucide-react';
 import type { ExtractedContact, ExtractedProject } from '../../services/api';
 import * as api from '../../services/api';
+import { useContactsStore } from '../../stores/contactsStore';
 
 interface EntitySuggestionProps {
   contacts: ExtractedContact[];
@@ -119,7 +120,8 @@ export function EntitySuggestion({
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || null;
 
-    await api.createContact({
+    // Via le store unique : le contact créé est immédiatement visible Mémoire ET CRM (P4).
+    await useContactsStore.getState().createContact({
       first_name: firstName,
       last_name: lastName,
       company: contact.company,
