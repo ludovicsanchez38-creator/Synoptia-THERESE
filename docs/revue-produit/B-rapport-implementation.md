@@ -26,10 +26,12 @@
 - **Frontend** : `tsc --noEmit` = 0 erreur · `vitest` = **129 tests** (dont nouveaux : 7 contactsStore + 1 EntitySuggestion) · `eslint` = au seuil (≤27 warnings, 0 erreur) · `npm run build` (tsc + vite) = OK.
 - **Backend** : `pytest tests/test_regression.py` (dont +2 BUG-102) = vert · suite complète hors e2e = **exit 0** · `ruff` = clean.
 
-## Vérification navigateur (smoke runtime — 1er regard)
-- App lancée dans Chrome contre un backend isolé (port dédié, base jetable `/tmp`, **zéro donnée de Ludo touchée**).
-- Résultat : le frontend (toutes les modifs Chantier B) **se charge, monte et s'exécute sans crash**, atteint l'onboarding/UI principale. Les seules erreurs console sont (a) backend injoignable quand on visait le sidecar de l'app installée (CORS), corrigé en passant sur le backend isolé, et (b) API Tauri absentes en navigateur (`useFileDrop`), sans rapport avec le Chantier B.
-- Le **flux d'écriture human-like complet** (créer un contact → vérifier qu'il apparaît en Mémoire ET en CRM, recherche sémantique, panneau in-window) est confié à **Syn** pour un 2e regard dans l'environnement Tauri réel (cf. `B-test-script-syn.md`), et il est déjà couvert au niveau logique par les tests unitaires du store (B1) et d'EntitySuggestion (B5).
+## Vérification navigateur human-like (1er regard, déroulé par Claude)
+App lancée dans Chrome (MCP) contre un **backend isolé** (port dédié 17393, base jetable `/tmp`, **zéro donnée de Ludo touchée**), onboarding complété via API. Flux d'écriture réel déroulé :
+- **P3 — Mémoire in-window** ✓ : le bouton Mémoire du header ouvre un **panneau dans la même fenêtre** (glisse depuis la droite, dashboard en backdrop), pas une fenêtre détachée.
+- **P4 — création via store unique** ✓ : contact créé via la modale "Nouveau contact" → apparaît **instantanément** dans la liste Mémoire (compteur Contacts 0 → 1). Le log backend confirme la création via le chemin canonique `POST /api/memory/contacts` (routage B5).
+- **P5 — recherche sémantique** ✓ : taper le nom du contact le **masque** de la liste (recherche sémantique côté serveur, et non un filtre JS local qui aurait matché le nom) ; effacer la requête le fait **réapparaître** (searchResults → null).
+- Limite honnête : la **vue croisée CRM** (contact CRM visible en Mémoire) n'a pas pu être déroulée en navigateur car le CRM s'ouvre en **fenêtre séparée** (`window.open` bloqué par le navigateur — c'est l'architecture fenêtres-panels, précisément le sujet de la Phase 1). Elle est couverte au niveau code (B2 : CRMPanel lit `useContactsStore`) + tests unitaires, et confiée à **Syn** dans l'environnement Tauri réel (`B-test-script-syn.md`) pour un **2e regard indépendant**.
 
 ## Notes / vigilance
 - `crm.py` POST `/contacts` conserve sa sync Google Sheets ; B6 y ajoute juste l'embed Qdrant (résilient si Qdrant absent).
