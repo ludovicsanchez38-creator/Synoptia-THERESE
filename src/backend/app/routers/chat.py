@@ -1105,7 +1105,13 @@ async def _execute_tools_and_continue(
     # Execute each tool call
     tool_results: list[ToolResult] = []
 
-    for tc in tool_calls:
+    # Chantier A (vérité d'exécution) : plafonner les créations d'entités par tour
+    # (anti rafale de noms hallucinés), en plus de la déduplication par nom.
+    from app.services.execution_truth import enforce_create_cap, summarize_executions
+    allowed_calls, blocked_calls = enforce_create_cap(tool_calls)
+    exec_records: list[tuple[str, str, bool]] = []
+
+    for tc in allowed_calls:
         logger.info(f"Executing tool: {tc.name} with args: {tc.arguments}")
 
         # Execute based on tool type
@@ -1252,6 +1258,34 @@ async def _execute_tools_and_continue(
             result=result.result if result.success else f"Error: {result.error}",
             is_error=not result.success,
         ))
+        exec_records.append(
+            (tc.name, result.result if result.success else f"Error: {result.error}", not result.success)
+        )
+
+    # Créations bloquées par le cap : erreur honnête pour le LLM ET l'utilisateur
+    for tc in blocked_calls:
+        cap_msg = (
+            "Création bloquée : limite de créations par tour atteinte "
+            "(garde-fou anti création en masse). Confirme si tu veux vraiment en créer davantage."
+        )
+        tool_results.append(ToolResult(tool_call_id=tc.id, result=f"Error: {cap_msg}", is_error=True))
+        exec_records.append((tc.name, f"Error: {cap_msg}", True))
+        blocked_status = StreamChunk(
+            type="tool_result",
+            content=f"[{tc.name}] Bloqué : limite de créations par tour atteinte",
+            conversation_id=conversation_id,
+        )
+        yield f"data: {json.dumps(blocked_status.model_dump())}\n\n"
+
+    # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
+    recap = summarize_executions(exec_records)
+    if recap:
+        recap_chunk = StreamChunk(
+            type="status",
+            content=recap,
+            conversation_id=conversation_id,
+        )
+        yield f"data: {json.dumps(recap_chunk.model_dump())}\n\n"
 
     # Continue conversation with tool results
     new_tool_calls: list[ToolCall] = []

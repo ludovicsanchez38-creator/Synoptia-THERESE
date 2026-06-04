@@ -3375,6 +3375,45 @@ class TestBUG102_UnifiedContactQdrantEmbed:
 
 
 # ============================================================
+# Chantier A (revue produit - Confiance / vérité d'exécution)
+# Verrouille : déduplication des créations d'entités (anti création en masse),
+# erreurs honnêtes (pas de faux succès), et câblage du cap + résumé déterministe.
+# ============================================================
+
+
+class TestChantierA_VeriteExecution:
+    """L'IA ne doit pas mentir sur ce qu'elle fait : dédup, erreurs honnêtes, cap, récap déterministe."""
+
+    MEMORY_TOOLS = SRC / "app" / "services" / "memory_tools.py"
+    CHAT_PY = SRC / "app" / "routers" / "chat.py"
+
+    def test_create_tools_deduplicate(self):
+        content = self.MEMORY_TOOLS.read_text(encoding="utf-8")
+        assert "_find_existing_contact" in content, (
+            "execute_create_contact doit dédupliquer (anti création en masse)"
+        )
+        assert "_find_existing_project" in content, (
+            "execute_create_project doit dédupliquer (anti création en masse)"
+        )
+
+    def test_create_tools_return_honest_errors(self):
+        content = self.MEMORY_TOOLS.read_text(encoding="utf-8")
+        # Sur échec, les outils renvoient un objet {"error": ...} + rollback (pas de faux succès)
+        assert content.count("await session.rollback()") >= 2, (
+            "Les outils de création doivent rollback et renvoyer une erreur honnête en cas d'échec"
+        )
+
+    def test_chat_enforces_create_cap_and_recap(self):
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        assert "enforce_create_cap" in content, (
+            "chat.py doit plafonner les créations par tour (anti rafale de noms hallucinés)"
+        )
+        assert "summarize_executions" in content, (
+            "chat.py doit émettre un résumé déterministe de ce qui a réellement été créé"
+        )
+
+
+# ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
 # ============================================================
@@ -3579,22 +3618,9 @@ class TestBUG060_CRMHeaderHomogeneity:
         )
 
 
-class TestBUG061_ProjectsHeaderHomogeneity:
-    """MemoryPanelStandalone doit utiliser le pattern header gradient badge."""
-
-    PROJECTS_TSX = Path("src/frontend/src/components/memory/MemoryPanelStandalone.tsx")
-
-    def test_gradient_badge_present(self):
-        content = self.PROJECTS_TSX.read_text(encoding="utf-8")
-        assert "bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20" in content, (
-            "Projets header doit utiliser le badge gradient (BUG-061)"
-        )
-
-    def test_briefcase_icon_imported(self):
-        content = self.PROJECTS_TSX.read_text(encoding="utf-8")
-        assert "Briefcase" in content, (
-            "Projets header doit utiliser l'icône Briefcase (BUG-061)"
-        )
+# BUG-061 (TestBUG061_ProjectsHeaderHomogeneity) retiré : il gardait le style du header
+# de MemoryPanelStandalone.tsx, fenêtre Mémoire détachée supprimée par la revue produit
+# Chantier B (P3, Mémoire repliée en panneau in-window). Le fichier n'existe plus.
 
 
 class TestBUG062_MCPNodePath:
