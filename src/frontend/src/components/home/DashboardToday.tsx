@@ -30,7 +30,6 @@ import {
   type DashboardInvoice,
   type DashboardProspect,
 } from '../../services/api/dashboard';
-import { openPanelWindow } from '../../services/windowManager';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useReducedMotion } from '../../stores/accessibilityStore';
 
@@ -151,9 +150,9 @@ export function DashboardToday({ onDismiss }: DashboardTodayProps) {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleOpenCalendar = useCallback(() => openPanelWindow('calendar'), []);
-  const handleOpenTasks = useCallback(() => openPanelWindow('tasks'), []);
-  const handleOpenInvoices = useCallback(() => openPanelWindow('invoices'), []);
+  const handleOpenCalendar = useCallback(() => useNavigationStore.getState().setView('calendar'), []);
+  const handleOpenTasks = useCallback(() => useNavigationStore.getState().setView('tasks'), []);
+  const handleOpenInvoices = useCallback(() => useNavigationStore.getState().setView('invoices'), []);
   const handleOpenCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
 
   if (loading) {

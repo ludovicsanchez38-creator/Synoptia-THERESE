@@ -26,7 +26,6 @@ import { useAtelierStore } from '../../stores/atelierStore';
 // OpenClaw store : conservé mais plus utilisé dans ChatLayout
 import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
-import { openPanelWindow } from '../../services/windowManager';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
 
@@ -38,6 +37,18 @@ const DashboardToday = lazy(() =>
 // Phase 1 (content-swap) : vues rendues dans la zone principale au lieu de fenêtres.
 const CRMPanel = lazy(() =>
   import('../crm').then((m) => ({ default: m.CRMPanel }))
+);
+const EmailPanel = lazy(() =>
+  import('../email').then((m) => ({ default: m.EmailPanel }))
+);
+const CalendarPanel = lazy(() =>
+  import('../calendar').then((m) => ({ default: m.CalendarPanel }))
+);
+const TasksPanel = lazy(() =>
+  import('../tasks').then((m) => ({ default: m.TasksPanel }))
+);
+const InvoicesPanel = lazy(() =>
+  import('../invoices').then((m) => ({ default: m.InvoicesPanel }))
 );
 
 // Préférence utilisateur : skip dashboard au lancement
@@ -89,11 +100,11 @@ export function ChatLayout() {
   const { isDragging } = useFileDrop();
 
   const handleNewConversation = useCallback(() => createConversation(), [createConversation]);
-  const handleToggleEmail = useCallback(() => openPanelWindow('email'), []);
-  const handleToggleCalendar = useCallback(() => openPanelWindow('calendar'), []);
-  const handleToggleTasks = useCallback(() => openPanelWindow('tasks'), []);
-  const handleToggleInvoices = useCallback(() => openPanelWindow('invoices'), []);
-  // Phase 1 : le CRM devient une VUE de la zone principale (content-swap).
+  // Phase 1 : Email/Agenda/Tâches/Factures/CRM deviennent des VUES de la zone principale.
+  const handleToggleEmail = useCallback(() => useNavigationStore.getState().setView('email'), []);
+  const handleToggleCalendar = useCallback(() => useNavigationStore.getState().setView('calendar'), []);
+  const handleToggleTasks = useCallback(() => useNavigationStore.getState().setView('tasks'), []);
+  const handleToggleInvoices = useCallback(() => useNavigationStore.getState().setView('invoices'), []);
   const handleToggleCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
   const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
 
@@ -153,7 +164,7 @@ export function ChatLayout() {
         )}
 
         {/* Phase 1 (content-swap) : routeur de vues dans la zone principale */}
-        {activeView === 'crm' ? (
+        {activeView !== 'chat' ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center px-4 py-2 border-b border-border/50">
               <button
@@ -165,7 +176,11 @@ export function ChatLayout() {
               </button>
             </div>
             <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
-              <CRMPanel standalone />
+              {activeView === 'crm' && <CRMPanel standalone />}
+              {activeView === 'email' && <EmailPanel standalone />}
+              {activeView === 'calendar' && <CalendarPanel standalone />}
+              {activeView === 'tasks' && <TasksPanel standalone />}
+              {activeView === 'invoices' && <InvoicesPanel standalone />}
             </Suspense>
           </div>
         ) : showDashboard ? (
