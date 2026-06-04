@@ -149,16 +149,8 @@ describe('PanelWindow', () => {
     });
   });
 
-  it('ne doit PAS pré-charger les comptes pour le panel CRM', async () => {
-    const { PanelWindow } = await import('./PanelWindow');
-    render(<PanelWindow panel="crm" />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('crm-panel')).toBeTruthy();
-    });
-
-    expect(mockGetEmailAuthStatus).not.toHaveBeenCalled();
-  });
+  // (Test CRM retiré : le CRM est devenu une VUE de la zone principale en Phase 1,
+  //  il n'est plus un panel de PanelWindow.)
 
   // BUG-049 : le conteneur principal de PanelWindow ne doit PAS avoir overflow-hidden.
   // overflow-hidden sur un ancêtre clippe les menus <select> dans WebView2 (Windows)

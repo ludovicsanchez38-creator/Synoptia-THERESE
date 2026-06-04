@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
-import { Sparkles, WifiOff } from 'lucide-react';
+import { Sparkles, WifiOff, ArrowLeft } from 'lucide-react';
 import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -25,6 +25,7 @@ import { useDemoStore } from '../../stores/demoStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 // OpenClaw store : conservé mais plus utilisé dans ChatLayout
 import { usePanelStore } from '../../stores/panelStore';
+import { useNavigationStore } from '../../stores/navigationStore';
 import { openPanelWindow } from '../../services/windowManager';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
@@ -32,6 +33,11 @@ import type { SlashCommand } from './SlashCommandsMenu';
 // Lazy-loaded : Dashboard "Ma journée" (US-005)
 const DashboardToday = lazy(() =>
   import('../home/DashboardToday').then((m) => ({ default: m.DashboardToday }))
+);
+
+// Phase 1 (content-swap) : vues rendues dans la zone principale au lieu de fenêtres.
+const CRMPanel = lazy(() =>
+  import('../crm').then((m) => ({ default: m.CRMPanel }))
 );
 
 // Préférence utilisateur : skip dashboard au lancement
@@ -51,6 +57,8 @@ export function ChatLayout() {
   const toggleAtelier = useAtelierStore((s) => s.togglePanel);
   const openAtelierPanel = useAtelierStore((s) => s.openPanel);
   const ps = usePanelStore();
+  const activeView = useNavigationStore((s) => s.activeView);
+  const goBack = useNavigationStore((s) => s.goBack);
 
   useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
 
@@ -85,7 +93,8 @@ export function ChatLayout() {
   const handleToggleCalendar = useCallback(() => openPanelWindow('calendar'), []);
   const handleToggleTasks = useCallback(() => openPanelWindow('tasks'), []);
   const handleToggleInvoices = useCallback(() => openPanelWindow('invoices'), []);
-  const handleToggleCRM = useCallback(() => openPanelWindow('crm'), []);
+  // Phase 1 : le CRM devient une VUE de la zone principale (content-swap).
+  const handleToggleCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
   const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
 
   // Cmd+Shift+K : ouvrir l'Atelier en mode chat local
@@ -143,8 +152,23 @@ export function ChatLayout() {
           </div>
         )}
 
-        {/* US-005 : Dashboard "Ma journée" ou chat */}
-        {showDashboard ? (
+        {/* Phase 1 (content-swap) : routeur de vues dans la zone principale */}
+        {activeView === 'crm' ? (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex items-center px-4 py-2 border-b border-border/50">
+              <button
+                onClick={goBack}
+                className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
+                aria-label="Retour au chat"
+              >
+                <ArrowLeft className="w-4 h-4" /> Chat
+              </button>
+            </div>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
+              <CRMPanel standalone />
+            </Suspense>
+          </div>
+        ) : showDashboard ? (
           <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
             <DashboardToday onDismiss={handleDismissDashboard} />
           </Suspense>

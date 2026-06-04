@@ -3414,6 +3414,41 @@ class TestChantierA_VeriteExecution:
 
 
 # ============================================================
+# Phase 1 (revue produit - refonte navigation content-swap)
+# Le CRM est une VUE de la zone principale (navigationStore), plus une fenêtre Tauri.
+# ============================================================
+
+
+class TestPhase1_CRMAsView:
+    """Le CRM doit être une vue (content-swap), plus une fenêtre détachée."""
+
+    WINDOW_MANAGER = FRONTEND / "services" / "windowManager.ts"
+    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    NAV_STORE = FRONTEND / "stores" / "navigationStore.ts"
+
+    def test_navigation_store_exists(self):
+        content = self.NAV_STORE.read_text(encoding="utf-8")
+        assert "activeView" in content and "setView" in content, (
+            "navigationStore doit gérer activeView + setView (routeur de vues Phase 1)"
+        )
+
+    def test_crm_not_a_window(self):
+        content = self.WINDOW_MANAGER.read_text(encoding="utf-8")
+        assert "'crm'" not in content, (
+            "Le CRM ne doit plus être une fenêtre détachée (windowManager) : il est devenu une vue"
+        )
+
+    def test_chatlayout_uses_view_router(self):
+        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+        assert "useNavigationStore" in content, (
+            "ChatLayout doit utiliser le navigationStore pour router les vues"
+        )
+        assert "setView('crm')" in content, (
+            "Le bouton CRM doit basculer vers la vue CRM (setView), pas ouvrir une fenêtre"
+        )
+
+
+# ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
 # ============================================================

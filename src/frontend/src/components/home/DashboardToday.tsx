@@ -31,6 +31,7 @@ import {
   type DashboardProspect,
 } from '../../services/api/dashboard';
 import { openPanelWindow } from '../../services/windowManager';
+import { useNavigationStore } from '../../stores/navigationStore';
 import { useReducedMotion } from '../../stores/accessibilityStore';
 
 interface DashboardTodayProps {
@@ -153,7 +154,7 @@ export function DashboardToday({ onDismiss }: DashboardTodayProps) {
   const handleOpenCalendar = useCallback(() => openPanelWindow('calendar'), []);
   const handleOpenTasks = useCallback(() => openPanelWindow('tasks'), []);
   const handleOpenInvoices = useCallback(() => openPanelWindow('invoices'), []);
-  const handleOpenCRM = useCallback(() => openPanelWindow('crm'), []);
+  const handleOpenCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
 
   if (loading) {
     return (
