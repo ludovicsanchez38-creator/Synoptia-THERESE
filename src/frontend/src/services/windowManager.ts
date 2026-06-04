@@ -8,12 +8,13 @@
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { getApiBase } from './api/core';
 
-export type PanelType = 'email' | 'calendar' | 'tasks' | 'invoices' | 'crm' | 'memory';
+// La Mémoire est un panneau IN-WINDOW (P3), plus une fenêtre détachée.
+export type PanelType = 'email' | 'calendar' | 'tasks' | 'invoices' | 'crm';
 
 // Runtime whitelist for panel names (SEC-018)
 // TypeScript types are erased at runtime - this ensures validation at runtime too
 const VALID_PANELS: ReadonlySet<string> = new Set<PanelType>([
-  'email', 'calendar', 'tasks', 'invoices', 'crm', 'memory',
+  'email', 'calendar', 'tasks', 'invoices', 'crm',
 ]);
 
 export function isValidPanel(value: string): value is PanelType {
@@ -63,13 +64,6 @@ const PANEL_CONFIGS: Record<PanelType, PanelConfig> = {
     height: 800,
     minWidth: 900,
     minHeight: 600,
-  },
-  memory: {
-    title: 'THERESE - Projet',
-    width: 1100,
-    height: 750,
-    minWidth: 800,
-    minHeight: 500,
   },
 };
 

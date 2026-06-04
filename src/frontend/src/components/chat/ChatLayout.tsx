@@ -132,7 +132,7 @@ export function ChatLayout() {
       <SideToggle side="right" isOpen={ps.showMemoryPanel} onClick={ps.toggleMemoryPanel} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
       <header role="banner" aria-label="Barre d'outils Therese">
-        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={() => openPanelWindow('memory')} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={ps.toggleMemoryPanel} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">

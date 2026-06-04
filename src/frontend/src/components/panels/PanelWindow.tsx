@@ -16,7 +16,6 @@ import { CalendarPanel } from '../calendar';
 import { TasksPanel } from '../tasks';
 import { InvoicesPanel } from '../invoices';
 import { CRMPanel } from '../crm';
-import { MemoryPanelStandalone } from '../memory/MemoryPanelStandalone';
 import type { PanelType } from '../../services/windowManager';
 
 /** Error Boundary pour capturer les erreurs de rendu dans les panels */
@@ -151,7 +150,6 @@ export function PanelWindow({ panel }: PanelWindowProps) {
         {panel === 'tasks' && <TasksPanel standalone />}
         {panel === 'invoices' && <InvoicesPanel standalone />}
         {panel === 'crm' && <CRMPanel standalone />}
-        {panel === 'memory' && <MemoryPanelStandalone />}
       </div>
     </PanelErrorBoundary>
   );

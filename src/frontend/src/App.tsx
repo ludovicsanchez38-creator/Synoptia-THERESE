@@ -23,7 +23,7 @@ const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 function getPanelFromUrl(): PanelType | null {
   const params = new URLSearchParams(window.location.search);
   const panel = params.get('panel');
-  if (panel && ['email', 'calendar', 'tasks', 'invoices', 'crm', 'memory'].includes(panel)) {
+  if (panel && ['email', 'calendar', 'tasks', 'invoices', 'crm'].includes(panel)) {
     return panel as PanelType;
   }
   return null;
