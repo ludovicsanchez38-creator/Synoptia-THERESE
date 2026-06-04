@@ -81,11 +81,33 @@ describe('contactsStore', () => {
     expect(useContactsStore.getState().contacts).toHaveLength(0);
   });
 
-  it('search("q") peuple searchResults via searchMemory (contacts uniquement)', async () => {
-    vi.mocked(searchMemory).mockResolvedValueOnce({ contacts: [makeContact({ id: 'c3' })] });
+  it('search("q") fusionne filtre local (nom/email) + résultats sémantiques (sans doublon)', async () => {
+    useContactsStore.setState({ contacts: [makeContact({ id: 'c1', first_name: 'Jean' })] });
+    // Le sémantique renvoie un autre contact + le même c1 (doublon à dédupliquer)
+    vi.mocked(searchMemory).mockResolvedValueOnce({
+      contacts: [makeContact({ id: 'c3', first_name: 'Autre' }), makeContact({ id: 'c1', first_name: 'Jean' })],
+    });
     await useContactsStore.getState().search('jean');
     expect(searchMemory).toHaveBeenCalledWith('jean', ['contacts']);
-    expect(useContactsStore.getState().searchResults).toHaveLength(1);
+    const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
+    expect(ids).toEqual(['c1', 'c3']); // c1 (local d'abord) puis c3 (sémantique), c1 non dupliqué
+  });
+
+  it('search trouve par le NOM via le filtre local même si le sémantique renvoie vide (régression Syn P5)', async () => {
+    useContactsStore.setState({ contacts: [makeContact({ id: 'cR', first_name: 'Revue', last_name: 'BrowserTest' })] });
+    vi.mocked(searchMemory).mockResolvedValueOnce({ contacts: [] }); // sémantique ne matche pas
+    await useContactsStore.getState().search('Revue');
+    const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
+    expect(ids).toContain('cR'); // le contact reste trouvable par son nom
+  });
+
+  it('search reste utilisable si le sémantique ÉCHOUE (repli sur le filtre local, pas de throw)', async () => {
+    useContactsStore.setState({ contacts: [makeContact({ id: 'cR', first_name: 'Revue' })] });
+    vi.mocked(searchMemory).mockRejectedValueOnce(new Error('qdrant down'));
+    await expect(useContactsStore.getState().search('Revue')).resolves.toBeUndefined();
+    const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
+    expect(ids).toEqual(['cR']);
+    expect(useContactsStore.getState().loading).toBe(false);
   });
 
   it('search("") remet searchResults à null sans appeler l\'API (repli liste complète)', async () => {

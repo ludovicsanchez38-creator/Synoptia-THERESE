@@ -33,6 +33,23 @@ interface ContactsStore {
   removeLocal: (id: string) => void;
 }
 
+/** Vrai si le contact matche la requête sur nom/email/entreprise (filtre local). */
+export function contactMatchesQuery(contact: Contact, query: string): boolean {
+  const q = query.toLowerCase();
+  return (
+    (contact.first_name?.toLowerCase().includes(q) ?? false) ||
+    (contact.last_name?.toLowerCase().includes(q) ?? false) ||
+    (contact.company?.toLowerCase().includes(q) ?? false) ||
+    (contact.email?.toLowerCase().includes(q) ?? false)
+  );
+}
+
+/** Fusionne deux listes de contacts en dédupliquant par id (la première prime). */
+function mergeContactsById(primary: Contact[], extra: Contact[]): Contact[] {
+  const seen = new Set(primary.map((c) => c.id));
+  return [...primary, ...extra.filter((c) => !seen.has(c.id))];
+}
+
 export const useContactsStore = create<ContactsStore>((set, get) => ({
   contacts: [],
   searchResults: null,
@@ -74,12 +91,17 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
       return;
     }
     set({ loading: true });
+    // Filtre local immédiat (nom/email/entreprise) : garantit qu'on retrouve TOUJOURS
+    // par le nom (régression P5 trouvée par Syn : la recherche sémantique pure cachait
+    // les contacts au lieu de les trouver).
+    const local = get().contacts.filter((c) => contactMatchesQuery(c, q));
     try {
       const res = await apiSearchMemory(q, ['contacts']);
-      set({ searchResults: res.contacts ?? [], loading: false });
-    } catch (e) {
-      set({ loading: false });
-      throw e;
+      // Hybride : matches locaux d'abord, puis résultats sémantiques non déjà présents.
+      set({ searchResults: mergeContactsById(local, res.contacts ?? []), loading: false });
+    } catch {
+      // Sémantique indisponible : la recherche reste utilisable via le filtre local.
+      set({ searchResults: local, loading: false });
     }
   },
 
