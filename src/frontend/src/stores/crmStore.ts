@@ -1,25 +1,18 @@
 /**
  * THÉRÈSE v2 - CRM Store
  *
- * Zustand store pour la gestion du CRM.
- * Persistance des contacts et projets pour affichage instantané.
+ * Zustand store recentré sur les PROJETS et l'UI du CRM (pipeline).
+ * Les CONTACTS sont désormais détenus par `contactsStore` (source de vérité unique,
+ * P4 - Chantier B revue produit). Le CRM est une VUE filtrée (contacts avec source).
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ContactResponse, Project } from '../services/api';
+import type { Project } from '../services/api';
 
 type Tab = 'pipeline' | 'activities';
 
 interface CRMStore {
-  // Contacts
-  contacts: ContactResponse[];
-  selectedContactId: string | null;
-  setContacts: (contacts: ContactResponse[]) => void;
-  setSelectedContact: (contactId: string | null) => void;
-  updateContact: (contactId: string, updates: Partial<ContactResponse>) => void;
-  addContact: (contact: ContactResponse) => void;
-
   // Projects
   projects: Project[];
   setProjects: (projects: Project[]) => void;
@@ -35,22 +28,6 @@ interface CRMStore {
 export const useCRMStore = create<CRMStore>()(
   persist(
     (set) => ({
-      // Contacts
-      contacts: [],
-      selectedContactId: null,
-      setContacts: (contacts) => set({ contacts }),
-      setSelectedContact: (contactId) => set({ selectedContactId: contactId }),
-      updateContact: (contactId, updates) =>
-        set((state) => ({
-          contacts: state.contacts.map((c) =>
-            c.id === contactId ? { ...c, ...updates } : c
-          ),
-        })),
-      addContact: (contact) =>
-        set((state) => ({
-          contacts: [contact, ...state.contacts],
-        })),
-
       // Projects
       projects: [],
       setProjects: (projects) => set({ projects }),
@@ -66,7 +43,6 @@ export const useCRMStore = create<CRMStore>()(
     {
       name: 'crm-storage',
       partialize: (state) => ({
-        contacts: state.contacts,
         projects: state.projects,
         activeTab: state.activeTab,
       }),

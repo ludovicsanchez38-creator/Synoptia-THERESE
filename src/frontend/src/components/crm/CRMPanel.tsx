@@ -12,7 +12,8 @@ import { X, LayoutDashboard, Users, Activity, UserPlus, Upload, Mail, Phone, Fil
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { useCRMStore } from '../../stores/crmStore';
-import { listContacts, listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
+import { useContactsStore } from '../../stores/contactsStore';
+import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
 import { createCRMContact, importVCFContacts, type CreateCRMContactRequest } from '../../services/api/crm';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
@@ -25,18 +26,18 @@ interface CRMPanelProps {
 }
 
 export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps) {
+  const { projects, activeTab, setProjects, setActiveTab } = useCRMStore();
   const {
-    contacts,
-    projects,
+    contacts: allContacts,
     selectedContactId,
-    activeTab,
-    setContacts,
-    setProjects,
     setSelectedContact,
-    updateContact,
-    addContact,
-    setActiveTab,
-  } = useCRMStore();
+    fetchContacts,
+    upsertLocal,
+  } = useContactsStore();
+
+  // Le CRM est une VUE filtrée du store unique : contacts ayant une source
+  // (prospects/pipeline). La Mémoire, elle, affiche tous les contacts.
+  const contacts = allContacts.filter((c) => !!c.source);
 
   const hasCachedContacts = contacts.length > 0;
 
@@ -61,15 +62,14 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     try {
       if (!hasCachedContacts) setLoading(true);
       setError(null);
-      // Charger contacts et projets en parallèle
-      const [contactsData, projectsData] = await Promise.all([
-        listContacts(0, 200, { hasSource: true }),
+      // Contacts via le store unique (sur-ensemble) + projets en parallèle
+      const [, projectsData] = await Promise.all([
+        fetchContacts(),
         listProjects(0, 200),
       ]);
-      setContacts(contactsData as ContactResponse[]);
       setProjects(projectsData);
       // Peupler la map de remplacement pour le mode démo
-      populateMap(contactsData, projectsData);
+      populateMap(useContactsStore.getState().contacts, projectsData);
     } catch (err: any) {
       console.error('Failed to load CRM data:', err);
       if (!hasCachedContacts) {
@@ -84,7 +84,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     try {
       setError(null);
       const updated = await updateContactStage(contactId, newStage);
-      updateContact(contactId, updated);
+      upsertLocal(updated);
     } catch (err: any) {
       console.error('Failed to update stage:', err);
       setError(err?.message || 'Impossible de mettre à jour le stage');
@@ -114,7 +114,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     try {
       setError(null);
       const newContact = await createCRMContact(data);
-      addContact(newContact);
+      upsertLocal(newContact);
       setShowCreateForm(false);
     } catch (err: any) {
       console.error('Failed to create contact:', err);
