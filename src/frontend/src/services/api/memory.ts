@@ -23,6 +23,9 @@ export interface Contact {
   last_interaction: string | null;
   created_at: string;
   updated_at: string;
+  // Scope fields (E3-05) - présents côté backend
+  scope?: string;
+  scope_id?: string | null;
   // RGPD fields (Phase 6)
   rgpd_base_legale?: string | null;
   rgpd_date_collecte?: string | null;

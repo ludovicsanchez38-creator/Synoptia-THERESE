@@ -8,6 +8,7 @@ import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
+import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface MemoryPanelProps {
@@ -22,7 +23,14 @@ type Tab = 'contacts' | 'files';
 export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: MemoryPanelProps) {
   const addNotification = useStatusStore((state) => state.addNotification);
   const [activeTab, setActiveTab] = useState<Tab>('contacts');
-  const [contacts, setContacts] = useState<api.Contact[]>([]);
+  // Contacts via le store UNIQUE (P4) ; plus de state local dupliqué.
+  const {
+    contacts,
+    searchResults,
+    fetchContacts,
+    search: searchContacts,
+    removeLocal,
+  } = useContactsStore();
   const [indexedFiles, setIndexedFiles] = useState<api.FileMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,26 +92,29 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
     if (isOpen) {
       loadData();
     }
-  }, [isOpen, scopeFilter]);
+  }, [isOpen]);
+
+  // P5 : recherche sémantique débouncée quand la requête change.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      searchContacts(searchQuery).catch(() => undefined);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchQuery, searchContacts]);
 
   async function loadData() {
     setLoading(true);
     try {
-      // E3-05: Apply scope filter
-      const scopeParams: api.ScopeFilter | undefined = scopeFilter !== 'all'
-        ? { scope: scopeFilter as MemoryScope }
-        : undefined;
-
-      const [contactsData, filesData, rgpdStatsData] = await Promise.all([
-        api.listContactsWithScope(0, 50, scopeParams),
+      // Contacts via le store unique (sur-ensemble) ; le scope est filtré côté client.
+      const [, filesData, rgpdStatsData] = await Promise.all([
+        fetchContacts(),
         api.listFiles(),
         api.getRGPDStats().catch(() => null), // RGPD stats (fail silently)
       ]);
-      setContacts(contactsData);
       setIndexedFiles(filesData);
       setRgpdStats(rgpdStatsData);
       // Peupler la map de remplacement pour le mode démo
-      populateMap(contactsData, []);
+      populateMap(useContactsStore.getState().contacts, []);
     } catch (error) {
       console.error('Failed to load memory data:', error);
     } finally {
@@ -175,7 +186,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
     setDeleteError(null);
     try {
       await api.deleteContactWithCascade(deleteConfirm.id, true);
-      setContacts(prev => prev.filter(c => c.id !== deleteConfirm.id));
+      removeLocal(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Failed to delete:', error);
@@ -185,19 +196,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
     }
   }
 
-  // Filter data based on search
-  const filteredContacts = contacts.filter(c => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      c.first_name?.toLowerCase().includes(searchLower) ||
-      c.last_name?.toLowerCase().includes(searchLower) ||
-      c.company?.toLowerCase().includes(searchLower) ||
-      c.email?.toLowerCase().includes(searchLower)
-    );
-  });
+  // P5 : pendant une recherche on affiche les résultats sémantiques (searchResults),
+  // sinon la liste complète du store. Le scope est filtré côté client.
+  const isSearching = searchQuery.trim().length > 0;
+  const baseContacts = isSearching ? (searchResults ?? []) : contacts;
+  const scopedContacts = scopeFilter === 'all'
+    ? baseContacts
+    : baseContacts.filter((c) => c.scope === scopeFilter);
 
   // Mode démo : masquer les contacts affichés
-  const displayContacts = demoEnabled ? filteredContacts.map(c => maskContact(c)) : filteredContacts;
+  const displayContacts = demoEnabled ? scopedContacts.map(c => maskContact(c)) : scopedContacts;
 
   // Handle file indexed from browser
   const handleFileIndexed = (metadata: api.FileMetadata) => {

@@ -2,11 +2,25 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryPanel } from './MemoryPanel';
 import { useStatusStore } from '../../stores/statusStore';
+import { useContactsStore } from '../../stores/contactsStore';
 
 const mockDownloadVCFFile = vi.fn();
 const mockListContactsWithScope = vi.fn();
 const mockListFiles = vi.fn();
 const mockGetRGPDStats = vi.fn();
+
+// contactsStore importe directement depuis services/api/memory : on le mocke ici
+// pour éviter un fetch réel en jsdom et garder le test déterministe.
+vi.mock('../../services/api/memory', async () => {
+  const actual = await vi.importActual<typeof import('../../services/api/memory')>(
+    '../../services/api/memory'
+  );
+  return {
+    ...actual,
+    listContacts: vi.fn().mockResolvedValue([]),
+    searchMemory: vi.fn().mockResolvedValue({ contacts: [] }),
+  };
+});
 
 vi.mock('../../services/api', async () => {
   const actual = await vi.importActual<typeof import('../../services/api')>('../../services/api');
@@ -39,6 +53,7 @@ describe('MemoryPanel export VCF', () => {
     mockListFiles.mockResolvedValue([]);
     mockGetRGPDStats.mockResolvedValue(null);
     useStatusStore.setState({ notifications: [] });
+    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null });
   });
 
   it('affiche un succès desktop quand l export est réellement sauvegardé', async () => {
