@@ -8,28 +8,17 @@ import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
 import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
-import type { PanelType } from './services/windowManager';
 import { Z_LAYER } from './styles/z-layers';
 
-// Lazy-loaded : panneaux secondaires et ecrans non-critiques (UltraJury perf)
-const PanelWindow = lazy(() => import('./components/panels/PanelWindow').then(m => ({ default: m.PanelWindow })));
+// Lazy-loaded : ecrans non-critiques (UltraJury perf)
 const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
 const SplashScreen = lazy(() => import('./components/SplashScreen').then(m => ({ default: m.SplashScreen })));
 
 // Mode production Tauri (sidecar actif) : on attend que le backend soit prêt
 const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 
-// Detecter si on est dans une fenetre panel
-function getPanelFromUrl(): PanelType | null {
-  const params = new URLSearchParams(window.location.search);
-  const panel = params.get('panel');
-  if (panel && ['email', 'calendar', 'tasks', 'invoices'].includes(panel)) {
-    return panel as PanelType;
-  }
-  return null;
-}
-
-const activePanel = getPanelFromUrl();
+// Phase 1 (revue produit) : plus de fenêtres-panels détachées. Email/Agenda/Tâches/
+// Factures/CRM/Mémoire sont des vues/panneaux de la fenêtre principale (content-swap).
 
 function App() {
   const [backendReady, setBackendReady] = useState(!IS_TAURI_PRODUCTION);
@@ -135,15 +124,6 @@ function App() {
       </div>
     </div>
   );
-
-  // Si on est dans une fenetre panel, afficher directement le panel
-  if (activePanel) {
-    return (
-      <Suspense fallback={lazyFallback}>
-        <PanelWindow panel={activePanel} />
-      </Suspense>
-    );
-  }
 
   // En production Tauri : SplashScreen pendant le démarrage du sidecar
   if (!backendReady) {

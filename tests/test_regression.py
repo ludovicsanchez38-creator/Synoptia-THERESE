@@ -3423,6 +3423,7 @@ class TestPhase1_CRMAsView:
     """Le CRM doit être une vue (content-swap), plus une fenêtre détachée."""
 
     WINDOW_MANAGER = FRONTEND / "services" / "windowManager.ts"
+    PANEL_WINDOW = FRONTEND / "components" / "panels" / "PanelWindow.tsx"
     CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
     NAV_STORE = FRONTEND / "stores" / "navigationStore.ts"
 
@@ -3432,10 +3433,13 @@ class TestPhase1_CRMAsView:
             "navigationStore doit gérer activeView + setView (routeur de vues Phase 1)"
         )
 
-    def test_crm_not_a_window(self):
-        content = self.WINDOW_MANAGER.read_text(encoding="utf-8")
-        assert "'crm'" not in content, (
-            "Le CRM ne doit plus être une fenêtre détachée (windowManager) : il est devenu une vue"
+    def test_panel_window_system_removed(self):
+        # Phase 1 L9 : plus de fenêtres-panels détachées (tout est content-swap).
+        assert not self.WINDOW_MANAGER.exists(), (
+            "Le windowManager (fenêtres-panels Tauri) doit être supprimé en Phase 1"
+        )
+        assert not self.PANEL_WINDOW.exists(), (
+            "PanelWindow (rendu des fenêtres-panels) doit être supprimé en Phase 1"
         )
 
     def test_chatlayout_uses_view_router(self):
@@ -3443,9 +3447,10 @@ class TestPhase1_CRMAsView:
         assert "useNavigationStore" in content, (
             "ChatLayout doit utiliser le navigationStore pour router les vues"
         )
-        assert "setView('crm')" in content, (
-            "Le bouton CRM doit basculer vers la vue CRM (setView), pas ouvrir une fenêtre"
-        )
+        for view in ("crm", "email", "calendar", "tasks", "invoices"):
+            assert f"setView('{view}')" in content, (
+                f"Le bouton {view} doit basculer vers la vue (setView), pas ouvrir une fenêtre"
+            )
 
 
 # ============================================================
