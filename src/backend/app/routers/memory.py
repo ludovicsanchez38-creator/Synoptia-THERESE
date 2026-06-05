@@ -627,8 +627,10 @@ async def update_contact(
     await _embed_contact(contact)
 
     # Recalculate score if relevant fields changed (Phase 5 CRM)
+    # P0-PROD-1 : si un score est fourni explicitement dans le PATCH, il prime et
+    # ne doit pas être écrasé par le recalcul automatique (override manuel).
     scoring_fields = {"email", "phone", "company", "stage", "source"}
-    if scoring_fields.intersection(update_data.keys()):
+    if "score" not in update_data and scoring_fields.intersection(update_data.keys()):
         await update_contact_score(session, contact, reason=f"update_{','.join(update_data.keys())}")
         await session.commit()
         await session.refresh(contact)

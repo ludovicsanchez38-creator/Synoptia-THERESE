@@ -139,7 +139,22 @@ class TestCRMContacts:
         assert data["company"] == "Synoptia"
         assert data["email"] == "marie@synoptia.fr"
         assert data["stage"] == "contact"
-        assert data["score"] == 50
+        # P0-PROD-1 : le score reflète désormais les données (email/phone/company/
+        # source/stage) au lieu d'un 50 figé qui rendait les contacts indistinguables.
+        from app.models.entities import Contact
+        from app.services.scoring import calculate_base_score
+
+        assert data["score"] == calculate_base_score(
+            Contact(
+                first_name="Marie",
+                company="Synoptia",
+                email="marie@synoptia.fr",
+                phone="+33612345678",
+                source="website",
+                stage="contact",
+            )
+        )
+        assert data["score"] != 50
         assert "id" in data
 
     @pytest.mark.asyncio

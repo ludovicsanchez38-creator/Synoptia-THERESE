@@ -164,6 +164,9 @@ class ContactUpdate(BaseModel):
     # CRM fields (Phase 5)
     stage: str | None = None
     source: str | None = None
+    # P0-PROD-1 : override manuel du score (sinon le PATCH du champ score était
+    # silencieusement ignoré faute de champ sur le schéma).
+    score: int | None = None
 
     # RGPD fields (Phase 6)
     rgpd_base_legale: str | None = None

@@ -6046,3 +6046,87 @@ class TestP0RGPD_FantomeVectoriel:
         # Le helper passe par app.services.qdrant.get_qdrant_service (import au call),
         # donc seul l'anonymize touche `fake` (la création passe par le mock global).
         fake.async_delete_by_entity.assert_awaited_once_with(cid)
+
+
+# ============================================================
+# REVUE PRODUIT - Passage personas 1 - Lot S (P0)
+# P0-PROD-1 : réparer le scoring CRM. Constat C8 : PATCH du champ score ignoré,
+# recalculate-score sans effet, tout figé à 60 (P6 agent immo). Un acheteur
+# chaud n'est pas distinguable d'un dossier perdu.
+# ============================================================
+
+
+class TestP0PROD_ScoringCRM:
+    """Le scoring doit refléter les données et accepter un override manuel."""
+
+    @pytest.mark.asyncio
+    async def test_create_crm_contact_calcule_le_score(self, client):
+        """Bug A : le score initial reflète email/phone/company, n'est plus figé."""
+        from app.models.entities import Contact
+        from app.services.scoring import calculate_base_score
+
+        resp = await client.post(
+            "/api/crm/contacts",
+            json={
+                "first_name": "Karim",
+                "last_name": "Benali",
+                "company": "Agence ABC",
+                "email": "karim@abc.fr",
+                "phone": "+33600000000",
+                "stage": "contact",
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        score = resp.json()["score"]
+
+        expected = calculate_base_score(
+            Contact(
+                first_name="Karim",
+                company="Agence ABC",
+                email="karim@abc.fr",
+                phone="+33600000000",
+                source="THERESE",
+                stage="contact",
+            )
+        )
+        assert score == expected, (
+            f"Le score créé ({score}) doit être calculé ({expected}), pas figé"
+        )
+        assert score != 50, "Le score ne doit plus être figé en dur à 50"
+
+    @pytest.mark.asyncio
+    async def test_patch_score_manuel_persiste(self, client):
+        """Bug B : PATCH d'un score manuel doit être appliqué et persisté."""
+        resp = await client.post(
+            "/api/crm/contacts", json={"first_name": "Sofia", "company": "X"}
+        )
+        assert resp.status_code == 200, resp.text
+        cid = resp.json()["id"]
+
+        patch = await client.patch(
+            f"/api/memory/contacts/{cid}", json={"score": 88}
+        )
+        assert patch.status_code == 200, patch.text
+        assert patch.json()["score"] == 88
+
+        got = await client.get(f"/api/memory/contacts/{cid}")
+        assert got.json()["score"] == 88, "Le score manuel doit être persisté"
+
+    @pytest.mark.asyncio
+    async def test_patch_score_manuel_non_ecrase_par_changement_de_stage(self, client):
+        """Bug C : un score fourni explicitement ne doit pas être recalculé/écrasé."""
+        resp = await client.post(
+            "/api/crm/contacts", json={"first_name": "Léa", "company": "Y"}
+        )
+        assert resp.status_code == 200, resp.text
+        cid = resp.json()["id"]
+
+        patch = await client.patch(
+            f"/api/memory/contacts/{cid}",
+            json={"score": 88, "stage": "signature"},
+        )
+        assert patch.status_code == 200, patch.text
+        assert patch.json()["score"] == 88, (
+            "Un score explicite ne doit pas être écrasé par le recalcul auto"
+        )
+        assert patch.json()["stage"] == "signature"

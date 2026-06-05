@@ -47,7 +47,7 @@ from app.services.oauth import (
     OAuthConfig,
     get_oauth_service,
 )
-from app.services.scoring import update_contact_score
+from app.services.scoring import calculate_base_score, update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -353,9 +353,12 @@ async def create_crm_contact(
         phone=request.phone.strip() if request.phone else None,
         source=source,
         stage=request.stage,
-        score=50,
         scope="global",
     )
+    # P0-PROD-1 : calculer le score depuis les données du contact (email, phone,
+    # company, stage, source) au lieu d'un 50 figé qui rendait tous les contacts
+    # indistinguables (constat C8 : "tout figé à 60").
+    contact.score = calculate_base_score(contact)
     session.add(contact)
     await session.commit()
     await session.refresh(contact)
