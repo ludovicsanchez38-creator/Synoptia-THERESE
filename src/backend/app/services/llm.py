@@ -232,6 +232,23 @@ def detect_default_ollama_model(
 class LLMService:
     """Service for LLM interactions."""
 
+    # Garde-fous factuels injectés dans tous les prompts système (revue produit,
+    # lot S). Sans eux, le chat invente l'hébergement (constat C2 : "en France",
+    # "en UE", "RAM", faux lien OpenAI) et fabrique des références de droit
+    # (constat C6 : faux articles 227-22 CP, L121-1, L441-6, NDA bidon).
+    SOVEREIGNTY_BLOCK = """## Souveraineté et hébergement des données (factuel, non négociable)
+- Le STOCKAGE de tes données est 100 % local et hors-ligne, dans le dossier `~/.therese/` sur la machine de l'utilisateur (base SQLite chiffrée + index vectoriel Qdrant + sauvegardes).
+- Aucun serveur THÉRÈSE n'existe : pas d'hébergeur, pas de cloud THÉRÈSE, aucune donnée envoyée à Synoptïa.
+- Seul le TRAITEMENT conversationnel peut sortir vers le fournisseur du modèle si un modèle cloud est choisi (ex. Mistral). Avec un modèle local (Ollama), rien ne quitte la machine.
+- N'invente JAMAIS un lieu d'hébergement (« en France », « en UE », « en RAM »...), un hébergeur ni un domaine tiers. Ne fabrique jamais d'URL ni de lien de fichier qui n'existe pas.
+- Si on te demande où sont les données, réponds factuellement ce qui précède."""
+
+    LEGAL_GUARDRAIL_BLOCK = """## Fiabilité juridique et réglementaire (anti-hallucination)
+- Pour toute référence légale, réglementaire ou normative (numéro d'article, loi, décret, taux, numéro de déclaration, SIRET, TVA, NDA, agrément), ne la cite QUE si tu en es certain.
+- Si tu n'es pas certain, écris `[à vérifier]` ou un placeholder explicite (`[numéro d'article à vérifier]`, `XX €`) plutôt qu'une valeur inventée.
+- N'invente JAMAIS un numéro d'article, de loi, de SIRET, de TVA, de NDA, de déclaration d'activité ni un taux chiffré.
+- Sur tout document à valeur juridique (devis, facture, contrat, clause, courrier), rappelle qu'une relecture humaine est requise avant signature ou dépôt."""
+
     DEFAULT_SYSTEM_PROMPT_TEMPLATE = """Tu es THÉRÈSE, une assistante IA souveraine française.
 
 ## Utilisateur
@@ -243,6 +260,8 @@ class LLMService:
 ## Ton rôle
 Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 Tu es efficace, professionnelle et tu utilises un français naturel et fluide.
+
+{guardrails}
 
 ## Style de réponse
 - Réponds de manière concise et directe. Va droit au but.
@@ -269,6 +288,8 @@ Tu aides les entrepreneurs et TPE avec leurs tâches quotidiennes.
 
 ## Date et heure actuelles
 {current_date}
+
+{guardrails}
 
 ## Style de réponse
 - Réponds de manière concise et directe. Va droit au but.
@@ -313,10 +334,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         current_date = f"{day} {month_fr} {now.strftime('%Y, %H:%M')} UTC"
         current_date_example = f"{day} {month_fr} {now.strftime('%Y')}"
 
+        # Garde-fous factuels (souveraineté + juridique), revue produit lot S
+        guardrails = f"{self.SOVEREIGNTY_BLOCK}\n\n{self.LEGAL_GUARDRAIL_BLOCK}"
+
         if not profile or not profile.name:
             # Substitution manuelle (pas .format()) pour éviter ValueError
             # si therese_md contient des accolades (JSON, code, etc.)
             prompt = self.DEFAULT_SYSTEM_PROMPT_NO_PROFILE
+            prompt = prompt.replace("{guardrails}", guardrails)
             prompt = prompt.replace("{current_date}", current_date)
             prompt = prompt.replace("{therese_md}", therese_md_section)
             return prompt
@@ -324,6 +349,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # Substitution manuelle pour éviter ValueError sur les accolades
         # dans user_identity ou therese_md (BUG OpenRouter signalé par Dr_logic-3D)
         prompt = self.DEFAULT_SYSTEM_PROMPT_TEMPLATE
+        prompt = prompt.replace("{guardrails}", guardrails)
         prompt = prompt.replace("{user_identity}", profile.format_for_llm())
         prompt = prompt.replace("{current_date}", current_date)
         prompt = prompt.replace("{current_date_example}", current_date_example)

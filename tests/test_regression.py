@@ -5921,3 +5921,57 @@ class TestBUG090VCFExport:
         assert "BUG-097" in content, (
             "Le fix doit être commenté BUG-097 pour faciliter la traçabilité"
         )
+
+
+# ============================================================
+# REVUE PRODUIT - Passage personas 1 - Lot S (P0)
+# Garde-fous prompt système : P0-IA-1 (souveraineté) + P0-IA-2 (juridique).
+# Constats C2 (l'IA bluffe sur l'hébergement : "en France", "en UE", "RAM",
+# faux lien OpenAI) et C6 (faux articles de loi 227-22 CP, L121-1, L441-6,
+# NDA inventé dans des documents à signer/déposer).
+# ============================================================
+
+
+class TestP0IA_GardesFousPromptSysteme:
+    """Le prompt système doit poser deux garde-fous factuels non négociables."""
+
+    def test_placeholder_guardrails_dans_les_deux_templates(self):
+        """P0-IA : les 2 templates de prompt câblent le bloc {guardrails}."""
+        from app.services.llm import LLMService
+
+        for tmpl in (
+            LLMService.DEFAULT_SYSTEM_PROMPT_TEMPLATE,
+            LLMService.DEFAULT_SYSTEM_PROMPT_NO_PROFILE,
+        ):
+            assert "{guardrails}" in tmpl, (
+                "Chaque template de prompt système doit référencer {guardrails} "
+                "pour porter les garde-fous souveraineté + juridique."
+            )
+
+    def test_prompt_rendu_affirme_le_stockage_local(self):
+        """P0-IA-1 : le prompt rendu affirme le stockage 100% local et nie tout serveur."""
+        from app.services.llm import LLMService
+
+        prompt = LLMService()._get_system_prompt_with_identity()
+        assert "~/.therese/" in prompt, "Le prompt doit nommer le dossier de stockage local"
+        assert "Aucun serveur THÉRÈSE n'existe" in prompt, (
+            "Le prompt doit nier explicitement l'existence d'un serveur Thérèse"
+        )
+        assert "N'invente JAMAIS un lieu d'hébergement" in prompt, (
+            "Le prompt doit interdire d'inventer un hébergeur/domaine tiers"
+        )
+
+    def test_prompt_rendu_interdit_l_hallu_juridique(self):
+        """P0-IA-2 : le prompt rendu impose les placeholders et interdit d'inventer le droit."""
+        from app.services.llm import LLMService
+
+        prompt = LLMService()._get_system_prompt_with_identity()
+        assert "[à vérifier]" in prompt, (
+            "Le prompt doit imposer le placeholder [à vérifier] pour les références incertaines"
+        )
+        assert "N'invente JAMAIS un numéro d'article" in prompt, (
+            "Le prompt doit interdire d'inventer article/SIRET/NDA/taux"
+        )
+        assert "relecture humaine" in prompt, (
+            "Le prompt doit rappeler la relecture humaine sur les documents juridiques"
+        )
