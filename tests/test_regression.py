@@ -3491,6 +3491,15 @@ class TestL6_MemoryAsView:
             "PanelContainer ne doit plus rendre le tiroir Mémoire (isOpen={showMemoryPanel})"
         )
 
+    def test_panelstore_memory_toggle_debt_removed(self):
+        # Dette soldée : plus de double chemin showMemoryPanel/toggleMemoryPanel
+        # (la Mémoire est une vue gérée par navigationStore, pas un panneau).
+        content = (FRONTEND / "stores" / "panelStore.ts").read_text(encoding="utf-8")
+        for dead in ("showMemoryPanel", "toggleMemoryPanel", "closeMemoryPanel"):
+            assert dead not in content, (
+                f"panelStore ne doit plus exposer {dead} (Mémoire = vue, pas panneau)"
+            )
+
 
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat

@@ -13,7 +13,6 @@ import * as api from '../services/api';
 // ============================================================
 
 export type PanelId =
-  | 'memory'
   | 'board'
   | 'settings'
   | 'atelier'
@@ -36,7 +35,6 @@ interface PanelState {
   showCommandPalette: boolean;
   showShortcuts: boolean;
   showSettings: boolean;
-  showMemoryPanel: boolean;
   showBoardPanel: boolean;
   showContactModal: boolean;
   showProjectModal: boolean;
@@ -60,8 +58,6 @@ interface PanelState {
   closeShortcuts: () => void;
   openSettings: () => void;
   closeSettings: () => void;
-  toggleMemoryPanel: () => void;
-  closeMemoryPanel: () => void;
   toggleBoardPanel: () => void;
   closeBoardPanel: () => void;
   toggleConversationSidebar: () => void;
@@ -95,7 +91,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   showCommandPalette: false,
   showShortcuts: false,
   showSettings: false,
-  showMemoryPanel: false,
   showBoardPanel: false,
   showContactModal: false,
   showProjectModal: false,
@@ -111,7 +106,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   togglePanel: (panel) => {
     const state = get();
     const mapping: Record<string, keyof PanelState> = {
-      memory: 'showMemoryPanel',
       board: 'showBoardPanel',
       settings: 'showSettings',
       commandPalette: 'showCommandPalette',
@@ -126,7 +120,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
 
   closePanel: (panel) => {
     const mapping: Record<string, keyof PanelState> = {
-      memory: 'showMemoryPanel',
       board: 'showBoardPanel',
       settings: 'showSettings',
       commandPalette: 'showCommandPalette',
@@ -147,7 +140,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       showCommandPalette: false,
       showShortcuts: false,
       showSettings: false,
-      showMemoryPanel: false,
       showBoardPanel: false,
       showContactModal: false,
       showProjectModal: false,
@@ -164,8 +156,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   closeShortcuts: () => set({ showShortcuts: false }),
   openSettings: () => set({ showSettings: true }),
   closeSettings: () => set({ showSettings: false }),
-  toggleMemoryPanel: () => set((s) => ({ showMemoryPanel: !s.showMemoryPanel })),
-  closeMemoryPanel: () => set({ showMemoryPanel: false }),
   toggleBoardPanel: () => set((s) => ({ showBoardPanel: !s.showBoardPanel })),
   closeBoardPanel: () => set({ showBoardPanel: false }),
   toggleConversationSidebar: () =>
@@ -208,8 +198,6 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       set({ showShortcuts: false });
     } else if (s.showSettings) {
       set({ showSettings: false });
-    } else if (s.showMemoryPanel) {
-      set({ showMemoryPanel: false });
     } else if (s.showConversationSidebar) {
       set({ showConversationSidebar: false });
     }
