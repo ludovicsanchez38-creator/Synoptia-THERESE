@@ -365,22 +365,18 @@ TAURI_LIB_RS = (
     Path(__file__).resolve().parent.parent
     / "src" / "frontend" / "src-tauri" / "src" / "lib.rs"
 )
-WINDOW_MANAGER_TS = FRONTEND / "services" / "windowManager.ts"
 MESSAGE_LIST_TSX = FRONTEND / "components" / "chat" / "MessageList.tsx"
 
 
 class TestBUG015PortMismatchPanels:
-    """Les fenêtres panels doivent recevoir le port backend via l'URL."""
+    """initApiBase() doit lire le port backend depuis le paramètre ?port= de l'URL.
 
-    def test_window_manager_passes_port(self):
-        """windowManager doit passer le port backend en paramètre URL."""
-        content = WINDOW_MANAGER_TS.read_text(encoding="utf-8")
-        assert "port=" in content, (
-            "windowManager doit passer ?port=XXXX dans l'URL du panel"
-        )
-        assert "getApiBase" in content, (
-            "windowManager doit utiliser getApiBase() pour récupérer le port courant"
-        )
+    Note (revue produit) : le test du windowManager (fenêtres-panels Tauri détachées)
+    a été retiré en Phase 1 L9 — les panels sont devenus des vues content-swap, il
+    n'y a plus de fenêtre détachée à qui passer le port dans l'URL. La suppression de
+    cette machinerie est validée par TestPhase1_CRMAsView::test_panel_window_system_removed.
+    Restent les invariants côté récepteur (core.ts), toujours valides.
+    """
 
     def test_api_core_reads_url_port(self):
         """initApiBase() doit lire le paramètre ?port= de l'URL."""
@@ -2920,44 +2916,31 @@ class TestBUG044_LinuxOnedirPyInstaller:
 
 
 class TestBUG049_CalendarDropdownOverflow:
-    """BUG-049 : Le dropdown <select> du calendrier passait derrière les autres composants.
-    Cause : overflow-hidden sur le conteneur PanelWindow clippait le menu déroulant
-    dans WebView2 (Windows) qui rend <select> via Chromium et non via l'OS.
-    Fix : supprimer overflow-hidden du conteneur h-screen w-screen de PanelWindow.
+    """BUG-049 : le dropdown <select> du calendrier passait derrière les autres composants.
+
+    Note (revue produit) : depuis la Phase 1 (vues content-swap), le calendrier n'est
+    plus rendu dans une fenêtre-panel détachée. Les anciens tests sur le conteneur de
+    PanelWindow (supprimé) ont été retirés ; l'overflow-hidden des conteneurs de vue
+    (App.tsx, ChatLayout.tsx) est légitime (discipline de scroll). Le vrai correctif
+    anti-régression reste le wrapper à fort stacking-context autour du <select>, testé
+    ci-dessous sur le code réel.
     """
 
-    PANEL_WINDOW = Path("src/frontend/src/components/panels/PanelWindow.tsx")
-
-    def test_panel_window_outer_container_has_no_overflow_hidden(self):
-        content = self.PANEL_WINDOW.read_text(encoding="utf-8")
-        # Le conteneur h-screen w-screen ne doit pas avoir overflow-hidden
-        # (il peut exister ailleurs, mais pas sur le conteneur principal des panels)
-        import re
-        # Chercher la ligne du conteneur principal des panels (après PanelErrorBoundary)
-        match = re.search(r'h-screen w-screen[^"]*overflow-hidden', content)
-        assert match is None, (
-            "PanelWindow : le conteneur h-screen w-screen ne doit pas avoir overflow-hidden "
-            "(cause le clipping du <select> calendrier dans WebView2)"
-        )
-
-    def test_panel_window_outer_container_exists_without_overflow(self):
-        content = self.PANEL_WINDOW.read_text(encoding="utf-8")
-        import re
-        # Le conteneur doit exister (h-screen w-screen bg-bg text-text)
-        match = re.search(r'className="h-screen w-screen bg-bg text-text"', content)
-        assert match is not None, (
-            "PanelWindow doit avoir un conteneur h-screen w-screen bg-bg text-text "
-            "sans overflow-hidden"
-        )
+    CALENDAR_PANEL = FRONTEND / "components" / "calendar" / "CalendarPanel.tsx"
 
     def test_calendar_select_has_zindex_wrapper(self):
-        content = Path("src/frontend/src/components/calendar/CalendarPanel.tsx").read_text(encoding="utf-8")
-        assert 'z-[100]' in content, (
-            "CalendarPanel : le <select> doit être enveloppé dans un div z-[100] "
-            "pour que le dropdown s'affiche au-dessus des autres composants"
-        )
-        assert 'relative z-[100]' in content, (
-            "Le wrapper doit avoir 'relative z-[100]' pour créer un nouveau contexte de stacking"
+        """Le <select> doit être enveloppé dans `relative ${Z_LAYER.ONBOARDING}`
+        (= z-[100]) pour créer un contexte de stacking au-dessus de la pile, robuste
+        aux overflow-hidden légitimes des conteneurs de vue.
+
+        On asserte sur le CODE réel (le template literal du className), pas sur le
+        commentaire : retirer le wrapper casserait bien le test (l'ancienne version
+        matchait 'z-[100]' présent seulement dans le commentaire = faux positif).
+        """
+        content = self.CALENDAR_PANEL.read_text(encoding="utf-8")
+        assert "relative ${Z_LAYER.ONBOARDING}" in content, (
+            "CalendarPanel : le <select> doit être enveloppé dans "
+            "`relative ${Z_LAYER.ONBOARDING}` (contexte de stacking au-dessus de la pile)"
         )
 
 
@@ -4485,24 +4468,51 @@ class TestBUG_DocxPptxXlsxGuardrails:
 
 
 class TestBUG_CommandPaletteProduire:
-    """BUG cmd-k : commande 'Produire' absente + z-index + Cmd+N textarea."""
+    """BUG cmd-k : commande 'Produire un document' accessible + z-index + Cmd+N textarea.
 
-    def test_command_palette_has_produce_command(self):
-        """CommandPalette doit contenir la commande 'Produire un document'."""
-        content = open('src/frontend/src/components/chat/CommandPalette.tsx').read()
-        assert "'produce'" in content
-        assert 'Produire un document' in content
-        assert 'onOpenGuided' in content
+    Note (revue produit) : depuis la refonte L8, la palette ⌘K dérive ses commandes
+    du registre d'actions (actionRegistry.ts) au lieu d'une liste codée en dur. L'ancien
+    'produce' / prop onOpenGuided a migré vers l'action 'guided.open' ; les invariants
+    historiques sont ré-exprimés sur le registre et le système Z_LAYER.
+    """
+
+    REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
+    COMMAND_PALETTE = FRONTEND / "components" / "chat" / "CommandPalette.tsx"
+    Z_LAYERS = FRONTEND / "styles" / "z-layers.ts"
+
+    def test_produce_document_action_in_registry(self):
+        """La production guidée de documents reste accessible (migration L8 de
+        l'ancien 'produce'/onOpenGuided vers l'action 'guided.open' du registre)."""
+        content = self.REGISTRY.read_text(encoding="utf-8")
+        assert "'guided.open'" in content, (
+            "Le registre doit exposer l'action de production guidée de documents"
+        )
+        assert "Produire un document" in content
+        # La palette dérive bien ses commandes du registre (plus de liste en dur)
+        palette = self.COMMAND_PALETTE.read_text(encoding="utf-8")
+        assert "getActions()" in palette and "runAction(" in palette
 
     def test_command_palette_z_index_above_settings(self):
-        """CommandPalette doit avoir un z-index supérieur à SettingsModal (z-50)."""
-        content = open('src/frontend/src/components/chat/CommandPalette.tsx').read()
+        """La palette doit être au-dessus des modaux (Settings = Z_LAYER.MODAL z-50).
+        Depuis le passage au système Z_LAYER, on vérifie l'usage de la couche dédiée
+        et l'ordre numérique des couches (l'ancien test cherchait un z-[N] en dur,
+        désormais absent, et passait donc à vide)."""
+        palette = self.COMMAND_PALETTE.read_text(encoding="utf-8")
+        assert "Z_LAYER.COMMAND_PALETTE" in palette, (
+            "CommandPalette doit utiliser la couche Z_LAYER.COMMAND_PALETTE"
+        )
         import re
-        # Chercher z-[N] ou z-N dans le conteneur principal de la palette
-        matches = re.findall(r'z-\[?(\d+)\]?', content)
-        if matches:
-            max_z = max(int(z) for z in matches)
-            assert max_z > 50, f"z-index max de CommandPalette doit être > 50 (trouvé : {max_z})"
+
+        layers = self.Z_LAYERS.read_text(encoding="utf-8")
+
+        def _z(name: str) -> int:
+            m = re.search(rf"{name}:\s*'z-\[?(\d+)\]?'", layers)
+            assert m is not None, f"Couche {name} introuvable dans z-layers.ts"
+            return int(m.group(1))
+
+        assert _z("COMMAND_PALETTE") > _z("MODAL"), (
+            "La palette (COMMAND_PALETTE) doit être au-dessus des modaux (MODAL/Settings)"
+        )
 
     def test_cmd_n_works_in_input_context(self):
         """Cmd+N doit être intercepté avant le garde isInput dans useKeyboardShortcuts."""
