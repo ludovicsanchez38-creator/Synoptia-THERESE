@@ -13,6 +13,7 @@ import { ChatHeader } from './ChatHeader';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { CommandPalette } from './CommandPalette';
+import { ConversationMemoryChip } from './ConversationMemoryChip';
 import { ShortcutsModal } from './ShortcutsModal';
 import { ConversationSidebar } from '../sidebar/ConversationSidebar';
 import { DropZone } from '../files/DropZone';
@@ -209,9 +210,13 @@ export function ChatLayout() {
               <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={(u, a) => ps.openSaveCommand(u, a)} onGuidedPanelChange={setGuidedPanelActive} />
             </div>
             {!guidedPanelActive && (
-              <div className="border-t border-border">
-                <ChatInput onOpenCommandPalette={ps.openCommandPalette} initialPrompt={guidedPrompt} initialSkillId={guidedSkillId} onInitialPromptConsumed={handleGuidedPromptConsumed} userCommands={userSlashCommands} />
-              </div>
+              <>
+                {/* L6 : pastille de glance « N contacts liés à cette conversation » */}
+                <ConversationMemoryChip />
+                <div className="border-t border-border">
+                  <ChatInput onOpenCommandPalette={ps.openCommandPalette} initialPrompt={guidedPrompt} initialSkillId={guidedSkillId} onInitialPromptConsumed={handleGuidedPromptConsumed} userCommands={userSlashCommands} />
+                </div>
+              </>
             )}
           </>
         )}

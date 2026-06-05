@@ -10,6 +10,7 @@ import { UserPlus, FolderPlus, Check, X, Loader2 } from 'lucide-react';
 import type { ExtractedContact, ExtractedProject } from '../../services/api';
 import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
+import { useChatStore } from '../../stores/chatStore';
 
 interface EntitySuggestionProps {
   contacts: ExtractedContact[];
@@ -121,6 +122,10 @@ export function EntitySuggestion({
     const lastName = nameParts.slice(1).join(' ') || null;
 
     // Via le store unique : le contact créé est immédiatement visible Mémoire ET CRM (P4).
+    // L6 (pastille de contexte) : on rattache le contact né dans le chat à sa
+    // conversation (scope=conversation). Il reste visible dans « Tout » (le listing
+    // par défaut ne filtre pas le scope) et alimente la pastille « N contacts liés ».
+    const conversationId = useChatStore.getState().currentConversationId;
     await useContactsStore.getState().createContact({
       first_name: firstName,
       last_name: lastName,
@@ -128,6 +133,7 @@ export function EntitySuggestion({
       email: contact.email,
       phone: contact.phone,
       notes: contact.role ? `Role: ${contact.role}` : null,
+      ...(conversationId ? { scope: 'conversation', scope_id: conversationId } : {}),
     });
 
     setRemainingContacts((prev) => prev.filter((c) => c.name !== contact.name));
