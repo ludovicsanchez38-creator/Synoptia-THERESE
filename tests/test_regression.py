@@ -5975,3 +5975,74 @@ class TestP0IA_GardesFousPromptSysteme:
         assert "relecture humaine" in prompt, (
             "Le prompt doit rappeler la relecture humaine sur les documents juridiques"
         )
+
+
+# ============================================================
+# REVUE PRODUIT - Passage personas 1 - Lot S (P0)
+# P0-RGPD-1 : purger le fantôme vectoriel à l'anonymisation Art. 17.
+# Constat C4 : la fiche [ANONYMISÉ] remonte encore en recherche sémantique
+# car l'embedding Qdrant n'était jamais supprimé (P6, P7 à 0,74, P9 à 0,69).
+# ============================================================
+
+
+class TestP0RGPD_FantomeVectoriel:
+    """L'anonymisation doit supprimer l'embedding Qdrant du contact."""
+
+    @pytest.mark.asyncio
+    async def test_helper_purge_contact_vector_supprime_le_vecteur(self, monkeypatch):
+        """Le helper appelle async_delete_by_entity et retourne le nombre purgé."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        import app.services.qdrant as qmod
+        from app.services.rgpd_auto import purge_contact_vector
+
+        fake = MagicMock()
+        fake.async_delete_by_entity = AsyncMock(return_value=2)
+        monkeypatch.setattr(qmod, "get_qdrant_service", lambda: fake)
+
+        deleted = await purge_contact_vector("contact-xyz")
+
+        fake.async_delete_by_entity.assert_awaited_once_with("contact-xyz")
+        assert deleted == 2
+
+    @pytest.mark.asyncio
+    async def test_helper_purge_best_effort_si_qdrant_plante(self, monkeypatch):
+        """Une panne Qdrant ne doit pas faire échouer l'anonymisation (best effort)."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        import app.services.qdrant as qmod
+        from app.services.rgpd_auto import purge_contact_vector
+
+        fake = MagicMock()
+        fake.async_delete_by_entity = AsyncMock(side_effect=RuntimeError("qdrant down"))
+        monkeypatch.setattr(qmod, "get_qdrant_service", lambda: fake)
+
+        # Ne doit pas lever, et retourne 0
+        assert await purge_contact_vector("contact-xyz") == 0
+
+    @pytest.mark.asyncio
+    async def test_anonymize_endpoint_purge_le_vecteur(self, client, monkeypatch):
+        """POST /api/rgpd/anonymize/{id} déclenche la purge du vecteur Qdrant."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        import app.services.qdrant as qmod
+
+        fake = MagicMock()
+        fake.async_delete_by_entity = AsyncMock(return_value=1)
+        monkeypatch.setattr(qmod, "get_qdrant_service", lambda: fake)
+
+        resp = await client.post(
+            "/api/memory/contacts",
+            json={"first_name": "Karim", "last_name": "Benali", "email": "karim@x.fr"},
+        )
+        assert resp.status_code == 200, resp.text
+        cid = resp.json()["id"]
+
+        anon = await client.post(
+            f"/api/rgpd/anonymize/{cid}", json={"reason": "Demande du client"}
+        )
+        assert anon.status_code == 200, anon.text
+
+        # Le helper passe par app.services.qdrant.get_qdrant_service (import au call),
+        # donc seul l'anonymize touche `fake` (la création passe par le mock global).
+        fake.async_delete_by_entity.assert_awaited_once_with(cid)

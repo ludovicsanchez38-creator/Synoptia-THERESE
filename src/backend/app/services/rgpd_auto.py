@@ -22,6 +22,25 @@ logger = logging.getLogger(__name__)
 DEFAULT_RETENTION_MONTHS = 36
 
 
+async def purge_contact_vector(contact_id: str) -> int:
+    """Supprime l'embedding Qdrant d'un contact (droit à l'oubli, Art. 17).
+
+    Sans cette purge, la fiche anonymisée [ANONYMISÉ] continue de remonter en
+    recherche sémantique au même score (constat C4 de la revue produit) :
+    l'effacement reste incomplet et la faille RGPD est démontrable.
+
+    Best effort : une panne Qdrant ne doit pas faire échouer l'anonymisation
+    déjà actée en base. On journalise et on renvoie 0 le cas échéant.
+    """
+    try:
+        from app.services.qdrant import get_qdrant_service
+
+        return await get_qdrant_service().async_delete_by_entity(contact_id)
+    except Exception as e:
+        logger.warning(f"RGPD: échec purge vecteur Qdrant pour {contact_id}: {e}")
+        return 0
+
+
 async def _get_purge_retention_months() -> int:
     """Récupère la durée de rétention configurée (préférence utilisateur)."""
     try:
@@ -142,6 +161,7 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 results["notifications"] += 1
 
             # Anonymisation le jour J
+            anonymized_ids: list[str] = []
             for contact in contacts_to_purge:
                 # Vérifier qu'on n'a pas déjà notifié l'anonymisation
                 existing = await session.execute(
@@ -186,9 +206,16 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                     action_label="Voir",
                 )
                 session.add(notif)
+                anonymized_ids.append(contact.id)
                 results["anonymisations"] += 1
 
             await session.commit()
+
+        # Purge du fantôme vectoriel (P0-RGPD-1) hors session SQL : même droit à
+        # l'oubli que l'anonymisation manuelle, sinon la fiche [ANONYMISÉ]
+        # resterait indexée dans Qdrant.
+        for cid in anonymized_ids:
+            await purge_contact_vector(cid)
 
         total = results["notifications"] + results["anonymisations"]
         if total > 0:

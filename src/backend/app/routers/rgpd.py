@@ -229,7 +229,16 @@ async def anonymize_contact(
 
     await session.commit()
 
-    logger.info(f"RGPD anonymization for contact {contact_id}: {request.reason}")
+    # Purge du fantôme vectoriel (P0-RGPD-1) : sans ça, la fiche [ANONYMISÉ]
+    # remonte encore en recherche sémantique au même score (constat C4).
+    from app.services.rgpd_auto import purge_contact_vector
+
+    purged = await purge_contact_vector(contact_id)
+
+    logger.info(
+        f"RGPD anonymization for contact {contact_id}: {request.reason} "
+        f"({purged} vecteur(s) purgé(s))"
+    )
 
     return RGPDAnonymizeResponse(
         success=True,
