@@ -57,6 +57,10 @@ const InvoicesPanel = lazy(() =>
 const MemoryPanel = lazy(() =>
   import('../memory/MemoryPanel').then((m) => ({ default: m.MemoryPanel }))
 );
+// Arbitrage A/B : l'indexation de fichiers sort de la Mémoire en vue dédiée.
+const FileBrowser = lazy(() =>
+  import('../files/FileBrowser').then((m) => ({ default: m.FileBrowser }))
+);
 
 // Préférence utilisateur : skip dashboard au lancement
 const PREF_SKIP_DASHBOARD = 'therese-skip-dashboard';
@@ -209,6 +213,11 @@ export function ChatLayout() {
               {activeView === 'invoices' && <InvoicesPanel standalone />}
               {activeView === 'memory' && (
                 <MemoryPanel standalone onNewContact={ps.openNewContact} onEditContact={ps.openEditContact} />
+              )}
+              {activeView === 'files' && (
+                <div className="flex-1 overflow-auto p-4">
+                  <FileBrowser />
+                </div>
               )}
             </Suspense>
           </div>

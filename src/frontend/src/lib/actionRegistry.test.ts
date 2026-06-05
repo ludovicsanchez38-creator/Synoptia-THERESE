@@ -44,6 +44,11 @@ describe('actionRegistry (L8 - registre d\'actions invocable)', () => {
     expect(useNavigationStore.getState().activeView).toBe('crm');
   });
 
+  it("runAction('files.open') bascule sur la vue Indexation (arbitrage A/B)", () => {
+    runAction('files.open');
+    expect(useNavigationStore.getState().activeView).toBe('files');
+  });
+
   it("runAction('contact.new') ouvre la modale de contact", () => {
     runAction('contact.new');
     expect(usePanelStore.getState().showContactModal).toBe(true);

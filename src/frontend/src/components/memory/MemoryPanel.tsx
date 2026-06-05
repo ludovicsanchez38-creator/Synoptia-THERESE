@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Plus, Search, ChevronRight, FolderOpen, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw } from 'lucide-react';
+import { X, Users, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
-import { FileBrowser } from '../files/FileBrowser';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
@@ -20,13 +19,10 @@ interface MemoryPanelProps {
   standalone?: boolean;
 }
 
-type Tab = 'contacts' | 'files';
-
 export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, standalone = false }: MemoryPanelProps) {
   // En standalone (vue), le panneau est toujours « ouvert » et charge ses données.
   const effectiveOpen = standalone || !!isOpen;
   const addNotification = useStatusStore((state) => state.addNotification);
-  const [activeTab, setActiveTab] = useState<Tab>('contacts');
   // Contacts via le store UNIQUE (P4) ; plus de state local dupliqué.
   const {
     contacts,
@@ -35,7 +31,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     search: searchContacts,
     removeLocal,
   } = useContactsStore();
-  const [indexedFiles, setIndexedFiles] = useState<api.FileMetadata[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // E3-05: Scope filter state
@@ -110,12 +105,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     setLoading(true);
     try {
       // Contacts via le store unique (sur-ensemble) ; le scope est filtré côté client.
-      const [, filesData, rgpdStatsData] = await Promise.all([
+      const [, rgpdStatsData] = await Promise.all([
         fetchContacts(),
-        api.listFiles(),
         api.getRGPDStats().catch(() => null), // RGPD stats (fail silently)
       ]);
-      setIndexedFiles(filesData);
       setRgpdStats(rgpdStatsData);
       // Peupler la map de remplacement pour le mode démo
       populateMap(useContactsStore.getState().contacts, []);
@@ -211,18 +204,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   // Mode démo : masquer les contacts affichés
   const displayContacts = demoEnabled ? scopedContacts.map(c => maskContact(c)) : scopedContacts;
 
-  // Handle file indexed from browser
-  const handleFileIndexed = (metadata: api.FileMetadata) => {
-    setIndexedFiles(prev => {
-      // Update if exists, add if new
-      const exists = prev.find(f => f.id === metadata.id);
-      if (exists) {
-        return prev.map(f => f.id === metadata.id ? metadata : f);
-      }
-      return [metadata, ...prev];
-    });
-  };
-
   const panelBody = (
     <>
             {/* Header */}
@@ -235,34 +216,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
               )}
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-border/50">
-              <button
-                onClick={() => setActiveTab('contacts')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'contacts'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                Contacts ({contacts.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('files')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'files'
-                    ? 'text-accent-cyan border-b-2 border-accent-cyan'
-                    : 'text-text-muted hover:text-text'
-                }`}
-              >
-                <FolderOpen className="w-4 h-4" />
-                Fichiers ({indexedFiles.length})
-              </button>
-            </div>
+            {/* Arbitrage A/B : Fichiers sortis en vue Indexation dédiée.
+                La Mémoire ne contient plus que les Contacts (un seul sujet, pas d'onglets). */}
 
-            {/* Search + Scope Filter - only for contacts */}
-            {activeTab === 'contacts' && (
+            {/* Search + Scope Filter */}
+            {(
               <div className="p-3 border-b border-border/30 space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -295,7 +253,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             )}
 
             {/* RGPD Alert Banner */}
-            {activeTab === 'contacts' && rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
+            {rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
               <div className="mx-3 mt-3 p-2.5 rounded-lg bg-orange-500/10 border border-orange-500/30">
                 <div className="flex items-center gap-2 text-sm text-orange-400">
                   <Shield className="w-4 h-4 flex-shrink-0" />
@@ -312,7 +270,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                 <div className="flex items-center justify-center h-32">
                   <div className="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
                 </div>
-              ) : activeTab === 'contacts' ? (
+              ) : (
                 <ContactsList
                   contacts={displayContacts}
                   onSelect={(c) => onEditContact?.(c)}
@@ -325,11 +283,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     });
                   }}
                   onRGPDAction={(type, contact) => setRgpdAction({ type, contact })}
-                />
-              ) : (
-                <FileBrowser
-                  onFileIndex={handleFileIndexed}
-                  onFileSelect={(f) => console.log('Selected file:', f)}
                 />
               )}
             </div>
@@ -541,8 +494,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
               )}
             </AnimatePresence>
 
-            {/* Footer - Add button (contacts only) */}
-            {activeTab === 'contacts' && (
+            {/* Footer - Add button */}
+            {(
               <div className="p-3 border-t border-border/50 space-y-2">
                 <Button
                   variant="primary"

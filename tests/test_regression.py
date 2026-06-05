@@ -3590,6 +3590,41 @@ class TestL8_ActionRegistry:
         )
 
 
+class TestArbitrage_FilesView:
+    """Arbitrage A/B (2026-06-05) : on GARDE la Mémoire, on sort seulement les
+    Fichiers en vue 'Indexation' dédiée. Contacts/RGPD/recherche restent en Mémoire."""
+
+    NAV_STORE = FRONTEND / "stores" / "navigationStore.ts"
+    REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
+    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
+
+    def test_files_is_an_app_view(self):
+        content = self.NAV_STORE.read_text(encoding="utf-8")
+        assert "'files'" in content, "navigationStore doit connaître la vue 'files' (Indexation)"
+
+    def test_files_action_in_registry(self):
+        content = self.REGISTRY.read_text(encoding="utf-8")
+        assert "files.open" in content and "setView('files')" in content, (
+            "Le registre doit exposer une action d'ouverture de l'Indexation"
+        )
+
+    def test_chatlayout_routes_files_view(self):
+        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+        assert "activeView === 'files'" in content and "FileBrowser" in content, (
+            "ChatLayout doit rendre la vue Indexation (FileBrowser)"
+        )
+
+    def test_memory_no_longer_hosts_files(self):
+        content = self.MEMORY_PANEL.read_text(encoding="utf-8")
+        assert "FileBrowser" not in content, (
+            "MemoryPanel ne doit plus héberger FileBrowser (Fichiers sortis en vue dédiée)"
+        )
+        assert "'contacts' | 'files'" not in content, (
+            "MemoryPanel ne doit plus avoir d'onglet 'files'"
+        )
+
+
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.

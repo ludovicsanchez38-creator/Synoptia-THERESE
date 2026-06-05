@@ -15,7 +15,8 @@ export type AppView =
   | 'email'
   | 'calendar'
   | 'tasks'
-  | 'invoices';
+  | 'invoices'
+  | 'files'; // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
 
 interface NavigationStore {
   activeView: AppView;
