@@ -70,12 +70,9 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
     fetchCommands();
   }, [fetchCommands]);
 
-  // Écouter l'événement d'ouverture de la bibliothèque de prompts (depuis CommandPalette)
-  useEffect(() => {
-    const handler = () => setShowPromptLibrary(true);
-    window.addEventListener('therese:open-prompt-library', handler);
-    return () => window.removeEventListener('therese:open-prompt-library', handler);
-  }, []);
+  // (KO Syn 2.2) La bibliothèque de prompts est désormais montée globalement
+  // (PanelContainer + panelStore) pour être accessible depuis ⌘K partout.
+  // Le bouton « home » ci-dessous garde son ouverture locale.
 
   const homeCommands = useMemo(() => {
     return commands.filter((c) => c.show_on_home);

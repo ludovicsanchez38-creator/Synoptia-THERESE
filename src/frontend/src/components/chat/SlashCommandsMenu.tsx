@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useCommandsStore } from '../../stores/commandsStore';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 
 /** Map icon name (string from backend) to Lucide component */
@@ -195,19 +196,24 @@ export function SlashCommandsMenu({
             onSelect(filteredCommands[selectedIndex]);
           }
           break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
+        // Échap : géré par la pile unifiée (resolveEscape via escapeStack, correctif
+        // KO Syn 1.3) ; ne plus le traiter ici sinon il ferme aussi la sidebar.
       }
     },
-    [isOpen, selectedIndex, filteredCommands, onIndexChange, onSelect, onClose]
+    [isOpen, selectedIndex, filteredCommands, onIndexChange, onSelect]
   );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  // Le menu slash s'inscrit sur la pile d'Échap : Échap le ferme via resolveEscape
+  // sans effet de bord (sidebar) — correctif KO Syn 1.3.
+  useEffect(() => {
+    if (!isOpen) return;
+    return pushEscapeHandler(onClose);
+  }, [isOpen, onClose]);
 
   if (!isOpen || filteredCommands.length === 0) return null;
 

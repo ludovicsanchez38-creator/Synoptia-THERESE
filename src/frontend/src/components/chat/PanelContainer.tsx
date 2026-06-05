@@ -30,6 +30,11 @@ const BoardPanel = lazy(() =>
 const AtelierPanel = lazy(() =>
   import('../atelier/AtelierPanel').then((m) => ({ default: m.AtelierPanel }))
 );
+// Correctif KO Syn 2.2 : la bibliothèque de prompts vivait dans HomeCommands
+// (chat home only) -> morte depuis ⌘K ailleurs. On la monte globalement.
+const PromptLibrary = lazy(() =>
+  import('../prompts/PromptLibrary').then((m) => ({ default: m.PromptLibrary }))
+);
 
 import { Z_LAYER } from '../../styles/z-layers';
 
@@ -44,6 +49,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
     showProjectModal,
     showBoardPanel,
     showSaveCommand,
+    showPromptLibrary,
     editingContact,
     editingProject,
     saveCommandData,
@@ -52,6 +58,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
     closeProjectModal,
     closeBoardPanel,
     closeSaveCommand,
+    closePromptLibrary,
   } = usePanelStore();
 
   const handleMemorySaved = useCallback(() => {
@@ -117,6 +124,24 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
 
         {/* Atelier - Agents IA Embarqués */}
         <AtelierPanel />
+
+        {/* Bibliothèque de prompts globale (KO Syn 2.2) : accessible depuis ⌘K partout */}
+        {showPromptLibrary && (
+          <div
+            className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
+            onClick={closePromptLibrary}
+          >
+            <div className="w-full max-w-3xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+              <PromptLibrary
+                onSelectPrompt={(text) => {
+                  closePromptLibrary();
+                  window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: text }));
+                }}
+                onClose={closePromptLibrary}
+              />
+            </div>
+          </div>
+        )}
       </Suspense>
 
       {/* Modal Sauvegarder comme raccourci */}

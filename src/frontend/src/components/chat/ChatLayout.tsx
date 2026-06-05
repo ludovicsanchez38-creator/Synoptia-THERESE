@@ -86,12 +86,19 @@ export function ChatLayout() {
 
   useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
 
-  // L8 : l'action « Produire un document » (registre/⌘K) est découplée via un
-  // événement window. On expose aussi runAction pour l'appel bas niveau
-  // (debug / test / futur pont Thérèse, suggestion Dr_logic).
+  // Insertion d'un prompt dans le chat depuis ailleurs (⌘K « Produire un document »,
+  // bibliothèque de prompts) — correctif KO Syn 2.1/2.2 : ramène au chat et pré-remplit.
+  // Expose aussi runAction pour l'appel bas niveau (debug / test / pont Thérèse, Dr_logic).
   useEffect(() => {
-    const onGuided = () => setGuidedPanelActive(false);
-    window.addEventListener('therese:open-guided', onGuided);
+    const onInsertPrompt = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (typeof text !== 'string') return;
+      useNavigationStore.getState().setView('chat');
+      setGuidedSkillId(undefined);
+      setGuidedPrompt(text);
+      setGuidedPanelActive(false);
+    };
+    window.addEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
     (window as unknown as { __therese?: unknown }).__therese = {
       runAction,
       getActions,
@@ -105,7 +112,7 @@ export function ChatLayout() {
         contacts: useContactsStore,
       },
     };
-    return () => window.removeEventListener('therese:open-guided', onGuided);
+    return () => window.removeEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
   }, []);
 
   // Si l'utilisateur a déjà des messages dans la conversation courante, pas de dashboard

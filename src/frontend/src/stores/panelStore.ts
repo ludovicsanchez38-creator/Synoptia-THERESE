@@ -35,6 +35,7 @@ interface PanelState {
   showCommandPalette: boolean;
   showShortcuts: boolean;
   showSettings: boolean;
+  showPromptLibrary: boolean;
   showBoardPanel: boolean;
   showContactModal: boolean;
   showProjectModal: boolean;
@@ -58,6 +59,8 @@ interface PanelState {
   closeShortcuts: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openPromptLibrary: () => void;
+  closePromptLibrary: () => void;
   toggleBoardPanel: () => void;
   closeBoardPanel: () => void;
   toggleConversationSidebar: () => void;
@@ -88,6 +91,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   showCommandPalette: false,
   showShortcuts: false,
   showSettings: false,
+  showPromptLibrary: false,
   showBoardPanel: false,
   showContactModal: false,
   showProjectModal: false,
@@ -153,6 +157,8 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   closeShortcuts: () => set({ showShortcuts: false }),
   openSettings: () => set({ showSettings: true }),
   closeSettings: () => set({ showSettings: false }),
+  openPromptLibrary: () => set({ showPromptLibrary: true }),
+  closePromptLibrary: () => set({ showPromptLibrary: false }),
   toggleBoardPanel: () => set((s) => ({ showBoardPanel: !s.showBoardPanel })),
   closeBoardPanel: () => set({ showBoardPanel: false }),
   toggleConversationSidebar: () =>

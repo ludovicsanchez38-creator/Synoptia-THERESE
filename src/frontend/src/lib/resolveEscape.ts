@@ -15,8 +15,14 @@ import { usePanelStore } from '../stores/panelStore';
 import { useAtelierStore } from '../stores/atelierStore';
 import { useActionsStore } from '../stores/actionsStore';
 import { useNavigationStore } from '../stores/navigationStore';
+import { runTopEscapeHandler } from './escapeStack';
 
 export function resolveEscape(): void {
+  // 0. Overlays internes aux vues / menu slash (state local, pas dans un store) :
+  // ils interceptent Échap AVANT le retour de vue (sinon Échap éjecte la vue sous
+  // le modal — KO Syn 1.1/1.2 — ou ferme la sidebar en plus du menu — KO 1.3).
+  if (runTopEscapeHandler()) return;
+
   const ps = usePanelStore.getState();
 
   // 1. Overlays modaux, du plus en avant au moins en avant.

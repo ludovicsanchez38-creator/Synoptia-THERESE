@@ -30,9 +30,11 @@ export interface AppAction {
   run: () => void;
 }
 
-/** Émet un événement window pour les actions qui dépendent d'un état local de vue. */
-function emit(name: string): void {
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event(name));
+/** Insère un prompt de départ dans le chat (correctif KO Syn 2.1 « Produire un document »). */
+function insertChatPrompt(text: string): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: text }));
+  }
 }
 
 const nav = () => useNavigationStore.getState();
@@ -44,8 +46,8 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'chat.new', label: 'Nouvelle conversation', description: 'Démarrer une nouvelle conversation', group: 'Chat', shortcut: 'N', run: () => chat().createConversation() },
   { id: 'chat.clear', label: 'Effacer la conversation', description: 'Supprimer tous les messages', group: 'Chat', keywords: ['vider', 'reset'], run: () => chat().clearCurrentConversation() },
   { id: 'conversations.toggle', label: 'Conversations', description: 'Ouvrir la liste des conversations', group: 'Chat', shortcut: 'B', run: () => panel().toggleConversationSidebar() },
-  { id: 'guided.open', label: 'Produire un document', description: 'Générer DOCX, PPTX ou XLSX (Skills Office)', group: 'Chat', keywords: ['docx', 'pptx', 'xlsx', 'office'], run: () => emit('therese:open-guided') },
-  { id: 'prompt-library.open', label: 'Bibliothèque de prompts', description: 'Modèles de prompts prêts à l\'emploi', group: 'Chat', keywords: ['modèles', 'templates'], run: () => emit('therese:open-prompt-library') },
+  { id: 'guided.open', label: 'Produire un document', description: 'Générer DOCX, PPTX ou XLSX (Skills Office)', group: 'Chat', keywords: ['docx', 'pptx', 'xlsx', 'office'], run: () => { nav().setView('chat'); insertChatPrompt('Aide-moi à produire un document (DOCX, PPTX ou XLSX) : '); } },
+  { id: 'prompt-library.open', label: 'Bibliothèque de prompts', description: 'Modèles de prompts prêts à l\'emploi', group: 'Chat', keywords: ['modèles', 'templates'], run: () => panel().openPromptLibrary() },
 
   // -- Mémoire --
   { id: 'memory.open', label: 'Ouvrir la Mémoire', description: 'Contacts, projets, fichiers', group: 'Mémoire', shortcut: 'M', keywords: ['contacts', 'projets'], run: () => nav().setView('memory') },

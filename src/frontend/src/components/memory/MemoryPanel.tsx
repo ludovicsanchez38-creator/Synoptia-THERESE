@@ -8,6 +8,7 @@ import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
 import { useContactsStore } from '../../stores/contactsStore';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface MemoryPanelProps {
@@ -100,6 +101,22 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     }, 250);
     return () => clearTimeout(t);
   }, [searchQuery, searchContacts]);
+
+  // Correctif KO Syn 1.1/1.2 : quand un modal destructif (suppression / RGPD) est
+  // ouvert, Échap doit le fermer LUI, pas éjecter la vue Mémoire. On l'inscrit sur
+  // la pile d'Échap (interceptée avant le retour de vue par resolveEscape).
+  useEffect(() => {
+    if (!deleteConfirm && !rgpdAction) return;
+    return pushEscapeHandler(() => {
+      if (rgpdAction) {
+        setRgpdAction(null);
+        setAnonymizeReason('');
+      } else {
+        setDeleteConfirm(null);
+        setDeleteError(null);
+      }
+    });
+  }, [deleteConfirm, rgpdAction]);
 
   async function loadData() {
     setLoading(true);

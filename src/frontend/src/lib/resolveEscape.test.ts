@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { resolveEscape } from './resolveEscape';
+import { pushEscapeHandler, _clearEscapeHandlers } from './escapeStack';
 import { usePanelStore } from '../stores/panelStore';
 import { useAtelierStore } from '../stores/atelierStore';
 import { useActionsStore } from '../stores/actionsStore';
@@ -19,10 +20,20 @@ function resetStores() {
   useAtelierStore.setState({ isOpen: false });
   useActionsStore.setState({ isPanelOpen: false });
   useNavigationStore.setState({ activeView: 'chat', history: [] });
+  _clearEscapeHandlers();
 }
 
 describe('resolveEscape (pile Échap/retour unifiée L7)', () => {
   beforeEach(resetStores);
+
+  it("un overlay interne de vue (pile) intercepte Échap AVANT le retour de vue (KO Syn 1.1/1.2)", () => {
+    useNavigationStore.setState({ activeView: 'memory', history: ['chat'] });
+    const closeModal = vi.fn();
+    pushEscapeHandler(closeModal);
+    resolveEscape();
+    expect(closeModal).toHaveBeenCalledTimes(1); // le modal se ferme
+    expect(useNavigationStore.getState().activeView).toBe('memory'); // la vue NE part PAS
+  });
 
   it('ferme un overlay panelStore ouvert (et ne revient pas en arrière)', () => {
     useNavigationStore.setState({ activeView: 'crm', history: ['chat'] });

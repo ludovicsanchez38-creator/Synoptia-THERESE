@@ -8,6 +8,7 @@ beforeEach(() => {
   useNavigationStore.setState({ activeView: 'chat', history: [] });
   usePanelStore.setState({
     showSettings: false,
+    showPromptLibrary: false,
     showBoardPanel: false,
     showContactModal: false,
     showProjectModal: false,
@@ -68,11 +69,17 @@ describe('actionRegistry (L8 - registre d\'actions invocable)', () => {
     expect(runAction('does.not.exist')).toBe(false);
   });
 
-  it("les actions contextuelles passent par un événement window (découplage ChatLayout)", () => {
+  it("'guided.open' ramène au chat et insère un prompt de départ (KO Syn 2.1)", () => {
     const handler = vi.fn();
-    window.addEventListener('therese:open-guided', handler);
+    window.addEventListener('therese:insert-prompt', handler);
     expect(runAction('guided.open')).toBe(true);
+    expect(useNavigationStore.getState().activeView).toBe('chat');
     expect(handler).toHaveBeenCalledTimes(1);
-    window.removeEventListener('therese:open-guided', handler);
+    window.removeEventListener('therese:insert-prompt', handler);
+  });
+
+  it("'prompt-library.open' ouvre la bibliothèque globale (KO Syn 2.2)", () => {
+    expect(runAction('prompt-library.open')).toBe(true);
+    expect(usePanelStore.getState().showPromptLibrary).toBe(true);
   });
 });

@@ -3625,6 +3625,42 @@ class TestArbitrage_FilesView:
         )
 
 
+class TestSynKO_NavFixes:
+    """Correctifs des KO trouvés par Syn (2e regard navigateur adversarial)."""
+
+    ESCAPE_STACK = FRONTEND / "lib" / "escapeStack.ts"
+    RESOLVE_ESCAPE = FRONTEND / "lib" / "resolveEscape.ts"
+    MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
+    SLASH_MENU = FRONTEND / "components" / "chat" / "SlashCommandsMenu.tsx"
+    PANEL_CONTAINER = FRONTEND / "components" / "chat" / "PanelContainer.tsx"
+    REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
+
+    def test_escape_stack_used_by_resolve_escape(self):
+        # KO 1.1/1.2/1.3 : les overlays internes de vue interceptent Échap d'abord.
+        assert "runTopEscapeHandler" in self.RESOLVE_ESCAPE.read_text(encoding="utf-8")
+        assert "pushEscapeHandler" in self.ESCAPE_STACK.read_text(encoding="utf-8")
+
+    def test_memory_modals_register_escape(self):
+        # KO 1.1/1.2 : suppression / RGPD ne doivent plus éjecter la vue.
+        assert "pushEscapeHandler" in self.MEMORY_PANEL.read_text(encoding="utf-8")
+
+    def test_slash_menu_uses_escape_stack_not_local(self):
+        content = self.SLASH_MENU.read_text(encoding="utf-8")
+        assert "pushEscapeHandler" in content, "Le menu slash doit passer par la pile d'Échap"
+        assert "case 'Escape'" not in content, (
+            "KO 1.3 : le menu slash ne doit plus traiter Échap localement (fermait la sidebar)"
+        )
+
+    def test_prompt_library_mounted_globally(self):
+        # KO 2.2 : la bibliothèque de prompts doit être accessible depuis ⌘K partout.
+        assert "PromptLibrary" in self.PANEL_CONTAINER.read_text(encoding="utf-8")
+        assert "openPromptLibrary" in self.REGISTRY.read_text(encoding="utf-8")
+
+    def test_guided_inserts_chat_prompt(self):
+        # KO 2.1 : « Produire un document » ne doit plus être mort.
+        assert "insert-prompt" in self.REGISTRY.read_text(encoding="utf-8")
+
+
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
