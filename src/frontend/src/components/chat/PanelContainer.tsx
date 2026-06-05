@@ -14,9 +14,7 @@ import { listUserCommands, createUserCommand, type UserCommand } from '../../ser
 import type { SlashCommand } from './SlashCommandsMenu';
 
 // Lazy-loaded panels (UltraJury perf: réduire le bundle initial)
-const MemoryPanel = lazy(() =>
-  import('../memory/MemoryPanel').then((m) => ({ default: m.MemoryPanel }))
-);
+// L6 : MemoryPanel n'est plus un tiroir ici, c'est une vue rendue par ChatLayout.
 const ContactModal = lazy(() =>
   import('../memory/ContactModal').then((m) => ({ default: m.ContactModal }))
 );
@@ -41,7 +39,6 @@ interface PanelContainerProps {
 
 export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
   const {
-    showMemoryPanel,
     showSettings,
     showContactModal,
     showProjectModal,
@@ -50,14 +47,11 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
     editingContact,
     editingProject,
     saveCommandData,
-    closeMemoryPanel,
     closeSettings,
     closeContactModal,
     closeProjectModal,
     closeBoardPanel,
     closeSaveCommand,
-    openNewContact,
-    openEditContact,
   } = usePanelStore();
 
   const handleMemorySaved = useCallback(() => {
@@ -99,14 +93,6 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
           </div>
         }
       >
-        {/* Memory Panel (sidebar) */}
-        <MemoryPanel
-          isOpen={showMemoryPanel}
-          onClose={closeMemoryPanel}
-          onNewContact={openNewContact}
-          onEditContact={openEditContact}
-        />
-
         {/* Settings Modal */}
         <SettingsModal isOpen={showSettings} onClose={closeSettings} />
 

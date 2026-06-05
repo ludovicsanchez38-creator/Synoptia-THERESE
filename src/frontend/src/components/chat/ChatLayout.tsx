@@ -50,6 +50,10 @@ const TasksPanel = lazy(() =>
 const InvoicesPanel = lazy(() =>
   import('../invoices').then((m) => ({ default: m.InvoicesPanel }))
 );
+// L6 : la Mémoire devient une vue de la zone principale (plus un tiroir overlay).
+const MemoryPanel = lazy(() =>
+  import('../memory/MemoryPanel').then((m) => ({ default: m.MemoryPanel }))
+);
 
 // Préférence utilisateur : skip dashboard au lancement
 const PREF_SKIP_DASHBOARD = 'therese-skip-dashboard';
@@ -106,6 +110,13 @@ export function ChatLayout() {
   const handleToggleTasks = useCallback(() => useNavigationStore.getState().setView('tasks'), []);
   const handleToggleInvoices = useCallback(() => useNavigationStore.getState().setView('invoices'), []);
   const handleToggleCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
+  // L6 : la Mémoire est une vue. ⌘M garde une sémantique « toggle » :
+  // déjà sur la vue Mémoire -> retour, sinon -> bascule vers la vue Mémoire.
+  const handleToggleMemory = useCallback(() => {
+    const nav = useNavigationStore.getState();
+    if (nav.activeView === 'memory') nav.goBack();
+    else nav.setView('memory');
+  }, []);
   const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
 
   // Cmd+Shift+K : ouvrir l'Atelier en mode chat local
@@ -125,7 +136,7 @@ export function ChatLayout() {
     onNewConversation: handleNewConversation,
     onShowShortcuts: ps.openShortcuts,
     onEscape: ps.handleEscape,
-    onToggleMemoryPanel: ps.toggleMemoryPanel,
+    onToggleMemoryPanel: handleToggleMemory,
     onNewContact: ps.openNewContact,
     onNewProject: ps.openNewProject,
     onOpenSettings: ps.openSettings,
@@ -139,7 +150,9 @@ export function ChatLayout() {
     onToggleAtelierPanel: toggleAtelier,
     onToggleDemoMode: toggleDemo,
     onOpenKatiaNewTask: handleOpenAtelierChat,
-    onSearch: () => usePanelStore.getState().togglePanel('memory'),
+    // L6 : ⌘K « Rechercher » bascule vers la vue Mémoire (fini le faux ami
+    // qui ouvrait le tiroir). La vraie recherche globale relève de L8 (⌘K).
+    onSearch: handleToggleMemory,
     onOpenFile: () => console.log('Open file'),
   });
 
@@ -149,10 +162,10 @@ export function ChatLayout() {
     <div className="h-full flex flex-col relative">
       <DropZone isDragging={isDragging} />
       <SideToggle side="left" isOpen={ps.showConversationSidebar} onClick={ps.toggleConversationSidebar} label="Conversations" shortcut={isMac ? '⌘B' : 'Ctrl+B'} />
-      <SideToggle side="right" isOpen={ps.showMemoryPanel} onClick={ps.toggleMemoryPanel} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
+      <SideToggle side="right" isOpen={activeView === 'memory'} onClick={handleToggleMemory} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
       <header role="banner" aria-label="Barre d'outils Therese">
-        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={ps.toggleMemoryPanel} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={handleToggleMemory} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
@@ -181,6 +194,9 @@ export function ChatLayout() {
               {activeView === 'calendar' && <CalendarPanel standalone />}
               {activeView === 'tasks' && <TasksPanel standalone />}
               {activeView === 'invoices' && <InvoicesPanel standalone />}
+              {activeView === 'memory' && (
+                <MemoryPanel standalone onNewContact={ps.openNewContact} onEditContact={ps.openEditContact} />
+              )}
             </Suspense>
           </div>
         ) : showDashboard ? (
@@ -201,7 +217,7 @@ export function ChatLayout() {
         )}
       </main>
 
-      <CommandPalette isOpen={ps.showCommandPalette} onClose={ps.closeCommandPalette} onShowShortcuts={ps.openShortcuts} onNewContact={ps.openNewContact} onNewProject={ps.openNewProject} onOpenSettings={ps.openSettings} onToggleConversations={ps.toggleConversationSidebar} onToggleMemory={ps.toggleMemoryPanel} onToggleBoard={ps.toggleBoardPanel} onToggleEmail={handleToggleEmail} onToggleCalendar={handleToggleCalendar} onToggleTasks={handleToggleTasks} onToggleInvoices={handleToggleInvoices} onToggleCRM={handleToggleCRM} onSearch={() => usePanelStore.getState().togglePanel('memory')} onOpenFile={() => console.log('Open file')} onOpenGuided={() => setGuidedPanelActive(false)} onOpenPromptLibrary={() => window.dispatchEvent(new Event("therese:open-prompt-library"))} />
+      <CommandPalette isOpen={ps.showCommandPalette} onClose={ps.closeCommandPalette} onShowShortcuts={ps.openShortcuts} onNewContact={ps.openNewContact} onNewProject={ps.openNewProject} onOpenSettings={ps.openSettings} onToggleConversations={ps.toggleConversationSidebar} onToggleMemory={handleToggleMemory} onToggleBoard={ps.toggleBoardPanel} onToggleEmail={handleToggleEmail} onToggleCalendar={handleToggleCalendar} onToggleTasks={handleToggleTasks} onToggleInvoices={handleToggleInvoices} onToggleCRM={handleToggleCRM} onSearch={handleToggleMemory} onOpenFile={() => console.log('Open file')} onOpenGuided={() => setGuidedPanelActive(false)} onOpenPromptLibrary={() => window.dispatchEvent(new Event("therese:open-prompt-library"))} />
       <ShortcutsModal isOpen={ps.showShortcuts} onClose={ps.closeShortcuts} />
       <aside role="complementary" aria-label="Conversations">
         <ConversationSidebar isOpen={ps.showConversationSidebar} onClose={ps.closeConversationSidebar} />

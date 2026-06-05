@@ -3454,6 +3454,45 @@ class TestPhase1_CRMAsView:
 
 
 # ============================================================
+# L6 (revue produit) - La Mémoire devient une VUE content-swap
+# (verdict panel UX/UI : docs/revue-produit/L6-decision-ux-panel.md)
+# Plus un tiroir overlay : une vue de la zone principale comme les 5 autres.
+# ============================================================
+
+
+class TestL6_MemoryAsView:
+    """La Mémoire doit être une vue (content-swap), plus un tiroir overlay."""
+
+    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    PANEL_CONTAINER = FRONTEND / "components" / "chat" / "PanelContainer.tsx"
+    MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
+
+    def test_memory_panel_supports_standalone(self):
+        content = self.MEMORY_PANEL.read_text(encoding="utf-8")
+        assert "standalone" in content, (
+            "MemoryPanel doit accepter un prop standalone (rendu vue plein écran)"
+        )
+
+    def test_chatlayout_routes_memory_view(self):
+        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+        assert "setView('memory')" in content, (
+            "Le déclencheur Mémoire doit basculer vers la vue (setView('memory'))"
+        )
+        assert "activeView === 'memory'" in content, (
+            "Le routeur de ChatLayout doit rendre la vue Mémoire"
+        )
+        assert "<MemoryPanel standalone" in content, (
+            "ChatLayout doit rendre MemoryPanel en standalone dans la zone principale"
+        )
+
+    def test_memory_drawer_removed_from_panelcontainer(self):
+        content = self.PANEL_CONTAINER.read_text(encoding="utf-8")
+        assert "isOpen={showMemoryPanel}" not in content, (
+            "PanelContainer ne doit plus rendre le tiroir Mémoire (isOpen={showMemoryPanel})"
+        )
+
+
+# ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
 # ============================================================
