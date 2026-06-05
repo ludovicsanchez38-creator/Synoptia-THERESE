@@ -215,11 +215,33 @@ export async function deleteProjectWithCascade(
 }
 
 // Memory Search
+/**
+ * Un résultat de recherche mémoire (forme réelle renvoyée par le backend).
+ * Avant : searchMemory était typé `{ contacts? }` mais renvoyait `{ results }`,
+ * donc `res.contacts` était toujours undefined -> moitié sémantique morte en UI
+ * (régression trouvée par Syn). On expose désormais la vraie forme.
+ */
+export interface MemorySearchHit {
+  id: string;
+  entity_type: string; // 'contact' | 'project' | ...
+  title: string;
+  content: string;
+  score: number;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface MemorySearchResponse {
+  query: string;
+  results: MemorySearchHit[];
+  total: number;
+  search_time_ms: number;
+}
+
 export async function searchMemory(
   query: string,
   types: string[] = ['contacts', 'projects']
-): Promise<{ contacts?: Contact[]; projects?: Project[] }> {
-  return request('/api/memory/search', {
+): Promise<MemorySearchResponse> {
+  return request<MemorySearchResponse>('/api/memory/search', {
     method: 'POST',
     body: JSON.stringify({ query, types }),
   });

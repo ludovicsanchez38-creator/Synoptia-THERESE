@@ -21,6 +21,9 @@ import { useContactsStore } from './contactsStore';
 const makeContact = (over: Partial<Contact> = {}): Contact =>
   ({ id: 'c1', first_name: 'Jean', last_name: 'Dupont', ...over } as Contact);
 
+// Un hit de recherche mémoire (forme réelle du backend : results[], pas contacts[]).
+const hit = (id: string) => ({ id, entity_type: 'contact', title: '', content: '', score: 0.5 });
+
 describe('contactsStore', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -82,23 +85,32 @@ describe('contactsStore', () => {
   });
 
   it('search("q") fusionne filtre local (nom/email) + résultats sémantiques (sans doublon)', async () => {
-    useContactsStore.setState({ contacts: [makeContact({ id: 'c1', first_name: 'Jean' })] });
-    // Le sémantique renvoie un autre contact + le même c1 (doublon à dédupliquer)
-    vi.mocked(searchMemory).mockResolvedValueOnce({
-      contacts: [makeContact({ id: 'c3', first_name: 'Autre' }), makeContact({ id: 'c1', first_name: 'Jean' })],
+    // Les deux contacts sont dans le store ; le sémantique renvoie des IDS (results[]).
+    useContactsStore.setState({
+      contacts: [makeContact({ id: 'c1', first_name: 'Jean' }), makeContact({ id: 'c3', first_name: 'Autre' })],
     });
+    vi.mocked(searchMemory).mockResolvedValueOnce({ query: 'jean', total: 2, search_time_ms: 1, results: [hit('c3'), hit('c1')] });
     await useContactsStore.getState().search('jean');
     expect(searchMemory).toHaveBeenCalledWith('jean', ['contacts']);
     const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
-    expect(ids).toEqual(['c1', 'c3']); // c1 (local d'abord) puis c3 (sémantique), c1 non dupliqué
+    expect(ids).toEqual(['c1', 'c3']); // c1 (local d'abord) puis c3 (sémantique résolu du store), c1 non dupliqué
   });
 
   it('search trouve par le NOM via le filtre local même si le sémantique renvoie vide (régression Syn P5)', async () => {
     useContactsStore.setState({ contacts: [makeContact({ id: 'cR', first_name: 'Revue', last_name: 'BrowserTest' })] });
-    vi.mocked(searchMemory).mockResolvedValueOnce({ contacts: [] }); // sémantique ne matche pas
+    vi.mocked(searchMemory).mockResolvedValueOnce({ query: 'Revue', total: 0, search_time_ms: 1, results: [] });
     await useContactsStore.getState().search('Revue');
     const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
     expect(ids).toContain('cR'); // le contact reste trouvable par son nom
+  });
+
+  it('remonte un contact trouvé par le SÉMANTIQUE même si le nom ne matche pas le filtre local (moitié sémantique vivante, régression Syn)', async () => {
+    useContactsStore.setState({ contacts: [makeContact({ id: 'cS', first_name: 'Jean', last_name: 'Dupont' })] });
+    // 'plombier' ne matche pas le nom localement, mais le sémantique le remonte.
+    vi.mocked(searchMemory).mockResolvedValueOnce({ query: 'plombier', total: 1, search_time_ms: 1, results: [hit('cS')] });
+    await useContactsStore.getState().search('plombier');
+    const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
+    expect(ids).toContain('cS');
   });
 
   it('search reste utilisable si le sémantique ÉCHOUE (repli sur le filtre local, pas de throw)', async () => {

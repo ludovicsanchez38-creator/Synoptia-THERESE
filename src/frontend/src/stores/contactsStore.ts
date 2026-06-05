@@ -97,8 +97,16 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
     const local = get().contacts.filter((c) => contactMatchesQuery(c, q));
     try {
       const res = await apiSearchMemory(q, ['contacts']);
-      // Hybride : matches locaux d'abord, puis résultats sémantiques non déjà présents.
-      set({ searchResults: mergeContactsById(local, res.contacts ?? []), loading: false });
+      // Le backend renvoie des HITS (id + entity_type), pas des contacts complets.
+      // On résout les hits 'contact' en contacts complets via le store (sinon la
+      // moitié sémantique est morte en UI, régression trouvée par Syn).
+      const byId = new Map(get().contacts.map((c) => [c.id, c]));
+      const semantic = (res.results ?? [])
+        .filter((r) => r.entity_type === 'contact')
+        .map((r) => byId.get(r.id))
+        .filter((c): c is Contact => !!c);
+      // Hybride : matches locaux d'abord, puis hits sémantiques non déjà présents.
+      set({ searchResults: mergeContactsById(local, semantic), loading: false });
     } catch {
       // Sémantique indisponible : la recherche reste utilisable via le filtre local.
       set({ searchResults: local, loading: false });
