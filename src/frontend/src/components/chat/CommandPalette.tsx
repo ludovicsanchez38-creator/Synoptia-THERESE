@@ -19,16 +19,14 @@ import {
   ListTodo,
   Receipt,
   BarChart3,
-  FileText,
   Search as SearchIcon,
   Sparkles,
   BookOpen,
   Play,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useActionsStore } from '../../stores/actionsStore';
 import { useUXMode } from '../../hooks/useUXMode';
-import { useChatStore } from '../../stores/chatStore';
+import { getActions, runAction } from '../../lib/actionRegistry';
 import { Z_LAYER } from '../../styles/z-layers';
 
 export interface Command {
@@ -40,51 +38,39 @@ export interface Command {
   action: () => void;
   category: 'chat' | 'memory' | 'panels' | 'settings';
   contributeurOnly?: boolean;
+  keywords?: string[];
 }
+
+// L8 : la palette ⌘K affiche le registre d'actions. Le registre est sans JSX
+// (invocable hors React) ; la palette mappe id -> icône ici.
+const ACTION_ICONS: Record<string, React.ReactNode> = {
+  'chat.new': <MessageSquarePlus className="w-4 h-4" />,
+  'chat.clear': <Trash2 className="w-4 h-4" />,
+  'conversations.toggle': <PanelLeft className="w-4 h-4" />,
+  'guided.open': <Sparkles className="w-4 h-4" />,
+  'prompt-library.open': <BookOpen className="w-4 h-4" />,
+  'memory.open': <PanelRight className="w-4 h-4" />,
+  'memory.search': <SearchIcon className="w-4 h-4" />,
+  'contact.new': <UserPlus className="w-4 h-4" />,
+  'project.new': <FolderPlus className="w-4 h-4" />,
+  'crm.open': <BarChart3 className="w-4 h-4" />,
+  'email.open': <Mail className="w-4 h-4" />,
+  'calendar.open': <Calendar className="w-4 h-4" />,
+  'tasks.open': <ListTodo className="w-4 h-4" />,
+  'invoices.open': <Receipt className="w-4 h-4" />,
+  'board.open': <Gavel className="w-4 h-4" />,
+  'actions.open': <Play className="w-4 h-4 text-cyan-400" />,
+  'data.export': <Download className="w-4 h-4" />,
+  'settings.open': <Settings className="w-4 h-4" />,
+  'shortcuts.open': <Keyboard className="w-4 h-4" />,
+};
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  onShowShortcuts: () => void;
-  onNewContact?: () => void;
-  onNewProject?: () => void;
-  onOpenSettings?: () => void;
-  onToggleConversations?: () => void;
-  onToggleMemory?: () => void;
-  onToggleBoard?: () => void;
-  onToggleEmail?: () => void;
-  onToggleCalendar?: () => void;
-  onToggleTasks?: () => void;
-  onToggleInvoices?: () => void;
-  onToggleCRM?: () => void;
-  onSearch?: () => void;
-  onOpenFile?: () => void;
-  onOpenGuided?: () => void;
-  onOpenPromptLibrary?: () => void;
-  onExportData?: () => void;
 }
 
-export function CommandPalette({
-  isOpen,
-  onClose,
-  onShowShortcuts,
-  onNewContact,
-  onNewProject,
-  onOpenSettings,
-  onToggleConversations,
-  onToggleMemory,
-  onToggleBoard,
-  onToggleEmail,
-  onToggleCalendar,
-  onToggleTasks,
-  onToggleInvoices,
-  onToggleCRM,
-  onSearch,
-  onOpenFile,
-  onOpenGuided,
-  onOpenPromptLibrary,
-  onExportData,
-}: CommandPaletteProps) {
+export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,196 +78,25 @@ export function CommandPalette({
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
   const { isContributeur } = useUXMode();
 
-  const { createConversation, clearCurrentConversation } = useChatStore();
-
   // Détection plateforme pour affichage raccourcis (⌘ sur Mac, Ctrl sur Windows/Linux)
   const mod = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
 
   const commands = useMemo<Command[]>(
-    () => [
-      // -- Chat --
-      {
-        id: 'new-conversation',
-        name: 'Nouvelle conversation',
-        description: 'Démarrer une nouvelle conversation',
-        icon: <MessageSquarePlus className="w-4 h-4" />,
-        shortcut: `${mod}N`,
-        action: () => { createConversation(); onClose(); },
-        category: 'chat',
-      },
-      {
-        id: 'clear-conversation',
-        name: 'Effacer conversation',
-        description: 'Supprimer tous les messages',
-        icon: <Trash2 className="w-4 h-4" />,
-        action: () => { clearCurrentConversation(); onClose(); },
-        category: 'chat',
-      },
-      {
-        id: 'conversations',
-        name: 'Conversations',
-        description: 'Ouvrir la sidebar des conversations',
-        icon: <PanelLeft className="w-4 h-4" />,
-        shortcut: `${mod}B`,
-        action: () => { onClose(); onToggleConversations?.(); },
-        category: 'chat',
-      },
-      {
-        id: 'produce',
-        name: 'Produire un document',
-        description: 'Générer DOCX, PPTX ou XLSX avec les Skills Office',
-        icon: <Sparkles className="w-4 h-4" />,
-        action: () => { onClose(); onOpenGuided?.(); },
-        category: 'chat',
-      },
-            {
-        id: 'prompt-library',
-        name: 'Bibliothèque de prompts',
-        description: 'Modèles de prompts prêts à l\'emploi',
-        icon: <BookOpen className="w-4 h-4" />,
-        action: () => { onClose(); onOpenPromptLibrary?.(); },
-        category: 'chat',
-      },
-      // -- Mémoire --
-      {
-        id: 'memory',
-        name: 'Espace de travail',
-        description: 'Ouvrir contacts, projets, fichiers',
-        icon: <PanelRight className="w-4 h-4" />,
-        shortcut: `${mod}M`,
-        action: () => { onClose(); onToggleMemory?.(); },
-        category: 'memory',
-      },
-      {
-        id: 'add-contact',
-        name: 'Ajouter un contact',
-        description: 'Créer un nouveau contact en mémoire',
-        icon: <UserPlus className="w-4 h-4" />,
-        action: () => { onClose(); onNewContact?.(); },
-        category: 'memory',
-      },
-      {
-        id: 'add-project',
-        name: 'Ajouter un projet',
-        description: 'Créer un nouveau projet en mémoire',
-        icon: <FolderPlus className="w-4 h-4" />,
-        action: () => { onClose(); onNewProject?.(); },
-        category: 'memory',
-      },
-      {
-        id: 'search-memory',
-        name: 'Rechercher en mémoire',
-        description: 'Chercher dans contacts, projets, fichiers',
-        icon: <SearchIcon className="w-4 h-4" />,
-        shortcut: `${mod}⇧F`,
-        action: () => { onClose(); onSearch?.(); },
-        category: 'memory',
-      },
-      {
-        id: 'open-file',
-        name: 'Ouvrir un fichier',
-        description: 'Parcourir et indexer des fichiers',
-        icon: <FileText className="w-4 h-4" />,
-        shortcut: `${mod}O`,
-        action: () => { onClose(); onOpenFile?.(); },
-        category: 'memory',
-      },
-      // -- Panels --
-      {
-        id: 'board',
-        name: 'Board de décision',
-        description: 'Convoquer le board de conseillers IA',
-        icon: <Gavel className="w-4 h-4" />,
-        shortcut: `${mod}D`,
-        action: () => { onClose(); onToggleBoard?.(); },
-        category: 'panels',
-      },
-      {
-        id: 'email',
-        name: 'Email',
-        description: 'Ouvrir la boîte email',
-        icon: <Mail className="w-4 h-4" />,
-        shortcut: `${mod}E`,
-        action: () => { onClose(); onToggleEmail?.(); },
-        category: 'panels',
-      },
-      {
-        id: 'calendar',
-        name: 'Calendrier',
-        description: 'Ouvrir le calendrier',
-        icon: <Calendar className="w-4 h-4" />,
-        shortcut: `${mod}⇧C`,
-        action: () => { onClose(); onToggleCalendar?.(); },
-        category: 'panels',
-      },
-      {
-        id: 'tasks',
-        name: 'Tâches',
-        description: 'Ouvrir les tâches et todos',
-        icon: <ListTodo className="w-4 h-4" />,
-        shortcut: `${mod}T`,
-        action: () => { onClose(); onToggleTasks?.(); },
-        category: 'panels',
-      },
-      {
-        id: 'invoices',
-        name: 'Factures',
-        description: 'Ouvrir les factures et devis',
-        icon: <Receipt className="w-4 h-4" />,
-        shortcut: `${mod}I`,
-        action: () => { onClose(); onToggleInvoices?.(); },
-        category: 'panels',
-      },
-      {
-        id: 'crm',
-        name: 'CRM Pipeline',
-        description: 'Ouvrir le pipeline commercial',
-        icon: <BarChart3 className="w-4 h-4" />,
-        shortcut: `${mod}P`,
-        action: () => { onClose(); onToggleCRM?.(); },
-        category: 'panels',
-      },
-      // -- Settings --
-      {
-        id: 'export-data',
-        name: 'Exporter les données',
-        description: 'Télécharger un backup de ta mémoire',
-        icon: <Download className="w-4 h-4" />,
-        action: () => { onClose(); onExportData?.(); },
-        category: 'settings',
-      },
-      {
-        id: 'settings',
-        name: 'Paramètres',
-        description: 'Configurer THÉRÈSE',
-        icon: <Settings className="w-4 h-4" />,
-        shortcut: `${mod},`,
-        action: () => { onClose(); onOpenSettings?.(); },
-        category: 'settings',
-      },
-      {
-        id: 'shortcuts',
-        name: 'Raccourcis clavier',
-        description: 'Voir tous les raccourcis',
-        icon: <Keyboard className="w-4 h-4" />,
-        shortcut: `${mod}/`,
-        action: () => { onClose(); onShowShortcuts(); },
-        category: 'settings',
-      },
-      // -- Actions --
-      {
-        id: 'actions',
-        name: 'Actions',
-        description: 'Lancer un agent actionnable (rapport, relance, audit...)',
-        icon: <Play className="w-4 h-4 text-cyan-400" />,
-        action: () => { onClose(); useActionsStore.getState().openPanel(); },
-        category: 'panels',
-      },
-    ],
-    [createConversation, clearCurrentConversation, onClose, onShowShortcuts,
-     onNewContact, onNewProject, onOpenSettings, onToggleConversations,
-     onToggleMemory, onToggleBoard, onToggleEmail, onToggleCalendar,
-     onToggleTasks, onToggleInvoices, onToggleCRM, onSearch, onOpenFile, onOpenGuided, onExportData]
+    () =>
+      getActions().map((a) => ({
+        id: a.id,
+        name: a.label,
+        description: a.description ?? '',
+        icon: ACTION_ICONS[a.id] ?? <Sparkles className="w-4 h-4" />,
+        shortcut: a.shortcut ? `${mod}${a.shortcut}` : undefined,
+        category: 'panels' as const,
+        keywords: a.keywords,
+        action: () => {
+          onClose();
+          runAction(a.id);
+        },
+      })),
+    [mod, onClose]
   );
 
   const filteredCommands = useMemo(() => {
@@ -295,7 +110,8 @@ export function CommandPalette({
     return available.filter(
       (cmd) =>
         cmd.name.toLowerCase().includes(q) ||
-        cmd.description.toLowerCase().includes(q)
+        cmd.description.toLowerCase().includes(q) ||
+        (cmd.keywords ?? []).some((k) => k.toLowerCase().includes(q))
     );
   }, [commands, query, isContributeur]);
 

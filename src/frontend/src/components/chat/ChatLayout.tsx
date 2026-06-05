@@ -28,6 +28,7 @@ import { useAtelierStore } from '../../stores/atelierStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { resolveEscape } from '../../lib/resolveEscape';
+import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
 
@@ -78,6 +79,16 @@ export function ChatLayout() {
   const goBack = useNavigationStore((s) => s.goBack);
 
   useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
+
+  // L8 : l'action « Produire un document » (registre/⌘K) est découplée via un
+  // événement window. On expose aussi runAction pour l'appel bas niveau
+  // (debug / test / futur pont Thérèse, suggestion Dr_logic).
+  useEffect(() => {
+    const onGuided = () => setGuidedPanelActive(false);
+    window.addEventListener('therese:open-guided', onGuided);
+    (window as unknown as { __therese?: unknown }).__therese = { runAction, getActions };
+    return () => window.removeEventListener('therese:open-guided', onGuided);
+  }, []);
 
   // Si l'utilisateur a déjà des messages dans la conversation courante, pas de dashboard
   useEffect(() => {
@@ -223,7 +234,7 @@ export function ChatLayout() {
         )}
       </main>
 
-      <CommandPalette isOpen={ps.showCommandPalette} onClose={ps.closeCommandPalette} onShowShortcuts={ps.openShortcuts} onNewContact={ps.openNewContact} onNewProject={ps.openNewProject} onOpenSettings={ps.openSettings} onToggleConversations={ps.toggleConversationSidebar} onToggleMemory={handleToggleMemory} onToggleBoard={ps.toggleBoardPanel} onToggleEmail={handleToggleEmail} onToggleCalendar={handleToggleCalendar} onToggleTasks={handleToggleTasks} onToggleInvoices={handleToggleInvoices} onToggleCRM={handleToggleCRM} onSearch={handleToggleMemory} onOpenFile={() => console.log('Open file')} onOpenGuided={() => setGuidedPanelActive(false)} onOpenPromptLibrary={() => window.dispatchEvent(new Event("therese:open-prompt-library"))} />
+      <CommandPalette isOpen={ps.showCommandPalette} onClose={ps.closeCommandPalette} />
       <ShortcutsModal isOpen={ps.showShortcuts} onClose={ps.closeShortcuts} />
       <aside role="complementary" aria-label="Conversations">
         <ConversationSidebar isOpen={ps.showConversationSidebar} onClose={ps.closeConversationSidebar} />

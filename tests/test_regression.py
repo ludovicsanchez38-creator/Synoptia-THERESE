@@ -3562,6 +3562,34 @@ class TestL7_UnifiedEscape:
         )
 
 
+class TestL8_ActionRegistry:
+    """L8 : registre d'actions invocable (⌘K + runAction bas niveau, idée Dr_logic)."""
+
+    REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
+    COMMAND_PALETTE = FRONTEND / "components" / "chat" / "CommandPalette.tsx"
+    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+
+    def test_registry_exposes_run_action(self):
+        content = self.REGISTRY.read_text(encoding="utf-8")
+        assert "export function runAction" in content
+        assert "export function getActions" in content
+        assert "APP_ACTIONS" in content
+
+    def test_command_palette_reads_from_registry(self):
+        content = self.COMMAND_PALETTE.read_text(encoding="utf-8")
+        assert "getActions()" in content, (
+            "La palette ⌘K doit dériver ses commandes du registre (getActions), "
+            "plus de liste codée en dur"
+        )
+        assert "runAction(" in content
+
+    def test_chatlayout_exposes_run_action_low_level(self):
+        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+        assert "__therese" in content and "runAction" in content, (
+            "ChatLayout doit exposer runAction (appel bas niveau, suggestion Dr_logic)"
+        )
+
+
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.
