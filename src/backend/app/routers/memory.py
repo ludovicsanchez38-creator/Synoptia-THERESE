@@ -322,6 +322,9 @@ def _contact_to_response(contact: Contact) -> ContactResponse:
         score=contact.score,
         source=contact.source,
         last_interaction=contact.last_interaction,
+        # Scope (L6)
+        scope=contact.scope,
+        scope_id=contact.scope_id,
         # RGPD fields (Phase 6)
         rgpd_base_legale=contact.rgpd_base_legale,
         rgpd_date_collecte=contact.rgpd_date_collecte,
@@ -386,6 +389,9 @@ async def create_contact(
         # CRM fields (Phase 5)
         stage=request.stage,
         source=request.source,
+        # Scope (L6) : rattachement conversation/projet (defaut global si non fourni)
+        scope=request.scope or "global",
+        scope_id=request.scope_id,
     )
     session.add(contact)
     await session.commit()

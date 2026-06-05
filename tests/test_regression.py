@@ -3501,6 +3501,41 @@ class TestL6_MemoryAsView:
             )
 
 
+class TestL6_ContactScopeRoundtrip:
+    """L6 pastille : le scope d'un contact doit round-tripper (create accepte, response expose).
+
+    Bug trouvé en vérif d'intégration : ContactCreate/ContactResponse n'avaient pas
+    scope/scope_id, donc le scope était jeté à la création ET jamais renvoyé -> le
+    filtre 'Conv.' de la Mémoire et la pastille de glance ne pouvaient pas fonctionner.
+    """
+
+    MEMORY_ROUTER = SRC / "app" / "routers" / "memory.py"
+
+    def test_contact_create_accepts_scope(self):
+        from app.models.schemas import ContactCreate
+
+        c = ContactCreate(first_name="X", scope="conversation", scope_id="conv-1")
+        assert c.scope == "conversation"
+        assert c.scope_id == "conv-1"
+
+    def test_contact_response_exposes_scope(self):
+        from app.models.schemas import ContactResponse
+
+        assert "scope" in ContactResponse.model_fields, (
+            "ContactResponse doit exposer scope (sinon filtre Conv. + pastille L6 cassés)"
+        )
+        assert "scope_id" in ContactResponse.model_fields
+
+    def test_create_handler_persists_and_exposes_scope(self):
+        content = self.MEMORY_ROUTER.read_text(encoding="utf-8")
+        assert "scope=request.scope" in content, (
+            "create_contact doit persister le scope reçu (round-trip L6)"
+        )
+        assert "scope=contact.scope" in content, (
+            "_contact_to_response doit exposer le scope du contact (round-trip L6)"
+        )
+
+
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.

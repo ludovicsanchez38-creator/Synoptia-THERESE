@@ -144,6 +144,10 @@ class ContactCreate(BaseModel):
     stage: str = "contact"
     source: str | None = None
 
+    # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
+    scope: str | None = None  # global | project | conversation (defaut global cote modele)
+    scope_id: str | None = None
+
 
 class ContactUpdate(BaseModel):
     """Update contact request."""
@@ -186,6 +190,10 @@ class ContactResponse(BaseModel):
     score: int
     source: str | None
     last_interaction: datetime | None
+
+    # Scope (L6 revue produit) : expose le rattachement pour les filtres et la pastille.
+    scope: str = "global"
+    scope_id: str | None = None
 
     # RGPD fields (Phase 6)
     rgpd_base_legale: str | None = None
