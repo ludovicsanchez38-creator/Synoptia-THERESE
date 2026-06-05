@@ -6,7 +6,7 @@
  */
 
 /** URL de base du backend (port fixe 17293) */
-export let API_BASE = 'http://127.0.0.1:17293';
+export let API_BASE = 'http://127.0.0.1:17393';
 
 /**
  * Singleton : une seule promesse d'init partagée entre toutes les fenêtres/appels.
