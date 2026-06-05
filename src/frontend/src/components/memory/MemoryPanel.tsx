@@ -12,15 +12,19 @@ import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface MemoryPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
   onNewContact?: () => void;
   onEditContact?: (contact: api.Contact) => void;
+  /** Mode vue plein écran (content-swap L6) : pas de backdrop ni de tiroir fixe. */
+  standalone?: boolean;
 }
 
 type Tab = 'contacts' | 'files';
 
-export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: MemoryPanelProps) {
+export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, standalone = false }: MemoryPanelProps) {
+  // En standalone (vue), le panneau est toujours « ouvert » et charge ses données.
+  const effectiveOpen = standalone || !!isOpen;
   const addNotification = useStatusStore((state) => state.addNotification);
   const [activeTab, setActiveTab] = useState<Tab>('contacts');
   // Contacts via le store UNIQUE (P4) ; plus de state local dupliqué.
@@ -89,10 +93,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
 
   // Load data when panel opens or scope changes
   useEffect(() => {
-    if (isOpen) {
+    if (effectiveOpen) {
       loadData();
     }
-  }, [isOpen]);
+  }, [effectiveOpen]);
 
   // P5 : recherche sémantique débouncée quand la requête change.
   useEffect(() => {
@@ -219,36 +223,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
     });
   };
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            variants={overlayVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.2 }}
-            className={`fixed inset-0 bg-black/40 backdrop-blur-sm ${Z_LAYER.BACKDROP}`}
-            onClick={onClose}
-          />
-
-          {/* Panel */}
-          <motion.div
-            variants={sidebarVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            data-testid="memory-panel"
-            className={`fixed right-0 top-0 bottom-0 w-[420px] bg-surface border-l border-border ${Z_LAYER.MODAL} flex flex-col shadow-2xl`}
-          >
+  const panelBody = (
+    <>
             {/* Header */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-border/50">
               <h2 className="text-lg font-semibold text-text">Mémoire</h2>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="w-5 h-5" />
-              </Button>
+              {!standalone && (
+                <Button variant="ghost" size="icon" onClick={onClose}>
+                  <X className="w-5 h-5" />
+                </Button>
+              )}
             </div>
 
             {/* Tabs */}
@@ -598,6 +582,46 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact }: Me
                 </div>
               </div>
             )}
+    </>
+  );
+
+  // Mode vue plein écran (L6) : pas de backdrop, pas de tiroir fixe.
+  // `relative` pour que les modaux internes (suppression, RGPD) en `absolute inset-0`
+  // restent cadrés sur la vue.
+  if (standalone) {
+    return (
+      <div className="relative h-full flex flex-col bg-bg" data-testid="memory-panel">
+        {panelBody}
+      </div>
+    );
+  }
+
+  // Mode tiroir (legacy / overlay)
+  return (
+    <AnimatePresence>
+      {effectiveOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+            className={`fixed inset-0 bg-black/40 backdrop-blur-sm ${Z_LAYER.BACKDROP}`}
+            onClick={onClose}
+          />
+
+          {/* Panel */}
+          <motion.div
+            variants={sidebarVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            data-testid="memory-panel"
+            className={`fixed right-0 top-0 bottom-0 w-[420px] bg-surface border-l border-border ${Z_LAYER.MODAL} flex flex-col shadow-2xl`}
+          >
+            {panelBody}
           </motion.div>
         </>
       )}

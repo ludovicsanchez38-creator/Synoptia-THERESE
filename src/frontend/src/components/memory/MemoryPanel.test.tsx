@@ -116,3 +116,36 @@ describe('MemoryPanel export VCF', () => {
     });
   });
 });
+
+// L6 (revue produit) : la Mémoire devient une VUE plein écran (content-swap),
+// au même titre que CRM/Email/Agenda/Tâches/Factures. En mode `standalone`,
+// pas de tiroir `fixed w-[420px]` ni de backdrop qui masque le chat.
+describe('MemoryPanel mode standalone (vue L6)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListFiles.mockResolvedValue([]);
+    mockGetRGPDStats.mockResolvedValue(null);
+    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null });
+  });
+
+  it('rend une vue pleine hauteur, sans tiroir fixe 420px', async () => {
+    render(<MemoryPanel standalone />);
+    const panel = await screen.findByTestId('memory-panel');
+    expect(panel.className).toContain('h-full');
+    expect(panel.className).not.toContain('w-[420px]');
+    expect(panel.className).not.toContain('fixed');
+  });
+
+  it('ne pose aucun backdrop qui masque le chat', async () => {
+    const { container } = render(<MemoryPanel standalone />);
+    await screen.findByTestId('memory-panel');
+    // Le tiroir posait un backdrop `fixed inset-0 bg-black/40` par-dessus le chat.
+    expect(container.querySelector('.bg-black\\/40')).toBeNull();
+  });
+
+  it('charge ses données sans dépendre de isOpen (standalone est toujours ouvert)', async () => {
+    render(<MemoryPanel standalone />);
+    // Le footer "Nouveau contact" n'existe que quand le contenu contacts est monté.
+    expect(await screen.findByTestId('memory-add-contact-btn')).toBeInTheDocument();
+  });
+});
