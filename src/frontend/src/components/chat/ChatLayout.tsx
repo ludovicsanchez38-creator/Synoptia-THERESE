@@ -27,6 +27,8 @@ import { useAtelierStore } from '../../stores/atelierStore';
 // OpenClaw store : conservé mais plus utilisé dans ChatLayout
 import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
+import { useActionsStore } from '../../stores/actionsStore';
+import { useContactsStore } from '../../stores/contactsStore';
 import { resolveEscape } from '../../lib/resolveEscape';
 import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
@@ -90,7 +92,19 @@ export function ChatLayout() {
   useEffect(() => {
     const onGuided = () => setGuidedPanelActive(false);
     window.addEventListener('therese:open-guided', onGuided);
-    (window as unknown as { __therese?: unknown }).__therese = { runAction, getActions };
+    (window as unknown as { __therese?: unknown }).__therese = {
+      runAction,
+      getActions,
+      // Inspection bas niveau (debug / test / pont Thérèse) : lecture d'état des stores.
+      stores: {
+        navigation: useNavigationStore,
+        panel: usePanelStore,
+        actions: useActionsStore,
+        atelier: useAtelierStore,
+        chat: useChatStore,
+        contacts: useContactsStore,
+      },
+    };
     return () => window.removeEventListener('therese:open-guided', onGuided);
   }, []);
 
