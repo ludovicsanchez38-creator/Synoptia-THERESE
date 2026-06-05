@@ -27,6 +27,7 @@ import { useAtelierStore } from '../../stores/atelierStore';
 // OpenClaw store : conservé mais plus utilisé dans ChatLayout
 import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
+import { resolveEscape } from '../../lib/resolveEscape';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
 
@@ -136,7 +137,7 @@ export function ChatLayout() {
     onCommandPalette: ps.openCommandPalette,
     onNewConversation: handleNewConversation,
     onShowShortcuts: ps.openShortcuts,
-    onEscape: ps.handleEscape,
+    onEscape: resolveEscape,
     onToggleMemoryPanel: handleToggleMemory,
     onNewContact: ps.openNewContact,
     onNewProject: ps.openNewProject,

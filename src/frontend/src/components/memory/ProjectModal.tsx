@@ -213,20 +213,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
   }
 
-  // Handle escape key
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) {
-        if (showDeleteConfirm) {
-          setShowDeleteConfirm(false);
-        } else {
-          onClose();
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, showDeleteConfirm]);
+  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la modale via le store.
 
   // Get contact display name
   function getContactDisplayName(contact: api.Contact): string {

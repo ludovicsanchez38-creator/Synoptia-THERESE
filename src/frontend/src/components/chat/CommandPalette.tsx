@@ -331,13 +331,12 @@ export function CommandPalette({
             filteredCommands[selectedIndex].action();
           }
           break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
+        // Échap : géré par la pile unifiée (resolveEscape, L7), pas localement.
+        // Sinon course : la palette (onKeyDown élément, tire avant le handler
+        // global window) se fermerait, et resolveEscape ferait un retour de vue.
       }
     },
-    [filteredCommands, selectedIndex, onClose]
+    [filteredCommands, selectedIndex]
   );
 
   // Scroll selected item into view

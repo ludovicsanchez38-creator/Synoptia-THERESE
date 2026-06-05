@@ -3536,6 +3536,32 @@ class TestL6_ContactScopeRoundtrip:
         )
 
 
+class TestL7_UnifiedEscape:
+    """L7 : une seule pile Échap/retour (resolveEscape), plus de piles concurrentes."""
+
+    RESOLVE_ESCAPE = FRONTEND / "lib" / "resolveEscape.ts"
+    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    PANEL_STORE = FRONTEND / "stores" / "panelStore.ts"
+
+    def test_resolve_escape_handles_view_return(self):
+        content = self.RESOLVE_ESCAPE.read_text(encoding="utf-8")
+        assert "export function resolveEscape" in content
+        assert "goBack" in content, "resolveEscape doit gérer le retour de vue (coeur L7)"
+        assert "activeView" in content
+
+    def test_chatlayout_uses_resolve_escape(self):
+        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+        assert "onEscape: resolveEscape" in content, (
+            "ChatLayout doit brancher Échap sur la pile unifiée resolveEscape"
+        )
+
+    def test_panelstore_handle_escape_removed(self):
+        content = self.PANEL_STORE.read_text(encoding="utf-8")
+        assert "handleEscape" not in content, (
+            "panelStore.handleEscape doit être supprimé (remplacé par resolveEscape)"
+        )
+
+
 # ============================================================
 # F-12 (v0.3.6) - Indicateur modèle actif au-dessus du chat
 # ChatInput doit afficher le modèle LLM actif.

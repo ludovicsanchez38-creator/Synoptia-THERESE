@@ -75,9 +75,6 @@ interface PanelState {
   // Save Command
   openSaveCommand: (userPrompt: string, assistantContent: string) => void;
   closeSaveCommand: () => void;
-
-  // Escape handler : ferme le panel le plus en avant
-  handleEscape: () => void;
 }
 
 // ============================================================
@@ -182,24 +179,4 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       showSaveCommand: false,
       saveCommandData: null,
     }),
-
-  // Escape : ferme le modal le plus en avant (z-index décroissant)
-  handleEscape: () => {
-    const s = get();
-    if (s.showBoardPanel) {
-      set({ showBoardPanel: false });
-    } else if (s.showContactModal) {
-      set({ showContactModal: false, editingContact: null });
-    } else if (s.showProjectModal) {
-      set({ showProjectModal: false, editingProject: null });
-    } else if (s.showCommandPalette) {
-      set({ showCommandPalette: false });
-    } else if (s.showShortcuts) {
-      set({ showShortcuts: false });
-    } else if (s.showSettings) {
-      set({ showSettings: false });
-    } else if (s.showConversationSidebar) {
-      set({ showConversationSidebar: false });
-    }
-  },
 }));

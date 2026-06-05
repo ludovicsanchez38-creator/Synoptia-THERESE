@@ -113,16 +113,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
     }
   }, [contextMenuId]);
 
-  // Keyboard shortcut to toggle
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la sidebar via le store.
 
   return (
     <AnimatePresence>
