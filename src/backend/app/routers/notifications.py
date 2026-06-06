@@ -33,6 +33,8 @@ def _notification_to_response(notif: Notification) -> NotificationResponse:
     )
 
 
+# Collection exposee avec ET sans slash final (anti-redirection 307).
+@router.get("", include_in_schema=False)
 @router.get("/")
 async def list_notifications(
     limit: int = Query(50, ge=1, le=200, description="Nombre max de notifications"),

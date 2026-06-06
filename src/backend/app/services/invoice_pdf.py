@@ -556,8 +556,16 @@ class InvoicePDFGenerator:
         self,
         tva_applicable: bool,
         currency_symbol: str,
+        currency: str = "EUR",
     ) -> list[Any]:
-        """Construit le bloc conditions de paiement et mentions legales."""
+        """Construit le bloc conditions de paiement et mentions legales.
+
+        Les mentions de droit francais (interets de retard au taux legal,
+        indemnite forfaitaire de 40 EUR art. L441-10) ne s'appliquent qu'a une
+        facture en EUR / droit FR : sur une facture en devise etrangere (CAD,
+        CHF...), on imprime une ligne neutre, comme generate_legal_mentions cote
+        routeur. Sans ce garde-fou, le PDF affichait "40 CA$" + droit FR.
+        """
         s = self.styles
         theme = self.theme
 
@@ -577,10 +585,20 @@ class InvoicePDFGenerator:
             ),
         )
 
+        if currency == "EUR":
+            penalty_lines = (
+                "En cas de retard de paiement, application d'interets de retard au taux legal.<br/>"
+                f"Indemnite forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
+            )
+        else:
+            penalty_lines = (
+                "En cas de retard de paiement, des penalites pourront etre appliquees "
+                "selon les conditions convenues entre les parties.<br/>"
+            )
+
         conditions_text = (
             f"Paiement a reception de facture, net a 30 jours.<br/>"
-            f"En cas de retard de paiement, application d'interets de retard au taux legal.<br/>"
-            f"Indemnite forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
+            f"{penalty_lines}"
             f"<br/>"
             f"<b>Mentions legales :</b> {tva_mention}"
         )
@@ -673,7 +691,7 @@ class InvoicePDFGenerator:
         story.extend(self._build_notes_block(invoice_data.get("notes", "")))
 
         # 7. Conditions de paiement
-        story.extend(self._build_conditions_block(tva_applicable, currency_symbol))
+        story.extend(self._build_conditions_block(tva_applicable, currency_symbol, currency))
 
         # Build PDF
         doc.build(story, onFirstPage=on_first, onLaterPages=on_later)

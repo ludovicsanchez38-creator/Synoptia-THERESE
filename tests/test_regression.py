@@ -6772,6 +6772,60 @@ class TestGlobal_Fixes:
         # Une ligne générique reste présente (pas de vide juridique).
         assert "retard de paiement" in cad
 
+    def _render_invoice_pdf(self, tmp_path, currency: str) -> str:
+        """Rend un PDF de facture minimal dans la devise donnée, renvoie le texte extrait."""
+        from pypdf import PdfReader
+
+        from app.services.invoice_pdf import InvoicePDFGenerator
+
+        gen = InvoicePDFGenerator(output_dir=str(tmp_path))
+        invoice_data = {
+            "invoice_number": f"FACT-2026-TEST-{currency}",
+            "document_type": "facture",
+            "tva_applicable": True,
+            "validite_jours": 30,
+            "issue_date": "2026-06-06T00:00:00",
+            "due_date": "2026-07-06T00:00:00",
+            "status": "draft",
+            "subtotal_ht": 100.0,
+            "total_tax": 20.0,
+            "total_ttc": 120.0,
+            "notes": "",
+            "lines": [{
+                "description": "Conseil",
+                "quantity": 1,
+                "unit_price_ht": 100.0,
+                "tva_rate": 20.0,
+                "total_ht": 100.0,
+                "total_ttc": 120.0,
+            }],
+        }
+        contact_data = {"name": "Client QC", "company": "", "email": "", "phone": "", "address": ""}
+        profile = {
+            "name": "Ludovic Sanchez", "company": "Synoptia",
+            "address": "Manosque", "siren": "", "siret": "99160678100011",
+            "code_ape": "", "tva_intra": "",
+        }
+        path = gen.generate_invoice_pdf(
+            invoice_data=invoice_data, contact_data=contact_data,
+            user_profile=profile, currency=currency,
+        )
+        text = "".join(page.extract_text() for page in PdfReader(path).pages)
+        return "".join(text.split()).lower()  # sans espaces pour robustesse extraction
+
+    def test_pdf_drops_french_indemnity_for_foreign_currency(self, tmp_path):
+        """Le PDF (vrai livrable) ne doit PAS imprimer l'indemnité FR (40 / L441,
+        'frais de recouvrement') sur une facture en devise étrangère (CAD)."""
+        cad = self._render_invoice_pdf(tmp_path, "CAD")
+        assert "recouvrement" not in cad, "L'indemnité FR (frais de recouvrement) ne doit pas figurer en CAD"
+        assert "tauxlegal" not in cad, "La pénalité 'au taux légal' (droit FR) ne doit pas figurer en CAD"
+        assert "convenues" in cad, "Une ligne neutre doit prendre le relais en devise étrangère"
+
+    def test_pdf_keeps_french_indemnity_in_eur(self, tmp_path):
+        """Régression inverse : en EUR, l'indemnité forfaitaire FR reste bien présente."""
+        eur = self._render_invoice_pdf(tmp_path, "EUR")
+        assert "recouvrement" in eur, "En EUR, l'indemnité forfaitaire (frais de recouvrement) doit rester"
+
     def test_collection_routes_have_no_slash_variant(self):
         """invoices/tasks : routes collection exposées sans slash final (anti-redirection 307)."""
         from app.main import app

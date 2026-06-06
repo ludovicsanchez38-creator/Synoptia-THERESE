@@ -305,7 +305,9 @@ def test_calendar_quick_add(api_client, seeded_calendar):
     Pour les calendriers locaux, cet endpoint n'est pas disponible.
     On teste que l'endpoint existe et repond correctement.
     """
-    # L'endpoint quick-add requiert un account_id (Google Calendar)
+    # L'endpoint quick-add requiert un compte Google. Sur un calendrier LOCAL,
+    # il repond 400 avec un message explicite (creation via formulaire), au lieu
+    # d'un 404 trompeur (garde-fou honnete 0.20.0).
     resp = api_client.post(
         "/api/calendar/events/quick-add",
         json={
@@ -314,8 +316,8 @@ def test_calendar_quick_add(api_client, seeded_calendar):
         },
         params={"account_id": "fake-account-id"},
     )
-    # Sans compte Google, doit retourner 404 (account not found)
-    assert resp.status_code == 404
+    assert resp.status_code == 400
+    assert "Google" in resp.text
 
 
 # ============================================================
