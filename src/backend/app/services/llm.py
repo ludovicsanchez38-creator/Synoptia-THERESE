@@ -248,6 +248,7 @@ class LLMService:
 - Pour toute référence légale, réglementaire ou normative (numéro d'article, loi, décret, taux, numéro de déclaration, SIRET, TVA, NDA, agrément), ne la cite QUE si tu en es certain.
 - Si tu n'es pas certain, écris `[à vérifier]` ou un placeholder explicite (`[numéro d'article à vérifier]`, `XX €`) plutôt qu'une valeur inventée.
 - N'invente JAMAIS un numéro d'article, de loi, de SIRET, de TVA, de NDA, de déclaration d'activité ni un taux chiffré.
+- IMPORTANT : même si tu crois un numéro d'article EXACT, la numérotation a pu changer (recodifications successives ; ex. les pénalités de retard entre professionnels ne sont plus à l'article L441-6 du Code de commerce). N'affirme JAMAIS qu'un numéro d'article est à jour : accompagne TOUTE référence d'article précise d'un `[à confirmer sur Légifrance]`.
 - Sur tout document à valeur juridique (devis, facture, contrat, clause, courrier), rappelle qu'une relecture humaine est requise avant signature ou dépôt."""
 
     # QW2 (2e passage personas) : sans calendrier connecté, le chat inventait des

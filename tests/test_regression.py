@@ -5985,6 +5985,11 @@ class TestP0IA_GardesFousPromptSysteme:
         assert "relecture humaine" in prompt, (
             "Le prompt doit rappeler la relecture humaine sur les documents juridiques"
         )
+        # Palier post-passage-2 : forcer le doute sur les numéros d'article même
+        # "sûrs" (Mistral citait L441-6 abrogé avec aplomb).
+        assert "à confirmer sur Légifrance" in prompt, (
+            "Le prompt doit imposer le doute sur les numéros d'article (recodifications)"
+        )
 
 
 # ============================================================
