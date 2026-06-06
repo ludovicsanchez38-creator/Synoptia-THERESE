@@ -6447,3 +6447,71 @@ class TestP0PROD2_BillingProfile:
         content = (FRONTEND / "components" / "invoices" / "InvoiceForm.tsx").read_text(encoding="utf-8")
         assert "getBillingProfileStatus" in content
         assert "émetteur" in content.lower()
+
+
+# ============================================================
+# LOT M - P0-PROD-3 : brancher le chat sur le CRM + calendrier
+# Constat C9 : le chat hallucine le contexte client / les échéances au lieu de
+# lire les objets structurés. Tool read_contact + fenêtre calendrier élargie.
+# ============================================================
+
+
+class TestP0PROD3_ChatTools:
+    """Le chat doit pouvoir LIRE une fiche contact complète et un agenda large."""
+
+    @pytest.mark.asyncio
+    async def test_read_contact_tool_returns_full_fiche(self, db_session):
+        """read_contact retourne coordonnées, stage, score, notes et interactions."""
+        import json
+
+        from app.models.entities import Activity, Contact
+        from app.services.memory_tools import MEMORY_TOOL_NAMES, execute_memory_tool
+
+        assert "read_contact" in MEMORY_TOOL_NAMES
+
+        c = Contact(
+            first_name="Karim",
+            last_name="Benali",
+            company="Agence ABC",
+            email="karim@abc.fr",
+            stage="proposition",
+            score=85,
+            notes="Cherche un T3 sous 250k",
+        )
+        db_session.add(c)
+        await db_session.commit()
+        db_session.add(Activity(contact_id=c.id, type="call", title="Appel découverte"))
+        await db_session.commit()
+
+        result = await execute_memory_tool("read_contact", {"query": "Benali"}, db_session)
+        data = json.loads(result)
+
+        assert data["found"] is True
+        fiche = data["contacts"][0]
+        assert fiche["score"] == 85
+        assert fiche["stage"] == "proposition"
+        assert fiche["notes"] == "Cherche un T3 sous 250k"
+        assert any(a["title"] == "Appel découverte" for a in fiche["recent_activities"])
+
+    @pytest.mark.asyncio
+    async def test_read_contact_not_found(self, db_session):
+        """read_contact renvoie found=False plutôt que d'inventer un contact."""
+        import json
+
+        from app.services.memory_tools import execute_memory_tool
+
+        result = await execute_memory_tool("read_contact", {"query": "Personne12345"}, db_session)
+        assert json.loads(result)["found"] is False
+
+    def test_read_contact_is_registered_as_tool(self):
+        """read_contact doit être exposé au LLM dans MEMORY_TOOLS."""
+        from app.services.memory_tools import MEMORY_TOOLS
+
+        names = {t["function"]["name"] for t in MEMORY_TOOLS}
+        assert "read_contact" in names
+
+    def test_calendar_tool_default_window_widened(self):
+        """La fenêtre par défaut du calendrier doit être élargie (échéances, P9)."""
+        content = (SRC / "app" / "services" / "workspace_tools.py").read_text(encoding="utf-8")
+        assert 'args.get("days", 30)' in content, "Défaut calendrier élargi à 30 jours"
+        assert "90" in content, "Max élargi pour couvrir les échéances"

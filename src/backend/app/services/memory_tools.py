@@ -105,7 +105,31 @@ CREATE_PROJECT_TOOL = {
     },
 }
 
-MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL]
+READ_CONTACT_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "read_contact",
+        "description": (
+            "Lit la fiche COMPLETE d'un contact existant dans la memoire de THERESE "
+            "(coordonnees, notes, stage commercial, score, source, dernieres interactions). "
+            "Utilise CET OUTIL plutot que d'inventer quand l'utilisateur demande le contexte, "
+            "le suivi, les notes ou l'historique d'une personne ou d'une entreprise. "
+            "Recherche par nom, prenom ou entreprise."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Nom, prenom ou entreprise du contact a retrouver",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL, READ_CONTACT_TOOL]
 
 
 # ============================================================
@@ -327,6 +351,82 @@ async def execute_create_project(
         }, ensure_ascii=False)
 
 
+async def execute_read_contact(
+    arguments: dict[str, Any],
+    session: AsyncSession,
+) -> str:
+    """Execute the read_contact tool : retourne la fiche complète + interactions.
+
+    Permet au chat de LIRE le CRM au lieu d'halluciner le contexte client (P0-PROD-3,
+    constat C9 : la fiche client ne remontait pas dans le chat).
+    """
+    from app.models.entities import Activity
+
+    query = (arguments.get("query") or "").strip()
+    if not query:
+        return json.dumps(
+            {"error": "Indique un nom, prénom ou entreprise à rechercher"},
+            ensure_ascii=False,
+        )
+
+    q = query.lower()
+    result = await session.execute(select(Contact))
+    matches = [
+        c
+        for c in result.scalars().all()
+        if q in (c.first_name or "").lower()
+        or q in (c.last_name or "").lower()
+        or q in (c.display_name or "").lower()
+        or q in (c.company or "").lower()
+    ]
+
+    if not matches:
+        return json.dumps(
+            {"found": False, "message": f"Aucun contact trouvé pour « {query} »."},
+            ensure_ascii=False,
+        )
+
+    contacts_out = []
+    for c in matches[:5]:
+        act_result = await session.execute(
+            select(Activity)
+            .where(Activity.contact_id == c.id)
+            .order_by(Activity.created_at.desc())
+            .limit(5)
+        )
+        activities = act_result.scalars().all()
+        contacts_out.append(
+            {
+                "contact_id": c.id,
+                "display_name": c.display_name,
+                "company": c.company,
+                "email": c.email,
+                "phone": c.phone,
+                "source": c.source,
+                "stage": c.stage,
+                "score": c.score,
+                "notes": c.notes,
+                "last_interaction": c.last_interaction.isoformat()
+                if c.last_interaction
+                else None,
+                "recent_activities": [
+                    {
+                        "type": a.type,
+                        "title": a.title,
+                        "description": a.description,
+                        "date": a.created_at.isoformat() if a.created_at else None,
+                    }
+                    for a in activities
+                ],
+            }
+        )
+
+    return json.dumps(
+        {"found": True, "count": len(contacts_out), "contacts": contacts_out},
+        ensure_ascii=False,
+    )
+
+
 async def execute_memory_tool(
     tool_name: str,
     arguments: dict[str, Any],
@@ -342,8 +442,10 @@ async def execute_memory_tool(
         return await execute_create_contact(arguments, session)
     elif tool_name == "create_project":
         return await execute_create_project(arguments, session)
+    elif tool_name == "read_contact":
+        return await execute_read_contact(arguments, session)
     else:
         return json.dumps({"error": f"Outil inconnu: {tool_name}"}, ensure_ascii=False)
 
 
-MEMORY_TOOL_NAMES = {"create_contact", "create_project"}
+MEMORY_TOOL_NAMES = {"create_contact", "create_project", "read_contact"}

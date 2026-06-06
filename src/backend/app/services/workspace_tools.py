@@ -117,14 +117,15 @@ LIST_CALENDAR_EVENTS_TOOL = {
         "description": (
             "Liste les evenements du calendrier de l'utilisateur. "
             "Utilise cet outil quand l'utilisateur demande ses prochains RDV, "
-            "son agenda, ou son planning."
+            "son agenda, son planning ou ses ECHEANCES, AU LIEU d'inventer des dates. "
+            "Pour des echeances (fiscales, projets), pense a elargir la fenetre (days=60/90)."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "days": {
                     "type": "integer",
-                    "description": "Nombre de jours a consulter (defaut: 7, max: 30)",
+                    "description": "Nombre de jours a consulter (defaut: 30, max: 90)",
                 },
             },
             "required": [],
@@ -413,7 +414,7 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
     if error:
         return error
 
-    days = min(args.get("days", 7), 30)
+    days = min(args.get("days", 30), 90)
     now = datetime.now(timezone.utc)
     time_max = now + timedelta(days=days)
 

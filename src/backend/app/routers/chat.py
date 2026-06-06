@@ -880,7 +880,7 @@ async def _do_stream_response(
             capabilities += "- **read_emails** / **send_email** / **search_emails** : Lire, envoyer et chercher dans les emails de l'utilisateur.\n"
         if "list_calendar_events" in tool_names:
             capabilities += "- **list_calendar_events** / **create_calendar_event** : Consulter et creer des evenements dans le calendrier.\n"
-        mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", "create_contact", "create_project", *WORKSPACE_TOOL_NAMES)]
+        mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", *MEMORY_TOOL_NAMES, *WORKSPACE_TOOL_NAMES)]
         if mcp_tools:
             capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
         context.system_prompt += capabilities
