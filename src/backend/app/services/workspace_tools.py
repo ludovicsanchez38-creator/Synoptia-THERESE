@@ -176,6 +176,37 @@ CREATE_CALENDAR_EVENT_TOOL = {
 }
 
 
+GENERATE_DOCUMENT_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "generate_document",
+        "description": (
+            "Genere un VRAI fichier bureautique telechargeable (Word, PowerPoint ou Excel) "
+            "a partir du contenu que tu fournis. Utilise CET OUTIL des que l'utilisateur demande "
+            "de creer/generer un document (DOCX/Word, PPTX/presentation, XLSX/tableur). "
+            "Ne fabrique JAMAIS de faux lien : c'est cet outil qui produit le fichier et renvoie "
+            "l'URL de telechargement reelle. Mets tout le contenu voulu dans le parametre content."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string",
+                    "enum": ["docx", "pptx", "xlsx"],
+                    "description": "Format : docx (Word), pptx (PowerPoint) ou xlsx (Excel)",
+                },
+                "title": {"type": "string", "description": "Titre du document"},
+                "content": {
+                    "type": "string",
+                    "description": "Contenu complet a mettre dans le document (texte/markdown structure)",
+                },
+            },
+            "required": ["format", "content"],
+        },
+    },
+}
+
+
 # All workspace tools
 WORKSPACE_TOOLS = [
     READ_EMAILS_TOOL,
@@ -183,7 +214,12 @@ WORKSPACE_TOOLS = [
     SEARCH_EMAILS_TOOL,
     LIST_CALENDAR_EVENTS_TOOL,
     CREATE_CALENDAR_EVENT_TOOL,
+    GENERATE_DOCUMENT_TOOL,
 ]
+
+# P8 (2e passage personas) : routage chat -> skill Office en OUTIL appelable
+# (avant : detection d'intention fragile -> aucun fichier produit / faux lien).
+_DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro"}
 
 WORKSPACE_TOOL_NAMES = {t["function"]["name"] for t in WORKSPACE_TOOLS}
 
@@ -208,8 +244,46 @@ async def execute_workspace_tool(
         return await _list_calendar_events(arguments, session)
     elif tool_name == "create_calendar_event":
         return await _create_calendar_event(arguments, session)
+    elif tool_name == "generate_document":
+        return await _generate_document(arguments, session)
     else:
         return f"Outil inconnu : {tool_name}"
+
+
+async def _generate_document(args: dict, session: AsyncSession) -> str:
+    """Génère un vrai fichier Office via le registre de skills (P8).
+
+    Avant : le chat « bluffait » un faux lien faute de routage fiable. Désormais
+    le LLM appelle cet outil, qui produit réellement le fichier et renvoie l'URL.
+    """
+    from app.services.skills import get_skills_registry
+    from app.services.skills.base import SkillExecuteRequest
+
+    fmt = (args.get("format") or "docx").lower()
+    skill_id = _DOC_SKILL_IDS.get(fmt)
+    if not skill_id:
+        return f"Format non supporte : {fmt}. Formats disponibles : docx, pptx, xlsx."
+
+    content = (args.get("content") or "").strip()
+    if not content:
+        return "Aucun contenu fourni : impossible de generer le document."
+
+    title = args.get("title")
+    try:
+        registry = get_skills_registry()
+        resp = await registry.execute(
+            skill_id,
+            SkillExecuteRequest(prompt=title or content[:120], title=title),
+            content,
+        )
+        if resp.success:
+            return (
+                f"Document {fmt.upper()} genere : {resp.file_name}. "
+                f"Telechargement : {resp.download_url}"
+            )
+        return f"Echec de generation du document : {resp.error}"
+    except Exception as e:  # pragma: no cover - dépend du sandbox skills
+        return f"Erreur lors de la generation du document : {e}"
 
 
 async def _get_email_provider(session: AsyncSession):

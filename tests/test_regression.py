@@ -6577,3 +6577,59 @@ class TestQW_PromptHardening:
         content = (SRC / "app" / "services" / "workspace_tools.py").read_text(encoding="utf-8")
         assert "AUCUN CALENDRIER CONNECTE" in content
         assert "N'invente AUCUN evenement" in content
+
+
+# ============================================================
+# P8 (2e passage personas) : skill Office en OUTIL appelable
+# Le chat bluffait un faux lien faute de routage fiable -> generate_document.
+# ============================================================
+
+
+class TestQW_GenerateDocumentTool:
+    """Le LLM doit pouvoir générer un vrai fichier Office via un outil."""
+
+    def test_generate_document_registered(self):
+        """L'outil generate_document est exposé aux providers."""
+        from app.services.workspace_tools import WORKSPACE_TOOL_NAMES, WORKSPACE_TOOLS
+
+        assert "generate_document" in WORKSPACE_TOOL_NAMES
+        names = {t["function"]["name"] for t in WORKSPACE_TOOLS}
+        assert "generate_document" in names
+
+    @pytest.mark.asyncio
+    async def test_generate_document_produces_real_link(self, db_session, monkeypatch):
+        """L'outil exécute le bon skill et renvoie une URL de téléchargement réelle."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        import app.services.skills as skills_mod
+        from app.services.workspace_tools import execute_workspace_tool
+
+        fake_resp = MagicMock(
+            success=True,
+            file_name="rapport_ab12.docx",
+            download_url="/api/skills/download/ab12",
+            error=None,
+        )
+        fake_registry = MagicMock()
+        fake_registry.execute = AsyncMock(return_value=fake_resp)
+        monkeypatch.setattr(skills_mod, "get_skills_registry", lambda: fake_registry)
+
+        result = await execute_workspace_tool(
+            "generate_document",
+            {"format": "docx", "title": "Rapport", "content": "# Titre\nContenu"},
+            db_session,
+        )
+
+        assert "rapport_ab12.docx" in result
+        assert "/api/skills/download/ab12" in result
+        assert fake_registry.execute.await_args[0][0] == "docx-pro"
+
+    @pytest.mark.asyncio
+    async def test_generate_document_rejects_empty_content(self, db_session):
+        """Pas de contenu -> message clair, pas de génération fantôme."""
+        from app.services.workspace_tools import execute_workspace_tool
+
+        result = await execute_workspace_tool(
+            "generate_document", {"format": "docx", "content": "   "}, db_session
+        )
+        assert "aucun contenu" in result.lower()
