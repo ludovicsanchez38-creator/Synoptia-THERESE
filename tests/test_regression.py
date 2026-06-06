@@ -6645,3 +6645,72 @@ class TestQW_GenerateDocumentTool:
         content = (SRC / "app" / "routers" / "chat.py").read_text(encoding="utf-8")
         assert '"generate_document" in tool_names' in content
         assert '"read_contact" in tool_names' in content
+
+
+# ============================================================
+# RAG JURIDIQUE : corpus de références légales vérifiées (Légifrance)
+# Ancre les réponses juridiques sur des références à jour au lieu de la mémoire
+# périmée du modèle (2e passage : L441-6 cité au lieu de L441-10).
+# ============================================================
+
+
+class TestRAG_LegalCorpus:
+    """Le corpus juridique vérifié doit être chargé, cherché et injecté."""
+
+    def test_corpus_loads_verified_entries(self):
+        """Le corpus existe et ne contient que des entrées sourcées (Légifrance/service-public)."""
+        from app.services.legal_corpus import _load_corpus
+
+        entries = _load_corpus()
+        assert len(entries) >= 10
+        for e in entries:
+            assert e.get("reference")
+            url = e.get("source_url", "")
+            assert "legifrance" in url or "service-public" in url
+
+    def test_lookup_late_payment_points_to_current_article(self):
+        """'pénalités de retard' doit pointer L441-10 (et pas l'ancien L441-6)."""
+        from app.services.legal_corpus import lookup_legal
+
+        matches = lookup_legal(
+            "Rédige une clause de pénalités de retard de paiement pour ma facture entre professionnels."
+        )
+        assert matches
+        refs = " ".join(m["reference"] for m in matches)
+        assert "L441-10" in refs
+        assert "L441-6 " not in refs and "L441-6," not in refs
+
+    def test_lookup_moral_interests_article(self):
+        """'intérêts moratoires' doit retrouver l'article 1231-6 du Code civil (finding avocate)."""
+        from app.services.legal_corpus import lookup_legal
+
+        matches = lookup_legal("Quels sont les intérêts moratoires en cas de retard de paiement ?")
+        refs = " ".join(m["reference"] for m in matches)
+        assert "1231-6" in refs
+
+    def test_lookup_no_match_returns_empty(self):
+        """Aucun sujet juridique -> pas d'injection."""
+        from app.services.legal_corpus import lookup_legal
+
+        assert lookup_legal("Quelle est la météo à Manosque aujourd'hui ?") == []
+
+    def test_format_legal_context_has_guardrail(self):
+        """Le contexte formaté impose d'utiliser ces refs + [à confirmer] pour le reste."""
+        from app.services.legal_corpus import get_legal_context
+
+        ctx = get_legal_context("franchise en base de TVA mention sur facture")
+        assert "VÉRIFIÉES" in ctx
+        assert "à confirmer sur Légifrance" in ctx
+        assert "293 B" in ctx
+
+    @pytest.mark.asyncio
+    async def test_memory_context_injects_legal_without_memory(self):
+        """_get_memory_context injecte les réfs légales même sans résultat mémoire."""
+        from app.routers.chat import _get_memory_context
+
+        ctx = await _get_memory_context(
+            "clause de pénalités de retard de paiement entre professionnels"
+        )
+        assert ctx is not None
+        assert "L441-10" in ctx
+        assert "VÉRIFIÉES" in ctx

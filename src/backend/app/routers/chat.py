@@ -274,6 +274,7 @@ async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
 
     Returns formatted context string or None if no relevant memories found.
     """
+    context_parts: list[str] = []
     try:
         qdrant = get_qdrant_service()
         results = await qdrant.async_search(
@@ -282,11 +283,7 @@ async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
             score_threshold=0.35,  # Lower threshold for broader context
         )
 
-        if not results:
-            return None
-
         # Format results into context string
-        context_parts = []
         seen_files = set()  # Track seen files to avoid duplicates
 
         for hit in results:
@@ -321,12 +318,23 @@ async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
 
             logger.debug(f"Memory context hit: {memory_type} (score={score:.2f})")
 
-        if context_parts:
-            return "\n\n".join(context_parts)
-
     except Exception as e:
         logger.warning(f"Failed to get memory context: {e}")
 
+    # RAG juridique : injecter les références légales VÉRIFIÉES (corpus Légifrance)
+    # si le message touche un sujet juridique, pour ancrer le modèle au lieu de sa
+    # mémoire périmée (cf. 2e passage personas : L441-6 cité au lieu de L441-10).
+    try:
+        from app.services.legal_corpus import get_legal_context
+
+        legal = get_legal_context(user_message)
+        if legal:
+            context_parts.append(legal)
+    except Exception as e:
+        logger.debug(f"Contexte juridique ignoré : {e}")
+
+    if context_parts:
+        return "\n\n".join(context_parts)
     return None
 
 

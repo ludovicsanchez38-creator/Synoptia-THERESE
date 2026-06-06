@@ -1,0 +1,282 @@
+{
+  "_meta": {
+    "description": "Corpus juridique vérifié sur sources officielles (Légifrance/service-public) le 2026-06-06 pour ancrer l'assistant et éviter les références inventées/périmées. NE PAS éditer à la main sans re-vérifier la source.",
+    "verified_at": "2026-06-06",
+    "source": "Légifrance / service-public.fr, double vérification (passe + cross-check adversarial)"
+  },
+  "entries": [
+    {
+      "topic": "Penalites de retard de paiement entre professionnels (B2B) : taux applicable et indemnite forfaitaire de recouvrement",
+      "keywords": [
+        "penalites de retard",
+        "retard de paiement",
+        "interets de retard",
+        "taux bce + 10 points",
+        "indemnite forfaitaire 40 euros",
+        "frais de recouvrement",
+        "facture impayee",
+        "l441-10",
+        "d441-5",
+        "delai de paiement b2b",
+        "trois fois le taux legal",
+        "paiement entre professionnels",
+        "60 jours emission facture",
+        "45 jours fin de mois"
+      ],
+      "reference": "Article L441-10 du Code de commerce (delais de paiement et taux des penalites de retard) et article D441-5 du Code de commerce (montant de l'indemnite forfaitaire de 40 euros)",
+      "code": "Code de commerce",
+      "summary": "En B2B, le delai de reglement de droit commun ne peut depasser 30 jours apres la date de reception des marchandises ou d'execution de la prestation ; le delai convenu entre les parties ne peut depasser 60 jours apres emission de la facture, ou par derogation 45 jours fin de mois si expressement stipule par contrat (art. L441-10 I). Les penalites de retard sont exigibles de plein droit sans rappel, des le lendemain de la date de paiement figurant sur la facture ; leur taux, fixe par les CGV, ne peut etre inferieur a trois fois le taux d'interet legal, et a defaut de stipulation il est egal au taux de refinancement de la BCE majore de 10 points de pourcentage (art. L441-10 II). Tout professionnel en retard est en outre debiteur de plein droit d'une indemnite forfaitaire pour frais de recouvrement, dont le montant est fixe a 40 euros par l'article D441-5 (par facture impayee), une indemnisation complementaire sur justificatifs restant possible.",
+      "key_figures": "Taux par defaut = taux BCE refinancement + 10 points de pourcentage (taux du 1er janvier applicable au 1er semestre, taux du 1er juillet applicable au 2nd semestre). Taux plancher si stipule dans les CGV = 3 x taux d'interet legal. Indemnite forfaitaire de recouvrement = 40 euros par facture (art. D441-5, renvoi au II de L441-10), non soumise a TVA, due de plein droit des le 1er jour de retard. Delai de droit commun 30 jours apres reception ; plafonds convenus 60 jours apres emission de la facture ou 45 jours fin de mois.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038414392",
+      "verified_note": "Contre-verification independante le 06/06/2026 sur Legifrance (texte des deux articles lu sur les fiches officielles). NUMEROTATION CONFIRMEE EXACTE ET A JOUR : les penalites de retard B2B ne sont PLUS a l'ancien art. L441-6 (recodifie par l'ordonnance n 2019-359 du 24/04/2019) mais a l'art. L441-10, en vigueur depuis le 26/04/2019, non abroge. Les delais de paiement de droit commun (30/60/45 jours fin de mois) figurent dans le I de L441-10, le taux des penalites dans le II. Le II de L441-10 renvoie a un decret pour l'indemnite forfaitaire : c'est l'art. D441-5 (en vigueur depuis le 27/02/2021, modifie par decret n 2021-211 du 24/02/2021), en vigueur, qui la fixe a 40 euros et renvoie explicitement au II de L441-10. CAVEAT 1 (version programmee) : la fiche L441-10 affiche la borne 'Version en vigueur du 26/04/2019 au 01/09/2026', une nouvelle version entrant en vigueur le 01/09/2026 ; cette echeance coincide avec le calendrier de la facturation electronique obligatoire (reception toutes entreprises + emission grandes entreprises/ETI au 01/09/2026) et ne remet pas en cause le fond de la regle actuelle. Reverifier la version applicable apres le 01/09/2026 (notamment l'articulation delais/facture electronique). CAVEAT 2 (taux variable) : le taux BCE majore de 10 pts est variable car le taux de refinancement BCE evolue ; ne PAS figer un pourcentage chiffre dans le corpus, indiquer la formule (le taux applicable est celui en vigueur au 1er janvier pour le 1er semestre, au 1er juillet pour le 2nd semestre). Sources officielles : L441-10 (LEGIARTI000038414392) et D441-5 (LEGIARTI000043197457)."
+    },
+    {
+      "topic": "Délais de paiement maximum entre professionnels (B2B)",
+      "keywords": [
+        "delais de paiement",
+        "delai paiement professionnels",
+        "delai paiement b2b",
+        "60 jours",
+        "45 jours fin de mois",
+        "30 jours",
+        "delai paiement facture",
+        "paiement entre entreprises",
+        "delai reglement fournisseur",
+        "loi lme delais",
+        "l441-10"
+      ],
+      "reference": "Article L441-10 du Code de commerce",
+      "code": "Code de commerce",
+      "summary": "Sauf dispositions contraires aux conditions de vente ou convenues entre les parties, le délai de règlement des sommes dues ne peut dépasser 30 jours après la date de réception des marchandises ou d'exécution de la prestation. Le délai convenu entre les parties ne peut excéder 60 jours après la date d'émission de la facture, ou par dérogation 45 jours fin de mois (à condition d'être expressément stipulé au contrat et de ne pas constituer un abus manifeste). Pour les factures périodiques, le délai ne peut dépasser 45 jours après la date d'émission. Tout retard donne lieu de plein droit à des pénalités et à l'indemnité forfaitaire de recouvrement (II de l'article).",
+      "key_figures": "Délai par défaut : 30 jours (réception/exécution). Délai max convenu : 60 jours date d'émission facture. Dérogatoire : 45 jours fin de mois. Factures périodiques : 45 jours max. Pénalités de retard : taux de refinancement BCE le plus récent + 10 points (plancher : 3x le taux d'intérêt légal). Indemnité forfaitaire de recouvrement : 40 € par facture (art. D441-5). Sanction administrative : jusqu'à 75 000 € (personne physique, 150 000 € en récidive) / 2 M€ (personne morale, 4 M€ en récidive).",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038414392",
+      "verified_note": "Vérification indépendante OK. Numéro et contenu confirmés sur Légifrance (texte intégral de l'article, https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038414392) ET sur entreprendre.service-public.gouv.fr (fiche F23211). Recodification confirmée : depuis l'ordonnance du 24/04/2019 ces dispositions ne sont PLUS à l'ancien art. L441-6 mais bien à l'art. L441-10 (sous-section 2 « Délais de paiement », L441-10 à L441-16). VERSION : Légifrance affiche « en vigueur du 26 avril 2019 au 1er septembre 2026 », date de fin liée à la réforme de la facturation électronique (généralisation au 01/09/2026) qui modifie le processus de transmission mais ne change PAS les plafonds 30/45/60 jours sur le fond. À revérifier après le 01/09/2026 pour la version alors en vigueur. Indemnité 40 € : confirmée fixée par l'art. D441-5 (partie réglementaire), L441-10 II renvoyant à un décret. Sanctions administratives 75 000 €/2 M€ (doublées en récidive) confirmées par la fiche service-public. NB illustratif (taux BCE+10 variable, à ne pas figer dans le corpus) : entreprendre.service-public affiche 13,15 % au 1er sem. 2025 puis 12,15 % aux 2e sem. 2025 / 1er sem. 2026."
+    },
+    {
+      "topic": "Mentions obligatoires sur une facture entre professionnels (B2B) : pénalités de retard et indemnité forfaitaire de 40 EUR",
+      "keywords": [
+        "mentions obligatoires facture",
+        "facture entre professionnels",
+        "facture b2b",
+        "penalites de retard",
+        "indemnite forfaitaire",
+        "indemnite 40 euros",
+        "frais de recouvrement",
+        "taux des penalites",
+        "date de reglement",
+        "mentions legales facture",
+        "retard de paiement",
+        "l441-9",
+        "l441-10",
+        "d441-5"
+      ],
+      "reference": "Article L441-9 du Code de commerce (mentions obligatoires de la facture), complété par l'article L441-10 (délais de paiement et pénalités de retard) et l'article D441-5 (montant de l'indemnité forfaitaire pour frais de recouvrement fixé à 40 EUR)",
+      "code": "Code de commerce",
+      "summary": "L'article L441-9 impose que toute facture entre professionnels mentionne notamment la date à laquelle le règlement doit intervenir, les conditions d'escompte applicables, le taux des pénalités exigibles le jour suivant la date de règlement, et le montant de l'indemnité forfaitaire pour frais de recouvrement due au créancier en cas de retard de paiement. L'article L441-10 fixe le délai de règlement (30 jours après réception des marchandises par défaut ; plafond convenu de 60 jours après émission de facture ou 45 jours fin de mois) et prévoit, en cas de retard, des pénalités au taux directeur de la BCE majoré de 10 points (plancher : 3 fois le taux de l'intérêt légal), exigibles sans rappel, plus l'indemnité forfaitaire dont le montant est fixé à 40 EUR par l'article D441-5.",
+      "key_figures": "Indemnité forfaitaire pour frais de recouvrement : 40 EUR par facture en retard (art. D441-5). Taux des pénalités de retard : taux de refinancement de la BCE majoré de 10 points (par défaut), plancher 3 fois le taux de l'intérêt légal. Délai de paiement : 30 jours après réception des marchandises par défaut ; plafond 60 jours après émission de facture, ou 45 jours fin de mois. Amende administrative pour mentions/délais manquants : jusqu'à 75 000 EUR (personne physique) / 375 000 EUR (personne morale), portée à 150 000 EUR / 750 000 EUR en cas de réitération sous 2 ans.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000038414397",
+      "verified_note": "Vérifié indépendamment sur Legifrance (texte intégral des trois articles, WebFetch). RECODIFICATION confirmée : mentions de facture (ex-L441-3) et pénalités de retard (ex-L441-6) recodifiées par l'ordonnance n°2019-359 du 24/04/2019. Ne PAS citer L441-3 ni L441-6 (périmés). Numérotation actuelle confirmée : L441-9 (mentions obligatoires facture, version en vigueur du 26/04/2019 au 01/09/2026), L441-10 (délais et pénalités, même fenêtre 26/04/2019 au 01/09/2026), D441-5 (montant 40 EUR, version en vigueur depuis le 27/02/2021, décret n°2021-211 du 24/02/2021, renvoie expressément au II de l'art. L441-10 — texte exact : « Le montant de l'indemnité forfaitaire pour frais de recouvrement prévue au II de l'article L. 441-10 est fixé à 40 euros. »). L'indemnité de 40 EUR est forfaitaire (due une fois par facture en retard, quel que soit le montant ou la durée du retard) et s'ajoute aux pénalités sans entrer dans leur base de calcul ; une indemnisation complémentaire reste possible sur justification si les frais réels sont supérieurs. CAVEAT : L441-9 ET L441-10 expirent au 01/09/2026 (entrée en vigueur de la généralisation de la facturation électronique) ; une nouvelle rédaction prendra le relais à cette date — à re-vérifier sur Legifrance après septembre 2026. Correction apportée à la 1re passe : préciser que c'est bien L441-10 (et pas seulement L441-9) dont la version expire au 01/09/2026."
+    },
+    {
+      "topic": "Franchise en base de TVA - exonération sous seuils et mention obligatoire sur facture",
+      "keywords": [
+        "franchise en base de tva",
+        "tva non applicable",
+        "art 293 b du cgi",
+        "article 293 b",
+        "exoneration tva",
+        "tva non applicable art 293 b du cgi",
+        "mention facture franchise tva",
+        "auto-entrepreneur tva",
+        "micro-entreprise tva",
+        "pas de tva sur facture",
+        "seuil franchise tva",
+        "293 b cgi",
+        "tva non applicable art l223-3 cibs",
+        "code des impositions sur les biens et services",
+        "franchise tva mention obligatoire"
+      ],
+      "reference": "Article 293 B du Code général des impôts (siège de la franchise en base) ; obligation de mention sur facture fondée sur l'article 289 du CGI et l'article 242 nonies de l'annexe II au CGI ; recodification : article L. 223-3 du Code des impositions sur les biens et services (CIBS) à compter du 1er septembre 2026",
+      "code": "Code général des impôts (CGI) ; Code des impositions sur les biens et services (CIBS) à compter du 01/09/2026",
+      "summary": "L'article 293 B du CGI institue une franchise qui dispense les assujettis établis en France du paiement de la TVA lorsque leur chiffre d'affaires ne dépasse pas les seuils légaux (texte Legifrance : \"Pour leurs livraisons de biens et leurs prestations de services, les assujettis établis en France bénéficient d'une franchise qui les dispense du paiement de la taxe sur la valeur ajoutée\"). L'assujetti en franchise ne facture pas la TVA et ne peut pas la déduire (interdiction posée par l'art. 293 E du CGI). Il doit, en application de l'art. 289 du CGI et de l'art. 242 nonies de l'annexe II au CGI, porter sur chaque facture la mention \"TVA non applicable, article 293 B du CGI\".",
+      "key_figures": "Seuils 2026 (inchangés) : 85 000 EUR de CA N-1 / 93 500 EUR seuil majoré année en cours pour les ventes de biens et l'hébergement ; 37 500 EUR de CA N-1 / 41 250 EUR seuil majoré pour les prestations de services et activités libérales. Mention sur facture : \"TVA non applicable, article 293 B du CGI\". RECODIFICATION : à compter du 1er septembre 2026 la TVA quitte le CGI pour le CIBS (ordonnance n° 2025-1247 du 17/12/2025) ; la nouvelle mention devient \"TVA non applicable, art. L. 223-3 du code des impositions sur les biens et services (CIBS)\", l'ancienne mention \"art. 293 B du CGI\" restant tolérée sur les factures jusqu'au 31 décembre 2027.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000052488142",
+      "verified_note": "Vérifié indépendamment sur sources officielles (juin 2026). (1) Legifrance, article 293 B du CGI, dernière version LEGIARTI000052488142, \"en vigueur du 01/03/2025 au 01/09/2026\" : texte de la franchise confirmé. NB : l'URL de la 1re passe (LEGIARTI000045035275) pointait vers une version ANTÉRIEURE de l'article ; URL à jour corrigée. La numérotation 293 B reste exacte (pas un ancien numéro périmé type L441-6). (2) CORRECTION de fond par rapport à la 1re passe : l'obligation de porter la mention sur la facture N'EST PAS fondée sur l'art. 293 E du CGI. Le BOFiP (BOI-TVA-DECLA-40-10-20) rattache cette obligation à l'art. 289 du CGI et à l'art. 242 nonies de l'annexe II au CGI ; l'art. 293 E du CGI porte uniquement l'INTERDICTION de déduire et de faire apparaître la TVA. La 1re passe attribuait à tort l'obligation de mention à l'art. 293 E. (3) Recodification CIBS confirmée ET précisée : l'art. 293 B a été abrogé par l'ordonnance n° 2025-1247 du 17/12/2025 (mention d'abrogation visible sur Legifrance), entrée en vigueur au 1er septembre 2026. Le nouveau numéro d'article, que la 1re passe disait ne PAS avoir confirmé, est désormais confirmé : franchise reprise dans le CIBS et nouvelle mention \"TVA non applicable, art. L. 223-3 du CIBS\" (ancienne référence 293 B tolérée jusqu'au 31/12/2027). (4) Seuils 2026 confirmés inchangés (85 000/93 500 et 37 500/41 250) via service-public et BOFiP ; projet de seuil unique à 25 000 EUR abandonné. confidence=high : numéro d'article, contenu, base de l'obligation de mention et recodification confirmés sur Legifrance + BOFiP + service-public."
+    },
+    {
+      "topic": "Cession des droits patrimoniaux d'auteur : mentions obligatoires de l'acte de cession (étendue, destination, lieu, durée)",
+      "keywords": [
+        "cession droits d'auteur",
+        "cession droits patrimoniaux",
+        "mentions obligatoires cession",
+        "etendue destination lieu duree",
+        "acte de cession",
+        "contrat de cession droits d'auteur",
+        "transmission des droits de l'auteur",
+        "delimitation du domaine d'exploitation",
+        "mention distincte droit cede",
+        "l131-3",
+        "cession de droits propriete intellectuelle"
+      ],
+      "reference": "Article L131-3 du Code de la propriété intellectuelle",
+      "code": "Code de la propriété intellectuelle",
+      "summary": "La transmission des droits de l'auteur est subordonnée à la condition que chacun des droits cédés fasse l'objet d'une mention distincte dans l'acte de cession et que le domaine d'exploitation des droits cédés soit délimité quant à son étendue et à sa destination, quant au lieu et quant à la durée. Les cessions de droits d'adaptation audiovisuelle font l'objet d'un contrat écrit sur un document distinct de celui relatif à l'édition imprimée de l'oeuvre.",
+      "key_figures": "4 critères cumulatifs de délimitation du domaine d'exploitation : étendue, destination, lieu (territoire), durée, + une mention distincte pour chacun des droits cédés. Cession d'adaptation audiovisuelle : contrat écrit sur document distinct (al. 3).",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006278958",
+      "verified_note": "Contre-vérification indépendante effectuée le 06/06/2026 (WebSearch + WebFetch Legifrance, page de l'article et page de section). Numéro et texte du 1er alinéa confirmés MOT POUR MOT sur Legifrance. Article L131-3 EN VIGUEUR, statut affiché \"en vigueur\", version de base du 03/07/1992, jamais abrogé ni recodifié. Rattachement confirmé : Partie I (propriété littéraire et artistique), Livre Ier (droit d'auteur), Titre III (Exploitation des droits, art. L131-1 à L139-1), Chapitre Ier (Dispositions générales, art. L131-1 à L131-9, section LEGISCTA000006161639). À ne pas confondre avec L131-3-1 à L131-3-3 (oeuvres des agents publics, ajoutés en 2006) ni avec L131-4 (rémunération proportionnelle). C'est toujours L131-3 qui porte les mentions obligatoires de la cession. CORRECTION/NUANCE par rapport à la 1re passe : la sanction de \"nullité\" affirmée dans le summary initial N'EST PAS écrite dans l'article (le texte dit seulement que la transmission est \"subordonnée à la condition\") ; la nullité (relative, au profit de l'auteur) ou l'interprétation restrictive résultent de la jurisprudence de la Cour de cassation, pas du texte légal. J'ai donc retiré cette affirmation du summary pour rester strictement factuel à la source. La référence légale, elle, est exacte et à jour."
+    },
+    {
+      "topic": "Droit moral de l'auteur",
+      "keywords": [
+        "droit moral",
+        "inalienable",
+        "imprescriptible",
+        "perpetuel",
+        "droit au nom",
+        "propriete intellectuelle",
+        "droit d'auteur",
+        "l121-1"
+      ],
+      "reference": "Article L121-1 du Code de la propriete intellectuelle",
+      "code": "Code de la propriete intellectuelle",
+      "summary": "L'auteur jouit du droit au respect de son nom, de sa qualite et de son oeuvre. Ce droit est attache a sa personne. Il est perpetuel, inalienable et imprescriptible. Il est transmissible a cause de mort aux heritiers de l'auteur. L'exercice peut etre confere a un tiers en vertu de dispositions testamentaires.</summary>\n</invoke>\n",
+      "key_figures": "Trois caracteres : perpetuel, inalienable, imprescriptible. Survit a l'expiration des droits patrimoniaux (70 ans post mortem, art. L123-1 CPI).",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006278891/",
+      "verified_note": "Verifie sur Legifrance (article LEGIARTI000006278891). Numero et texte integral confirmes. EN VIGUEUR, inchange depuis le 03/07/1992 (loi 92-597), aucune recodification ni abrogation, a jour 2026. Summary corrige pour coller au verbatim officiel (deux phrases distinctes). A ne pas confondre avec L121-2 (divulgation), L121-4 (repentir/retrait), L212-2 (artiste-interprete)."
+    },
+    {
+      "topic": "Carte professionnelle et mandat écrit de l'agent immobilier (loi Hoguet)",
+      "keywords": [
+        "loi hoguet",
+        "carte professionnelle agent immobilier",
+        "mandat agent immobilier",
+        "mandat ecrit immobilier",
+        "agent immobilier reglementation",
+        "transaction immobiliere",
+        "carte t",
+        "decret 72-678",
+        "registre des mandats",
+        "commission agent immobilier"
+      ],
+      "reference": "Loi n° 70-9 du 2 janvier 1970 (loi Hoguet), art. 3 (carte professionnelle) et art. 6 (mandat / conventions écrites) ; décret d'application n° 72-678 du 20 juillet 1972, art. 72 (mandat écrit préalable et registre des mandats) et art. 73 (rémunération fixée dans le mandat)",
+      "code": "Loi n° 70-9 du 2 janvier 1970 (dite loi Hoguet) - loi autonome NON codifiée, complétée par le décret n° 72-678 du 20 juillet 1972",
+      "summary": "L'art. 3 de la loi Hoguet réserve les activités d'entremise et de gestion immobilières (visées à l'art. 1er) aux titulaires d'une carte professionnelle délivrée par le président de la chambre de commerce et d'industrie territoriale, sous conditions d'aptitude professionnelle, de garantie financière et d'assurance de responsabilité civile professionnelle. L'art. 6 impose que les conventions conclues avec ces professionnels (notamment le mandat) soient rédigées par écrit, dans les conditions fixées par décret en Conseil d'État. Le décret n° 72-678 précise (art. 72) que le titulaire de la carte \"Transactions\" ne peut négocier ou s'engager sans détenir un mandat écrit préalable, enregistré par ordre chronologique sur un registre des mandats dont le numéro est reporté sur l'exemplaire remis au mandant (conservation 10 ans), et (art. 73) que la rémunération ne peut être perçue que si ses conditions de détermination et la partie qui en a la charge sont fixées dans le mandat.",
+      "key_figures": "Carte professionnelle valable 3 ans, délivrée par la CCI territoriale (réforme loi ALUR 2014 ; avant : préfecture). Mandat écrit préalable obligatoire (art. 6 loi + art. 72 décret), numéroté et inscrit au registre des mandats par ordre chronologique. Conservation des mandats et du registre : 10 ans. Pas de commission/honoraires sans mandat écrit régulier fixant la rémunération (art. 73 décret) ; le défaut d'inscription au registre ou de report du numéro est sanctionné par la nullité du mandat selon la jurisprudence constante de la Cour de cassation.",
+      "source_url": "https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000512228",
+      "verified_note": "Vérifié indépendamment sur Légifrance (WebFetch des articles). Loi n° 70-9 du 2 janvier 1970 (JORFTEXT000000512228) : art. 3 = carte professionnelle, délivrée par le président de la CCI territoriale (LEGIARTI000043977265, version en vigueur 17/07/2025), conditions aptitude + garantie financière + assurance RC pro ; art. 6 = conventions/mandats rédigés par écrit avec renvoi à décret en Conseil d'État (LEGIARTI000032043077, version 01/10/2016). Décret d'application n° 72-678 du 20 JUILLET 1972 (JORFTEXT000000855024 / LEGITEXT000006061974) : art. 72 = mandat écrit préalable + registre des mandats chronologique + report du numéro sur l'exemplaire du mandant + conservation 10 ans (LEGIARTI000033202014, version 01/10/2016) ; art. 73 = rémunération fixée dans le mandat (LEGIARTI000033261932, version 20/10/2016). CORRECTION 1re passe : le décret est du 20 JUILLET 1972 (le verified_note précédent écrivait à tort \"20 janvier 1972\", en contradiction avec son propre code/reference). CORRECTION 2 : la nullité du mandat en cas de défaut d'inscription au registre/numéro n'est pas écrite littéralement dans l'art. 72 mais résulte de la jurisprudence constante de la Cour de cassation appliquant cet article (formulation ajustée pour ne pas surinterpréter le texte). CAVEAT : contrairement aux pénalités de retard B2B (recodifiées de L441-6 vers L441-10 du Code de commerce), la loi Hoguet N'A PAS été recodifiée dans un code et conserve sa numérotation d'origine (art. 1, 3, 6...). Elle a été modifiée à plusieurs reprises, notamment par la loi ALUR n° 2014-366 du 24 mars 2014 (carte délivrée par la CCI et non plus la préfecture, validité 3 ans, formation continue). Toujours citer le binôme loi + décret, jamais un numéro d'article de code."
+    },
+    {
+      "topic": "Droit de rétractation du consommateur dans la vente à distance (délai de 14 jours)",
+      "keywords": [
+        "droit de retractation",
+        "delai de retractation",
+        "14 jours",
+        "vente a distance",
+        "retractation consommateur",
+        "achat en ligne",
+        "contrat a distance",
+        "renvoyer un produit",
+        "annuler une commande",
+        "retractation hors etablissement",
+        "demarchage telephonique",
+        "l221-18",
+        "code de la consommation",
+        "remboursement 14 jours"
+      ],
+      "reference": "Article L221-18 du Code de la consommation",
+      "code": "Code de la consommation",
+      "summary": "Le consommateur dispose d'un délai de quatorze jours pour exercer son droit de rétractation d'un contrat conclu à distance, à la suite d'un démarchage téléphonique ou hors établissement, sans avoir à motiver sa décision ni à supporter d'autres coûts que ceux prévus aux articles L. 221-23 à L. 221-25. Le délai court à compter du jour de la conclusion du contrat pour les contrats de prestation de services, et à compter du jour de la réception du bien par le consommateur (ou un tiers désigné) pour les contrats de vente de biens.",
+      "key_figures": "Délai de rétractation : 14 jours. Point de départ : jour de conclusion du contrat (services) ou jour de réception du bien (biens) ; pour livraisons échelonnées, à compter de la réception du dernier bien (art. L221-19). Remboursement par le professionnel : au plus tard dans les 14 jours suivant la notification de la rétractation (art. L221-24).",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032226842/",
+      "verified_note": "CONFIRMÉ INDÉPENDAMMENT sur Légifrance (texte intégral de l'article L221-18, statut « En vigueur » depuis le 01/07/2016, toujours applicable en 2026). Numéro d'article exact et à jour, contenu et délai de 14 jours validés mot pour mot. RECODIFICATION IMPORTANTE : le droit de rétractation de 14 jours figurait auparavant à l'ancien article L121-21 du Code de la consommation, abrogé et recodifié à L221-18 par l'ordonnance n°2016-301 du 14 mars 2016 (entrée en vigueur 01/07/2016). Ne plus citer L121-21. Le délai de 14 jours est issu de la directive 2011/83/UE et n'a pas changé. Articles connexes vérifiés sur Légifrance (section L221-18 à L221-28) : L221-19 (calcul du délai : jour de conclusion/réception non compté, prorogation au 1er jour ouvrable si échéance samedi/dimanche/férié), L221-20 (prorogation de 12 mois si information défaillante du professionnel), L221-21 (modalités d'exercice : formulaire ou déclaration dénuée d'ambiguïté), L221-23 (frais et obligations de renvoi du consommateur), L221-24 (remboursement par le professionnel au plus tard dans les 14 jours suivant la notification), L221-28 (13 exceptions au droit de rétractation : biens confectionnés selon les spécifications du consommateur, biens susceptibles de se détériorer/périmer rapidement, prestations pleinement exécutées avant la fin du délai avec accord préalable, etc.). Champ d'application : protège uniquement les consommateurs (B2C), ne s'applique pas aux contrats entre professionnels."
+    },
+    {
+      "topic": "Secret professionnel et sanction pénale de sa violation",
+      "keywords": [
+        "secret professionnel",
+        "violation secret professionnel",
+        "article 226-13",
+        "atteinte au secret professionnel",
+        "revelation information secrete",
+        "depositaire par etat ou profession",
+        "sanction secret professionnel",
+        "exceptions secret 226-14",
+        "delit secret professionnel"
+      ],
+      "reference": "Article 226-13 du Code pénal (exceptions et dérogations prévues à l'article 226-14 du Code pénal)",
+      "code": "Code pénal",
+      "summary": "La révélation d'une information à caractère secret par une personne qui en est dépositaire soit par état ou par profession, soit en raison d'une fonction ou d'une mission temporaire, est punie d'un an d'emprisonnement et de 15 000 euros d'amende (art. 226-13). L'article 226-14 énumère les cas où cette interdiction ne s'applique pas (notamment lorsque la loi impose ou autorise la révélation, information des autorités sur des violences ou privations infligées à un mineur ou à une personne vulnérable, signalement de violences conjugales mettant la vie en danger).",
+      "key_figures": "Peine : 1 an d'emprisonnement + 15 000 € d'amende (art. 226-13). Exceptions légales : art. 226-14.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006417945",
+      "verified_note": "VÉRIFIÉ INDÉPENDAMMENT sur Legifrance (texte intégral récupéré sur 2 identifiants LEGIARTI résolvant tous deux vers l'art. 226-13 en vigueur) + confirmation par la page de section \"De l'atteinte au secret\". Numéro 226-13 EXACT et À JOUR 2026, en vigueur depuis le 1er janvier 2002 (entrée en vigueur du nouveau Code pénal, ord. n°2000-916 du 19/09/2000), NON abrogé. Peine confirmée mot pour mot : 1 an d'emprisonnement + 15 000 € d'amende. Art. 226-14 (exceptions) également en vigueur, version courante depuis le 12/05/2024. CAVEAT recodification confirmé : ancien art. 378 du Code pénal de 1810 → recodifié à 226-13 dans le nouveau Code ; ne PAS citer l'art. 378. Placement : Livre II, Titre II, Chapitre VI, Section 4 (De l'atteinte au secret, art. 226-13 à 226-15), Paragraphe 1 (De l'atteinte au secret professionnel, art. 226-13 à 226-14). CORRECTION par rapport à la 1re passe : le champ \"reference\" était mal formulé (\"exceptions à l'article 226-14\") ; en réalité ce sont les exceptions À l'application de l'art. 226-13 qui figurent À l'art. 226-14. Formulation corrigée. Source primaire : Legifrance uniquement (blogs ignorés)."
+    },
+    {
+      "topic": "Déclaration d'activité d'un organisme de formation (numéro de déclaration auprès de la DREETS)",
+      "keywords": [
+        "declaration d'activite",
+        "organisme de formation",
+        "numero de declaration",
+        "nda",
+        "prestataire de formation",
+        "dreets",
+        "prefet de region",
+        "l6351-1",
+        "code du travail formation",
+        "enregistrement organisme formation",
+        "mon activite formation",
+        "recepisse declaration activite"
+      ],
+      "reference": "Article L6351-1 du Code du travail (dépôt et enregistrement de la déclaration d'activité) ; délai de dépôt de 3 mois et envoi au préfet de région précisés à l'article R6351-1 du Code du travail",
+      "code": "Code du travail",
+      "summary": "Toute personne qui réalise des actions prévues à l'article L. 6313-1 dépose auprès de l'autorité administrative (préfet de région / DREETS) une déclaration d'activité, dès la conclusion de la première convention ou du premier contrat de formation professionnelle (art. L. 6353-1 et L. 6353-3). L'autorité administrative procède à l'enregistrement de la déclaration sauf dans les cas prévus par l'article L. 6351-3, puis délivre un récépissé portant le numéro de déclaration d'activité (NDA).",
+      "key_figures": "Délai de dépôt : au plus tard 3 mois suivant la première convention/contrat (art. R6351-1). Autorité : préfet de région via le service régional de contrôle de la DREETS. Dépôt en ligne via le téléservice \"Mon activité formation\" (MAF) ou formulaire papier. Délai d'instruction : 2 mois après réception du dossier complet, le silence valant enregistrement de la déclaration.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037386232",
+      "verified_note": "CONFIRMÉ INDÉPENDAMMENT sur sources officielles. (1) Article L6351-1 sur Legifrance (LEGIARTI000037386232) : version en vigueur depuis le 01/01/2019, modifié par LOI n°2018-771 du 5 septembre 2018 art. 24, NON abrogé. Texte intégral reproduit conforme : dépôt de la déclaration d'activité + enregistrement par l'autorité administrative (sauf cas L6351-3). Numérotation actuelle et à jour 2026 (chapitre Ier \"Déclaration d'activité\", art. L6351-1 A à L6351-8). (2) Article R6351-1 (LEGIARTI000043766587) vérifié sur Legifrance : version en vigueur depuis le 08/07/2021 (Décret n°2021-900 du 5 juillet 2021), confirme le délai de dépôt \"au plus tard dans les trois mois\" et l'envoi au \"préfet de région compétent\", dépôt dématérialisé possible via téléservice (R6351-13). (3) entreprendre.service-public.gouv.fr (fiche F19087) confirme : délai 3 mois, autorité = service régional de contrôle de la DREETS, téléservice \"Mon activité formation (MAF)\", récépissé/NDA délivré dans un délai d'instruction de 2 mois (silence vaut enregistrement). SEULE CORRECTION par rapport à la 1re passe : le délai d'instruction est de 2 mois (délai légal, silence = enregistrement), et non \"~2 mois indicatif\". Le texte de L6351-1 lui-même ne contient pas l'expression \"numéro de déclaration\" : le NDA résulte du récépissé d'enregistrement (cohérent avec la 1re passe). Aucune recodification récente : la référence reste valable en 2026."
+    },
+    {
+      "topic": "Prescription des obligations entre commerçants (ou entre commerçants et non-commerçants)",
+      "keywords": [
+        "prescription commerciale",
+        "prescription entre commercants",
+        "obligations nees a l'occasion de leur commerce",
+        "delai de prescription 5 ans",
+        "prescription action en paiement",
+        "l110-4",
+        "prescription quinquennale commerciale",
+        "delai pour agir commercant"
+      ],
+      "reference": "Article L110-4 du Code de commerce",
+      "code": "Code de commerce",
+      "summary": "Les obligations nées à l'occasion de leur commerce entre commerçants, ou entre commerçants et non-commerçants, se prescrivent par cinq ans si elles ne sont pas soumises à des prescriptions spéciales plus courtes (I). Le II prévoit des prescriptions d'un an pour des cas maritimes énumérés (nourriture fournie aux matelots sur ordre du capitaine, fournitures de matériaux pour la construction, l'équipement et l'approvisionnement d'un navire, ouvrages faits après réception).",
+      "key_figures": "Délai de prescription principal : 5 ans. Prescriptions spéciales : 1 an (cas maritimes énumérés au II). Point de départ aligné sur l'art. 2224 du Code civil (jour où le titulaire connaît ou aurait dû connaître les faits). Délai abaissé de 10 à 5 ans par la loi n° 2008-561 du 17 juin 2008.",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000027725867",
+      "verified_note": "Numéro et contenu confirmés indépendamment sur Légifrance (texte officiel + page de section LEGISCTA000006133171). L'article L110-4 est EN VIGUEUR (version en vigueur depuis le 17 juin 2013), NON ABROGÉ et NON recodifié. C'est la bonne base : le délai de droit commun en matière commerciale est de 5 ans (et non plus 10 ans depuis la réforme de la prescription par la loi n° 2008-561 du 17 juin 2008). Dernière modification : loi n° 2013-619 du 16 juillet 2013 (art. 32). Toujours applicable en 2026. À ne pas confondre avec L137-2 (devenu L218-2 du Code de la consommation) qui régit la prescription biennale professionnel/consommateur. Le point de départ suit l'art. 2224 du Code civil (jurisprudence Cour de cassation). Entrée de la 1re passe validée sans correction de fond, simple précision sur la date de version en vigueur (17/06/2013) vs date de la loi modificative (16/07/2013)."
+    },
+    {
+      "topic": "Intérêts moratoires, dommages-intérêts de retard et délai de grâce du juge (Code civil)",
+      "keywords": [
+        "interets moratoires",
+        "dommages-interets de retard",
+        "retard de paiement",
+        "obligation de somme d'argent",
+        "interet au taux legal",
+        "mise en demeure",
+        "delai de grace",
+        "echelonnement de la dette",
+        "report de paiement",
+        "article 1231-6",
+        "article 1343-5",
+        "majorations d'interets",
+        "penalites de retard",
+        "taux legal",
+        "mauvaise foi du debiteur"
+      ],
+      "reference": "Article 1231-6 du Code civil (intérêts moratoires / dommages-intérêts de retard) et Article 1343-5 du Code civil (délai de grâce du juge)",
+      "code": "Code civil",
+      "summary": "L'art. 1231-6 dispose que les dommages et intérêts dus à raison du retard dans le paiement d'une obligation de somme d'argent consistent dans l'intérêt au taux légal, à compter de la mise en demeure ; ils sont dus sans que le créancier soit tenu de justifier d'aucune perte ; le créancier auquel son débiteur en retard a causé, par sa mauvaise foi, un préjudice indépendant de ce retard peut obtenir des dommages et intérêts distincts de l'intérêt moratoire. L'art. 1343-5 permet au juge, compte tenu de la situation du débiteur et des besoins du créancier, de reporter ou échelonner, dans la limite de deux années, le paiement des sommes dues, avec suspension des procédures d'exécution et non-encourement des majorations d'intérêts ou pénalités pendant le délai fixé ; toute stipulation contraire est réputée non écrite.",
+      "key_figures": "Intérêt au taux légal à compter de la mise en demeure (art. 1231-6) ; délai de grâce du juge limité à 2 années, taux d'intérêt réduit au moins égal au taux légal possible sur décision spéciale et motivée, stipulation contraire réputée non écrite, non applicable aux dettes d'aliment (art. 1343-5)",
+      "source_url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032010133",
+      "verified_note": "VÉRIFIÉ INDÉPENDAMMENT (06/06/2026) sur Legifrance, numéros et textes confirmés mot pour mot. Art. 1231-6 : EN VIGUEUR depuis le 01/10/2016, créé par l'Ordonnance n°2016-131 du 10 février 2016 (art. 2), non abrogé (URL https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032010133). Art. 1343-5 : EN VIGUEUR depuis le 01/10/2016, issu de l'Ordonnance n°2016-131 (art. 3), non abrogé (URL https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032035267/). CAVEAT RECODIFICATION (important pour ancrer l'IA) : ces dispositions résultent de la réforme du droit des obligations (ord. 2016-131). L'ancien art. 1153 C. civ. (intérêts moratoires au taux légal) est devenu l'art. 1231-6, et l'ancien art. 1244-1 (délai de grâce) est devenu l'art. 1343-5 ; ne plus citer 1153 ni 1244-1 (concordance confirmée par l'aide-mémoire INC et les tables de concordance de la réforme). À NE PAS CONFONDRE avec les pénalités de retard B2B entre professionnels (art. L441-10 du Code de commerce, taux BCE+10 pts + indemnité forfaitaire 40 €), qui relèvent du Code de commerce et ne se cumulent pas avec les intérêts légaux de l'art. 1231-6. Texte exact 1343-5 confirmé sur Legifrance : report/échelonnement « dans la limite de deux années », « Les majorations d'intérêts ou les pénalités prévues en cas de retard ne sont pas encourues pendant le délai fixé par le juge », « Toute stipulation contraire est réputée non écrite », dispositions non applicables aux dettes d'aliment. La 1re passe était exacte ; aucune correction nécessaire."
+    }
+  ]
+}
