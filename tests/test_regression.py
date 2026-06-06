@@ -6638,3 +6638,10 @@ class TestQW_GenerateDocumentTool:
             "generate_document", {"format": "docx", "content": "   "}, db_session
         )
         assert "aucun contenu" in result.lower()
+
+    def test_capabilities_advertise_generate_document_and_read_contact(self):
+        """Le prompt de capacités (streaming) doit pousser à utiliser generate_document
+        et read_contact, sinon le LLM rédige inline / hallucine au lieu d'appeler l'outil."""
+        content = (SRC / "app" / "routers" / "chat.py").read_text(encoding="utf-8")
+        assert '"generate_document" in tool_names' in content
+        assert '"read_contact" in tool_names' in content
