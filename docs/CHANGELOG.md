@@ -7,6 +7,60 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.20.0-alpha] - 6 juin 2026 - Revue produit : confiance, données unifiées, navigation
+
+Gros bump (0.13.2 → 0.20.0), aboutissement d'une revue produit globale recentrée sur le solopreneur. Deux jours de chantier : refonte de la navigation, mise au carré de la confiance et de la souveraineté, données rendues cohérentes (CRM, facturation, mémoire), puis deux passages de personas métier, un test exhaustif de toutes les fonctionnalités, des revues adversariales multi-agents et une vérification humaine finale. 1044 tests de régression au vert.
+
+### Confiance et souveraineté
+- **Fini le bluff sur l'hébergement** : à « où sont mes données ? », Thérèse répond factuellement (stockage 100 % local dans `~/.therese/`, aucun serveur tiers) et distingue clairement le **stockage** (local) du **traitement** (qui part chez le fournisseur du modèle seulement si un modèle cloud est actif).
+- **Souveraineté honnête sur le chiffrement** : Thérèse ne prétend plus que la base est « chiffrée » (ni « AES-256 »). La base SQLite n'est pas chiffrée au repos ; seuls les secrets (clés API, mots de passe de messagerie) le sont, par champ, via Fernet (AES-128) avec la clé au trousseau du système (sinon fichier à accès restreint). Documentation alignée.
+- **Badge local/cloud par message** : chaque réponse indique si elle vient d'un modèle local (Ollama) ou cloud.
+- **Juridique ancré (RAG)** : un corpus de références vérifiées sur Légifrance (pénalités de retard L441-10, franchise TVA 293 B, cession de droits CPI, intérêts moratoires 1231-6, Hoguet, rétractation, secret pro, prescription...) est injecté dans les réponses. Pour le reste, Thérèse signale `[à confirmer sur Légifrance]` au lieu d'inventer.
+
+### CRM et facturation
+- **Scoring CRM réparé** : les scores reflètent enfin les données (un client chaud se distingue d'un dossier perdu), fini le « figé à 60 ».
+- **Notes clients persistées** : les notes saisies à la création d'un contact sont stockées, relues et cherchables.
+- **Profil émetteur** (SIRET, NDA d'organisme de formation, code APE) : un garde-fou bloque la génération d'une facture sans identité émettrice, et le profil est propagé au PDF.
+- **Devise étrangère honnête jusque dans le PDF** : sur une facture en CAD, les mentions de droit français (indemnité 40 EUR, art. L441-10) ne s'impriment plus, ni dans le document stocké ni dans le PDF remis au client ; une ligne générique prend le relais. En EUR, rien ne change.
+
+### Email et documents
+- **Signature mail** : nouvel écran pour éditer la signature HTML par compte.
+- **Génération de documents** : « génère-moi un Word/PowerPoint/Excel » produit un vrai fichier téléchargeable.
+
+### Anti-hallucination
+- Le chat lit la vraie fiche d'un contact au lieu d'inventer le contexte client.
+- Sans calendrier connecté, Thérèse dit l'absence au lieu d'inventer des rendez-vous ; l'ajout rapide en langage naturel répond clairement (création via formulaire) pour un calendrier local.
+- RGPD : l'anonymisation (droit à l'oubli) purge aussi l'index de recherche (la fiche anonymisée ne remonte plus).
+
+### Navigation (refonte)
+- Tout passe en vues content-swap (plus de fenêtres détachées) : Mémoire, CRM, Email, Calendrier, Indexation des fichiers.
+- Touche Échap unifiée, palette de commandes ⌘K alimentée par un registre d'actions, pastille « N contacts liés à cette conversation ».
+
+### Multi-LLM et Board de décision
+- **Outils Mistral réparés** : avec Mistral, dès qu'un outil était sollicité (chat CRM, génération de document, synthèse du board), la réponse revenait vide. Le provider est désormais aligné sur OpenAI (appels d'outils streamés accumulés correctement, signalement de l'appel d'outil, relance réelle avec les résultats). Les outils fonctionnent de bout en bout.
+- **Board plus robuste** : avec un seul fournisseur configuré, les 5 conseillers tapaient la même clé simultanément et certains revenaient vides (rate-limit). La concurrence est limitée par fournisseur : tous répondent.
+
+### Fixed
+- Le chat en streaming plantait sur **tout appel d'outil** avec Mistral (construction d'événement invalide) puis renvoyait une **réponse vide** (relance d'outil non implémentée) → corrigé.
+- Le RAG juridique ignorait les requêtes **accentuées** (« intérêts », « commerçants ») → normalisation des accents.
+- Mentions légales en EUR imprimées sur une facture en devise étrangère → corrigées jusque dans le PDF.
+- Redirection 307 sur la liste et la création de factures, tâches et notifications → routes exposées avec et sans slash final.
+- Sélecteur de modèles qui tombait à un seul modèle après bascule de fournisseur → liste complète rétablie (source unique GET/POST).
+- Démarrage d'un serveur MCP qui gelait la requête → borné par un timeout ; doublon → erreur explicite (409).
+- Messages d'erreur de validation (422) qui n'indiquaient pas le champ fautif → corrigés.
+- Profil émetteur (SIRET/NDA) qui parasitait le contexte des conseillers du board → contexte allégé.
+
+### Validation
+- Deux passages de 11 personas métier (simulés puis joués en live), un persona de test exhaustif (25 zones), des revues adversariales multi-agents (qui ont rattrapé le PDF en devise et deux régressions de tests), et une **vérification humaine finale en navigateur** (fournisseur Mistral réel) : GO.
+- 1044 tests de régression backend au vert, lint propre.
+
+### Dette connue (non bloquante)
+- Appel d'outils non implémenté pour Grok, Gemini et Ollama (réponse en texte sans outils, pas de réponse vide).
+- Quick-add calendrier en langage naturel : Google uniquement pour l'instant.
+- RAG juridique : corpus de 12 références, à étendre au fil de l'eau.
+
+---
+
 ## [v0.1.13-alpha] - 13 février 2026 - Fix clés API 401 + auto-création CRM Sheet
 
 ### Fixed
