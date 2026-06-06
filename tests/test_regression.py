@@ -6189,3 +6189,104 @@ class TestQW_CADCurrency:
         ).read_text(encoding="utf-8")
         assert "'CAD'" in content, "InvoiceForm doit proposer CAD (sélecteur de devise)"
         assert "CAD:" in content, "InvoiceForm CURRENCY_SYMBOLS doit mapper CAD"
+
+
+# ============================================================
+# QUICK WIN testeur (Capov, Discord alpha 05/06/2026) : UI signature mail
+# La brique backend existait (signature_html par compte, GET/PUT, injection à
+# l'envoi) mais sans écran de réglage. Ajout de l'UI + couverture du contrat.
+# ============================================================
+
+
+class TestQW_EmailSignature:
+    """Signature mail : contrat backend (round-trip + sanitisation) + câblage UI."""
+
+    @pytest.mark.asyncio
+    async def test_signature_roundtrip_and_sanitization(self, client):
+        """PUT/GET signature : persiste, round-trip, et neutralise le HTML dangereux."""
+        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import patch as _patch
+
+        with _patch("app.routers.email.get_email_provider") as mock_provider:
+            mock_instance = MagicMock()
+            mock_instance.test_connection = AsyncMock(return_value={"success": True})
+            mock_provider.return_value = mock_instance
+            await client.post(
+                "/api/email/auth/imap-setup",
+                json={
+                    "email": "sig@example.com",
+                    "password": "app-password-test",
+                    "imap_host": "imap.example.com",
+                    "imap_port": 993,
+                    "smtp_host": "smtp.example.com",
+                    "smtp_port": 587,
+                    "smtp_use_tls": True,
+                },
+            )
+
+        status = await client.get("/api/email/auth/status")
+        account_id = status.json()["accounts"][0]["id"]
+
+        put = await client.put(
+            f"/api/email/accounts/{account_id}/signature",
+            json={"signature_html": "<p>Ludo</p><script>alert(1)</script>"},
+        )
+        assert put.status_code == 200, put.text
+        assert "Ludo" in put.json()["signature_html"]
+        assert "<script>" not in put.json()["signature_html"], "Le HTML doit être sanitisé (nh3)"
+
+        got = await client.get(f"/api/email/accounts/{account_id}/signature")
+        assert got.status_code == 200
+        assert got.json()["account_id"] == account_id
+        assert "<script>" not in (got.json()["signature_html"] or "")
+
+    def test_signature_strips_inline_css(self):
+        """Revue : nh3 ne filtre pas le CSS de style -> on retire style de l'allowlist
+        (sinon background-image:url(remote) exfiltre, contraire au 100% local)."""
+        from app.services.html_sanitizer import sanitize_html
+
+        out = sanitize_html(
+            '<div style="position:fixed;background-image:url(https://evil.com/x)">x</div>'
+        )
+        assert "style=" not in out
+        assert "evil.com" not in out
+        assert "position:fixed" not in out
+        assert "x" in out  # le contenu textuel reste
+
+    def test_signature_links_get_noopener_rel(self):
+        """Revue : les liens target=_blank doivent recevoir rel=noopener (anti tab-nabbing)."""
+        from app.services.html_sanitizer import sanitize_html
+
+        out = sanitize_html('<a href="https://x.fr" target="_blank">lien</a>')
+        assert "noopener" in out
+
+    def test_emailpanel_wires_signature_editor(self):
+        """EmailPanel doit exposer le déclencheur et monter la modale de signature."""
+        content = (
+            FRONTEND / "components" / "email" / "EmailPanel.tsx"
+        ).read_text(encoding="utf-8")
+        assert "SignatureEditorModal" in content
+        assert "setShowSignatureEditor" in content
+
+    def test_signature_editor_preview_is_sanitized(self):
+        """L'aperçu passe par la politique partagée sanitizeEmailHtml (interdit style/
+        script) ; la modale s'inscrit sur la pile Échap (anti-éjection de vue, revue)."""
+        content = (
+            FRONTEND / "components" / "email" / "SignatureEditorModal.tsx"
+        ).read_text(encoding="utf-8")
+        assert "sanitizeEmailHtml" in content, "L'aperçu doit utiliser sanitizeEmailHtml"
+        assert "pushEscapeHandler" in content, (
+            "La modale doit s'inscrire sur la pile Échap (sinon Échap éjecte la vue)"
+        )
+        assert "getEmailSignature" in content and "updateEmailSignature" in content
+
+    def test_shared_sanitizer_forbids_inline_style(self):
+        """Le sanitizer partagé (aperçu + emails reçus) doit interdire l'attribut style,
+        cohérent avec le backend nh3."""
+        import re
+
+        content = (FRONTEND / "lib" / "sanitizeEmailHtml.ts").read_text(encoding="utf-8")
+        assert "FORBID_TAGS" in content and "'style'" in content
+        m = re.search(r"ALLOWED_ATTR:\s*\[(.*?)\]", content, re.DOTALL)
+        assert m is not None, "ALLOWED_ATTR introuvable"
+        assert "'style'" not in m.group(1), "style ne doit pas être dans ALLOWED_ATTR"

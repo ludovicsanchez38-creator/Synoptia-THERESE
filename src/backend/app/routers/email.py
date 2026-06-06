@@ -987,8 +987,11 @@ async def send_email(
         if is_html:
             body = body + "<br><br>" + account.signature_html
         else:
-            # Convertir le body texte en HTML pour ajouter la signature
-            body = f"<p>{body}</p><br>" + account.signature_html
+            # Convertir le body texte en HTML pour ajouter la signature.
+            # Échapper le texte saisi (sinon < > & seraient interprétés comme du
+            # HTML) et restituer les sauts de ligne.
+            safe_body = html.escape(body).replace("\n", "<br>")
+            body = f"<p>{safe_body}</p><br>" + account.signature_html
             is_html = True
 
     if account.provider == "imap":

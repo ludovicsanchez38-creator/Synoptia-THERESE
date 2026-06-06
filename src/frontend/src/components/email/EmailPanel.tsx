@@ -24,6 +24,7 @@ import {
   ExternalLink,
   LogOut,
   FileText,
+  PenLine,
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-shell';
 import { useEmailStore } from '../../stores/emailStore';
@@ -32,6 +33,7 @@ import { EmailList } from './EmailList';
 import { EmailDetail } from './EmailDetail';
 import { EmailCompose } from './EmailCompose';
 import { EmailSetupWizard } from './wizard';
+import { SignatureEditorModal } from './SignatureEditorModal';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 
@@ -66,6 +68,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const [syncing, setSyncing] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showSignatureEditor, setShowSignatureEditor] = useState(false);
   const [reauthing, setReauthing] = useState(false);
   // Contrôle l'affichage du wizard indépendamment de isConnected.
   // Initialisé à true pour l'afficher automatiquement si aucun compte.
@@ -227,6 +230,16 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const currentAccount = accounts.find((a) => a.id === currentAccountId);
   const isConnected = accounts.length > 0;
 
+  // Éditeur de signature (rendu via portail, partagé par les 2 modes de rendu)
+  const signatureModal =
+    showSignatureEditor && currentAccountId ? (
+      <SignatureEditorModal
+        accountId={currentAccountId}
+        accountEmail={currentAccount?.email}
+        onClose={() => setShowSignatureEditor(false)}
+      />
+    ) : null;
+
   // System labels
   const systemLabels = [
     { id: 'INBOX', name: 'Boite de réception', icon: Inbox },
@@ -314,6 +327,15 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
                   <UserPlus className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSignatureEditor(true)}
+                  title="Signature email"
+                  disabled={!currentAccountId}
+                >
+                  <PenLine className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
@@ -447,6 +469,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             </>
           )}
         </div>
+        {signatureModal}
       </div>
     );
   }
@@ -547,6 +570,15 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowAddAccount(true)} title="Ajouter un compte">
                   <UserPlus className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSignatureEditor(true)}
+                  title="Signature email"
+                  disabled={!currentAccountId}
+                >
+                  <PenLine className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
@@ -682,6 +714,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
           )}
         </div>
       </motion.div>
+      {signatureModal}
     </div>
   );
 }

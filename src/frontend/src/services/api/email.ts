@@ -223,6 +223,28 @@ export async function disconnectEmailAccount(accountId: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to disconnect account');
 }
 
+// Signature HTML par compte (le backend sanitise via nh3 au PUT)
+export async function getEmailSignature(
+  accountId: string
+): Promise<{ account_id: string; signature_html: string | null }> {
+  const response = await apiFetch(`${API_BASE}/api/email/accounts/${accountId}/signature`);
+  if (!response.ok) throw new Error('Failed to get signature');
+  return response.json();
+}
+
+export async function updateEmailSignature(
+  accountId: string,
+  signatureHtml: string
+): Promise<{ account_id: string; signature_html: string }> {
+  const response = await apiFetch(`${API_BASE}/api/email/accounts/${accountId}/signature`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ signature_html: signatureHtml }),
+  });
+  if (!response.ok) throw new Error('Failed to update signature');
+  return response.json();
+}
+
 // Messages
 export async function listEmailMessages(
   accountId: string,

@@ -7,14 +7,17 @@ ALLOWED_TAGS = {
     "table", "tr", "td", "th", "thead", "tbody",
     "ul", "ol", "li", "h1", "h2", "h3", "h4", "blockquote", "hr",
 }
+# Pas d'attribut `style` : nh3 ne filtre pas le CSS inline, ce qui laisserait
+# passer background-image:url(http://...) (exfiltration réseau au rendu, contraire
+# à la promesse « 100 % local ») et position:fixed (overlay). On ne garde que des
+# attributs de présentation HTML inoffensifs, alignés sur la politique déjà
+# appliquée aux emails reçus (sanitizeEmailHtml côté frontend, qui interdit style).
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
     "a": {"href", "title", "target"},
     "img": {"src", "alt", "width", "height"},
-    "span": {"style"},
-    "div": {"style"},
-    "td": {"colspan", "rowspan", "style"},
-    "th": {"colspan", "rowspan", "style"},
-    "table": {"style", "border", "cellpadding", "cellspacing"},
+    "td": {"colspan", "rowspan"},
+    "th": {"colspan", "rowspan"},
+    "table": {"border", "cellpadding", "cellspacing"},
 }
 
 
@@ -24,5 +27,6 @@ def sanitize_html(html: str) -> str:
         html,
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
-        link_rel=None,
+        # rel=noopener noreferrer sur les liens (anti tab-nabbing / fuite referrer)
+        link_rel="noopener noreferrer",
     )
