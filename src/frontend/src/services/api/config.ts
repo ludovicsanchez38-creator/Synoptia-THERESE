@@ -89,6 +89,9 @@ export interface UserProfile {
   address: string | null;
   siren: string | null;
   tva_intra: string | null;
+  siret: string | null;
+  code_ape: string | null;
+  nda: string | null;
   display_name: string;
 }
 
@@ -103,6 +106,9 @@ export interface UserProfileUpdate {
   address?: string;
   siren?: string;
   tva_intra?: string;
+  siret?: string;
+  code_ape?: string;
+  nda?: string;
 }
 
 export interface WorkingDirectory {

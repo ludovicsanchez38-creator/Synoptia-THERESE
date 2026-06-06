@@ -98,6 +98,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     address: '',
     siren: '',
     tva_intra: '',
+    siret: '',
+    code_ape: '',
+    nda: '',
     context: '',
   });
   const [profileSaving, setProfileSaving] = useState(false);
@@ -179,6 +182,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           address: profileData.address || '',
           siren: profileData.siren || '',
           tva_intra: profileData.tva_intra || '',
+          siret: profileData.siret || '',
+          code_ape: profileData.code_ape || '',
+          nda: profileData.nda || '',
           context: profileData.context || '',
         });
       }
@@ -393,6 +399,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         address: profileForm.address,
         siren: profileForm.siren,
         tva_intra: profileForm.tva_intra,
+        siret: profileForm.siret,
+        code_ape: profileForm.code_ape,
+        nda: profileForm.nda,
         context: profileForm.context,
       });
       setProfile(savedProfile);
@@ -426,6 +435,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           address: importedProfile.address || '',
           siren: importedProfile.siren || '',
           tva_intra: importedProfile.tva_intra || '',
+          siret: importedProfile.siret || '',
+          code_ape: importedProfile.code_ape || '',
+          nda: importedProfile.nda || '',
           context: importedProfile.context || '',
         });
         setProfileSaved(true);

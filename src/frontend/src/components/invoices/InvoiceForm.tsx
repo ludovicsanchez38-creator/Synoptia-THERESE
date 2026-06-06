@@ -8,8 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Plus, Trash2, Save, FileCheck } from 'lucide-react';
-import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
+import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid, getBillingProfileStatus } from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -69,6 +69,13 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
+  // P0-PROD-2 : garde-fou profil émetteur (raison sociale + SIRET + adresse)
+  const [billingMissing, setBillingMissing] = useState<string[] | null>(null);
+  useEffect(() => {
+    getBillingProfileStatus()
+      .then((s) => setBillingMissing(s.is_complete ? null : s.missing))
+      .catch(() => {});
+  }, []);
   const [documentType, setDocumentType] = useState<'devis' | 'facture' | 'avoir'>(
     (invoice?.document_type as 'devis' | 'facture' | 'avoir') || 'facture'
   );
@@ -348,6 +355,18 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
+          {billingMissing && billingMissing.length > 0 && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-yellow-200">
+                Profil émetteur incomplet ({billingMissing.join(', ')}). Une facture sans ces
+                informations n'est pas conforme. Complète-le dans Réglages &gt; Profil avant de
+                générer le PDF.
+              </p>
+            </div>
+          )}
+
           {/* Type de document */}
           {!invoice && (
             <div>

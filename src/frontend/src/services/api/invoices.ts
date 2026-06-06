@@ -97,6 +97,13 @@ export async function getInvoice(invoiceId: string): Promise<Invoice> {
   return response.json();
 }
 
+// P0-PROD-2 : statut du profil émetteur (garde-fou avant 1re facture)
+export async function getBillingProfileStatus(): Promise<{ is_complete: boolean; missing: string[] }> {
+  const response = await apiFetch(`${API_BASE}/api/invoices/billing/profile-status`);
+  if (!response.ok) throw new Error('Failed to get billing profile status');
+  return response.json();
+}
+
 export async function createInvoice(req: CreateInvoiceRequest): Promise<Invoice> {
   const response = await apiFetch(`${API_BASE}/api/invoices`, {
     method: 'POST',

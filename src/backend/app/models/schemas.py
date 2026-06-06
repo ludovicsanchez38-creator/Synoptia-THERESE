@@ -424,6 +424,9 @@ class UserProfileUpdate(BaseModel):
     address: str = ""
     siren: str = ""
     tva_intra: str = ""
+    siret: str = ""
+    code_ape: str = ""
+    nda: str = ""
 
 
 class UserProfileResponse(BaseModel):
@@ -439,6 +442,9 @@ class UserProfileResponse(BaseModel):
     address: str = ""
     siren: str = ""
     tva_intra: str = ""
+    siret: str = ""
+    code_ape: str = ""
+    nda: str = ""
     display_name: str
 
 

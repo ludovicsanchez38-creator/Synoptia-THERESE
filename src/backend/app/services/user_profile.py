@@ -34,6 +34,9 @@ class UserProfile:
     address: str = ""              # "294 Montee des Genets, 04100 Manosque"
     siren: str = ""                # "991 606 781"
     tva_intra: str = ""            # "FR 08 991 606 781"
+    siret: str = ""                # "991 606 781 00011" (identite emetteur facture)
+    code_ape: str = ""             # "6202A" (code NAF)
+    nda: str = ""                  # Numero declaration activite (organisme de formation)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -53,7 +56,25 @@ class UserProfile:
             address=data.get("address", ""),
             siren=data.get("siren", ""),
             tva_intra=data.get("tva_intra", ""),
+            siret=data.get("siret", ""),
+            code_ape=data.get("code_ape", ""),
+            nda=data.get("nda", ""),
         )
+
+    def is_billing_complete(self) -> bool:
+        """Profil émetteur minimal pour émettre une facture conforme (P0-PROD-2)."""
+        return bool((self.company or self.name) and self.siret and self.address)
+
+    def missing_billing_fields(self) -> list[str]:
+        """Champs manquants pour une facture conforme."""
+        missing: list[str] = []
+        if not (self.company or self.name):
+            missing.append("raison sociale ou nom")
+        if not self.siret:
+            missing.append("SIRET")
+        if not self.address:
+            missing.append("adresse")
+        return missing
 
     def display_name(self) -> str:
         """Get display name (nickname or full name)."""
@@ -82,6 +103,21 @@ class UserProfile:
         # Location
         if self.location:
             parts.append(f" Basé à {self.location}.")
+
+        # Identité légale / facturation : injectée pour que l'assistant ne l'INVENTE
+        # JAMAIS dans les documents (P0-PROD-2, constat C7 : SIRET/NDA hallucinés).
+        legal = []
+        if self.siret:
+            legal.append(f"SIRET {self.siret}")
+        if self.tva_intra:
+            legal.append(f"TVA intra {self.tva_intra}")
+        if self.nda:
+            legal.append(f"déclaration d'activité (OF) {self.nda}")
+        if legal:
+            parts.append(
+                f" Identité légale exacte (à reprendre telle quelle, ne jamais inventer) : "
+                f"{', '.join(legal)}."
+            )
 
         # Extended context (truncated if too long)
         if self.context:

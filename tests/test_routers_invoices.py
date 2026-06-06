@@ -272,12 +272,32 @@ class TestInvoicesCRUD:
         assert get_response.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_generate_invoice_pdf_without_cached_profile(self, client: AsyncClient):
-        """GET /api/invoices/{id}/pdf reste robuste si le profil cache est absent."""
+    async def test_generate_invoice_pdf_blocked_without_emitter_profile(self, client: AsyncClient):
+        """P0-PROD-2 : GET /api/invoices/{id}/pdf est bloqué (400) si le profil émetteur
+        est absent/incomplet (facture sans SIRET ni identité = non conforme)."""
         contact_id = await _create_contact(client)
         invoice = await _create_invoice(client, contact_id)
 
         with patch("app.routers.invoices.get_cached_profile", return_value=None):
+            response = await client.get(f"/api/invoices/{invoice['id']}/pdf")
+
+        assert response.status_code == 400, response.text
+
+    @pytest.mark.asyncio
+    async def test_generate_invoice_pdf_with_complete_emitter(self, client: AsyncClient):
+        """P0-PROD-2 : avec un profil émetteur complet, le PDF est généré (200)."""
+        from app.services.user_profile import UserProfile
+
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+
+        complete = UserProfile(
+            name="Ludovic Sanchez",
+            company="Synoptia",
+            address="294 Montee des Genets, 04100 Manosque",
+            siret="99160678100011",
+        )
+        with patch("app.routers.invoices.get_cached_profile", return_value=complete):
             response = await client.get(f"/api/invoices/{invoice['id']}/pdf")
 
         assert response.status_code == 200, response.text

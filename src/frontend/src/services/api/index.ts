@@ -385,6 +385,7 @@ export {
   sendInvoiceByEmail,
   convertDevisToInvoice,
   updateDevisStatus,
+  getBillingProfileStatus,
   type InvoiceLine,
   type Invoice,
   type InvoiceLineRequest,

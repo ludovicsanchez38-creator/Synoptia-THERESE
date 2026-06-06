@@ -19,6 +19,9 @@ export interface ProfileFormData {
   address: string;
   siren: string;
   tva_intra: string;
+  siret: string;
+  code_ape: string;
+  nda: string;
   context: string;
 }
 
@@ -322,6 +325,44 @@ export function ProfileTab({
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
+        </div>
+
+        {/* P0-PROD-2 : identité émetteur (requise pour une facture conforme) */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="settings-profile-siret" className="text-xs text-text-muted mb-1 block">SIRET (requis pour facturer)</label>
+            <input
+              id="settings-profile-siret"
+              type="text"
+              value={profileForm.siret}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
+              placeholder="991 606 781 00011"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+            />
+          </div>
+          <div>
+            <label htmlFor="settings-profile-ape" className="text-xs text-text-muted mb-1 block">Code APE / NAF</label>
+            <input
+              id="settings-profile-ape"
+              type="text"
+              value={profileForm.code_ape}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
+              placeholder="6202A"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="settings-profile-nda" className="text-xs text-text-muted mb-1 block">N° de déclaration d'activité (organisme de formation)</label>
+          <input
+            id="settings-profile-nda"
+            type="text"
+            value={profileForm.nda}
+            onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
+            placeholder="93 04 01236 04"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+          />
         </div>
 
         <div>

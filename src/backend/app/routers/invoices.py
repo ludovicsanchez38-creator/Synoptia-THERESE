@@ -510,6 +510,25 @@ async def convert_invoice(
     return _invoice_to_response(new_invoice)
 
 
+@router.get("/billing/profile-status")
+async def billing_profile_status():
+    """Statut de complétude du profil émetteur (P0-PROD-2).
+
+    Permet à l'UI de poser un garde-fou avant la 1re facture : raison sociale (ou
+    nom), SIRET et adresse sont requis pour une facture conforme et opposable.
+    """
+    profile = get_cached_profile()
+    if profile is None:
+        return {
+            "is_complete": False,
+            "missing": ["raison sociale ou nom", "SIRET", "adresse"],
+        }
+    return {
+        "is_complete": profile.is_billing_complete(),
+        "missing": profile.missing_billing_fields(),
+    }
+
+
 @router.get("/{invoice_id}/pdf")
 async def generate_invoice_pdf(
     invoice_id: str,
@@ -534,6 +553,25 @@ async def generate_invoice_pdf(
 
     # Récupérer le profil utilisateur (dataclass → dict pour .get())
     _profile = get_cached_profile()
+
+    # P0-PROD-2 : garde-fou émetteur. Un document de facturation sans identité
+    # émetteur (raison sociale + SIRET + adresse) n'est pas conforme ni opposable
+    # (constat C7 : factures sans SIRET, NDA inventé faute de profil).
+    if _profile is None or not _profile.is_billing_complete():
+        missing = (
+            _profile.missing_billing_fields()
+            if _profile
+            else ["raison sociale ou nom", "SIRET", "adresse"]
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Profil émetteur incomplet : renseigne "
+                + ", ".join(missing)
+                + " dans Réglages > Profil avant de générer un document de facturation."
+            ),
+        )
+
     user_profile = _profile.to_dict() if _profile else {}
 
     # Préparer les données pour le PDF

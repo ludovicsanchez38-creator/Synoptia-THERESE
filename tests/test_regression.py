@@ -6346,3 +6346,104 @@ class TestP0IA3_ProviderBadge:
         assert "setLLMConfig" in content or "setModel" in content, (
             "ChatInput doit pouvoir changer de modèle"
         )
+
+
+# ============================================================
+# LOT M - P0-PROD-2 : profil émetteur + garde-fou avant facture
+# Constat C7 : factures/devis sans SIRET ni identité émetteur (P8, P10),
+# NDA d'OF inventé faute de profil (P7).
+# ============================================================
+
+
+class TestP0PROD2_BillingProfile:
+    """Le profil émetteur (SIRET, identité) doit être stocké et bloquer une
+    facture non conforme."""
+
+    @pytest.mark.asyncio
+    async def test_profile_siret_nda_roundtrip(self, client):
+        """Le profil accepte et restitue SIRET / code APE / NDA."""
+        resp = await client.post(
+            "/api/config/profile",
+            json={
+                "name": "Ludovic Sanchez",
+                "company": "Synoptia",
+                "address": "294 Montee des Genets, 04100 Manosque",
+                "siret": "99160678100011",
+                "code_ape": "6202A",
+                "nda": "93040123604",
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert data["siret"] == "99160678100011"
+        assert data["code_ape"] == "6202A"
+        assert data["nda"] == "93040123604"
+
+    @pytest.mark.asyncio
+    async def test_billing_status_complete_after_profile(self, client):
+        """billing/profile-status passe à is_complete=True une fois le profil rempli."""
+        await client.post(
+            "/api/config/profile",
+            json={
+                "name": "Ludo",
+                "company": "Synoptia",
+                "address": "294 Montee des Genets",
+                "siret": "99160678100011",
+            },
+        )
+        resp = await client.get("/api/invoices/billing/profile-status")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["is_complete"] is True
+
+    @pytest.mark.asyncio
+    async def test_pdf_generation_blocked_without_emitter(self, client):
+        """La génération PDF est bloquée (400) si le profil émetteur est incomplet."""
+        # Profil sans SIRET ni adresse -> incomplet
+        await client.post("/api/config/profile", json={"name": "Ludo"})
+
+        c = await client.post("/api/memory/contacts", json={"first_name": "Client"})
+        cid = c.json()["id"]
+        inv = await client.post(
+            "/api/invoices/",
+            json={
+                "contact_id": cid,
+                "lines": [
+                    {
+                        "description": "Prestation",
+                        "quantity": 1.0,
+                        "unit_price_ht": 100.0,
+                        "tva_rate": 20.0,
+                    }
+                ],
+            },
+        )
+        assert inv.status_code == 200, inv.text
+        invoice_id = inv.json()["id"]
+
+        pdf = await client.get(f"/api/invoices/{invoice_id}/pdf")
+        assert pdf.status_code == 400, pdf.text
+        # Le handler HTTPException custom renvoie {"code", "message"} (pas "detail").
+        body = pdf.json()
+        msg = (body.get("message") or body.get("detail") or "").lower()
+        assert "émetteur" in msg or "siret" in msg
+
+    def test_profile_injects_legal_identity_for_llm(self):
+        """format_for_llm doit injecter SIRET/NDA pour que le chat ne les invente pas."""
+        from app.services.user_profile import UserProfile
+
+        p = UserProfile(name="Ludo", siret="99160678100011", nda="93040123604")
+        out = p.format_for_llm()
+        assert "99160678100011" in out
+        assert "93040123604" in out
+        assert "ne jamais inventer" in out.lower()
+
+    def test_profile_tab_has_siret_field(self):
+        """L'utilisateur doit pouvoir saisir son SIRET dans le profil."""
+        content = (FRONTEND / "components" / "settings" / "ProfileTab.tsx").read_text(encoding="utf-8")
+        assert "siret" in content and "SIRET" in content
+
+    def test_invoice_form_has_emitter_guardrail(self):
+        """Le formulaire de facture doit afficher un garde-fou profil émetteur."""
+        content = (FRONTEND / "components" / "invoices" / "InvoiceForm.tsx").read_text(encoding="utf-8")
+        assert "getBillingProfileStatus" in content
+        assert "émetteur" in content.lower()
