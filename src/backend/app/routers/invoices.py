@@ -159,6 +159,9 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
     )
 
 
+# Routes "collection" exposees avec ET sans slash final pour eviter la
+# redirection 307 (le frontend appelle sans slash, les tests avec slash).
+@router.get("", response_model=list[InvoiceResponse], include_in_schema=False)
 @router.get("/", response_model=list[InvoiceResponse])
 async def list_invoices(
     status: str | None = Query(None, description="Filtrer par status (draft, sent, paid, overdue, cancelled)"),
@@ -209,6 +212,7 @@ async def get_invoice(
     return _invoice_to_response(invoice)
 
 
+@router.post("", response_model=InvoiceResponse, include_in_schema=False)
 @router.post("/", response_model=InvoiceResponse)
 async def create_invoice(
     request: CreateInvoiceRequest,
@@ -643,22 +647,35 @@ async def generate_invoice_pdf(
 def generate_legal_mentions(
     late_penalty_rate: float = 11.62,
     due_date_str: str = "",
+    currency: str = "EUR",
 ) -> str:
     """
-    Genere les mentions legales obligatoires pour une facture francaise.
+    Genere les mentions legales d'une facture.
 
     Args:
         late_penalty_rate: Taux de penalite de retard (defaut: 3x taux BCE ~3.87% = 11.62%)
         due_date_str: Date d'echeance formatee
+        currency: Devise du document. Les mentions legales francaises (indemnite 40
+            EUR, art. L441-10) ne s'appliquent qu'en EUR / droit FR : on ne les met
+            pas sur une facture libellee en devise etrangere (test global : 40 EUR
+            sur une facture CAD).
     """
     lines = [
         f"Date d'echeance : {due_date_str}." if due_date_str else "",
-        f"En cas de retard de paiement, une penalite de {late_penalty_rate:.2f}% annuel sera appliquee "
-        "(3 fois le taux d'interet legal en vigueur).",
-        "Une indemnite forfaitaire de 40 EUR pour frais de recouvrement sera exigee "
-        "(art. L441-10 du Code de commerce).",
-        "Escompte pour paiement anticipe : neant.",
     ]
+    if currency == "EUR":
+        lines += [
+            f"En cas de retard de paiement, une penalite de {late_penalty_rate:.2f}% annuel sera appliquee "
+            "(3 fois le taux d'interet legal en vigueur).",
+            "Une indemnite forfaitaire de 40 EUR pour frais de recouvrement sera exigee "
+            "(art. L441-10 du Code de commerce).",
+            "Escompte pour paiement anticipe : neant.",
+        ]
+    else:
+        lines.append(
+            "En cas de retard de paiement, des penalites pourront etre appliquees "
+            "conformement aux conditions convenues entre les parties."
+        )
     return "\n".join(line for line in lines if line)
 
 
@@ -717,6 +734,7 @@ async def convert_devis_to_invoice(
     legal_mentions = generate_legal_mentions(
         late_penalty_rate=late_penalty_rate,
         due_date_str=due_date.strftime("%d/%m/%Y"),
+        currency=devis.currency,
     )
 
     new_invoice = Invoice(

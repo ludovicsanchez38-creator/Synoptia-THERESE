@@ -3921,8 +3921,13 @@ class TestF14_OllamaModelListing:
 
     def test_ollama_branch_in_get_llm(self):
         content = self.CONFIG_PY.read_text(encoding="utf-8")
-        assert 'config.provider.value == "ollama"' in content, (
-            "GET /llm doit avoir une branche pour Ollama (F-14)"
+        # Depuis le refactor 0.20.0, la liste des modèles (Ollama inclus) est
+        # centralisée dans le helper _available_models_for, partagé GET + POST /llm.
+        assert "_available_models_for" in content, (
+            "GET/POST /llm doivent déléguer à _available_models_for (F-14, refactor 0.20.0)"
+        )
+        assert 'provider_value == "ollama"' in content, (
+            "Le helper doit avoir une branche Ollama (F-14)"
         )
 
     def test_ollama_fetches_api_tags(self):
@@ -6754,3 +6759,62 @@ class TestGlobal_Fixes:
         content = (SRC / "app" / "routers" / "mcp.py").read_text(encoding="utf-8")
         assert "status_code=409" in content
         assert "asyncio.wait_for" in content
+
+    def test_legal_mentions_gated_on_currency(self):
+        """Les mentions FR (40 EUR, L441-10) ne sortent qu'en EUR, pas en devise étrangère."""
+        from app.routers.invoices import generate_legal_mentions
+
+        eur = generate_legal_mentions(due_date_str="06/06/2026", currency="EUR")
+        assert "40 EUR" in eur and "L441-10" in eur
+
+        cad = generate_legal_mentions(due_date_str="06/06/2026", currency="CAD")
+        assert "40 EUR" not in cad and "L441-10" not in cad
+        # Une ligne générique reste présente (pas de vide juridique).
+        assert "retard de paiement" in cad
+
+    def test_collection_routes_have_no_slash_variant(self):
+        """invoices/tasks : routes collection exposées sans slash final (anti-redirection 307)."""
+        from app.main import app
+
+        paths = {getattr(r, "path", None) for r in app.routes}
+        # Avant le fix, seuls "/api/invoices/" et "/api/tasks/" existaient -> 307.
+        assert "/api/invoices" in paths and "/api/invoices/" in paths
+        assert "/api/tasks" in paths and "/api/tasks/" in paths
+
+    @pytest.mark.asyncio
+    async def test_available_models_symmetric_for_cloud_provider(self):
+        """_available_models_for renvoie la liste complète (source unique GET/POST)."""
+        from app.routers.config import _available_models_for
+
+        models = await _available_models_for("anthropic")
+        # Le POST renvoyait avant une liste vide pour les providers cloud.
+        assert len(models) >= 3
+        assert "claude-opus-4-8" in models
+
+    def test_board_profile_brief_omits_legal_identity(self):
+        """format_brief (Board) garde le nom/métier mais retire SIRET/TVA/NDA."""
+        from app.services.user_profile import UserProfile
+
+        profile = UserProfile(
+            name="Claire Fontaine",
+            role="consultante-formatrice",
+            siret="123 456 789 00010",
+            nda="93040123604",
+            tva_intra="FR00123456789",
+        )
+        brief = profile.format_brief()
+        assert "Claire Fontaine" in brief
+        assert "123 456 789 00010" not in brief
+        assert "93040123604" not in brief
+        # Le format complet, lui, doit toujours porter l'identité légale (anti-hallu chat).
+        assert "123 456 789 00010" in profile.format_for_llm()
+
+    @pytest.mark.asyncio
+    async def test_quick_add_local_returns_clear_error(self, client):
+        """Quick-add sans compte Google : 400 explicite (plus de 404 'Account not found')."""
+        resp = await client.post(
+            "/api/calendar/events/quick-add",
+            json={"text": "Déjeuner demain à 12h30", "calendar_id": "local-cal"},
+        )
+        assert resp.status_code == 400, resp.text
+        assert "Google" in resp.json().get("message", "") + resp.text

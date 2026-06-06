@@ -871,24 +871,23 @@ async def set_working_directory(
 # ============================================================
 
 
-@router.get("/llm", response_model=LLMConfigResponse)
-async def get_llm_config(session: AsyncSession = Depends(get_session)):
-    """Get current LLM configuration."""
-    from app.services.llm import get_llm_service
+async def _available_models_for(provider_value: str) -> list[str]:
+    """
+    Liste des modeles disponibles pour un provider donne.
 
-    service = get_llm_service()
-    config = service.config
-
-    # Get available models for the provider
-    available_models = []
-    if config.provider.value == "anthropic":
+    Source de verite unique utilisee par GET et POST /llm : sans ca, un POST
+    de bascule de provider renvoyait une liste vide pour les providers cloud
+    (le selecteur frontend tombait a 1 seul modele apres changement).
+    """
+    available_models: list[str] = []
+    if provider_value == "anthropic":
         # Claude 4.x series (juin 2026)
         available_models = [
             "claude-opus-4-8",               # Flagship (lancé 28/05/2026)
             "claude-sonnet-4-6",             # Équilibré, défaut recommandé
             "claude-haiku-4-5-20251001",     # Rapide & économique
         ]
-    elif config.provider.value == "openai":
+    elif provider_value == "openai":
         # GPT-5.x series (juin 2026)
         available_models = [
             "gpt-5.5",           # Flagship
@@ -897,14 +896,14 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "gpt-5.3-codex",     # Spécialiste code
             "gpt-5.5-pro",       # Raisonnement avancé
         ]
-    elif config.provider.value == "gemini":
+    elif provider_value == "gemini":
         # Gemini 3.x series (juin 2026)
         available_models = [
             "gemini-3.1-pro-preview",     # Flagship, haute capacité
             "gemini-3.5-flash",           # Rapide & puissant (recommandé)
             "gemini-3.1-flash-lite",      # Ultra-rapide, économique
         ]
-    elif config.provider.value == "mistral":
+    elif provider_value == "mistral":
         # Mistral latest (alias evergreen)
         available_models = [
             "mistral-large-latest",   # Top-tier
@@ -912,14 +911,14 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
             "devstral-small-latest",  # Dev tasks
             "mistral-small-latest",   # Fast & efficient
         ]
-    elif config.provider.value == "grok":
+    elif provider_value == "grok":
         # Grok 4.x series (juin 2026)
         available_models = [
             "grok-4.3",                      # Flagship (recommandé)
             "grok-4.20-0309-reasoning",      # Raisonnement
             "grok-4.20-0309-non-reasoning",  # Équilibré
         ]
-    elif config.provider.value == "openrouter":
+    elif provider_value == "openrouter":
         # OpenRouter : fetch dynamique des modèles disponibles
         fallback_models = [
             "anthropic/claude-sonnet-4-6",
@@ -957,7 +956,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         except Exception as e:
             logger.warning(f"Failed to fetch OpenRouter models: {e}")
             available_models = fallback_models
-    elif config.provider.value == "ollama":
+    elif provider_value == "ollama":
         # F-14 : lister les modèles Ollama installés localement
         try:
             client = await get_http_client()
@@ -971,6 +970,19 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         except Exception:
             # Ollama non disponible - liste vide, pas d'erreur
             available_models = []
+    return available_models
+
+
+@router.get("/llm", response_model=LLMConfigResponse)
+async def get_llm_config(session: AsyncSession = Depends(get_session)):
+    """Get current LLM configuration."""
+    from app.services.llm import get_llm_service
+
+    service = get_llm_service()
+    config = service.config
+
+    # Get available models for the provider (source unique partagee avec POST)
+    available_models = await _available_models_for(config.provider.value)
 
     # Inclure le modele actif dans la liste s il est custom
     if config.model and config.model not in available_models:
@@ -1080,17 +1092,9 @@ async def set_llm_config(
 
     await session.commit()
 
-    # Récupérer la liste des modèles disponibles pour le provider
-    post_available_models: list[str] = []
-    if provider == LLMProvider.OLLAMA:
-        try:
-            client = await get_http_client()
-            resp = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                post_available_models = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
-        except Exception as e:
-            logger.debug("Service non disponible: %s", e)
+    # Liste des modèles disponibles : même source que le GET (symétrie GET/POST,
+    # sinon le selecteur frontend tombait a 1 seul modele apres bascule cloud).
+    post_available_models = await _available_models_for(provider.value)
 
     # Inclure le modele custom dans la reponse POST aussi
     if request.model and request.model not in post_available_models:

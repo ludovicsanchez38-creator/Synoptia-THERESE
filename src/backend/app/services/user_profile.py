@@ -129,6 +129,38 @@ class UserProfile:
 
         return "".join(parts) if parts else ""
 
+    def format_brief(self) -> str:
+        """
+        Variante allegee pour les conseillers du Board de decision.
+
+        On y met qui est l'utilisateur, son metier et son contexte, mais PAS
+        l'identite legale de facturation (SIRET/TVA/NDA) : elle est utile au
+        chat et aux documents (anti-hallu) mais c'est du bruit pour une
+        deliberation strategique (constat test global : profil emetteur trop
+        verbeux injecte dans le Board).
+        """
+        parts = []
+        if self.name:
+            parts.append(f"Tu conseilles **{self.name}**")
+            if self.nickname:
+                parts.append(f" (appelle-le **{self.nickname}**)")
+            parts.append(".")
+        if self.role or self.company:
+            role_parts = []
+            if self.role:
+                role_parts.append(self.role)
+            if self.company:
+                role_parts.append(f"chez {self.company}")
+            parts.append(f" {' '.join(role_parts)}.")
+        if self.location:
+            parts.append(f" Basé à {self.location}.")
+        if self.context:
+            context_text = self.context[:2000]
+            if len(self.context) > 2000:
+                context_text += "..."
+            parts.append(f"\n\n### Contexte utilisateur:\n{context_text}")
+        return "".join(parts) if parts else ""
+
 
 # Preference keys
 PROFILE_KEY = "user_profile"

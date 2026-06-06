@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
+# Collection exposee avec ET sans slash final (anti-redirection 307).
+@router.get("", include_in_schema=False)
 @router.get("/")
 async def list_tasks(
     status: str | None = Query(None, description="Filter by status"),
@@ -102,6 +104,7 @@ async def get_task(
     )
 
 
+@router.post("", include_in_schema=False)
 @router.post("/")
 async def create_task(
     request: CreateTaskRequest,

@@ -22,7 +22,7 @@
 | 14 | **Config / LLM** | `/api/config/llm`, `/api-key`, `/working-directory`, `/therese-md`, `/onboarding` | Choix provider/modèle, clés, dossier de travail |
 | 15 | **Tasks** | `/api/tasks` (CRUD + complete) | Tâches, complétion |
 | 16 | **Notifications** | `/api/notifications` | Liste, compteur, marquage lu |
-| 17 | **Calculateurs** | `/api/calculators/roi`, `/ice`, `/rice`, `/npv`, `/break-even` | Calculs de décision |
+| 17 | **Calculateurs** | `/api/calc/roi`, `/ice`, `/rice`, `/npv`, `/break-even` | Calculs de décision |
 | 18 | **Escalation / coûts** | `/api/escalation/estimate-cost`, `/limits`, `/usage/*` | Estimation coût, limites, conso |
 | 19 | **Personnalisation** | `/api/personalisation/templates`, `/llm-behavior`, `/features` | Templates, comportement LLM, feature flags |
 | 20 | **Fichiers / indexation** | `/api/files/index`, `/upload`, `/{id}/content` | Indexation pour RAG |

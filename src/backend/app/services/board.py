@@ -72,7 +72,9 @@ def _get_user_context() -> str:
     # Profil utilisateur
     profile = get_cached_profile()
     if profile and profile.name:
-        context_parts.append(f"## Utilisateur\n{profile.format_for_llm()}")
+        # format_brief : on omet l'identite legale (SIRET/TVA/NDA), inutile aux
+        # conseillers et bruyante dans une deliberation strategique.
+        context_parts.append(f"## Utilisateur\n{profile.format_brief()}")
 
     # THERESE.md
     therese_md = load_therese_md()

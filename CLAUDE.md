@@ -94,6 +94,9 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis v0.20.0 (revue produit, 06/06/2026)
+- [ ] **Quick-add calendrier local en langage naturel** : la route `POST /api/calendar/events/quick-add` ne fait du parsing NL que via l'API Google quickAdd (Google uniquement). Pour un calendrier local/CalDAV, on renvoie désormais un 400 explicite (au lieu d'un 404 "Account not found" trompeur). Feature à implémenter : un parser de dates FR souverain (stdlib ou dépendance `dateparser`) pour le quick-add local. Tant que ce n'est pas fait, l'événement local se crée via le formulaire.
+
 ### Depuis v0.13.2-alpha (04/06/2026)
 - [ ] **`config.py:47`** (`ollama_model = "mistral:7b"`) : réglage mort (aucun usage dans le backend, confirmé au grep). À supprimer pour éviter la confusion avec le défaut Ollama dynamique (`detect_default_ollama_model`).
 - [ ] **Onboarding `LLMStep.tsx`** : le plafond `max-h-48` a été retiré (BUG-100, masquait Ollama sur macOS). Si la liste des providers devient trop longue sur petit écran, préférer un défilement avec indicateur visible (gradient/affordance) plutôt qu'un conteneur court sans repère.

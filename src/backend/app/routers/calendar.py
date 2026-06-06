@@ -1070,13 +1070,31 @@ async def delete_event(
 @router.post("/events/quick-add")
 async def quick_add_event(
     request: QuickAddEventRequest,
-    account_id: str = Query(...),
+    account_id: str | None = Query(None, description="Compte Google (requis pour le quick-add NL)"),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarEventResponse:
     """
     Ajoute un événement via parsing texte naturel.
     Ex: "Déjeuner avec Pierre demain à 12h30"
+
+    Le parsing en langage naturel s'appuie sur l'API quickAdd de Google : il
+    n'est donc disponible que sur un calendrier Google connecté. Pour un
+    calendrier local (souverain), on répond clairement plutôt que de renvoyer
+    un « Account not found » trompeur : l'événement se crée via le formulaire.
     """
+    # Garde-fou honnête : quick-add NL = Google uniquement.
+    calendar = await session.get(Calendar, request.calendar_id)
+    is_local_target = calendar is not None and calendar.provider in ("local", "caldav")
+    if account_id is None or is_local_target:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "L'ajout rapide en langage naturel n'est disponible que sur un "
+                "calendrier Google connecté. Pour un calendrier local, crée "
+                "l'événement avec le formulaire (titre, date et heure)."
+            ),
+        )
+
     account = await session.get(EmailAccount, account_id)
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
