@@ -6515,3 +6515,38 @@ class TestP0PROD3_ChatTools:
         content = (SRC / "app" / "services" / "workspace_tools.py").read_text(encoding="utf-8")
         assert 'args.get("days", 30)' in content, "Défaut calendrier élargi à 30 jours"
         assert "90" in content, "Max élargi pour couvrir les échéances"
+
+
+# ============================================================
+# QUICK WINS 2e passage personas (06/06/2026)
+# QW1 : notes CRM jetées à la création. QW3 : GET /api/crm/contacts/{id} manquant.
+# ============================================================
+
+
+class TestQW_CRMNotesAndGet:
+    """Le POST CRM doit persister notes/address/tags, et la fiche se relire par id."""
+
+    @pytest.mark.asyncio
+    async def test_crm_create_persists_notes(self, client):
+        """QW1 : la note métier envoyée à la création doit être stockée et relue."""
+        note = "Cherche un T3 sous 250k, tensions sur le prix"
+        resp = await client.post(
+            "/api/crm/contacts",
+            json={"first_name": "Karim", "company": "ABC", "notes": note},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["notes"] == note, "La note ne doit plus être jetée"
+        cid = resp.json()["id"]
+
+        got = await client.get(f"/api/crm/contacts/{cid}")
+        assert got.status_code == 200, got.text
+        body = got.json()
+        assert body["notes"] == note
+        assert body["score"] is not None, "QW3 : le score doit être hydraté"
+        assert body["stage"] == "contact"
+
+    @pytest.mark.asyncio
+    async def test_crm_get_contact_404(self, client):
+        """QW3 : la route CRM par id existe et renvoie 404 si introuvable."""
+        got = await client.get("/api/crm/contacts/inexistant-123")
+        assert got.status_code == 404

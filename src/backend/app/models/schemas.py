@@ -953,6 +953,11 @@ class CreateCRMContactRequest(BaseModel):
     phone: str | None = None
     source: str | None = None
     stage: str = "contact"
+    # QW1 : ces champs étaient jetés silencieusement à la création (la note métier
+    # n'était ni stockée, ni cherchable). Cf. 2e passage personas (RH/santé/compta).
+    notes: str | None = None
+    address: str | None = None
+    tags: list[str] | None = None
 
 
 # ============================================================

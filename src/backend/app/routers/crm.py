@@ -5,6 +5,7 @@ REST API pour les features CRM (pipeline, scoring, activites, livrables, sync Go
 Phase 5 - CRM Features + Local First Export/Import
 """
 
+import json
 import logging
 from datetime import UTC, datetime
 
@@ -353,6 +354,11 @@ async def create_crm_contact(
         phone=request.phone.strip() if request.phone else None,
         source=source,
         stage=request.stage,
+        # QW1 : notes/address/tags étaient ignorés -> la note métier était perdue
+        # (ni stockée, ni indexée dans Qdrant, ni cherchable). 2e passage personas.
+        notes=request.notes.strip() if request.notes else None,
+        address=request.address.strip() if request.address else None,
+        tags=json.dumps(request.tags) if request.tags else None,
         scope="global",
     )
     # P0-PROD-1 : calculer le score depuis les données du contact (email, phone,
@@ -412,6 +418,26 @@ async def create_crm_contact(
         logger.warning(f"Failed to push contact to Google Sheets: {e}")
 
     from app.routers.memory import _contact_to_response
+    return _contact_to_response(contact)
+
+
+@router.get("/contacts/{contact_id}", response_model=ContactResponse)
+async def get_crm_contact(
+    contact_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Lit une fiche contact complète par son id (QW3).
+
+    La route CRM par id manquait : les clients qui faisaient GET
+    /api/crm/contacts/{id} tombaient sur un 404 (d'où l'impression que les champs
+    revenaient vides). On expose désormais la fiche complète (score/stage/notes
+    inclus), via le même sérialiseur que la Mémoire.
+    """
+    contact = await session.get(Contact, contact_id)
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    from app.routers.memory import _contact_to_response
+
     return _contact_to_response(contact)
 
 
