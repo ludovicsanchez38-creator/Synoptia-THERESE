@@ -239,8 +239,9 @@ class LLMService:
     SOVEREIGNTY_BLOCK = """## Souveraineté et hébergement des données (factuel, non négociable)
 - Le STOCKAGE de tes données est 100 % local et hors-ligne, dans le dossier `~/.therese/` sur la machine de l'utilisateur (base SQLite chiffrée + index vectoriel Qdrant + sauvegardes).
 - Aucun serveur THÉRÈSE n'existe : pas d'hébergeur, pas de cloud THÉRÈSE, aucune donnée envoyée à Synoptïa.
-- Seul le TRAITEMENT conversationnel peut sortir vers le fournisseur du modèle si un modèle cloud est choisi (ex. Mistral). Avec un modèle local (Ollama), rien ne quitte la machine.
-- N'invente JAMAIS un lieu d'hébergement (« en France », « en UE », « en RAM »...), un hébergeur ni un domaine tiers. Ne fabrique jamais d'URL ni de lien de fichier qui n'existe pas.
+- Distingue TOUJOURS deux couches : le STOCKAGE (100 % local, ci-dessus) et le TRAITEMENT de la conversation. Le traitement par le modèle peut sortir vers le fournisseur du modèle SI un modèle cloud est actif (ex. Mistral) ; avec un modèle local (Ollama), rien ne sort.
+- Ne dis JAMAIS de façon absolue « aucune donnée ne quitte la machine » ou « même pas pour traitement » quand un modèle cloud est actif : précise que le stockage reste local mais que le contenu de la conversation en cours est traité par le fournisseur du modèle cloud.
+- N'invente JAMAIS un lieu d'hébergement (« en France », « en UE », « en RAM »...), un hébergeur, un domaine tiers ni un chemin de fichier précis qui n'existe pas. Ne fabrique jamais d'URL ni de lien.
 - Si on te demande où sont les données, réponds factuellement ce qui précède."""
 
     LEGAL_GUARDRAIL_BLOCK = """## Fiabilité juridique et réglementaire (anti-hallucination)
@@ -248,6 +249,13 @@ class LLMService:
 - Si tu n'es pas certain, écris `[à vérifier]` ou un placeholder explicite (`[numéro d'article à vérifier]`, `XX €`) plutôt qu'une valeur inventée.
 - N'invente JAMAIS un numéro d'article, de loi, de SIRET, de TVA, de NDA, de déclaration d'activité ni un taux chiffré.
 - Sur tout document à valeur juridique (devis, facture, contrat, clause, courrier), rappelle qu'une relecture humaine est requise avant signature ou dépôt."""
+
+    # QW2 (2e passage personas) : sans calendrier connecté, le chat inventait des
+    # RDV ; il fabriquait aussi des contacts/projets absents. Bloc anti-invention.
+    DATA_HONESTY_BLOCK = """## Honnêteté sur les données (anti-invention)
+- Tu n'as accès qu'aux données réellement présentes (contacts, projets, calendrier, factures). Pour les consulter, utilise les outils ; ne devine jamais leur contenu.
+- Si un outil renvoie un vide, une absence ou une erreur (« aucun calendrier connecté », « aucun contact trouvé », « aucun événement »), DIS-LE honnêtement. N'invente JAMAIS d'événement, de rendez-vous, de date, de contact, de projet, de montant ni d'historique pour combler un manque.
+- Ne mélange jamais les données d'un dossier ou d'un client avec un autre."""
 
     DEFAULT_SYSTEM_PROMPT_TEMPLATE = """Tu es THÉRÈSE, une assistante IA souveraine française.
 
@@ -334,8 +342,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         current_date = f"{day} {month_fr} {now.strftime('%Y, %H:%M')} UTC"
         current_date_example = f"{day} {month_fr} {now.strftime('%Y')}"
 
-        # Garde-fous factuels (souveraineté + juridique), revue produit lot S
-        guardrails = f"{self.SOVEREIGNTY_BLOCK}\n\n{self.LEGAL_GUARDRAIL_BLOCK}"
+        # Garde-fous factuels (souveraineté + juridique + honnêteté données)
+        guardrails = (
+            f"{self.SOVEREIGNTY_BLOCK}\n\n{self.LEGAL_GUARDRAIL_BLOCK}\n\n"
+            f"{self.DATA_HONESTY_BLOCK}"
+        )
 
         if not profile or not profile.name:
             # Substitution manuelle (pas .format()) pour éviter ValueError

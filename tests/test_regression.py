@@ -6550,3 +6550,30 @@ class TestQW_CRMNotesAndGet:
         """QW3 : la route CRM par id existe et renvoie 404 si introuvable."""
         got = await client.get("/api/crm/contacts/inexistant-123")
         assert got.status_code == 404
+
+
+class TestQW_PromptHardening:
+    """QW2/QW4 : anti-hallu calendrier + distinction stockage/traitement."""
+
+    def test_prompt_distinguishes_storage_vs_treatment(self):
+        """QW4 : le prompt distingue stockage local et traitement cloud."""
+        from app.services.llm import LLMService
+
+        prompt = LLMService()._get_system_prompt_with_identity()
+        assert "Distingue TOUJOURS deux couches" in prompt
+        # Interdit explicitement la surpromesse observée au 2e passage
+        assert "même pas pour traitement" in prompt
+
+    def test_prompt_has_data_honesty_block(self):
+        """QW2 : bloc anti-invention quand un outil renvoie un vide/une absence."""
+        from app.services.llm import LLMService
+
+        prompt = LLMService()._get_system_prompt_with_identity()
+        assert "anti-invention" in prompt.lower()
+        assert "N'invente JAMAIS d'événement" in prompt
+
+    def test_calendar_tool_directive_on_no_calendar(self):
+        """QW2 : l'outil calendrier renvoie une consigne directive sans compte."""
+        content = (SRC / "app" / "services" / "workspace_tools.py").read_text(encoding="utf-8")
+        assert "AUCUN CALENDRIER CONNECTE" in content
+        assert "N'invente AUCUN evenement" in content

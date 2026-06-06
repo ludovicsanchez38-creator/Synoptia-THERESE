@@ -412,7 +412,13 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
 
     provider, error = await _get_calendar_provider(session)
     if error:
-        return error
+        # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
+        # consigne directive pour qu'elle relaie l'absence au lieu de broder.
+        return (
+            f"AUCUN CALENDRIER CONNECTE ({error}). "
+            "N'invente AUCUN evenement, date ni rendez-vous. Indique a l'utilisateur "
+            "qu'aucun calendrier n'est connecte et propose d'en configurer un."
+        )
 
     days = min(args.get("days", 30), 90)
     now = datetime.now(timezone.utc)
