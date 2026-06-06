@@ -279,6 +279,16 @@ class BoardService:
             chunk_queue: asyncio.Queue[BoardDeliberationChunk | None] = asyncio.Queue()
             opinions_dict: dict[AdvisorRole, AdvisorOpinion] = {}
 
+            # Anti-429 (vérif Syn) : en mono-provider, les 5 conseillers retombent
+            # sur le même fournisseur. Lancer 5 appels d'un coup sur une seule clé
+            # déclenche un rate-limit (429) et des avis vides. On limite donc la
+            # concurrence PAR fournisseur (≤2) : aucune limite en multi-provider
+            # (chaque clé a peu d'avis), mais plus de burst sur une clé unique.
+            provider_semaphores: dict[str, asyncio.Semaphore] = {
+                prov: asyncio.Semaphore(2)
+                for _, prov in advisor_services.values()
+            }
+
             async def process_advisor(role: AdvisorRole):
                 """Process a single advisor and put chunks in the queue."""
                 config = ADVISOR_CONFIG[role]
@@ -301,16 +311,21 @@ class BoardService:
 
                 full_content = ""
                 try:
-                    async for chunk in llm_service.stream_response(context):
-                        full_content += chunk
-                        await chunk_queue.put(BoardDeliberationChunk(
-                            type="advisor_chunk",
-                            role=role,
-                            name=config["name"],
-                            emoji=config["emoji"],
-                            provider=actual_provider,
-                            content=chunk,
-                        ))
+                    # Sémaphore par fournisseur : au plus 2 appels simultanés sur
+                    # une même clé (anti-429). advisor_start a déjà été émis, donc
+                    # l'UI montre tous les conseillers « en réflexion » pendant
+                    # que les appels s'étalent.
+                    async with provider_semaphores[actual_provider]:
+                        async for chunk in llm_service.stream_response(context):
+                            full_content += chunk
+                            await chunk_queue.put(BoardDeliberationChunk(
+                                type="advisor_chunk",
+                                role=role,
+                                name=config["name"],
+                                emoji=config["emoji"],
+                                provider=actual_provider,
+                                content=chunk,
+                            ))
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
                     full_content = f"Désolé, une erreur s'est produite: {str(e)}"
