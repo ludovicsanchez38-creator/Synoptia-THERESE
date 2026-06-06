@@ -10,7 +10,7 @@
 
 THÉRÈSE est une application desktop intelligente conçue pour les **solopreneurs et TPE français**. Alternative souveraine à [Cowork d'Anthropic](https://www.anthropic.com), elle combine la puissance des grands modèles de langage avec une **mémoire persistante** et une **souveraineté totale des données**.
 
-Contrairement à Cowork - qui repart de zéro à chaque session - THÉRÈSE se souvient de vos clients, de vos projets, de vos préférences. Toutes vos données restent sur votre machine, chiffrées et sous votre contrôle.
+Contrairement à Cowork - qui repart de zéro à chaque session - THÉRÈSE se souvient de vos clients, de vos projets, de vos préférences. Toutes vos données restent sur votre machine, sous votre contrôle (les secrets comme les clés API et mots de passe de messagerie sont chiffrés par champ).
 
 ### Pourquoi THÉRÈSE ?
 
@@ -28,7 +28,7 @@ Contrairement à Cowork - qui repart de zéro à chaque session - THÉRÈSE se s
 |---------|------------|-------------------|
 | **Mémoire persistante** | Oui - contacts, projets, fichiers indexés | Non - chaque session repart de zéro |
 | **Multi-providers LLM** | 6 providers (Claude, GPT, Gemini, Mistral, Grok, Ollama) | Claude uniquement |
-| **Données** | 100% local, chiffrement Fernet + Trousseau macOS | Cloud Anthropic |
+| **Données** | 100% local ; secrets chiffrés par champ (Fernet + Trousseau macOS), base en clair sur la machine | Cloud Anthropic |
 | **Interface** | Dark mode premium, animations Framer Motion, guided prompts | Interface standard |
 | **Sécurité** | Chiffrement AES-128-CBC, détection injection prompt, sandbox code | Vulnérabilité prompt injection connue (PromptArmor) |
 | **Plateforme** | macOS (Windows/Linux prévu) | macOS uniquement |

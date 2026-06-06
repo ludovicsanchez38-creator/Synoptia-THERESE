@@ -4560,16 +4560,28 @@ class TestBUG_MistralTools:
     """BUG MCP tools : Mistral ne transmettait pas les tools à l'API."""
 
     def test_mistral_sends_tools_in_json_body(self):
-        """mistral.py doit inclure les tools dans le body JSON quand fournis."""
-        content = open('src/backend/app/services/providers/mistral.py').read()
-        assert '"tools": tools' in content
-        assert '"tool_choice": "auto"' in content
+        """Le body JSON Mistral inclut tools + tool_choice=auto quand des tools sont fournis."""
+        from app.services.llm import LLMConfig, LLMProvider
+        from app.services.providers.mistral import MistralProvider
+
+        provider = MistralProvider(
+            LLMConfig(provider=LLMProvider.MISTRAL, model="mistral-large-latest", api_key="x"),
+            client=None,
+        )
+        tools = [{"type": "function", "function": {"name": "read_contact"}}]
+        body = provider._build_request_body([{"role": "user", "content": "hi"}], tools=tools)
+        assert body["tools"] == tools
+        assert body["tool_choice"] == "auto"
+        # Sans tools : pas de clés tools/tool_choice
+        body_no_tools = provider._build_request_body([{"role": "user", "content": "hi"}])
+        assert "tools" not in body_no_tools and "tool_choice" not in body_no_tools
 
     def test_mistral_parses_tool_calls_in_stream(self):
-        """mistral.py doit détecter les tool_calls dans le stream Mistral."""
+        """mistral.py détecte les tool_calls et signale finish_reason tool_calls."""
         content = open('src/backend/app/services/providers/mistral.py').read()
         assert 'tool_calls' in content
-        assert 'tool_use' in content
+        assert 'finish_reason == "tool_calls"' in content
+        assert 'stop_reason="tool_calls"' in content
 
 
 class TestBUG_MCPPollingStarting:
@@ -6872,3 +6884,118 @@ class TestGlobal_Fixes:
         )
         assert resp.status_code == 400, resp.text
         assert "Google" in resp.json().get("message", "") + resp.text
+
+
+class TestMistralToolLoop:
+    """Mistral : boucle d'outils réparée (NO-GO Syn 0.20.0).
+
+    Avant : tout appel d'outil renvoyait une réponse VIDE (le done annonçait
+    'end_turn' au lieu de 'tool_calls' donc l'outil n'était jamais exécuté, et
+    continue_with_tool_results était un stub).
+    """
+
+    def _provider(self, lines):
+        from app.services.llm import LLMConfig, LLMProvider
+        from app.services.providers.mistral import MistralProvider
+
+        class _Resp:
+            def raise_for_status(self):
+                return None
+
+            async def aiter_lines(self):
+                for ln in lines:
+                    yield ln
+
+        class _Ctx:
+            async def __aenter__(self):
+                return _Resp()
+
+            async def __aexit__(self, *a):
+                return False
+
+        class _Client:
+            def stream(self, *a, **k):
+                return _Ctx()
+
+        config = LLMConfig(provider=LLMProvider.MISTRAL, model="mistral-large-latest", api_key="x")
+        return MistralProvider(config, _Client())
+
+    @pytest.mark.asyncio
+    async def test_stream_emits_tool_call_and_tool_calls_stop_reason(self):
+        """Un tool_call streamé en fragments est reconstruit, avec done(stop_reason=tool_calls)."""
+        import json
+
+        def sse(obj):
+            return "data: " + json.dumps(obj)
+
+        lines = [
+            sse({"choices": [{"delta": {"tool_calls": [
+                {"index": 0, "id": "call_1", "function": {"name": "read_contact", "arguments": '{"na'}}
+            ]}}]}),
+            sse({"choices": [{"delta": {"tool_calls": [
+                {"index": 0, "function": {"arguments": 'me":"Dupont"}'}}
+            ]}}]}),
+            sse({"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}),
+            "data: [DONE]",
+        ]
+        provider = self._provider(lines)
+        events = [
+            e async for e in provider.stream(
+                None, [{"role": "user", "content": "qui est Dupont ?"}], tools=[{"type": "function"}]
+            )
+        ]
+        tool_calls = [e for e in events if e.type == "tool_call"]
+        assert len(tool_calls) == 1
+        assert tool_calls[0].tool_call.name == "read_contact"
+        assert tool_calls[0].tool_call.arguments == {"name": "Dupont"}
+        dones = [e for e in events if e.type == "done"]
+        assert any(e.stop_reason == "tool_calls" for e in dones), (
+            "done doit signaler tool_calls pour déclencher l'exécution + la continuation"
+        )
+
+    @pytest.mark.asyncio
+    async def test_continue_with_tool_results_appends_messages_and_restreams(self):
+        """continue_with_tool_results n'est plus un stub : il renvoie les résultats et re-stream."""
+        from app.services.providers.base import StreamEvent, ToolCall, ToolResult
+
+        provider = self._provider([])
+        captured = {}
+
+        async def fake_stream(system_prompt, messages, tools=None):
+            captured["messages"] = messages
+            yield StreamEvent(type="text", content="Dupont travaille chez ACME.")
+
+        provider.stream = fake_stream
+
+        events = [
+            e async for e in provider.continue_with_tool_results(
+                system_prompt=None,
+                messages=[{"role": "user", "content": "qui est Dupont ?"}],
+                assistant_content="",
+                tool_calls=[ToolCall(id="call_1", name="read_contact", arguments={"name": "Dupont"})],
+                tool_results=[ToolResult(tool_call_id="call_1", result={"company": "ACME"})],
+            )
+        ]
+
+        # Re-stream effectif (plus de réponse vide)
+        assert any(e.type == "text" and "ACME" in (e.content or "") for e in events)
+        msgs = captured["messages"]
+        assistant = [m for m in msgs if m["role"] == "assistant" and m.get("tool_calls")]
+        assert assistant, "le message assistant portant les tool_calls doit être ajouté"
+        assert assistant[0]["tool_calls"][0]["function"]["name"] == "read_contact"
+        tool_msgs = [m for m in msgs if m["role"] == "tool"]
+        assert tool_msgs and tool_msgs[0]["tool_call_id"] == "call_1"
+        assert "ACME" in tool_msgs[0]["content"]
+
+
+class TestSovereigntyHonesty:
+    """Souveraineté : ne plus prétendre la base chiffrée (NO-GO Syn 0.20.0)."""
+
+    def test_prompt_does_not_claim_encrypted_database(self):
+        from app.services.llm import LLMService
+
+        block = LLMService.SOVEREIGNTY_BLOCK
+        assert "base SQLite chiffrée" not in block, "ne plus affirmer que la base est chiffrée (faux)"
+        assert "n'est PAS chiffrée au repos" in block
+        # Honnête sur ce qui EST chiffré : les secrets, via Fernet (AES-128)
+        assert "AES-128" in block and "clés API" in block

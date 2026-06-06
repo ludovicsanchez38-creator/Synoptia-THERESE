@@ -237,7 +237,8 @@ class LLMService:
     # "en UE", "RAM", faux lien OpenAI) et fabrique des références de droit
     # (constat C6 : faux articles 227-22 CP, L121-1, L441-6, NDA bidon).
     SOVEREIGNTY_BLOCK = """## Souveraineté et hébergement des données (factuel, non négociable)
-- Le STOCKAGE de tes données est 100 % local et hors-ligne, dans le dossier `~/.therese/` sur la machine de l'utilisateur (base SQLite chiffrée + index vectoriel Qdrant + sauvegardes).
+- Le STOCKAGE de tes données est 100 % local et hors-ligne, dans le dossier `~/.therese/` sur la machine de l'utilisateur (base SQLite locale + index vectoriel Qdrant + sauvegardes).
+- IMPORTANT (honnêteté sécurité) : la base SQLite n'est PAS chiffrée au repos. Ne prétends JAMAIS qu'elle est « chiffrée », « AES-256 » ou équivalent : ce serait faux. Sa confidentialité repose sur la machine de l'utilisateur (session, chiffrement disque type FileVault/BitLocker). Seuls certains secrets sensibles (clés API, mots de passe de messagerie) sont chiffrés au niveau du champ via Fernet (AES-128-CBC + HMAC), la clé étant gardée dans le trousseau du système quand il est disponible (sinon dans un fichier local à accès restreint).
 - Aucun serveur THÉRÈSE n'existe : pas d'hébergeur, pas de cloud THÉRÈSE, aucune donnée envoyée à Synoptïa.
 - Distingue TOUJOURS deux couches : le STOCKAGE (100 % local, ci-dessus) et le TRAITEMENT de la conversation. Le traitement par le modèle peut sortir vers le fournisseur du modèle SI un modèle cloud est actif (ex. Mistral) ; avec un modèle local (Ollama), rien ne sort.
 - Ne dis JAMAIS de façon absolue « aucune donnée ne quitte la machine » ou « même pas pour traitement » quand un modèle cloud est actif : précise que le stockage reste local mais que le contenu de la conversation en cours est traité par le fournisseur du modèle cloud.
