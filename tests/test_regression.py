@@ -6714,3 +6714,43 @@ class TestRAG_LegalCorpus:
         assert ctx is not None
         assert "L441-10" in ctx
         assert "VÉRIFIÉES" in ctx
+
+
+# ============================================================
+# TEST GLOBAL (persona Claire Fontaine) - corrections pré-0.20.0
+# ============================================================
+
+
+class TestGlobal_Fixes:
+    """Corrections issues du test exhaustif des fonctionnalités."""
+
+    def test_legal_lookup_accent_insensitive(self):
+        """Le matching juridique doit ignorer les accents (intérêts, commerçants...)."""
+        from app.services.legal_corpus import lookup_legal
+
+        assert lookup_legal("Quels sont les intérêts moratoires entre commerçants ?"), (
+            "Une requête accentuée doit matcher le corpus"
+        )
+        refs = " ".join(x["reference"] for x in lookup_legal("clause de pénalités de retard"))
+        assert "L441-10" in refs
+
+    @pytest.mark.asyncio
+    async def test_validation_422_exposes_field(self, client):
+        """Hors debug, la 422 doit indiquer le champ manquant (details non vide)."""
+        resp = await client.post("/api/crm/contacts", json={})
+        assert resp.status_code == 422, resp.text
+        details = resp.json().get("details", [])
+        assert details, "details ne doit plus être vide"
+        assert any("first_name" in d.get("field", "") for d in details)
+
+    def test_mistral_provider_uses_valid_stream_event(self):
+        """mistral.py ne doit plus utiliser les kwargs invalides (bug streaming tools)."""
+        content = (SRC / "app" / "services" / "providers" / "mistral.py").read_text(encoding="utf-8")
+        assert "tool_use_id=" not in content
+        assert 'type="tool_call"' in content and "tool_call=ToolCall(" in content
+
+    def test_mcp_create_server_handles_duplicate_and_timeout(self):
+        """create_server : 409 explicite sur doublon + démarrage borné par timeout."""
+        content = (SRC / "app" / "routers" / "mcp.py").read_text(encoding="utf-8")
+        assert "status_code=409" in content
+        assert "asyncio.wait_for" in content

@@ -9,6 +9,7 @@ stoppait l'invention mais pas la donnée périmée ; ce corpus la corrige à la 
 
 import json
 import logging
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -16,6 +17,15 @@ logger = logging.getLogger(__name__)
 
 _CORPUS_PATH = Path(__file__).resolve().parent.parent / "data" / "legal_corpus.json"
 _MAX_MATCHES = 4
+
+
+def _norm(text: str) -> str:
+    """Minuscule + sans accents : matching robuste (test global : « intérêts »,
+    « commerçants » ne matchaient pas les mots-clés sans normalisation)."""
+    lowered = text.lower()
+    return "".join(
+        c for c in unicodedata.normalize("NFD", lowered) if unicodedata.category(c) != "Mn"
+    )
 
 
 @lru_cache(maxsize=1)
@@ -37,10 +47,10 @@ def lookup_legal(message: str, max_matches: int = _MAX_MATCHES) -> list[dict]:
     """
     if not message:
         return []
-    text = message.lower()
+    text = _norm(message)
     scored: list[tuple[int, dict]] = []
     for entry in _load_corpus():
-        score = sum(1 for kw in entry.get("keywords", []) if kw and kw in text)
+        score = sum(1 for kw in entry.get("keywords", []) if kw and _norm(kw) in text)
         if score > 0:
             scored.append((score, entry))
     scored.sort(key=lambda m: m[0], reverse=True)

@@ -4,6 +4,7 @@ THÉRÈSE v2 - MCP Router
 API endpoints for managing MCP servers and tools.
 """
 
+import asyncio
 import logging
 
 from app.models.schemas_mcp import (
@@ -50,19 +51,31 @@ async def create_server(request: MCPServerCreate) -> MCPServerResponse:
         else:
             encrypted_env[key] = value
 
-    server = service.add_server(
-        name=request.name,
-        command=request.command,
-        args=request.args,
-        env=encrypted_env,
-        enabled=request.enabled,
-    )
+    # Test global : un doublon de commande levait un ValueError non capturé -> 500
+    # opaque. On le traduit en 409 explicite.
+    try:
+        server = service.add_server(
+            name=request.name,
+            command=request.command,
+            args=request.args,
+            env=encrypted_env,
+            enabled=request.enabled,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
 
-    # Auto-start if enabled
+    # Auto-start if enabled : borné par un timeout pour ne pas GELER la requête
+    # (spawn npx pouvant bloquer plusieurs dizaines de secondes). Le serveur est
+    # créé même si le démarrage traîne (il pourra être démarré ensuite).
     if request.enabled:
-        success = await service.start_server(server.id)
-        if not success:
-            logger.warning("Serveur %s cree mais demarrage echoue", server.name)
+        try:
+            success = await asyncio.wait_for(service.start_server(server.id), timeout=8)
+            if not success:
+                logger.warning("Serveur %s cree mais demarrage echoue", server.name)
+        except asyncio.TimeoutError:
+            logger.warning("Serveur %s cree, demarrage non confirme (timeout 8s)", server.name)
+        except Exception as e:
+            logger.warning("Serveur %s cree, demarrage en erreur : %s", server.name, e)
 
     return MCPServerResponse(**server.to_dict())
 

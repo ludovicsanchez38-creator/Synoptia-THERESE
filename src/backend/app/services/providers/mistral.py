@@ -78,11 +78,18 @@ class MistralProvider(BaseProvider):
                                         except json.JSONDecodeError:
                                             # Arguments partiellement streamés (chunk invalide)
                                             tool_input = {}
+                                        # Bug critique (test global) : StreamEvent n'a
+                                        # pas de kwargs tool_use_id/tool_name/tool_input
+                                        # -> tout appel d'outil en streaming Mistral
+                                        # plantait. Aligné sur anthropic.py (type
+                                        # tool_call + ToolCall).
                                         yield StreamEvent(
-                                            type="tool_use",
-                                            tool_use_id=tc.get("id", ""),
-                                            tool_name=fn.get("name", ""),
-                                            tool_input=tool_input,
+                                            type="tool_call",
+                                            tool_call=ToolCall(
+                                                id=tc.get("id", ""),
+                                                name=fn.get("name", ""),
+                                                arguments=tool_input,
+                                            ),
                                         )
                         except json.JSONDecodeError:
                             continue

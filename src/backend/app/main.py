@@ -449,12 +449,22 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Retourne les erreurs de validation en 422 au lieu de 500."""
+    # Test global : hors debug, 'details' était [] -> le client ne savait pas quel
+    # champ manquait. On expose un résumé exploitable (champ + message) sans fuiter
+    # les valeurs d'entrée (on ne renvoie le détail Pydantic brut qu'en debug).
+    safe_details = [
+        {
+            "field": ".".join(str(x) for x in err.get("loc", []) if x != "body"),
+            "message": err.get("msg", ""),
+        }
+        for err in exc.errors()
+    ]
     return JSONResponse(
         status_code=422,
         content={
             "code": "VALIDATION_ERROR",
             "message": "Données invalides dans la requête",
-            "details": exc.errors() if settings.debug else [],
+            "details": exc.errors() if settings.debug else safe_details,
         },
     )
 
