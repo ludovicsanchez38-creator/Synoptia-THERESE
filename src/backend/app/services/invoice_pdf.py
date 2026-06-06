@@ -45,6 +45,7 @@ CURRENCY_SYMBOLS: dict[str, str] = {
     "CHF": "CHF",
     "GBP": "\u00a3",
     "USD": "$",
+    "CAD": "CA$",
 }
 
 # Fallback par defaut (utilise uniquement si aucun dossier de travail configure)

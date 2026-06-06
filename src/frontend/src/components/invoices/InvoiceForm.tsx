@@ -38,6 +38,7 @@ const CURRENCIES = [
   { value: 'CHF', label: 'CHF' },
   { value: 'USD', label: 'USD ($)' },
   { value: 'GBP', label: 'GBP (£)' },
+  { value: 'CAD', label: 'CAD (CA$)' },
 ];
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -45,6 +46,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   CHF: 'CHF',
   USD: '$',
   GBP: '£',
+  CAD: 'CA$',
 };
 
 function formatDecimalInput(value: number) {

@@ -6140,3 +6140,52 @@ class TestP0PROD_ScoringCRM:
             "Un score explicite ne doit pas être écrasé par le recalcul auto"
         )
         assert patch.json()["stage"] == "signature"
+
+
+# ============================================================
+# QUICK WIN testeur (Capov, Discord alpha 05/06/2026) : devise CAD
+# Le module facturation ne proposait que EUR/CHF/USD/GBP. Ajout du dollar
+# canadien (CAD), demandé par un testeur alpha.
+# ============================================================
+
+
+class TestQW_CADCurrency:
+    """La devise CAD doit être acceptée de bout en bout (schéma + PDF + UI)."""
+
+    @pytest.mark.asyncio
+    async def test_invoice_accepts_cad_currency(self, client):
+        """POST /api/invoices/ doit accepter currency='CAD' (Literal élargi)."""
+        c = await client.post("/api/memory/contacts", json={"first_name": "Capov"})
+        assert c.status_code == 200, c.text
+        cid = c.json()["id"]
+
+        resp = await client.post(
+            "/api/invoices/",
+            json={
+                "contact_id": cid,
+                "currency": "CAD",
+                "lines": [
+                    {
+                        "description": "Conseil",
+                        "quantity": 1.0,
+                        "unit_price_ht": 100.0,
+                        "tva_rate": 20.0,
+                    }
+                ],
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["currency"] == "CAD"
+
+    def test_backend_pdf_has_cad_symbol(self):
+        """invoice_pdf.CURRENCY_SYMBOLS doit mapper CAD vers un symbole d'affichage."""
+        content = (SRC / "app" / "services" / "invoice_pdf.py").read_text(encoding="utf-8")
+        assert '"CAD"' in content, "CURRENCY_SYMBOLS (PDF) doit inclure CAD"
+
+    def test_frontend_invoice_form_offers_cad(self):
+        """InvoiceForm doit proposer CAD dans le sélecteur et sa table de symboles."""
+        content = (
+            FRONTEND / "components" / "invoices" / "InvoiceForm.tsx"
+        ).read_text(encoding="utf-8")
+        assert "'CAD'" in content, "InvoiceForm doit proposer CAD (sélecteur de devise)"
+        assert "CAD:" in content, "InvoiceForm CURRENCY_SYMBOLS doit mapper CAD"
