@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
     tokens_in: int | None = None
     tokens_out: int | None = None
     model: str | None = None
+    provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     created_at: datetime
 
 
@@ -56,6 +57,7 @@ class StreamChunk(BaseModel):
     entities: dict | None = None
     tool_name: str | None = None  # For tool_result type
     skill_file: dict | None = None  # For skill_file type (auto-detected skill execution)
+    provider: str | None = None  # P0-IA-3 : provider LLM utilisé (event done)
 
 
 class ExtractedContactSchema(BaseModel):
@@ -338,6 +340,7 @@ class MessageResponse(BaseModel):
     tokens_in: int | None
     tokens_out: int | None
     model: str | None
+    provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     created_at: datetime
 
 

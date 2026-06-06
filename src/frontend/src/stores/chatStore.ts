@@ -9,6 +9,7 @@ export interface MessageUsage {
   output_tokens: number;
   cost_eur: number;
   model: string;
+  provider?: string; // P0-IA-3 : badge local/cloud par message
 }
 
 export interface MessageUncertainty {
@@ -28,6 +29,7 @@ export interface Message {
   usage?: MessageUsage;
   uncertainty?: MessageUncertainty;
   imageId?: string;
+  provider?: string; // P0-IA-3 : provider LLM (messages d'historique)
 }
 
 export interface Conversation {

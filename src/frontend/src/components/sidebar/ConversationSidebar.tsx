@@ -68,6 +68,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
           role: msg.role as 'user' | 'assistant' | 'system',
           content: msg.content,
           timestamp: new Date(msg.created_at),
+          provider: msg.provider ?? undefined, // P0-IA-3 : badge local/cloud à la relecture
         }));
         // This will now create the conversation if it doesn't exist
         useChatStore.getState().setConversationMessages(id, formattedMessages);

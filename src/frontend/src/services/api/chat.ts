@@ -76,7 +76,9 @@ export interface StreamChunk {
     output_tokens: number;
     cost_eur: number;
     model: string;
+    provider?: string; // P0-IA-3 : badge local/cloud
   };
+  provider?: string; // P0-IA-3 : provider LLM (event done)
   uncertainty?: {
     is_uncertain: boolean;
     confidence_level: 'high' | 'medium' | 'low';
@@ -102,6 +104,7 @@ export interface MessageResponse {
   tokens_in: number | null;
   tokens_out: number | null;
   model: string | null;
+  provider?: string | null; // P0-IA-3 : badge local/cloud par message
   created_at: string;
 }
 

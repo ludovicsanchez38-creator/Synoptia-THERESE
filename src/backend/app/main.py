@@ -147,6 +147,13 @@ async def lifespan(app: FastAPI):
                     conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
                     conn.commit()
                     logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+                # P0-IA-3 : provider LLM par message (badge local/cloud)
+                cursor = conn.execute("PRAGMA table_info(messages)")
+                msg_columns = [row[1] for row in cursor.fetchall()]
+                if msg_columns and "provider" not in msg_columns:
+                    conn.execute("ALTER TABLE messages ADD COLUMN provider TEXT")
+                    conn.commit()
+                    logger.info("Migration auto : colonne 'provider' ajoutée à la table messages")
                 # US-017 : purge_excluded sur contacts
                 cursor = conn.execute("PRAGMA table_info(contacts)")
                 contact_columns = [row[1] for row in cursor.fetchall()]

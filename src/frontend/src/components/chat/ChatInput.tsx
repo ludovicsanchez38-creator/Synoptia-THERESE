@@ -781,6 +781,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             ) : (
               <span className="text-xs font-medium text-text">{currentModel}</span>
             )}
+            {currentProvider && (
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  currentProvider === 'ollama'
+                    ? 'bg-green-500/15 text-green-300'
+                    : 'bg-orange-500/15 text-orange-300'
+                }`}
+                title={
+                  currentProvider === 'ollama'
+                    ? 'Modèle local (Ollama) : le traitement reste sur ta machine'
+                    : 'Modèle cloud : le traitement sort vers le fournisseur'
+                }
+              >
+                {currentProvider === 'ollama' ? 'local' : 'cloud'}
+              </span>
+            )}
           </div>
         </div>
       )}

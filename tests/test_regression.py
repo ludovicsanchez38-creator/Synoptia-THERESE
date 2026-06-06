@@ -6290,3 +6290,59 @@ class TestQW_EmailSignature:
         m = re.search(r"ALLOWED_ATTR:\s*\[(.*?)\]", content, re.DOTALL)
         assert m is not None, "ALLOWED_ATTR introuvable"
         assert "'style'" not in m.group(1), "style ne doit pas être dans ALLOWED_ATTR"
+
+
+# ============================================================
+# LOT M - P0-IA-3 : badge local/cloud par message
+# Constat C1/C2 : l'utilisateur ne sait pas si sa requête est partie chez Mistral
+# (cloud) ou est restée locale (Ollama). On expose le provider par message.
+# ============================================================
+
+
+class TestP0IA3_ProviderBadge:
+    """Le provider LLM doit être stocké et exposé par message (badge local/cloud)."""
+
+    @pytest.mark.asyncio
+    async def test_message_provider_roundtrips_in_history(self, client, db_session):
+        """Un message assistant persiste son provider, exposé dans l'historique."""
+        from app.models.entities import Conversation, Message
+
+        conv = Conversation(title="Test provider")
+        db_session.add(conv)
+        await db_session.commit()
+
+        db_session.add(
+            Message(
+                conversation_id=conv.id,
+                role="assistant",
+                content="Tes données sont locales dans ~/.therese/.",
+                model="mistral-small-latest",
+                provider="mistral",
+            )
+        )
+        await db_session.commit()
+
+        resp = await client.get(f"/api/chat/conversations/{conv.id}/messages")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["provider"] == "mistral"
+        assert data[0]["model"] == "mistral-small-latest"
+
+    def test_main_auto_migration_adds_provider_column(self):
+        """La migration auto desktop doit ajouter la colonne provider à messages."""
+        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        assert "ALTER TABLE messages ADD COLUMN provider" in content
+
+    def test_message_bubble_shows_provider_badge(self):
+        """MessageBubble doit afficher un badge local/cloud selon le provider."""
+        content = (FRONTEND / "components" / "chat" / "MessageBubble.tsx").read_text(encoding="utf-8")
+        assert "provider" in content, "MessageBubble doit lire message.provider"
+        assert "ollama" in content.lower(), "Le badge doit distinguer Ollama (local)"
+
+    def test_chat_input_has_model_selector(self):
+        """ChatInput doit exposer un sélecteur de modèle (F-12)."""
+        content = (FRONTEND / "components" / "chat" / "ChatInput.tsx").read_text(encoding="utf-8")
+        assert "setLLMConfig" in content or "setModel" in content, (
+            "ChatInput doit pouvoir changer de modèle"
+        )

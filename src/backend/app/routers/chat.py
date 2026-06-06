@@ -680,6 +680,7 @@ async def send_message(
         role="assistant",
         content=assistant_content,
         model=llm_service.config.model,
+        provider=llm_service.config.provider.value,
     )
     session.add(assistant_message)
     await session.commit()
@@ -688,6 +689,8 @@ async def send_message(
         id=assistant_message.id,
         conversation_id=conversation.id,
         content=assistant_content,
+        model=llm_service.config.model,
+        provider=llm_service.config.provider.value,
         created_at=assistant_message.created_at,
     )
 
@@ -984,6 +987,7 @@ async def _do_stream_response(
         role="assistant",
         content=full_content,
         model=llm_service.config.model,
+        provider=llm_service.config.provider.value,
     )
     session.add(assistant_message)
     await session.commit()
@@ -1017,11 +1021,13 @@ async def _do_stream_response(
         message_id=assistant_message.id,
     )
     done_dict = done_data.model_dump()
+    done_dict["provider"] = llm_service.config.provider.value
     done_dict["usage"] = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cost_eur": usage_record.cost_eur,
         "model": llm_service.config.model,
+        "provider": llm_service.config.provider.value,
     }
     done_dict["uncertainty"] = uncertainty
     yield f"data: {json.dumps(done_dict)}\n\n"
@@ -1464,6 +1470,7 @@ async def get_conversation_messages(
             tokens_in=msg.tokens_in,
             tokens_out=msg.tokens_out,
             model=msg.model,
+            provider=msg.provider,
             created_at=msg.created_at,
         )
         for msg in messages

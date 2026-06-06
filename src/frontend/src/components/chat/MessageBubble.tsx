@@ -13,7 +13,7 @@ import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, Image as ImageIcon } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, Image as ImageIcon, Cpu, Cloud } from 'lucide-react';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -399,6 +399,28 @@ export const MessageBubble = memo(function MessageBubble({
                 </span>
               </div>
             )}
+
+            {/* P0-IA-3 : badge local/cloud par message (constat C1/C2) */}
+            {(() => {
+              const prov = message.provider ?? message.usage?.provider;
+              if (!prov) return null;
+              const isLocal = prov === 'ollama';
+              return (
+                <div
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${
+                    isLocal ? 'bg-green-500/10 text-green-300' : 'bg-orange-500/10 text-orange-300'
+                  }`}
+                  title={
+                    isLocal
+                      ? 'Réponse locale (Ollama) : le traitement est resté sur ta machine, rien ne sort'
+                      : `Réponse cloud (${prov}) : le traitement est sorti vers le fournisseur du modèle`
+                  }
+                >
+                  {isLocal ? <Cpu className="w-3 h-3" /> : <Cloud className="w-3 h-3" />}
+                  <span>{isLocal ? 'Local' : 'Cloud'}</span>
+                </div>
+              );
+            })()}
 
             {/* Usage/cost display */}
             {message.usage && (

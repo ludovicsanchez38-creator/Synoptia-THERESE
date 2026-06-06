@@ -122,6 +122,10 @@ class Message(SQLModel, table=True):
     tokens_in: int | None = None
     tokens_out: int | None = None
     model: str | None = None
+    # Provider LLM utilisé (ollama, mistral, anthropic...) pour le badge local/cloud
+    # par message (P0-IA-3 revue produit). None pour les réponses non-LLM
+    # (commandes déterministes, recherche profonde).
+    provider: str | None = None
     extra_data: str | None = None  # JSON object stored as string
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 
