@@ -62,7 +62,9 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
   } = usePanelStore();
 
   const handleMemorySaved = useCallback(() => {
-    // Le panel se recharge au re-render
+    // Les vues persistantes (Projets en content-swap) détiennent leur propre cache et
+    // ne re-montent pas au save : on les notifie pour qu'elles se resynchronisent.
+    window.dispatchEvent(new CustomEvent('therese:memory-changed'));
   }, []);
 
   const handleSaveCommandSubmit = useCallback(

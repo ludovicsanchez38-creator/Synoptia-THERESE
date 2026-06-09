@@ -51,7 +51,7 @@ export const APP_ACTIONS: AppAction[] = [
 
   // -- Mémoire --
   { id: 'memory.open', label: 'Ouvrir la Mémoire', description: 'Contacts', group: 'Mémoire', shortcut: 'M', keywords: ['contacts'], run: () => nav().setView('memory') },
-  { id: 'memory.search', label: 'Rechercher en mémoire', description: 'Chercher dans contacts, projets, fichiers', group: 'Mémoire', shortcut: '⇧F', keywords: ['recherche', 'find'], run: () => nav().setView('memory') },
+  { id: 'memory.search', label: 'Rechercher en mémoire', description: 'Chercher dans les contacts', group: 'Mémoire', shortcut: '⇧F', keywords: ['recherche', 'find'], run: () => nav().setView('memory') },
   { id: 'contact.new', label: 'Ajouter un contact', description: 'Créer un nouveau contact', group: 'Mémoire', keywords: ['nouveau contact'], run: () => panel().openNewContact() },
   { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Mémoire', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
 

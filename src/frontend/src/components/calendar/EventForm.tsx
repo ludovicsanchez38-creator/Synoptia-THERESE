@@ -104,13 +104,11 @@ export function EventForm() {
     }
 
     // Validation : la fin ne peut pas précéder le début (message explicite, BUG capov 0.20).
-    const startMs = allDay
-      ? new Date(`${startDate}T00:00:00`).getTime()
-      : new Date(`${startDate}T${startTime}:00`).getTime();
-    const endMs = allDay
-      ? new Date(`${endDate}T00:00:00`).getTime()
-      : new Date(`${endDate}T${endTime}:00`).getTime();
-    if (endMs < startMs) {
+    // Comparaison sur l'heure MURALE (chaînes ISO triables à champs fixes) plutôt que sur
+    // des timestamps locaux : juste même autour des changements d'heure (DST) — revue F3.
+    const startKey = allDay ? startDate : `${startDate}T${startTime}`;
+    const endKey = allDay ? endDate : `${endDate}T${endTime}`;
+    if (endKey < startKey) {
       setFormError(
         allDay
           ? 'La date de fin doit être identique ou postérieure à la date de début.'

@@ -169,6 +169,7 @@ export function ChatHeader({
           onClick={onToggleProjectsPanel}
           className="w-8 h-8 hover:bg-accent-cyan/10"
           title="Projets"
+          aria-label="Projets"
         >
           <Briefcase className="w-4 h-4" />
         </Button>

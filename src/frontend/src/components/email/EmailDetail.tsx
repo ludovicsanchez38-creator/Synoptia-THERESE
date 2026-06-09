@@ -33,6 +33,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
   const [bodyLoading, setBodyLoading] = useState(false);
+  const [bodyError, setBodyError] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
 
@@ -53,6 +54,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     if (message.body_html || message.body_plain) return; // déjà chargé
     let cancelled = false;
     setBodyLoading(true);
+    setBodyError(false);
     api
       .getEmailMessage(accountId, messageId)
       .then((full) => {
@@ -65,6 +67,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
       })
       .catch((err) => {
         console.error('Failed to load full email body:', err);
+        if (!cancelled) setBodyError(true);
       })
       .finally(() => {
         if (!cancelled) setBodyLoading(false);
@@ -271,7 +274,14 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         ) : message.body_plain ? (
           <pre className="whitespace-pre-wrap text-sm text-text font-sans">{message.body_plain}</pre>
         ) : (
-          <p className="text-sm italic text-text-muted">{message.snippet || 'Aucun contenu à afficher.'}</p>
+          <div className="text-sm text-text-muted">
+            {bodyError && (
+              <p className="mb-2 text-warning">
+                Impossible de charger le message complet. Aperçu seulement :
+              </p>
+            )}
+            <p className="italic">{message.snippet || 'Aucun contenu à afficher.'}</p>
+          </div>
         )}
       </div>
 

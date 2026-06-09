@@ -13,6 +13,7 @@ import * as api from '../../services/api';
 import type { Project } from '../../services/api';
 import { Button } from '../ui/Button';
 import { Z_LAYER } from '../../styles/z-layers';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
 
@@ -41,6 +42,31 @@ export function ProjectsPanel() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // F2 (revue) : la modale projet GLOBALE (⌘K « Ajouter un projet », palette) est
+  // pilotée par panelStore, hors de cette vue. On se resynchronise quand elle signale
+  // un changement, sinon une création via ⌘K n'apparaîtrait pas tant qu'on reste ici.
+  useEffect(() => {
+    const onChanged = () => load();
+    window.addEventListener('therese:memory-changed', onChanged);
+    return () => window.removeEventListener('therese:memory-changed', onChanged);
+  }, [load]);
+
+  // F1 (revue) : nos overlays sont en state local (non pilotés par panelStore), donc
+  // invisibles pour resolveEscape → Échap éjectait la vue SOUS la modale. On les
+  // enregistre sur la pile Échap unifiée (LIFO) tant qu'ils sont ouverts.
+  useEffect(() => {
+    if (!deleteTarget) return;
+    return pushEscapeHandler(() => setDeleteTarget(null));
+  }, [deleteTarget]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    return pushEscapeHandler(() => {
+      setModalOpen(false);
+      setEditing(null);
+    });
+  }, [modalOpen]);
 
   const handleNew = useCallback(() => {
     setEditing(null);
@@ -150,14 +176,17 @@ export function ProjectsPanel() {
           className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/50 p-4`}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="delete-project-title"
         >
           <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-text">Supprimer le projet ?</h2>
+            <h2 id="delete-project-title" className="text-base font-semibold text-text">
+              Supprimer le projet ?
+            </h2>
             <p className="text-sm text-text-muted mt-2">
               « {deleteTarget.name} » sera supprimé. Cette action est définitive.
             </p>
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(null)}>
+              <Button variant="ghost" size="sm" autoFocus onClick={() => setDeleteTarget(null)}>
                 Annuler
               </Button>
               <Button variant="danger" size="sm" onClick={confirmDelete}>
