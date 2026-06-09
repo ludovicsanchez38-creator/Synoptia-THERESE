@@ -9,7 +9,8 @@ import logging
 from datetime import date, datetime, timedelta
 
 from app.models.database import get_session
-from app.models.entities import CalendarEvent, Contact, Invoice, Task
+from app.models.entities import Calendar, CalendarEvent, Contact, EmailAccount, Invoice, Task
+from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +18,43 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+@router.get("/setup-status")
+async def get_setup_status(session: AsyncSession = Depends(get_session)):
+    """Retourne l'état de configuration initial pour la vue Accueil.
+
+    Indique si l'utilisateur a déjà connecté un calendrier, un compte mail,
+    et si son profil de facturation est complet.
+    Permet d'afficher un guide de mise en route contextuel.
+    """
+    has_calendar = False
+    try:
+        result = await session.execute(select(Calendar.id).limit(1))
+        has_calendar = result.scalar() is not None
+    except Exception as e:
+        logger.warning(f"Erreur lecture calendrier (setup-status): {e}")
+
+    has_email = False
+    try:
+        result = await session.execute(select(EmailAccount.id).limit(1))
+        has_email = result.scalar() is not None
+    except Exception as e:
+        logger.warning(f"Erreur lecture compte email (setup-status): {e}")
+
+    billing_complete = False
+    try:
+        profile = get_cached_profile()
+        if profile is not None:
+            billing_complete = profile.is_billing_complete()
+    except Exception as e:
+        logger.warning(f"Erreur lecture profil facturation (setup-status): {e}")
+
+    return {
+        "has_calendar": has_calendar,
+        "has_email": has_email,
+        "billing_complete": billing_complete,
+    }
 
 
 @router.get("/today")
