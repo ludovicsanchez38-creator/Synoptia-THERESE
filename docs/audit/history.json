@@ -1,0 +1,5 @@
+[
+  {"date": "2026-03-12", "score": 64.1, "version": "0.6.x"},
+  {"date": "2026-03-27", "score": 73.4, "version": "0.7.2", "scores": {"securite": 79, "frontend": 78, "produit": 78, "conformite": 78, "performance": 73, "architecture": 73, "resilience": 72, "accessibilite": 72, "contenu": 72, "devops": 68, "qualite_code": 66}},
+  {"date": "2026-06-09", "score": 70.5, "version": "0.21.0-alpha", "scores": {"performance": 77, "conformite": 77, "frontend": 76, "qualite_code": 72, "securite": 71.5, "architecture": 68.7, "contenu": 66.5, "accessibilite": 66, "resilience": 66, "produit": 66, "devops": 63}, "note": "Cross-review durcie (8 binomes, tout verifie), code x2 depuis mars. Delta a interpreter avec prudence."}
+]
