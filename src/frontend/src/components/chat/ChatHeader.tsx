@@ -14,7 +14,7 @@ interface ChatHeaderProps {
   onToggleTasksPanel?: () => void;
   onToggleInvoicesPanel?: () => void;
   onToggleCRMPanel?: () => void;
-  onToggleMemoryPanel?: () => void;
+  onToggleProjectsPanel?: () => void;
   onToggleBoardPanel?: () => void;
   onToggleAtelierPanel?: () => void;
 }
@@ -26,7 +26,7 @@ export function ChatHeader({
   onToggleTasksPanel,
   onToggleInvoicesPanel,
   onToggleCRMPanel,
-  onToggleMemoryPanel,
+  onToggleProjectsPanel,
   onToggleBoardPanel,
   onToggleAtelierPanel,
 }: ChatHeaderProps) {
@@ -166,9 +166,9 @@ export function ChatHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onToggleMemoryPanel}
+          onClick={onToggleProjectsPanel}
           className="w-8 h-8 hover:bg-accent-cyan/10"
-          title={isMac ? 'Projet (⌘M)' : 'Projet (Ctrl+M)'}
+          title="Projets"
         >
           <Briefcase className="w-4 h-4" />
         </Button>

@@ -63,6 +63,10 @@ const MemoryPanel = lazy(() =>
 const FileBrowser = lazy(() =>
   import('../files/FileBrowser').then((m) => ({ default: m.FileBrowser }))
 );
+// BUG-104 : vue Projets dédiée (la refonte 0.20 avait fait perdre cette surface).
+const ProjectsPanel = lazy(() =>
+  import('../memory/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel }))
+);
 
 // Préférence utilisateur : skip dashboard au lancement
 const PREF_SKIP_DASHBOARD = 'therese-skip-dashboard';
@@ -148,6 +152,8 @@ export function ChatLayout() {
   const handleToggleTasks = useCallback(() => useNavigationStore.getState().setView('tasks'), []);
   const handleToggleInvoices = useCallback(() => useNavigationStore.getState().setView('invoices'), []);
   const handleToggleCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
+  // BUG-104 : le bouton « Projet » du header ouvre la vue Projets (et non la Mémoire).
+  const handleToggleProjects = useCallback(() => useNavigationStore.getState().setView('projects'), []);
   // L6 : la Mémoire est une vue. ⌘M garde une sémantique « toggle » :
   // déjà sur la vue Mémoire -> retour, sinon -> bascule vers la vue Mémoire.
   const handleToggleMemory = useCallback(() => {
@@ -203,7 +209,7 @@ export function ChatLayout() {
       <SideToggle side="right" isOpen={activeView === 'memory'} onClick={handleToggleMemory} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
       <header role="banner" aria-label="Barre d'outils Therese">
-        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleMemoryPanel={handleToggleMemory} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
@@ -240,6 +246,7 @@ export function ChatLayout() {
                   <FileBrowser />
                 </div>
               )}
+              {activeView === 'projects' && <ProjectsPanel />}
             </Suspense>
           </div>
         ) : showDashboard ? (

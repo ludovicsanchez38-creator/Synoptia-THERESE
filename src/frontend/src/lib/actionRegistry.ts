@@ -50,7 +50,7 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'prompt-library.open', label: 'Bibliothèque de prompts', description: 'Modèles de prompts prêts à l\'emploi', group: 'Chat', keywords: ['modèles', 'templates'], run: () => panel().openPromptLibrary() },
 
   // -- Mémoire --
-  { id: 'memory.open', label: 'Ouvrir la Mémoire', description: 'Contacts, projets, fichiers', group: 'Mémoire', shortcut: 'M', keywords: ['contacts', 'projets'], run: () => nav().setView('memory') },
+  { id: 'memory.open', label: 'Ouvrir la Mémoire', description: 'Contacts', group: 'Mémoire', shortcut: 'M', keywords: ['contacts'], run: () => nav().setView('memory') },
   { id: 'memory.search', label: 'Rechercher en mémoire', description: 'Chercher dans contacts, projets, fichiers', group: 'Mémoire', shortcut: '⇧F', keywords: ['recherche', 'find'], run: () => nav().setView('memory') },
   { id: 'contact.new', label: 'Ajouter un contact', description: 'Créer un nouveau contact', group: 'Mémoire', keywords: ['nouveau contact'], run: () => panel().openNewContact() },
   { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Mémoire', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
@@ -61,6 +61,7 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'calendar.open', label: 'Ouvrir le Calendrier', description: 'Agenda', group: 'Navigation', shortcut: '⇧C', keywords: ['agenda', 'rdv'], run: () => nav().setView('calendar') },
   { id: 'tasks.open', label: 'Ouvrir les Tâches', description: 'Tâches et todos', group: 'Navigation', shortcut: 'T', keywords: ['todo'], run: () => nav().setView('tasks') },
   { id: 'invoices.open', label: 'Ouvrir les Factures', description: 'Factures et devis', group: 'Navigation', shortcut: 'I', keywords: ['devis'], run: () => nav().setView('invoices') },
+  { id: 'projects.open', label: 'Ouvrir les Projets', description: 'Vos projets et leur avancement (kanban par statut)', group: 'Navigation', keywords: ['projets', 'kanban', 'avancement'], run: () => nav().setView('projects') },
   { id: 'files.open', label: 'Indexation des fichiers', description: 'Parcourir et indexer des fichiers locaux', group: 'Navigation', keywords: ['fichiers', 'indexation', 'documents'], run: () => nav().setView('files') },
   { id: 'board.open', label: 'Board de décision', description: 'Convoquer le board de conseillers IA', group: 'Navigation', shortcut: 'D', run: () => panel().toggleBoardPanel() },
   { id: 'actions.open', label: 'Actions', description: 'Lancer un agent actionnable (rapport, relance, audit...)', group: 'Actions', run: () => useActionsStore.getState().openPanel() },

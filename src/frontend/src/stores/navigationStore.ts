@@ -16,7 +16,8 @@ export type AppView =
   | 'calendar'
   | 'tasks'
   | 'invoices'
-  | 'files'; // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
+  | 'files' // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
+  | 'projects'; // Vue Projets dédiée (BUG-104 : surface perdue à la refonte 0.20)
 
 interface NavigationStore {
   activeView: AppView;

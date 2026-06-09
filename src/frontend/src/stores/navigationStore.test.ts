@@ -58,4 +58,11 @@ describe('navigationStore', () => {
     expect(s.activeView).toBe('chat');
     expect(s.history).toEqual([]);
   });
+
+  it("BUG-104 : la vue 'projects' existe et l'action ⌘K projects.open y navigue", async () => {
+    const { runAction } = await import('../lib/actionRegistry');
+    const ok = runAction('projects.open');
+    expect(ok).toBe(true);
+    expect(useNavigationStore.getState().activeView).toBe('projects');
+  });
 });
