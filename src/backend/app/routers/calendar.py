@@ -784,9 +784,12 @@ async def _create_event_google(
 
         if request.start_datetime and request.end_datetime:
             # BUG-082 : ajouter timeZone pour que Google Calendar interprète correctement
-            # Ne PAS ajouter de suffixe Z (UTC) car les heures sont locales
-            start = {"dateTime": request.start_datetime, "timeZone": "Europe/Paris"}
-            end = {"dateTime": request.end_datetime, "timeZone": "Europe/Paris"}
+            # Ne PAS ajouter de suffixe Z (UTC) car les heures sont locales.
+            # Fuseau réel du poste de l'utilisateur (capov à Toronto voyait un
+            # décalage de 6 h tant que "Europe/Paris" était codé en dur).
+            event_tz = request.timezone or "Europe/Paris"
+            start = {"dateTime": request.start_datetime, "timeZone": event_tz}
+            end = {"dateTime": request.end_datetime, "timeZone": event_tz}
         elif request.start_date and request.end_date:
             start = {"date": request.start_date}
             end = {"date": request.end_date}
@@ -944,13 +947,15 @@ async def update_event(
     try:
         calendar_service = CalendarService(access_token)
 
+        # Même fuseau réel du poste que pour la création (cohérence create/update).
+        event_tz = request.timezone or "Europe/Paris"
         start = (
-            {"dateTime": request.start_datetime}
+            {"dateTime": request.start_datetime, "timeZone": event_tz}
             if request.start_datetime
             else ({"date": request.start_date} if request.start_date else None)
         )
         end = (
-            {"dateTime": request.end_datetime}
+            {"dateTime": request.end_datetime, "timeZone": event_tz}
             if request.end_datetime
             else ({"date": request.end_date} if request.end_date else None)
         )

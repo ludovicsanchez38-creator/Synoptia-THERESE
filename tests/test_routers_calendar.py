@@ -580,3 +580,118 @@ class TestCalendarSync:
 
         assert data["calendars_synced"] >= 1
         assert data["synced_at"] is not None
+
+
+# ============================================================
+# Régression : fuseau horaire des événements Google
+# (capov, 0.20 : 9h30 à Toronto affiché à 3h30 = "Europe/Paris" en dur)
+# ============================================================
+
+
+class TestEventTimezoneRegression:
+    """Un événement Google doit porter le fuseau réel du poste de l'utilisateur,
+    pas 'Europe/Paris' codé en dur côté backend.
+    """
+
+    @pytest.mark.asyncio
+    async def test_create_google_event_uses_request_timezone(self):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.models.entities import EmailAccount
+        from app.models.schemas import CreateEventRequest
+        from app.routers.calendar import _create_event_google
+
+        request = CreateEventRequest(
+            calendar_id="primary",
+            summary="Réunion",
+            start_datetime="2026-06-09T09:30:00",
+            end_datetime="2026-06-09T10:00:00",
+            timezone="America/Toronto",
+        )
+
+        captured: dict = {}
+
+        class FakeCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def create_event(self, **kwargs):
+                captured.update(kwargs)
+                return {
+                    "id": "evt-1",
+                    "summary": kwargs["summary"],
+                    "start": kwargs["start"],
+                    "end": kwargs["end"],
+                    "status": "confirmed",
+                }
+
+        account = EmailAccount(
+            id="acc-1", email="test@example.com", provider="gmail", access_token="tok"
+        )
+        session = MagicMock()
+        session.get = AsyncMock(return_value=account)
+        session.add = MagicMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+
+        with patch("app.routers.calendar.CalendarService", FakeCalendarService), patch(
+            "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
+        ):
+            await _create_event_google("acc-1", request, session)
+
+        assert captured["start"]["timeZone"] == "America/Toronto"
+        assert captured["end"]["timeZone"] == "America/Toronto"
+
+    @pytest.mark.asyncio
+    async def test_update_google_event_uses_request_timezone(self):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.models.entities import CalendarEvent, EmailAccount
+        from app.models.schemas import UpdateEventRequest
+        from app.routers.calendar import update_event
+
+        request = UpdateEventRequest(
+            summary="Réunion",
+            start_datetime="2026-06-09T09:30:00",
+            end_datetime="2026-06-09T10:00:00",
+            timezone="America/Toronto",
+        )
+
+        captured: dict = {}
+
+        class FakeCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def update_event(self, **kwargs):
+                captured.update(kwargs)
+                return {
+                    "id": "evt-1",
+                    "summary": kwargs["summary"],
+                    "start": kwargs["start"],
+                    "end": kwargs["end"],
+                    "status": "confirmed",
+                }
+
+        account = EmailAccount(
+            id="acc-1", email="test@example.com", provider="gmail", access_token="tok"
+        )
+        db_event = CalendarEvent(id="evt-1", calendar_id="primary", summary="Réunion")
+        # session.get : Calendar (None -> Google), puis EmailAccount, puis CalendarEvent.
+        session = MagicMock()
+        session.get = AsyncMock(side_effect=[None, account, db_event])
+        session.add = MagicMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+
+        with patch("app.routers.calendar.CalendarService", FakeCalendarService):
+            await update_event(
+                event_id="evt-1",
+                request=request,
+                calendar_id="primary",
+                account_id="acc-1",
+                session=session,
+            )
+
+        assert captured["start"]["timeZone"] == "America/Toronto"
+        assert captured["end"]["timeZone"] == "America/Toronto"

@@ -44,6 +44,8 @@ export interface CreateEventRequest {
   end_date?: string;
   attendees?: string[];
   recurrence?: string[];
+  /** Fuseau IANA du poste (ex: "America/Toronto") pour les événements horodatés. */
+  timezone?: string;
 }
 
 export interface UpdateEventRequest {
@@ -56,6 +58,7 @@ export interface UpdateEventRequest {
   end_date?: string;
   attendees?: string[];
   recurrence?: string[];
+  timezone?: string;
 }
 
 export interface CalendarSyncResponse {

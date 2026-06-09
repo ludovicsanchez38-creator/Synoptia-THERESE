@@ -103,6 +103,22 @@ export function EventForm() {
       return;
     }
 
+    // Validation : la fin ne peut pas précéder le début (message explicite, BUG capov 0.20).
+    const startMs = allDay
+      ? new Date(`${startDate}T00:00:00`).getTime()
+      : new Date(`${startDate}T${startTime}:00`).getTime();
+    const endMs = allDay
+      ? new Date(`${endDate}T00:00:00`).getTime()
+      : new Date(`${endDate}T${endTime}:00`).getTime();
+    if (endMs < startMs) {
+      setFormError(
+        allDay
+          ? 'La date de fin doit être identique ou postérieure à la date de début.'
+          : "La date et l'heure de fin doivent être postérieures au début."
+      );
+      return;
+    }
+
     setFormError(null);
     clearError();
 
@@ -127,6 +143,9 @@ export function EventForm() {
         } else {
           request.start_datetime = `${startDate}T${startTime}:00`;
           request.end_datetime = `${endDate}T${endTime}:00`;
+          // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
+          // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
+          request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         }
 
         const updated = await api.updateEvent(
@@ -153,6 +172,9 @@ export function EventForm() {
         } else {
           request.start_datetime = `${startDate}T${startTime}:00`;
           request.end_datetime = `${endDate}T${endTime}:00`;
+          // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
+          // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
+          request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         }
 
         const created = await api.createEvent(request, currentAccountId!);

@@ -606,6 +606,9 @@ class CreateEventRequest(BaseModel):
     end_date: str | None = None
     attendees: list[str] | None = None
     recurrence: list[str] | None = None  # RRULE
+    # Fuseau IANA du poste (ex: "America/Toronto"). Indispensable pour que Google
+    # interprète l'heure saisie dans le bon fuseau (sinon décalage selon le serveur).
+    timezone: str | None = None
 
 
 class UpdateEventRequest(BaseModel):
@@ -620,6 +623,7 @@ class UpdateEventRequest(BaseModel):
     end_date: str | None = None
     attendees: list[str] | None = None
     recurrence: list[str] | None = None
+    timezone: str | None = None  # Fuseau IANA du poste (cf. CreateEventRequest)
 
 
 class ListEventsRequest(BaseModel):
