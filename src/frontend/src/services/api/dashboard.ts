@@ -75,3 +75,14 @@ export interface TodayDashboard {
 export async function fetchTodayDashboard(): Promise<TodayDashboard> {
   return request<TodayDashboard>('/api/dashboard/today');
 }
+
+export interface SetupStatus {
+  has_calendar: boolean;
+  has_email: boolean;
+  billing_complete: boolean;
+}
+
+/** Mise en route : ce qui reste à brancher (Accueil). 100 % local. */
+export async function fetchSetupStatus(): Promise<SetupStatus> {
+  return request<SetupStatus>('/api/dashboard/setup-status');
+}
