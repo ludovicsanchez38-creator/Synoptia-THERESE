@@ -7,6 +7,29 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.21.0-alpha] - 9 juin 2026 - Vue Accueil + correctifs des régressions 0.20
+
+Suite aux retours des testeurs après la 0.20, une vague de correctifs et la refonte de l'écran d'accueil. Tests de régression au vert (backend et frontend), avec revues adversariales multi-agents avant publication.
+
+### Nouvelle vue Accueil
+- L'écran d'ouverture « Ma journée » devient une vraie **page d'Accueil persistante**, accessible à tout moment (bouton maison dans la barre d'outils, ou ⌘K → « Accueil »), au lieu d'un écran qui disparaissait sans retour possible.
+- **Hybride** : en haut, un lanceur (nouvelle conversation, produire un document, ajouter un contact, factures) et la reprise des conversations récentes ; en bas, l'aperçu du jour (agenda du jour, et à traiter : factures à relancer, prospects, tâches urgentes).
+- **Utile même à vide** : une bande « Mise en route » propose ce qui n'est pas encore branché (agenda, messagerie, profil de facturation) et s'efface au fur et à mesure.
+- **Honnête** : suppression des éléments décoratifs trompeurs (fausse barre de recherche, badge de modèle codé en dur, fausse barre de saisie). Le badge affiche désormais le fournisseur réellement actif.
+
+### Correctifs (régressions 0.20 remontées par les testeurs)
+- **Calendrier - fuseau horaire** : un rendez-vous créé hors du fuseau de Paris s'affichait à la mauvaise heure (le fuseau « Europe/Paris » était imposé). L'événement respecte désormais le fuseau réel de votre poste.
+- **Calendrier - dates** : message d'erreur explicite quand l'heure de fin précède l'heure de début.
+- **Mail - lecture et réponse** : certains messages s'affichaient vides ; le corps complet est maintenant chargé à l'ouverture, et la réponse cite le message d'origine.
+- **Mail - boutons** : les boutons Répondre / Répondre à tous / Transférer ne disparaissent plus sur un volet étroit.
+- **Projets** : l'écran de gestion des projets, perdu lors de la refonte de navigation, est de retour (vue dédiée avec tableau par statut, glisser-déposer).
+
+### Sous le capot
+- Endpoint d'état de configuration (`/api/dashboard/setup-status`) pour la mise en route guidée.
+- Validation de fuseau et de dates côté formulaire ; chargement du corps des mails à l'ouverture du détail.
+
+---
+
 ## [v0.20.0-alpha] - 6 juin 2026 - Revue produit : confiance, données unifiées, navigation
 
 Gros bump (0.13.2 → 0.20.0), aboutissement d'une revue produit globale recentrée sur le solopreneur. Deux jours de chantier : refonte de la navigation, mise au carré de la confiance et de la souveraineté, données rendues cohérentes (CRM, facturation, mémoire), puis deux passages de personas métier, un test exhaustif de toutes les fonctionnalités, des revues adversariales multi-agents et une vérification humaine finale. 1044 tests de régression au vert.
