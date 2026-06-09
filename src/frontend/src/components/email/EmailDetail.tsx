@@ -32,6 +32,7 @@ interface EmailDetailProps {
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
+  const [bodyLoading, setBodyLoading] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
 
@@ -43,6 +44,36 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
       markAsRead();
     }
   }, [messageId]);
+
+  // BUG-102 : la liste ne charge que les métadonnées (snippet), pas le corps.
+  // On récupère le message complet à l'ouverture si le corps est absent, sinon
+  // le mail s'affiche vide et la réponse ne peut rien citer de l'original.
+  useEffect(() => {
+    if (!message) return;
+    if (message.body_html || message.body_plain) return; // déjà chargé
+    let cancelled = false;
+    setBodyLoading(true);
+    api
+      .getEmailMessage(accountId, messageId)
+      .then((full) => {
+        if (cancelled) return;
+        updateMessage(messageId, {
+          body_html: full.body_html,
+          body_plain: full.body_plain,
+          snippet: full.snippet ?? message.snippet,
+        });
+      })
+      .catch((err) => {
+        console.error('Failed to load full email body:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setBodyLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messageId, accountId]);
 
   async function markAsRead() {
     try {
@@ -107,9 +138,22 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     startComposing(recipients, subject, response);
   }
 
+  // BUG-102 : construit une réponse citant le message d'origine (comme un vrai
+  // client mail), au lieu d'un corps vide.
+  function buildQuotedReply(): string {
+    if (!message) return '';
+    const original = message.body_plain || message.snippet || '';
+    if (!original.trim()) return '';
+    const quoted = original
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n');
+    return `\n\n\nLe ${formatDate(message.date)}, ${message.from_name || message.from_email} a écrit :\n${quoted}`;
+  }
+
   function handleReply() {
     if (!message) return;
-    startComposing([message.from_email], `Re: ${message.subject || ''}`, '');
+    startComposing([message.from_email], `Re: ${message.subject || ''}`, buildQuotedReply());
   }
 
   function handleReplyAll() {
@@ -117,7 +161,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     const allRecipients = [message.from_email, ...message.to_emails].filter(
       (email, index, self) => self.indexOf(email) === index
     );
-    startComposing(allRecipients, `Re: ${message.subject || ''}`, '');
+    startComposing(allRecipients, `Re: ${message.subject || ''}`, buildQuotedReply());
   }
 
   function handleForward() {
@@ -215,13 +259,19 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {message.body_html ? (
+        {bodyLoading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-text-muted">
+            <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" /> Chargement du message…
+          </div>
+        ) : message.body_html ? (
           <div
             className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan [&_a]:hover:!text-accent-cyan/80 [&_*]:!bg-transparent"
             dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(message.body_html) }}
           />
-        ) : (
+        ) : message.body_plain ? (
           <pre className="whitespace-pre-wrap text-sm text-text font-sans">{message.body_plain}</pre>
+        ) : (
+          <p className="text-sm italic text-text-muted">{message.snippet || 'Aucun contenu à afficher.'}</p>
         )}
       </div>
 
@@ -232,8 +282,9 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         </div>
       )}
 
-      {/* Actions */}
-      <div className="px-6 py-4 border-t border-border/30 flex items-center gap-2">
+      {/* Actions — flex-wrap : sur un volet étroit, les boutons Répondre/Transférer
+          étaient rognés hors écran (BUG-105) au lieu de passer à la ligne. */}
+      <div className="px-6 py-4 border-t border-border/30 flex flex-wrap items-center gap-2">
         <Button variant="primary" size="sm" onClick={() => setShowResponseModal(true)}>
           <Sparkles className="w-4 h-4 mr-2" />
           Générer une réponse
