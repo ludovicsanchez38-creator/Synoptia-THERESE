@@ -65,4 +65,11 @@ describe('navigationStore', () => {
     expect(ok).toBe(true);
     expect(useNavigationStore.getState().activeView).toBe('projects');
   });
+
+  it("la vue 'home' existe et l'action ⌘K home.open y navigue", async () => {
+    const { runAction } = await import('../lib/actionRegistry');
+    const ok = runAction('home.open');
+    expect(ok).toBe(true);
+    expect(useNavigationStore.getState().activeView).toBe('home');
+  });
 });

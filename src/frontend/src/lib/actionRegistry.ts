@@ -56,6 +56,7 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Mémoire', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
 
   // -- Navigation (vues content-swap) --
+  { id: 'home.open', label: 'Accueil', description: "Revenir à la page d'accueil", group: 'Navigation', shortcut: 'H', keywords: ['accueil', 'home', 'journée'], run: () => nav().setView('home') },
   { id: 'crm.open', label: 'Ouvrir le CRM', description: 'Pipeline commercial', group: 'Navigation', shortcut: 'P', keywords: ['pipeline', 'prospects'], run: () => nav().setView('crm') },
   { id: 'email.open', label: 'Ouvrir l\'Email', description: 'Boîte email', group: 'Navigation', shortcut: 'E', run: () => nav().setView('email') },
   { id: 'calendar.open', label: 'Ouvrir le Calendrier', description: 'Agenda', group: 'Navigation', shortcut: '⇧C', keywords: ['agenda', 'rdv'], run: () => nav().setView('calendar') },

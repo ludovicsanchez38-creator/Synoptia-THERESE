@@ -10,6 +10,7 @@ import { create } from 'zustand';
 
 export type AppView =
   | 'chat'
+  | 'home' // Vue Accueil persistante (refonte dashboard)
   | 'memory'
   | 'crm'
   | 'email'
