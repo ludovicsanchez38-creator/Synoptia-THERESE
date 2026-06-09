@@ -1,9 +1,9 @@
 /**
- * THÉRÈSE v2 - ChatLayout (US-016 refactorisé + US-005 Dashboard)
+ * THÉRÈSE v2 - ChatLayout (US-016 refactorisé)
  *
- * Composant principal du chat. Réduit de ~480 lignes à ~170 lignes.
+ * Composant principal du chat.
  * - Panneaux gérés par panelStore (Zustand) - US-016
- * - Dashboard "Ma journée" au lancement - US-005
+ * - Vue Accueil au lancement (refonte dashboard) : routeur de vues content-swap
  * - Composants lazy-loaded dans PanelContainer
  */
 

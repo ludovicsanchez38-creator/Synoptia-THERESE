@@ -94,6 +94,9 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Dette issue de la vue Accueil (09/06/2026, branche `feat/dashboard-accueil`)
+- [ ] **`setup-status` `has_email`** (`dashboard.py`) : teste la simple existence d'une ligne `EmailAccount`, pas la validité du token. Un compte dont l'OAuth a expiré reste compté « branché » et la carte de mise en route disparaît. Acceptable pour l'onboarding ; raffiner si on veut distinguer « configuré » de « connecté valide » (réutiliser la logique de `email auth status`).
+
 ### Dette issue de la revue adversariale des correctifs 0.20 (09/06/2026, branche `fix/bugs-post-0.20`)
 Findings non-bloquants relevés par la revue 3 agents (les bloquants F1/F2/F3 ont été corrigés dans le commit `fix(review)`). À traiter plus tard :
 - [ ] **Valider le fuseau IANA côté backend** (`calendar.py` `_create_event_google` + `update_event`) : `request.timezone` est passé tel quel à Google sans contrôle, alors que le chemin local (`local_provider.py`) le valide via `pytz` avec fallback `Europe/Paris`. Parité à rétablir (un fuseau invalide d'un client mal codé → 400 Google remonté en 500 générique). Valider via `zoneinfo.ZoneInfo(tz)`, fallback Paris.
