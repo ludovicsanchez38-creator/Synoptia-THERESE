@@ -1,4 +1,4 @@
-import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap, Play } from 'lucide-react';
+import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap, Play, Home } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { useChatStore } from '../../stores/chatStore';
@@ -9,6 +9,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface ChatHeaderProps {
   onOpenSettings?: () => void;
+  onHome?: () => void;
   onToggleEmailPanel?: () => void;
   onToggleCalendarPanel?: () => void;
   onToggleTasksPanel?: () => void;
@@ -21,6 +22,7 @@ interface ChatHeaderProps {
 
 export function ChatHeader({
   onOpenSettings,
+  onHome,
   onToggleEmailPanel,
   onToggleCalendarPanel,
   onToggleTasksPanel,
@@ -113,6 +115,10 @@ export function ChatHeader({
 
       {/* Centre: Navigation (6 boutons icônes) */}
       <div className="flex-shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
+        <Button variant="ghost" size="icon" onClick={onHome} className="w-8 h-8 hover:bg-accent-cyan/10" title="Accueil" aria-label="Accueil">
+          <Home className="w-4 h-4" />
+        </Button>
+
         <Button
           variant="ghost"
           size="icon"

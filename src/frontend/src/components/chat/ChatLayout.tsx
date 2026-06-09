@@ -34,9 +34,9 @@ import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from './SlashCommandsMenu';
 
-// Lazy-loaded : Dashboard "Ma journée" (US-005)
-const DashboardToday = lazy(() =>
-  import('../home/DashboardToday').then((m) => ({ default: m.DashboardToday }))
+// Lazy-loaded : vue Accueil
+const HomeView = lazy(() =>
+  import('../home/HomeView').then((m) => ({ default: m.HomeView }))
 );
 
 // Phase 1 (content-swap) : vues rendues dans la zone principale au lieu de fenêtres.
@@ -68,19 +68,13 @@ const ProjectsPanel = lazy(() =>
   import('../memory/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel }))
 );
 
-// Préférence utilisateur : skip dashboard au lancement
-const PREF_SKIP_DASHBOARD = 'therese-skip-dashboard';
-
 export function ChatLayout() {
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
   const [guidedSkillId, setGuidedSkillId] = useState<string | undefined>(undefined);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const [guidedPanelActive, setGuidedPanelActive] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(() => {
-    return localStorage.getItem(PREF_SKIP_DASHBOARD) !== 'true';
-  });
 
-  const { createConversation, currentConversationId, conversations } = useChatStore();
+  const { createConversation, currentConversationId } = useChatStore();
   const toggleDemo = useDemoStore((s) => s.toggle);
   const toggleAtelier = useAtelierStore((s) => s.togglePanel);
   const openAtelierPanel = useAtelierStore((s) => s.openPanel);
@@ -119,15 +113,13 @@ export function ChatLayout() {
     return () => window.removeEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
   }, []);
 
-  // Si l'utilisateur a déjà des messages dans la conversation courante, pas de dashboard
+  // Au lancement : atterrir sur l'Accueil (sauf préférence contraire).
   useEffect(() => {
-    if (currentConversationId) {
-      const conv = conversations.find((c) => c.id === currentConversationId);
-      if (conv && conv.messages && conv.messages.length > 0) {
-        setShowDashboard(false);
-      }
+    if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
+      useNavigationStore.getState().setView('home');
     }
-  }, [currentConversationId, conversations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     listUserCommands()
@@ -161,8 +153,6 @@ export function ChatLayout() {
     if (nav.activeView === 'memory') nav.goBack();
     else nav.setView('memory');
   }, []);
-  const handleDismissDashboard = useCallback(() => setShowDashboard(false), []);
-
   // Cmd+Shift+K : ouvrir l'Atelier en mode chat local
   const handleOpenAtelierChat = useCallback(() => {
     openAtelierPanel();
@@ -209,7 +199,7 @@ export function ChatLayout() {
       <SideToggle side="right" isOpen={activeView === 'memory'} onClick={handleToggleMemory} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
       <header role="banner" aria-label="Barre d'outils Therese">
-        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} onHome={() => useNavigationStore.getState().setView('home')} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
@@ -221,7 +211,11 @@ export function ChatLayout() {
         )}
 
         {/* Phase 1 (content-swap) : routeur de vues dans la zone principale */}
-        {activeView !== 'chat' ? (
+        {activeView === 'home' ? (
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
+            <HomeView />
+          </Suspense>
+        ) : activeView !== 'chat' ? (
           <div className="flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center px-4 py-2 border-b border-border/50">
               <button
@@ -249,10 +243,6 @@ export function ChatLayout() {
               {activeView === 'projects' && <ProjectsPanel />}
             </Suspense>
           </div>
-        ) : showDashboard ? (
-          <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>
-            <DashboardToday onDismiss={handleDismissDashboard} />
-          </Suspense>
         ) : (
           <>
             <div className="flex-1 overflow-hidden">
