@@ -147,7 +147,7 @@ function StartupBehavior() {
         <div>
           <p className="text-sm text-text">Ouvrir sur le chat directement</p>
           <p className="text-xs text-text-muted mt-0.5">
-            Masquer le tableau de bord "Ma journée" au lancement
+            Ne pas afficher l'Accueil au lancement (aller directement au chat)
           </p>
         </div>
         <button
