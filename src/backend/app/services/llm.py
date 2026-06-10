@@ -665,6 +665,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         provider_name = self.config.provider.value
         cb = get_circuit_breaker()
         had_content = False
+        # US-008 (RES4) : les providers convertissent les 429/5xx en
+        # StreamEvent(type="error") sans lever ; sans ça, le circuit breaker
+        # restait aveugle à ces échecs en streaming. On les détecte ici.
+        had_error = False
+        error_detail = ""
 
         try:
             # Convert context to provider format
@@ -681,15 +686,24 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 async for event in self._provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
                     if event.type == "text" and event.content:
                         had_content = True
+                    elif event.type == "error":
+                        had_error = True
+                        error_detail = event.content or "stream error"
                     yield event
             else:
                 async for event in self._provider.stream(system_prompt, messages, tools):
                     if event.type == "text" and event.content:
                         had_content = True
+                    elif event.type == "error":
+                        had_error = True
+                        error_detail = event.content or "stream error"
                     yield event
 
-            # Si on a reçu du contenu, le provider fonctionne
-            if had_content:
+            # US-008 (RES4) : un événement d'erreur (429/5xx) ouvre le circuit,
+            # même si du contenu partiel a été reçu avant. Sinon succès.
+            if had_error:
+                cb.record_failure(provider_name, error_detail[:200])
+            elif had_content:
                 cb.record_success(provider_name)
 
         except Exception as e:
