@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
+import { useNavigationStore } from './navigationStore';
 
 import type { DetectedEntities } from '../services/api';
 
@@ -111,11 +112,19 @@ export const useChatStore = create<ChatStore>()(
           conversations: [newConversation, ...state.conversations],
           currentConversationId: id,
         }));
+        // BUG-107 : activer une conversation doit toujours afficher le chat.
+        // Avant la vue Accueil (0.21), l'app était toujours sur 'chat' et ce
+        // couplage était implicite ; depuis, créer une conversation depuis
+        // l'Accueil laissait la zone centrale sur l'Accueil (Cmd+N « invisible »).
+        useNavigationStore.getState().setView('chat');
         return id;
       },
 
       loadConversation: (id) => {
         set({ currentConversationId: id });
+        // BUG-107 : sélectionner une conversation (sidebar, Accueil) doit ramener
+        // la zone centrale sur le chat, sinon « rien ne s'ouvre » depuis l'Accueil.
+        useNavigationStore.getState().setView('chat');
       },
 
       deleteConversation: (id) => {
