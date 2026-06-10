@@ -12,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { recordCloudConsent } from '../../lib/consent';
 
 interface SecurityStepProps {
   onNext: () => void;
@@ -205,7 +206,11 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
           Retour
         </button>
         <button
-          onClick={onNext}
+          onClick={() => {
+            // RGPD-4 (US-003) : tracer le consentement (horodaté) avant de continuer.
+            recordCloudConsent();
+            onNext();
+          }}
           disabled={!acknowledged}
           data-testid="onboarding-next-btn"
           className={cn(

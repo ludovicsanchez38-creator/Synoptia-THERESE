@@ -12,7 +12,14 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session
-from app.models.entities import Activity, Contact, Deliverable, Project, Task
+from app.models.entities import (
+    Activity,
+    Contact,
+    Deliverable,
+    EmailMessage,
+    Project,
+    Task,
+)
 from app.models.schemas import (
     RGPDAnonymizeRequest,
     RGPDAnonymizeResponse,
@@ -217,6 +224,14 @@ async def anonymize_contact(
             await session.delete(deliv)
         # Delete project
         await session.delete(project)
+
+    # RGPD-1 (US-003) : effacer les emails liés au contact (art. 17). Ils
+    # restaient en base avec le contact_id, contenu intégral inclus.
+    result = await session.execute(
+        select(EmailMessage).where(EmailMessage.contact_id == contact_id)
+    )
+    for email_msg in result.scalars().all():
+        await session.delete(email_msg)
 
     # Log anonymization activity
     anonymization_log = Activity(

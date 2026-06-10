@@ -13,7 +13,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session_context
-from app.models.entities import Activity, Contact, Notification
+from app.models.entities import Activity, Contact, EmailMessage, Notification
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
@@ -22,23 +22,35 @@ logger = logging.getLogger(__name__)
 DEFAULT_RETENTION_MONTHS = 36
 
 
-async def purge_contact_vector(contact_id: str) -> int:
+async def purge_contact_vector(contact_id: str, max_attempts: int = 3) -> int:
     """Supprime l'embedding Qdrant d'un contact (droit à l'oubli, Art. 17).
 
     Sans cette purge, la fiche anonymisée [ANONYMISÉ] continue de remonter en
     recherche sémantique au même score (constat C4 de la revue produit) :
     l'effacement reste incomplet et la faille RGPD est démontrable.
 
-    Best effort : une panne Qdrant ne doit pas faire échouer l'anonymisation
-    déjà actée en base. On journalise et on renvoie 0 le cas échéant.
+    US-003 (RGPD-2) : on retente en cas de panne transitoire de Qdrant pour
+    réduire la fenêtre de « vecteur fantôme ». Best effort en dernier recours :
+    une panne durable ne fait pas échouer l'anonymisation déjà actée en base
+    (journalisée en ERROR pour traçabilité/alerte).
     """
-    try:
-        from app.services.qdrant import get_qdrant_service
+    last_error: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            from app.services.qdrant import get_qdrant_service
 
-        return await get_qdrant_service().async_delete_by_entity(contact_id)
-    except Exception as e:
-        logger.warning(f"RGPD: échec purge vecteur Qdrant pour {contact_id}: {e}")
-        return 0
+            return await get_qdrant_service().async_delete_by_entity(contact_id)
+        except Exception as e:  # noqa: BLE001 - on retente puis on journalise
+            last_error = e
+            logger.warning(
+                f"RGPD: échec purge vecteur Qdrant pour {contact_id} "
+                f"(tentative {attempt}/{max_attempts}): {e}"
+            )
+    logger.error(
+        f"RGPD: purge vecteur Qdrant définitivement échouée pour {contact_id} "
+        f"après {max_attempts} tentatives: {last_error}"
+    )
+    return 0
 
 
 async def _get_purge_retention_months() -> int:
@@ -186,6 +198,15 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 contact.stage = "archive"
                 contact.extra_data = None
                 contact.updated_at = now
+
+                # RGPD-1 (US-003) : effacer aussi les emails liés (art. 17),
+                # comme l'anonymisation manuelle. Sinon le contenu des mails du
+                # contact purgé restait en base.
+                emails = await session.execute(
+                    select(EmailMessage).where(EmailMessage.contact_id == contact.id)
+                )
+                for email_msg in emails.scalars().all():
+                    await session.delete(email_msg)
 
                 # Log d'activité
                 activity = Activity(

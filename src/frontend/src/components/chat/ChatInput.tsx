@@ -15,6 +15,7 @@ import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './Slas
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
@@ -451,6 +452,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           accumulatedContent += downloadMsg;
           pendingChunk += downloadMsg;
           flushToDisplay();
+        } else if (chunk.type === 'confirmation_required' && chunk.confirmation) {
+          // US-002 : action sensible (envoi d'email) en attente de validation.
+          // On affiche une carte de confirmation ; rien n'est exécuté sans clic.
+          useToolConfirmationStore.getState().add(chunk.confirmation);
         } else if (chunk.type === 'done') {
           // Store usage and uncertainty metadata (US-ESC-02, US-ESC-01)
           if (chunk.usage || chunk.uncertainty) {

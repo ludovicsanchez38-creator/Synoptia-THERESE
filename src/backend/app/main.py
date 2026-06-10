@@ -532,10 +532,19 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
 
     # Endpoints exemptés
+    # US-005 : /api/shutdown est appelé à la fermeture par Tauri (TcpStream brut,
+    # lib.rs) et par UpdateBanner, qui n'ont pas le token de session en main ;
+    # sans exemption, ces appels repartaient en 401 et le shutdown graceful ne
+    # s'exécutait jamais (force-kill + verrou backend.exe à l'update Windows).
+    # Risque CSRF accepté : impact limité à fermer l'app (nuisance récupérable,
+    # pas de fuite), et atténué par Private Network Access côté navigateur.
+    # Durcissement possible : faire signer l'appel par les 2 appelants (token
+    # lu depuis ~/.therese/.session_token) — nécessite un changement Rust testé.
     exempt_paths = [
         "/api/health", "/api/auth/token",
         "/api/email/auth/callback-redirect",
         "/api/crm/sync/callback",
+        "/api/shutdown",
         "/docs", "/redoc", "/openapi.json", "/health",
     ]
     if any(request.url.path.startswith(p) for p in exempt_paths):

@@ -177,7 +177,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         for p in prospects:
             stale_prospects.append({
                 "id": p.id,
-                "name": p.name,
+                "name": p.display_name,
                 "company": p.company,
                 "stage": p.stage,
                 "email": p.email,
