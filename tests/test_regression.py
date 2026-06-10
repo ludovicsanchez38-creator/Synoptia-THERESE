@@ -1225,9 +1225,13 @@ class TestBUG025OllamaSystemPrompt:
         import re
         code = PROVIDERS / "ollama.py"
         content = code.read_text(encoding="utf-8")
-        json_block = re.search(r'json=\{(.*?)\}', content, re.DOTALL)
-        assert json_block, "Bloc json= non trouvé dans ollama.py"
-        json_content = json_block.group(1)
+        # US-009 : le body est désormais construit dans request_body (dict
+        # nommé) avant d'être passé à json= ; couvrir les deux formes.
+        json_block = re.search(
+            r'(?:json=\{(.*?)\}|request_body: dict = \{(.*?)\})', content, re.DOTALL
+        )
+        assert json_block, "Bloc json=/request_body non trouvé dans ollama.py"
+        json_content = json_block.group(1) or json_block.group(2)
         assert '"system"' not in json_content, (
             "/api/chat n'accepte pas de champ 'system' top-level"
         )

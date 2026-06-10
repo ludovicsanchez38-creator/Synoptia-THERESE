@@ -55,15 +55,23 @@ class OllamaProvider(BaseProvider):
                 "num_ctx": min(max(self.config.context_window, 2048), 8192),
             }
 
+            request_body: dict = {
+                "model": model,
+                "messages": chat_messages,
+                "stream": True,
+                "options": ollama_options,
+            }
+            # US-009 : /api/chat accepte les tools au format OpenAI
+            # (type=function). Les modèles compatibles répondent avec
+            # message.tool_calls ; les autres renvoient un 400 explicite
+            # traité plus bas avec un message clair.
+            if tools:
+                request_body["tools"] = tools
+
             async with self.client.stream(
                 "POST",
                 f"{base_url}/api/chat",
-                json={
-                    "model": model,
-                    "messages": chat_messages,
-                    "stream": True,
-                    "options": ollama_options,
-                },
+                json=request_body,
                 # BUG-050 : pas de timeout de lecture pour les providers locaux
                 # Les skills Office sur machines lentes (Pentium G620) peuvent dépasser 120s
                 # L'AbortController frontend + bouton Stop gèrent déjà l'annulation utilisateur
@@ -72,6 +80,8 @@ class OllamaProvider(BaseProvider):
             ) as response:
                 response.raise_for_status()
                 has_content = False
+                has_tool_calls = False
+                tool_call_index = 0
                 async for line in response.aiter_lines():
                     if line:
                         try:
@@ -83,16 +93,42 @@ class OllamaProvider(BaseProvider):
                                     content=f"Ollama ({model}): {error_msg}",
                                 )
                                 return
+                            message = event.get("message", {})
+                            # US-009 : tool_calls natifs Ollama. Les arguments
+                            # arrivent déjà en objet JSON (pas une chaîne).
+                            # Ollama ne fournit pas d'id -> on en synthétise un
+                            # pour corréler les résultats dans la boucle d'outils.
+                            for tc in message.get("tool_calls") or []:
+                                func = tc.get("function", {})
+                                name = func.get("name")
+                                if not name:
+                                    continue
+                                arguments = func.get("arguments")
+                                if isinstance(arguments, str):
+                                    try:
+                                        arguments = json.loads(arguments)
+                                    except json.JSONDecodeError:
+                                        arguments = {}
+                                has_tool_calls = True
+                                yield StreamEvent(
+                                    type="tool_call",
+                                    tool_call=ToolCall(
+                                        id=f"ollama-call-{tool_call_index}",
+                                        name=name,
+                                        arguments=arguments or {},
+                                    ),
+                                )
+                                tool_call_index += 1
                             # Extraire le contenu - accepter aussi les chaînes vides
                             # (certains modèles comme gemma3:1b envoient du contenu vide)
-                            content = event.get("message", {}).get("content")
+                            content = message.get("content")
                             if content is not None and content != "":
                                 has_content = True
                                 yield StreamEvent(type="text", content=content)
                         except json.JSONDecodeError:
                             continue
 
-                if not has_content:
+                if not has_content and not has_tool_calls:
                     logger.warning(f"Ollama ({model}): réponse vide, aucun contenu reçu")
                     yield StreamEvent(
                         type="error",
@@ -103,7 +139,10 @@ class OllamaProvider(BaseProvider):
                     )
                     return
 
-            yield StreamEvent(type="done", stop_reason="end_turn")
+            yield StreamEvent(
+                type="done",
+                stop_reason="tool_calls" if has_tool_calls else "end_turn",
+            )
 
         except httpx.ConnectError:
             logger.error(f"Ollama connexion impossible: {base_url}")
@@ -126,7 +165,20 @@ class OllamaProvider(BaseProvider):
                 logger.debug("Impossible de parser le body erreur Ollama: %s", body_err)
                 detail = str(e)
             logger.error(f"Ollama HTTP {status}: {detail}")
-            if status == 404:
+            # US-009 (honnêteté) : modèle sans support des outils -> message
+            # explicite au lieu d'un HTTP 400 brut. L'utilisateur sait quoi faire.
+            if "does not support tools" in detail.lower():
+                yield StreamEvent(
+                    type="error",
+                    content=(
+                        f"Le modèle '{model}' ne gère pas les outils (création de "
+                        "contacts, calendrier, documents...). Pour utiliser ces "
+                        "fonctions avec Ollama, installe un modèle compatible "
+                        "outils (ex: qwen3, llama3.1, mistral) ou pose ta question "
+                        "sans demander d'action."
+                    ),
+                )
+            elif status == 404:
                 yield StreamEvent(
                     type="error",
                     content=(
@@ -175,5 +227,37 @@ class OllamaProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
-        """Ollama doesn't support tool calling in this implementation."""
-        yield StreamEvent(type="done", stop_reason="end_turn")
+        """US-009 : continuation après exécution des outils (format Ollama).
+
+        Format officiel /api/chat : le message assistant rejoue les tool_calls
+        (arguments en objet), puis chaque résultat est un message
+        {"role": "tool", "content": ..., "tool_name": <nom>} - Ollama corrèle
+        par nom, pas par id (il n'en fournit pas).
+        """
+        messages = list(messages)
+
+        assistant_message: dict = {
+            "role": "assistant",
+            "content": assistant_content or "",
+            "tool_calls": [
+                {"function": {"name": tc.name, "arguments": tc.arguments or {}}}
+                for tc in tool_calls
+            ],
+        }
+        messages.append(assistant_message)
+
+        name_by_id = {tc.id: tc.name for tc in tool_calls}
+        for tr in tool_results:
+            result_content = tr.result
+            if isinstance(result_content, dict):
+                result_content = json.dumps(result_content)
+            elif not isinstance(result_content, str):
+                result_content = str(result_content)
+            messages.append({
+                "role": "tool",
+                "content": result_content,
+                "tool_name": name_by_id.get(tr.tool_call_id, ""),
+            })
+
+        async for event in self.stream(system_prompt, messages, tools):
+            yield event
