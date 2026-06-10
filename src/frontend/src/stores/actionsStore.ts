@@ -13,6 +13,7 @@ import {
   cancelTask,
 } from '../services/api/actions';
 import { useChatStore } from './chatStore';
+import { useNavigationStore } from './navigationStore';
 
 /**
  * Set d'idempotence : empeche d'inserer plusieurs fois le resultat
@@ -30,7 +31,7 @@ const insertedTaskIds = new Set<string>();
  * Pour status `error` : insere un message d'erreur clair (resultat
  * partiel inclus s'il existe).
  */
-function insertResultInChat(task: TaskState): void {
+export function insertResultInChat(task: TaskState): void {
   if (insertedTaskIds.has(task.task_id)) return;
 
   const header = task.agent_name ? `**${task.agent_name}**\n\n` : '';
@@ -47,6 +48,9 @@ function insertResultInChat(task: TaskState): void {
   if (!content) return;
   insertedTaskIds.add(task.task_id);
   useChatStore.getState().addMessage({ role: 'assistant', content });
+  // BUG-107 : le résultat d'une action lancée depuis l'Accueil partait dans une
+  // conversation invisible. On ramène la vue sur le chat pour le rendre visible.
+  useNavigationStore.getState().setView('chat');
 }
 
 interface ActionsState {
