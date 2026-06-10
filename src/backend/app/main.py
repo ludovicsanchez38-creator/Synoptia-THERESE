@@ -389,10 +389,15 @@ if settings.therese_env != "production":
 
 # Rate limiting middleware (SEC-015)
 if HAS_SLOWAPI:
-    limiter = Limiter(key_func=get_remote_address)
+    # US-006 : sans default_limits, SlowAPIMiddleware ne limitait RIEN (aucune
+    # route décorée) alors que le log annonçait « active ». Limite globale
+    # généreuse : ne gêne pas l'usage d'une app desktop locale, mais attrape une
+    # boucle runaway / un process local abusif (garde-fou de robustesse).
+    _RATE_LIMIT_DEFAULT = "600/minute"
+    limiter = Limiter(key_func=get_remote_address, default_limits=[_RATE_LIMIT_DEFAULT])
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
-    logger.info("SlowAPI rate limiting active")
+    logger.info("SlowAPI rate limiting actif (defaut %s par IP)", _RATE_LIMIT_DEFAULT)
 else:
     limiter = None
     logger.error(
@@ -416,10 +421,8 @@ else:
             t for t in _request_counts[client_ip]
             if now - t < _FALLBACK_WINDOW
         ]
-        # Purger les clés vides pour éviter une fuite mémoire
-        if not _request_counts[client_ip]:
-            del _request_counts[client_ip]
-            return await call_next(request)
+        # US-006 : ne PAS court-circuiter quand la fenêtre est vide, sinon la
+        # 1re requête de chaque fenêtre n'est jamais comptée → limiteur no-op.
         if len(_request_counts[client_ip]) >= _FALLBACK_RATE_LIMIT:
             return JSONResponse(
                 status_code=429,
