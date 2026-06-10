@@ -80,6 +80,56 @@ def ensure_invoice_legacy_columns(
     return added_columns
 
 
+# US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
+# migrations ad-hoc d'init_db/main.py EST au schéma de cette révision : on
+# l'estampille pour qu'Alembic devienne l'unique voie d'évolution du schéma.
+# Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
+# vraie tête de src/backend/alembic/versions (épinglée en dur pour que
+# l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
+ALEMBIC_HEAD_REVISION = "a1b2c3d4e5f7"
+
+
+def ensure_alembic_stamp(db_path) -> None:
+    """Estampille la DB à la tête Alembic si elle n'a pas d'alembic_version.
+
+    Idempotent. Ne touche pas une DB déjà suivie par Alembic (révision plus
+    ancienne incluse : `alembic upgrade head` la fera avancer normalement).
+    Ne stamp JAMAIS une DB vide (sans tables métier) : elle doit être créée
+    par les migrations ou par create_all d'abord.
+    """
+    import sqlite3
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    if not db_path or not _Path(str(db_path)).exists():
+        return
+    try:
+        with closing(sqlite3.connect(str(db_path))) as conn:
+            has_tables = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='contacts'"
+            ).fetchone()
+            if not has_tables:
+                return
+            has_stamp = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
+            ).fetchone()
+            if has_stamp:
+                return
+            conn.execute(
+                "CREATE TABLE alembic_version ("
+                "version_num VARCHAR(32) NOT NULL, "
+                "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+            )
+            conn.execute(
+                "INSERT INTO alembic_version (version_num) VALUES (?)",
+                (ALEMBIC_HEAD_REVISION,),
+            )
+            conn.commit()
+            logger.info(f"US-015 : DB estampillée Alembic {ALEMBIC_HEAD_REVISION}")
+    except Exception as e:
+        logger.warning(f"Estampillage Alembic échoué : {e}")
+
+
 def get_database_url(async_mode: bool = True) -> str:
     """Get database URL for SQLite."""
     db_path = settings.db_path
@@ -191,6 +241,12 @@ async def init_db() -> None:
             except Exception as e:
                 logger.debug(f"Index creation skipped: {e}")
         conn.commit()
+
+    # US-015 : estampiller la DB à la tête Alembic. Le bootstrap ci-dessus
+    # (create_all + colonnes/index ad-hoc) amène la DB AU schéma courant ;
+    # l'estampille fait d'Alembic l'unique voie d'évolution future
+    # (`make db-migrate` fonctionne désormais aussi sur une DB legacy).
+    ensure_alembic_stamp(settings.db_path)
 
     logger.info("Database initialized successfully")
 

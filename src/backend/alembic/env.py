@@ -17,17 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import all models to ensure they're registered with SQLModel.metadata
 from app.config import settings  # noqa: E402
-from app.models.entities import (  # noqa: F401, E402
-    Contact,
-    Conversation,
-    EmailAccount,
-    EmailFollowUp,
-    EmailMessage,
-    FileMetadata,
-    Message,
-    Preference,
-    Project,
-)
+from app.models import entities, entities_agents  # noqa: F401, E402
+from app.services import audit  # noqa: F401, E402 - ActivityLog
 
 # Alembic Config object
 config = context.config
@@ -91,6 +82,30 @@ def run_migrations_online() -> None:
         with context.begin_transaction():
             context.run_migrations()
 
+
+# US-015 : pré-vol avant toute migration.
+# 1. DB NEUVE (aucune table métier) : la chaîne de migrations historique n'est
+#    pas déroulable depuis zéro (les DB ont toujours été créées par create_all).
+#    On bootstrap donc comme l'app : create_all depuis les modèles, source de
+#    vérité unique du schéma.
+# 2. DB legacy (tables présentes, pas d'alembic_version) : déjà au schéma
+#    courant -> estampille, sinon upgrade head recréerait des tables existantes.
+from app.models.database import ensure_alembic_stamp  # noqa: E402
+
+
+def _bootstrap_if_new() -> None:
+    from sqlalchemy import create_engine, inspect
+
+    engine = create_engine(f"sqlite:///{settings.db_path}")
+    try:
+        if "contacts" not in inspect(engine).get_table_names():
+            SQLModel.metadata.create_all(engine)
+    finally:
+        engine.dispose()
+
+
+_bootstrap_if_new()
+ensure_alembic_stamp(settings.db_path)
 
 if context.is_offline_mode():
     run_migrations_offline()
