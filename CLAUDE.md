@@ -94,6 +94,11 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis v0.22.0-alpha (10/06/2026, Sprint 0 remédiation audit)
+- [ ] **US-016 (perf, issu d'US-001)** : la sandbox d'exécution de code tourne désormais dans un sous-process `spawn` (sécurité). Le child ré-importe `app.services` (donc torch) à chaque génération de document → surcoût de démarrage. À régler par l'import paresseux de torch (retirer la réexport `app/services/__init__.py` + import dans la property `model` d'`embeddings.py`). Voir plan de remédiation Sprint 3.
+- [ ] **CSRF `/api/shutdown` (US-005)** : l'endpoint est exempté de l'auth (sinon le shutdown graceful ne s'exécutait jamais). Risque CSRF accepté (ferme l'app, récupérable ; atténué par Private Network Access navigateur). Durcissement possible : faire signer l'appel par les 2 appelants (token lu depuis `~/.therese/.session_token`) — nécessite un changement Rust (`lib.rs`) testé au build.
+- [ ] **Reste du plan de remédiation** (`~/Desktop/Plan-remediation-THERESE-2026-06-09.md`) : Sprint 1 (US-006 défenses API rate limit/MCP/fs, US-007 signature binaires + updater, US-008 résilience, US-011 backup complet) puis P2 (chiffrement DB au repos, migrations Alembic unifiées, CI bloquante).
+
 ### Dette issue de la vue Accueil (09/06/2026, branche `feat/dashboard-accueil`)
 - [ ] **`setup-status` `has_email`** (`dashboard.py`) : teste la simple existence d'une ligne `EmailAccount`, pas la validité du token. Un compte dont l'OAuth a expiré reste compté « branché » et la carte de mise en route disparaît. Acceptable pour l'onboarding ; raffiner si on veut distinguer « configuré » de « connecté valide » (réutiliser la logique de `email auth status`).
 
