@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-blue.svg" alt="AGPL-3.0 License" /></a>
   <a href="https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/actions"><img src="https://img.shields.io/github/actions/workflow/status/ludovicsanchez38-creator/Synoptia-THERESE/ci.yml?branch=main&label=CI" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.7.0--alpha-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.21.0--alpha-orange" alt="Version" />
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 - **18 skills intégrés** - Word, Excel, PowerPoint, emails pro, posts LinkedIn, propositions commerciales, analyses PDF/web, planification projets/semaine/objectifs
 - **Recherche web** - Brave Search, SearXNG (auto-hébergeable) ou DuckDuckGo
 - **Dictée vocale** - Parle, THÉRÈSE écrit
-- **Données locales** - Ton contexte stocké et chiffré sur ta machine. Les réponses passent par le provider IA de ton choix.
+- **Données locales** - Ton contexte reste sur ta machine, jamais envoyé à un serveur Synoptïa. Tes clés API sont chiffrées via le trousseau de ton système. Les réponses passent par le provider IA de ton choix.
 - **Atelier IA (v0.5)** - Deux agents embarqués qui améliorent l'app pour toi (voir ci-dessous)
 - **THERESE.md** - Fichier de contexte personnel éditable depuis les Paramètres
 
@@ -46,7 +46,7 @@ THÉRÈSE embarque deux agents IA open source qui travaillent ensemble :
 
 **Open source** : les prompts des agents (`SOUL.md`) sont livrés avec le code. Tu peux les personnaliser dans `~/.therese/agents/`. Tu fournis ta propre clé API (BYOK), on ne livre aucun token.
 
-**Compatible OpenClaw** : le format de configuration (agent.json + SOUL.md) est compatible avec [OpenClaw](https://github.com/anthropics/openclaw) (MIT).
+**Compatible OpenClaw** : le format de configuration (agent.json + SOUL.md) est compatible avec [OpenClaw](https://github.com/openclaw/openclaw) (MIT).
 
 ## Télécharger (alpha)
 
