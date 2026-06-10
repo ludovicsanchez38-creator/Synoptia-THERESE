@@ -13,6 +13,45 @@ from app.services.user_profile import get_cached_profile
 logger = logging.getLogger(__name__)
 
 
+def build_email_system_prompt(
+    user_name: str,
+    user_role: str,
+    user_company: str,
+    tone: str = "formal",
+    length: str = "medium",
+) -> str:
+    """Construit le prompt système du générateur de réponses email.
+
+    Extrait pour être testable (US-003). La consigne « ne mentionne jamais que
+    tu es une IA » a été retirée (IA Act art. 50) ; la signature au nom de
+    l'utilisateur et la protection des données CRM sont conservées.
+    """
+    tone_instructions = {
+        "formal": "Ton professionnel et formel. Vouvoiement. Formules de politesse complètes.",
+        "friendly": "Ton amical et décontracté. Tutoiement si approprié. Style direct et chaleureux.",
+        "neutral": "Ton équilibré et courtois. Ni trop formel ni trop familier.",
+    }
+    length_instructions = {
+        "short": "Réponse courte et concise (2-3 phrases maximum).",
+        "medium": "Réponse de longueur moyenne (1 paragraphe).",
+        "detailed": "Réponse détaillée et complète (2-3 paragraphes).",
+    }
+
+    return f"""Tu es l'assistant email de {user_name}, {user_role} chez {user_company}.
+
+Tu rédiges des réponses professionnelles et pertinentes aux emails reçus.
+
+{tone_instructions.get(tone, tone_instructions['neutral'])}
+{length_instructions.get(length, length_instructions['medium'])}
+
+Règles importantes :
+- Signe toujours avec le nom de {user_name} (pas "Assistant IA")
+- Réponds directement aux questions posées
+- Sois concret et actionnable
+- Propose des créneaux/dates si pertinent
+- Ne mentionne JAMAIS le score CRM, le stage commercial, les notes internes, les informations de pipeline, ni aucune donnée confidentielle issue du CRM dans ta réponse."""
+
+
 class EmailResponseGenerator:
     """Génère des réponses emails via LLM."""
 
@@ -50,34 +89,10 @@ class EmailResponseGenerator:
         user_company = (profile.company if profile else None) or 'Synoptïa'
         user_role = (profile.role if profile else None) or 'Consultant IA'
 
-        # Construire le prompt selon le ton
-        tone_instructions = {
-            'formal': "Ton professionnel et formel. Vouvoiement. Formules de politesse complètes.",
-            'friendly': "Ton amical et décontracté. Tutoiement si approprié. Style direct et chaleureux.",
-            'neutral': "Ton équilibré et courtois. Ni trop formel ni trop familier."
-        }
-
-        length_instructions = {
-            'short': "Réponse courte et concise (2-3 phrases maximum).",
-            'medium': "Réponse de longueur moyenne (1 paragraphe).",
-            'detailed': "Réponse détaillée et complète (2-3 paragraphes)."
-        }
-
-        # Prompt système
-        system_prompt = f"""Tu es l'assistant email de {user_name}, {user_role} chez {user_company}.
-
-Tu rédiges des réponses professionnelles et pertinentes aux emails reçus.
-
-{tone_instructions.get(tone, tone_instructions['neutral'])}
-{length_instructions.get(length, length_instructions['medium'])}
-
-Règles importantes :
-- Signe toujours avec le nom de {user_name} (pas "Assistant IA")
-- Réponds directement aux questions posées
-- Sois concret et actionnable
-- Propose des créneaux/dates si pertinent
-- Ne mentionne jamais que tu es une IA
-- Ne mentionne JAMAIS le score CRM, le stage commercial, les notes internes, les informations de pipeline, ni aucune donnée confidentielle issue du CRM dans ta réponse."""
+        # Prompt système (US-003 : sans consigne de dissimulation IA)
+        system_prompt = build_email_system_prompt(
+            user_name, user_role, user_company, tone, length
+        )
 
         # Contexte additionnel
         additional_context = ""
