@@ -560,7 +560,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                               <span>•</span>
                               <span className={cn(
                                 decision.confidence === 'high' && 'text-green-400',
-                                decision.confidence === 'medium' && 'text-yellow-400',
+                                decision.confidence === 'medium' && 'text-warning',
                                 decision.confidence === 'low' && 'text-red-400'
                               )}>
                                 Confiance {decision.confidence}

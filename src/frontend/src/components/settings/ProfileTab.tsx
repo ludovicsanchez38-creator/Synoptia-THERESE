@@ -1,12 +1,13 @@
 // Onglet Profil utilisateur - Paramètres THÉRÈSE
 // Extraction depuis SettingsModal.tsx pour modularité
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { User, Upload, Check, AlertCircle, Eye, FileText, X, Save, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 // Types des props du formulaire profil
 export interface ProfileFormData {
@@ -59,6 +60,13 @@ export function ProfileTab({
   const [mdSaving, setMdSaving] = useState(false);
   const [mdSaved, setMdSaved] = useState(false);
   const [mdError, setMdError] = useState<string | null>(null);
+
+  // US-013 : la modale THERESE.md est en state local (invisible pour resolveEscape) :
+  // piège de focus + Échap gérés ici. closeMdModal stable (useCallback) pour ne pas
+  // réarmer le piège à chaque re-render de l'onglet (frappe dans le formulaire).
+  const mdDialogRef = useRef<HTMLDivElement>(null);
+  const closeMdModal = useCallback(() => setMdModalOpen(false), []);
+  useDialogFocusTrap(mdDialogRef, { active: mdModalOpen, onEscape: closeMdModal });
 
   const openMdModal = async () => {
     setMdModalOpen(true);
@@ -117,7 +125,13 @@ export function ProfileTab({
       {/* Modal THERESE.md */}
       {mdModalOpen && (
         <div className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60`}>
-          <div className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-xl shadow-2xl flex flex-col max-h-[80vh]">
+          <div
+            ref={mdDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Aperçu THERESE.md"
+            className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-xl shadow-2xl flex flex-col max-h-[80vh]"
+          >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
               <div>
@@ -130,7 +144,7 @@ export function ProfileTab({
                 )}
               </div>
               <button
-                onClick={() => setMdModalOpen(false)}
+                onClick={closeMdModal}
                 className="p-1 rounded-lg hover:bg-border/30 text-text-muted hover:text-text transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -174,7 +188,7 @@ export function ProfileTab({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setMdModalOpen(false)}>
+                <Button variant="ghost" size="sm" onClick={closeMdModal}>
                   Fermer
                 </Button>
                 <Button
@@ -204,8 +218,8 @@ export function ProfileTab({
         </div>
       ) : (
         <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-yellow-400" />
-          <span className="text-sm text-yellow-400">Profil non configuré - Configure ton identité</span>
+          <AlertCircle className="w-4 h-4 text-warning" />
+          <span className="text-sm text-warning">Profil non configuré - Configure ton identité</span>
         </div>
       )}
 

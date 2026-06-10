@@ -5,12 +5,13 @@
  * US-EMAIL-09: Génération de réponse IA
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, RefreshCw, Check, Loader2 } from 'lucide-react';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface ResponseGeneratorModalProps {
   isOpen: boolean;
@@ -47,6 +48,17 @@ export function ResponseGeneratorModal({
   const [draft, setDraft] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+
+  // US-013 : piège de focus + Échap. onClose vient du parent sous forme de fléchée
+  // recréée à chaque rendu : on le stabilise (ref) pour ne pas réarmer le piège
+  // (et faire sauter le focus) à chaque re-render d'EmailDetail.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  const handleEscape = useCallback(() => onCloseRef.current(), []);
+  useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: handleEscape });
 
   const generateResponse = async () => {
     setIsGenerating(true);
@@ -113,6 +125,7 @@ export function ResponseGeneratorModal({
 
           {/* Modal */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Génération de réponse email"

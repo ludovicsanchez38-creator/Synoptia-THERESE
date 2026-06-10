@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ const initialFormData: FormData = {
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Actif', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-  { value: 'on_hold', label: 'En attente', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+  { value: 'on_hold', label: 'En attente', color: 'bg-yellow-500/20 text-warning border-yellow-500/30' },
   { value: 'completed', label: 'Terminé', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
   { value: 'cancelled', label: 'Annulé', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
 ];
@@ -53,6 +54,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!project;
+
+  // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
+  // Échap reste géré par la pile unifiée (resolveEscape L7 ou escapeStack du parent).
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: isOpen });
 
   // Load contacts for linking
   useEffect(() => {
@@ -213,8 +219,6 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
   }
 
-  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la modale via le store.
-
   // Get contact display name
   function getContactDisplayName(contact: api.Contact): string {
     const parts = [contact.first_name, contact.last_name].filter(Boolean);
@@ -239,6 +243,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
           {/* Modal */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={isEditing ? 'Modifier le projet' : 'Nouveau projet'}

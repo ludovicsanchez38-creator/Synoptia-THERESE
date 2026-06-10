@@ -540,7 +540,7 @@ const GLOBAL_ACTIVITY_COLORS: Record<string, string> = {
   email: 'text-blue-400',
   call: 'text-green-400',
   meeting: 'text-purple-400',
-  note: 'text-yellow-400',
+  note: 'text-warning',
 };
 
 function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {

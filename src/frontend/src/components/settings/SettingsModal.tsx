@@ -1,7 +1,7 @@
 // Modal Paramètres - Shell principal avec navigation sidebar
 // Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -21,6 +21,7 @@ import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -47,6 +48,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { isContributeur, setUXMode } = useUXMode();
+
+  // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
+  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: isOpen });
 
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
@@ -466,8 +472,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }
 
-  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la modale via le store.
-
   function renderContent() {
     if (loading) {
       return (
@@ -587,6 +591,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Modal */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Paramètres"

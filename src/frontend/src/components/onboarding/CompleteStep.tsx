@@ -155,7 +155,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
               className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                 item.configured
                   ? 'bg-green-500/20 text-green-400'
-                  : 'bg-yellow-500/20 text-yellow-400'
+                  : 'bg-yellow-500/20 text-warning'
               }`}
             >
               {item.configured ? <Check className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}

@@ -726,7 +726,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-400" title="RGPD non defini">
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title="RGPD non defini">
         ?
       </span>
     );

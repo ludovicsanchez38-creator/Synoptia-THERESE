@@ -199,13 +199,13 @@ export function ChatLayout() {
       <SideToggle side="left" isOpen={ps.showConversationSidebar} onClick={ps.toggleConversationSidebar} label="Conversations" shortcut={isMac ? '⌘B' : 'Ctrl+B'} />
       <SideToggle side="right" isOpen={activeView === 'memory'} onClick={handleToggleMemory} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
-      <header role="banner" aria-label="Barre d'outils Therese">
+      <header role="banner" aria-label="Barre d'outils Thérèse">
         <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} onHome={() => useNavigationStore.getState().setView('home')} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
         {!isOnline && (
-          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-sm" role="alert">
+          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-warning text-sm" role="alert">
             <WifiOff className="w-4 h-4 flex-shrink-0" />
             <span>Mode hors ligne - tes données sont sauvegardées localement</span>
           </div>

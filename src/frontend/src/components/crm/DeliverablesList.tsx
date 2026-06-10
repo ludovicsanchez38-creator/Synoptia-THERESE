@@ -16,7 +16,7 @@ interface DeliverablesListProps {
 const DELIVERABLE_STATUS = {
   a_faire: { label: 'À faire', icon: Circle, color: 'text-text-muted' },
   en_cours: { label: 'En cours', icon: Clock, color: 'text-blue-400' },
-  en_revision: { label: 'En révision', icon: AlertCircle, color: 'text-yellow-400' },
+  en_revision: { label: 'En révision', icon: AlertCircle, color: 'text-warning' },
   valide: { label: 'Validé', icon: CheckCircle2, color: 'text-green-400' },
 };
 

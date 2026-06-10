@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, User, Loader2, Trash2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
@@ -6,6 +6,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -42,6 +43,11 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isEditing = !!contact;
+
+  // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
+  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: isOpen });
 
   // Load contact data when editing
   useEffect(() => {
@@ -130,8 +136,6 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
     }
   }
 
-  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la modale via le store.
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -149,6 +153,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
           {/* Modal */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={isEditing ? 'Modifier le contact' : 'Nouveau contact'}

@@ -15,7 +15,7 @@ const confidenceConfig = {
     label: 'Confiance élevée',
   },
   medium: {
-    color: 'text-yellow-400',
+    color: 'text-warning',
     bg: 'bg-yellow-500/10',
     border: 'border-yellow-500/30',
     label: 'Confiance moyenne',
@@ -94,14 +94,14 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
         {/* Divergences */}
         {synthesis.divergence_points.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-yellow-400 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-warning flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
               Points de divergence
             </h4>
             <ul className="space-y-1.5">
               {synthesis.divergence_points.map((point, i) => (
                 <li key={i} className="text-sm text-text-muted flex items-start gap-2">
-                  <span className="text-yellow-400 mt-1">•</span>
+                  <span className="text-warning mt-1">•</span>
                   {point}
                 </li>
               ))}

@@ -137,7 +137,7 @@ export function UpdateBanner() {
       // Fallback : demander un redemarrage manuel
       setState({
         phase: 'error',
-        message: 'Veuillez redémarrer THERESE manuellement pour appliquer la mise à jour.',
+        message: 'Veuillez redémarrer THÉRÈSE manuellement pour appliquer la mise à jour.',
       });
     }
   }, []);
@@ -195,7 +195,7 @@ export function UpdateBanner() {
         <>
           <RefreshCw size={16} className="text-accent-cyan shrink-0 animate-spin" />
           <span className="text-text">
-            Telechargement de la v{state.version}...
+            Téléchargement de la v{state.version}...
             {state.progress > 0 && (
               <span className="text-text-muted ml-1">({state.progress}%)</span>
             )}
@@ -207,7 +207,7 @@ export function UpdateBanner() {
         <>
           <RefreshCw size={16} className="text-accent-cyan shrink-0" />
           <span className="text-text">
-            Mise a jour <strong className="text-accent-cyan">v{state.version}</strong> prete
+            Mise à jour <strong className="text-accent-cyan">v{state.version}</strong> prête
           </span>
           <button
             onClick={handleRestart}
@@ -225,7 +225,7 @@ export function UpdateBanner() {
               e.currentTarget.style.background = 'rgba(34, 211, 238, 0.2)';
             }}
           >
-            Redemarrer pour installer
+            Redémarrer pour installer
           </button>
         </>
       )}
@@ -241,7 +241,7 @@ export function UpdateBanner() {
         <button
           onClick={() => setDismissed(true)}
           className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text transition-colors"
-          aria-label="Fermer le bandeau de mise a jour"
+          aria-label="Fermer le bandeau de mise à jour"
         >
           <X size={14} />
         </button>

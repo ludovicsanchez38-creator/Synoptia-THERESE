@@ -290,7 +290,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
               <Check className="w-3 h-3" /> Disponible
             </span>
           ) : (
-            <span className="text-xs text-yellow-400">Non configurée</span>
+            <span className="text-xs text-warning">Non configurée</span>
           )}
         </div>
 

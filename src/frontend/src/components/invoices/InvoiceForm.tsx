@@ -358,7 +358,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
           {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
           {billingMissing && billingMissing.length > 0 && (
             <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-              <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+              <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-200">
                 Profil émetteur incomplet ({billingMissing.join(', ')}). Une facture sans ces
                 informations n'est pas conforme. Complète-le dans Réglages &gt; Profil avant de

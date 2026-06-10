@@ -407,7 +407,7 @@ export const MessageBubble = memo(function MessageBubble({
                   message.uncertainty.confidence_level === 'low'
                     ? 'bg-red-500/10 text-red-400'
                     : message.uncertainty.confidence_level === 'medium'
-                    ? 'bg-yellow-500/10 text-yellow-400'
+                    ? 'bg-yellow-500/10 text-warning'
                     : 'bg-green-500/10 text-green-400'
                 )}
                 title={message.uncertainty.uncertainty_phrases.join(', ')}

@@ -35,11 +35,12 @@
   --color-accent-tint: #DEF4F9;
   --color-ring: #22D3EE;
 
-  /* Sémantiques */
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
+  /* Sémantiques - assombris en CLAIR pour WCAG AA en texte (US-013 :
+     #F59E0B sur #F3F6FC ≈ 2.3:1, illisible ; les vives restent en sombre) */
+  --color-success: #047857;
+  --color-warning: #A16207;
+  --color-error: #B91C1C;
+  --color-info: #1D4ED8;
 
   /* Typography */
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -94,6 +95,13 @@
   --color-accent-ink: #06121F;
   --color-accent-tint: rgba(34, 211, 238, 0.12);
   --color-ring: #22D3EE;
+
+  /* Sémantiques - vives sur fond sombre (US-013 : info éclairci pour AA,
+     #3B82F6 sur #0B1226 ≈ 4.0:1 limite) */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #60A5FA;
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
@@ -261,6 +269,20 @@ img, a { -webkit-user-drag: none; }
   transition-timing-function: ease;
 }
 p, span, div:not(:hover), section { transition: none; }
+
+/* US-013 : respect de prefers-reduced-motion au niveau CSS (filet de
+   sécurité sous MotionConfig - couvre les animations CSS pures :
+   pulse, blink, spin, transitions) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* Animations */
 @keyframes spin { to { transform: rotate(360deg); } }

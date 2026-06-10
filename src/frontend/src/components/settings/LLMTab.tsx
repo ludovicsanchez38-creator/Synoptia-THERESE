@@ -343,8 +343,8 @@ export function LLMTab({
             </div>
           ) : (
             <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm text-yellow-400">Aucune clé API configurée</span>
+              <AlertCircle className="w-4 h-4 text-warning" />
+              <span className="text-sm text-warning">Aucune clé API configurée</span>
             </div>
           )}
 
