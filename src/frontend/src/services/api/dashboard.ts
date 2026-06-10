@@ -80,6 +80,8 @@ export interface SetupStatus {
   has_calendar: boolean;
   has_email: boolean;
   billing_complete: boolean;
+  /** US-012 : au moins une clé LLM cloud configurée (env ou DB) */
+  has_llm_key: boolean;
 }
 
 /** Mise en route : ce qui reste à brancher (Accueil). 100 % local. */

@@ -369,8 +369,17 @@ THÉRÈSE ouvre certains panneaux dans des **fenêtres indépendantes** (la fen�
 
 ### Fonctionnalités
 
-- **Email Gmail** : nécessite une configuration OAuth Google (voir Paramètres > Email).
-- **Panneaux Email et Calendrier** : nécessitent une configuration OAuth Google fonctionnelle.
+- **Email Gmail - deux approches** :
+  1. **Simple (recommandée)** : « SMTP / IMAP classique » dans l'assistant email, preset
+     Gmail, avec un **mot de passe d'application** Google (myaccount.google.com/apppasswords,
+     validation en 2 étapes requise sur le compte). Prêt en 2 minutes, aucun projet
+     Google Cloud à créer. Le mot de passe est chiffré localement.
+  2. **Avancée (OAuth)** : accès API Gmail complet, mais demande de créer ses propres
+     identifiants OAuth dans Google Cloud Console (projet, écran de consentement,
+     client « Application de bureau »). À réserver aux utilisateurs à l'aise avec
+     la console Google.
+- **Panneau Calendrier Google** : nécessite la configuration OAuth (approche 2). Le
+  calendrier local et CalDAV fonctionnent sans.
 - **Ollama** : nécessite qu'Ollama soit installé et lancé localement (`ollama serve`).
 - **Connexions externes (MCP)** : certains services nécessitent des packages npm globaux. En cas d'erreur au démarrage, vérifie que `npx` est dans ton PATH.
 

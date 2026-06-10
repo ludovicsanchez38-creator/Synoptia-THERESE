@@ -6,10 +6,19 @@ Données 100% locales SQLite, pas d'appel LLM.
 """
 
 import logging
+import os
 from datetime import date, datetime, timedelta
 
 from app.models.database import get_session
-from app.models.entities import Calendar, CalendarEvent, Contact, EmailAccount, Invoice, Task
+from app.models.entities import (
+    Calendar,
+    CalendarEvent,
+    Contact,
+    EmailAccount,
+    Invoice,
+    Preference,
+    Task,
+)
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_
@@ -18,6 +27,39 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# US-012 : détection « au moins une clé LLM configurée » pour la checklist
+# de mise en route. Mêmes providers que le router config (env OU Preference DB).
+_LLM_KEY_SOURCES: list[tuple[list[str], str]] = [
+    (["ANTHROPIC_API_KEY"], "anthropic_api_key"),
+    (["MISTRAL_API_KEY"], "mistral_api_key"),
+    (["OPENAI_API_KEY"], "openai_api_key"),
+    (["GEMINI_API_KEY", "GOOGLE_API_KEY"], "gemini_api_key"),
+    (["GROQ_API_KEY"], "groq_api_key"),
+    (["XAI_API_KEY"], "grok_api_key"),
+    (["OPENROUTER_API_KEY"], "openrouter_api_key"),
+]
+
+
+async def _has_any_llm_key(session: AsyncSession) -> bool:
+    """Au moins une clé LLM cloud disponible (env ou DB) ?
+
+    Sans aucune clé, le chat retombe sur Ollama local s'il est installé -
+    la checklist Accueil doit rappeler cette étape au lieu de laisser
+    l'utilisateur face à une erreur au premier message.
+    """
+    for env_names, _ in _LLM_KEY_SOURCES:
+        if any(os.environ.get(name) for name in env_names):
+            return True
+    db_keys = [db_key for _, db_key in _LLM_KEY_SOURCES]
+    try:
+        result = await session.execute(
+            select(Preference.key).where(Preference.key.in_(db_keys)).limit(1)
+        )
+        return result.scalar() is not None
+    except Exception as e:
+        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
+        return False
 
 
 @router.get("/setup-status")
@@ -50,10 +92,13 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
     except Exception as e:
         logger.warning(f"Erreur lecture profil facturation (setup-status): {e}")
 
+    has_llm_key = await _has_any_llm_key(session)
+
     return {
         "has_calendar": has_calendar,
         "has_email": has_email,
         "billing_complete": billing_complete,
+        "has_llm_key": has_llm_key,
     }
 
 
