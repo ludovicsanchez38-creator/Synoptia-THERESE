@@ -1,8 +1,32 @@
 """Tests du router dashboard (setup-status pour la vue Accueil)."""
 import pytest
+from app.models.entities import Calendar, Contact, EmailAccount
 from httpx import AsyncClient
 
-from app.models.entities import Calendar, EmailAccount
+
+class TestToday:
+    @pytest.mark.asyncio
+    async def test_today_stale_prospect_remonte_avec_son_nom(
+        self, client: AsyncClient, db_session
+    ):
+        """Régression : un prospect sans interaction doit apparaître dans
+        stale_prospects avec son nom. Contact n'a pas d'attribut `name`
+        (lève AttributeError, avalé en liste vide) — il faut display_name."""
+        db_session.add(
+            Contact(
+                id="ct-stale-1",
+                first_name="Jean",
+                last_name="Test",
+                stage="contact",
+                last_interaction=None,
+            )
+        )
+        await db_session.commit()
+
+        resp = await client.get("/api/dashboard/today")
+        assert resp.status_code == 200
+        prospects = resp.json()["stale_prospects"]
+        assert [p["name"] for p in prospects] == ["Jean Test"]
 
 
 class TestSetupStatus:
