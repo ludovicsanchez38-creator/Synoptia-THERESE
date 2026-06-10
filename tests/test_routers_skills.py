@@ -50,7 +50,7 @@ class TestSkillDocx:
 
         # Skill execution may require LLM, so accept various responses.
         # 404 is valid if skills aren't initialized (lifespan not triggered in tests).
-        assert response.status_code in [200, 400, 404, 500, 503]
+        assert response.status_code in [200, 400, 404, 503]
 
         if response.status_code == 200:
             result = response.json()
@@ -66,7 +66,7 @@ class TestSkillDocx:
             },
         })
 
-        assert response.status_code in [200, 400, 404, 500, 503]
+        assert response.status_code in [200, 400, 404, 503]
 
 
 class TestSkillPptx:
@@ -79,7 +79,7 @@ class TestSkillPptx:
             "prompt": "Cree une presentation de 3 slides sur l'IA",
         })
 
-        assert response.status_code in [200, 400, 404, 500, 503]
+        assert response.status_code in [200, 400, 404, 503]
 
 
 class TestSkillXlsx:
@@ -92,7 +92,7 @@ class TestSkillXlsx:
             "prompt": "Cree un tableau de bord avec des KPIs",
         })
 
-        assert response.status_code in [200, 400, 404, 500, 503]
+        assert response.status_code in [200, 400, 404, 503]
 
 
 class TestSkillDownload:
@@ -134,7 +134,7 @@ class TestSkillExecution:
 
         # Empty prompt may be accepted by schema but fail at LLM level.
         # 404 is valid if skills aren't initialized (lifespan not triggered in tests).
-        assert response.status_code in [400, 404, 422, 500, 503]
+        assert response.status_code in [400, 404, 422, 503]
 
     @pytest.mark.asyncio
     async def test_execute_missing_prompt(self, client: AsyncClient):

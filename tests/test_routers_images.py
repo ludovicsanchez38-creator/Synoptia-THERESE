@@ -3,9 +3,22 @@ THERESE v2 - Images Router Tests
 
 Tests for US-IMG-01 to US-IMG-05.
 """
-
 import pytest
 from httpx import AsyncClient
+
+# US-018 : neutraliser les clés env - sans ça, ces tests partaient en VRAI
+# appel API de génération d'image sur les machines configurées (résultat
+# dépendant de l'environnement, 500 au lieu des 400/422 déterministes).
+_IMAGE_ENV_KEYS = (
+    "OPENAI_API_KEY", "OPENAI_IMAGE_API_KEY", "GEMINI_API_KEY",
+    "GEMINI_IMAGE_API_KEY", "GOOGLE_API_KEY",
+)
+
+
+@pytest.fixture(autouse=True)
+def _no_image_api_keys(monkeypatch):
+    for key in _IMAGE_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
 
 
 class TestImageGeneration:
@@ -19,8 +32,8 @@ class TestImageGeneration:
             "provider": "gpt-image-2",
         })
 
-        # Should fail gracefully without API key (400, 500, or 503)
-        assert response.status_code in [200, 400, 422, 500, 503]
+        # Sans clé API : refus PROPRE (ValueError -> 400), jamais un 500
+        assert response.status_code == 400
 
     @pytest.mark.asyncio
     async def test_generate_image_empty_prompt(self, client: AsyncClient):
@@ -30,7 +43,7 @@ class TestImageGeneration:
             "provider": "gpt-image-2",
         })
 
-        assert response.status_code in [400, 422, 500]
+        assert response.status_code in [400, 422]
 
 
 class TestImageReference:
@@ -60,7 +73,7 @@ class TestImageProviders:
         })
 
         # Will fail without key, but validates request structure
-        assert response.status_code in [200, 400, 422, 500, 503]
+        assert response.status_code in [200, 400, 422, 503]
 
     @pytest.mark.skip(reason="Déclenche une génération d'image réelle (appel externe non mocké) -> hang/timeout en CI. À remplacer par un mock du service image_generator.")
     @pytest.mark.asyncio
@@ -71,7 +84,7 @@ class TestImageProviders:
             "provider": "nanobanan-pro",
         })
 
-        assert response.status_code in [200, 400, 422, 500, 503]
+        assert response.status_code in [200, 400, 422, 503]
 
     @pytest.mark.asyncio
     async def test_invalid_provider(self, client: AsyncClient):
@@ -147,7 +160,7 @@ class TestImageOptions:
             "size": "1536x1024",
         })
 
-        assert response.status_code in [200, 400, 422, 500, 503]
+        assert response.status_code in [200, 400, 422, 503]
 
     @pytest.mark.asyncio
     async def test_invalid_size(self, client: AsyncClient):

@@ -106,7 +106,7 @@ class TestMCPPresets:
 
             # Should either succeed or fail gracefully
             # May get 500 if duplicate command+args already exist in singleton service
-            assert response.status_code in [200, 400, 404, 500]
+            assert response.status_code in [200, 400, 404]
 
 
 class TestMCPTools:
@@ -138,7 +138,7 @@ class TestMCPTools:
             data = response.json()
             assert data.get("success") is False or "error" in data
         else:
-            assert response.status_code in [400, 404, 500]
+            assert response.status_code in [400, 404]
 
 
 class TestMCPServerLifecycle:

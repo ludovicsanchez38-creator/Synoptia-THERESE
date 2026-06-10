@@ -164,7 +164,7 @@ class TestImapAccountSetup:
             data = response.json()
 
             assert data["success"] is False
-            assert "Echec de connexion" in data["message"]
+            assert "Échec de connexion" in data["message"]
 
 
 # ============================================================
@@ -300,7 +300,7 @@ class TestEmailMessages:
                 )
                 # This will either succeed or fail depending on the mock chain
                 # The important thing is the endpoint is reachable
-                assert response.status_code in [200, 404, 500]
+                assert response.status_code in [200, 404]
 
     @pytest.mark.asyncio
     async def test_delete_message_not_found_account(self, client: AsyncClient):

@@ -116,7 +116,7 @@ class TestImportClaudeMd:
             response = await client.post("/api/config/profile/import-claude-md", json={
                 "file_path": "/nonexistent/CLAUDE.md",
             })
-            assert response.status_code in [400, 404, 422, 500]
+            assert response.status_code in [400, 404, 422]
         except Exception:
             # ExceptionGroup wrapping FileNotFoundError through Starlette middleware
             pass

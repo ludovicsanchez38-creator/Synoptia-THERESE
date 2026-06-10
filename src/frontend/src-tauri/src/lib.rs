@@ -4,6 +4,8 @@
 //! Gère le sidecar backend Python en mode release.
 
 use std::sync::Mutex;
+// Emitter ne sert que dans le bloc release (sidecar) - silencieux en dev
+#[cfg_attr(debug_assertions, allow(unused_imports))]
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::RunEvent;
@@ -33,6 +35,8 @@ fn log_sidecar(msg: &str) {
 
 /// Tue les anciens process backend THÉRÈSE zombies restés actifs.
 /// Nécessaire lors des mises à jour (ex: v0.1.4 → v0.1.5+).
+/// Appelée uniquement en release (bloc not(debug_assertions)).
+#[cfg_attr(debug_assertions, allow(dead_code))]
 fn kill_zombie_backends() {
     log_sidecar("Recherche de process backend zombies...");
 
