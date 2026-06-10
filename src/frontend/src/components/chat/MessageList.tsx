@@ -18,6 +18,35 @@ interface MessageListProps {
   onGuidedPanelChange?: (active: boolean) => void;
 }
 
+// Revue adversariale US-010 : Header/Footer au niveau MODULE. Définis inline,
+// leur identité changeait à chaque rendu et react-virtuoso (comparaison par
+// référence) démontait/remontait le sous-arbre à chaque flush de phrase :
+// l'animation d'entrée du TypingIndicator rejouait en boucle pendant tout le
+// stream. Le Footer lit les stores directement pour rester autonome.
+function ListHeader() {
+  return <div className="pt-4" aria-hidden="true" />;
+}
+
+function ListFooter() {
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
+  return (
+    <div className="max-w-3xl mx-auto px-4 pb-4">
+      <AnimatePresence>
+        {isStreaming && (
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <TypingIndicator />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChange }: MessageListProps) {
   // Subscribe to actual state to trigger re-renders when messages change
   const conversations = useChatStore((state) => state.conversations);
@@ -25,7 +54,6 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
   const isStreaming = useChatStore((state) => state.isStreaming);
   const clearMessageEntities = useChatStore((state) => state.clearMessageEntities);
   const { enabled: demoEnabled, maskText } = useDemoMask();
-  const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
   const announceMessages = useAccessibilityStore((s) => s.announceMessages);
   const prevMsgCountRef = useRef(0);
 
@@ -119,15 +147,22 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
   }
 
   return (
+    // Revue adversariale US-010 : PAS d'aria-live sur un conteneur virtualisé
+    // (remonter une vieille conversation monte d'anciens messages dans le DOM
+    // -> le lecteur d'écran les annoncerait comme nouveaux). Les nouveaux
+    // messages sont annoncés via announceToScreenReader (canal dédié).
     <div
       className="h-full"
-      aria-live="polite"
       aria-label="Messages de la conversation"
       data-testid="chat-message-list"
     >
       {/* US-010 : virtualisation - seuls les messages visibles sont montés,
-          les longues conversations restent fluides */}
+          les longues conversations restent fluides.
+          key={conversation.id} : changer de conversation REMONTE la liste,
+          donc initialTopMostItemIndex repositionne en bas (sinon on héritait
+          d'un offset en pixels arbitraire de la conversation précédente). */}
       <Virtuoso
+        key={conversation.id}
         style={{ height: '100%' }}
         data={displayMessages}
         computeItemKey={(index, message) => message.id || String(index)}
@@ -136,24 +171,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
         atBottomThreshold={120}
         initialTopMostItemIndex={Math.max(0, displayMessages.length - 1)}
         increaseViewportBy={{ top: 400, bottom: 400 }}
-        components={{
-          Header: () => <div className="pt-4" aria-hidden="true" />,
-          Footer: () => (
-            <div className="max-w-3xl mx-auto px-4 pb-4">
-              <AnimatePresence>
-                {isStreaming && (
-                  <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <TypingIndicator />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ),
-        }}
+        components={{ Header: ListHeader, Footer: ListFooter }}
       />
     </div>
   );

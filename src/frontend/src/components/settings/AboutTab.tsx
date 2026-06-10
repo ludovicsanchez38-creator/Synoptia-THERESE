@@ -9,8 +9,10 @@ import { checkHealth } from '../../services/api';
 
 const GITHUB_REPO = 'ludovicsanchez38-creator/Synoptia-THERESE';
 const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
-// US-012 : invitation Discord alpha (même lien que la landing synoptia.fr/therese/alpha)
-const DISCORD_URL = 'https://discord.gg/therese-alpha';
+// US-012 : invitation Discord alpha PERMANENTE (revue adversariale : l'URL
+// vanity discord.gg/therese-alpha n'existait pas - Unknown Invite. Celle-ci
+// est créée par le bot Thérèse sur la guilde THÉRÈSE - Alpha, sans expiration).
+const DISCORD_URL = 'https://discord.gg/krDGArdbH8';
 
 interface ReleaseInfo {
   tag_name: string;
@@ -114,8 +116,10 @@ export function AboutTab() {
   }
 
   function openDownload(url: string) {
+    // return open(url) : propage le rejet d'open() au catch (hors Tauri,
+    // open() rejette en async - sans le return, le fallback ne tournait jamais)
     import('@tauri-apps/plugin-shell').then(({ open }) => {
-      open(url);
+      return open(url);
     }).catch(() => {
       window.open(url, '_blank');
     });

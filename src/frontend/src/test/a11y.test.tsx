@@ -29,24 +29,56 @@ function contrast(fg: string, bg: string): number {
   return (l1 + 0.05) / (l2 + 0.05);
 }
 
-// Tokens du design system (globals.css) - à maintenir en phase
-const LIGHT_BG = '#F3F6FC';
-const LIGHT_SURFACE = '#FFFFFF';
-const DARK_BG = '#0B1226';
-const DARK_SURFACE = '#131B35';
+// Revue adversariale US-013 : lire les VRAIES valeurs de globals.css (un test
+// sur des constantes copiées ne détecte aucune régression de la feuille de
+// style réelle). Échoue si un token attendu disparaît.
+// fs direct : l'import Vite ?raw est intercepté par le pipeline CSS de vitest,
+// et import.meta.url n'est pas file:// sous vitest -> chemin depuis le cwd
+// (vitest tourne toujours depuis src/frontend).
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const LIGHT_SEMANTIC = {
-  success: '#047857',
-  warning: '#A16207',
-  error: '#B91C1C',
-  info: '#1D4ED8',
-};
-const DARK_SEMANTIC = {
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#60A5FA',
-};
+const CSS = readFileSync(resolve(process.cwd(), 'src/styles/globals.css'), 'utf-8');
+
+function extractBlock(startMarker: string): string {
+  const start = CSS.indexOf(startMarker);
+  if (start === -1) throw new Error(`Bloc introuvable dans globals.css : ${startMarker}`);
+  const open = CSS.indexOf('{', start);
+  let depth = 1;
+  let i = open + 1;
+  while (depth > 0 && i < CSS.length) {
+    if (CSS[i] === '{') depth++;
+    if (CSS[i] === '}') depth--;
+    i++;
+  }
+  return CSS.slice(open + 1, i - 1);
+}
+
+function tokens(block: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const m of block.matchAll(/--color-([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})\s*;/g)) {
+    out[m[1]] = m[2];
+  }
+  return out;
+}
+
+const LIGHT = tokens(extractBlock('@theme'));
+const DARK = { ...LIGHT, ...tokens(extractBlock('[data-theme="dark"]')) };
+
+const SEMANTIC_NAMES = ['success', 'warning', 'error', 'info'] as const;
+for (const name of SEMANTIC_NAMES) {
+  if (!LIGHT[name] || !DARK[name]) {
+    throw new Error(`Token sémantique --color-${name} absent d'un des thèmes`);
+  }
+}
+
+const LIGHT_BG = LIGHT['bg'];
+const LIGHT_SURFACE = LIGHT['surface'];
+const DARK_BG = DARK['bg'];
+const DARK_SURFACE = DARK['surface'];
+
+const LIGHT_SEMANTIC = Object.fromEntries(SEMANTIC_NAMES.map((n) => [n, LIGHT[n]]));
+const DARK_SEMANTIC = Object.fromEntries(SEMANTIC_NAMES.map((n) => [n, DARK[n]]));
 
 describe('US-013 : contraste AA des tokens sémantiques', () => {
   it.each(Object.entries(LIGHT_SEMANTIC))(
@@ -66,8 +98,8 @@ describe('US-013 : contraste AA des tokens sémantiques', () => {
   );
 
   it('texte principal lisible dans les deux thèmes', () => {
-    expect(contrast('#101C36', LIGHT_BG)).toBeGreaterThanOrEqual(7);
-    expect(contrast('#E6EDF7', DARK_BG)).toBeGreaterThanOrEqual(7);
+    expect(contrast(LIGHT['text'], LIGHT_BG)).toBeGreaterThanOrEqual(7);
+    expect(contrast(DARK['text'], DARK_BG)).toBeGreaterThanOrEqual(7);
   });
 });
 

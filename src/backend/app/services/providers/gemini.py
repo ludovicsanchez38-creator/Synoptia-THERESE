@@ -29,12 +29,39 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 _SYNTHETIC_ID_PREFIX = "gemini-call-"
 
 
+# Revue adversariale US-009 : le champ `parameters` de l'API v1beta est un
+# proto Schema (sous-ensemble OpenAPI) qui REJETTE les clés inconnues avec un
+# 400 sur toute la requête. Les inputSchema MCP contiennent couramment
+# $schema, additionalProperties, anyOf, default... -> whitelist récursive.
+_GEMINI_SCHEMA_KEYS = {
+    "type", "description", "properties", "required", "enum", "items",
+    "nullable", "format", "minimum", "maximum", "minItems", "maxItems",
+}
+
+
+def _sanitize_schema(schema: dict) -> dict:
+    """Ne garde que les clés du proto Schema Gemini, récursivement."""
+    cleaned: dict = {}
+    for key, value in schema.items():
+        if key not in _GEMINI_SCHEMA_KEYS:
+            continue
+        if key == "properties" and isinstance(value, dict):
+            cleaned[key] = {
+                name: _sanitize_schema(sub) if isinstance(sub, dict) else sub
+                for name, sub in value.items()
+            }
+        elif key == "items" and isinstance(value, dict):
+            cleaned[key] = _sanitize_schema(value)
+        else:
+            cleaned[key] = value
+    return cleaned
+
+
 def _tools_to_function_declarations(tools: list[dict]) -> list[dict]:
     """US-009 : convertit les tools format OpenAI vers functionDeclarations.
 
-    Le schéma des parameters est un sous-ensemble OpenAPI compatible avec le
-    JSON Schema simple utilisé par memory_tools/workspace_tools : on le passe
-    tel quel (type/properties/required/description/enum).
+    Les schémas (memory/workspace tools, mais aussi inputSchema MCP arbitraires)
+    sont sanitisés vers le sous-ensemble proto Schema accepté par l'API.
     """
     declarations = []
     for tool in tools:
@@ -42,8 +69,8 @@ def _tools_to_function_declarations(tools: list[dict]) -> list[dict]:
         decl: dict = {"name": func.get("name", "")}
         if func.get("description"):
             decl["description"] = func["description"]
-        if func.get("parameters"):
-            decl["parameters"] = func["parameters"]
+        if isinstance(func.get("parameters"), dict):
+            decl["parameters"] = _sanitize_schema(func["parameters"])
         declarations.append(decl)
     return declarations
 
@@ -225,8 +252,16 @@ class GeminiProvider(BaseProvider):
         contents.append({"role": "model", "parts": model_parts})
 
         calls_by_id = {tc.id: tc for tc in tool_calls}
+        # Revue adversariale : sans ids (Gemini < 3), la corrélation est
+        # positionnelle -> émettre les functionResponse dans l'ORDRE des
+        # functionCall, pas dans l'ordre d'exécution (enforce_create_cap
+        # déplace les appels bloqués en queue de tool_results).
+        order = {tc.id: i for i, tc in enumerate(tool_calls)}
+        sorted_results = sorted(
+            tool_results, key=lambda tr: order.get(tr.tool_call_id, len(order))
+        )
         response_parts: list[dict] = []
-        for tr in tool_results:
+        for tr in sorted_results:
             tc = calls_by_id.get(tr.tool_call_id)
             fr: dict[str, Any] = {
                 "name": tc.name if tc else "",

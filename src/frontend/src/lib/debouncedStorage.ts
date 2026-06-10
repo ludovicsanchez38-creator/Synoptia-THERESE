@@ -8,58 +8,54 @@
  * page (pas de perte de la dernière écriture).
  */
 
-interface PendingWrite {
-  key: string;
-  value: string;
-}
-
 export function createDebouncedStorage(delayMs = 400): Storage {
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let pending: PendingWrite | null = null;
+  // Map par clé (revue adversariale : un pending unique perdait la 1re
+  // écriture si un second store adoptait le même wrapper)
+  const pending = new Map<string, string>();
 
   const flush = () => {
     if (timer) {
       clearTimeout(timer);
       timer = null;
     }
-    if (pending) {
-      const { key, value } = pending;
-      pending = null;
+    for (const [key, value] of pending) {
       localStorage.setItem(key, value);
     }
+    pending.clear();
   };
 
   if (typeof window !== 'undefined') {
+    // beforeunload n'est pas fiable dans la WebView Tauri (WKWebView) :
+    // pagehide et visibilitychange couvrent la fermeture/masquage réels.
     window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) flush();
+    });
   }
 
   return {
     getItem(key: string): string | null {
       // Lecture cohérente : pousser l'écriture en attente d'abord
-      if (pending?.key === key) flush();
+      if (pending.has(key)) flush();
       return localStorage.getItem(key);
     },
     setItem(key: string, value: string): void {
-      pending = { key, value };
+      pending.set(key, value);
       if (!timer) {
         timer = setTimeout(flush, delayMs);
       }
     },
     removeItem(key: string): void {
-      if (pending?.key === key) {
-        pending = null;
-        if (timer) {
-          clearTimeout(timer);
-          timer = null;
-        }
-      }
+      pending.delete(key);
       localStorage.removeItem(key);
     },
     get length(): number {
       return localStorage.length;
     },
     clear(): void {
-      pending = null;
+      pending.clear();
       if (timer) {
         clearTimeout(timer);
         timer = null;

@@ -36,8 +36,16 @@ _LLM_ENV_KEYS = [
 
 
 def _clear_llm_env(monkeypatch):
+    """Neutralise TOUTES les sources LLM : env, .env (settings) et le ping
+    Ollama (la machine de dev/CI peut avoir un Ollama qui tourne)."""
+    from app.config import settings
+
     for key in _LLM_ENV_KEYS:
         monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(settings, "anthropic_api_key", None, raising=False)
+    monkeypatch.setattr(settings, "mistral_api_key", None, raising=False)
+    # Port 9 (discard) : connexion refusée immédiate, ping toujours négatif
+    monkeypatch.setattr(settings, "ollama_base_url", "http://127.0.0.1:9", raising=False)
 
 
 class TestSetupStatus:
@@ -110,6 +118,23 @@ class TestSetupStatus:
 
         _clear_llm_env(monkeypatch)
         db_session.add(Preference(key="anthropic_api_key", value="sk-ant-test"))
+        await db_session.commit()
+
+        resp = await client.get("/api/dashboard/setup-status")
+        assert resp.status_code == 200
+        assert resp.json()["has_llm_key"] is True
+
+    @pytest.mark.asyncio
+    async def test_setup_status_provider_ollama_compte(
+        self, client: AsyncClient, db_session, monkeypatch
+    ):
+        """Revue adversariale US-012 : l'utilisateur 100 % Ollama (persona
+        souveraineté) ne doit PAS voir la carte « Configurer une clé IA »
+        en permanence."""
+        from app.models.entities import Preference
+
+        _clear_llm_env(monkeypatch)
+        db_session.add(Preference(key="llm_provider", value="ollama"))
         await db_session.commit()
 
         resp = await client.get("/api/dashboard/setup-status")

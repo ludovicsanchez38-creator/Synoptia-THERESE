@@ -33,16 +33,23 @@ OPENAI_TOOLS = [
 
 
 class _FakeStreamResponse:
-    def __init__(self, lines: list[str], status: int = 200):
+    """Reproduit le contrat httpx d'une réponse STREAMING : le body d'erreur
+    n'est pas pré-chargé, il faut le lire via aread() (revue adversariale :
+    un fake au body pré-lu validait du code mort en prod)."""
+
+    def __init__(self, lines: list[str], status: int = 200, body: bytes = b""):
         self.status_code = status
         self._lines = lines
+        self._body = body
 
     def raise_for_status(self) -> None:
+        # Contrat streaming honnête : la réponse levée n'a PAS de body lu
+        # (e.response.json() échoue, comme en prod sur client.stream()).
         if self.status_code >= 400:
             import httpx
 
             request = httpx.Request("POST", "http://test")
-            response = httpx.Response(self.status_code, request=request, json={"error": self._lines[0] if self._lines else ""})
+            response = httpx.Response(self.status_code, request=request)
             raise httpx.HTTPStatusError("error", request=request, response=response)
 
     async def aiter_lines(self):
@@ -50,20 +57,40 @@ class _FakeStreamResponse:
             yield line
 
     async def aread(self) -> bytes:
-        return b""
+        return self._body
 
 
 class _FakeClient:
-    """Faux httpx.AsyncClient : capture la requête, rejoue des lignes."""
+    """Faux httpx.AsyncClient : capture les requêtes, rejoue des réponses.
 
-    def __init__(self, lines: list[str], status: int = 200):
-        self._lines = lines
-        self._status = status
-        self.last_request: dict | None = None
+    Accepte une réponse unique (lines) ou une séquence de réponses
+    (responses=[...]) pour tester les retries.
+    """
+
+    def __init__(
+        self,
+        lines: list[str] | None = None,
+        status: int = 200,
+        responses: list[_FakeStreamResponse] | None = None,
+    ):
+        self._responses = responses or [_FakeStreamResponse(lines or [], status)]
+        self._call_index = 0
+        self.requests: list[dict] = []
+
+    @property
+    def last_request(self) -> dict | None:
+        return self.requests[-1] if self.requests else None
 
     def stream(self, method, url, **kwargs):
-        self.last_request = {"method": method, "url": url, **kwargs}
-        resp = _FakeStreamResponse(self._lines, self._status)
+        import copy
+
+        # deepcopy : le provider peut muter request_body APRÈS l'envoi
+        # (retry sans tools) ; on capture ce qui a été réellement envoyé.
+        captured = {k: copy.deepcopy(v) if k == "json" else v for k, v in kwargs.items()}
+        self.requests.append({"method": method, "url": url, **captured})
+        idx = min(self._call_index, len(self._responses) - 1)
+        self._call_index += 1
+        resp = self._responses[idx]
 
         class _CM:
             async def __aenter__(_s):
@@ -226,37 +253,136 @@ async def test_ollama_continuation_construit_les_messages_outils():
     assert tool_msg["tool_name"] == "create_contact"
 
 
+@pytest.fixture(autouse=True)
+def _reset_ollama_capability_cache():
+    """Le cache de capacité tools est process-local : l'isoler entre tests."""
+    from app.services.providers import ollama as ollama_module
+
+    ollama_module._MODELS_WITHOUT_TOOLS.clear()
+    yield
+    ollama_module._MODELS_WITHOUT_TOOLS.clear()
+
+
 @pytest.mark.asyncio
-async def test_ollama_modele_sans_tools_message_clair():
-    """Honnêteté : modèle sans support tools → message explicite, pas un HTTP 400 brut."""
-    import httpx
+async def test_ollama_modele_sans_tools_degradation_gracieuse():
+    """Revue adversariale US-009 : modèle sans tools -> le chat TEXTE doit
+    continuer de fonctionner (avant : 400 à chaque message, chat inutilisable
+    sur gemma3 & co). Attendu : avis honnête UNE fois + retry sans tools."""
+    error_400 = _FakeStreamResponse(
+        [],
+        status=400,
+        body=json.dumps(
+            {"error": "registry.ollama.ai/library/qwen3:8b does not support tools"}
+        ).encode(),
+    )
+    text_ok = _FakeStreamResponse(
+        [json.dumps({"message": {"role": "assistant", "content": "Bonjour !"}, "done": True})]
+    )
+    client = _FakeClient(responses=[error_400, text_ok])
 
-    class _RaisingClient(_FakeClient):
-        def stream(self, method, url, **kwargs):
-            self.last_request = {"method": method, "url": url, **kwargs}
-            request = httpx.Request("POST", url)
-            response = httpx.Response(
-                400,
-                request=request,
-                json={"error": "registry.ollama.ai/library/gemma3:1b does not support tools"},
-            )
+    events = await _collect(
+        _ollama(client).stream(None, [{"role": "user", "content": "salut"}], tools=OPENAI_TOOLS)
+    )
 
-            class _CM:
-                async def __aenter__(_s):
-                    raise httpx.HTTPStatusError("400", request=request, response=response)
+    # Pas d'événement error : dégradation gracieuse
+    assert not [e for e in events if e.type == "error"], events
+    texts = [e.content for e in events if e.type == "text"]
+    # Avis honnête (outils indisponibles) PUIS la vraie réponse
+    assert any("outil" in t.lower() for t in texts), texts
+    assert any("Bonjour !" in t for t in texts), texts
+    # Deux requêtes : la première avec tools, le retry SANS
+    assert len(client.requests) == 2
+    assert "tools" in client.requests[0]["json"]
+    assert "tools" not in client.requests[1]["json"]
 
-                async def __aexit__(_s, *a):
-                    return False
 
-            return _CM()
+@pytest.mark.asyncio
+async def test_ollama_capacite_memorisee_pas_de_400_au_message_suivant():
+    """Une fois l'incapacité connue, plus d'aller-retour 400 : les tools ne
+    sont plus envoyés pour ce modèle (et plus d'avis répété)."""
+    error_400 = _FakeStreamResponse(
+        [], status=400,
+        body=json.dumps({"error": "model does not support tools"}).encode(),
+    )
+    text_ok = _FakeStreamResponse(
+        [json.dumps({"message": {"role": "assistant", "content": "ok"}, "done": True})]
+    )
+    client = _FakeClient(responses=[error_400, text_ok, text_ok])
+    provider = _ollama(client)
 
-    client = _RaisingClient([])
-    events = await _collect(_ollama(client).stream(None, [{"role": "user", "content": "crée Marie"}], tools=OPENAI_TOOLS))
+    await _collect(provider.stream(None, [{"role": "user", "content": "a"}], tools=OPENAI_TOOLS))
+    events2 = await _collect(
+        provider.stream(None, [{"role": "user", "content": "b"}], tools=OPENAI_TOOLS)
+    )
 
+    # 3e requête (2e message) : directement sans tools, une seule tentative
+    assert len(client.requests) == 3
+    assert "tools" not in client.requests[2]["json"]
+    texts2 = [e.content for e in events2 if e.type == "text"]
+    assert not any("outil" in t.lower() for t in texts2), "l'avis ne doit pas se répéter"
+
+
+@pytest.mark.asyncio
+async def test_ollama_404_modele_absent_message_clair():
+    """Le body d'erreur est lu via aread() (streaming) : le 404 doit produire
+    le message d'installation, pas un HTTP brut."""
+    error_404 = _FakeStreamResponse(
+        [], status=404,
+        body=json.dumps({"error": 'model "qwen3:8b" not found'}).encode(),
+    )
+    client = _FakeClient(responses=[error_404])
+    events = await _collect(
+        _ollama(client).stream(None, [{"role": "user", "content": "salut"}], tools=None)
+    )
     errors = [e for e in events if e.type == "error"]
-    assert errors, "Une erreur doit être émise"
-    assert "outil" in errors[0].content.lower(), errors[0].content
-    assert "qwen3:8b" in errors[0].content or "modèle" in errors[0].content.lower()
+    assert errors and "ollama pull" in errors[0].content.lower(), errors
+
+
+@pytest.mark.asyncio
+async def test_ollama_texte_et_tool_call_dans_le_meme_stream():
+    """Cas réel fréquent : contenu texte ET tool_calls dans le même message."""
+    mixed = {
+        "message": {
+            "role": "assistant",
+            "content": "Je crée Marie.",
+            "tool_calls": [{"function": {"name": "create_contact", "arguments": {"name": "Marie"}}}],
+        },
+        "done": False,
+    }
+    done = {"message": {"role": "assistant", "content": ""}, "done": True}
+    client = _FakeClient([json.dumps(mixed), json.dumps(done)])
+
+    events = await _collect(
+        _ollama(client).stream(None, [{"role": "user", "content": "crée Marie"}], tools=OPENAI_TOOLS)
+    )
+
+    assert any(e.type == "text" and e.content == "Je crée Marie." for e in events)
+    assert any(e.type == "tool_call" for e in events)
+    assert any(e.type == "done" and e.stop_reason == "tool_calls" for e in events)
+
+
+@pytest.mark.asyncio
+async def test_ollama_plusieurs_tool_calls_ids_distincts():
+    chunk = {
+        "message": {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"function": {"name": "create_contact", "arguments": {"name": "Marie"}}},
+                {"function": {"name": "create_contact", "arguments": {"name": "Paul"}}},
+            ],
+        },
+        "done": False,
+    }
+    done = {"message": {"role": "assistant", "content": ""}, "done": True}
+    client = _FakeClient([json.dumps(chunk), json.dumps(done)])
+
+    events = await _collect(
+        _ollama(client).stream(None, [{"role": "user", "content": "x"}], tools=OPENAI_TOOLS)
+    )
+    tool_events = [e for e in events if e.type == "tool_call"]
+    assert len(tool_events) == 2
+    assert tool_events[0].tool_call.id != tool_events[1].tool_call.id
 
 
 # ---------------------------------------------------------------------------
@@ -364,3 +490,130 @@ async def test_gemini_sans_tools_garde_le_grounding():
     )
     body = client.last_request["json"]
     assert any("google_search" in t for t in body.get("tools", []))
+
+
+@pytest.mark.asyncio
+async def test_gemini_3_combine_grounding_et_functions():
+    """Gemini 3 : seule combinaison documentée tools intégrés + function calling."""
+    client = _FakeClient(["data: " + json.dumps({"candidates": []})])
+    await _collect(
+        _gemini(client, model="gemini-3.1-pro-preview").stream(
+            None, [{"role": "user", "parts": [{"text": "hi"}]}], tools=OPENAI_TOOLS
+        )
+    )
+    tools_sent = client.last_request["json"]["tools"]
+    combined = tools_sent[0]
+    assert "google_search" in combined and "functionDeclarations" in combined
+
+
+@pytest.mark.asyncio
+async def test_gemini_sanitise_les_schemas_mcp():
+    """Revue adversariale : les inputSchema MCP ($schema, additionalProperties,
+    anyOf, default...) provoquaient un 400 proto Schema sur TOUTE la requête."""
+    mcp_tool = {
+        "type": "function",
+        "function": {
+            "name": "mcp_search",
+            "description": "Recherche",
+            "parameters": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "query": {"type": "string", "default": "", "description": "Requête"},
+                    "filters": {
+                        "type": "array",
+                        "items": {"type": "object", "anyOf": [{"type": "string"}], "properties": {"k": {"type": "string"}}},
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    }
+    client = _FakeClient(["data: " + json.dumps({"candidates": []})])
+    await _collect(
+        _gemini(client).stream(None, [{"role": "user", "parts": [{"text": "hi"}]}], tools=[mcp_tool])
+    )
+    decls = next(
+        t["functionDeclarations"] for t in client.last_request["json"]["tools"] if "functionDeclarations" in t
+    )
+    params = decls[0]["parameters"]
+    flat = json.dumps(params)
+    assert "$schema" not in flat and "additionalProperties" not in flat and "anyOf" not in flat
+    assert "default" not in flat
+    # Les clés légitimes survivent, récursivement
+    assert params["properties"]["query"]["type"] == "string"
+    assert params["properties"]["filters"]["items"]["properties"]["k"]["type"] == "string"
+    assert params["required"] == ["query"]
+
+
+@pytest.mark.asyncio
+async def test_gemini_function_responses_dans_l_ordre_des_calls():
+    """Sans ids (Gemini < 3), la corrélation est positionnelle : les résultats
+    doivent suivre l'ordre des functionCall même si l'exécution a réordonné."""
+    text_chunk = {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+    client = _FakeClient(["data: " + json.dumps(text_chunk)])
+    calls = [
+        ToolCall(id="gemini-call-0", name="create_contact", arguments={"name": "A"}),
+        ToolCall(id="gemini-call-1", name="create_contact", arguments={"name": "B"}),
+    ]
+    # Résultats fournis dans l'ordre INVERSE (cas enforce_create_cap)
+    results = [
+        ToolResult(tool_call_id="gemini-call-1", result={"who": "B"}),
+        ToolResult(tool_call_id="gemini-call-0", result={"who": "A"}),
+    ]
+    await _collect(
+        _gemini(client).continue_with_tool_results(
+            None, [{"role": "user", "parts": [{"text": "x"}]}],
+            assistant_content="", tool_calls=calls, tool_results=results, tools=OPENAI_TOOLS,
+        )
+    )
+    contents = client.last_request["json"]["contents"]
+    frs = [p["functionResponse"]["response"]["result"]["who"] for p in contents[-1]["parts"]]
+    assert frs == ["A", "B"]
+
+
+@pytest.mark.asyncio
+async def test_grok_plusieurs_tool_calls_accumules_par_index():
+    """Accumulation par index (héritée d'openai.py) avec 2 appels entrelacés."""
+    chunk1 = {
+        "choices": [{"delta": {"tool_calls": [
+            {"index": 0, "id": "call_a", "function": {"name": "create_contact", "arguments": '{"name":'}},
+            {"index": 1, "id": "call_b", "function": {"name": "read_contact", "arguments": '{"id": 1}'}},
+        ]}, "finish_reason": None}]
+    }
+    chunk2 = {
+        "choices": [{"delta": {"tool_calls": [
+            {"index": 0, "function": {"arguments": ' "Marie"}'}},
+        ]}, "finish_reason": None}]
+    }
+    finish = {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}
+    client = _FakeClient([
+        f"data: {json.dumps(chunk1)}", f"data: {json.dumps(chunk2)}",
+        f"data: {json.dumps(finish)}", "data: [DONE]",
+    ])
+    events = await _collect(_grok(client).stream(None, [{"role": "user", "content": "x"}], tools=OPENAI_TOOLS))
+    tool_events = [e for e in events if e.type == "tool_call"]
+    assert len(tool_events) == 2
+    by_id = {e.tool_call.id: e.tool_call for e in tool_events}
+    assert by_id["call_a"].arguments == {"name": "Marie"}
+    assert by_id["call_b"].arguments == {"id": 1}
+
+
+@pytest.mark.asyncio
+async def test_grok_arguments_invalides_comportement_fige():
+    """Comportement actuel FIGÉ (hérité d'openai.py, partagé par 6 providers) :
+    des arguments JSON invalides retombent sur {} - l'outil est appelé sans
+    arguments plutôt que de casser le stream. À reconsidérer si un cas réel
+    montre que l'échec explicite serait préférable."""
+    chunk = {
+        "choices": [{"delta": {"tool_calls": [
+            {"index": 0, "id": "call_x", "function": {"name": "create_contact", "arguments": '{"name": MALFORMED'}},
+        ]}, "finish_reason": None}]
+    }
+    finish = {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}
+    client = _FakeClient([f"data: {json.dumps(chunk)}", f"data: {json.dumps(finish)}", "data: [DONE]"])
+    events = await _collect(_grok(client).stream(None, [{"role": "user", "content": "x"}], tools=OPENAI_TOOLS))
+    tool_events = [e for e in events if e.type == "tool_call"]
+    assert len(tool_events) == 1
+    assert tool_events[0].tool_call.arguments == {}

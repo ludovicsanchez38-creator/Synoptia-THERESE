@@ -2108,11 +2108,21 @@ class TestBUG040_OllamaErrorMessages:
         )
 
     def test_ollama_catches_http_status_error(self):
-        """Le provider doit capturer httpx.HTTPStatusError pour les 404."""
+        """Les erreurs HTTP doivent produire un message clair (404 = modèle absent).
+
+        Revue adversariale US-009 : l'ancien except httpx.HTTPStatusError était
+        du code mort (body jamais lu sur une réponse streaming -> ResponseNotRead).
+        Le statut est désormais testé DANS le async with, body lu via aread()."""
         content = OLLAMA_PY.read_text(encoding="utf-8")
-        assert "httpx.HTTPStatusError" in content, (
-            "ollama.py doit capturer httpx.HTTPStatusError pour un message clair "
-            "quand le modèle n'est pas installé (404)"
+        assert "response.status_code != 200" in content, (
+            "ollama.py doit tester le status_code dans le async with "
+            "(raise_for_status + .json() = code mort sur du streaming)"
+        )
+        assert "aread()" in content, (
+            "ollama.py doit lire le body d'erreur via aread() avant de router"
+        )
+        assert "status == 404" in content, (
+            "ollama.py doit traiter le 404 (modèle non installé) explicitement"
         )
 
     def test_ollama_404_mentions_ollama_pull(self):
@@ -2261,7 +2271,9 @@ class TestBUG041_OllamaAdminError:
     def test_ollama_500_mentions_admin(self):
         """Le cas HTTP 500 d'Ollama doit avoir un message d'erreur explicite."""
         content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert "elif status == 500:" in content, (
+        # US-009 : la structure est passée de elif (handler except) à if (statut
+        # testé dans le async with) - l'intention (cas 500 dédié) est inchangée
+        assert "if status == 500:" in content, (
             "ollama.py doit avoir un cas spécifique pour HTTP 500"
         )
         # BUG-052 : message amélioré avec hint RAM
@@ -2306,7 +2318,8 @@ class TestBatchV0211_OllamaAdminWindows:
 
     def test_ollama_500_admin_message(self):
         content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert "elif status == 500:" in content, "Cas spécifique HTTP 500 manquant"
+        # US-009 : elif -> if (statut testé dans le async with), intention inchangée
+        assert "if status == 500:" in content, "Cas spécifique HTTP 500 manquant"
         # BUG-052 : message amélioré avec hint RAM au lieu de admin Windows
         assert "500" in content, "Message 500 doit être explicite"
 
@@ -5791,7 +5804,11 @@ class TestBUG69NestedExceptShadowing:
             src,
             re.DOTALL,
         )
-        assert match, "Bloc HTTPStatusError introuvable dans ollama.py"
+        # US-009 : le handler except httpx.HTTPStatusError a été supprimé
+        # (code mort sur du streaming - statut testé dans le async with).
+        # S'il revient un jour, il ne doit pas imbriquer un except qui écrase e.
+        if match is None:
+            return
         block = match.group(0)
         assert "except Exception as e:" not in block, (
             "Nested 'except Exception as e:' dans ollama.py ecrase la variable e"

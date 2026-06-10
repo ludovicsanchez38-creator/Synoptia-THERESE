@@ -42,24 +42,56 @@ _LLM_KEY_SOURCES: list[tuple[list[str], str]] = [
 
 
 async def _has_any_llm_key(session: AsyncSession) -> bool:
-    """Au moins une clé LLM cloud disponible (env ou DB) ?
+    """Au moins un LLM utilisable (clé cloud valide OU Ollama choisi/joignable) ?
 
-    Sans aucune clé, le chat retombe sur Ollama local s'il est installé -
-    la checklist Accueil doit rappeler cette étape au lieu de laisser
-    l'utilisateur face à une erreur au premier message.
+    Revue adversariale US-012 - trois angles morts corrigés :
+    - clé DB : vérifier le DÉCHIFFREMENT (une clé Fernet corrompue après
+      réinitialisation du Keychain comptait comme configurée alors que le
+      premier message échoue - exactement le cas que la checklist doit attraper) ;
+    - env : pydantic-settings lit le .env sans peupler os.environ -> inclure
+      settings.anthropic_api_key / settings.mistral_api_key ;
+    - Ollama : le persona 100 % local n'a AUCUNE clé cloud ; sans cette
+      détection, la carte « Configurer une clé IA (ou Ollama) » ne se masquait
+      jamais pour lui.
     """
+    from app.config import settings
+    from app.routers.config import _check_key_decryptable
+
     for env_names, _ in _LLM_KEY_SOURCES:
         if any(os.environ.get(name) for name in env_names):
             return True
-    db_keys = [db_key for _, db_key in _LLM_KEY_SOURCES]
+    # Fallback .env (pydantic-settings) pour les clés déclarées dans Settings
+    if settings.anthropic_api_key or settings.mistral_api_key:
+        return True
+
     try:
-        result = await session.execute(
-            select(Preference.key).where(Preference.key.in_(db_keys)).limit(1)
-        )
-        return result.scalar() is not None
+        for _, db_key in _LLM_KEY_SOURCES:
+            has_key, _corrupted = await _check_key_decryptable(session, db_key)
+            if has_key:
+                return True
     except Exception as e:
         logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
-        return False
+
+    # Ollama : choisi comme provider (Preference) ou serveur local joignable
+    try:
+        result = await session.execute(
+            select(Preference.value).where(Preference.key == "llm_provider").limit(1)
+        )
+        if result.scalar() == "ollama":
+            return True
+    except Exception as e:
+        logger.debug(f"Erreur lecture provider (setup-status): {e}")
+    try:
+        from app.services.http_client import get_http_client
+
+        client = await get_http_client()
+        response = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=1.0)
+        if response.status_code == 200:
+            return True
+    except Exception:
+        pass  # Ollama absent : attendu pour la plupart des installs cloud
+
+    return False
 
 
 @router.get("/setup-status")
