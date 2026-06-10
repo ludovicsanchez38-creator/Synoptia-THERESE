@@ -67,8 +67,8 @@ from app.routers import (
     tools_router,  # V3 - Installed Tools
     voice_router,
 )
-from app.services import close_qdrant, init_qdrant
 from app.services.mcp_service import get_mcp_service, initialize_mcp_service
+from app.services.qdrant import close_qdrant, init_qdrant
 from app.services.skills import close_skills, init_skills
 
 setup_logging()
@@ -226,6 +226,8 @@ async def lifespan(app: FastAPI):
     # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
     skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"
 
+    import asyncio
+
     if not skip_services:
         await init_qdrant()
         logger.info("Qdrant vector store initialized")
@@ -233,10 +235,19 @@ async def lifespan(app: FastAPI):
         await init_skills()
         logger.info("Skills system initialized")
 
-        await initialize_mcp_service()
-        logger.info("MCP service initialized")
+        # US-016 : le spawn des serveurs MCP (processus npx, téléchargements
+        # réseau au premier lancement) ne doit pas bloquer le démarrage -
+        # /health doit répondre dès que le coeur (DB, Qdrant, skills) est prêt.
+        # Si un chat arrive avant la fin, get_tools_for_llm expose simplement
+        # moins d'outils le temps que les serveurs montent.
+        async def _init_mcp_bg():
+            try:
+                await initialize_mcp_service()
+                logger.info("MCP service initialized")
+            except Exception as e:
+                logger.warning(f"Init MCP en arrière-plan échouée : {e}")
 
-    import asyncio
+        asyncio.create_task(_init_mcp_bg())
 
     if not skip_services:
         # Pre-charge le modele d'embeddings en arrière-plan (non-bloquant)

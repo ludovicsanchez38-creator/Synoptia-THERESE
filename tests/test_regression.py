@@ -197,7 +197,9 @@ class TestBUG012CrashMacM4Max:
         assert "device='mps'" not in content, "device='mps' crashe sur M4 Max"
         assert 'device="cuda"' not in content, "device='cuda' n'existe pas sur macOS"
 
-    @patch("app.services.embeddings.SentenceTransformer")
+    # US-016 : l'import de SentenceTransformer est différé dans la property
+    # (torch paresseux) -> patcher le module SOURCE, pas l'attribut local.
+    @patch("sentence_transformers.SentenceTransformer")
     def test_embeddings_constructor_receives_cpu(self, mock_st):
         """Vérifie que SentenceTransformer reçoit bien device='cpu' à l'exécution."""
         from app.services.embeddings import EmbeddingsService
