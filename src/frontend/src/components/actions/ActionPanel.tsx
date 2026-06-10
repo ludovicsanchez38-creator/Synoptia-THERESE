@@ -245,7 +245,7 @@ function TaskProgress({
   }[task.status];
 
   const statusColor = {
-    pending: 'text-yellow-400',
+    pending: 'text-warning',
     running: 'text-cyan-400',
     completed: 'text-emerald-400',
     cancelled: 'text-text-muted',

@@ -56,7 +56,7 @@ function formatSize(bytes: number): string {
 function sizeColor(bytes: number): string {
   const gb = bytes / 1_073_741_824;
   if (gb < 4) return 'text-green-400';
-  if (gb < 8) return 'text-yellow-400';
+  if (gb < 8) return 'text-warning';
   return 'text-red-400';
 }
 
@@ -86,7 +86,7 @@ export function AdvisorArcLayout({
         >
           <p className="text-xs text-text-muted">
             <span className="text-green-400">&#9679;</span> &lt; 4 Go (8 Go RAM)
-            {' '}<span className="text-yellow-400 ml-2">&#9679;</span> 4-8 Go (16 Go RAM)
+            {' '}<span className="text-warning ml-2">&#9679;</span> 4-8 Go (16 Go RAM)
             {' '}<span className="text-red-400 ml-2">&#9679;</span> &gt; 8 Go (32 Go+ RAM)
           </p>
           <p className="text-[10px] text-text-muted/70">

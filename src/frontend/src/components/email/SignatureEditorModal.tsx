@@ -20,15 +20,13 @@ import { getEmailSignature, updateEmailSignature } from '../../services/api/emai
 import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface SignatureEditorModalProps {
   accountId: string;
   accountEmail?: string;
   onClose: () => void;
 }
-
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])';
 
 export function SignatureEditorModal({ accountId, accountEmail, onClose }: SignatureEditorModalProps) {
   const [html, setHtml] = useState('');
@@ -50,12 +48,14 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
   // éviter le churn push/pop dû aux re-renders d'EmailPanel (polling reauth 3s).
   useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
 
-  // Restauration du focus au démontage + nettoyage du timer.
+  // US-013 : focus initial + piège Tab + restauration via le hook mutualisé.
+  // Pas d'onEscape : Échap reste géré par la pile unifiée (escapeStack) ci-dessus.
+  useDialogFocusTrap(dialogRef, { active: true });
+
+  // Nettoyage du timer du badge « Enregistré ».
   useEffect(() => {
-    const previouslyFocused = document.activeElement as HTMLElement | null;
     return () => {
       if (savedTimer.current) clearTimeout(savedTimer.current);
-      previouslyFocused?.focus?.();
     };
   }, []);
 
@@ -81,28 +81,6 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
   useEffect(() => {
     if (!loading) textareaRef.current?.focus();
   }, [loading]);
-
-  // Piège de focus (Tab uniquement ; Échap est géré par escapeStack).
-  useEffect(() => {
-    function handleTab(e: KeyboardEvent) {
-      if (e.key !== 'Tab' || !dialogRef.current) return;
-      const focusables = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener('keydown', handleTab);
-    return () => document.removeEventListener('keydown', handleTab);
-  }, []);
 
   async function handleSave() {
     setSaving(true);

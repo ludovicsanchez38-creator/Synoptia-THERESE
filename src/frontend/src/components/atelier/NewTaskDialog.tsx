@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { X, Zap, Loader2 } from "lucide-react";
 import { useOpenClawStore } from "../../stores/openclawStore";
 import { Z_LAYER } from "../../styles/z-layers";
+import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
 
 export function NewTaskDialog() {
   const { isNewTaskOpen, closeNewTask, dispatchTask, isDispatching, openclawConnected, runningCount, maxAgents } =
@@ -16,6 +17,11 @@ export function NewTaskDialog() {
   const [instruction, setInstruction] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isMaxReached = runningCount >= maxAgents;
+
+  // US-013 : piège de focus + Échap (closeNewTask est une action Zustand, stable).
+  // Appelé avant l'early return pour respecter la règle des hooks.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: isNewTaskOpen, onEscape: closeNewTask });
 
   useEffect(() => {
     if (isNewTaskOpen && textareaRef.current) {
@@ -37,14 +43,16 @@ export function NewTaskDialog() {
       e.preventDefault();
       handleSubmit();
     }
-    if (e.key === "Escape") {
-      closeNewTask();
-    }
+    // Échap : géré par useDialogFocusTrap (un seul handler actif).
   };
 
   return (
     <div className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center bg-black/50 backdrop-blur-sm`}>
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nouvelle tâche pour Katia"
         className="mx-4 w-full max-w-lg rounded-xl border border-border bg-bg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

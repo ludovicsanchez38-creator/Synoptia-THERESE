@@ -112,8 +112,8 @@ export function PerformanceTab() {
               </>
             ) : (
               <>
-                <AlertCircle className="w-4 h-4 text-yellow-400" />
-                <span className="text-sm text-yellow-400">SLA non respecté ({">"} 2s)</span>
+                <AlertCircle className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning">SLA non respecté ({">"} 2s)</span>
               </>
             )}
           </div>

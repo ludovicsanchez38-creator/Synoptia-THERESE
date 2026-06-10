@@ -116,7 +116,7 @@ function PresetCategory({
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-medium text-text">{preset.name}</span>
                         {preset.popular && (
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                          <Star className="w-3 h-3 text-warning fill-yellow-400" />
                         )}
                         {preset.risk_level === 'high' && (
                           <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400" title={preset.risk_warning}>
@@ -125,7 +125,7 @@ function PresetCategory({
                           </span>
                         )}
                         {preset.risk_level === 'medium' && (
-                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-yellow-400" title={preset.risk_warning}>
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title={preset.risk_warning}>
                             <ShieldAlert className="w-2.5 h-2.5" />
                             Moyen
                           </span>
@@ -148,14 +148,14 @@ function PresetCategory({
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-green-400" />}
                         {!isInstalling && isInstalled && !runningServer && (
                           <span title="Installé mais inactif - cliquer pour démarrer">
-                            <AlertCircle className="w-4 h-4 text-yellow-400" />
+                            <AlertCircle className="w-4 h-4 text-warning" />
                           </span>
                         )}
                       </div>
                     </div>
                     <p className="text-xs text-text-muted line-clamp-2">{preset.description}</p>
                     {preset.env_required && preset.env_required.length > 0 && (
-                      <p className="text-xs text-yellow-400 mt-1">
+                      <p className="text-xs text-warning mt-1">
                         Requiert: {preset.env_required.join(', ')}
                       </p>
                     )}
@@ -424,7 +424,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       case 'running':
         return 'text-green-400';
       case 'starting':
-        return 'text-yellow-400';
+        return 'text-warning';
       case 'error':
         return 'text-red-400';
       default:
@@ -443,7 +443,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
         );
       case 'starting':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-warning">
             Démarrage...
           </span>
         );
@@ -521,18 +521,18 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               {/* BUG-083 : Avertissement si npx manquant */}
               {requirementsCheck && !requirementsCheck.all_satisfied && (
                 <div className="flex items-start gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                   <div className="text-xs text-yellow-300">
                     <p className="font-medium mb-1">Prérequis manquants</p>
                     {Object.entries(requirementsCheck.commands)
                       .filter(([, v]) => !(v as { available: boolean }).available)
                       .map(([cmd]) => (
-                        <p key={cmd} className="text-yellow-400">
+                        <p key={cmd} className="text-warning">
                           <code className="bg-yellow-500/20 px-1 rounded">{cmd}</code> non trouvé sur le système
                         </p>
                       ))}
                     {requirementsCheck.help_message && (
-                      <p className="mt-1 text-yellow-400/80">{requirementsCheck.help_message}</p>
+                      <p className="mt-1 text-warning/80">{requirementsCheck.help_message}</p>
                     )}
                   </div>
                 </div>

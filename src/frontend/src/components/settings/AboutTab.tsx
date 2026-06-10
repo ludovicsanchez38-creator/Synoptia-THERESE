@@ -2,13 +2,17 @@
 // Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Download, CheckCircle, ExternalLink, Info } from 'lucide-react';
+import { RefreshCw, Download, CheckCircle, ExternalLink, Info, MessageSquareWarning } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useBackendStore } from '../../hooks/useBackend';
 import { checkHealth } from '../../services/api';
 
 const GITHUB_REPO = 'ludovicsanchez38-creator/Synoptia-THERESE';
 const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
+// US-012 : invitation Discord alpha PERMANENTE (revue adversariale : l'URL
+// vanity discord.gg/therese-alpha n'existait pas - Unknown Invite. Celle-ci
+// est créée par le bot Thérèse sur la guilde THÉRÈSE - Alpha, sans expiration).
+const DISCORD_URL = 'https://discord.gg/krDGArdbH8';
 
 interface ReleaseInfo {
   tag_name: string;
@@ -112,8 +116,10 @@ export function AboutTab() {
   }
 
   function openDownload(url: string) {
+    // return open(url) : propage le rejet d'open() au catch (hors Tauri,
+    // open() rejette en async - sans le return, le fallback ne tournait jamais)
     import('@tauri-apps/plugin-shell').then(({ open }) => {
-      open(url);
+      return open(url);
     }).catch(() => {
       window.open(url, '_blank');
     });
@@ -145,6 +151,29 @@ export function AboutTab() {
             <span className="ml-2 text-accent-cyan font-medium">Alpha</span>
           </div>
         </div>
+      </div>
+
+      {/* US-012 : communauté et retours - le testeur alpha doit pouvoir
+          signaler un bug sans connaître l'URL Discord par coeur */}
+      <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
+        <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
+          <MessageSquareWarning className="w-4 h-4 text-accent-cyan" />
+          Un bug ? Une idée ?
+        </h4>
+        <p className="text-sm text-text-muted mb-3">
+          La communauté alpha vit sur Discord : signale les bugs dans
+          <span className="text-text font-medium"> #bugs</span>, propose tes idées dans
+          <span className="text-text font-medium"> #feedback</span>.
+        </p>
+        <Button
+          variant="secondary"
+          onClick={() => openDownload(DISCORD_URL)}
+          className="w-full justify-center"
+          data-testid="discord-feedback-btn"
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Rejoindre le Discord / Signaler un bug
+        </Button>
       </div>
 
       {/* Vérification des mises à jour */}

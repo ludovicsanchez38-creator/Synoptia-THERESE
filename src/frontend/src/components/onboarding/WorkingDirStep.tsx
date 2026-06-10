@@ -119,8 +119,8 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
           ) : (
             <div className="mb-6 px-4 py-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <div className="flex items-center gap-2 justify-center">
-                <AlertCircle className="w-4 h-4 text-yellow-400" />
-                <span className="text-sm text-yellow-400">Aucun dossier configuré</span>
+                <AlertCircle className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning">Aucun dossier configuré</span>
               </div>
             </div>
           )}

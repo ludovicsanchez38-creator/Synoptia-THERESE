@@ -451,33 +451,41 @@ class TestBUG009RustTasklistFallback:
 
 
 class TestScrollStreaming:
-    """Scroll automatique via div scrollable + scrollIntoView pendant le streaming."""
+    """US-010 : scroll géré par react-virtuoso (followOutput) - l'intention
+    historique (suivre le flux en bas, respecter la position de lecture)
+    est désormais portée par computeFollowOutput + Virtuoso."""
 
     def test_virtuoso_handles_scroll(self):
-        """MessageList doit utiliser overflow-y-auto et scrollIntoView pour le scroll automatique."""
+        """MessageList doit déléguer le scroll à Virtuoso (virtualisation US-010)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "overflow-y-auto" in content, (
-            "MessageList doit utiliser overflow-y-auto pour le conteneur scrollable"
+        assert "Virtuoso" in content, (
+            "MessageList doit utiliser react-virtuoso pour la liste de messages"
         )
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour le scroll automatique"
+        assert "followOutput" in content, (
+            "MessageList doit utiliser followOutput pour le scroll automatique"
         )
 
     def test_user_scroll_detection(self):
-        """MessageList doit utiliser un ref bottomRef comme ancre de scroll."""
+        """Le suivi du bas doit dépendre de la position utilisateur (atBottom)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef comme ancre de scroll en bas de la liste"
+        assert "atBottomThreshold" in content, (
+            "MessageList doit configurer atBottomThreshold pour détecter si "
+            "l'utilisateur est en bas (sinon on lui vole le scroll)"
         )
 
     def test_smooth_scroll_only_when_at_bottom(self):
-        """followOutput doit retourner 'smooth' quand l'utilisateur est en bas."""
-        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        """followOutput doit retourner 'smooth' quand l'utilisateur est en bas
+        (hors streaming) et false quand il a remonté la conversation."""
+        follow_output = MESSAGE_LIST_TSX.parent / "followOutput.ts"
+        content = follow_output.read_text(encoding="utf-8")
         assert "isStreaming" in content, (
-            "MessageList doit avoir accès à isStreaming pour conditionner le scroll"
+            "computeFollowOutput doit conditionner le comportement au streaming"
         )
         assert "'smooth'" in content, (
-            "followOutput doit retourner 'smooth' pour un scroll fluide quand l'utilisateur est en bas"
+            "computeFollowOutput doit retourner 'smooth' quand l'utilisateur est en bas"
+        )
+        assert "return false" in content, (
+            "computeFollowOutput doit retourner false quand l'utilisateur a remonté"
         )
 
 
@@ -655,26 +663,24 @@ class TestBUG020LazyLoading:
 
 
 class TestBUG021StreamingScroll:
-    """Scroll géré nativement par scrollIntoView + bottomRef (plus besoin de rAF manuel)."""
+    """BUG-021 : pas de scroll manuel par requestAnimationFrame. US-010 :
+    le scroll est entièrement délégué à react-virtuoso (followOutput)."""
 
     def test_virtuoso_replaces_raf_scroll(self):
-        """MessageList doit utiliser scrollIntoView au lieu de requestAnimationFrame manuel."""
+        """MessageList ne doit PAS faire de scroll manuel (rAF ou scrollIntoView)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour le scroll natif (remplace rAF)"
+        assert "requestAnimationFrame" not in content, (
+            "MessageList ne doit pas scroller via requestAnimationFrame manuel (BUG-021)"
         )
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef comme ancre pour le scroll streaming"
+        assert "Virtuoso" in content, (
+            "MessageList doit déléguer le scroll à react-virtuoso (US-010)"
         )
 
     def test_virtuoso_ref_present(self):
-        """MessageList doit avoir un ref bottomRef pour l'ancre de scroll."""
+        """La politique de scroll doit être centralisée dans computeFollowOutput."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit avoir un ref bottomRef pour l'ancre de scroll"
-        )
-        assert "useRef" in content, (
-            "MessageList doit utiliser useRef pour le ref bottomRef"
+        assert "computeFollowOutput" in content, (
+            "MessageList doit utiliser computeFollowOutput (politique de scroll testée)"
         )
 
 
@@ -1225,9 +1231,13 @@ class TestBUG025OllamaSystemPrompt:
         import re
         code = PROVIDERS / "ollama.py"
         content = code.read_text(encoding="utf-8")
-        json_block = re.search(r'json=\{(.*?)\}', content, re.DOTALL)
-        assert json_block, "Bloc json= non trouvé dans ollama.py"
-        json_content = json_block.group(1)
+        # US-009 : le body est désormais construit dans request_body (dict
+        # nommé) avant d'être passé à json= ; couvrir les deux formes.
+        json_block = re.search(
+            r'(?:json=\{(.*?)\}|request_body: dict = \{(.*?)\})', content, re.DOTALL
+        )
+        assert json_block, "Bloc json=/request_body non trouvé dans ollama.py"
+        json_content = json_block.group(1) or json_block.group(2)
         assert '"system"' not in json_content, (
             "/api/chat n'accepte pas de champ 'system' top-level"
         )
@@ -2013,20 +2023,21 @@ class TestBUG037_ScrollJumpStreaming:
     MSG_LIST = Path("src/frontend/src/components/chat/MessageList.tsx")
 
     def test_virtuoso_follow_output_present(self):
-        """scrollIntoView avec behavior conditionnel doit gérer la transition fin-streaming sans saut."""
+        """followOutput conditionné au streaming doit gérer la transition
+        fin-streaming sans saut ('auto' pendant, 'smooth' après)."""
         content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour éviter les sauts de scroll"
+        assert "followOutput" in content, (
+            "MessageList doit utiliser followOutput (Virtuoso) pour éviter les sauts"
         )
 
     def test_align_to_bottom_prevents_jump(self):
-        """bottomRef + scrollIntoView avec behavior auto/smooth doit éviter les sauts en fin de streaming."""
-        content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef pour un scroll stable en fin de streaming"
-        )
-        assert "behavior" in content, (
-            "MessageList doit utiliser behavior auto/smooth dans scrollIntoView pour un scroll sans saut"
+        """La politique auto/smooth/false vit dans computeFollowOutput (testée
+        unitairement dans followOutput.test.ts)."""
+        follow_output = self.MSG_LIST.parent / "followOutput.ts"
+        content = follow_output.read_text(encoding="utf-8")
+        assert "'auto'" in content and "'smooth'" in content, (
+            "computeFollowOutput doit distinguer 'auto' (streaming) et 'smooth' "
+            "(hors streaming) pour une fin de streaming sans saut"
         )
 
 
@@ -2097,11 +2108,21 @@ class TestBUG040_OllamaErrorMessages:
         )
 
     def test_ollama_catches_http_status_error(self):
-        """Le provider doit capturer httpx.HTTPStatusError pour les 404."""
+        """Les erreurs HTTP doivent produire un message clair (404 = modèle absent).
+
+        Revue adversariale US-009 : l'ancien except httpx.HTTPStatusError était
+        du code mort (body jamais lu sur une réponse streaming -> ResponseNotRead).
+        Le statut est désormais testé DANS le async with, body lu via aread()."""
         content = OLLAMA_PY.read_text(encoding="utf-8")
-        assert "httpx.HTTPStatusError" in content, (
-            "ollama.py doit capturer httpx.HTTPStatusError pour un message clair "
-            "quand le modèle n'est pas installé (404)"
+        assert "response.status_code != 200" in content, (
+            "ollama.py doit tester le status_code dans le async with "
+            "(raise_for_status + .json() = code mort sur du streaming)"
+        )
+        assert "aread()" in content, (
+            "ollama.py doit lire le body d'erreur via aread() avant de router"
+        )
+        assert "status == 404" in content, (
+            "ollama.py doit traiter le 404 (modèle non installé) explicitement"
         )
 
     def test_ollama_404_mentions_ollama_pull(self):
@@ -2250,7 +2271,9 @@ class TestBUG041_OllamaAdminError:
     def test_ollama_500_mentions_admin(self):
         """Le cas HTTP 500 d'Ollama doit avoir un message d'erreur explicite."""
         content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert "elif status == 500:" in content, (
+        # US-009 : la structure est passée de elif (handler except) à if (statut
+        # testé dans le async with) - l'intention (cas 500 dédié) est inchangée
+        assert "if status == 500:" in content, (
             "ollama.py doit avoir un cas spécifique pour HTTP 500"
         )
         # BUG-052 : message amélioré avec hint RAM
@@ -2295,7 +2318,8 @@ class TestBatchV0211_OllamaAdminWindows:
 
     def test_ollama_500_admin_message(self):
         content = self.OLLAMA_PY.read_text(encoding="utf-8")
-        assert "elif status == 500:" in content, "Cas spécifique HTTP 500 manquant"
+        # US-009 : elif -> if (statut testé dans le async with), intention inchangée
+        assert "if status == 500:" in content, "Cas spécifique HTTP 500 manquant"
         # BUG-052 : message amélioré avec hint RAM au lieu de admin Windows
         assert "500" in content, "Message 500 doit être explicite"
 
@@ -5780,7 +5804,11 @@ class TestBUG69NestedExceptShadowing:
             src,
             re.DOTALL,
         )
-        assert match, "Bloc HTTPStatusError introuvable dans ollama.py"
+        # US-009 : le handler except httpx.HTTPStatusError a été supprimé
+        # (code mort sur du streaming - statut testé dans le async with).
+        # S'il revient un jour, il ne doit pas imbriquer un except qui écrase e.
+        if match is None:
+            return
         block = match.group(0)
         assert "except Exception as e:" not in block, (
             "Nested 'except Exception as e:' dans ollama.py ecrase la variable e"

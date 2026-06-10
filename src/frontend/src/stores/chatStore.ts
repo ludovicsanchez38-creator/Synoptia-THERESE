@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
+import { createDebouncedStorage } from '../lib/debouncedStorage';
 import { useNavigationStore } from './navigationStore';
 
 import type { DetectedEntities } from '../services/api';
@@ -198,9 +199,14 @@ export const useChatStore = create<ChatStore>()(
       },
 
       updateMessage: (id, content, meta) => {
+        // Revue adversariale US-010 : chercher le message par id dans TOUTES
+        // les conversations, pas seulement la courante. Si l'utilisateur
+        // change de conversation pendant le streaming, la finalisation
+        // (isStreaming:false) doit atteindre le message, sinon curseur
+        // fantôme éternel + markdown jamais rendu.
         set((state) => ({
           conversations: state.conversations.map((c) =>
-            c.id === state.currentConversationId
+            c.messages.some((m) => m.id === id)
               ? {
                   ...c,
                   messages: c.messages.map((m) =>
@@ -216,7 +222,7 @@ export const useChatStore = create<ChatStore>()(
       setMessageEntities: (id, entities) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
-            c.id === state.currentConversationId
+            c.messages.some((m) => m.id === id)
               ? {
                   ...c,
                   messages: c.messages.map((m) =>
@@ -246,7 +252,7 @@ export const useChatStore = create<ChatStore>()(
       setMessageMetadata: (id, usage, uncertainty) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
-            c.id === state.currentConversationId
+            c.messages.some((m) => m.id === id)
               ? {
                   ...c,
                   messages: c.messages.map((m) =>
@@ -345,9 +351,21 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: 'therese-chat',
+      // US-010 : écritures localStorage coalescées (au plus 1 par 400ms).
+      // Sans ça, chaque flush de phrase pendant le streaming sérialisait
+      // toutes les conversations vers localStorage.
+      storage: createJSONStorage(() => createDebouncedStorage(400)),
       partialize: (state) => ({
-        // Exclure les conversations éphémères de la persistance
-        conversations: state.conversations.filter((c) => !c.ephemeral),
+        // Exclure les conversations éphémères de la persistance, et assainir
+        // isStreaming (revue adversariale US-010 : un crash/fermeture pendant
+        // le streaming persistait un curseur fantôme éternel)
+        conversations: state.conversations
+          .filter((c) => !c.ephemeral)
+          .map((c) =>
+            c.messages.some((m) => m.isStreaming)
+              ? { ...c, messages: c.messages.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m)) }
+              : c
+          ),
         // BUG-076 : ne pas restaurer la dernière conversation au lancement
         // L'app démarre toujours sur l'écran d'accueil
       }),

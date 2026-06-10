@@ -6,10 +6,19 @@ Données 100% locales SQLite, pas d'appel LLM.
 """
 
 import logging
+import os
 from datetime import date, datetime, timedelta
 
 from app.models.database import get_session
-from app.models.entities import Calendar, CalendarEvent, Contact, EmailAccount, Invoice, Task
+from app.models.entities import (
+    Calendar,
+    CalendarEvent,
+    Contact,
+    EmailAccount,
+    Invoice,
+    Preference,
+    Task,
+)
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, or_
@@ -18,6 +27,71 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# US-012 : détection « au moins une clé LLM configurée » pour la checklist
+# de mise en route. Mêmes providers que le router config (env OU Preference DB).
+_LLM_KEY_SOURCES: list[tuple[list[str], str]] = [
+    (["ANTHROPIC_API_KEY"], "anthropic_api_key"),
+    (["MISTRAL_API_KEY"], "mistral_api_key"),
+    (["OPENAI_API_KEY"], "openai_api_key"),
+    (["GEMINI_API_KEY", "GOOGLE_API_KEY"], "gemini_api_key"),
+    (["GROQ_API_KEY"], "groq_api_key"),
+    (["XAI_API_KEY"], "grok_api_key"),
+    (["OPENROUTER_API_KEY"], "openrouter_api_key"),
+]
+
+
+async def _has_any_llm_key(session: AsyncSession) -> bool:
+    """Au moins un LLM utilisable (clé cloud valide OU Ollama choisi/joignable) ?
+
+    Revue adversariale US-012 - trois angles morts corrigés :
+    - clé DB : vérifier le DÉCHIFFREMENT (une clé Fernet corrompue après
+      réinitialisation du Keychain comptait comme configurée alors que le
+      premier message échoue - exactement le cas que la checklist doit attraper) ;
+    - env : pydantic-settings lit le .env sans peupler os.environ -> inclure
+      settings.anthropic_api_key / settings.mistral_api_key ;
+    - Ollama : le persona 100 % local n'a AUCUNE clé cloud ; sans cette
+      détection, la carte « Configurer une clé IA (ou Ollama) » ne se masquait
+      jamais pour lui.
+    """
+    from app.config import settings
+    from app.routers.config import _check_key_decryptable
+
+    for env_names, _ in _LLM_KEY_SOURCES:
+        if any(os.environ.get(name) for name in env_names):
+            return True
+    # Fallback .env (pydantic-settings) pour les clés déclarées dans Settings
+    if settings.anthropic_api_key or settings.mistral_api_key:
+        return True
+
+    try:
+        for _, db_key in _LLM_KEY_SOURCES:
+            has_key, _corrupted = await _check_key_decryptable(session, db_key)
+            if has_key:
+                return True
+    except Exception as e:
+        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
+
+    # Ollama : choisi comme provider (Preference) ou serveur local joignable
+    try:
+        result = await session.execute(
+            select(Preference.value).where(Preference.key == "llm_provider").limit(1)
+        )
+        if result.scalar() == "ollama":
+            return True
+    except Exception as e:
+        logger.debug(f"Erreur lecture provider (setup-status): {e}")
+    try:
+        from app.services.http_client import get_http_client
+
+        client = await get_http_client()
+        response = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=1.0)
+        if response.status_code == 200:
+            return True
+    except Exception:
+        pass  # Ollama absent : attendu pour la plupart des installs cloud
+
+    return False
 
 
 @router.get("/setup-status")
@@ -50,10 +124,13 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
     except Exception as e:
         logger.warning(f"Erreur lecture profil facturation (setup-status): {e}")
 
+    has_llm_key = await _has_any_llm_key(session)
+
     return {
         "has_calendar": has_calendar,
         "has_email": has_email,
         "billing_complete": billing_complete,
+        "has_llm_key": has_llm_key,
     }
 
 

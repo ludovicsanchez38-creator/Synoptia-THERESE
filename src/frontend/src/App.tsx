@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
@@ -31,6 +32,8 @@ function App() {
   const highContrast = useAccessibilityStore((state) => state.highContrast);
   const theme = useAccessibilityStore((state) => state.theme);
   const setReduceMotion = useAccessibilityStore((state) => state.setReduceMotion);
+  // US-013 : MotionConfig global
+  const reduceMotion = useAccessibilityStore((state) => state.reduceMotion);
 
   // Refonte DA : applique le theme clair/sombre sur <html> pour que tout le
   // document (body, #root, chrome de fenetre) suive les variables de couleur.
@@ -149,6 +152,10 @@ function App() {
 
   return (
     <GlobalErrorBoundary>
+      {/* US-013 : MotionConfig global - reduceMotion (réglage utilisateur)
+          coupe TOUTES les animations framer-motion d'un coup ; 'user' suit
+          prefers-reduced-motion système. Complété par le @media CSS. */}
+      <MotionConfig reducedMotion={reduceMotion ? 'always' : 'user'}>
       <div
         className="h-screen w-screen bg-bg text-text overflow-hidden"
         style={{ fontSize }}
@@ -174,6 +181,7 @@ function App() {
           />
         </Suspense>
       </div>
+      </MotionConfig>
     </GlobalErrorBoundary>
   );
 }

@@ -26,7 +26,7 @@ const ACTIVITY_COLORS = {
   email: 'text-blue-400',
   call: 'text-green-400',
   meeting: 'text-purple-400',
-  note: 'text-yellow-400',
+  note: 'text-warning',
   stage_change: 'text-cyan-400',
   score_change: 'text-magenta-400',
 };

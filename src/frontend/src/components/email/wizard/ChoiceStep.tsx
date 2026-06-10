@@ -56,9 +56,11 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           whileTap={{ scale: 0.98 }}
           className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
         >
+          {/* US-012 : « Recommandé » retiré - ce chemin exige de créer un
+              projet Google Cloud, ce qui était l'impasse n°1 des testeurs */}
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan rounded-full">
-              Recommandé
+            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-full">
+              Avancé
             </span>
           </div>
 
@@ -92,21 +94,27 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           onClick={() => onSelect('smtp')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative p-6 bg-background/40 border-2 border-border/30 rounded-xl hover:border-border/60 transition-all group text-left"
+          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
         >
+          <div className="absolute top-3 right-3">
+            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan rounded-full">
+              Recommandé
+            </span>
+          </div>
+
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-text-muted/20 to-text-muted/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Server className="w-6 h-6 text-text-muted" />
           </div>
 
-          <h4 className="text-base font-semibold text-text mb-2">SMTP Classique</h4>
+          <h4 className="text-base font-semibold text-text mb-2">SMTP / IMAP classique</h4>
           <p className="text-sm text-text-muted mb-4">
-            Connexion SMTP/IMAP (OVH, Gandi, etc.)
+            Gmail (mot de passe d'application), OVH, Gandi, Infomaniak...
           </p>
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <ShieldCheck className="w-4 h-4 text-green-400" />
-              <span>Configuration simple</span>
+              <span>Prêt en 2 minutes, sans projet Google Cloud</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <ShieldCheck className="w-4 h-4 text-green-400" />
@@ -120,10 +128,17 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
         </motion.button>
       </div>
 
+      {/* US-012 : le chemin Gmail SANS créer de projet Google Cloud doit être
+          visible - c'était l'impasse n°1 des testeurs alpha */}
       <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
         <p className="text-sm text-text-muted">
-          <strong className="text-text">Note :</strong> Gmail OAuth est recommandé pour une sécurité maximale.
-          Le SMTP classique fonctionne avec tous les fournisseurs (OVH, Gandi, Infomaniak, etc.).
+          <strong className="text-text">Gmail sans prise de tête :</strong> choisis « SMTP / IMAP
+          classique », sélectionne le preset Gmail et utilise un{' '}
+          <strong className="text-text">mot de passe d'application</strong> (Google →
+          myaccount.google.com/apppasswords, validation en 2 étapes requise). Aucune
+          configuration Google Cloud n'est nécessaire. L'option Gmail OAuth reste là pour
+          ceux qui préfèrent un accès API complet (elle demande de créer ses propres
+          identifiants OAuth dans Google Cloud Console).
         </p>
       </div>
     </motion.div>

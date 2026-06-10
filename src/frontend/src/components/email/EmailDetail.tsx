@@ -216,7 +216,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={toggleStar}>
               <Star
-                className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-yellow-400' : ''}`}
+                className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-warning' : ''}`}
               />
             </Button>
             <Button variant="ghost" size="sm" onClick={handleTrash}>

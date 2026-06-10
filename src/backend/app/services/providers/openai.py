@@ -40,6 +40,10 @@ def _uses_max_completion_tokens(model: str) -> bool:
 class OpenAIProvider(BaseProvider):
     """OpenAI GPT API provider."""
 
+    # US-009 : URL surclassable - GrokProvider réutilise toute la boucle
+    # d'outils (xAI est OpenAI-compatible) en ne changeant que l'endpoint.
+    API_URL = OPENAI_API_URL
+
     def _build_request_body(
         self,
         messages: list[dict],
@@ -76,7 +80,7 @@ class OpenAIProvider(BaseProvider):
         try:
             async with self.client.stream(
                 "POST",
-                OPENAI_API_URL,
+                self.API_URL,
                 headers={
                     "Authorization": f"Bearer {self.config.api_key}",
                     "Content-Type": "application/json",
@@ -149,10 +153,10 @@ class OpenAIProvider(BaseProvider):
                             continue
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"OpenAI API error: {e.response.status_code}")
+            logger.error(f"{type(self).__name__} API error: {e.response.status_code}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
-            logger.error(f"OpenAI streaming error: {e}")
+            logger.error(f"{type(self).__name__} streaming error: {e}")
             yield StreamEvent(type="error", content=str(e))
 
     async def continue_with_tool_results(

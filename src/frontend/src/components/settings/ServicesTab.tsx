@@ -129,7 +129,7 @@ export function ServicesTab({
                           Clé OK
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-warning">
                           Clé requise
                         </span>
                       )}
@@ -216,8 +216,8 @@ export function ServicesTab({
           </div>
         ) : (
           <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-yellow-400">Dictée vocale désactivée</span>
+            <AlertCircle className="w-4 h-4 text-warning" />
+            <span className="text-sm text-warning">Dictée vocale désactivée</span>
           </div>
         )}
 

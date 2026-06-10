@@ -2,13 +2,21 @@
  * THERESE v2 - SetupChecklist : mise en route guidee qui se retire.
  * N'affiche que les etapes NON faites ; se masque entierement quand tout est branche.
  */
-import { Calendar, Mail, FileSignature, ArrowRight } from 'lucide-react';
+import { Calendar, Mail, FileSignature, KeyRound, ArrowRight } from 'lucide-react';
 import type { SetupStatus } from '../../services/api/dashboard';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
 
 export function SetupChecklist({ status }: { status: SetupStatus }) {
   const steps = [
+    {
+      // US-012 : sans clé LLM, le premier message du chat échoue - cette
+      // étape passe en tête (Ollama local reste l'alternative sans clé).
+      done: status.has_llm_key,
+      label: 'Configurer une clé IA (ou Ollama)',
+      icon: KeyRound,
+      action: () => usePanelStore.getState().openSettings(),
+    },
     {
       done: status.has_calendar,
       label: 'Connecter votre agenda',

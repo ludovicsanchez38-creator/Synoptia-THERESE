@@ -332,7 +332,7 @@ export function EmailList({ accountId }: EmailListProps) {
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {message.is_starred && <Star className="w-3 h-3 text-yellow-400 shrink-0" />}
+                      {message.is_starred && <Star className="w-3 h-3 text-warning shrink-0" />}
                       <div className="w-8 shrink-0 flex items-center justify-center">
                         {message.priority && (
                           <EmailPriorityBadge

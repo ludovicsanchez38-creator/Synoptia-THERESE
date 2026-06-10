@@ -450,8 +450,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       {/* Warning if no API key configured */}
       {needsApiKey && !hasApiKey && (
         <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
-          <span className="text-sm text-yellow-400">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+          <span className="text-sm text-warning">
             Sans clé API, THÉRÈSE ne pourra pas fonctionner. Configure une clé ou utilise Ollama.
           </span>
         </div>
