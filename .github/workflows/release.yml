@@ -14,8 +14,23 @@ permissions:
   contents: write
 
 jobs:
+  preflight:
+    name: Vérifier la clé de signature updater
+    runs-on: ubuntu-latest
+    steps:
+      - name: La clé de signature updater est-elle présente ?
+        env:
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY absent. L'updater (createUpdaterArtifacts) exige la cle privee de signature. Ajoute les secrets TAURI_SIGNING_PRIVATE_KEY et TAURI_SIGNING_PRIVATE_KEY_PASSWORD au repo avant de tagger (voir docs/UPDATER-SETUP.md)."
+            exit 1
+          fi
+          echo "Cle de signature updater presente."
+
   build:
     name: Build ${{ matrix.platform.name }}
+    needs: preflight
     strategy:
       fail-fast: false
       matrix:
@@ -235,6 +250,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # US-007 : signature des artefacts updater (.sig) + generation de latest.json.
+          # Sans ces secrets, createUpdaterArtifacts=true fait echouer le bundling.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: src/frontend
           tagName: ${{ github.event.inputs.tag || github.ref_name }}
@@ -250,4 +269,7 @@ jobs:
             - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
           releaseDraft: true
           prerelease: true
-          args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json' || '' }}
+          # US-007 : --config updater-ci.conf.json active createUpdaterArtifacts
+          # (signe les .sig + genere latest.json) UNIQUEMENT en CI, pour ne pas
+          # casser les builds locaux qui n'ont pas la cle de signature.
+          args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json --config src-tauri/updater-ci.conf.json' || '--config src-tauri/updater-ci.conf.json' }}
