@@ -499,58 +499,126 @@ async def cleanup_old_logs(
 # ============================================================
 
 
+def _backups_dir():
+    """Dossier des backups, sous le data dir (respecte THERESE_DATA_DIR)."""
+    from pathlib import Path
+
+    d = Path(settings.data_dir) / "backups"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _checkpoint_db() -> None:
+    """US-011 : flush le WAL SQLite dans therese.db avant backup/restore.
+
+    En mode WAL, les transactions récentes restent dans `therese.db-wal` et ne
+    sont PAS dans l'archive si on copie seulement `therese.db` → perte de
+    données. Le checkpoint TRUNCATE les rapatrie dans le fichier principal.
+    """
+    import sqlite3
+    from contextlib import closing
+    from pathlib import Path
+
+    db_path = settings.db_path
+    if db_path and Path(str(db_path)).exists():
+        try:
+            # closing() ferme bien la connexion : le context manager natif de
+            # sqlite3 ne gère que la transaction, pas la fermeture du handle.
+            with closing(sqlite3.connect(str(db_path))) as conn:
+                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception as e:
+            logger.warning("Checkpoint WAL échoué (backup/restore) : %s", e)
+
+
+def _create_archive(archive_path) -> list[str]:
+    """Crée une archive .tar.gz complète : DB (checkpointée) + Qdrant + images
+    + mcp_servers.json. Retourne la liste des éléments inclus."""
+    import tarfile
+    from pathlib import Path
+
+    _checkpoint_db()
+    data_dir = Path(settings.data_dir)
+    targets = [
+        (Path(settings.db_path) if settings.db_path else None, "therese.db"),
+        (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
+        (data_dir / "images", "images"),
+        (data_dir / "mcp_servers.json", "mcp_servers.json"),
+    ]
+    included: list[str] = []
+    with tarfile.open(archive_path, "w:gz") as tar:
+        for src, arcname in targets:
+            if src and src.exists():
+                tar.add(str(src), arcname=arcname)
+                included.append(arcname)
+    return included
+
+
+def _safe_extractall(tar, dest) -> None:
+    """Extraction protégée contre le path traversal, compatible Python 3.11+.
+
+    Utilise filter='data' (PEP 706, Python 3.12+) si disponible ; sinon valide
+    chaque membre à la main (pas de chemin absolu / .. / lien)."""
+    from pathlib import Path
+
+    try:
+        tar.extractall(dest, filter="data")
+        return
+    except TypeError:
+        pass  # Python < 3.12 : pas de paramètre filter
+    dest_resolved = Path(dest).resolve()
+    for member in tar.getmembers():
+        target = (Path(dest) / member.name).resolve()
+        if not str(target).startswith(str(dest_resolved)) or member.issym() or member.islnk():
+            raise HTTPException(
+                status_code=400, detail="Archive de backup non sûre (path traversal ou lien)"
+            )
+    tar.extractall(dest)
+
+
 @router.post("/backup")
 async def create_backup(
     session: AsyncSession = Depends(get_session),
 ):
     """
-    Create a backup of all data (US-BAK-03).
+    Create a complete backup of all data (US-011 / US-BAK-03).
 
-    Returns backup info and file path.
+    US-011 : sauvegarde TOUT (DB + Qdrant + images + mcp_servers.json) dans une
+    archive .tar.gz, pas seulement therese.db. Sans ça, un restore perdait la
+    mémoire vectorielle, les images et la config MCP.
     """
-    import shutil
-    from pathlib import Path
+    backup_dir = _backups_dir()
 
-    # Get backup directory
-    backup_dir = Path.home() / ".therese" / "backups"
-    backup_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create timestamped backup
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_name = f"therese_backup_{timestamp}"
+    archive_path = backup_dir / f"{backup_name}.tar.gz"
 
-    # Copy database file
-    db_path = settings.db_path
-    backup_db_path = backup_dir / f"{backup_name}.db"
-    shutil.copy2(db_path, backup_db_path)
+    included = _create_archive(archive_path)
 
-    # Create backup metadata
     metadata = {
         "created_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
-        "db_path": str(backup_db_path),
+        "archive_path": str(archive_path),
         "backup_name": backup_name,
+        "included": included,
     }
-
-    # Save metadata
     metadata_path = backup_dir / f"{backup_name}.json"
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
 
-    # Audit log
     await log_activity(
         session,
         AuditAction.DATA_EXPORTED,
         resource_type="backup",
         resource_id=backup_name,
-        details=json.dumps({"type": "backup", "path": str(backup_db_path)}),
+        details=json.dumps({"type": "backup", "path": str(archive_path)}),
     )
 
     return {
         "success": True,
         "backup_name": backup_name,
-        "path": str(backup_db_path),
+        "path": str(archive_path),
         "created_at": metadata["created_at"],
+        "included": included,
     }
 
 
@@ -561,9 +629,7 @@ async def list_backups():
     """
     from pathlib import Path
 
-    backup_dir = Path.home() / ".therese" / "backups"
-    if not backup_dir.exists():
-        return {"backups": []}
+    backup_dir = _backups_dir()
 
     backups = []
     for metadata_file in backup_dir.glob("*.json"):
@@ -571,10 +637,10 @@ async def list_backups():
             with open(metadata_file) as f:
                 metadata = json.load(f)
 
-            # Check if DB file exists
-            db_path = Path(metadata.get("db_path", ""))
-            if db_path.exists():
-                metadata["size_bytes"] = db_path.stat().st_size
+            # US-011 : archive .tar.gz (nouveau) ou .db legacy (compat ascendante)
+            artifact = Path(metadata.get("archive_path") or metadata.get("db_path", ""))
+            if artifact.exists():
+                metadata["size_bytes"] = artifact.stat().st_size
                 metadata["exists"] = True
             else:
                 metadata["exists"] = False
@@ -617,30 +683,63 @@ async def restore_backup(
             detail="Ajoutez ?confirm=true pour confirmer la restauration",
         )
 
-    backup_dir = Path.home() / ".therese" / "backups"
+    import tarfile
+
+    backup_dir = _backups_dir()
+    data_dir = Path(settings.data_dir)
 
     # Verify path is within backups directory
     backup_path = backup_dir / backup_name
     if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
         raise HTTPException(status_code=403, detail="Chemin de backup non autorise")
 
-    backup_db = backup_dir / f"{backup_name}.db"
+    archive = backup_dir / f"{backup_name}.tar.gz"
+    legacy_db = backup_dir / f"{backup_name}.db"  # compat ascendante
     metadata_file = backup_dir / f"{backup_name}.json"
 
-    if not backup_db.exists():
+    if not archive.exists() and not legacy_db.exists():
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouve")
 
-    # Create a backup of current state before restore
+    # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
+    # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
-    current_backup_path = backup_dir / f"{current_backup_name}.db"
-    shutil.copy2(settings.db_path, current_backup_path)
+    safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
+    _create_archive(safety_archive)
 
-    # Restore from backup
+    def _wipe_volatile_dirs() -> None:
+        # Restore PROPRE : on retire qdrant/ et images/ avant extraction pour ne
+        # pas laisser d'orphelins (fichiers créés après le backup).
+        for sub in ("qdrant", "images"):
+            p = data_dir / sub
+            if p.exists():
+                shutil.rmtree(p, ignore_errors=True)
+
+    def _rollback() -> None:
+        # Rollback INTÉGRAL depuis l'archive de sécurité (état d'avant restore).
+        # _wipe_volatile_dirs() a pu détruire qdrant/ et images/ avant qu'une
+        # erreur (corruption OU archive piégée) ne survienne : on remet tout.
+        try:
+            _wipe_volatile_dirs()
+            with tarfile.open(safety_archive, "r:gz") as tar:
+                _safe_extractall(tar, data_dir)
+        except Exception:
+            logger.exception("Rollback du restore en échec")
+
+    # Restore (US-011 : archive complète ; .db legacy = DB seule)
     try:
-        shutil.copy2(backup_db, settings.db_path)
+        if archive.exists():
+            _checkpoint_db()  # flush le WAL courant avant d'écraser la DB
+            _wipe_volatile_dirs()
+            with tarfile.open(archive, "r:gz") as tar:
+                _safe_extractall(tar, data_dir)
+        else:
+            shutil.copy2(legacy_db, settings.db_path)
+    except HTTPException:
+        # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
+        _rollback()
+        raise
     except Exception as e:
-        # Rollback
-        shutil.copy2(current_backup_path, settings.db_path)
+        _rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Echec de la restauration: {e}. Donnees restaurees a l'etat precedent.",
@@ -665,7 +764,6 @@ async def restore_backup(
 @router.delete("/backups/{backup_name}")
 async def delete_backup(backup_name: str):
     """Delete a backup."""
-    from pathlib import Path
 
     # Validation du nom de backup (SEC-019)
     if not re.match(r'^[a-zA-Z0-9_\-\.]+$', backup_name):
@@ -674,23 +772,24 @@ async def delete_backup(backup_name: str):
             detail="Nom de backup invalide. Seuls les caracteres alphanumeriques, tirets, underscores et points sont autorises.",
         )
 
-    backup_dir = Path.home() / ".therese" / "backups"
+    backup_dir = _backups_dir()
 
     # Verify path is within backups directory
     backup_path = backup_dir / backup_name
     if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
         raise HTTPException(status_code=403, detail="Chemin de backup non autorise")
 
-    backup_db = backup_dir / f"{backup_name}.db"
+    # US-011 : archive .tar.gz (nouveau) ou .db legacy
+    archive = backup_dir / f"{backup_name}.tar.gz"
+    legacy_db = backup_dir / f"{backup_name}.db"
     metadata_file = backup_dir / f"{backup_name}.json"
 
-    if not backup_db.exists():
+    if not archive.exists() and not legacy_db.exists():
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouve")
 
-    # Delete both files
-    backup_db.unlink()
-    if metadata_file.exists():
-        metadata_file.unlink()
+    for f in (archive, legacy_db, metadata_file):
+        if f.exists():
+            f.unlink()
 
     return {"deleted": True, "backup_name": backup_name}
 
@@ -790,15 +889,8 @@ async def get_backup_status():
     """
     Get backup status and recommendations.
     """
-    from pathlib import Path
-
-    backup_dir = Path.home() / ".therese" / "backups"
-    if not backup_dir.exists():
-        return {
-            "has_backups": False,
-            "last_backup": None,
-            "recommendation": "Aucune sauvegarde. Creez-en une maintenant.",
-        }
+    # US-011 : respecter THERESE_DATA_DIR (cohérence avec list/create/restore).
+    backup_dir = _backups_dir()
 
     # Find most recent backup
     backups = list(backup_dir.glob("*.json"))

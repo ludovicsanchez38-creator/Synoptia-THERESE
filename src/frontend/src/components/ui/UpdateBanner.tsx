@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Download, RefreshCw, X } from 'lucide-react';
 import { API_BASE } from '../../services/api/core';
+import { sanitizeErrorMessage } from '../../lib/sanitizeError';
 
 /** Intervalle entre les checks auto (6 heures en ms) */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -231,7 +232,7 @@ export function UpdateBanner() {
 
       {state.phase === 'error' && (
         <>
-          <span className="text-accent-magenta">{state.message}</span>
+          <span className="text-accent-magenta">{sanitizeErrorMessage(state.message)}</span>
         </>
       )}
 

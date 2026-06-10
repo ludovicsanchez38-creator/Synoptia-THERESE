@@ -67,10 +67,10 @@
     },
     "updater": {
       "endpoints": [
-        "https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases/latest/download/latest.json"
+        "https://synoptia.fr/therese/alpha/latest.json"
       ],
       "dialog": false,
-      "pubkey": ""
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJDMDUyMEE1M0UwRDcxQTYKUldTbWNRMCtwU0FGTFBIS3B2cEtTeHVEdHF0L3JGemlUdWd0dFNSRjZTUDNEWitGeVpaUUtDNEgK"
     }
   }
 }

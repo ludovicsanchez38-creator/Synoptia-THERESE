@@ -7,6 +7,7 @@ Supports Nextcloud, iCloud, Fastmail, cal.com, Radicale, etc.
 
 import asyncio
 import logging
+import os
 from datetime import UTC, date, datetime, timedelta
 from typing import Optional
 
@@ -79,10 +80,14 @@ class CalDAVProvider(CalendarProvider):
     def _get_client(self) -> caldav.DAVClient:
         """Get or create CalDAV client."""
         if not self._client:
+            # US-008 (RES5-a) : timeout explicite. Sans lui, un serveur CalDAV
+            # distant qui pend bloquait l'opération indéfiniment.
+            timeout = int(os.getenv("CALDAV_TIMEOUT", "30"))
             self._client = caldav.DAVClient(
                 url=self._url,
                 username=self._username,
                 password=self._password,
+                timeout=timeout,
             )
         return self._client
 

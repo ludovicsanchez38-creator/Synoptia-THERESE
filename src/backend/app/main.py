@@ -121,6 +121,26 @@ async def _load_user_profile():
         logger.warning(f"Failed to load user profile: {e}")
 
 
+def _is_fatal_migration_error(exc: Exception) -> bool:
+    """US-008 (RES5-b) : une migration auto qui échoue pour une raison fatale
+    (DB en lecture seule, permission refusée, verrou, disque plein) ne doit pas
+    être avalée silencieusement — l'app démarrerait avec un schéma incomplet.
+    Les erreurs bénignes (colonne déjà présente, table existante) restent
+    tolérées (warning)."""
+    msg = str(exc).lower()
+    fatal_markers = (
+        "readonly",
+        "read-only",
+        "permission",
+        "locked",
+        "disk i/o",
+        "disk full",
+        "no space",
+        "unable to open database",
+    )
+    return any(marker in msg for marker in fatal_markers)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -196,6 +216,10 @@ async def lifespan(app: FastAPI):
                     conn.commit()
                     logger.info("Migration auto : table 'email_follow_ups' créée")
     except Exception as e:
+        # US-008 (RES5-b) : ne pas avaler une erreur de migration fatale.
+        if _is_fatal_migration_error(e):
+            logger.error(f"Migration critique échouée, démarrage interrompu : {e}")
+            raise
         logger.warning(f"Migration auto ignorée : {e}")
 
     # En mode test (THERESE_SKIP_SERVICES=1), sauter les services externes
@@ -389,10 +413,15 @@ if settings.therese_env != "production":
 
 # Rate limiting middleware (SEC-015)
 if HAS_SLOWAPI:
-    limiter = Limiter(key_func=get_remote_address)
+    # US-006 : sans default_limits, SlowAPIMiddleware ne limitait RIEN (aucune
+    # route décorée) alors que le log annonçait « active ». Limite globale
+    # généreuse : ne gêne pas l'usage d'une app desktop locale, mais attrape une
+    # boucle runaway / un process local abusif (garde-fou de robustesse).
+    _RATE_LIMIT_DEFAULT = "600/minute"
+    limiter = Limiter(key_func=get_remote_address, default_limits=[_RATE_LIMIT_DEFAULT])
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
-    logger.info("SlowAPI rate limiting active")
+    logger.info("SlowAPI rate limiting actif (defaut %s par IP)", _RATE_LIMIT_DEFAULT)
 else:
     limiter = None
     logger.error(
@@ -416,10 +445,8 @@ else:
             t for t in _request_counts[client_ip]
             if now - t < _FALLBACK_WINDOW
         ]
-        # Purger les clés vides pour éviter une fuite mémoire
-        if not _request_counts[client_ip]:
-            del _request_counts[client_ip]
-            return await call_next(request)
+        # US-006 : ne PAS court-circuiter quand la fenêtre est vide, sinon la
+        # 1re requête de chaque fenêtre n'est jamais comptée → limiteur no-op.
         if len(_request_counts[client_ip]) >= _FALLBACK_RATE_LIMIT:
             return JSONResponse(
                 status_code=429,
@@ -726,12 +753,32 @@ async def shutdown_backend():
     return {"status": "shutting_down"}
 
 
+async def _check_database_available() -> bool:
+    """US-008 (RES2) : teste réellement la connexion DB.
+
+    `text()` est obligatoire sous SQLAlchemy 2.x : une chaîne SQL brute lève,
+    ce qui marquait à tort la DB indisponible en permanence.
+    """
+    from app.models.database import get_session_context
+    from sqlalchemy import text
+
+    try:
+        async with get_session_context() as session:
+            await session.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
 @app.get("/health")
 async def health():
     """Health check endpoint for monitoring."""
     from app.services.error_handler import get_service_status
 
     status = get_service_status()
+
+    # US-008 (RES2) : tester réellement la DB, pas lire un statut singleton stale.
+    status.set_available("database", await _check_database_available())
     services = status.get_all_statuses()
 
     # Check critical services
@@ -763,16 +810,8 @@ async def service_status():
 
     status.set_available("qdrant", qdrant_available)
 
-    # Check database
-    db_available = True
-    try:
-        from app.models.database import get_session_context
-
-        async with get_session_context() as session:
-            await session.execute("SELECT 1")
-    except Exception:
-        db_available = False
-
+    # Check database (US-008 RES2 : via le helper partagé, text() obligatoire)
+    db_available = await _check_database_available()
     status.set_available("database", db_available)
 
     return {
