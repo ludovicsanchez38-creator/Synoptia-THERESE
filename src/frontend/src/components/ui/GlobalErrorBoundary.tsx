@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { sanitizeErrorMessage } from '../../lib/sanitizeError';
 
 interface Props {
   children: ReactNode;
@@ -49,7 +50,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             </p>
             {this.state.error && (
               <p className="text-text-muted text-sm mb-6 font-mono bg-surface rounded-lg p-3 break-all">
-                {this.state.error.message}
+                {sanitizeErrorMessage(this.state.error.message)}
               </p>
             )}
             <button
