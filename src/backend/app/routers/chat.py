@@ -45,6 +45,11 @@ from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
 from app.services.slash_commands import execute_slash_command, parse_slash_command
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
+from app.services.tool_confirmations import (
+    pop_pending,
+    register_pending,
+    requires_confirmation,
+)
 from app.services.web_search import (
     BROWSER_TOOL,
     WEB_SEARCH_TOOL,
@@ -1132,6 +1137,34 @@ async def _execute_tools_and_continue(
     for tc in allowed_calls:
         logger.info(f"Executing tool: {tc.name} with args: {tc.arguments}")
 
+        # US-002 : les outils sensibles (envoi de mail) ne s'exécutent jamais
+        # automatiquement sur décision du LLM. On met l'action en attente et on
+        # demande validation à l'utilisateur ; l'exécution réelle a lieu via
+        # POST /api/chat/confirm-tool une fois l'action confirmée.
+        if requires_confirmation(tc.name):
+            confirmation_id = register_pending(tc.name, tc.arguments)
+            confirm_chunk = StreamChunk(
+                type="confirmation_required",
+                conversation_id=conversation_id,
+                tool_name=tc.name,
+                confirmation={
+                    "confirmation_id": confirmation_id,
+                    "tool_name": tc.name,
+                    "arguments": tc.arguments,
+                },
+            )
+            yield f"data: {json.dumps(confirm_chunk.model_dump())}\n\n"
+            tool_results.append(ToolResult(
+                tool_call_id=tc.id,
+                result=(
+                    "Action préparée et en attente de validation de l'utilisateur. "
+                    "NE PAS la considérer comme exécutée : l'utilisateur doit confirmer."
+                ),
+                is_error=False,
+            ))
+            exec_records.append((tc.name, "en attente de confirmation utilisateur", False))
+            continue
+
         # Execute based on tool type
         if tc.name == "web_search":
             # Built-in web search tool
@@ -1352,6 +1385,40 @@ async def _execute_tools_and_continue(
                 conversation_id=conversation_id,
             )
             yield f"data: {json.dumps(error_data.model_dump())}\n\n"
+
+
+# ============================================================
+# US-002 - Confirmation d'actions sensibles
+# ============================================================
+
+
+class ConfirmToolRequest(BaseModel):
+    """Validation (ou annulation) d'une action sensible mise en attente."""
+
+    confirmation_id: str
+    approved: bool
+
+
+@router.post("/confirm-tool")
+async def confirm_tool(
+    request: ConfirmToolRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Exécute (ou annule) une action sensible (ex. send_email) après validation
+    explicite de l'utilisateur. L'action a été mise en attente par la boucle
+    d'outils, qui ne l'exécute jamais automatiquement (US-002)."""
+    action = pop_pending(request.confirmation_id)
+    if action is None:
+        raise HTTPException(
+            status_code=404, detail="Action introuvable ou déjà traitée"
+        )
+
+    tool_name, arguments = action
+    if not request.approved:
+        return {"status": "cancelled", "tool_name": tool_name}
+
+    result = await execute_workspace_tool(tool_name, arguments, session)
+    return {"status": "executed", "tool_name": tool_name, "result": result}
 
 
 # ============================================================

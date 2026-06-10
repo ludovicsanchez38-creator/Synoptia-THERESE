@@ -57,7 +57,7 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file';
+  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'confirmation_required';
   content: string;
   conversation_id?: string;
   message_id?: string;
@@ -70,6 +70,11 @@ export interface StreamChunk {
     file_size: number;
     download_url: string;
     format: string;
+  };
+  confirmation?: {
+    confirmation_id: string;
+    tool_name: string;
+    arguments: Record<string, unknown>;
   };
   usage?: {
     input_tokens: number;
@@ -263,5 +268,22 @@ export async function getConversationMessages(
 export async function deleteConversation(id: string): Promise<void> {
   await request<{ deleted: boolean }>(`/api/chat/conversations/${id}`, {
     method: 'DELETE',
+  });
+}
+
+export interface ConfirmToolResponse {
+  status: 'executed' | 'cancelled';
+  tool_name: string;
+  result?: string;
+}
+
+// US-002 : valide (ou annule) une action sensible mise en attente (ex. send_email).
+export async function confirmTool(
+  confirmationId: string,
+  approved: boolean
+): Promise<ConfirmToolResponse> {
+  return request<ConfirmToolResponse>('/api/chat/confirm-tool', {
+    method: 'POST',
+    body: JSON.stringify({ confirmation_id: confirmationId, approved }),
   });
 }

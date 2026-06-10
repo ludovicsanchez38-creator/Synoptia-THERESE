@@ -50,13 +50,14 @@ class ChatResponse(BaseModel):
 class StreamChunk(BaseModel):
     """Streaming response chunk."""
 
-    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file"] = "text"
+    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "confirmation_required"] = "text"
     content: str = ""
     conversation_id: str | None = None
     message_id: str | None = None
     entities: dict | None = None
     tool_name: str | None = None  # For tool_result type
     skill_file: dict | None = None  # For skill_file type (auto-detected skill execution)
+    confirmation: dict | None = None  # US-002 : action sensible en attente de validation
     provider: str | None = None  # P0-IA-3 : provider LLM utilisé (event done)
 
 

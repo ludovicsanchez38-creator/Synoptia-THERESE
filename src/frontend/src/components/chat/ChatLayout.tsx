@@ -14,6 +14,7 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { CommandPalette } from './CommandPalette';
 import { ConversationMemoryChip } from './ConversationMemoryChip';
+import { ToolConfirmationCard } from './ToolConfirmationCard';
 import { ShortcutsModal } from './ShortcutsModal';
 import { ConversationSidebar } from '../sidebar/ConversationSidebar';
 import { DropZone } from '../files/DropZone';
@@ -250,6 +251,8 @@ export function ChatLayout() {
             </div>
             {!guidedPanelActive && (
               <>
+                {/* US-002 : actions sensibles (envoi d'email) à valider */}
+                <ToolConfirmationCard />
                 {/* L6 : pastille de glance « N contacts liés à cette conversation » */}
                 <ConversationMemoryChip />
                 <div className="border-t border-border">
