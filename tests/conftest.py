@@ -6,6 +6,7 @@ Pytest fixtures and configuration for all tests.
 
 import os
 import sys
+import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
@@ -26,6 +27,10 @@ if _backend_dir not in sys.path:
 # Set test environment before importing app
 os.environ["THERESE_ENV"] = "test"
 os.environ["THERESE_SKIP_SERVICES"] = "1"
+# Isolation des données : ne JAMAIS toucher la base réelle de l'utilisateur.
+# Les fixtures client/db_session font drop_all/create_all ; sans data dir dédié,
+# lancer la suite détruirait ~/.therese. setdefault respecte un override (CI/dev).
+os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-test-"))
 
 from app.main import app
 from app.models.database import get_session
