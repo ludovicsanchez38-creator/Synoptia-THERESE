@@ -31,6 +31,10 @@ os.environ["THERESE_SKIP_SERVICES"] = "1"
 # Les fixtures client/db_session font drop_all/create_all ; sans data dir dédié,
 # lancer la suite détruirait ~/.therese. setdefault respecte un override (CI/dev).
 os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-test-"))
+# US-014 : clé SQLCipher fixe pour la suite - déterministe et sans dépendre
+# du trousseau de la machine (Keychain absent en CI, prompts possibles en dev).
+# Le chemin chiffré reste ENTIÈREMENT exercé (engines + migration + backup).
+os.environ.setdefault("THERESE_DB_KEY", "ad" * 32)
 
 from app.main import app
 from app.models.database import get_session

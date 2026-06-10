@@ -157,10 +157,11 @@ async def lifespan(app: FastAPI):
 
     # Migration auto : ajouter les colonnes manquantes (desktop = pas d'alembic auto)
     try:
-        import sqlite3
+        from app.models.database import db_connect
         db_path = settings.db_path
         if db_path and FilePath(str(db_path)).exists():
-            with sqlite3.connect(str(db_path)) as conn:
+            # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
+            with db_connect(db_path) as conn:
                 cursor = conn.execute("PRAGMA table_info(invoices)")
                 columns = [row[1] for row in cursor.fetchall()]
                 if columns and "currency" not in columns:

@@ -56,7 +56,8 @@ def ensure_invoice_legacy_columns(
     target_columns = columns or tuple(INVOICE_LEGACY_COLUMN_DEFINITIONS.keys())
     added_columns: list[str] = []
 
-    with sqlite3.connect(str(db_path)) as conn:
+    # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
+    with db_connect(db_path) as conn:
         cursor = conn.execute("PRAGMA table_info(invoices)")
         existing_columns = {row[1] for row in cursor.fetchall()}
         if not existing_columns:
@@ -97,14 +98,14 @@ def ensure_alembic_stamp(db_path) -> None:
     Ne stamp JAMAIS une DB vide (sans tables métier) : elle doit être créée
     par les migrations ou par create_all d'abord.
     """
-    import sqlite3
     from contextlib import closing
     from pathlib import Path as _Path
 
     if not db_path or not _Path(str(db_path)).exists():
         return
     try:
-        with closing(sqlite3.connect(str(db_path))) as conn:
+        # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
+        with closing(db_connect(db_path)) as conn:
             has_tables = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='contacts'"
             ).fetchone()
@@ -130,6 +131,122 @@ def ensure_alembic_stamp(db_path) -> None:
         logger.warning(f"Estampillage Alembic échoué : {e}")
 
 
+# ============================================================
+# US-014 : chiffrement de la base au repos (SQLCipher)
+# ============================================================
+# therese.db est chiffrée avec SQLCipher (AES-256), clé dérivée de la clé
+# maîtresse du trousseau (HKDF, cf. encryption.get_db_key_hex). Une DB claire
+# existante est migrée au démarrage (sqlcipher_export + vérification).
+# Échappatoire : THERESE_DB_PLAINTEXT=1 (debug / trousseau indisponible).
+
+_db_cipher_active = False  # positionné par init_db, lu par les listeners
+
+
+def db_encryption_enabled() -> bool:
+    """Chiffrement au repos actif ? (US-014)"""
+    import os
+
+    return os.environ.get("THERESE_DB_PLAINTEXT") != "1"
+
+
+def db_is_encrypted(db_path) -> bool:
+    """Une DB SQLite claire commence par l'en-tête 'SQLite format 3'."""
+    from pathlib import Path as _Path
+
+    p = _Path(str(db_path))
+    if not p.exists() or p.stat().st_size == 0:
+        return False
+    with open(p, "rb") as f:
+        return f.read(16) != b"SQLite format 3\x00"
+
+
+def _db_key_pragma() -> str:
+    from app.services.encryption import get_db_key_hex
+
+    return f"PRAGMA key = \"x'{get_db_key_hex()}'\""
+
+
+def db_connect(db_path):
+    """Connexion directe à therese.db (remplace les sqlite3.connect épars).
+
+    Adaptatif : DB chiffrée -> sqlcipher3 + clé ; DB claire (échappatoire ou
+    pré-migration) -> sqlite3 standard. Tous les accès hors engine DOIVENT
+    passer par ici (data.py, agents.py, swarm.py, main.py, env.py).
+    """
+
+    if db_is_encrypted(db_path):
+        import sqlcipher3
+
+        conn = sqlcipher3.connect(str(db_path))
+        conn.execute(_db_key_pragma())
+        return conn
+    return sqlite3.connect(str(db_path))
+
+
+def ensure_db_encrypted(db_path) -> None:
+    """Migre une DB claire existante vers SQLCipher (idempotent).
+
+    Étapes : checkpoint WAL -> sqlcipher_export vers un fichier temporaire ->
+    vérification (mêmes tables + integrity_check) -> remplacement atomique.
+    La copie claire n'est PAS conservée (la garder annulerait le chiffrement
+    au repos) : la vérification précède toujours le remplacement.
+    """
+    import os
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    p = _Path(str(db_path))
+    if not p.exists() or p.stat().st_size == 0 or db_is_encrypted(p):
+        return
+
+    import sqlcipher3
+    from app.services.encryption import get_db_key_hex
+
+    key_hex = get_db_key_hex()
+    tmp = _Path(str(p) + ".encrypting")
+    tmp.unlink(missing_ok=True)
+
+    # Rapatrier le WAL avant export (sinon transactions récentes perdues)
+    with closing(sqlite3.connect(str(p))) as conn:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        expected_tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+
+    with closing(sqlcipher3.connect(str(p))) as conn:
+        conn.execute(
+            f"ATTACH DATABASE ? AS encrypted KEY \"x'{key_hex}'\"", (str(tmp),)
+        )
+        conn.execute("SELECT sqlcipher_export('encrypted')")
+        conn.execute("DETACH DATABASE encrypted")
+
+    # Vérifier le chiffré AVANT de remplacer la claire
+    with closing(sqlcipher3.connect(str(tmp))) as conn:
+        conn.execute(f"PRAGMA key = \"x'{key_hex}'\"")
+        got_tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+        integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
+    if got_tables != expected_tables or integrity != "ok":
+        tmp.unlink(missing_ok=True)
+        raise RuntimeError(
+            "Migration SQLCipher : vérification échouée "
+            f"(tables {len(got_tables)}/{len(expected_tables)}, integrity={integrity}). "
+            "La base claire est intacte."
+        )
+
+    os.replace(tmp, p)
+    for suffix in ("-wal", "-shm"):
+        _Path(str(p) + suffix).unlink(missing_ok=True)
+    logger.info("US-014 : base migrée vers SQLCipher (chiffrement au repos actif)")
+
+
 def get_database_url(async_mode: bool = True) -> str:
     """Get database URL for SQLite."""
     db_path = settings.db_path
@@ -147,17 +264,47 @@ async def init_db() -> None:
     # Ensure parent directory exists
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # US-014 : chiffrement au repos. Migrer une DB claire existante, puis
+    # brancher les deux engines sur sqlcipher3 (clé posée en PREMIER pragma
+    # de chaque connexion). Échec de clé/migration = fatal et explicite
+    # (démarrer en clair en silence trahirait la promesse de souveraineté ;
+    # échappatoire documentée : THERESE_DB_PLAINTEXT=1).
+    global _db_cipher_active
+    _db_cipher_active = False
+    engine_kwargs: dict = {}
+    if db_encryption_enabled():
+        try:
+            ensure_db_encrypted(settings.db_path)
+            import aiosqlite.core as _aiosqlite_core
+            import sqlcipher3
+
+            # aiosqlite importe sqlite3 en dur : on substitue le module DBAPI
+            # SQLCipher (même API) pour le moteur async.
+            _aiosqlite_core.sqlite3 = sqlcipher3.dbapi2
+            engine_kwargs["module"] = sqlcipher3.dbapi2
+            _db_cipher_active = True
+        except Exception:
+            logger.error(
+                "US-014 : chiffrement de la base indisponible. Démarrage REFUSÉ "
+                "pour ne pas écrire en clair en silence. Débloquer le trousseau "
+                "ou poser THERESE_DB_PLAINTEXT=1 (assumé, base en clair)."
+            )
+            raise
+
     # Create sync engine for table creation
     sync_engine = create_engine(
         get_database_url(async_mode=False),
         echo=settings.debug,
         connect_args={"check_same_thread": False},
+        **engine_kwargs,
     )
 
     # PERF-005 + Phase 3: SQLite PRAGMAs optimises
     @event.listens_for(sync_engine, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
+        if _db_cipher_active:
+            cursor.execute(_db_key_pragma())  # DOIT précéder tout autre accès
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA synchronous=NORMAL")
@@ -180,6 +327,8 @@ async def init_db() -> None:
     @event.listens_for(async_engine.sync_engine, "connect")
     def _set_async_sqlite_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
+        if _db_cipher_active:
+            cursor.execute(_db_key_pragma())  # DOIT précéder tout autre accès
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA synchronous=NORMAL")

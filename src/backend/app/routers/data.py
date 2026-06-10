@@ -325,7 +325,7 @@ async def delete_all_data(
     if not confirm:
         raise HTTPException(
             status_code=400,
-            detail="Ajoutez ?confirm=true pour confirmer la suppression de toutes vos donnees",
+            detail="Ajoute ?confirm=true pour confirmer la suppression de toutes tes données",
         )
 
     # Log avant suppression
@@ -384,8 +384,8 @@ async def delete_all_data(
 
     return {
         "deleted": True,
-        "message": "Toutes vos donnees ont ete supprimees conformement au RGPD Art. 17",
-        "note": "Les logs d'audit sont conserves pour des raisons legales",
+        "message": "Toutes tes données ont été supprimées conformément au RGPD Art. 17",
+        "note": "Les logs d'audit sont conservés pour des raisons légales",
     }
 
 
@@ -515,16 +515,18 @@ def _checkpoint_db() -> None:
     sont PAS dans l'archive si on copie seulement `therese.db` → perte de
     données. Le checkpoint TRUNCATE les rapatrie dans le fichier principal.
     """
-    import sqlite3
     from contextlib import closing
     from pathlib import Path
+
+    from app.models.database import db_connect
 
     db_path = settings.db_path
     if db_path and Path(str(db_path)).exists():
         try:
             # closing() ferme bien la connexion : le context manager natif de
             # sqlite3 ne gère que la transaction, pas la fermeture du handle.
-            with closing(sqlite3.connect(str(db_path))) as conn:
+            # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée.
+            with closing(db_connect(db_path)) as conn:
                 conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         except Exception as e:
             logger.warning("Checkpoint WAL échoué (backup/restore) : %s", e)
@@ -674,13 +676,13 @@ async def restore_backup(
     if not re.match(r'^[a-zA-Z0-9_\-\.]+$', backup_name):
         raise HTTPException(
             status_code=400,
-            detail="Nom de backup invalide. Seuls les caracteres alphanumeriques, tirets, underscores et points sont autorises.",
+            detail="Nom de backup invalide. Seuls les caractères alphanumériques, tirets, underscores et points sont autorisés.",
         )
 
     if not confirm:
         raise HTTPException(
             status_code=400,
-            detail="Ajoutez ?confirm=true pour confirmer la restauration",
+            detail="Ajoute ?confirm=true pour confirmer la restauration",
         )
 
     import tarfile
@@ -691,14 +693,14 @@ async def restore_backup(
     # Verify path is within backups directory
     backup_path = backup_dir / backup_name
     if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
-        raise HTTPException(status_code=403, detail="Chemin de backup non autorise")
+        raise HTTPException(status_code=403, detail="Chemin de backup non autorisé")
 
     archive = backup_dir / f"{backup_name}.tar.gz"
     legacy_db = backup_dir / f"{backup_name}.db"  # compat ascendante
     metadata_file = backup_dir / f"{backup_name}.json"
 
     if not archive.exists() and not legacy_db.exists():
-        raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouve")
+        raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouvé")
 
     # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
     # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
@@ -742,7 +744,7 @@ async def restore_backup(
         _rollback()
         raise HTTPException(
             status_code=500,
-            detail=f"Echec de la restauration: {e}. Donnees restaurees a l'etat precedent.",
+            detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.",
         )
 
     # Load metadata if exists
@@ -769,7 +771,7 @@ async def delete_backup(backup_name: str):
     if not re.match(r'^[a-zA-Z0-9_\-\.]+$', backup_name):
         raise HTTPException(
             status_code=400,
-            detail="Nom de backup invalide. Seuls les caracteres alphanumeriques, tirets, underscores et points sont autorises.",
+            detail="Nom de backup invalide. Seuls les caractères alphanumériques, tirets, underscores et points sont autorisés.",
         )
 
     backup_dir = _backups_dir()
@@ -777,7 +779,7 @@ async def delete_backup(backup_name: str):
     # Verify path is within backups directory
     backup_path = backup_dir / backup_name
     if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
-        raise HTTPException(status_code=403, detail="Chemin de backup non autorise")
+        raise HTTPException(status_code=403, detail="Chemin de backup non autorisé")
 
     # US-011 : archive .tar.gz (nouveau) ou .db legacy
     archive = backup_dir / f"{backup_name}.tar.gz"
@@ -785,7 +787,7 @@ async def delete_backup(backup_name: str):
     metadata_file = backup_dir / f"{backup_name}.json"
 
     if not archive.exists() and not legacy_db.exists():
-        raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouve")
+        raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouvé")
 
     for f in (archive, legacy_db, metadata_file):
         if f.exists():
@@ -930,9 +932,9 @@ async def get_backup_status():
     recommendation = None
 
     if age_days > 7:
-        recommendation = f"Votre derniere sauvegarde date de {age_days} jours. Pensez a en creer une nouvelle."
+        recommendation = f"Ta dernière sauvegarde date de {age_days} jours. Pense à en créer une nouvelle."
     elif age_days > 1:
-        recommendation = f"Derniere sauvegarde il y a {age_days} jours."
+        recommendation = f"Dernière sauvegarde il y a {age_days} jours."
 
     return {
         "has_backups": True,

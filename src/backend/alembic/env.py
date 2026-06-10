@@ -9,7 +9,7 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import pool
 from sqlmodel import SQLModel
 
 # Add app to path for imports
@@ -66,11 +66,9 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # US-014 : engine conscient du chiffrement (engine_from_config ne sait
+    # pas poser la clé SQLCipher)
+    connectable = _make_engine(poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
@@ -93,10 +91,29 @@ def run_migrations_online() -> None:
 from app.models.database import ensure_alembic_stamp  # noqa: E402
 
 
-def _bootstrap_if_new() -> None:
-    from sqlalchemy import create_engine, inspect
+def _make_engine(**kwargs):
+    """US-014 : engine adapté à l'état de la base (claire ou SQLCipher)."""
+    from app.models.database import _db_key_pragma, db_is_encrypted
+    from sqlalchemy import create_engine, event
 
-    engine = create_engine(f"sqlite:///{settings.db_path}")
+    if db_is_encrypted(settings.db_path):
+        import sqlcipher3
+
+        kwargs["module"] = sqlcipher3.dbapi2
+    engine = create_engine(f"sqlite:///{settings.db_path}", **kwargs)
+    if "module" in kwargs:
+        @event.listens_for(engine, "connect")
+        def _set_key(dbapi_conn, _record):
+            cursor = dbapi_conn.cursor()
+            cursor.execute(_db_key_pragma())
+            cursor.close()
+    return engine
+
+
+def _bootstrap_if_new() -> None:
+    from sqlalchemy import inspect
+
+    engine = _make_engine()
     try:
         if "contacts" not in inspect(engine).get_table_names():
             SQLModel.metadata.create_all(engine)
