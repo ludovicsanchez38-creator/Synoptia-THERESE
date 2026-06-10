@@ -451,33 +451,41 @@ class TestBUG009RustTasklistFallback:
 
 
 class TestScrollStreaming:
-    """Scroll automatique via div scrollable + scrollIntoView pendant le streaming."""
+    """US-010 : scroll géré par react-virtuoso (followOutput) - l'intention
+    historique (suivre le flux en bas, respecter la position de lecture)
+    est désormais portée par computeFollowOutput + Virtuoso."""
 
     def test_virtuoso_handles_scroll(self):
-        """MessageList doit utiliser overflow-y-auto et scrollIntoView pour le scroll automatique."""
+        """MessageList doit déléguer le scroll à Virtuoso (virtualisation US-010)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "overflow-y-auto" in content, (
-            "MessageList doit utiliser overflow-y-auto pour le conteneur scrollable"
+        assert "Virtuoso" in content, (
+            "MessageList doit utiliser react-virtuoso pour la liste de messages"
         )
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour le scroll automatique"
+        assert "followOutput" in content, (
+            "MessageList doit utiliser followOutput pour le scroll automatique"
         )
 
     def test_user_scroll_detection(self):
-        """MessageList doit utiliser un ref bottomRef comme ancre de scroll."""
+        """Le suivi du bas doit dépendre de la position utilisateur (atBottom)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef comme ancre de scroll en bas de la liste"
+        assert "atBottomThreshold" in content, (
+            "MessageList doit configurer atBottomThreshold pour détecter si "
+            "l'utilisateur est en bas (sinon on lui vole le scroll)"
         )
 
     def test_smooth_scroll_only_when_at_bottom(self):
-        """followOutput doit retourner 'smooth' quand l'utilisateur est en bas."""
-        content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
+        """followOutput doit retourner 'smooth' quand l'utilisateur est en bas
+        (hors streaming) et false quand il a remonté la conversation."""
+        follow_output = MESSAGE_LIST_TSX.parent / "followOutput.ts"
+        content = follow_output.read_text(encoding="utf-8")
         assert "isStreaming" in content, (
-            "MessageList doit avoir accès à isStreaming pour conditionner le scroll"
+            "computeFollowOutput doit conditionner le comportement au streaming"
         )
         assert "'smooth'" in content, (
-            "followOutput doit retourner 'smooth' pour un scroll fluide quand l'utilisateur est en bas"
+            "computeFollowOutput doit retourner 'smooth' quand l'utilisateur est en bas"
+        )
+        assert "return false" in content, (
+            "computeFollowOutput doit retourner false quand l'utilisateur a remonté"
         )
 
 
@@ -655,26 +663,24 @@ class TestBUG020LazyLoading:
 
 
 class TestBUG021StreamingScroll:
-    """Scroll géré nativement par scrollIntoView + bottomRef (plus besoin de rAF manuel)."""
+    """BUG-021 : pas de scroll manuel par requestAnimationFrame. US-010 :
+    le scroll est entièrement délégué à react-virtuoso (followOutput)."""
 
     def test_virtuoso_replaces_raf_scroll(self):
-        """MessageList doit utiliser scrollIntoView au lieu de requestAnimationFrame manuel."""
+        """MessageList ne doit PAS faire de scroll manuel (rAF ou scrollIntoView)."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour le scroll natif (remplace rAF)"
+        assert "requestAnimationFrame" not in content, (
+            "MessageList ne doit pas scroller via requestAnimationFrame manuel (BUG-021)"
         )
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef comme ancre pour le scroll streaming"
+        assert "Virtuoso" in content, (
+            "MessageList doit déléguer le scroll à react-virtuoso (US-010)"
         )
 
     def test_virtuoso_ref_present(self):
-        """MessageList doit avoir un ref bottomRef pour l'ancre de scroll."""
+        """La politique de scroll doit être centralisée dans computeFollowOutput."""
         content = MESSAGE_LIST_TSX.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit avoir un ref bottomRef pour l'ancre de scroll"
-        )
-        assert "useRef" in content, (
-            "MessageList doit utiliser useRef pour le ref bottomRef"
+        assert "computeFollowOutput" in content, (
+            "MessageList doit utiliser computeFollowOutput (politique de scroll testée)"
         )
 
 
@@ -2017,20 +2023,21 @@ class TestBUG037_ScrollJumpStreaming:
     MSG_LIST = Path("src/frontend/src/components/chat/MessageList.tsx")
 
     def test_virtuoso_follow_output_present(self):
-        """scrollIntoView avec behavior conditionnel doit gérer la transition fin-streaming sans saut."""
+        """followOutput conditionné au streaming doit gérer la transition
+        fin-streaming sans saut ('auto' pendant, 'smooth' après)."""
         content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "scrollIntoView" in content, (
-            "MessageList doit utiliser scrollIntoView pour éviter les sauts de scroll"
+        assert "followOutput" in content, (
+            "MessageList doit utiliser followOutput (Virtuoso) pour éviter les sauts"
         )
 
     def test_align_to_bottom_prevents_jump(self):
-        """bottomRef + scrollIntoView avec behavior auto/smooth doit éviter les sauts en fin de streaming."""
-        content = self.MSG_LIST.read_text(encoding="utf-8")
-        assert "bottomRef" in content, (
-            "MessageList doit utiliser bottomRef pour un scroll stable en fin de streaming"
-        )
-        assert "behavior" in content, (
-            "MessageList doit utiliser behavior auto/smooth dans scrollIntoView pour un scroll sans saut"
+        """La politique auto/smooth/false vit dans computeFollowOutput (testée
+        unitairement dans followOutput.test.ts)."""
+        follow_output = self.MSG_LIST.parent / "followOutput.ts"
+        content = follow_output.read_text(encoding="utf-8")
+        assert "'auto'" in content and "'smooth'" in content, (
+            "computeFollowOutput doit distinguer 'auto' (streaming) et 'smooth' "
+            "(hors streaming) pour une fin de streaming sans saut"
         )
 
 
