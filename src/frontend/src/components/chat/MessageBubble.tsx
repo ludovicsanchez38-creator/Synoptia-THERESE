@@ -1,6 +1,9 @@
 import { memo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+// US-010 : sans remark-gfm, react-markdown ne parse pas les tableaux GFM
+// (| a | b |), le barré (~~) ni les listes de tâches -> texte brut à l'écran
+import remarkGfm from 'remark-gfm';
 // hljs Light build : ~10x plus leger que Prism full (UltraJury perf)
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
@@ -93,6 +96,25 @@ function CodeBlock({
         {children}
       </SyntaxHighlighter>
     </div>
+  );
+}
+
+/**
+ * US-010 : comparateur de memo explicite.
+ *
+ * MessageList recrée la closure onSaveAsCommand à chaque rendu, ce qui
+ * cassait React.memo (comparaison shallow) : TOUTES les bulles assistant se
+ * re-rendaient à chaque chunk streamé. On compare le message par identité
+ * (le store est immutable : un message non touché garde sa référence) et
+ * onSaveAsCommand par présence seulement.
+ */
+export function arePropsEqual(
+  prev: MessageBubbleProps,
+  next: MessageBubbleProps
+): boolean {
+  return (
+    prev.message === next.message &&
+    !prev.onSaveAsCommand === !next.onSaveAsCommand
   );
 }
 
@@ -242,6 +264,7 @@ export const MessageBubble = memo(function MessageBubble({
             </div>
           ) : (
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               code({ className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || '');
@@ -442,4 +465,4 @@ export const MessageBubble = memo(function MessageBubble({
       </div>
     </motion.div>
   );
-});
+}, arePropsEqual);

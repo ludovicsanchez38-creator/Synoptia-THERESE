@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
+import { createDebouncedStorage } from '../lib/debouncedStorage';
 import { useNavigationStore } from './navigationStore';
 
 import type { DetectedEntities } from '../services/api';
@@ -345,6 +346,10 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: 'therese-chat',
+      // US-010 : écritures localStorage coalescées (au plus 1 par 400ms).
+      // Sans ça, chaque flush de phrase pendant le streaming sérialisait
+      // toutes les conversations vers localStorage.
+      storage: createJSONStorage(() => createDebouncedStorage(400)),
       partialize: (state) => ({
         // Exclure les conversations éphémères de la persistance
         conversations: state.conversations.filter((c) => !c.ephemeral),

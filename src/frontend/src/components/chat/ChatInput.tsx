@@ -373,7 +373,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     const flushToDisplay = () => {
       if (accumulatedContent !== displayedContent) {
         displayedContent = accumulatedContent;
-        updateMessage(assistantMessageId, displayedContent);
+        // US-010 : maintenir isStreaming pendant les flushs intermédiaires.
+        // updateMessage force isStreaming:false par défaut -> dès la première
+        // phrase, la bulle re-parsait tout le markdown à chaque chunk et le
+        // curseur de streaming disparaissait.
+        updateMessage(assistantMessageId, displayedContent, { isStreaming: true });
       }
       if (bufferTimer) { clearTimeout(bufferTimer); bufferTimer = null; }
     };
