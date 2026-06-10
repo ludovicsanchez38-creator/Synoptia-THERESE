@@ -8,6 +8,8 @@ Approche code-execution : LLM -> code Python -> exécution -> fichier.
 import ast
 import asyncio
 import logging
+import multiprocessing
+import queue
 import re
 from abc import abstractmethod
 from pathlib import Path
@@ -61,6 +63,10 @@ BLOCKED_PATTERNS: list[str] = [
     r"\bdelattr\s*\(",
     r"\bbreakpoint\s*\(",
     r"\binput\s*\(",
+    # US-001 : bloquer l'introspection par dunders, qui permet l'évasion
+    # classique du namespace restreint, ex. ().__class__.__bases__[0].__subclasses__().
+    # Le code de génération de document (openpyxl/docx/pptx) n'en a aucun usage.
+    r"__\w+__",
 ]
 
 # Imports autorisés par format
@@ -665,6 +671,30 @@ def _restricted_import(format_type: str):
     return safe_import
 
 
+def _run_generation_in_subprocess(
+    code: str,
+    output_path: str,
+    title: str,
+    format_type: str,
+    nb_slides: int,
+    result_queue: Any,
+) -> None:
+    """Cible du sous-process spawn (US-001).
+
+    Exécutée dans un interpréteur frais qui n'hérite pas de la mémoire du
+    backend (token de session, clé Fernet) : une évasion éventuelle du
+    namespace restreint ne donne donc pas accès aux secrets du process
+    principal. Le résultat (ok / error) est remonté via la queue.
+    """
+    try:
+        namespace = _build_namespace(output_path, title, format_type, nb_slides)
+        compiled = compile(code, "<llm_generated>", "exec")
+        exec(compiled, namespace)  # noqa: S102
+        result_queue.put(("ok", ""))
+    except Exception as e:  # noqa: BLE001 - tout est remonté au process parent
+        result_queue.put(("error", f"{type(e).__name__}: {e}"))
+
+
 async def execute_sandboxed(
     code: str,
     output_path: str,
@@ -673,7 +703,7 @@ async def execute_sandboxed(
     nb_slides: int = 10,
 ) -> None:
     """
-    Exécute du code Python dans un namespace restreint avec timeout.
+    Exécute du code Python dans un sous-process isolé avec timeout.
 
     Args:
         code: Code Python à exécuter
@@ -694,34 +724,37 @@ async def execute_sandboxed(
     if not is_valid_imports:
         raise CodeExecutionError(f"Validation imports échouée : {import_error}")
 
-    # 3. Construire le namespace
-    namespace = _build_namespace(output_path, title, format_type, nb_slides)
+    # 3. Exécuter dans un sous-process spawn isolé (US-001).
+    # spawn => interpréteur neuf sans la mémoire du backend ; combiné au blocage
+    # des dunders, une évasion ne peut pas atteindre les secrets du process.
+    ctx = multiprocessing.get_context("spawn")
+    result_queue: Any = ctx.Queue()
+    process = ctx.Process(
+        target=_run_generation_in_subprocess,
+        args=(code, output_path, title, format_type, nb_slides, result_queue),
+        daemon=True,
+    )
 
-    # 4. Exécuter dans un thread avec timeout
-    def _execute():
+    def _run_and_wait() -> tuple[str, str]:
+        process.start()
         try:
-            compiled = compile(code, "<llm_generated>", "exec")
-            exec(compiled, namespace)  # noqa: S102
-        except Exception as e:
-            raise CodeExecutionError(
-                f"Erreur d'exécution : {type(e).__name__}: {e}"
-            ) from e
+            status, detail = result_queue.get(timeout=EXECUTION_TIMEOUT)
+        except queue.Empty:
+            status, detail = "timeout", ""
+        finally:
+            if process.is_alive():
+                process.terminate()
+            process.join(5)
+        return status, detail
 
-    try:
-        await asyncio.wait_for(
-            asyncio.to_thread(_execute),
-            timeout=EXECUTION_TIMEOUT,
-        )
-    except asyncio.TimeoutError:
+    status, detail = await asyncio.to_thread(_run_and_wait)
+
+    if status == "timeout":
         raise CodeExecutionError(
             f"Timeout : l'exécution a dépassé {EXECUTION_TIMEOUT}s"
         )
-    except CodeExecutionError:
-        raise
-    except Exception as e:
-        raise CodeExecutionError(
-            f"Erreur inattendue : {type(e).__name__}: {e}"
-        ) from e
+    if status == "error":
+        raise CodeExecutionError(f"Erreur d'exécution : {detail}")
 
 
 class CodeGenSkill(BaseSkill):
