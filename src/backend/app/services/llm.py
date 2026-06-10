@@ -229,6 +229,29 @@ def detect_default_ollama_model(
 # LLM Service (Facade)
 # -----------------------------------------------------------------------------
 
+
+def _is_provider_outage(content: str | None) -> bool:
+    """US-008 (RES4) : distingue une panne provider — où basculer de fournisseur
+    aide (HTTP 429/5xx, réseau, quota, clé invalide) — d'une erreur applicative
+    (content_filter, prompt trop long, validation) qui ne doit PAS ouvrir le
+    circuit (sinon deux prompts trop longs couperaient le provider pour tous).
+    Conservateur : en cas de doute, on ne compte pas (évite les faux positifs)."""
+    if not content:
+        return False
+    c = content.lower()
+    # Erreurs HTTP "API error: {code}" : seuls 429 et 5xx sont des pannes.
+    match = re.search(r"api error[^\d]*(\d{3})", c)
+    if match:
+        code = int(match.group(1))
+        return code == 429 or code >= 500
+    outage_markers = (
+        "timeout", "timed out", "connection", "réseau", "network",
+        "unreachable", "refused", "trop de requêtes", "rate limit",
+        "crédit", "insuffisant", "clé api", "invalide ou expir",
+    )
+    return any(marker in c for marker in outage_markers)
+
+
 class LLMService:
     """Service for LLM interactions."""
 
@@ -686,7 +709,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 async for event in self._provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
                     if event.type == "text" and event.content:
                         had_content = True
-                    elif event.type == "error":
+                    elif event.type == "error" and _is_provider_outage(event.content):
                         had_error = True
                         error_detail = event.content or "stream error"
                     yield event
@@ -694,7 +717,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 async for event in self._provider.stream(system_prompt, messages, tools):
                     if event.type == "text" and event.content:
                         had_content = True
-                    elif event.type == "error":
+                    elif event.type == "error" and _is_provider_outage(event.content):
                         had_error = True
                         error_detail = event.content or "stream error"
                     yield event
@@ -739,10 +762,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             messages = context.to_openai_format()
             system_prompt = context.system_prompt
 
+        # US-008 (RES4) : la continuation après outils doit aussi compter les
+        # erreurs HTTP (429/5xx) au circuit breaker, comme le stream principal.
+        provider_name = self.config.provider.value
+        cb = get_circuit_breaker()
+        had_error = False
+        error_detail = ""
+
         async for event in self._provider.continue_with_tool_results(
             system_prompt, messages, assistant_content, tool_calls, tool_results, tools
         ):
+            if event.type == "error" and _is_provider_outage(event.content):
+                had_error = True
+                error_detail = event.content or "stream error"
             yield event
+
+        if had_error:
+            cb.record_failure(provider_name, error_detail[:200])
 
     async def generate_content(
         self,
