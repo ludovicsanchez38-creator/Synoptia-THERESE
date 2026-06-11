@@ -118,3 +118,25 @@
 - **Piège** : modifier/valider `src/backend/tests/` ne reflète pas la CI. Toujours viser `tests/` (racine) pour reproduire les échecs CI backend.
 - **Reproduire en local** : `cd <repo> && THERESE_ENV=test TRANSFORMERS_OFFLINE=1 uv run pytest tests/ --ignore=tests/e2e -q` (les tests `async_client` peuvent demander des services ; les tests unitaires purs tournent seuls).
 - **Aggravant** : le job est parfois tué au teardown (threads orphelins) AVANT d'imprimer la section FAILURES + le résumé → les échecs sont invisibles dans le log. Un hook `pytest_runtest_logreport` qui imprime `[TEST-FAILED] <nodeid>` sur stderr (flush) aide (présent dans `src/backend/tests/conftest.py`, à ajouter aussi côté racine si besoin).
+
+## Release : 403 « Resource not accessible by integration » à la création de release (11/06/2026)
+
+Depuis ~11/06/2026, tauri-action n'arrive plus à CRÉER la release avec le
+GITHUB_TOKEN (403 sur POST /releases), alors que `permissions: contents: write`
+est identique aux runs qui passaient la veille (durcissement côté GitHub).
+L'UPLOAD d'assets sur une release existante fonctionne, lui.
+
+**Contournement validé** : pré-créer la draft via `gh release create vX.Y.Z-alpha
+--draft --prerelease --notes-file ...` (auth locale) AVANT le build ou avant un
+`gh run rerun --failed` - tauri-action prend alors le chemin « draft trouvée ->
+upload ». À intégrer au début du skill /release-therese (créer la draft juste
+après le push du tag).
+
+## CI job rust : factices requis pour tauri-codegen (11/06/2026)
+
+`cargo clippy` sur src-tauri exige : (1) le sidecar externalBin
+(`binaries/backend-<triple>`), (2) le dossier `../dist` avec au moins un
+fichier (feature custom-protocol par défaut), (3) les globs de
+`tauri.linux.conf.json` - AUTO-chargé sur Linux - satisfaits
+(`binaries/backend-libs/` + `_internal/`), et (4) `libasound2-dev` dans
+les paquets apt (alsa-sys du plugin micro).
