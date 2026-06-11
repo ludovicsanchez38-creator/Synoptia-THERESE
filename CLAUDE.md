@@ -108,7 +108,9 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 > une réponse » coupé en bas. (4) `fix(prompts)` 917200f : overlay biblio sans
 > hauteur fixe (`max-h` seul + enfant `h-full`) → 1re carte coupée en haut →
 > `h-[85vh] overflow-hidden`. Backend 1173 verts, frontend 26 verts (composants).
-> Les 2 fixes UI restent à constater visuellement dans l'app réelle (build).
+> **RELEASÉ v0.24.2-alpha le 11/06** (build 3 OS OK, landing + latest.json à
+> jour, rapport `docs/releases/v0.24.2-alpha.md`). Vérif visuelle des 2 fixes UI
+> reportée (économie tokens) : Ludo la fera dans l'app installée.
 
 
 (Section maintenue par le workflow /release-therese et Zezette)
