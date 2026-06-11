@@ -16,7 +16,9 @@ export function selectRecentConversations(conversations: Conversation[], limit: 
 export function RecentConversations() {
   const conversations = useChatStore((s) => s.conversations);
   const loadConversation = useChatStore((s) => s.loadConversation);
-  const recent = selectRecentConversations(conversations, 5);
+  // 4 items (et non 5) : la home doit tenir sans scroll dans la fenêtre
+  // adaptative d'un écran de portable (~860 px de haut utile).
+  const recent = selectRecentConversations(conversations, 4);
 
   function open(id: string) {
     loadConversation(id);

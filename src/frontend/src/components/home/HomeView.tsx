@@ -24,8 +24,8 @@ export function HomeView() {
   }, []);
 
   return (
-    <div className="flex-1 min-w-0 overflow-y-auto px-7 py-6">
-      <div className="flex flex-col gap-[22px] max-w-[1100px] mx-auto">
+    <div className="flex-1 min-w-0 overflow-y-auto px-7 py-5">
+      <div className="flex flex-col gap-[18px] max-w-[1100px] mx-auto">
         <HomeHeader />
         {setup && <SetupChecklist status={setup} />}
         <QuickActions />

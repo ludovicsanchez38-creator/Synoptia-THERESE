@@ -219,6 +219,19 @@ pub fn run() {
         .plugin(tauri_plugin_mic_recorder::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        // Mémorise taille/position/maximisé entre les sessions
+        // (.window-state.json dans app_config_dir). VISIBLE exclu : le show()
+        // différé de 100 ms du setup reste seul maître de l'affichage.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(
+                    tauri_plugin_window_state::StateFlags::SIZE
+                        | tauri_plugin_window_state::StateFlags::POSITION
+                        | tauri_plugin_window_state::StateFlags::MAXIMIZED
+                        | tauri_plugin_window_state::StateFlags::FULLSCREEN,
+                )
+                .build(),
+        )
         .manage(SidecarState {
             child: Mutex::new(None),
         })
@@ -231,6 +244,27 @@ pub fn run() {
                 {
                     use tauri::TitleBarStyle;
                     let _ = window.set_title_bar_style(TitleBarStyle::Overlay);
+                }
+
+                // Premier lancement (aucun état window-state sauvegardé) :
+                // dimensionner la fenêtre sur le moniteur courant pour que le
+                // dashboard d'accueil s'affiche en entier, puis centrer.
+                // Les lancements suivants : le plugin window-state restaure la
+                // taille/position laissées par l'utilisateur.
+                let has_saved_state = app
+                    .path()
+                    .app_config_dir()
+                    .map(|d| d.join(".window-state.json").exists())
+                    .unwrap_or(false);
+                if !has_saved_state {
+                    if let Ok(Some(monitor)) = window.current_monitor() {
+                        let scale = monitor.scale_factor();
+                        let screen = monitor.size().to_logical::<f64>(scale);
+                        let width = (screen.width * 0.86).clamp(900.0, 1480.0).min(screen.width);
+                        let height = (screen.height * 0.88).clamp(660.0, 1040.0).min(screen.height);
+                        let _ = window.set_size(tauri::LogicalSize::new(width, height));
+                        let _ = window.center();
+                    }
                 }
 
                 // Afficher la fenêtre rapidement.

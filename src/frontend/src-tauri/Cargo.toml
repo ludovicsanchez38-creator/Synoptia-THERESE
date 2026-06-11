@@ -27,6 +27,7 @@ tauri-plugin-mic-recorder = "2.0.0"
 dirs = "5"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-window-state = "2"
 
 [features]
 default = ["custom-protocol"]
