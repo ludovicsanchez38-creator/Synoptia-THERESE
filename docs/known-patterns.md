@@ -140,3 +140,20 @@ fichier (feature custom-protocol par défaut), (3) les globs de
 `tauri.linux.conf.json` - AUTO-chargé sur Linux - satisfaits
 (`binaries/backend-libs/` + `_internal/`), et (4) `libasound2-dev` dans
 les paquets apt (alsa-sys du plugin micro).
+
+## Updater : relaunch auto post-update KO, fallback manuel (v0.24, 11/06/2026)
+Le cycle updater N→N+1 fonctionne (bandeau → téléchargement signé → install)
+mais le redémarrage automatique ne relance pas l'app : bandeau « Redémarre
+THÉRÈSE manuellement pour appliquer la mise à jour ». Cause probable :
+la séquence d'arrêt (shutdown graceful sidecar 5 s + kills dans RunEvent::Exit)
+interfère avec le relaunch du plugin process. L'installation est déjà faite à
+ce stade : un quit/relance manuel suffit. À corriger ou assumer (le bandeau
+fallback est honnête).
+
+## pytest : os._exit du conftest avale le résumé final en sortie redirigée (11/06/2026)
+Quand la sortie pytest part dans un pipe/fichier, le hook de sortie forcée
+(`pytest_sessionfinish` → `os._exit`, anti-hang threads orphelins) coupe le
+process AVANT l'écriture du résumé « N passed/failed ». NE PAS conclure au
+vert sur l'absence de FAILED dans le tail : vérifier l'EXIT CODE et compter
+les F des lignes de progression (`grep -oE "^[.sFEx]+ +\[" | fold -w1`).
+A failli masquer 3 FAILED à la release 0.24.
