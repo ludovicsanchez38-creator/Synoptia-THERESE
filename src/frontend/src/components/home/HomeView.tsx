@@ -37,7 +37,7 @@ export function HomeView() {
           <p className="text-sm text-text-muted">Aperçu du jour indisponible pour le moment.</p>
         ) : (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin text-accent" /> Chargement de votre journée…
+            <Loader2 className="w-5 h-5 animate-spin text-accent" /> Chargement de ta journée…
           </div>
         )}
       </div>

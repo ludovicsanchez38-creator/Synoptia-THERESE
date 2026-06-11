@@ -19,13 +19,13 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
     },
     {
       done: status.has_calendar,
-      label: 'Connecter votre agenda',
+      label: 'Connecter ton agenda',
       icon: Calendar,
       action: () => useNavigationStore.getState().setView('calendar'),
     },
     {
       done: status.has_email,
-      label: 'Connecter votre messagerie',
+      label: 'Connecter ta messagerie',
       icon: Mail,
       action: () => useNavigationStore.getState().setView('email'),
     },

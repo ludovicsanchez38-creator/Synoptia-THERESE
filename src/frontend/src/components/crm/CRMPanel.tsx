@@ -636,7 +636,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
           <div className="text-center">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>{filter === 'all' ? 'Aucune activité enregistrée' : `Aucune activité de type "${ACTIVITY_FILTER_CHIPS.find(c => c.id === filter)?.label}"`}</p>
-            <p className="text-xs mt-1">Cliquez sur un contact dans le Pipeline pour ajouter une activité</p>
+            <p className="text-xs mt-1">Clique sur un contact dans le Pipeline pour ajouter une activité</p>
           </div>
         </div>
       )}

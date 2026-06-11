@@ -135,7 +135,7 @@ class AgentRuntime:
         if not llm_service:
             yield AgentEvent(
                 type="error",
-                content="Aucun service LLM configuré. Vérifiez votre clé API dans les paramètres.",
+                content="Aucun service LLM configuré. Vérifie ta clé API dans les paramètres.",
             )
             return
 

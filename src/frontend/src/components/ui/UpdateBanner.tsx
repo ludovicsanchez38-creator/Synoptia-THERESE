@@ -137,7 +137,7 @@ export function UpdateBanner() {
       // Fallback : demander un redemarrage manuel
       setState({
         phase: 'error',
-        message: 'Veuillez redémarrer THÉRÈSE manuellement pour appliquer la mise à jour.',
+        message: 'Redémarre THÉRÈSE manuellement pour appliquer la mise à jour.',
       });
     }
   }, []);

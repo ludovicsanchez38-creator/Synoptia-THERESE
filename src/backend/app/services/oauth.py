@@ -160,7 +160,7 @@ class OAuthPKCEService:
             logger.warning("Too many pending OAuth flows, rejecting new request")
             raise HTTPException(
                 status_code=429,
-                detail="Trop de flux OAuth en attente. Veuillez patienter."
+                detail="Trop de flux OAuth en attente. Patiente quelques secondes."
             )
 
         # Generate PKCE parameters

@@ -1383,7 +1383,7 @@ async def export_ics_file(
     if calendar_id:
         cal = await session.get(Calendar, calendar_id)
         if not cal:
-            raise HTTPException(status_code=404, detail="Calendrier non trouve")
+            raise HTTPException(status_code=404, detail="Calendrier non trouvé")
         query = query.where(CalendarEvent.calendar_id == calendar_id)
 
     result = await session.execute(query)

@@ -1143,7 +1143,7 @@ async def initiate_sheets_oauth(
     return {
         "auth_url": result["auth_url"],
         "state": result["state"],
-        "message": "Ouvrez cette URL dans votre navigateur pour autoriser l'accès à Google Sheets",
+        "message": "Ouvre cette URL dans ton navigateur pour autoriser l'accès à Google Sheets",
     }
 
 
@@ -1215,7 +1215,7 @@ async def sync_crm(
     if not spreadsheet_pref or not spreadsheet_pref.value:
         raise HTTPException(
             status_code=400,
-            detail="Spreadsheet ID non configuré. Utilisez POST /api/crm/sync/config d'abord."
+            detail="Spreadsheet ID non configuré. Utilise POST /api/crm/sync/config d'abord."
         )
 
     spreadsheet_id = spreadsheet_pref.value
@@ -1246,7 +1246,7 @@ async def sync_crm(
     if not access_token and not api_key:
         raise HTTPException(
             status_code=401,
-            detail="Aucune authentification disponible. Connectez Google Sheets (OAuth) ou configurez une clé API Gemini."
+            detail="Aucune authentification disponible. Connecte Google Sheets (OAuth) ou configure une clé API Gemini."
         )
 
     # Create sheets service

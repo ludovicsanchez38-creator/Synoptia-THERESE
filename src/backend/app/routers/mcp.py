@@ -466,7 +466,7 @@ PRESET_SERVERS = [
         "category": "communication",
         "url": "https://business.whatsapp.com",
         "risk_level": "medium",
-        "risk_warning": "Peut envoyer des messages WhatsApp en votre nom",
+        "risk_warning": "Peut envoyer des messages WhatsApp en ton nom",
         "command": "npx",
         "args": ["-y", "whatsapp-business-mcp-server"],
         "env_required": ["WHATSAPP_API_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_BUSINESS_ACCOUNT_ID"],

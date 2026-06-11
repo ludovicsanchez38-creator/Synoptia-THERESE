@@ -117,13 +117,13 @@ def validate_mcp_command(command: str, args: list[str] | None = None) -> None:
     cmd_name_normalized = _normalize_command_name(cmd_name)
 
     if cmd_name_normalized in BLOCKED_COMMANDS:
-        raise ValueError(f"Commande MCP bloquee : '{cmd_name}' est interdite pour des raisons de securite")
+        raise ValueError(f"Commande MCP bloquée : '{cmd_name}' est interdite pour des raisons de sécurité")
 
     if cmd_name_normalized not in ALLOWED_MCP_COMMANDS:
         logger.warning(f"Commande MCP non whitelistee : '{cmd_name}'. Autorisees : {ALLOWED_MCP_COMMANDS}")
         raise ValueError(
-            f"Commande MCP non autorisee : '{cmd_name}'. "
-            f"Commandes autorisees : {', '.join(sorted(ALLOWED_MCP_COMMANDS))}"
+            f"Commande MCP non autorisée : '{cmd_name}'. "
+            f"Commandes autorisées : {', '.join(sorted(ALLOWED_MCP_COMMANDS))}"
         )
 
     # Valider les arguments contre les operateurs shell (SEC-001)

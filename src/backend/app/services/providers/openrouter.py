@@ -163,7 +163,7 @@ class OpenRouterProvider(BaseProvider):
                                     yield StreamEvent(
                                         type="error",
                                         content="Le modèle a filtré la réponse (content_filter). "
-                                        "Reformulez votre message ou essayez un autre modèle.",
+                                        "Reformule ton message ou essaie un autre modèle.",
                                     )
 
                         except json.JSONDecodeError:
@@ -194,23 +194,23 @@ class OpenRouterProvider(BaseProvider):
             if status == 401:
                 yield StreamEvent(type="error", content="Clé API OpenRouter invalide ou expirée.")
             elif status == 402:
-                yield StreamEvent(type="error", content="Crédit OpenRouter insuffisant. Rechargez votre compte sur openrouter.ai.")
+                yield StreamEvent(type="error", content="Crédit OpenRouter insuffisant. Recharge ton compte sur openrouter.ai.")
             elif status == 403:
                 # 403 = pas de crédits, compte suspendu, ou clé sans permission
                 if api_error_msg:
                     yield StreamEvent(
                         type="error",
                         content=f"OpenRouter a refusé la requête (403) : {api_error_msg}. "
-                        "Vérifiez vos crédits sur openrouter.ai/settings/billing ou choisissez un modèle gratuit (:free).",
+                        "Vérifie tes crédits sur openrouter.ai/settings/billing ou choisis un modèle gratuit (:free).",
                     )
                 else:
                     yield StreamEvent(
                         type="error",
                         content="OpenRouter : accès refusé (403). Crédits insuffisants ou clé sans permission. "
-                        "Rechargez votre compte sur openrouter.ai/settings/billing ou choisissez un modèle gratuit (:free).",
+                        "Recharge ton compte sur openrouter.ai/settings/billing ou choisis un modèle gratuit (:free).",
                     )
             elif status == 429:
-                yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patientez quelques secondes.")
+                yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patiente quelques secondes.")
             else:
                 if api_error_msg:
                     yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status}) : {api_error_msg}")

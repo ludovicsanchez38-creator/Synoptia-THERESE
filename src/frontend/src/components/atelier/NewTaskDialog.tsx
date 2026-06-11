@@ -78,7 +78,7 @@ export function NewTaskDialog() {
         <div className="px-5 py-4">
           {!openclawConnected && (
             <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-              OpenClaw n&apos;est pas connecté. Vérifiez que le gateway tourne.
+              OpenClaw n&apos;est pas connecté. Vérifie que le gateway tourne.
             </div>
           )}
 

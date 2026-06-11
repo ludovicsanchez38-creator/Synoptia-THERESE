@@ -357,7 +357,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     if (requirementsCheck && !requirementsCheck.all_satisfied) {
       const cmdCheck = requirementsCheck.commands[preset.command];
       if (cmdCheck && !cmdCheck.available) {
-        onError(`Impossible d'installer ${preset.name} : la commande '${preset.command}' n'est pas disponible. ${requirementsCheck.help_message || 'Installez Node.js pour continuer.'}`);
+        onError(`Impossible d'installer ${preset.name} : la commande '${preset.command}' n'est pas disponible. ${requirementsCheck.help_message || 'Installe Node.js pour continuer.'}`);
         return;
       }
     }
@@ -391,7 +391,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
       // Verifier si le serveur a demarre correctement
       if (installed.status === 'error') {
-        onError(installed.name + ' installé mais erreur au démarrage : ' + (installed.error || 'Erreur inconnue. Vérifiez que Node.js est installé.'));
+        onError(installed.name + ' installé mais erreur au démarrage : ' + (installed.error || 'Erreur inconnue. Vérifie que Node.js est installé.'));
       } else if (installed.status !== 'running') {
         // Auto-start seulement si pas deja running (le backend demarre deja)
         try {
@@ -701,7 +701,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           <Server className="w-8 h-8 text-text-muted mx-auto mb-3" />
           <p className="text-text-muted">Aucun serveur MCP configuré</p>
           <p className="text-xs text-text-muted mt-1">
-            Cliquez sur "Presets" pour installer des serveurs prédéfinis
+            Clique sur "Presets" pour installer des serveurs prédéfinis
           </p>
         </div>
       ) : (

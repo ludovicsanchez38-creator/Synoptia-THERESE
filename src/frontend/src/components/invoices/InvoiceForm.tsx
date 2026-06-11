@@ -192,12 +192,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     e.preventDefault();
 
     if (!contactId) {
-      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez sélectionner un contact' });
+      addNotification({ type: 'warning', title: 'Champ requis', message: 'Sélectionne un contact' });
       return;
     }
 
     if (lines.length === 0 || lines.every((line) => !line.description)) {
-      addNotification({ type: 'warning', title: 'Champ requis', message: 'Veuillez ajouter au moins une ligne de facturation' });
+      addNotification({ type: 'warning', title: 'Champ requis', message: 'Ajoute au moins une ligne de facturation' });
       return;
     }
 
@@ -212,12 +212,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     });
 
     if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
-      alert('Veuillez saisir des nombres valides pour les quantités et montants');
+      alert('Saisis des nombres valides pour les quantités et montants');
       return;
     }
 
     if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
-      alert('Veuillez saisir une quantité supérieure ou égale à 1 et un prix positif ou nul');
+      alert('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul');
       return;
     }
 
