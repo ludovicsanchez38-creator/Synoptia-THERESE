@@ -14,7 +14,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from app.models.database import get_session
-from app.models.entities import EmailAccount, EmailMessage
+from app.models.entities import Contact, EmailAccount, EmailMessage
 from app.models.schemas_email import (
     ClassifyEmailRequest,
     EmailAccountResponse,
@@ -82,13 +82,14 @@ def get_gmail_oauth_config(
     )
 
 
-async def get_crm_contact_by_email(session: AsyncSession, email: str | None):
+async def get_crm_contact_by_email(
+    session: AsyncSession, email: str | None
+) -> Contact | None:
     """Retrouve le contact CRM correspondant à un email d'expéditeur (insensible à la casse).
 
     La table Contact est la source de vérité (score, téléphone, notes) - le
     payload Qdrant des contacts ne contient que name/company/email.
     """
-    from app.models.entities import Contact
     from sqlalchemy import func
 
     if not email:

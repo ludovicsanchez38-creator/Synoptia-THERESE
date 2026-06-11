@@ -254,7 +254,7 @@ class GeminiProvider(BaseProvider):
 
     @staticmethod
     def _append_tool_turn(
-        contents: list[dict],
+        contents: list[dict[str, Any]],
         assistant_content: str,
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],

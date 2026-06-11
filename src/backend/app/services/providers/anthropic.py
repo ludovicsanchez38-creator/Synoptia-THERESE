@@ -180,7 +180,7 @@ class AnthropicProvider(BaseProvider):
 
     @staticmethod
     def _append_tool_turn(
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         assistant_content: str,
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
