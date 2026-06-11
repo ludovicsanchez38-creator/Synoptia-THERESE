@@ -209,6 +209,10 @@ jobs:
         run: |
           mkdir -p binaries && touch binaries/backend-x86_64-unknown-linux-gnu && chmod +x binaries/backend-x86_64-unknown-linux-gnu
           mkdir -p ../dist && touch ../dist/index.html
+          # tauri.linux.conf.json est auto-chargé sur Linux : ses globs de
+          # resources (backend-libs) doivent matcher au moins un fichier
+          mkdir -p binaries/backend-libs/_internal
+          touch binaries/backend-libs/backend binaries/backend-libs/_internal/factice
 
       - name: Clippy - BLOQUANT (zéro warning)
         working-directory: src/frontend/src-tauri
