@@ -95,6 +95,20 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 > **v0.24.1 RELEASÉE le 11/06/2026** (3 fixes lcjp + fix mypy 32f8dae).
 > lcjp répondu sur #bugs. Reste : son retour réel (validation multi-tours
 > Mistral) et le résultat du test updater 0.24.0 → 0.24.1 mené par Ludo.
+>
+> **4 bugs Ludo corrigés sur main (11/06 fin de journée, PAS encore releasé)** :
+> (1) `fix(images)` 7e0bfd0 : `image_generator._get_api_key_from_db` lisait la
+> clé via `create_engine("sqlite://")` standard, KO sur base chiffrée SQLCipher
+> (US-014) → « clé non configurée » alors que le test de clé passait. Passe par
+> `db_connect`. Touche GPT/Gemini/Fal. (2) `fix(gemini)` e8525a3 : les noms
+> d'outils MCP partaient bruts dans `functionDeclarations[].name` → 400 « Invalid
+> function name » sur toute la requête → chat Gemini muet. Sanitisation conforme
+> + table nom-sanitisé→réel pour le retour + re-sanitisation du tour rejoué.
+> (3) `fix(email)` 83564ad : barre d'actions du mail sans `shrink-0` → « Générer
+> une réponse » coupé en bas. (4) `fix(prompts)` 917200f : overlay biblio sans
+> hauteur fixe (`max-h` seul + enfant `h-full`) → 1re carte coupée en haut →
+> `h-[85vh] overflow-hidden`. Backend 1173 verts, frontend 26 verts (composants).
+> Les 2 fixes UI restent à constater visuellement dans l'app réelle (build).
 
 
 (Section maintenue par le workflow /release-therese et Zezette)
