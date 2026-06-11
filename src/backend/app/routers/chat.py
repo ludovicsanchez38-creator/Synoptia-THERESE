@@ -369,6 +369,15 @@ async def _get_existing_entity_names(session: AsyncSession) -> tuple[list[str], 
     project_result = await session.execute(select(Project.name).limit(2000))
     project_names = [name for (name,) in project_result.all() if name]
 
+    # Pas de cap silencieux : au-delà, l'anti-doublons d'extraction devient
+    # partiel (doublons possibles), l'utilisateur doit pouvoir le savoir.
+    if len(contact_names) >= 2000 or len(project_names) >= 2000:
+        logger.warning(
+            "Anti-doublons d'extraction borné à 2000 noms (contacts=%d, projets=%d) "
+            "- des doublons peuvent passer au-delà",
+            len(contact_names), len(project_names),
+        )
+
     return contact_names, project_names
 
 

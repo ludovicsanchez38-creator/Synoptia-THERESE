@@ -494,7 +494,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
             return BoardSynthesis(
                 consensus_points=["Analyse en cours..."],
                 divergence_points=[],
-                recommendation="Veuillez reformuler votre question pour obtenir une meilleure synthèse.",
+                recommendation="Reformule ta question pour obtenir une meilleure synthèse.",
                 confidence="low",
                 next_steps=["Reformuler la question", "Consulter le board à nouveau"],
             )

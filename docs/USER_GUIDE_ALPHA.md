@@ -415,6 +415,12 @@ Aucune popup bloquante : tu choisis le moment. Si le redémarrage automatique é
 
 ### Application desktop
 
+- **Base chiffrée depuis la 0.23 - ne PAS revenir en arrière** : au premier lancement
+  d'une version >= 0.23, ta base de données est chiffrée (SQLCipher). Une version
+  antérieure de THÉRÈSE ne peut plus la lire (erreur « file is not a database ») :
+  ne réinstalle pas une version plus ancienne après ce premier lancement. Tes
+  backups (Paramètres > Données) contiennent tout ce qu'il faut pour restaurer,
+  y compris la clé de chiffrement - protège ces fichiers comme la base elle-même.
 - **Pas de code signing macOS** : au premier lancement du `.app`, macOS affiche un avertissement Gatekeeper ("application non vérifiée"). Pour l'ouvrir : clic droit -> Ouvrir, puis confirmer.
 - **Pas de notifications push** : les notifications ne sont pas encore implémentées.
 - **La compilation nécessite Xcode CLI tools (macOS)** : installe-les avec `xcode-select --install` avant de compiler. Sur Windows, il faut Visual Studio Build Tools.

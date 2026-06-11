@@ -33,7 +33,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
     },
     {
         "id": "writer",
-        "name": "Redacteur",
+        "name": "Rédacteur",
         "icon": "\u270d\ufe0f",
         "description": "Redige des textes professionnels adaptes a ton activite",
         "color": "magenta",
@@ -148,7 +148,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
     },
     {
         "id": "creative",
-        "name": "Creatif",
+        "name": "Créatif",
         "icon": "\U0001f3a8",
         "description": "Genere des idees, du contenu creatif et des concepts visuels",
         "color": "amber",

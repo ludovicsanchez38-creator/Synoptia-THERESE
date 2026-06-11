@@ -32,8 +32,8 @@ La base SQLite (`~/.therese/therese.db`) est chiffrée avec **SQLCipher** (AES-2
 
 Conséquences à connaître :
 - une copie du fichier `therese.db` (vol, sauvegarde cloud, autre machine) est **illisible sans la clé** ;
-- restaurer un backup THÉRÈSE sur une autre machine nécessite de transférer aussi la clé (`~/.therese/.encryption_key`) ;
-- perdre la clé maîtresse = perdre les clés API ET la base ;
+- les backups intégrés (Paramètres > Données) embarquent la clé (`.encryption_key`) : l'archive est **autosuffisante** pour une restauration sur une autre machine, donc à protéger comme la base elle-même (elle contient aussi Qdrant et les images en clair) ;
+- perdre la clé maîtresse ET ses backups = perdre les clés API et la base ;
 - échappatoire assumée pour le débogage : `THERESE_DB_PLAINTEXT=1` (base en clair, à tes risques).
 
 ### Authentification

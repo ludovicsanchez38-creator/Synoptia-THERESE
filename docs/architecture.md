@@ -335,7 +335,7 @@ src/backend/
 ├── app/
 │   ├── main.py                 # FastAPI app, lifespan
 │   ├── config.py               # Settings (pydantic-settings)
-│   ├── routers/                # 32 routers (un par domaine fonctionnel)
+│   ├── routers/                # 31 routers (un par domaine fonctionnel)
 │   │   ├── chat.py             # /api/chat/* (streaming SSE, tools)
 │   │   ├── memory.py           # /api/memory/* (contacts, projets, recherche)
 │   │   ├── files.py            # /api/files/* (indexation fichiers locaux)

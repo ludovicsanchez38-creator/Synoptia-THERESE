@@ -92,16 +92,31 @@ from app.models.database import ensure_alembic_stamp  # noqa: E402
 
 
 def _make_engine(**kwargs):
-    """US-014 : engine adapté à l'état de la base (claire ou SQLCipher)."""
-    from app.models.database import _db_key_pragma, db_is_encrypted
+    """US-014 : engine adapté à l'état de la base (claire ou SQLCipher).
+
+    Revue adversariale : une DB NEUVE naît chiffrée si le chiffrement est
+    actif (avant, make db-migrate sur dossier vierge créait un therese.db en
+    CLAIR, contredisant la promesse « jamais en clair en silence »).
+    """
+    from pathlib import Path as _Path
+
+    from app.models.database import (
+        _db_key_pragma,
+        db_encryption_enabled,
+        db_is_encrypted,
+    )
     from sqlalchemy import create_engine, event
 
-    if db_is_encrypted(settings.db_path):
+    db_exists = _Path(str(settings.db_path)).exists()
+    use_cipher = db_is_encrypted(settings.db_path) or (
+        not db_exists and db_encryption_enabled()
+    )
+    if use_cipher:
         import sqlcipher3
 
         kwargs["module"] = sqlcipher3.dbapi2
     engine = create_engine(f"sqlite:///{settings.db_path}", **kwargs)
-    if "module" in kwargs:
+    if use_cipher:
         @event.listens_for(engine, "connect")
         def _set_key(dbapi_conn, _record):
             cursor = dbapi_conn.cursor()
@@ -121,8 +136,16 @@ def _bootstrap_if_new() -> None:
         engine.dispose()
 
 
-_bootstrap_if_new()
-ensure_alembic_stamp(settings.db_path)
+# Pas d'effet de bord en mode offline (génération SQL) : ni création de
+# fichier DB, ni estampille.
+if not context.is_offline_mode():
+    _bootstrap_if_new()
+    # Revue adversariale US-015 : les migrations ad-hoc AVANT l'estampille,
+    # sinon une DB legacy serait marquée head sans le schéma de head.
+    from app.models.database import apply_adhoc_migrations  # noqa: E402
+
+    apply_adhoc_migrations(settings.db_path)
+    ensure_alembic_stamp(settings.db_path)
 
 if context.is_offline_mode():
     run_migrations_offline()

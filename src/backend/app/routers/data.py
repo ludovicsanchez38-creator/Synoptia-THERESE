@@ -534,7 +534,14 @@ def _checkpoint_db() -> None:
 
 def _create_archive(archive_path) -> list[str]:
     """Crée une archive .tar.gz complète : DB (checkpointée) + Qdrant + images
-    + mcp_servers.json. Retourne la liste des éléments inclus."""
+    + mcp_servers.json + clé de chiffrement. Retourne la liste des éléments inclus.
+
+    Revue adversariale US-014 : sans .encryption_key, le backup n'était PLUS
+    restaurable après perte de la machine (DB chiffrée, clé dans le Keychain
+    mort) - la raison d'être du backup. L'archive contient déjà Qdrant et les
+    images EN CLAIR : inclure la clé n'abaisse pas la posture, mais le fichier
+    de backup doit être protégé comme la base elle-même (documenté SECURITY.md).
+    """
     import tarfile
     from pathlib import Path
 
@@ -545,6 +552,8 @@ def _create_archive(archive_path) -> list[str]:
         (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
         (data_dir / "images", "images"),
         (data_dir / "mcp_servers.json", "mcp_servers.json"),
+        (data_dir / ".encryption_key", ".encryption_key"),
+        (data_dir / ".encryption_salt", ".encryption_salt"),
     ]
     included: list[str] = []
     with tarfile.open(archive_path, "w:gz") as tar:
@@ -553,6 +562,58 @@ def _create_archive(archive_path) -> list[str]:
                 tar.add(str(src), arcname=arcname)
                 included.append(arcname)
     return included
+
+
+def _verify_restored_db() -> None:
+    """Revue adversariale US-014 : la DB restaurée doit être LISIBLE avant de
+    déclarer le succès - sinon restore répondait success puis l'app était
+    brickée au redémarrage (clé d'une autre machine). Clés candidates : celle
+    dérivée du .encryption_key restauré (restauration cross-machine), puis la
+    clé locale courante. Une DB claire (backup pré-US-014) est acceptée : elle
+    sera re-chiffrée au prochain démarrage."""
+    from contextlib import closing
+    from pathlib import Path
+
+    from app.models.database import db_is_encrypted
+
+    db_path = Path(str(settings.db_path))
+    if not db_path.exists() or not db_is_encrypted(db_path):
+        return
+
+    import sqlcipher3
+    from app.services.encryption import derive_db_key_from_master, get_db_key_hex
+
+    candidates: list[str] = []
+    key_file = Path(settings.data_dir) / ".encryption_key"
+    if key_file.exists():
+        try:
+            candidates.append(derive_db_key_from_master(key_file.read_bytes()))
+        except Exception as e:
+            logger.warning("Clé du backup illisible : %s", e)
+    try:
+        current = get_db_key_hex()
+        if current not in candidates:
+            candidates.append(current)
+    except Exception as e:
+        logger.warning("Clé locale indisponible : %s", e)
+
+    for key_hex in candidates:
+        try:
+            with closing(sqlcipher3.connect(str(db_path))) as conn:
+                conn.execute(f"PRAGMA key = \"x'{key_hex}'\"")
+                conn.execute("SELECT count(*) FROM sqlite_master").fetchone()
+            return
+        except Exception:
+            continue
+
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "La base restaurée est chiffrée avec une clé introuvable sur cette "
+            "machine (archive sans .encryption_key ?). Restauration annulée, "
+            "tes données actuelles sont intactes."
+        ),
+    )
 
 
 def _safe_extractall(tar, dest) -> None:
@@ -734,6 +795,9 @@ async def restore_backup(
             _wipe_volatile_dirs()
             with tarfile.open(archive, "r:gz") as tar:
                 _safe_extractall(tar, data_dir)
+            # US-014 : vérifier que la DB restaurée s'ouvre AVANT de déclarer
+            # le succès (sinon rollback via le except HTTPException ci-dessous)
+            _verify_restored_db()
         else:
             shutil.copy2(legacy_db, settings.db_path)
     except HTTPException:
@@ -759,7 +823,7 @@ async def restore_backup(
         "restored_at": datetime.now(UTC).isoformat(),
         "backup_metadata": metadata,
         "safety_backup": current_backup_name,
-        "note": "Redemarrez l'application pour appliquer les changements",
+        "note": "Redémarre l'application pour appliquer les changements",
     }
 
 

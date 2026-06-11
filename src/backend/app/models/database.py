@@ -81,6 +81,78 @@ def ensure_invoice_legacy_columns(
     return added_columns
 
 
+def apply_adhoc_migrations(db_path) -> None:
+    """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
+
+    Factorisées depuis main.py (revue adversariale US-015) : elles DOIVENT
+    tourner avant ensure_alembic_stamp, sinon une DB legacy serait estampillée
+    head sans avoir le schéma de head. Appelées par init_db, le lifespan
+    (filet) et le pré-vol alembic/env.py.
+    """
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    if not db_path or not _Path(str(db_path)).exists():
+        return
+    with closing(db_connect(db_path)) as conn:
+        cursor = conn.execute("PRAGMA table_info(invoices)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if columns and "currency" not in columns:
+            conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
+            conn.commit()
+            logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+        # P0-IA-3 : provider LLM par message (badge local/cloud)
+        cursor = conn.execute("PRAGMA table_info(messages)")
+        msg_columns = [row[1] for row in cursor.fetchall()]
+        if msg_columns and "provider" not in msg_columns:
+            conn.execute("ALTER TABLE messages ADD COLUMN provider TEXT")
+            conn.commit()
+            logger.info("Migration auto : colonne 'provider' ajoutée à la table messages")
+        # US-017 : purge_excluded sur contacts
+        cursor = conn.execute("PRAGMA table_info(contacts)")
+        contact_columns = [row[1] for row in cursor.fetchall()]
+        if contact_columns and "purge_excluded" not in contact_columns:
+            conn.execute("ALTER TABLE contacts ADD COLUMN purge_excluded BOOLEAN DEFAULT 0")
+            conn.commit()
+            logger.info("Migration auto : colonne 'purge_excluded' ajoutée à la table contacts")
+        # Email Backlog : signature_html sur email_accounts
+        cursor = conn.execute("PRAGMA table_info(email_accounts)")
+        ea_columns = [row[1] for row in cursor.fetchall()]
+        if ea_columns and "signature_html" not in ea_columns:
+            conn.execute("ALTER TABLE email_accounts ADD COLUMN signature_html TEXT")
+            conn.commit()
+            logger.info("Migration auto : colonne 'signature_html' ajoutée à email_accounts")
+        # Email Backlog : contact_id sur email_messages
+        cursor = conn.execute("PRAGMA table_info(email_messages)")
+        em_columns = [row[1] for row in cursor.fetchall()]
+        if em_columns and "contact_id" not in em_columns:
+            conn.execute("ALTER TABLE email_messages ADD COLUMN contact_id TEXT REFERENCES contacts(id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_messages_contact_id ON email_messages(contact_id)")
+            conn.commit()
+            logger.info("Migration auto : colonne 'contact_id' ajoutée à email_messages")
+        # Email Backlog : table email_follow_ups
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='email_follow_ups'"
+        )
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE email_follow_ups (
+                    id VARCHAR NOT NULL PRIMARY KEY,
+                    email_message_id VARCHAR NOT NULL REFERENCES email_messages(id),
+                    contact_id VARCHAR REFERENCES contacts(id),
+                    due_date VARCHAR NOT NULL,
+                    note VARCHAR,
+                    status VARCHAR NOT NULL DEFAULT 'pending',
+                    created_at VARCHAR NOT NULL
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_email_message_id ON email_follow_ups(email_message_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_contact_id ON email_follow_ups(contact_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_status ON email_follow_ups(status)")
+            conn.commit()
+            logger.info("Migration auto : table 'email_follow_ups' créée")
+
+
 # US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
 # migrations ad-hoc d'init_db/main.py EST au schéma de cette révision : on
 # l'estampille pour qu'Alembic devienne l'unique voie d'évolution du schéma.
@@ -115,6 +187,32 @@ def ensure_alembic_stamp(db_path) -> None:
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
             ).fetchone()
             if has_stamp:
+                # Revue adversariale US-015 : une DB trackée à une révision
+                # ANCIENNE dont le schéma a déjà été patché par les migrations
+                # ad-hoc (elles tournent à chaque boot) ferait planter
+                # `upgrade head` en duplicate column. Preuve de schéma au
+                # niveau de la tête épinglée : invoices.validite_jours (la
+                # colonne ajoutée PAR cette révision). Si présente ->
+                # ré-estampiller à la tête.
+                current = conn.execute(
+                    "SELECT version_num FROM alembic_version"
+                ).fetchone()
+                if current and current[0] != ALEMBIC_HEAD_REVISION:
+                    inv_cols = {
+                        row[1]
+                        for row in conn.execute("PRAGMA table_info(invoices)")
+                    }
+                    if "validite_jours" in inv_cols:
+                        conn.execute(
+                            "UPDATE alembic_version SET version_num = ?",
+                            (ALEMBIC_HEAD_REVISION,),
+                        )
+                        conn.commit()
+                        logger.info(
+                            f"US-015 : alembic_version réaligné {current[0]} -> "
+                            f"{ALEMBIC_HEAD_REVISION} (schéma déjà patché par "
+                            "les migrations ad-hoc)"
+                        )
                 return
             conn.execute(
                 "CREATE TABLE alembic_version ("
@@ -272,22 +370,47 @@ async def init_db() -> None:
     global _db_cipher_active
     _db_cipher_active = False
     engine_kwargs: dict = {}
-    if db_encryption_enabled():
+    # Revue adversariale US-014 : si la base est DÉJÀ chiffrée, l'échappatoire
+    # THERESE_DB_PLAINTEXT=1 est inopérante (les engines doivent poser la clé,
+    # sinon « file is not a database »). Le flag n'empêche que la migration
+    # initiale vers le chiffré.
+    if not db_encryption_enabled() and db_is_encrypted(settings.db_path):
+        logger.warning(
+            "US-014 : THERESE_DB_PLAINTEXT=1 ignoré - la base est déjà chiffrée "
+            "(le flag n'agit qu'avant la migration initiale)."
+        )
+    if db_encryption_enabled() or db_is_encrypted(settings.db_path):
         try:
             ensure_db_encrypted(settings.db_path)
+            # Revue adversariale US-014 : sur une DB DÉJÀ chiffrée, une
+            # mauvaise clé (Keychain réinitialisé, DB d'une autre machine)
+            # explosait plus loin en « file is not a database » brut, hors de
+            # ce try. Probe explicite ici -> diagnostic pédagogique ci-dessous.
+            if db_is_encrypted(settings.db_path):
+                from contextlib import closing as _closing
+
+                with _closing(db_connect(settings.db_path)) as _probe:
+                    _probe.execute("SELECT count(*) FROM sqlite_master").fetchone()
             import aiosqlite.core as _aiosqlite_core
             import sqlcipher3
 
             # aiosqlite importe sqlite3 en dur : on substitue le module DBAPI
-            # SQLCipher (même API) pour le moteur async.
+            # SQLCipher (même API) pour le moteur async. Substitution
+            # PROCESS-GLOBALE non restaurée par close_db : tout autre
+            # consommateur d'aiosqlite de ce process passerait par sqlcipher3
+            # (sans clé il lit les DB claires comme sqlite3 - inoffensif
+            # aujourd'hui, à garder en tête si un second engine async apparaît).
             _aiosqlite_core.sqlite3 = sqlcipher3.dbapi2
             engine_kwargs["module"] = sqlcipher3.dbapi2
             _db_cipher_active = True
         except Exception:
             logger.error(
-                "US-014 : chiffrement de la base indisponible. Démarrage REFUSÉ "
-                "pour ne pas écrire en clair en silence. Débloquer le trousseau "
-                "ou poser THERESE_DB_PLAINTEXT=1 (assumé, base en clair)."
+                "US-014 : clé de chiffrement indisponible ou différente de celle "
+                "de la base (Keychain réinitialisé ? base d'une autre machine ?). "
+                "La base est INTACTE mais verrouillée : restaure le fichier "
+                "~/.therese/.encryption_key d'origine (présent dans tes backups). "
+                "Démarrage refusé pour ne pas écrire en clair en silence. "
+                "THERESE_DB_PLAINTEXT=1 n'agit que sur une base encore en clair."
             )
             raise
 
@@ -390,6 +513,10 @@ async def init_db() -> None:
             except Exception as e:
                 logger.debug(f"Index creation skipped: {e}")
         conn.commit()
+
+    # Revue adversariale US-015 : les migrations ad-hoc DOIVENT précéder
+    # l'estampille, sinon la DB serait marquée head sans le schéma de head.
+    apply_adhoc_migrations(settings.db_path)
 
     # US-015 : estampiller la DB à la tête Alembic. Le bootstrap ci-dessus
     # (create_all + colonnes/index ad-hoc) amène la DB AU schéma courant ;

@@ -19,7 +19,11 @@ BACKEND = Path(__file__).parent.parent / "src" / "backend"
 
 
 def _read_stamp(db_path: Path) -> str | None:
-    with sqlite3.connect(str(db_path)) as conn:
+    # db_connect : la DB peut être CHIFFRÉE (depuis la revue adversariale,
+    # make db-migrate sur dossier vierge crée une DB chiffrée d'office)
+    from app.models.database import db_connect
+
+    with db_connect(db_path) as conn:
         row = conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
         ).fetchone()
@@ -113,3 +117,54 @@ def test_make_db_migrate_sur_db_neuve(tmp_path):
     result = _run_upgrade_head(data_dir)
     assert result.returncode == 0, result.stderr[-800:]
     assert _read_stamp(data_dir / "therese.db") == ALEMBIC_HEAD_REVISION
+
+def test_stamp_sur_db_chiffree(tmp_path):
+    """Revue adversariale : ensure_alembic_stamp passe par db_connect, donc
+    doit fonctionner sur une DB SQLCipher (et pas avaler une erreur de clé
+    en silence)."""
+    from app.models.database import db_connect, ensure_db_encrypted
+
+    db = tmp_path / "therese.db"
+    _make_legacy_db(db)
+    ensure_db_encrypted(db)
+
+    ensure_alembic_stamp(db)
+    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+    with db_connect(db) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM contacts").fetchone() is not None
+
+
+def test_realignement_db_trackee_ancienne_schema_patche(tmp_path):
+    """Revue adversariale US-015 : une DB trackée à une révision ancienne dont
+    le schéma a déjà été patché par les migrations ad-hoc (validite_jours
+    présent) doit être ré-estampillée à la tête - sinon upgrade head replante
+    en duplicate column."""
+    db = tmp_path / "therese.db"
+    with sqlite3.connect(str(db)) as conn:
+        conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
+        conn.execute(
+            "CREATE TABLE invoices (id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER)"
+        )
+        conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
+        conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
+        conn.commit()
+
+    ensure_alembic_stamp(db)
+    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
+@pytest.mark.slow
+def test_make_db_migrate_sur_db_chiffree(tmp_path):
+    """`make db-migrate` doit fonctionner sur une DB CHIFFRÉE (env.py
+    _make_engine pose la clé SQLCipher)."""
+    from app.models.database import ensure_db_encrypted
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    db = data_dir / "therese.db"
+    _make_legacy_db(db)
+    ensure_db_encrypted(db)
+
+    result = _run_upgrade_head(data_dir)
+    assert result.returncode == 0, result.stderr[-800:]
+    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION

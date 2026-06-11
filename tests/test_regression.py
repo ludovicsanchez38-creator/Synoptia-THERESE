@@ -6382,8 +6382,11 @@ class TestP0IA3_ProviderBadge:
         assert data[0]["model"] == "mistral-small-latest"
 
     def test_main_auto_migration_adds_provider_column(self):
-        """La migration auto desktop doit ajouter la colonne provider à messages."""
-        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        """La migration auto desktop doit ajouter la colonne provider à messages.
+
+        Revue adversariale US-015 : les migrations ad-hoc vivent désormais dans
+        database.apply_adhoc_migrations (avant l'estampille Alembic)."""
+        content = (SRC / "app" / "models" / "database.py").read_text(encoding="utf-8")
         assert "ALTER TABLE messages ADD COLUMN provider" in content
 
     def test_message_bubble_shows_provider_badge(self):

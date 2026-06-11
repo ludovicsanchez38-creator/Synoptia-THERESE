@@ -59,6 +59,28 @@ class TestMigration:
         with db_connect(db) as conn:
             assert conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0] == 3
 
+    def test_migration_couvre_le_wal_non_checkpointe(self, tmp_path):
+        """Revue adversariale : des transactions encore dans le -wal (pas
+        checkpointées) doivent survivre à la migration vers le chiffré."""
+        db = tmp_path / "therese.db"
+        conn = sqlite3.connect(str(db))
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("CREATE TABLE contacts (id INTEGER PRIMARY KEY, name TEXT)")
+        conn.commit()
+        conn.execute("INSERT INTO contacts (name) VALUES ('Dans le WAL')")
+        conn.commit()  # commit WAL : la donnée vit dans therese.db-wal
+        assert (tmp_path / "therese.db-wal").exists(), "précondition : WAL présent"
+
+        ensure_db_encrypted(db)
+        conn.close()
+
+        assert db_is_encrypted(db) is True
+        with db_connect(db) as enc:
+            rows = enc.execute("SELECT name FROM contacts").fetchall()
+        assert rows == [("Dans le WAL",)]
+        # plus de WAL clair résiduel
+        assert not (tmp_path / "therese.db-wal").exists()
+
     def test_pas_de_copie_claire_residuelle(self, tmp_path):
         """Garder une copie claire annulerait le chiffrement au repos."""
         db = tmp_path / "therese.db"
@@ -101,6 +123,18 @@ class TestRuntime:
         with tarfile.open(archive_path, "r:gz") as tar:
             member = tar.extractfile("therese.db")
             header = member.read(16)
+            names = tar.getnames()
         assert header != b"SQLite format 3\x00", (
             "le backup contiendrait une DB en CLAIR"
         )
+        # Revue adversariale : l'archive doit être AUTOSUFFISANTE - sans la
+        # clé, un backup restauré sur une machine neuve est illisible et
+        # l'app ne démarre plus (la raison d'être du backup disparaît).
+        # NB : en test la clé vient de THERESE_DB_KEY, mais le fichier
+        # .encryption_key existe dès que le service de chiffrement a tourné.
+        from app.services.encryption import get_encryption_service
+
+        get_encryption_service().encrypt("probe")  # force la création de la clé
+        resp2 = await client.post("/api/data/backup")
+        with tarfile.open(resp2.json()["path"], "r:gz") as tar2:
+            assert ".encryption_key" in tar2.getnames(), names

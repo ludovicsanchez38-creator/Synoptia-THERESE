@@ -862,7 +862,7 @@ async def send_invoice_by_email(
     raise HTTPException(
         status_code=501,
         detail="L'envoi de factures par email n'est pas encore disponible. "
-        "Veuillez télécharger le PDF et l'envoyer manuellement.",
+        "Télécharge le PDF et envoie-le manuellement.",
     )
 
     return {

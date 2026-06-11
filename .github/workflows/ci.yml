@@ -156,15 +156,27 @@ jobs:
       # US-018 (graduel) : la dette mypy existante est figée en BASELINE.
       # Une PR qui AJOUTE des erreurs de typage passe au rouge ; faire
       # baisser le compteur met à jour la baseline ci-dessous.
+      # Revue adversariale : mypy sort en exit 1 dès qu'il y a des erreurs ;
+      # avec le set -e/pipefail du shell bash de GitHub Actions, l'assignation
+      # tuait le step AVANT la comparaison (job rouge à chaque run). Capture
+      # avec || true, comptage par grep ' error:', et garde anti-fail-open
+      # (sortie vide ou crash mypy = rouge, pas vert).
       - name: mypy - BLOQUANT au-delà de la baseline
         shell: bash
         env:
-          MYPY_BASELINE: "1059"
+          MYPY_BASELINE: "999"
         run: |
-          count=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>/dev/null | wc -l | tr -d ' ')
+          mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
+          if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then
+            echo "::error::mypy n'a pas produit de sortie exploitable (crash ?)"
+            printf '%s\n' "$mypy_out" | head -20
+            exit 1
+          fi
+          count=$(printf '%s\n' "$mypy_out" | grep -c ' error:' || true)
           echo "mypy : $count erreurs (baseline $MYPY_BASELINE)"
           if [ "$count" -gt "$MYPY_BASELINE" ]; then
             echo "::error::mypy a dépassé la baseline ($count > $MYPY_BASELINE) - de nouvelles erreurs de typage ont été introduites"
+            printf '%s\n' "$mypy_out" | grep ' error:' | tail -20
             exit 1
           fi
 
@@ -188,11 +200,15 @@ jobs:
         with:
           workspaces: src/frontend/src-tauri
 
-      # Le build script Tauri exige le sidecar (externalBin) : un binaire
-      # factice suffit pour analyser le code Rust sans builder le backend.
-      - name: Sidecar factice
+      # Le build script Tauri exige le sidecar (externalBin) ET le dossier
+      # frontendDist ../dist (la feature par défaut custom-protocol embarque
+      # les assets : tauri-codegen panique si le dossier manque - revue
+      # adversariale). Des factices suffisent pour analyser le code Rust.
+      - name: Sidecar et dist factices
         working-directory: src/frontend/src-tauri
-        run: mkdir -p binaries && touch binaries/backend-x86_64-unknown-linux-gnu && chmod +x binaries/backend-x86_64-unknown-linux-gnu
+        run: |
+          mkdir -p binaries && touch binaries/backend-x86_64-unknown-linux-gnu && chmod +x binaries/backend-x86_64-unknown-linux-gnu
+          mkdir -p ../dist && touch ../dist/index.html
 
       - name: Clippy - BLOQUANT (zéro warning)
         working-directory: src/frontend/src-tauri

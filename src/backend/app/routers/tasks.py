@@ -61,6 +61,7 @@ async def list_tasks(
         Task.status.desc(),  # todo/in_progress avant done/cancelled
         Task.priority.desc(),
         Task.due_date.asc(),
+        Task.id.asc(),  # ordre TOTAL : pagination déterministe
     )
     stmt = stmt.limit(limit).offset(offset)
 
