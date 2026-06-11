@@ -267,6 +267,8 @@ jobs:
             Installeurs disponibles ci-dessous.
 
             ### Notes
+            - **IMPORTANT (depuis 0.23)** : au premier lancement, ta base de données est chiffrée (SQLCipher). Une version antérieure à 0.23 ne pourra plus la lire : ne reviens pas en arrière après ce premier lancement. Tes backups (Paramètres → Données) contiennent tout ce qu'il faut pour restaurer, y compris la clé - protège ces fichiers comme la base elle-même.
+            - **Mises à jour automatiques (depuis 0.23)** : l'app vérifie les nouvelles versions au lancement puis toutes les 6 h et propose l'installation en un clic.
             - **macOS** : Clic droit → Ouvrir → Confirmer (app non signée). Si le backend ne démarre pas, ouvre le Terminal et lance : `xattr -cr /Applications/THÉRÈSE.app` puis relance l'app.
             - **Windows** : Exclure l'app de l'antivirus si faux positif PyInstaller
             - **Linux** : Installer avec `sudo dpkg -i therese_*.deb`
