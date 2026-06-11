@@ -249,10 +249,14 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     { id: 'TRASH', name: 'Corbeille', icon: Trash2 },
   ];
 
-  // Mode standalone : pleine page sans modal
+  // Mode standalone : pleine page sans modal.
+  // flex-1 min-h-0 (PAS h-full) : le conteneur de vue contient aussi la
+  // back-bar « Chat » ; h-full = 100 % du conteneur => le panneau débordait de
+  // la hauteur de la back-bar et la barre d'actions du mail était rognée en
+  // bas (« Générer une réponse » invisible, prouvé par repro 11/06/2026).
   if (standalone) {
     return (
-      <div data-testid="email-panel" className="h-full flex flex-col bg-bg">
+      <div data-testid="email-panel" className="flex-1 min-h-0 flex flex-col bg-bg">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
           <div className="flex items-center gap-3">

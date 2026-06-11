@@ -445,8 +445,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
   // Mode standalone : pleine page
   if (standalone) {
+    // flex-1 min-h-0, pas h-full : la back-bar « Chat » du conteneur de vue
+    // ferait déborder le panneau de sa hauteur (cf. bug EmailPanel 11/06).
     return (
-      <div className="h-full flex flex-col bg-bg" data-testid="invoices-panel">
+      <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="invoices-panel">
         {invoicesHeader}
         {invoicesFilters}
         {invoicesList}

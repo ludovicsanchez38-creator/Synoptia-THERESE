@@ -501,8 +501,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
   // Mode standalone : pleine page
   if (standalone) {
+    // flex-1 min-h-0, pas h-full : la back-bar « Chat » du conteneur de vue
+    // ferait déborder le panneau de sa hauteur (cf. bug EmailPanel 11/06).
     return (
-      <div data-testid="calendar-panel" className="h-full flex flex-col bg-bg">
+      <div data-testid="calendar-panel" className="flex-1 min-h-0 flex flex-col bg-bg">
         {calendarHeader}
         {reauthBanner}
         {calendarNav}

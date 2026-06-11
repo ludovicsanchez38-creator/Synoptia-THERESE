@@ -131,7 +131,11 @@ describe('MemoryPanel mode standalone (vue L6)', () => {
   it('rend une vue pleine hauteur, sans tiroir fixe 420px', async () => {
     render(<MemoryPanel standalone />);
     const panel = await screen.findByTestId('memory-panel');
-    expect(panel.className).toContain('h-full');
+    // flex-1 min-h-0 (et plus h-full) : pleine hauteur DANS le conteneur de
+    // vue ; h-full débordait de la hauteur de la back-bar (bug 11/06/2026).
+    expect(panel.className).toContain('flex-1');
+    expect(panel.className).toContain('min-h-0');
+    expect(panel.className).not.toContain('h-full');
     expect(panel.className).not.toContain('w-[420px]');
     expect(panel.className).not.toContain('fixed');
   });

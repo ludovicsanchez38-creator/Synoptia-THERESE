@@ -559,8 +559,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   // `relative` pour que les modaux internes (suppression, RGPD) en `absolute inset-0`
   // restent cadrés sur la vue.
   if (standalone) {
+    // flex-1 min-h-0, pas h-full : la back-bar « Chat » du conteneur de vue
+    // ferait déborder le panneau de sa hauteur (cf. bug EmailPanel 11/06).
     return (
-      <div className="relative h-full flex flex-col bg-bg" data-testid="memory-panel">
+      <div className="relative flex-1 min-h-0 flex flex-col bg-bg" data-testid="memory-panel">
         {panelBody}
       </div>
     );

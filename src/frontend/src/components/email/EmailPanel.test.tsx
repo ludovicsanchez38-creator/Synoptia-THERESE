@@ -91,6 +91,21 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
     });
   });
 
+  it('régression 11/06/2026 : la racine standalone est flex-1 min-h-0, pas h-full', async () => {
+    // h-full = 100 % du conteneur de vue qui contient AUSSI la back-bar
+    // « Chat » -> le panneau débordait de sa hauteur et la barre d'actions du
+    // mail (« Générer une réponse ») était rognée sous la fenêtre.
+    const { EmailPanel } = await import('./EmailPanel');
+    render(<EmailPanel standalone />);
+
+    await waitFor(() => {
+      const root = screen.getByTestId('email-panel');
+      expect(root.className).toContain('flex-1');
+      expect(root.className).toContain('min-h-0');
+      expect(root.className).not.toContain('h-full');
+    });
+  });
+
   it('BUG-037 : la croix du wizard ferme le wizard (mode standalone, sans compte)', async () => {
     const { EmailPanel } = await import('./EmailPanel');
     render(<EmailPanel standalone />);
