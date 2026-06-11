@@ -403,7 +403,7 @@ export const MessageBubble = memo(function MessageBubble({
             {message.uncertainty?.is_uncertain && (
               <div
                 className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded-full',
+                  'flex items-center gap-1.5 px-2 py-1 rounded-[6px]',
                   message.uncertainty.confidence_level === 'low'
                     ? 'bg-red-500/10 text-red-400'
                     : message.uncertainty.confidence_level === 'medium'
@@ -430,7 +430,7 @@ export const MessageBubble = memo(function MessageBubble({
               const isLocal = prov === 'ollama';
               return (
                 <div
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-[6px] ${
                     isLocal ? 'bg-green-500/10 text-green-300' : 'bg-orange-500/10 text-orange-300'
                   }`}
                   title={
@@ -448,7 +448,7 @@ export const MessageBubble = memo(function MessageBubble({
             {/* Usage/cost display */}
             {message.usage && (
               <div
-                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-[6px] bg-surface"
                 title="Coût estimé de cette requête API (consommation de tokens). Ce n'est pas une facture."
               >
                 <Coins className="w-3 h-3" />

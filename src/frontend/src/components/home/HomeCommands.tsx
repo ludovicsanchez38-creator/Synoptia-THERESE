@@ -258,7 +258,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                             setShowMoveMenuId(showMoveMenuId === cmd.id ? null : cmd.id);
                             setConfirmDeleteId(null);
                           }}
-                          className="p-1 rounded-full hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan transition-colors"
+                          className="p-1 rounded-[6px] hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan transition-colors"
                           title="Déplacer"
                         >
                           <ArrowRightLeft className="w-3 h-3" />

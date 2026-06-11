@@ -136,7 +136,7 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-text">{risk.title}</span>
                     <span className={cn(
-                      'text-xs px-2 py-0.5 rounded-full',
+                      'text-xs px-2 py-0.5 rounded-[6px]',
                       severityColors[risk.severity]
                     )}>
                       {severityLabels[risk.severity]}

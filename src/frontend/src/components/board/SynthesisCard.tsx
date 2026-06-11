@@ -48,7 +48,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
           Synthèse du Board
         </h3>
         <span className={cn(
-          'px-3 py-1 rounded-full text-xs font-medium',
+          'px-3 py-1 rounded-[6px] text-xs font-medium',
           config.bg,
           config.border,
           config.color,

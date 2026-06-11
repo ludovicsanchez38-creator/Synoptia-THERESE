@@ -302,7 +302,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                         </span>
                       )}
                       <div className={cn(
-                        'flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium',
+                        'flex items-center gap-1.5 px-2 py-0.5 rounded-[6px] text-xs font-medium',
                         STATUS_CONFIG[invoice.status]?.color || 'text-text-muted',
                         STATUS_CONFIG[invoice.status]?.badgeBg || 'bg-gray-500/20'
                       )}>

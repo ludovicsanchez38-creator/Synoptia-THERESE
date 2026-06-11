@@ -38,7 +38,7 @@ export function ConnectionStatus() {
   return (
     <div
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs',
+        'flex items-center gap-2 px-3 py-1.5 rounded-[6px] text-xs',
         config.bgColor
       )}
     >

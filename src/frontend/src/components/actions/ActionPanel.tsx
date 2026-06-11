@@ -86,10 +86,10 @@ function AgentCard({
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-[6px]">
               {agent.steps_count} étapes
             </span>
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-full bg-surface-2', colorClass)}>
+            <span className={cn('text-[10px] px-2 py-0.5 rounded-[6px] bg-surface-2', colorClass)}>
               {CATEGORY_LABELS[agent.category] || agent.category}
             </span>
           </div>

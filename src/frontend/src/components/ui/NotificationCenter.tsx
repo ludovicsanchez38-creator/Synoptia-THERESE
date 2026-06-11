@@ -74,7 +74,7 @@ function SourceBadge({ source }: { source: string }) {
   return (
     <span
       className={cn(
-        "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+        "text-[10px] font-medium px-1.5 py-0.5 rounded-[6px]",
         colors[source] || colors.system
       )}
     >

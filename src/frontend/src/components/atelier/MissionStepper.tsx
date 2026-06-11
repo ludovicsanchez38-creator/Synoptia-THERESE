@@ -43,7 +43,7 @@ export function MissionStepper({ currentPhase }: Props) {
               />
             )}
             <div
-              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-all"
+              className="flex items-center gap-1 rounded-[6px] px-2 py-1 text-xs font-medium transition-all"
               style={{
                 backgroundColor: isActive
                   ? 'rgba(168, 85, 247, 0.2)'

@@ -59,7 +59,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           {/* US-012 : « Recommandé » retiré - ce chemin exige de créer un
               projet Google Cloud, ce qui était l'impasse n°1 des testeurs */}
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-full">
+            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-[6px]">
               Avancé
             </span>
           </div>
@@ -97,7 +97,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
         >
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan rounded-full">
+            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan rounded-[6px]">
               Recommandé
             </span>
           </div>

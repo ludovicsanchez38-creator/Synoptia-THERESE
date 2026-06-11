@@ -610,7 +610,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
             <button
               key={chip.id}
               onClick={() => setFilter(chip.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-accent-cyan/20 text-accent-cyan'
                   : 'bg-surface text-text-muted hover:bg-surface-elevated'

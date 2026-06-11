@@ -772,7 +772,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {/* F-12/F-14/F-15 : sélecteur de modèle actif (pill interactif) */}
       {currentModel && (
         <div className="flex items-center px-2 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
             <Cpu className="w-3.5 h-3.5 text-accent-cyan" />
             {availableModels.length > 1 ? (
               <select
@@ -792,7 +792,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             )}
             {currentProvider && (
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-[6px] ${
                   currentProvider === 'ollama'
                     ? 'bg-green-500/15 text-green-300'
                     : 'bg-orange-500/15 text-orange-300'
