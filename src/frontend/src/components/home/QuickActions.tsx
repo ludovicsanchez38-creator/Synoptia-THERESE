@@ -19,14 +19,18 @@ export function QuickActions() {
   }
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {ACTIONS.map(({ id, label, icon: Icon }) => (
+      {ACTIONS.map(({ id, label, icon: Icon }, i) => (
         <button
           key={id}
           type="button"
           onClick={() => handle(id)}
-          className="flex items-center gap-2.5 p-3 rounded-xl bg-surface border border-border text-left hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors"
+          className="card-brutal flex items-center gap-2.5 p-3 rounded-[9px] bg-surface border-[1.5px] border-border text-left"
         >
-          <span className="w-8 h-8 rounded-lg grid place-items-center bg-accent-tint text-accent shrink-0">
+          {/* Pastille duotone : accent catégoriel k1-k4, cerclée d'encre */}
+          <span
+            className="w-8 h-8 rounded-[6px] grid place-items-center shrink-0 border-[1.5px] border-[var(--btn-ink)]"
+            style={{ background: `var(--k${(i % 4) + 1}bg)`, color: `var(--k${(i % 4) + 1})` }}
+          >
             <Icon className="w-4 h-4" />
           </span>
           <span className="text-[13px] font-medium text-text leading-tight">{label}</span>

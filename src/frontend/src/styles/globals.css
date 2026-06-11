@@ -66,6 +66,13 @@
   --glow-cyan-shadow: 0 1px 2px rgba(16, 28, 54, 0.06);
   --glow-magenta-shadow: 0 1px 2px rgba(16, 28, 54, 0.06);
 
+  /* DA boutons « brutaliste éditorial » (11/06/2026) : bordure encre +
+     ombre dure décalée sans flou. Déclinées par thème ci-dessous. */
+  --btn-ink: #101C36;
+  --btn-shadow-color: #101C36;
+  --btn-danger-ink: #B91C1C;
+  --btn-danger-shadow: #B91C1C;
+
   /* Accents KPI / catégories (clair Équilibre) */
   --k1: #0F8FB3; --k1bg: #DEF4F9;
   --k2: #B45309; --k2bg: #FAEFDC;
@@ -118,6 +125,12 @@
   --k2: #F59E0B; --k2bg: rgba(245, 158, 11, 0.13);
   --k3: #E11D8D; --k3bg: rgba(225, 29, 141, 0.13);
   --k4: #A855F7; --k4bg: rgba(168, 85, 247, 0.13);
+
+  /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
+  --btn-ink: #E6EDF7;
+  --btn-shadow-color: rgba(34, 211, 238, 0.55);
+  --btn-danger-ink: #EF4444;
+  --btn-danger-shadow: rgba(239, 68, 68, 0.5);
 }
 
 /* Base styles - fenêtre avec coins arrondis */
@@ -211,18 +224,61 @@ img, a { -webkit-user-drag: none; }
   background: radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.03) 0%, transparent 70%), var(--color-surface);
 }
 
-/* Bouton premium : translation au survol */
-.btn-glow { position: relative; overflow: hidden; transition: all 0.3s ease; }
-.btn-glow::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
-  opacity: 0; transition: opacity 0.3s ease;
+/* ============================================================
+   DA BOUTONS « BRUTALISTE ÉDITORIAL » (11/06/2026)
+   Bordure encre 2px + ombre dure décalée (aucun flou).
+   Hover : le bouton se soulève (ombre 4px). Clic : il « s'enfonce »
+   (translation vers l'ombre, ombre nulle).
+   ============================================================ */
+.btn-brutal {
+  border: 2px solid var(--btn-ink);
+  box-shadow: 3px 3px 0 var(--btn-shadow-color);
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.btn-glow:hover::before { opacity: 1; }
+.btn-brutal:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--btn-shadow-color);
+}
+.btn-brutal:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--btn-shadow-color);
+}
+.btn-brutal:disabled { box-shadow: 2px 2px 0 var(--btn-shadow-color); }
+
+/* Variante danger : encre et ombre rouges (redéfinit juste les variables) */
+.btn-brutal-danger {
+  --btn-ink: var(--btn-danger-ink);
+  --btn-shadow-color: var(--btn-danger-shadow);
+}
+
+/* Carte-bouton brutale (QuickActions, etc.) : non-layered pour que la
+   transition transform ne soit pas écrasée par la règle « * » ci-dessous
+   (Tailwind 4 = cascade layers, unlayered > layered). */
+.card-brutal {
+  transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background-color 0.15s ease, border-color 0.15s ease;
+}
+.card-brutal:hover {
+  border-color: var(--btn-ink);
+  box-shadow: 3px 3px 0 var(--btn-shadow-color);
+  transform: translate(-1px, -1px);
+}
+.card-brutal:active {
+  transform: translate(0, 0);
+  box-shadow: none;
+}
+
+/* Icônes lucide : trait affirmé (2.25 au lieu de 2) - les SVG maison
+   n'ont pas la classe .lucide et gardent leur trait. */
+svg.lucide { stroke-width: 2.25; }
+
+/* Legacy : .btn-glow conservé comme alias du langage brutal (plus aucun
+   usage TSX au 11/06/2026, filet pour du HTML résiduel) */
+.btn-glow { position: relative; transition: transform 0.12s ease, box-shadow 0.12s ease; }
 .btn-glow:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 28, 54, 0.18), var(--glow);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--btn-shadow-color);
 }
 
 /* Anneau d'accent au focus */
@@ -364,6 +420,13 @@ p, span, div:not(:hover), section { transition: none; }
   --glow: none;
   --glass-bg: rgba(0, 0, 0, 0.95);
   --glass-border: #FFFFFF;
+
+  /* DA boutons brutaliste : encre et ombres blanches/rouge vif sur fond noir
+     (sans quoi l'ombre dure #101C36 serait invisible) */
+  --btn-ink: #FFFFFF;
+  --btn-shadow-color: #FFFFFF;
+  --btn-danger-ink: #FF0000;
+  --btn-danger-shadow: #FF0000;
 }
 
 [data-high-contrast="true"] .glass { border-width: 2px; }
