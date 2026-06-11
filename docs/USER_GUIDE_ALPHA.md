@@ -433,11 +433,18 @@ Aucune popup bloquante : tu choisis le moment. Si le redémarrage automatique é
      validation en 2 étapes requise sur le compte). Prêt en 2 minutes, aucun projet
      Google Cloud à créer. Le mot de passe est chiffré localement.
   2. **Avancée (OAuth)** : accès API Gmail complet, mais demande de créer ses propres
-     identifiants OAuth dans Google Cloud Console (projet, écran de consentement,
-     client « Application de bureau »). À réserver aux utilisateurs à l'aise avec
-     la console Google.
-- **Panneau Calendrier Google** : nécessite la configuration OAuth (approche 2). Le
-  calendrier local et CalDAV fonctionnent sans.
+     identifiants OAuth dans Google Cloud Console. À réserver aux utilisateurs à
+     l'aise avec la console Google. Points qui piègent (merci lcjp) :
+     - Type de client : choisir « **Application Web** » (pas « Application de
+       bureau ») - c'est le seul type qui offre le champ « URI de redirection
+       autorisés » où coller l'URL que THÉRÈSE affiche en cas d'erreur 403.
+     - **Activer les deux APIs** dans « APIs et services > Bibliothèque » :
+       « Gmail API » **et** « Google Calendar API ». Sans la seconde, la
+       connexion Gmail fonctionne mais le calendrier renvoie « accès refusé ».
+     - Écran de consentement : ajouter ton adresse Gmail comme utilisateur test.
+- **Panneau Calendrier Google** : nécessite la configuration OAuth (approche 2),
+  avec l'API « Google Calendar » activée dans le même projet. Le calendrier
+  local et CalDAV fonctionnent sans.
 - **Ollama** : nécessite qu'Ollama soit installé et lancé localement (`ollama serve`).
 - **Connexions externes (MCP)** : certains services nécessitent des packages npm globaux. En cas d'erreur au démarrage, vérifie que `npx` est dans ton PATH.
 

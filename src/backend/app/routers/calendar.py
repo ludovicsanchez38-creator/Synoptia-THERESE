@@ -146,6 +146,26 @@ async def list_calendars(
     ]
 
 
+def _raise_if_google_403(e: Exception) -> None:
+    """403 Google = API Calendar non activée dans le projet GCP ou scope refusé.
+
+    Sans ce mapping, le testeur reçoit un 500 générique et le chat répond
+    « ça coince » sans piste (bug lcjp 11/06/2026).
+    """
+    import httpx
+
+    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 403:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Google refuse l'accès au calendrier (403). Vérifie que l'API "
+                "« Google Calendar » est activée dans ta console Google Cloud "
+                "(APIs et services > Bibliothèque > Google Calendar API > Activer), "
+                "puis reconnecte ton compte Google dans Paramètres > Services."
+            ),
+        ) from e
+
+
 async def _list_google_calendars(
     account_id: str,
     account: EmailAccount,
@@ -206,6 +226,7 @@ async def _list_google_calendars(
         raise
     except Exception as e:
         logger.error(f"Failed to list Google calendars: {e}")
+        _raise_if_google_403(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -659,6 +680,7 @@ async def _list_events_google(
         raise
     except Exception as e:
         logger.error(f"Failed to list events: {e}")
+        _raise_if_google_403(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

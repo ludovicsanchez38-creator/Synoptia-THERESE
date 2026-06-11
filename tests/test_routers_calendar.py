@@ -695,3 +695,49 @@ class TestEventTimezoneRegression:
 
         assert captured["start"]["timeZone"] == "America/Toronto"
         assert captured["end"]["timeZone"] == "America/Toronto"
+
+
+# ============================================================
+# 403 Google actionnable (bug lcjp 11/06/2026)
+# L'API Calendar non activée dans le projet GCP du testeur renvoyait
+# un 500 générique ("ça coince" dans le chat) au lieu de guider.
+# ============================================================
+
+
+class TestGoogle403Actionnable:
+    """Un 403 Google doit produire un message actionnable, pas un 500."""
+
+    @pytest.mark.asyncio
+    async def test_list_calendars_403_message_actionnable(self):
+        import httpx
+        from unittest.mock import AsyncMock, MagicMock
+
+        from fastapi import HTTPException
+
+        from app.models.entities import EmailAccount
+        from app.routers.calendar import _list_google_calendars
+
+        class FakeCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def list_calendars(self):
+                request = httpx.Request("GET", "https://www.googleapis.com/calendar/v3/users/me/calendarList")
+                response = httpx.Response(403, request=request)
+                raise httpx.HTTPStatusError("Forbidden", request=request, response=response)
+
+        account = EmailAccount(
+            id="acc-403", email="test@example.com", provider="gmail", access_token="tok"
+        )
+        session = MagicMock()
+        session.commit = AsyncMock()
+
+        with patch("app.routers.calendar.CalendarService", FakeCalendarService), patch(
+            "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
+        ):
+            with pytest.raises(HTTPException) as exc:
+                await _list_google_calendars("acc-403", account, session)
+
+        assert exc.value.status_code == 403
+        assert "Google Calendar" in exc.value.detail
+        assert "console Google Cloud" in exc.value.detail
