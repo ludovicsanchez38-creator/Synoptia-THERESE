@@ -98,7 +98,7 @@ export function ChatHeader({
             <h1 className="text-lg font-bold gradient-text tracking-tight">THÉRÈSE</h1>
           </button>
           {demoEnabled && (
-            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 rounded-full animate-pulse">
+            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 rounded-[6px] animate-pulse">
               Mode Démo
             </span>
           )}
@@ -113,12 +113,17 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* Centre: Navigation (6 boutons icônes) */}
-      <div className="flex-shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
-        <Button variant="ghost" size="icon" onClick={onHome} className="w-8 h-8 hover:bg-accent-cyan/10" title="Accueil" aria-label="Accueil">
-          <Home className="w-4 h-4" />
-        </Button>
+      {/* Centre: Accueil isolé + Navigation */}
+      <div className="flex-shrink-0 flex items-center gap-2.5">
+        {/* Accueil : sa propre barre, séparée du groupe de navigation */}
+        <div className="flex items-center px-1 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
+          <Button variant="ghost" size="icon" onClick={onHome} className="w-8 h-8 hover:bg-accent-cyan/10" title="Accueil" aria-label="Accueil">
+            <Home className="w-4 h-4" />
+          </Button>
+        </div>
 
+        {/* Navigation (6 boutons icônes) */}
+        <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
         <Button
           variant="ghost"
           size="icon"
@@ -199,6 +204,7 @@ export function ChatHeader({
         >
           <FileText className="w-4 h-4" />
         </Button>
+        </div>
       </div>
 
       {/* Droite: Atelier + Paramètres + Window controls */}
