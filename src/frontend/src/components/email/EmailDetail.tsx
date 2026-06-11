@@ -287,14 +287,16 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Erreur suppression */}
       {trashError && (
-        <div className="mx-6 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="mx-6 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg shrink-0">
           <p className="text-xs text-red-300">{trashError}</p>
         </div>
       )}
 
-      {/* Actions — flex-wrap : sur un volet étroit, les boutons Répondre/Transférer
-          étaient rognés hors écran (BUG-105) au lieu de passer à la ligne. */}
-      <div className="px-6 py-4 border-t border-border/30 flex flex-wrap items-center gap-2">
+      {/* Actions — shrink-0 : la barre ne doit jamais être compressée ni poussée
+          hors du cadre par le corps du mail (sinon « Générer une réponse » se
+          retrouve coupé en bas). flex-wrap : sur un volet étroit, les boutons
+          passent à la ligne au lieu d'être rognés (BUG-105). */}
+      <div className="px-6 py-4 border-t border-border/30 flex flex-wrap items-center gap-2 shrink-0">
         <Button variant="primary" size="sm" onClick={() => setShowResponseModal(true)}>
           <Sparkles className="w-4 h-4 mr-2" />
           Générer une réponse
