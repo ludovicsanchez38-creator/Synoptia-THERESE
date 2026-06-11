@@ -44,11 +44,19 @@ export async function listTasks(params?: {
   status?: string;
   priority?: string;
   project_id?: string;
+  limit?: number;
+  offset?: number;
 }): Promise<Task[]> {
   const queryParams = new URLSearchParams();
   if (params?.status) queryParams.set('status', params.status);
   if (params?.priority) queryParams.set('priority', params.priority);
   if (params?.project_id) queryParams.set('project_id', params.project_id);
+  // Revue adversariale US-016 : le backend pagine désormais (défaut 200).
+  // Sans limit explicite, les tâches au-delà disparaissaient de l'UI sans
+  // indicateur. 1000 = plafond API, palliatif honnête en attendant une
+  // vraie pagination dans TasksPanel.
+  queryParams.set('limit', String(params?.limit ?? 1000));
+  if (params?.offset) queryParams.set('offset', String(params.offset));
 
   const response = await apiFetch(`${API_BASE}/api/tasks?${queryParams}`);
   if (!response.ok) {

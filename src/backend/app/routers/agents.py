@@ -51,13 +51,14 @@ def _get_source_path() -> str | None:
 
     # 1. Préférence en DB (configurée via l'onglet Agents dans les paramètres)
     try:
-        import sqlite3
 
         from app.config import settings
 
         db_path = settings.db_path
         if db_path and Path(db_path).exists():
-            conn = sqlite3.connect(str(db_path))
+            from app.models.database import db_connect
+
+            conn = db_connect(db_path)  # US-014 : clé SQLCipher si chiffrée
             cursor = conn.execute("SELECT value FROM preferences WHERE key = 'agent_source_path'")
             row = cursor.fetchone()
             conn.close()
@@ -145,7 +146,7 @@ async def agent_request(
     if not source_path:
         raise HTTPException(
             status_code=400,
-            detail="Chemin du code source non configuré. Configurez THERESE_SOURCE_PATH ou passez source_path.",
+            detail="Chemin du code source non configuré. Configure THERESE_SOURCE_PATH ou passe source_path.",
         )
 
     # Créer la tâche en DB
@@ -531,7 +532,7 @@ async def approve_task(
     # Merge la branche
     success = await git.merge(task.branch_name, into="main")
     if not success:
-        raise HTTPException(status_code=500, detail="Échec du merge. Vérifiez les conflits.")
+        raise HTTPException(status_code=500, detail="Échec du merge. Vérifie les conflits.")
 
     # Supprimer la branche
     await git.delete_branch(task.branch_name)
@@ -848,7 +849,7 @@ async def dispatch_to_openclaw(
     if not connected:
         raise HTTPException(
             status_code=503,
-            detail="OpenClaw n est pas accessible. Vérifiez que le gateway tourne sur le port 18789.",
+            detail="OpenClaw n'est pas accessible. Vérifie que le gateway tourne sur le port 18789.",
         )
 
     # Créer la session en DB

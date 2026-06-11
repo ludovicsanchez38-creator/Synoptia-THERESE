@@ -235,7 +235,7 @@ async def deep_research(
     if not all_sources:
         yield ResearchProgress(
             type="error",
-            content="Aucun résultat trouvé. Vérifiez votre clé Brave Search ou reformulez la question.",
+            content="Aucun résultat trouvé. Vérifie ta clé Brave Search ou reformule la question.",
         )
         return
 

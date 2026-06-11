@@ -704,7 +704,7 @@ async def convert_devis_to_invoice(
     # 1. Recuperer le devis
     devis = await _get_invoice_with_lines(session, invoice_id)
     if not devis:
-        raise HTTPException(status_code=404, detail="Devis non trouve")
+        raise HTTPException(status_code=404, detail="Devis non trouvé")
 
     # 2. Verifier que c'est un devis
     if devis.document_type != "devis":
@@ -715,9 +715,9 @@ async def convert_devis_to_invoice(
 
     # 3. Verifier le statut (accepted ou sent, pas deja converti)
     if devis.status == "converted":
-        raise HTTPException(status_code=400, detail="Ce devis a deja ete converti en facture")
+        raise HTTPException(status_code=400, detail="Ce devis a déjà été converti en facture")
     if devis.status == "cancelled":
-        raise HTTPException(status_code=400, detail="Impossible de convertir un devis annule")
+        raise HTTPException(status_code=400, detail="Impossible de convertir un devis annulé")
 
     # Parametres de conversion
     req = request or ConvertDevisRequest()
@@ -812,12 +812,12 @@ async def update_devis_status(
     if new_status not in valid_devis_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"Statut invalide pour un devis. Valeurs acceptees : {', '.join(sorted(valid_devis_statuses))}",
+            detail=f"Statut invalide pour un devis. Valeurs acceptées : {', '.join(sorted(valid_devis_statuses))}",
         )
 
     invoice = await _get_invoice_with_lines(session, invoice_id)
     if not invoice:
-        raise HTTPException(status_code=404, detail="Devis non trouve")
+        raise HTTPException(status_code=404, detail="Devis non trouvé")
 
     if invoice.document_type != "devis":
         raise HTTPException(status_code=400, detail="Ce document n'est pas un devis")
@@ -862,7 +862,7 @@ async def send_invoice_by_email(
     raise HTTPException(
         status_code=501,
         detail="L'envoi de factures par email n'est pas encore disponible. "
-        "Veuillez télécharger le PDF et l'envoyer manuellement.",
+        "Télécharge le PDF et envoie-le manuellement.",
     )
 
     return {

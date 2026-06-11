@@ -278,12 +278,12 @@ async def _generate_document(args: dict, session: AsyncSession) -> str:
         )
         if resp.success:
             return (
-                f"Document {fmt.upper()} genere : {resp.file_name}. "
-                f"Telechargement : {resp.download_url}"
+                f"Document {fmt.upper()} généré : {resp.file_name}. "
+                f"Téléchargement : {resp.download_url}"
             )
-        return f"Echec de generation du document : {resp.error}"
+        return f"Échec de génération du document : {resp.error}"
     except Exception as e:  # pragma: no cover - dépend du sandbox skills
-        return f"Erreur lors de la generation du document : {e}"
+        return f"Erreur lors de la génération du document : {e}"
 
 
 async def _get_email_provider(session: AsyncSession):

@@ -7,10 +7,12 @@ Generates embeddings for semantic search using sentence-transformers.
 import asyncio
 import logging
 from functools import lru_cache
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 from app.config import settings
-from sentence_transformers import SentenceTransformer
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class EmbeddingsService:
     """Service for generating text embeddings."""
 
     _instance: "EmbeddingsService | None" = None
-    _model: SentenceTransformer | None = None
+    _model: "SentenceTransformer | None" = None
 
     def __new__(cls) -> "EmbeddingsService":
         """Singleton pattern for embedding model."""
@@ -28,9 +30,16 @@ class EmbeddingsService:
         return cls._instance
 
     @property
-    def model(self) -> SentenceTransformer:
-        """Lazy load the embedding model."""
+    def model(self) -> "SentenceTransformer":
+        """Lazy load the embedding model.
+
+        US-016 : l'import de sentence_transformers (qui tire torch, plusieurs
+        secondes + centaines de Mo) est différé ICI - importer le module
+        embeddings ne coûte plus rien tant qu'on n'embedde pas.
+        """
         if self._model is None:
+            from sentence_transformers import SentenceTransformer
+
             logger.info(f"Loading embedding model: {settings.embedding_model}")
             self._model = SentenceTransformer(
                 settings.embedding_model,

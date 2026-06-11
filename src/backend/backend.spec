@@ -34,6 +34,7 @@ hidden_imports = [
     "sqlalchemy",
     "sqlalchemy.dialects.sqlite",
     "aiosqlite",
+    "sqlcipher3",  # US-014 : chiffrement SQLCipher de therese.db
     # HTTP / API clients
     "httpx",
     "anthropic",

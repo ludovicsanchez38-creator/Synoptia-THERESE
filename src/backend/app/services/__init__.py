@@ -2,58 +2,12 @@
 THÉRÈSE v2 - Services Package
 
 Business logic and external service integrations.
+
+US-016 : ce package n'a PLUS de réexports. Les anciens
+`from app.services import get_llm_service, embed_text...` forçaient l'import
+d'embeddings.py (donc sentence_transformers + torch, plusieurs secondes et
+centaines de Mo) pour TOUT consommateur du package - y compris le sous-process
+sandbox de génération de documents qui n'en a jamais besoin.
+Importer directement le module voulu : `from app.services.llm import ...`,
+`from app.services.embeddings import ...`, etc.
 """
-
-from app.services.embeddings import (
-    EmbeddingsService,
-    embed_text,
-    embed_texts,
-    get_embeddings_service,
-)
-from app.services.llm import (
-    ContextWindow,
-    LLMConfig,
-    LLMProvider,
-    LLMService,
-    get_llm_service,
-)
-from app.services.llm import (
-    Message as LLMMessage,
-)
-from app.services.qdrant import (
-    QdrantService,
-    close_qdrant,
-    get_qdrant_service,
-    init_qdrant,
-)
-from app.services.skills import (
-    SkillsRegistry,
-    close_skills,
-    get_skills_registry,
-    init_skills,
-)
-
-__all__ = [
-    # Embeddings
-    "EmbeddingsService",
-    "get_embeddings_service",
-    "embed_text",
-    "embed_texts",
-    # Qdrant
-    "QdrantService",
-    "get_qdrant_service",
-    "init_qdrant",
-    "close_qdrant",
-    # LLM
-    "LLMService",
-    "LLMConfig",
-    "LLMProvider",
-    "ContextWindow",
-    "LLMMessage",
-    "get_llm_service",
-    # Skills
-    "init_skills",
-    "close_skills",
-    "get_skills_registry",
-    "SkillsRegistry",
-]

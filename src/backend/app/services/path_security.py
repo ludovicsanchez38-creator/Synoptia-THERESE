@@ -71,7 +71,7 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
 
     # Verifier que le fichier existe
     if not path.exists():
-        raise FileNotFoundError(f"Fichier non trouve : {path}")
+        raise FileNotFoundError(f"Fichier non trouvé : {path}")
 
     # Verifier les repertoires systeme interdits
     path_str = str(path)
@@ -167,8 +167,8 @@ def validate_indexable_file(file_path: str | Path, allowed_base: Path | None = N
     if ext not in INDEXABLE_EXTENSIONS:
         logger.warning(f"Type de fichier non indexable : {ext} ({path.name})")
         raise ValueError(
-            f"Type de fichier non autorise pour l'indexation : '{ext}'. "
-            f"Types autorises : {', '.join(sorted(INDEXABLE_EXTENSIONS))}"
+            f"Type de fichier non autorisé pour l'indexation : '{ext}'. "
+            f"Types autorisés : {', '.join(sorted(INDEXABLE_EXTENSIONS))}"
         )
 
     return path

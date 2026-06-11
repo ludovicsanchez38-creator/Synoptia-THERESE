@@ -71,6 +71,11 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
     - GPT Image 2 (OpenAI): High quality, good for portraits
     - Nano Banana 2 (Gemini): Up to 4K, good with reference images
     """
+    # US-018 : valider AVANT d'appeler le service - un prompt vide partait en
+    # appel API réel (donc 500 dépendant de l'environnement) au lieu d'un 422.
+    if not request.prompt or not request.prompt.strip():
+        raise HTTPException(status_code=422, detail="Le prompt ne peut pas être vide.")
+
     try:
         service = get_image_service()
 

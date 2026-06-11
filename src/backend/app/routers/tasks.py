@@ -32,6 +32,8 @@ async def list_tasks(
     status: str | None = Query(None, description="Filter by status"),
     priority: str | None = Query(None, description="Filter by priority"),
     project_id: str | None = Query(None, description="Filter by project"),
+    limit: int = Query(200, ge=1, le=1000, description="Nombre max de tâches"),
+    offset: int = Query(0, ge=0, description="Décalage de pagination"),
     session: AsyncSession = Depends(get_session),
 ) -> list[TaskResponse]:
     """
@@ -41,6 +43,9 @@ async def list_tasks(
         - status: todo, in_progress, done, cancelled
         - priority: low, medium, high, urgent
         - project_id: UUID du projet lié
+
+    US-016 : paginé (limit/offset, défaut 200) - la réponse était non bornée,
+    des centaines de tâches terminées étaient sérialisées à chaque ouverture.
     """
     stmt = select(Task)
 
@@ -56,7 +61,9 @@ async def list_tasks(
         Task.status.desc(),  # todo/in_progress avant done/cancelled
         Task.priority.desc(),
         Task.due_date.asc(),
+        Task.id.asc(),  # ordre TOTAL : pagination déterministe
     )
+    stmt = stmt.limit(limit).offset(offset)
 
     result = await session.execute(stmt)
     tasks = result.scalars().all()

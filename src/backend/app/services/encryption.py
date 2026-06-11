@@ -21,8 +21,12 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
-# Chemin de la cle de chiffrement (fallback)
-THERESE_DIR = Path.home() / ".therese"
+# Chemin de la cle de chiffrement (fallback) - suit le data dir effectif
+# (THERESE_DATA_DIR compris : la clé vit avec les données qu'elle protège,
+# et les tests n'écrivent plus dans le vrai ~/.therese)
+from app.config import settings as _settings  # noqa: E402
+
+THERESE_DIR = Path(str(_settings.data_dir))
 KEY_FILE = THERESE_DIR / ".encryption_key"
 SALT_FILE = THERESE_DIR / ".encryption_salt"
 
@@ -53,6 +57,7 @@ class EncryptionService:
 
     _instance: Optional["EncryptionService"] = None
     _fernet: Fernet | None = None
+    _master_key: bytes | None = None
     _using_keychain: bool = False
     _lock: threading.Lock = threading.Lock()
 
@@ -76,6 +81,7 @@ class EncryptionService:
 
         # Essayer d'abord le keychain, sinon fallback sur fichier
         key = self._get_or_create_key()
+        self._master_key = key  # US-014 : sert aussi à dériver la clé SQLCipher
         self._fernet = Fernet(key)
 
         storage = "keychain" if self._using_keychain else "file"
@@ -383,6 +389,48 @@ class EncryptionService:
 
 # Singleton global
 _encryption_service: EncryptionService | None = None
+
+
+def get_db_key_hex() -> str:
+    """US-014 : clé SQLCipher (64 hex) pour le chiffrement de therese.db.
+
+    Dérivée par HKDF de la clé maîtresse du trousseau (même cycle de vie que
+    la clé des API keys : Keychain avec backup fichier, cf. BUG-050). Perdre
+    la clé maîtresse = perdre les clés API ET la base - rayon de souffle
+    identique à l'existant, un seul secret à sauvegarder.
+
+    Surcharge possible par THERESE_DB_KEY (64 hex) : environnements de test
+    et headless sans trousseau.
+    """
+    import os
+
+    override = os.environ.get("THERESE_DB_KEY")
+    if override:
+        if len(override) != 64 or any(c not in "0123456789abcdefABCDEF" for c in override):
+            raise ValueError("THERESE_DB_KEY doit faire 64 caractères hexadécimaux")
+        return override.lower()
+
+    service = get_encryption_service()
+    service._ensure_initialized()
+    return derive_db_key_from_master(service._master_key)
+
+
+def derive_db_key_from_master(master_key: bytes) -> str:
+    """Dérive la clé SQLCipher (64 hex) d'une clé maîtresse donnée.
+
+    Utilisé par get_db_key_hex (clé du trousseau) et par la vérification de
+    restauration de backup (clé lue depuis le .encryption_key de l'archive).
+    """
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+    derived = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b"therese-sqlcipher-db-v1",
+    ).derive(master_key)
+    return derived.hex()
 
 
 def get_encryption_service() -> EncryptionService:

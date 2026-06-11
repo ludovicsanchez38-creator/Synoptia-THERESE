@@ -1,7 +1,7 @@
 # Architecture Technique - THÉRÈSE v2
 
 > Document généré par l'agent Architect (BMAD)
-> Date : 21 janvier 2026
+> Date : 21 janvier 2026 - Dernière mise à jour : 11 juin 2026 (rafraîchissement routers/services)
 
 ## Statut
 
@@ -335,40 +335,85 @@ src/backend/
 ├── app/
 │   ├── main.py                 # FastAPI app, lifespan
 │   ├── config.py               # Settings (pydantic-settings)
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── chat.py             # /api/chat/*
-│   │   ├── memory.py           # /api/memory/*
-│   │   ├── files.py            # /api/files/*
-│   │   └── config.py           # /api/config/*
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── chat_service.py     # Conversation logic
-│   │   ├── memory_service.py   # Memory CRUD + search
-│   │   ├── file_service.py     # File parsing
-│   │   ├── llm_service.py      # LLM abstraction
-│   │   └── embedding_service.py
+│   ├── routers/                # 31 routers (un par domaine fonctionnel)
+│   │   ├── chat.py             # /api/chat/* (streaming SSE, tools)
+│   │   ├── memory.py           # /api/memory/* (contacts, projets, recherche)
+│   │   ├── files.py            # /api/files/* (indexation fichiers locaux)
+│   │   ├── config.py           # /api/config/* (providers, clés API)
+│   │   ├── data.py             # /api/data/* (export, backup/restore, RGPD)
+│   │   ├── dashboard.py        # /api/dashboard/* (vue Accueil : today, setup-status)
+│   │   ├── email.py            # /api/email/* (Gmail OAuth + IMAP/SMTP)
+│   │   ├── email_setup.py      # Assistant configuration email
+│   │   ├── calendar.py         # /api/calendar/* (Google, CalDAV, local)
+│   │   ├── crm.py              # /api/crm/* (pipeline, activités, sync Sheets)
+│   │   ├── invoices.py         # /api/invoices/* (devis, factures, PDF)
+│   │   ├── tasks.py            # /api/tasks/* (kanban de tâches)
+│   │   ├── board.py            # /api/board/* (board de décision 5 conseillers)
+│   │   ├── agents.py           # /api/agents/* (Atelier : swarm, missions, OpenClaw)
+│   │   ├── actions.py          # /api/actions/* (agents actionnables)
+│   │   ├── skills.py           # /api/skills/* (génération DOCX/PPTX/XLSX)
+│   │   ├── images.py           # /api/images/* (GPT Image, Gemini)
+│   │   ├── voice.py            # /api/voice/* (transcription Groq Whisper)
+│   │   ├── mcp.py              # /api/mcp/* (serveurs MCP, presets)
+│   │   ├── browser.py          # /api/browser/* (agent navigateur)
+│   │   ├── calculators.py      # /api/calculators/* (ROI, ICE, RICE, NPV...)
+│   │   ├── commands.py / commands_v3.py  # Commandes slash utilisateur
+│   │   ├── prompts.py          # Guided prompts (écran d'accueil)
+│   │   ├── notifications.py    # Notifications internes
+│   │   ├── follow_ups.py       # Relances et suivis
+│   │   ├── escalation.py       # Escalade / confirmation d'outils
+│   │   ├── personalisation.py  # Personnalisation (profil, préférences)
+│   │   ├── performance.py      # Métriques de performance
+│   │   ├── rgpd.py             # /api/rgpd/* (registre, anonymisation)
+│   │   └── tools.py            # Outils exposés au LLM
+│   ├── services/               # Logique métier
+│   │   ├── llm.py              # Orchestrateur LLM (circuit breaker, fallback)
+│   │   ├── providers/          # 11 providers : anthropic, openai, gemini,
+│   │   │                       #   mistral, grok, ollama, openrouter,
+│   │   │                       #   deepseek, perplexity, infomaniak (+ base)
+│   │   ├── agents/             # Atelier embarqué : runtime, swarm (Katia),
+│   │   │                       #   bus, profiles, git_service, tools
+│   │   ├── email/              # Providers email : gmail, imap_smtp (+ factory)
+│   │   ├── calendar/           # Providers calendrier : google, caldav, local
+│   │   ├── skills/             # code_executor (sandbox), générateurs
+│   │   │                       #   docx/pptx/xlsx/html, registry, intent
+│   │   ├── embeddings.py       # nomic-embed-text (768 dim)
+│   │   ├── qdrant.py           # Recherche vectorielle
+│   │   ├── encryption.py       # Fernet + Keychain
+│   │   ├── prompt_security.py  # Anti-injection prompt
+│   │   ├── path_security.py    # Validation chemins fichiers
+│   │   ├── mcp_service.py      # Gestion serveurs MCP (whitelist commandes)
+│   │   ├── error_handler.py    # Messages d'erreur utilisateur (FR, tutoyés)
+│   │   ├── circuit_breaker.py  # Résilience providers LLM
+│   │   ├── crm_sync.py / crm_import.py / crm_export.py / crm_utils.py
+│   │   ├── invoice_pdf.py      # Génération PDF factures (+ pdf_theme.py)
+│   │   ├── email_classifier_v2.py / email_response_generator.py
+│   │   ├── email_contact_matcher.py / email_setup_assistant.py
+│   │   ├── gmail_service.py / sheets_service.py / oauth.py
+│   │   ├── deep_research.py / web_search.py / browser_agent.py
+│   │   ├── memory_tools.py / workspace_tools.py / entity_extractor.py
+│   │   ├── notification_service.py / follow_ups (escalation, scoring)
+│   │   ├── slash_commands.py / user_commands.py / command_registry.py
+│   │   ├── action_agents.py / openclaw_bridge.py / mcp_therese_server.py
+│   │   ├── audit.py / rgpd_auto.py / legal_corpus.py / user_profile.py
+│   │   ├── token_tracker.py / performance.py / execution_truth.py
+│   │   ├── file_parser.py / html_sanitizer.py / http_client.py
+│   │   ├── image_generator.py / calculators.py / board.py / context.py
+│   │   └── tool_confirmations.py / import_service.py / calendar_service.py
 │   ├── models/
-│   │   ├── __init__.py
-│   │   ├── database.py         # SQLite connection
-│   │   ├── entities.py         # SQLModel models
-│   │   └── schemas.py          # Pydantic request/response
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── prompts.py          # System prompts
-│   │   ├── extraction.py       # Entity extraction
-│   │   └── context.py          # Context assembly
-│   └── utils/
-│       ├── __init__.py
-│       ├── parsers.py          # PDF, DOCX parsers
-│       └── chunking.py         # Text chunking
-├── tests/
-│   ├── test_chat.py
-│   ├── test_memory.py
-│   └── test_files.py
+│   │   ├── database.py         # Connexion SQLite + engine async
+│   │   ├── entities.py         # SQLModel (contacts, projets, emails, factures...)
+│   │   ├── entities_agents.py  # Modèles Atelier/agents
+│   │   ├── board.py / command.py
+│   │   └── schemas*.py         # Pydantic request/response par domaine
+│   ├── core/                   # Prompts système, extraction, contexte
+│   └── utils/                  # Parsers, chunking
+├── alembic/                    # Migrations de schéma
 ├── pyproject.toml              # UV config
-└── .python-version             # 3.12
+└── backend.spec                # Build PyInstaller (sidecar Tauri)
 ```
+
+> Les tests vivent dans `tests/` à la racine du repo (pytest, hors E2E Playwright).
 
 **Main FastAPI App** (main.py) :
 

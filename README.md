@@ -31,7 +31,7 @@
 - **18 skills intégrés** - Word, Excel, PowerPoint, emails pro, posts LinkedIn, propositions commerciales, analyses PDF/web, planification projets/semaine/objectifs
 - **Recherche web** - Brave Search, SearXNG (auto-hébergeable) ou DuckDuckGo
 - **Dictée vocale** - Parle, THÉRÈSE écrit
-- **Données locales** - Ton contexte reste sur ta machine, jamais envoyé à un serveur Synoptïa. Tes clés API sont chiffrées via le trousseau de ton système. Les réponses passent par le provider IA de ton choix.
+- **Données locales et chiffrées** - Ton contexte reste sur ta machine, jamais envoyé à un serveur Synoptïa. Ta base de données est chiffrée au repos (SQLCipher, AES-256) et tes clés API sont chiffrées via le trousseau de ton système. Les réponses passent par le provider IA de ton choix.
 - **Atelier IA (v0.5)** - Deux agents embarqués qui améliorent l'app pour toi (voir ci-dessous)
 - **THERESE.md** - Fichier de contexte personnel éditable depuis les Paramètres
 

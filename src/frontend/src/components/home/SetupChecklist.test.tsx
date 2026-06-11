@@ -18,9 +18,9 @@ describe('SetupChecklist', () => {
         status={{ has_calendar: false, has_email: true, billing_complete: false, has_llm_key: true }}
       />
     );
-    expect(queryByText('Connecter votre agenda')).toBeTruthy();
+    expect(queryByText('Connecter ton agenda')).toBeTruthy();
     expect(queryByText('Compléter le profil de facturation')).toBeTruthy();
-    expect(queryByText('Connecter votre messagerie')).toBeNull();
+    expect(queryByText('Connecter ta messagerie')).toBeNull();
   });
 
   it('US-012 : sans clé LLM, la checklist rappelle cette étape', () => {

@@ -94,6 +94,11 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis Sprint 3 (11/06/2026)
+- [ ] **E2E Playwright hors CI** : tests/e2e toujours exclus (`--ignore=tests/e2e`) - ils exigent Vite + uvicorn + navigateur, flaky en CI. US-018 a durci le reste (audits bloquants, clippy -D warnings, mypy baseline) ; un job e2e nightly (pas par PR) reste à concevoir.
+- [ ] **mypy baseline 1059 erreurs** (ci.yml job mypy) : gate anti-régression seulement. Faire baisser le compteur module par module et mettre à jour MYPY_BASELINE à chaque baisse.
+- [ ] **torch 2.9.1 épinglé avec 3 CVE ignorées** (ci.yml security-audit) : bump vers 2.10 à planifier (PyInstaller 3 OS + release.yml à mettre à jour ensemble). transformers 4.57.6 : attendre la 5.0 stable.
+
 ### Depuis Sprint 2 (11/06/2026, findings minor de la revue adversariale, non bloquants)
 - [ ] **Multi-tours d'outils** : `_execute_tools_and_continue` (chat.py) rappelle `continue_with_tool_results` avec le contexte ORIGINAL : les functionCall/résultats du tour précédent disparaissent de l'historique envoyé au modèle (qui peut re-demander un outil déjà exécuté). Pattern partagé par TOUS les providers (pas introduit par US-009, mais désormais atteignable sur Grok/Ollama/Gemini). Garde-fous existants : cap de créations, max 5 itérations, dédup par nom. Fix : accumuler les tours d'outils dans le contexte de la récursion.
 - [ ] **Gemini 2.x + tools = grounding perdu silencieusement** : dès que des tools sont fournis (toujours en chat), google_search est écarté sur gemini-2.x (combinaison non documentée hors Gemini 3) et chat.py n'ajoute pas WEB_SEARCH_TOOL en compensation (commentaire chat.py:866 devenu faux). Impact limité : l'UI ne propose plus que du 3.x. Fix : ajouter WEB_SEARCH_TOOL aux tools Gemini quand le grounding est écarté.

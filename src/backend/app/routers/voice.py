@@ -66,7 +66,7 @@ async def transcribe_audio(
     if not api_key:
         raise HTTPException(
             status_code=400,
-            detail="Clé API Groq non configurée. Ajoutez-la dans les paramètres.",
+            detail="Clé API Groq non configurée. Ajoute-la dans les paramètres.",
         )
 
     # Read audio data
@@ -116,7 +116,7 @@ async def transcribe_audio(
             elif response.status_code == 429:
                 raise HTTPException(
                     status_code=429,
-                    detail="Limite de requêtes Groq dépassée. Réessayez dans quelques instants.",
+                    detail="Limite de requêtes Groq dépassée. Réessaie dans quelques instants.",
                 )
             else:
                 raise HTTPException(
@@ -135,7 +135,7 @@ async def transcribe_audio(
     except httpx.TimeoutException:
         raise HTTPException(
             status_code=504,
-            detail="Timeout lors de la transcription. Réessayez avec un audio plus court.",
+            detail="Timeout lors de la transcription. Réessaie avec un audio plus court.",
         )
     except httpx.RequestError as e:
         logger.error(f"Network error during transcription: {e}")

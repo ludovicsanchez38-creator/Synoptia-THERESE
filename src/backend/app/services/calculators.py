@@ -95,7 +95,7 @@ class CalculatorService:
 
         # Interprétation
         if roi_percent >= 100:
-            interpretation = f"🚀 Excellent ! Vous avez doublé votre investissement (+{roi_percent:.1f}%)"
+            interpretation = f"🚀 Excellent ! Tu as doublé ton investissement (+{roi_percent:.1f}%)"
         elif roi_percent >= 50:
             interpretation = f"✅ Très bon ROI de {roi_percent:.1f}%. L'investissement est rentable."
         elif roi_percent >= 20:

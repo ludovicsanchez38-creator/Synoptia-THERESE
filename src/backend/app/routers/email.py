@@ -690,7 +690,7 @@ async def test_email_connection(
         logger.error(f"Connection test failed: {e}")
         return {
             "success": False,
-            "message": f"Echec de connexion: {str(e)}",
+            "message": f"Échec de connexion: {str(e)}",
         }
 
 
@@ -829,7 +829,7 @@ async def _list_messages_imap(
         logger.error(f"IMAP timeout for account {account.email}: {e}")
         raise HTTPException(
             status_code=504,
-            detail=f"Delai de connexion IMAP depasse pour {account.imap_host}",
+            detail=f"Délai de connexion IMAP dépassé pour {account.imap_host}",
         )
     except Exception as e:
         logger.error(f"IMAP list_messages failed for {account.email}: {e}")

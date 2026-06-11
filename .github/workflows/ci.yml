@@ -112,13 +112,104 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Audit NPM (high + critical)
+      # US-018 : audits BLOQUANTS sur les dépendances de production (les
+      # `|| true` rendaient ces étapes décoratives). Toute exception est
+      # explicite et justifiée ci-dessous, jamais silencieuse.
+      - name: Audit NPM (prod, high + critical) - BLOQUANT
         working-directory: src/frontend
-        run: npm audit --audit-level=high || true
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Installer pip-audit et uv
         run: pip install pip-audit uv
 
-      - name: Audit Python
+      # Exceptions documentées (état au 11/06/2026, à réviser à chaque bump) :
+      # - torch 2.9.1 : PYSEC-2026-139 / CVE-2025-3000 / CVE-2025-3001 -
+      #   fix = torch 2.10, bump non trivial (PyInstaller 3 OS + version CPU
+      #   épinglée dans release.yml). Surface réduite : modèle local fixe.
+      # - transformers 4.57.6 : PYSEC-2025-217 / CVE-2026-1839 - fix = 5.0.0rc3
+      #   (release candidate, pas raisonnable en prod).
+      - name: Audit Python (prod) - BLOQUANT avec exceptions justifiées
         shell: bash
-        run: pip-audit -r <(uv export --no-hashes) || true
+        run: |
+          pip-audit -r <(uv export --no-hashes --no-dev) --no-deps --disable-pip \
+            --ignore-vuln PYSEC-2026-139 \
+            --ignore-vuln CVE-2025-3000 \
+            --ignore-vuln CVE-2025-3001 \
+            --ignore-vuln PYSEC-2025-217 \
+            --ignore-vuln CVE-2026-1839
+
+  mypy:
+    name: Typage (mypy, baseline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      # US-018 (graduel) : la dette mypy existante est figée en BASELINE.
+      # Une PR qui AJOUTE des erreurs de typage passe au rouge ; faire
+      # baisser le compteur met à jour la baseline ci-dessous.
+      # Revue adversariale : mypy sort en exit 1 dès qu'il y a des erreurs ;
+      # avec le set -e/pipefail du shell bash de GitHub Actions, l'assignation
+      # tuait le step AVANT la comparaison (job rouge à chaque run). Capture
+      # avec || true, comptage par grep ' error:', et garde anti-fail-open
+      # (sortie vide ou crash mypy = rouge, pas vert).
+      - name: mypy - BLOQUANT au-delà de la baseline
+        shell: bash
+        env:
+          MYPY_BASELINE: "999"
+        run: |
+          mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
+          if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then
+            echo "::error::mypy n'a pas produit de sortie exploitable (crash ?)"
+            printf '%s\n' "$mypy_out" | head -20
+            exit 1
+          fi
+          count=$(printf '%s\n' "$mypy_out" | grep -c ' error:' || true)
+          echo "mypy : $count erreurs (baseline $MYPY_BASELINE)"
+          if [ "$count" -gt "$MYPY_BASELINE" ]; then
+            echo "::error::mypy a dépassé la baseline ($count > $MYPY_BASELINE) - de nouvelles erreurs de typage ont été introduites"
+            printf '%s\n' "$mypy_out" | grep ' error:' | tail -20
+            exit 1
+          fi
+
+  rust:
+    name: Rust (Tauri - clippy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer dépendances Linux (Tauri)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/frontend/src-tauri
+
+      # Le build script Tauri exige le sidecar (externalBin) ET le dossier
+      # frontendDist ../dist (la feature par défaut custom-protocol embarque
+      # les assets : tauri-codegen panique si le dossier manque - revue
+      # adversariale). Des factices suffisent pour analyser le code Rust.
+      - name: Sidecar et dist factices
+        working-directory: src/frontend/src-tauri
+        run: |
+          mkdir -p binaries && touch binaries/backend-x86_64-unknown-linux-gnu && chmod +x binaries/backend-x86_64-unknown-linux-gnu
+          mkdir -p ../dist && touch ../dist/index.html
+
+      - name: Clippy - BLOQUANT (zéro warning)
+        working-directory: src/frontend/src-tauri
+        run: cargo clippy --all-targets -- -D warnings

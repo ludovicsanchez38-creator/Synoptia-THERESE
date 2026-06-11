@@ -143,7 +143,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         // Timeout
         if (elapsed > TIMEOUT_MS) {
           setError(
-            'Le backend ne répond pas. Relancez THÉRÈSE.'
+            'Le backend ne répond pas. Relance THÉRÈSE.'
           );
           return;
         }

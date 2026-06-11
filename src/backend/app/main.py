@@ -67,8 +67,8 @@ from app.routers import (
     tools_router,  # V3 - Installed Tools
     voice_router,
 )
-from app.services import close_qdrant, init_qdrant
 from app.services.mcp_service import get_mcp_service, initialize_mcp_service
+from app.services.qdrant import close_qdrant, init_qdrant
 from app.services.skills import close_skills, init_skills
 
 setup_logging()
@@ -155,66 +155,14 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
-    # Migration auto : ajouter les colonnes manquantes (desktop = pas d'alembic auto)
+    # Migrations ad-hoc : factorisées dans database.apply_adhoc_migrations
+    # (revue adversariale US-015 : elles doivent tourner AVANT l'estampille
+    # Alembic, sinon une DB est marquée head sans avoir le schéma de head).
+    # init_db les a déjà appliquées ; cet appel est un filet idempotent.
     try:
-        import sqlite3
-        db_path = settings.db_path
-        if db_path and FilePath(str(db_path)).exists():
-            with sqlite3.connect(str(db_path)) as conn:
-                cursor = conn.execute("PRAGMA table_info(invoices)")
-                columns = [row[1] for row in cursor.fetchall()]
-                if columns and "currency" not in columns:
-                    conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
-                    conn.commit()
-                    logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
-                # P0-IA-3 : provider LLM par message (badge local/cloud)
-                cursor = conn.execute("PRAGMA table_info(messages)")
-                msg_columns = [row[1] for row in cursor.fetchall()]
-                if msg_columns and "provider" not in msg_columns:
-                    conn.execute("ALTER TABLE messages ADD COLUMN provider TEXT")
-                    conn.commit()
-                    logger.info("Migration auto : colonne 'provider' ajoutée à la table messages")
-                # US-017 : purge_excluded sur contacts
-                cursor = conn.execute("PRAGMA table_info(contacts)")
-                contact_columns = [row[1] for row in cursor.fetchall()]
-                if contact_columns and "purge_excluded" not in contact_columns:
-                    conn.execute("ALTER TABLE contacts ADD COLUMN purge_excluded BOOLEAN DEFAULT 0")
-                    conn.commit()
-                    logger.info("Migration auto : colonne 'purge_excluded' ajoutée à la table contacts")
-                # Email Backlog : signature_html sur email_accounts
-                cursor = conn.execute("PRAGMA table_info(email_accounts)")
-                ea_columns = [row[1] for row in cursor.fetchall()]
-                if ea_columns and "signature_html" not in ea_columns:
-                    conn.execute("ALTER TABLE email_accounts ADD COLUMN signature_html TEXT")
-                    conn.commit()
-                    logger.info("Migration auto : colonne 'signature_html' ajoutée à email_accounts")
-                # Email Backlog : contact_id sur email_messages
-                cursor = conn.execute("PRAGMA table_info(email_messages)")
-                em_columns = [row[1] for row in cursor.fetchall()]
-                if em_columns and "contact_id" not in em_columns:
-                    conn.execute("ALTER TABLE email_messages ADD COLUMN contact_id TEXT REFERENCES contacts(id)")
-                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_messages_contact_id ON email_messages(contact_id)")
-                    conn.commit()
-                    logger.info("Migration auto : colonne 'contact_id' ajoutée à email_messages")
-                # Email Backlog : table email_follow_ups
-                cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_follow_ups'")
-                if not cursor.fetchone():
-                    conn.execute("""
-                        CREATE TABLE email_follow_ups (
-                            id VARCHAR NOT NULL PRIMARY KEY,
-                            email_message_id VARCHAR NOT NULL REFERENCES email_messages(id),
-                            contact_id VARCHAR REFERENCES contacts(id),
-                            due_date VARCHAR NOT NULL,
-                            note VARCHAR,
-                            status VARCHAR NOT NULL DEFAULT 'pending',
-                            created_at VARCHAR NOT NULL
-                        )
-                    """)
-                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_email_message_id ON email_follow_ups(email_message_id)")
-                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_contact_id ON email_follow_ups(contact_id)")
-                    conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_status ON email_follow_ups(status)")
-                    conn.commit()
-                    logger.info("Migration auto : table 'email_follow_ups' créée")
+        from app.models.database import apply_adhoc_migrations
+
+        apply_adhoc_migrations(settings.db_path)
     except Exception as e:
         # US-008 (RES5-b) : ne pas avaler une erreur de migration fatale.
         if _is_fatal_migration_error(e):
@@ -226,6 +174,8 @@ async def lifespan(app: FastAPI):
     # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
     skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"
 
+    import asyncio
+
     if not skip_services:
         await init_qdrant()
         logger.info("Qdrant vector store initialized")
@@ -233,10 +183,26 @@ async def lifespan(app: FastAPI):
         await init_skills()
         logger.info("Skills system initialized")
 
-        await initialize_mcp_service()
-        logger.info("MCP service initialized")
+        # US-016 : le spawn des serveurs MCP (processus npx, téléchargements
+        # réseau au premier lancement) ne doit pas bloquer le démarrage -
+        # /health doit répondre dès que le coeur (DB, Qdrant, skills) est prêt.
+        # Si un chat arrive avant la fin, get_tools_for_llm expose simplement
+        # moins d'outils le temps que les serveurs montent.
+        async def _init_mcp_bg():
+            try:
+                await initialize_mcp_service()
+                logger.info("MCP service initialized")
+            except asyncio.CancelledError:
+                logger.info("Init MCP annulée (arrêt de l'app pendant le démarrage)")
+                raise
+            except Exception as e:
+                logger.warning(f"Init MCP en arrière-plan échouée : {e}")
 
-    import asyncio
+        # Référence FORTE + annulation au shutdown (revue adversariale :
+        # sans ça, fermer l'app pendant l'init laissait la boucle continuer
+        # à spawner des serveurs npx APRÈS le shutdown -> processus orphelins ;
+        # et asyncio ne garde qu'une référence faible sur les tasks).
+        app.state.mcp_init_task = asyncio.create_task(_init_mcp_bg())
 
     if not skip_services:
         # Pre-charge le modele d'embeddings en arrière-plan (non-bloquant)
@@ -375,6 +341,15 @@ async def lifespan(app: FastAPI):
         if browser.is_active:
             await browser.stop()
 
+        # Annuler l'init MCP encore en cours AVANT le shutdown du service
+        mcp_init_task = getattr(app.state, "mcp_init_task", None)
+        if mcp_init_task is not None and not mcp_init_task.done():
+            mcp_init_task.cancel()
+            try:
+                await mcp_init_task
+            except asyncio.CancelledError:
+                pass
+
         mcp_service = get_mcp_service()
         await mcp_service.shutdown()
         await close_skills()
@@ -452,7 +427,7 @@ else:
                 status_code=429,
                 content={
                     "code": "RATE_LIMITED",
-                    "message": "Trop de requetes. Veuillez patienter.",
+                    "message": "Trop de requêtes, patiente un instant.",
                 },
             )
         _request_counts[client_ip].append(now)
@@ -505,7 +480,7 @@ if HAS_SLOWAPI:
             status_code=429,
             content={
                 "code": "RATE_LIMITED",
-                "message": "Trop de requêtes. Veuillez patienter.",
+                "message": "Trop de requêtes, patiente un instant.",
             },
         )
 
@@ -529,7 +504,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={
             "code": ErrorCode.UNKNOWN_ERROR.value,
-            "message": "Une erreur inattendue s'est produite. Veuillez reessayer.",
+            "message": "Une erreur inattendue s'est produite, réessaie.",
             "recoverable": True,
             "details": {"error": str(exc)} if settings.debug else {},
         },

@@ -349,16 +349,34 @@ async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
 
 
 async def _get_existing_entity_names(session: AsyncSession) -> tuple[list[str], list[str]]:
-    """Get names of existing contacts and projects to avoid duplicates."""
-    # Get contact names
-    contact_result = await session.execute(select(Contact))
-    contacts = contact_result.scalars().all()
-    contact_names = [c.display_name for c in contacts if c.display_name]
+    """Get names of existing contacts and projects to avoid duplicates.
 
-    # Get project names
-    project_result = await session.execute(select(Project))
-    projects = project_result.scalars().all()
-    project_names = [p.name for p in projects if p.name]
+    US-016 : requêtes ciblées sur les colonnes de nom (au lieu d'hydrater
+    toutes les entités complètes à chaque message) + borne de sécurité - la
+    liste ne sert qu'à éviter les doublons dans l'extraction d'entités.
+    """
+    contact_result = await session.execute(
+        select(Contact.first_name, Contact.last_name, Contact.company).limit(2000)
+    )
+    contact_names = []
+    for first_name, last_name, company in contact_result.all():
+        name = " ".join(p for p in (first_name, last_name) if p)
+        if not name and company:
+            name = company
+        if name:
+            contact_names.append(name)
+
+    project_result = await session.execute(select(Project.name).limit(2000))
+    project_names = [name for (name,) in project_result.all() if name]
+
+    # Pas de cap silencieux : au-delà, l'anti-doublons d'extraction devient
+    # partiel (doublons possibles), l'utilisateur doit pouvoir le savoir.
+    if len(contact_names) >= 2000 or len(project_names) >= 2000:
+        logger.warning(
+            "Anti-doublons d'extraction borné à 2000 noms (contacts=%d, projets=%d) "
+            "- des doublons peuvent passer au-delà",
+            len(contact_names), len(project_names),
+        )
 
     return contact_names, project_names
 

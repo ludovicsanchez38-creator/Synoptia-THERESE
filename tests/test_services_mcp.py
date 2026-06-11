@@ -42,22 +42,22 @@ class TestValidateMCPCommand:
     def test_validate_mcp_command_blocked(self):
         """Les commandes bloquées doivent lever ValueError."""
         for cmd in BLOCKED_COMMANDS:
-            with pytest.raises(ValueError, match="Commande MCP bloquee"):
+            with pytest.raises(ValueError, match="Commande MCP bloquée"):
                 validate_mcp_command(cmd)
 
     def test_validate_mcp_command_blocked_with_path(self):
         """Les commandes bloquées avec chemin doivent lever ValueError."""
-        with pytest.raises(ValueError, match="Commande MCP bloquee"):
+        with pytest.raises(ValueError, match="Commande MCP bloquée"):
             validate_mcp_command("/bin/rm")
 
     def test_validate_mcp_command_unknown(self):
         """Les commandes inconnues doivent lever ValueError."""
-        with pytest.raises(ValueError, match="Commande MCP non autorisee"):
+        with pytest.raises(ValueError, match="Commande MCP non autorisée"):
             validate_mcp_command("unknown_command")
 
     def test_validate_mcp_command_unknown_with_path(self):
         """Les commandes inconnues avec chemin doivent lever ValueError."""
-        with pytest.raises(ValueError, match="Commande MCP non autorisee"):
+        with pytest.raises(ValueError, match="Commande MCP non autorisée"):
             validate_mcp_command("/usr/bin/unknown_cmd")
 
 

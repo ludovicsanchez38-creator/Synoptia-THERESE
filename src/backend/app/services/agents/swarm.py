@@ -26,13 +26,14 @@ logger = logging.getLogger(__name__)
 def _get_agent_model(agent_id: str) -> str | None:
     """Lit le modèle choisi pour un agent depuis la DB."""
     try:
-        import sqlite3
 
         from app.config import settings
 
         db_path = settings.db_path
         if db_path and db_path.exists():
-            conn = sqlite3.connect(str(db_path))
+            from app.models.database import db_connect
+
+            conn = db_connect(db_path)  # US-014 : clé SQLCipher si chiffrée
             cursor = conn.execute(
                 "SELECT value FROM preferences WHERE key = ?",
                 (f"agent_{agent_id}_model",),
@@ -72,7 +73,7 @@ class SwarmOrchestrator:
         yield AgentStreamChunk(
             type="agent_start",
             agent="katia",
-            content="Analyse de votre demande...",
+            content="Analyse de ta demande...",
             task_id=task_id,
             phase="spec",
         )

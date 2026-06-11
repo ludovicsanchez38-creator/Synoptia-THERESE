@@ -266,7 +266,7 @@ async def execute_create_contact(
         logger.error(f"Failed to create contact via tool: {e}")
         await session.rollback()
         return json.dumps({
-            "error": f"Echec de la creation du contact: {str(e)}",
+            "error": f"Échec de la création du contact: {str(e)}",
         }, ensure_ascii=False)
 
 
@@ -347,7 +347,7 @@ async def execute_create_project(
         logger.error(f"Failed to create project via tool: {e}")
         await session.rollback()
         return json.dumps({
-            "error": f"Echec de la creation du projet: {str(e)}",
+            "error": f"Échec de la création du projet: {str(e)}",
         }, ensure_ascii=False)
 
 

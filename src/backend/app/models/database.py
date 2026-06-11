@@ -56,7 +56,8 @@ def ensure_invoice_legacy_columns(
     target_columns = columns or tuple(INVOICE_LEGACY_COLUMN_DEFINITIONS.keys())
     added_columns: list[str] = []
 
-    with sqlite3.connect(str(db_path)) as conn:
+    # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
+    with db_connect(db_path) as conn:
         cursor = conn.execute("PRAGMA table_info(invoices)")
         existing_columns = {row[1] for row in cursor.fetchall()}
         if not existing_columns:
@@ -80,6 +81,270 @@ def ensure_invoice_legacy_columns(
     return added_columns
 
 
+def apply_adhoc_migrations(db_path) -> None:
+    """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
+
+    Factorisées depuis main.py (revue adversariale US-015) : elles DOIVENT
+    tourner avant ensure_alembic_stamp, sinon une DB legacy serait estampillée
+    head sans avoir le schéma de head. Appelées par init_db, le lifespan
+    (filet) et le pré-vol alembic/env.py.
+    """
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    if not db_path or not _Path(str(db_path)).exists():
+        return
+    with closing(db_connect(db_path)) as conn:
+        cursor = conn.execute("PRAGMA table_info(invoices)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if columns and "currency" not in columns:
+            conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
+            conn.commit()
+            logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+        # P0-IA-3 : provider LLM par message (badge local/cloud)
+        cursor = conn.execute("PRAGMA table_info(messages)")
+        msg_columns = [row[1] for row in cursor.fetchall()]
+        if msg_columns and "provider" not in msg_columns:
+            conn.execute("ALTER TABLE messages ADD COLUMN provider TEXT")
+            conn.commit()
+            logger.info("Migration auto : colonne 'provider' ajoutée à la table messages")
+        # US-017 : purge_excluded sur contacts
+        cursor = conn.execute("PRAGMA table_info(contacts)")
+        contact_columns = [row[1] for row in cursor.fetchall()]
+        if contact_columns and "purge_excluded" not in contact_columns:
+            conn.execute("ALTER TABLE contacts ADD COLUMN purge_excluded BOOLEAN DEFAULT 0")
+            conn.commit()
+            logger.info("Migration auto : colonne 'purge_excluded' ajoutée à la table contacts")
+        # Email Backlog : signature_html sur email_accounts
+        cursor = conn.execute("PRAGMA table_info(email_accounts)")
+        ea_columns = [row[1] for row in cursor.fetchall()]
+        if ea_columns and "signature_html" not in ea_columns:
+            conn.execute("ALTER TABLE email_accounts ADD COLUMN signature_html TEXT")
+            conn.commit()
+            logger.info("Migration auto : colonne 'signature_html' ajoutée à email_accounts")
+        # Email Backlog : contact_id sur email_messages
+        cursor = conn.execute("PRAGMA table_info(email_messages)")
+        em_columns = [row[1] for row in cursor.fetchall()]
+        if em_columns and "contact_id" not in em_columns:
+            conn.execute("ALTER TABLE email_messages ADD COLUMN contact_id TEXT REFERENCES contacts(id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_messages_contact_id ON email_messages(contact_id)")
+            conn.commit()
+            logger.info("Migration auto : colonne 'contact_id' ajoutée à email_messages")
+        # Email Backlog : table email_follow_ups
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='email_follow_ups'"
+        )
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE email_follow_ups (
+                    id VARCHAR NOT NULL PRIMARY KEY,
+                    email_message_id VARCHAR NOT NULL REFERENCES email_messages(id),
+                    contact_id VARCHAR REFERENCES contacts(id),
+                    due_date VARCHAR NOT NULL,
+                    note VARCHAR,
+                    status VARCHAR NOT NULL DEFAULT 'pending',
+                    created_at VARCHAR NOT NULL
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_email_message_id ON email_follow_ups(email_message_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_contact_id ON email_follow_ups(contact_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_status ON email_follow_ups(status)")
+            conn.commit()
+            logger.info("Migration auto : table 'email_follow_ups' créée")
+
+
+# US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
+# migrations ad-hoc d'init_db/main.py EST au schéma de cette révision : on
+# l'estampille pour qu'Alembic devienne l'unique voie d'évolution du schéma.
+# Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
+# vraie tête de src/backend/alembic/versions (épinglée en dur pour que
+# l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
+ALEMBIC_HEAD_REVISION = "a1b2c3d4e5f7"
+
+
+def ensure_alembic_stamp(db_path) -> None:
+    """Estampille la DB à la tête Alembic si elle n'a pas d'alembic_version.
+
+    Idempotent. Ne touche pas une DB déjà suivie par Alembic (révision plus
+    ancienne incluse : `alembic upgrade head` la fera avancer normalement).
+    Ne stamp JAMAIS une DB vide (sans tables métier) : elle doit être créée
+    par les migrations ou par create_all d'abord.
+    """
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    if not db_path or not _Path(str(db_path)).exists():
+        return
+    try:
+        # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
+        with closing(db_connect(db_path)) as conn:
+            has_tables = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='contacts'"
+            ).fetchone()
+            if not has_tables:
+                return
+            has_stamp = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
+            ).fetchone()
+            if has_stamp:
+                # Revue adversariale US-015 : une DB trackée à une révision
+                # ANCIENNE dont le schéma a déjà été patché par les migrations
+                # ad-hoc (elles tournent à chaque boot) ferait planter
+                # `upgrade head` en duplicate column. Preuve de schéma au
+                # niveau de la tête épinglée : invoices.validite_jours (la
+                # colonne ajoutée PAR cette révision). Si présente ->
+                # ré-estampiller à la tête.
+                current = conn.execute(
+                    "SELECT version_num FROM alembic_version"
+                ).fetchone()
+                if current and current[0] != ALEMBIC_HEAD_REVISION:
+                    inv_cols = {
+                        row[1]
+                        for row in conn.execute("PRAGMA table_info(invoices)")
+                    }
+                    if "validite_jours" in inv_cols:
+                        conn.execute(
+                            "UPDATE alembic_version SET version_num = ?",
+                            (ALEMBIC_HEAD_REVISION,),
+                        )
+                        conn.commit()
+                        logger.info(
+                            f"US-015 : alembic_version réaligné {current[0]} -> "
+                            f"{ALEMBIC_HEAD_REVISION} (schéma déjà patché par "
+                            "les migrations ad-hoc)"
+                        )
+                return
+            conn.execute(
+                "CREATE TABLE alembic_version ("
+                "version_num VARCHAR(32) NOT NULL, "
+                "CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"
+            )
+            conn.execute(
+                "INSERT INTO alembic_version (version_num) VALUES (?)",
+                (ALEMBIC_HEAD_REVISION,),
+            )
+            conn.commit()
+            logger.info(f"US-015 : DB estampillée Alembic {ALEMBIC_HEAD_REVISION}")
+    except Exception as e:
+        logger.warning(f"Estampillage Alembic échoué : {e}")
+
+
+# ============================================================
+# US-014 : chiffrement de la base au repos (SQLCipher)
+# ============================================================
+# therese.db est chiffrée avec SQLCipher (AES-256), clé dérivée de la clé
+# maîtresse du trousseau (HKDF, cf. encryption.get_db_key_hex). Une DB claire
+# existante est migrée au démarrage (sqlcipher_export + vérification).
+# Échappatoire : THERESE_DB_PLAINTEXT=1 (debug / trousseau indisponible).
+
+_db_cipher_active = False  # positionné par init_db, lu par les listeners
+
+
+def db_encryption_enabled() -> bool:
+    """Chiffrement au repos actif ? (US-014)"""
+    import os
+
+    return os.environ.get("THERESE_DB_PLAINTEXT") != "1"
+
+
+def db_is_encrypted(db_path) -> bool:
+    """Une DB SQLite claire commence par l'en-tête 'SQLite format 3'."""
+    from pathlib import Path as _Path
+
+    p = _Path(str(db_path))
+    if not p.exists() or p.stat().st_size == 0:
+        return False
+    with open(p, "rb") as f:
+        return f.read(16) != b"SQLite format 3\x00"
+
+
+def _db_key_pragma() -> str:
+    from app.services.encryption import get_db_key_hex
+
+    return f"PRAGMA key = \"x'{get_db_key_hex()}'\""
+
+
+def db_connect(db_path):
+    """Connexion directe à therese.db (remplace les sqlite3.connect épars).
+
+    Adaptatif : DB chiffrée -> sqlcipher3 + clé ; DB claire (échappatoire ou
+    pré-migration) -> sqlite3 standard. Tous les accès hors engine DOIVENT
+    passer par ici (data.py, agents.py, swarm.py, main.py, env.py).
+    """
+
+    if db_is_encrypted(db_path):
+        import sqlcipher3
+
+        conn = sqlcipher3.connect(str(db_path))
+        conn.execute(_db_key_pragma())
+        return conn
+    return sqlite3.connect(str(db_path))
+
+
+def ensure_db_encrypted(db_path) -> None:
+    """Migre une DB claire existante vers SQLCipher (idempotent).
+
+    Étapes : checkpoint WAL -> sqlcipher_export vers un fichier temporaire ->
+    vérification (mêmes tables + integrity_check) -> remplacement atomique.
+    La copie claire n'est PAS conservée (la garder annulerait le chiffrement
+    au repos) : la vérification précède toujours le remplacement.
+    """
+    import os
+    from contextlib import closing
+    from pathlib import Path as _Path
+
+    p = _Path(str(db_path))
+    if not p.exists() or p.stat().st_size == 0 or db_is_encrypted(p):
+        return
+
+    import sqlcipher3
+    from app.services.encryption import get_db_key_hex
+
+    key_hex = get_db_key_hex()
+    tmp = _Path(str(p) + ".encrypting")
+    tmp.unlink(missing_ok=True)
+
+    # Rapatrier le WAL avant export (sinon transactions récentes perdues)
+    with closing(sqlite3.connect(str(p))) as conn:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        expected_tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+
+    with closing(sqlcipher3.connect(str(p))) as conn:
+        conn.execute(
+            f"ATTACH DATABASE ? AS encrypted KEY \"x'{key_hex}'\"", (str(tmp),)
+        )
+        conn.execute("SELECT sqlcipher_export('encrypted')")
+        conn.execute("DETACH DATABASE encrypted")
+
+    # Vérifier le chiffré AVANT de remplacer la claire
+    with closing(sqlcipher3.connect(str(tmp))) as conn:
+        conn.execute(f"PRAGMA key = \"x'{key_hex}'\"")
+        got_tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            )
+        }
+        integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
+    if got_tables != expected_tables or integrity != "ok":
+        tmp.unlink(missing_ok=True)
+        raise RuntimeError(
+            "Migration SQLCipher : vérification échouée "
+            f"(tables {len(got_tables)}/{len(expected_tables)}, integrity={integrity}). "
+            "La base claire est intacte."
+        )
+
+    os.replace(tmp, p)
+    for suffix in ("-wal", "-shm"):
+        _Path(str(p) + suffix).unlink(missing_ok=True)
+    logger.info("US-014 : base migrée vers SQLCipher (chiffrement au repos actif)")
+
+
 def get_database_url(async_mode: bool = True) -> str:
     """Get database URL for SQLite."""
     db_path = settings.db_path
@@ -97,17 +362,72 @@ async def init_db() -> None:
     # Ensure parent directory exists
     settings.db_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # US-014 : chiffrement au repos. Migrer une DB claire existante, puis
+    # brancher les deux engines sur sqlcipher3 (clé posée en PREMIER pragma
+    # de chaque connexion). Échec de clé/migration = fatal et explicite
+    # (démarrer en clair en silence trahirait la promesse de souveraineté ;
+    # échappatoire documentée : THERESE_DB_PLAINTEXT=1).
+    global _db_cipher_active
+    _db_cipher_active = False
+    engine_kwargs: dict = {}
+    # Revue adversariale US-014 : si la base est DÉJÀ chiffrée, l'échappatoire
+    # THERESE_DB_PLAINTEXT=1 est inopérante (les engines doivent poser la clé,
+    # sinon « file is not a database »). Le flag n'empêche que la migration
+    # initiale vers le chiffré.
+    if not db_encryption_enabled() and db_is_encrypted(settings.db_path):
+        logger.warning(
+            "US-014 : THERESE_DB_PLAINTEXT=1 ignoré - la base est déjà chiffrée "
+            "(le flag n'agit qu'avant la migration initiale)."
+        )
+    if db_encryption_enabled() or db_is_encrypted(settings.db_path):
+        try:
+            ensure_db_encrypted(settings.db_path)
+            # Revue adversariale US-014 : sur une DB DÉJÀ chiffrée, une
+            # mauvaise clé (Keychain réinitialisé, DB d'une autre machine)
+            # explosait plus loin en « file is not a database » brut, hors de
+            # ce try. Probe explicite ici -> diagnostic pédagogique ci-dessous.
+            if db_is_encrypted(settings.db_path):
+                from contextlib import closing as _closing
+
+                with _closing(db_connect(settings.db_path)) as _probe:
+                    _probe.execute("SELECT count(*) FROM sqlite_master").fetchone()
+            import aiosqlite.core as _aiosqlite_core
+            import sqlcipher3
+
+            # aiosqlite importe sqlite3 en dur : on substitue le module DBAPI
+            # SQLCipher (même API) pour le moteur async. Substitution
+            # PROCESS-GLOBALE non restaurée par close_db : tout autre
+            # consommateur d'aiosqlite de ce process passerait par sqlcipher3
+            # (sans clé il lit les DB claires comme sqlite3 - inoffensif
+            # aujourd'hui, à garder en tête si un second engine async apparaît).
+            _aiosqlite_core.sqlite3 = sqlcipher3.dbapi2
+            engine_kwargs["module"] = sqlcipher3.dbapi2
+            _db_cipher_active = True
+        except Exception:
+            logger.error(
+                "US-014 : clé de chiffrement indisponible ou différente de celle "
+                "de la base (Keychain réinitialisé ? base d'une autre machine ?). "
+                "La base est INTACTE mais verrouillée : restaure le fichier "
+                "~/.therese/.encryption_key d'origine (présent dans tes backups). "
+                "Démarrage refusé pour ne pas écrire en clair en silence. "
+                "THERESE_DB_PLAINTEXT=1 n'agit que sur une base encore en clair."
+            )
+            raise
+
     # Create sync engine for table creation
     sync_engine = create_engine(
         get_database_url(async_mode=False),
         echo=settings.debug,
         connect_args={"check_same_thread": False},
+        **engine_kwargs,
     )
 
     # PERF-005 + Phase 3: SQLite PRAGMAs optimises
     @event.listens_for(sync_engine, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
+        if _db_cipher_active:
+            cursor.execute(_db_key_pragma())  # DOIT précéder tout autre accès
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA synchronous=NORMAL")
@@ -130,6 +450,8 @@ async def init_db() -> None:
     @event.listens_for(async_engine.sync_engine, "connect")
     def _set_async_sqlite_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
+        if _db_cipher_active:
+            cursor.execute(_db_key_pragma())  # DOIT précéder tout autre accès
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA synchronous=NORMAL")
@@ -191,6 +513,16 @@ async def init_db() -> None:
             except Exception as e:
                 logger.debug(f"Index creation skipped: {e}")
         conn.commit()
+
+    # Revue adversariale US-015 : les migrations ad-hoc DOIVENT précéder
+    # l'estampille, sinon la DB serait marquée head sans le schéma de head.
+    apply_adhoc_migrations(settings.db_path)
+
+    # US-015 : estampiller la DB à la tête Alembic. Le bootstrap ci-dessus
+    # (create_all + colonnes/index ad-hoc) amène la DB AU schéma courant ;
+    # l'estampille fait d'Alembic l'unique voie d'évolution future
+    # (`make db-migrate` fonctionne désormais aussi sur une DB legacy).
+    ensure_alembic_stamp(settings.db_path)
 
     logger.info("Database initialized successfully")
 

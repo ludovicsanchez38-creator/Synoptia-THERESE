@@ -197,7 +197,9 @@ class TestBUG012CrashMacM4Max:
         assert "device='mps'" not in content, "device='mps' crashe sur M4 Max"
         assert 'device="cuda"' not in content, "device='cuda' n'existe pas sur macOS"
 
-    @patch("app.services.embeddings.SentenceTransformer")
+    # US-016 : l'import de SentenceTransformer est différé dans la property
+    # (torch paresseux) -> patcher le module SOURCE, pas l'attribut local.
+    @patch("sentence_transformers.SentenceTransformer")
     def test_embeddings_constructor_receives_cpu(self, mock_st):
         """Vérifie que SentenceTransformer reçoit bien device='cpu' à l'exécution."""
         from app.services.embeddings import EmbeddingsService
@@ -6380,8 +6382,11 @@ class TestP0IA3_ProviderBadge:
         assert data[0]["model"] == "mistral-small-latest"
 
     def test_main_auto_migration_adds_provider_column(self):
-        """La migration auto desktop doit ajouter la colonne provider à messages."""
-        content = APP_MAIN_PY.read_text(encoding="utf-8")
+        """La migration auto desktop doit ajouter la colonne provider à messages.
+
+        Revue adversariale US-015 : les migrations ad-hoc vivent désormais dans
+        database.apply_adhoc_migrations (avant l'estampille Alembic)."""
+        content = (SRC / "app" / "models" / "database.py").read_text(encoding="utf-8")
         assert "ALTER TABLE messages ADD COLUMN provider" in content
 
     def test_message_bubble_shows_provider_badge(self):

@@ -26,6 +26,16 @@ THÉRÈSE est conçu "local-first". Vos données restent sur votre machine :
 
 Les clés API des fournisseurs LLM sont chiffrées avec **Fernet** (AES-128-CBC). La clé de chiffrement est stockée dans le Keychain macOS ou le Windows Credential Manager (via `keyring`), jamais sur le disque.
 
+### Chiffrement de la base au repos (US-014)
+
+La base SQLite (`~/.therese/therese.db`) est chiffrée avec **SQLCipher** (AES-256). La clé est dérivée (HKDF-SHA256) de la clé maîtresse du trousseau : un seul secret à protéger, même cycle de vie que les clés API (Keychain + sauvegarde fichier `~/.therese/.encryption_key`, permissions 600). Une base claire existante est migrée automatiquement au premier démarrage (export chiffré, vérification d'intégrité, remplacement atomique - aucune copie claire conservée).
+
+Conséquences à connaître :
+- une copie du fichier `therese.db` (vol, sauvegarde cloud, autre machine) est **illisible sans la clé** ;
+- les backups intégrés (Paramètres > Données) embarquent la clé (`.encryption_key`) : l'archive est **autosuffisante** pour une restauration sur une autre machine, donc à protéger comme la base elle-même (elle contient aussi Qdrant et les images en clair) ;
+- perdre la clé maîtresse ET ses backups = perdre les clés API et la base ;
+- échappatoire assumée pour le débogage : `THERESE_DB_PLAINTEXT=1` (base en clair, à tes risques).
+
 ### Authentification
 
 - Chaque session génère un token unique (SEC-010)

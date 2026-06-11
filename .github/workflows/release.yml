@@ -92,9 +92,12 @@ jobs:
       - name: Installer torch CPU-only (réduction ~1 Go)
         if: runner.os != 'macOS'
         shell: bash
+        # US-018 : version ÉPINGLÉE sur celle d'uv.lock - sans ==, chaque
+        # release embarquait le dernier torch CPU publié (build non
+        # reproductible, et divergent de la version testée en CI).
         run: |
-          echo "=== Remplacement de torch par la version CPU-only ==="
-          uv pip install torch --index-url https://download.pytorch.org/whl/cpu --reinstall --no-deps
+          echo "=== Remplacement de torch par la version CPU-only (épinglée) ==="
+          uv pip install 'torch==2.9.1' --index-url https://download.pytorch.org/whl/cpu --reinstall --no-deps
 
       - name: Build sidecar (PyInstaller)
         shell: bash

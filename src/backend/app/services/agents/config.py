@@ -102,13 +102,14 @@ def _resolve_agents_dir() -> Path:
     if not source_path:
         # Lire directement en DB sans passer par le router
         try:
-            import sqlite3
 
             from app.config import settings
 
             db_path = settings.db_path
             if db_path and Path(db_path).exists():
-                conn = sqlite3.connect(str(db_path))
+                from app.models.database import db_connect
+
+                conn = db_connect(db_path)  # US-014 : clé SQLCipher si chiffrée
                 cursor = conn.execute(
                     "SELECT value FROM preferences WHERE key = 'agent_source_path'"
                 )
