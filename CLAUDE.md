@@ -94,6 +94,12 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis chantier UX/DA (11/06/2026, commits 203b752..254321a)
+- [ ] **window-state et moniteur debranche** : le plugin restaure la POSITION brute sans verifier que le moniteur existe encore (limitation connue tauri-plugin-window-state) - fenetre potentiellement hors ecran apres debranchement d'un externe. Garde possible : post-restore, re-center si hors bornes de `available_monitors()` (lib.rs setup).
+- [ ] **bump-version.sh ne regenere pas uv.lock** : la 0.23 est partie avec un uv.lock en 0.22.0 (rattrape commit a1b7422). Ajouter `uv lock` au script (ou a l'etape bump du skill /release-therese, comme le `npm install --package-lock-only` deja prevu).
+- [ ] **Doublons macOS dans tests/protocols/app/personas/** : `A1-sophie-freelance 2.md`, `A2-marc-consultant 2.md`, `A3-lea-power-user 2.md` (copies accidentelles, non annotees sidebar-fermee). A supprimer apres confirmation Ludo.
+- [ ] **DA brutaliste partielle** : seuls Button.tsx + home (QuickActions, badges) + utilitaires sont passes au langage brutaliste. Cartes, inputs, modales, SideToggle gardent l'ancien style doux - lot 2 a planifier si la direction confirme a l'usage.
+
 ### Depuis Sprint 3 (11/06/2026)
 - [ ] **E2E Playwright hors CI** : tests/e2e toujours exclus (`--ignore=tests/e2e`) - ils exigent Vite + uvicorn + navigateur, flaky en CI. US-018 a durci le reste (audits bloquants, clippy -D warnings, mypy baseline) ; un job e2e nightly (pas par PR) reste à concevoir.
 - [ ] **mypy baseline 1059 erreurs** (ci.yml job mypy) : gate anti-régression seulement. Faire baisser le compteur module par module et mettre à jour MYPY_BASELINE à chaque baisse.
