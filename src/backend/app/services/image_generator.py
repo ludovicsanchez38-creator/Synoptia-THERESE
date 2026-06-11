@@ -21,19 +21,25 @@ def _get_api_key_from_db(provider: str) -> str | None:
     """
     Load API key from database (Preferences table) et la déchiffrer.
     Falls back to environment variable if DB not available.
+
+    US-014 : la base est chiffrée SQLCipher au repos. On passe par db_connect
+    (qui pose la clé SQLCipher si nécessaire) au lieu d'une connexion SQLite
+    standard, sinon la lecture échoue silencieusement (« file is not a
+    database ») et toute génération d'image renvoie « clé non configurée ».
     """
     try:
-        from app.config import settings
-        from app.services.encryption import get_encryption_service
-        from sqlalchemy import create_engine, text
+        from contextlib import closing
 
-        engine = create_engine(f"sqlite:///{settings.db_path}")
-        with engine.connect() as conn:
-            result = conn.execute(
-                text("SELECT value FROM preferences WHERE key = :key"),
-                {"key": f"{provider}_api_key"}
+        from app.config import settings
+        from app.models.database import db_connect
+        from app.services.encryption import get_encryption_service
+
+        with closing(db_connect(settings.db_path)) as conn:
+            cursor = conn.execute(
+                "SELECT value FROM preferences WHERE key = ?",
+                (f"{provider}_api_key",),
             )
-            row = result.fetchone()
+            row = cursor.fetchone()
             if row and row[0]:
                 value = row[0]
                 encryption = get_encryption_service()
