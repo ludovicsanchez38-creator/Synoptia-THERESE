@@ -1,8 +1,11 @@
 /**
  * Parcours 06 - Navigation & Sidebar
  *
- * Scenario : sidebar visible -> conversations listees -> search
+ * Scenario : ouvrir la sidebar -> conversations listees -> search
  *            -> nouvelle conversation -> app-main intact
+ *
+ * Depuis le 11/06/2026 la sidebar est FERMEE au lancement (l'utilisateur
+ * atterrit sur l'Accueil) : le beforeEach l'ouvre via le raccourci clavier.
  *
  * User Stories : US-700, US-023, US-018
  */
@@ -17,6 +20,10 @@ test.describe('Parcours 06 - Navigation', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
     await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+    // Sidebar fermee par defaut : l'ouvrir (⌘B sur macOS, Ctrl+B ailleurs)
+    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await page.keyboard.press(`${modifier}+b`);
+    await page.waitForSelector('[data-testid="sidebar"]', { timeout: 10000 });
   });
 
   /** Helper : depuis le dashboard, cliquer "Passer au chat" pour acceder au chat */
@@ -27,7 +34,7 @@ test.describe('Parcours 06 - Navigation', () => {
     await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
   }
 
-  test('US-700.HP : la sidebar est visible au chargement', async ({ page }) => {
+  test('US-700.HP : la sidebar s\'ouvre au raccourci clavier', async ({ page }) => {
     const sidebar = page.getByTestId('sidebar');
     await expect(sidebar).toBeVisible({ timeout: 15000 });
   });

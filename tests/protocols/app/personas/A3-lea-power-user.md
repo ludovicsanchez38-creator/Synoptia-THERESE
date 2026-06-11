@@ -105,6 +105,12 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ## Phase 2 : Chat avancé et raccourcis (étapes 4-8)
 
+> **Sidebar fermée par défaut (depuis 11/06/2026)** : la sidebar conversations
+> n'est plus ouverte au lancement (l'app atterrit sur l'Accueil). Avant toute
+> action sur un `[data-testid="sidebar-*"]`, l'ouvrir :
+> `javascript_tool` -> `window.__therese.stores.panel.getState().togglePanel('conversationSidebar')`
+> (ou raccourci ⌘B/Ctrl+B), puis `wait_for` -> `[data-testid="sidebar"]` visible.
+
 ---
 
 ### Étape 4 : Raccourci Ctrl+N - nouvelle conversation

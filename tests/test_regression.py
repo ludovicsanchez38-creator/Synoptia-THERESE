@@ -687,19 +687,22 @@ class TestBUG021StreamingScroll:
 
 
 # ============================================================
-# UX (v0.1.18) - Sidebar conversations visible par défaut
+# UX (v0.24) - Sidebar conversations FERMÉE par défaut
+# (v0.1.18 l'ouvrait par défaut ; inversé le 11/06/2026 : l'utilisateur
+# atterrit sur l'Accueil sans overlay par-dessus, ⌘B/Ctrl+B pour ouvrir)
 # ============================================================
 
 
 class TestUXSidebarDefault:
-    """La sidebar conversations doit être visible au premier lancement."""
+    """La sidebar conversations doit être fermée au lancement."""
 
-    def test_sidebar_default_true(self):
-        """showConversationSidebar doit être initialisé à true dans panelStore."""
+    def test_sidebar_default_false(self):
+        """showConversationSidebar doit être initialisé à false dans panelStore."""
         panel_store = FRONTEND / "stores" / "panelStore.ts"
         content = panel_store.read_text(encoding="utf-8")
-        assert "showConversationSidebar: true" in content, (
-            "showConversationSidebar doit être initialisé à true dans panelStore (sidebar visible par défaut)"
+        assert "showConversationSidebar: false" in content, (
+            "showConversationSidebar doit être initialisé à false dans panelStore "
+            "(sidebar fermée par défaut, l'Accueil reste visible au lancement)"
         )
         # Vérifier que ChatLayout utilise bien le panelStore pour la sidebar
         layout_content = CHAT_LAYOUT_TSX.read_text(encoding="utf-8")

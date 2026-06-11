@@ -95,6 +95,12 @@ mkdir -p /tmp/therese-tests
 
 ## Phase 2 : Chat et rédaction assistée (étapes 4-11)
 
+> **Sidebar fermée par défaut (depuis 11/06/2026)** : la sidebar conversations
+> n'est plus ouverte au lancement (l'app atterrit sur l'Accueil). Avant toute
+> action sur un `[data-testid="sidebar-*"]`, l'ouvrir :
+> `javascript_tool` -> `window.__therese.stores.panel.getState().togglePanel('conversationSidebar')`
+> (ou raccourci ⌘B/Ctrl+B), puis `wait_for` -> `[data-testid="sidebar"]` visible.
+
 ---
 
 ### Étape 4 : Demander un email de relance - streaming réponse

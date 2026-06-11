@@ -85,9 +85,10 @@ interface PanelState {
 // ============================================================
 
 export const usePanelStore = create<PanelState>((set, get) => ({
-  // État initial
+  // État initial. Sidebar conversations FERMÉE au lancement : l'utilisateur
+  // atterrit sur l'Accueil sans overlay par-dessus (retour Ludo 11/06/2026).
   activePanel: null,
-  showConversationSidebar: true,
+  showConversationSidebar: false,
   showCommandPalette: false,
   showShortcuts: false,
   showSettings: false,
