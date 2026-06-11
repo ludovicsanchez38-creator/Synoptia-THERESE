@@ -3861,20 +3861,27 @@ class TestBUG059_SMTPTestTimeout:
 
 
 class TestBUG060_CRMHeaderHomogeneity:
-    """CRMPanel doit utiliser le pattern header gradient badge comme EmailPanel."""
+    """CRMPanel doit utiliser le pattern header pastille comme EmailPanel.
+
+    DA brutaliste 11/06/2026 : la pastille gradient historique (BUG-060) est
+    devenue un fond uni teinté cerclé d'encre, homogène sur tous les panels.
+    """
 
     CRM_PANEL_TSX = Path("src/frontend/src/components/crm/CRMPanel.tsx")
 
-    def test_gradient_badge_present(self):
+    def test_tint_badge_present(self):
         content = self.CRM_PANEL_TSX.read_text(encoding="utf-8")
-        assert "bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20" in content, (
-            "CRMPanel header doit utiliser le badge gradient (BUG-060)"
+        assert "bg-accent-tint border-[1.5px] border-[var(--btn-ink)]" in content, (
+            "CRMPanel header doit utiliser la pastille tint bordée encre (BUG-060 + DA 11/06)"
+        )
+        assert "bg-gradient-to-br from-accent-cyan/20" not in content, (
+            "Le gradient cyan-magenta ne doit pas revenir sur le header CRM (DA 11/06)"
         )
 
     def test_icon_in_badge(self):
         content = self.CRM_PANEL_TSX.read_text(encoding="utf-8")
-        assert "w-10 h-10 rounded-lg" in content, (
-            "CRMPanel header doit avoir un badge 10x10 arrondi (BUG-060)"
+        assert "w-10 h-10 rounded-[6px]" in content, (
+            "CRMPanel header doit avoir une pastille 10x10 au carré arrondi 6px (BUG-060 + DA 11/06)"
         )
 
 
@@ -3968,14 +3975,18 @@ class TestF14_OllamaModelListing:
 
 
 class TestF15_ModelIndicatorUI:
-    """L'indicateur de modèle dans ChatInput doit être un pill avec accent cyan."""
+    """L'indicateur de modèle dans ChatInput : tag carré avec accent cyan.
+
+    DA brutaliste 11/06/2026 : le pill arrondi historique (F-15) est devenu
+    un tag rectangulaire rounded-[6px], comme tous les badges de l'app.
+    """
 
     CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
 
     def test_pill_badge_styling(self):
         content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "rounded-full bg-accent-cyan/10" in content, (
-            "L'indicateur de modèle doit être un pill arrondi avec fond cyan (F-15)"
+        assert "rounded-[6px] bg-accent-cyan/10" in content, (
+            "L'indicateur de modèle doit être un tag carré avec fond cyan (F-15 + DA 11/06)"
         )
 
     def test_model_selector_dropdown(self):
