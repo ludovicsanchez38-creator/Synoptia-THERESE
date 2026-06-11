@@ -82,6 +82,24 @@ def get_gmail_oauth_config(
     )
 
 
+async def get_crm_contact_by_email(session: AsyncSession, email: str | None):
+    """Retrouve le contact CRM correspondant à un email d'expéditeur (insensible à la casse).
+
+    La table Contact est la source de vérité (score, téléphone, notes) - le
+    payload Qdrant des contacts ne contient que name/company/email.
+    """
+    from sqlalchemy import func
+
+    from app.models.entities import Contact
+
+    if not email:
+        return None
+    result = await session.execute(
+        select(Contact).where(func.lower(Contact.email) == email.strip().lower()).limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 async def ensure_valid_access_token(
     account: EmailAccount,
     session: AsyncSession,
@@ -1273,19 +1291,13 @@ async def classify_email(
             'cached': True,
         }
 
-    # Get CRM contact score if exists
+    # Get CRM contact score if exists (lookup SQL par email - la table Contact
+    # est la source de vérité du score, le payload Qdrant ne le contient pas)
     contact_score = None
     try:
-        from app.services.qdrant import get_qdrant_service
-        qdrant = get_qdrant_service()
-        results = qdrant.search(
-            query=f"{message.from_name} {message.from_email}",
-            entity_type='contact',
-            limit=1,
-        )
-        if results:
-            # Assume score 0-100 is stored in metadata
-            contact_score = results[0].payload.get('score', None)
+        contact = await get_crm_contact_by_email(session, message.from_email)
+        if contact:
+            contact_score = contact.score
     except Exception as e:
         logger.warning(f"Failed to get CRM score for {message.from_email}: {e}")
 
@@ -1340,26 +1352,21 @@ async def generate_email_response(
     if not message or message.account_id != account_id:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    # Get CRM contact context if exists
+    # Get CRM contact context if exists (lookup SQL par email - source de
+    # vérité, le payload Qdrant ne contient ni score ni téléphone ni notes)
     contact_context = None
     try:
-        from app.services.qdrant import get_qdrant_service
-        qdrant = get_qdrant_service()
-        results = qdrant.search(
-            query=f"{message.from_name} {message.from_email}",
-            entity_type='contact',
-            limit=1,
-        )
-        if results:
-            payload = results[0].payload
+        contact = await get_crm_contact_by_email(session, message.from_email)
+        if contact:
+            tags_list = json.loads(contact.tags) if contact.tags else []
             contact_context = f"""Contact CRM :
-- Nom : {payload.get('name', 'N/A')}
-- Entreprise : {payload.get('company', 'N/A')}
-- Email : {payload.get('email', 'N/A')}
-- Téléphone : {payload.get('phone', 'N/A')}
-- Score : {payload.get('score', 'N/A')}/100
-- Tags : {payload.get('tags', 'N/A')}
-- Notes : {payload.get('notes', 'N/A')}"""
+- Nom : {contact.display_name or 'N/A'}
+- Entreprise : {contact.company or 'N/A'}
+- Email : {contact.email or 'N/A'}
+- Téléphone : {contact.phone or 'N/A'}
+- Score : {contact.score}/100
+- Tags : {', '.join(tags_list) if tags_list else 'N/A'}
+- Notes : {contact.notes or 'N/A'}"""
     except Exception as e:
         logger.warning(f"Failed to get CRM context for {message.from_email}: {e}")
 

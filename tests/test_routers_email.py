@@ -577,3 +577,62 @@ class TestEmailModifyMessage:
             data = response.json()
 
             assert "STARRED" in data["labelIds"]
+
+
+# ============================================================
+# Score CRM expéditeur (bug lcjp 11/06/2026)
+# L'ancien code appelait qdrant.search(entity_type=...) - paramètre
+# inexistant - et lisait .payload sur des dicts : le score CRM était
+# silencieusement mort. La source de vérité est la table Contact (SQL).
+# ============================================================
+
+
+class TestCRMContactByEmail:
+    """get_crm_contact_by_email : lookup SQL du contact CRM par email."""
+
+    @pytest.mark.asyncio
+    async def test_trouve_contact_insensible_a_la_casse(self, client: AsyncClient):
+        import app.models.database as db_module
+        from app.models.entities import Contact
+        from app.routers.email import get_crm_contact_by_email
+
+        async with db_module.AsyncSessionLocal() as session:
+            contact = Contact(
+                first_name="Léo", last_name="Martin",
+                email="Leo.Martin@Aura-Conseil.fr", score=85, company="AURA",
+            )
+            session.add(contact)
+            await session.commit()
+
+            found = await get_crm_contact_by_email(session, "leo.martin@aura-conseil.fr")
+            assert found is not None
+            assert found.score == 85
+            assert found.company == "AURA"
+
+    @pytest.mark.asyncio
+    async def test_absent_retourne_none(self, client: AsyncClient):
+        import app.models.database as db_module
+        from app.routers.email import get_crm_contact_by_email
+
+        async with db_module.AsyncSessionLocal() as session:
+            found = await get_crm_contact_by_email(session, "inconnu@nulle-part.fr")
+            assert found is None
+
+    @pytest.mark.asyncio
+    async def test_email_vide_retourne_none(self, client: AsyncClient):
+        import app.models.database as db_module
+        from app.routers.email import get_crm_contact_by_email
+
+        async with db_module.AsyncSessionLocal() as session:
+            assert await get_crm_contact_by_email(session, "") is None
+            assert await get_crm_contact_by_email(session, None) is None
+
+    def test_plus_aucun_appel_qdrant_entity_type(self):
+        """Le paramètre entity_type n'existe pas dans QdrantService.search."""
+        from pathlib import Path
+
+        content = Path("src/backend/app/routers/email.py").read_text(encoding="utf-8")
+        assert "entity_type" not in content, (
+            "email.py ne doit plus appeler qdrant.search(entity_type=...) - "
+            "paramètre inexistant, le score CRM vient de la table Contact (SQL)"
+        )
