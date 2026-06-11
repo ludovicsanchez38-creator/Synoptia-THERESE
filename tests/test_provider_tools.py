@@ -547,6 +547,88 @@ async def test_gemini_sanitise_les_schemas_mcp():
     assert params["required"] == ["query"]
 
 
+# Régression bug Gemini #2 (11/06/2026) : les NOMS d'outils MCP (serveur__outil,
+# parfois avec /, espaces, chiffre en tête...) partaient bruts dans
+# functionDeclarations[].name → l'API Google rejette ("Invalid function name")
+# avec un 400 sur TOUTE la requête → le chat Gemini ne répond plus rien.
+
+
+@pytest.mark.asyncio
+async def test_gemini_sanitise_les_noms_doutils_non_conformes():
+    """Les noms partent conformes à la contrainte Gemini : commencer par
+    lettre/underscore, puis [A-Za-z0-9_.:-], max 128."""
+    import re
+
+    long_name = "a" * 130
+    tools = [
+        {"function": {"name": "gmail/send message", "parameters": {"type": "object"}}},
+        {"function": {"name": "123_outil", "parameters": {"type": "object"}}},
+        {"function": {"name": "deja.valide:ok-2", "parameters": {"type": "object"}}},
+        {"function": {"name": long_name, "parameters": {"type": "object"}}},
+    ]
+    client = _FakeClient(["data: " + json.dumps({"candidates": []})])
+    await _collect(
+        _gemini(client).stream(None, [{"role": "user", "parts": [{"text": "hi"}]}], tools=tools)
+    )
+    decls = next(
+        t["functionDeclarations"]
+        for t in client.last_request["json"]["tools"]
+        if "functionDeclarations" in t
+    )
+    valid = re.compile(r"^[A-Za-z_][A-Za-z0-9_.:-]*$")
+    for d in decls:
+        assert valid.match(d["name"]), f"nom non conforme: {d['name']!r}"
+        assert len(d["name"]) <= 128
+    assert decls[0]["name"] == "gmail_send_message"
+    assert decls[1]["name"] == "_123_outil"
+    assert decls[2]["name"] == "deja.valide:ok-2"  # déjà conforme : inchangé
+
+
+@pytest.mark.asyncio
+async def test_gemini_function_call_remappe_vers_le_nom_original():
+    """Gemini renvoie le nom SANITISÉ ; on doit ré-émettre le ToolCall avec le
+    nom RÉEL de l'outil, sinon l'exécuteur d'outils ne le retrouve pas."""
+    tools = [{"function": {"name": "gmail/send message", "parameters": {"type": "object"}}}]
+    chunk = {
+        "candidates": [
+            {"content": {"parts": [{"functionCall": {"name": "gmail_send_message", "args": {"to": "x"}}}]}}
+        ]
+    }
+    client = _FakeClient(["data: " + json.dumps(chunk)])
+    events = await _collect(
+        _gemini(client).stream(None, [{"role": "user", "parts": [{"text": "go"}]}], tools=tools)
+    )
+    tool_events = [e for e in events if e.type == "tool_call"]
+    assert len(tool_events) == 1
+    assert tool_events[0].tool_call.name == "gmail/send message"
+    assert tool_events[0].tool_call.arguments == {"to": "x"}
+
+
+@pytest.mark.asyncio
+async def test_gemini_continuation_rejoue_le_nom_sanitise():
+    """Le tour d'outils rejoué (functionCall/functionResponse) doit utiliser le
+    nom SANITISÉ, cohérent avec les functionDeclarations redéclarées."""
+    tools = [{"function": {"name": "gmail/send message", "parameters": {"type": "object"}}}]
+    text_chunk = {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}
+    client = _FakeClient(["data: " + json.dumps(text_chunk)])
+    await _collect(
+        _gemini(client).continue_with_tool_results(
+            None,
+            [{"role": "user", "parts": [{"text": "go"}]}],
+            assistant_content="",
+            tool_calls=[ToolCall(id="gemini-call-0", name="gmail/send message", arguments={"to": "x"})],
+            tool_results=[ToolResult(tool_call_id="gemini-call-0", result={"ok": True})],
+            tools=tools,
+        )
+    )
+    contents = client.last_request["json"]["contents"]
+    model_turn = next(c for c in contents if c["role"] == "model")
+    fc = next(p["functionCall"] for p in model_turn["parts"] if "functionCall" in p)
+    assert fc["name"] == "gmail_send_message"
+    fr = next(p["functionResponse"] for p in contents[-1]["parts"] if "functionResponse" in p)
+    assert fr["name"] == "gmail_send_message"
+
+
 @pytest.mark.asyncio
 async def test_gemini_function_responses_dans_l_ordre_des_calls():
     """Sans ids (Gemini < 3), la corrélation est positionnelle : les résultats

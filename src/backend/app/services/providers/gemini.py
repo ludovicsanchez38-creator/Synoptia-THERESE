@@ -7,6 +7,7 @@ Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 
 import json
 import logging
+import re
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -58,16 +59,50 @@ def _sanitize_schema(schema: dict) -> dict:
     return cleaned
 
 
+# L'API Gemini impose sur functionDeclaration.name : commencer par une lettre
+# ou un underscore, puis [A-Za-z0-9_.:-], 128 caractères max. Les noms d'outils
+# MCP (serveur__outil, parfois avec /, espaces, ou un chiffre en tête) violent
+# souvent cette règle -> 400 "Invalid function name" sur TOUTE la requête, donc
+# plus aucune réponse Gemini.
+_INVALID_NAME_CHAR = re.compile(r"[^A-Za-z0-9_.:-]")
+
+
+def _sanitize_function_name(name: str) -> str:
+    """Rend un nom d'outil conforme à la contrainte Gemini (cf. ci-dessus).
+
+    Déterministe : la même entrée donne toujours la même sortie, ce qui permet
+    de re-sanitiser un nom à la continuation sans table de correspondance.
+    """
+    if not name:
+        return "_"
+    cleaned = _INVALID_NAME_CHAR.sub("_", name)
+    if not (cleaned[0].isalpha() or cleaned[0] == "_"):
+        cleaned = "_" + cleaned
+    return cleaned[:128]
+
+
+def _build_name_map(tools: list[dict]) -> dict[str, str]:
+    """nom sanitisé -> nom réel, pour ré-associer le functionCall renvoyé par
+    Gemini à l'outil enregistré (qui porte son nom d'origine)."""
+    mapping: dict[str, str] = {}
+    for tool in tools:
+        raw = (tool.get("function", tool) or {}).get("name", "")
+        if raw:
+            mapping[_sanitize_function_name(raw)] = raw
+    return mapping
+
+
 def _tools_to_function_declarations(tools: list[dict]) -> list[dict]:
     """US-009 : convertit les tools format OpenAI vers functionDeclarations.
 
-    Les schémas (memory/workspace tools, mais aussi inputSchema MCP arbitraires)
-    sont sanitisés vers le sous-ensemble proto Schema accepté par l'API.
+    Les NOMS sont sanitisés (contrainte Gemini, bug #2) et les schémas
+    (memory/workspace tools, mais aussi inputSchema MCP arbitraires) vers le
+    sous-ensemble proto Schema accepté par l'API.
     """
     declarations = []
     for tool in tools:
         func = tool.get("function", tool)
-        decl: dict = {"name": func.get("name", "")}
+        decl: dict = {"name": _sanitize_function_name(func.get("name", ""))}
         if func.get("description"):
             decl["description"] = func["description"]
         if isinstance(func.get("parameters"), dict):
@@ -140,6 +175,9 @@ class GeminiProvider(BaseProvider):
             #   outils intégrés avec le function calling ; sur 2.x, on écarte
             #   le grounding dès qu'il y a des functionDeclarations.
             declarations = _tools_to_function_declarations(tools) if tools else []
+            # Table nom-sanitisé -> nom-réel pour ré-associer le functionCall
+            # renvoyé par Gemini (qui voit les noms sanitisés) à l'outil réel.
+            name_map = _build_name_map(tools) if tools else {}
             grounding_models = ["gemini-3", "gemini-2.5", "gemini-2.0"]
             grounding_ok = enable_grounding and any(model.startswith(m) for m in grounding_models)
             if declarations and grounding_ok and model.startswith("gemini-3"):
@@ -189,9 +227,11 @@ class GeminiProvider(BaseProvider):
                                     # US-009 : functionCall (arrive entier dans
                                     # un chunk, args déjà en objet JSON)
                                     if fc := part.get("functionCall"):
-                                        name = fc.get("name")
-                                        if not name:
+                                        raw_name = fc.get("name")
+                                        if not raw_name:
                                             continue
+                                        # Remapper le nom sanitisé vers le nom réel
+                                        name = name_map.get(raw_name, raw_name)
                                         call_id = fc.get("id") or f"{_SYNTHETIC_ID_PREFIX}{tool_call_index}"
                                         has_tool_calls = True
                                         yield StreamEvent(
@@ -264,7 +304,9 @@ class GeminiProvider(BaseProvider):
         if assistant_content:
             model_parts.append({"text": assistant_content})
         for tc in tool_calls:
-            fc: dict[str, Any] = {"name": tc.name, "args": tc.arguments or {}}
+            # Nom re-sanitisé : il doit matcher les functionDeclarations
+            # redéclarées (sanitisées), sinon Gemini ne corrèle pas le tour.
+            fc: dict[str, Any] = {"name": _sanitize_function_name(tc.name), "args": tc.arguments or {}}
             if tc.id and not tc.id.startswith(_SYNTHETIC_ID_PREFIX):
                 fc["id"] = tc.id
             model_parts.append({"functionCall": fc})
@@ -283,7 +325,7 @@ class GeminiProvider(BaseProvider):
         for tr in sorted_results:
             tc = calls_by_id.get(tr.tool_call_id)
             fr: dict[str, Any] = {
-                "name": tc.name if tc else "",
+                "name": _sanitize_function_name(tc.name) if tc else "",
                 "response": {"result": tr.result},
             }
             if tc and tc.id and not tc.id.startswith(_SYNTHETIC_ID_PREFIX):
