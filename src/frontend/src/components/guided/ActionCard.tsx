@@ -34,12 +34,9 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
         isPersonnaliser
           ? 'border-2 border-dashed border-border/40 cursor-default opacity-70'
-          : 'border border-border hover:border-accent-cyan/50 hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]'
+          : 'border-[1.5px] border-border hover:border-[var(--btn-ink)] hover:shadow-[3px_3px_0_var(--btn-shadow-color)]'
       )}
     >
-      {/* Gradient glow on hover */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-cyan/5 to-accent-magenta/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
       {/* Badge Bientôt */}
       {isPersonnaliser && (
         <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-cyan/10 text-accent-cyan/60 border border-accent-cyan/20">
@@ -47,14 +44,16 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         </span>
       )}
 
-      {/* Icon container */}
-      <div className={cn(
-        'relative flex items-center justify-center w-10 h-10 rounded-lg mb-3',
-        'bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20',
-        isPersonnaliser ? 'opacity-50' : 'group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30',
-        'transition-all duration-200'
-      )}>
-        <Icon className={cn('w-5 h-5 transition-colors duration-200', isPersonnaliser ? 'text-text-muted' : 'text-accent-cyan group-hover:text-text')} />
+      {/* Pastille duotone : accent catégoriel k1-k4 cerclé d'encre (DA brutaliste) */}
+      <div
+        className={cn(
+          'relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3',
+          'border-[1.5px] border-[var(--btn-ink)]',
+          isPersonnaliser && 'opacity-50'
+        )}
+        style={{ background: `var(--k${(index % 4) + 1}bg)`, color: `var(--k${(index % 4) + 1})` }}
+      >
+        <Icon className={cn('w-5 h-5', isPersonnaliser && 'text-text-muted')} />
       </div>
 
       {/* Title */}

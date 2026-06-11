@@ -356,7 +356,7 @@ function ConversationItem({
           className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
             isActive
               ? 'bg-accent-cyan/20'
-              : 'bg-gradient-to-br from-accent-cyan/10 to-accent-magenta/10'
+              : 'bg-surface-2'
           }`}
         >
           <MessageSquare

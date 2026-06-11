@@ -433,9 +433,7 @@ function DemoModeSection() {
   return (
     <div className="space-y-3 pt-4 border-t border-border/30">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-          demoEnabled ? 'bg-accent-cyan/20' : 'bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20'
-        }`}>
+        <div className="w-10 h-10 rounded-[6px] flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
           <Eye className="w-5 h-5 text-accent-cyan" />
         </div>
         <div className="flex-1">

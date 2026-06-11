@@ -63,8 +63,8 @@ export function DeliberationView({
         animate={{ opacity: 1, y: 0 }}
         className={cn(
           'p-4 rounded-xl',
-          'bg-gradient-to-r from-accent-cyan/10 to-accent-magenta/10',
-          'border border-accent-cyan/30'
+          'bg-accent-tint',
+          'border-[1.5px] border-[var(--btn-ink)]'
         )}
       >
         <h3 className="text-sm font-medium text-text-muted mb-1">

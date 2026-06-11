@@ -370,18 +370,18 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   className={cn(
                     'group relative flex flex-col items-start p-4 rounded-xl',
                     'bg-surface-elevated/60 backdrop-blur-sm',
-                    'border border-border hover:border-accent-cyan/50',
-                    'hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]',
+                    'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
+                    'hover:shadow-[3px_3px_0_var(--btn-shadow-color)]',
                     'transition-all duration-200 text-left',
                     'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
                   )}
                 >
-                  {/* Gradient glow on hover */}
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-cyan/5 to-accent-magenta/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
                   {/* Icon container */}
-                  <div className="relative flex items-center justify-center w-10 h-10 rounded-lg mb-3 bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30 transition-all duration-200">
-                    <cat.icon className="w-5 h-5 text-accent-cyan group-hover:text-text transition-colors duration-200" />
+                  <div
+                    className="relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3 border-[1.5px] border-[var(--btn-ink)]"
+                    style={{ background: `var(--k${(index % 4) + 1}bg)`, color: `var(--k${(index % 4) + 1})` }}
+                  >
+                    <cat.icon className="w-5 h-5" />
                   </div>
 
                   {/* Title */}
@@ -409,15 +409,17 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                 className={cn(
                   'group relative flex flex-col items-start p-4 rounded-xl',
                   'bg-surface-elevated/60 backdrop-blur-sm',
-                  'border border-border hover:border-accent-cyan/50',
-                  'hover:shadow-[0_0_20px_rgba(34,211,238,0.15)]',
+                  'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
+                  'hover:shadow-[3px_3px_0_var(--btn-shadow-color)]',
                   'transition-all duration-200 text-left',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
                 )}
               >
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-cyan/5 to-accent-magenta/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center w-10 h-10 rounded-lg mb-3 bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 group-hover:from-accent-cyan/30 group-hover:to-accent-magenta/30 transition-all duration-200">
-                  <BookOpen className="w-5 h-5 text-accent-cyan group-hover:text-text transition-colors duration-200" />
+                <div
+                  className="relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3 border-[1.5px] border-[var(--btn-ink)]"
+                  style={{ background: 'var(--k4bg)', color: 'var(--k4)' }}
+                >
+                  <BookOpen className="w-5 h-5" />
                 </div>
                 <h3 className="relative text-sm font-semibold text-text group-hover:text-text transition-colors duration-200">
                   Prompts

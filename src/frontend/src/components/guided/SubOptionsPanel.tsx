@@ -48,10 +48,10 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
       {/* Header with icon and question */}
       <div className="flex items-center gap-3 mb-6">
         <div className={cn(
-          'flex items-center justify-center w-12 h-12 rounded-xl',
-          'bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20'
+          'flex items-center justify-center w-12 h-12 rounded-[8px]',
+          'bg-accent-tint border-[1.5px] border-[var(--btn-ink)]'
         )}>
-          <Icon className="w-6 h-6 text-accent-cyan" />
+          <Icon className="w-6 h-6 text-accent" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-text">{action.title}</h3>

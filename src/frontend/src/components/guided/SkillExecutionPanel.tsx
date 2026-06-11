@@ -31,42 +31,42 @@ interface SkillExecutionPanelProps {
 const formatConfig: Record<FileFormat, {
   icon: typeof FileText;
   color: string;
-  bgGradient: string;
+  bgTint: string;
   label: string;
   description: string;
 }> = {
   docx: {
     icon: FileText,
     color: 'text-blue-400',
-    bgGradient: 'from-blue-500/20 to-blue-600/10',
+    bgTint: 'bg-blue-500/15',
     label: 'Document Word',
     description: 'Fichier .docx prêt à être téléchargé'
   },
   pptx: {
     icon: Presentation,
     color: 'text-orange-400',
-    bgGradient: 'from-orange-500/20 to-orange-600/10',
+    bgTint: 'bg-orange-500/15',
     label: 'Présentation PowerPoint',
     description: 'Fichier .pptx prêt à être téléchargé'
   },
   xlsx: {
     icon: Table,
     color: 'text-green-400',
-    bgGradient: 'from-green-500/20 to-green-600/10',
+    bgTint: 'bg-green-500/15',
     label: 'Tableur Excel',
     description: 'Fichier .xlsx prêt à être téléchargé'
   },
   html: {
     icon: FileText,
     color: 'text-cyan-400',
-    bgGradient: 'from-cyan-500/20 to-cyan-600/10',
+    bgTint: 'bg-cyan-500/15',
     label: 'Page Web',
     description: 'Fichier .html prêt à être téléchargé'
   },
   pdf: {
     icon: FileText,
     color: 'text-red-400',
-    bgGradient: 'from-red-500/20 to-red-600/10',
+    bgTint: 'bg-red-500/15',
     label: 'Document PDF',
     description: 'Fichier .pdf prêt à être téléchargé'
   },
@@ -110,8 +110,8 @@ export function SkillExecutionPanel({
     >
       {/* Gradient background */}
       <div className={cn(
-        'absolute inset-0 bg-gradient-to-br opacity-50',
-        config.bgGradient
+        'absolute inset-0 opacity-50',
+        config.bgTint
       )} />
 
       {/* Content */}
@@ -133,9 +133,9 @@ export function SkillExecutionPanel({
         {/* Icon + Status */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className={cn(
-            'relative w-16 h-16 rounded-2xl flex items-center justify-center mb-4',
-            'bg-gradient-to-br',
-            config.bgGradient
+            'relative w-16 h-16 rounded-[10px] flex items-center justify-center mb-4',
+            'border-[1.5px] border-[var(--btn-ink)]',
+            config.bgTint
           )}>
             <FormatIcon className={cn('w-8 h-8', config.color)} />
 
@@ -207,8 +207,8 @@ export function SkillExecutionPanel({
             <div className="flex items-center gap-3">
               <div className={cn(
                 'w-10 h-10 rounded-lg flex items-center justify-center',
-                'bg-gradient-to-br',
-                config.bgGradient
+                'border-[1.5px] border-[var(--btn-ink)]',
+                config.bgTint
               )}>
                 <FormatIcon className={cn('w-5 h-5', config.color)} />
               </div>

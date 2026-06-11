@@ -14,32 +14,32 @@ interface SkillPromptPanelProps {
 const formatConfig: Record<FileFormat, {
   icon: typeof FileText;
   color: string;
-  bgGradient: string;
+  bgTint: string;
 }> = {
   docx: {
     icon: FileText,
     color: 'text-blue-400',
-    bgGradient: 'from-blue-500/20 to-blue-600/10',
+    bgTint: 'bg-blue-500/15',
   },
   pptx: {
     icon: Presentation,
     color: 'text-orange-400',
-    bgGradient: 'from-orange-500/20 to-orange-600/10',
+    bgTint: 'bg-orange-500/15',
   },
   xlsx: {
     icon: Table,
     color: 'text-green-400',
-    bgGradient: 'from-green-500/20 to-green-600/10',
+    bgTint: 'bg-green-500/15',
   },
   html: {
     icon: FileText,
     color: 'text-cyan-400',
-    bgGradient: 'from-cyan-500/20 to-cyan-600/10',
+    bgTint: 'bg-cyan-500/15',
   },
   pdf: {
     icon: FileText,
     color: 'text-red-400',
-    bgGradient: 'from-red-500/20 to-red-600/10',
+    bgTint: 'bg-red-500/15',
   },
 };
 
@@ -50,7 +50,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
   const isImage = !!option.generatesImage;
   const format = option.generatesFile?.format || 'docx';
   const config = isImage
-    ? { icon: ImageIcon, color: 'text-purple-400', bgGradient: 'from-purple-500/20 to-pink-600/10' }
+    ? { icon: ImageIcon, color: 'text-purple-400', bgTint: 'bg-purple-500/15' }
     : formatConfig[format];
   const FormatIcon = config.icon;
 
@@ -99,9 +99,9 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
 
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center',
-            'bg-gradient-to-br',
-            config.bgGradient
+            'w-10 h-10 rounded-[6px] flex items-center justify-center',
+            'border-[1.5px] border-[var(--btn-ink)]',
+            config.bgTint
           )}>
             <FormatIcon className={cn('w-5 h-5', config.color)} />
           </div>

@@ -32,25 +32,25 @@ interface ImageGenerationPanelProps {
 // Config par provider
 const providerConfig: Record<ImageProvider, {
   color: string;
-  bgGradient: string;
+  bgTint: string;
   label: string;
   description: string;
 }> = {
   'gpt-image-2': {
     color: 'text-emerald-400',
-    bgGradient: 'from-emerald-500/20 to-teal-600/10',
+    bgTint: 'bg-emerald-500/15',
     label: 'GPT Image 2',
     description: 'Image générée par OpenAI'
   },
   'nanobanan-pro': {
     color: 'text-purple-400',
-    bgGradient: 'from-purple-500/20 to-pink-600/10',
+    bgTint: 'bg-purple-500/15',
     label: 'Nano Banana 2',
     description: 'Image générée par Gemini'
   },
   'fal-flux-pro': {
     color: 'text-orange-400',
-    bgGradient: 'from-orange-500/20 to-amber-600/10',
+    bgTint: 'bg-orange-500/15',
     label: 'Fal Flux Pro',
     description: 'Image générée par Fal (Flux Pro v1.1)'
   },
@@ -99,8 +99,8 @@ export function ImageGenerationPanel({
     >
       {/* Gradient background */}
       <div className={cn(
-        'absolute inset-0 bg-gradient-to-br opacity-50',
-        config.bgGradient
+        'absolute inset-0 opacity-50',
+        config.bgTint
       )} />
 
       {/* Content */}
@@ -122,9 +122,9 @@ export function ImageGenerationPanel({
         {/* Icon + Status */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className={cn(
-            'relative w-16 h-16 rounded-2xl flex items-center justify-center mb-4',
-            'bg-gradient-to-br',
-            config.bgGradient
+            'relative w-16 h-16 rounded-[10px] flex items-center justify-center mb-4',
+            'border-[1.5px] border-[var(--btn-ink)]',
+            config.bgTint
           )}>
             <Image className={cn('w-8 h-8', config.color)} />
 
