@@ -16,6 +16,7 @@ from .base import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 
 logger = logging.getLogger(__name__)
@@ -232,6 +233,7 @@ class GeminiProvider(BaseProvider):
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """US-009 : continuation après exécution des outils (format Gemini).
 
@@ -240,7 +242,24 @@ class GeminiProvider(BaseProvider):
         s'il vient du modèle (Gemini 3) - jamais nos ids synthétiques.
         """
         contents = list(messages)
+        # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
+        for turn in prior_turns or []:
+            self._append_tool_turn(
+                contents, turn.assistant_content, turn.tool_calls, turn.tool_results
+            )
+        self._append_tool_turn(contents, assistant_content, tool_calls, tool_results)
 
+        async for event in self.stream(system_prompt, contents, tools, enable_grounding=False):
+            yield event
+
+    @staticmethod
+    def _append_tool_turn(
+        contents: list[dict],
+        assistant_content: str,
+        tool_calls: list[ToolCall],
+        tool_results: list[ToolResult],
+    ) -> None:
+        """Ajoute un tour d'outils au format Gemini (functionCall/functionResponse)."""
         model_parts: list[dict] = []
         if assistant_content:
             model_parts.append({"text": assistant_content})
@@ -271,6 +290,3 @@ class GeminiProvider(BaseProvider):
                 fr["id"] = tc.id
             response_parts.append({"functionResponse": fr})
         contents.append({"role": "user", "parts": response_parts})
-
-        async for event in self.stream(system_prompt, contents, tools, enable_grounding=False):
-            yield event

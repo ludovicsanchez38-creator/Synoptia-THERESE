@@ -7,7 +7,7 @@ est resté d'un ancien process et empêche l'initialisation.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 

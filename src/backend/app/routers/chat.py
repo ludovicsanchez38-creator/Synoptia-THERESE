@@ -31,6 +31,7 @@ from app.services.llm import (
     LLMService,
     ToolCall,
     ToolResult,
+    ToolTurn,
     convert_markdown_tables_to_bullets,
     get_llm_service,
 )
@@ -1124,11 +1125,16 @@ async def _execute_tools_and_continue(
     conversation_id: str,
     remaining_iterations: int,
     session: AsyncSession | None = None,
+    prior_turns: list[ToolTurn] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
 
-    Handles recursive tool calling up to max_iterations.
+    Handles recursive tool calling up to max_iterations. prior_turns porte
+    les tours d'outils déjà joués dans CETTE réponse : ils sont rejoués dans
+    le contexte de continuation, sinon le modèle ne voit jamais les résultats
+    précédents, re-demande le même outil en boucle puis invente une
+    explication d'échec (bug lcjp 11/06/2026).
     """
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
@@ -1366,6 +1372,7 @@ async def _execute_tools_and_continue(
         tool_calls,
         tool_results,
         tools,
+        prior_turns=prior_turns,
     ):
         if event.type == "text" and event.content:
             continued_content += event.content
@@ -1386,13 +1393,38 @@ async def _execute_tools_and_continue(
                 async for nested_event in _execute_tools_and_continue(
                     llm_service,
                     mcp_service,
-                    context,  # Note: context doesn't include tool results, that's handled in continue_with_tool_results
+                    context,
                     continued_content,
                     new_tool_calls,
                     tools,
                     conversation_id,
                     remaining_iterations - 1,
                     session=session,
+                    # Le tour qui vient de se jouer rejoint l'historique :
+                    # le prochain continue_with_tool_results rejouera TOUS
+                    # les tours dans l'ordre avant le nouveau.
+                    prior_turns=[
+                        *(prior_turns or []),
+                        ToolTurn(
+                            assistant_content=assistant_content,
+                            tool_calls=tool_calls,
+                            # Résultats tronqués au replay (budget contexte :
+                            # 5 itérations max x N outils, les résultats
+                            # complets ne servent qu'au tour qui les consomme)
+                            tool_results=[
+                                ToolResult(
+                                    tool_call_id=tr.tool_call_id,
+                                    result=(
+                                        tr.result[:4000] + " [...tronqué]"
+                                        if isinstance(tr.result, str) and len(tr.result) > 4000
+                                        else tr.result
+                                    ),
+                                    is_error=tr.is_error,
+                                )
+                                for tr in tool_results
+                            ],
+                        ),
+                    ],
                 ):
                     yield nested_event
 

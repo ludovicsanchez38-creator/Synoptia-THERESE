@@ -42,9 +42,8 @@ class TestMigration:
 
         # 1. Le fichier n'a plus l'en-tête SQLite : illisible hors app
         assert db_is_encrypted(db) is True
-        with pytest.raises(sqlite3.DatabaseError):
-            with sqlite3.connect(str(db)) as raw:
-                raw.execute("SELECT * FROM sqlite_master").fetchall()
+        with pytest.raises(sqlite3.DatabaseError), sqlite3.connect(str(db)) as raw:
+            raw.execute("SELECT * FROM sqlite_master").fetchall()
 
         # 2. Les données sont intactes via db_connect (clé posée)
         with db_connect(db) as conn:

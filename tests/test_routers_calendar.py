@@ -709,13 +709,12 @@ class TestGoogle403Actionnable:
 
     @pytest.mark.asyncio
     async def test_list_calendars_403_message_actionnable(self):
-        import httpx
         from unittest.mock import AsyncMock, MagicMock
 
-        from fastapi import HTTPException
-
+        import httpx
         from app.models.entities import EmailAccount
         from app.routers.calendar import _list_google_calendars
+        from fastapi import HTTPException
 
         class FakeCalendarService:
             def __init__(self, _token):
@@ -734,9 +733,8 @@ class TestGoogle403Actionnable:
 
         with patch("app.routers.calendar.CalendarService", FakeCalendarService), patch(
             "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
-        ):
-            with pytest.raises(HTTPException) as exc:
-                await _list_google_calendars("acc-403", account, session)
+        ), pytest.raises(HTTPException) as exc:
+            await _list_google_calendars("acc-403", account, session)
 
         assert exc.value.status_code == 403
         assert "Google Calendar" in exc.value.detail

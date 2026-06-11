@@ -10,7 +10,6 @@ Deux protections :
 import queue
 
 import pytest
-
 from app.services.skills.code_executor import (
     CodeExecutionError,
     _run_generation_in_subprocess,

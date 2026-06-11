@@ -17,6 +17,7 @@ from .base import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 
 logger = logging.getLogger(__name__)
@@ -280,6 +281,7 @@ class OllamaProvider(BaseProvider):
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """US-009 : continuation après exécution des outils (format Ollama).
 
@@ -289,17 +291,32 @@ class OllamaProvider(BaseProvider):
         par nom, pas par id (il n'en fournit pas).
         """
         messages = list(messages)
+        # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
+        for turn in prior_turns or []:
+            self._append_tool_turn(
+                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+            )
+        self._append_tool_turn(messages, assistant_content, tool_calls, tool_results)
 
-        assistant_message: dict = {
+        async for event in self.stream(system_prompt, messages, tools):
+            yield event
+
+    @staticmethod
+    def _append_tool_turn(
+        messages: list[dict],
+        assistant_content: str,
+        tool_calls: list[ToolCall],
+        tool_results: list[ToolResult],
+    ) -> None:
+        """Ajoute un tour d'outils au format Ollama (corrélation par tool_name)."""
+        messages.append({
             "role": "assistant",
             "content": assistant_content or "",
             "tool_calls": [
                 {"function": {"name": tc.name, "arguments": tc.arguments or {}}}
                 for tc in tool_calls
             ],
-        }
-        messages.append(assistant_message)
-
+        })
         name_by_id = {tc.id: tc.name for tc in tool_calls}
         for tr in tool_results:
             result_content = tr.result
@@ -312,6 +329,3 @@ class OllamaProvider(BaseProvider):
                 "content": result_content,
                 "tool_name": name_by_id.get(tr.tool_call_id, ""),
             })
-
-        async for event in self.stream(system_prompt, messages, tools):
-            yield event

@@ -4,7 +4,6 @@ Vérifie que convert_markdown_tables_to_bullets convertit correctement
 les tableaux Markdown en listes à puces sans toucher au reste du texte.
 """
 
-import pytest
 from app.services.llm import convert_markdown_tables_to_bullets
 
 

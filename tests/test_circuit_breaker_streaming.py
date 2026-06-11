@@ -17,7 +17,7 @@ class _ErrorProvider:
 
     async def continue_with_tool_results(
         self, system_prompt, messages, assistant_content, tool_calls, tool_results, tools
-    ):
+    , prior_turns=None):
         yield StreamEvent(type="error", content="API error: 503")
 
 

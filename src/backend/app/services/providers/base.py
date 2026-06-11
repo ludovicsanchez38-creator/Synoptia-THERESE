@@ -70,6 +70,19 @@ class ToolResult:
 
 
 @dataclass
+class ToolTurn:
+    """Un tour d'outils complet (texte assistant + appels + résultats).
+
+    Les continuations multi-tours doivent REJOUER les tours précédents dans
+    le contexte envoyé au modèle, sinon il re-demande les mêmes outils en
+    boucle puis invente une explication d'échec (bug lcjp 11/06/2026).
+    """
+    assistant_content: str
+    tool_calls: list[ToolCall]
+    tool_results: list[ToolResult]
+
+
+@dataclass
 class StreamEvent:
     """An event from the LLM stream."""
     type: Literal["text", "tool_call", "done", "error"]
@@ -114,6 +127,7 @@ class BaseProvider(ABC):
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """
         Continue streaming after tool execution.
@@ -125,11 +139,54 @@ class BaseProvider(ABC):
             tool_calls: The tool calls that were made
             tool_results: Results of those tool calls
             tools: Tools to make available
+            prior_turns: Tours d'outils PRÉCÉDENTS de la même réponse, à
+                rejouer dans l'ordre avant le tour courant (multi-tours)
 
         Yields:
             StreamEvent objects
         """
         pass
+
+    @staticmethod
+    def _append_openai_tool_turn(
+        messages: list[dict],
+        assistant_content: str,
+        tool_calls: list[ToolCall],
+        tool_results: list[ToolResult],
+    ) -> None:
+        """Ajoute un tour d'outils au format OpenAI-compatible (in place).
+
+        Un message assistant portant les tool_calls (arguments en chaîne
+        JSON), puis un message role="tool" par résultat (tool_call_id).
+        Partagé par OpenAI/Grok/Mistral/DeepSeek/Infomaniak/OpenRouter/
+        Perplexity.
+        """
+        messages.append({
+            "role": "assistant",
+            "content": assistant_content or None,
+            "tool_calls": [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.name,
+                        "arguments": json.dumps(tc.arguments) if tc.arguments else "{}",
+                    },
+                }
+                for tc in tool_calls
+            ],
+        })
+        for tr in tool_results:
+            result_content = tr.result
+            if isinstance(result_content, dict):
+                result_content = json.dumps(result_content)
+            elif not isinstance(result_content, str):
+                result_content = str(result_content)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tr.tool_call_id,
+                "content": result_content,
+            })
 
     def _parse_sse_line(self, line: str) -> dict | None:
         """Parse an SSE data line to JSON."""

@@ -16,6 +16,7 @@ from .base import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 
 logger = logging.getLogger(__name__)
@@ -167,42 +168,17 @@ class OpenAIProvider(BaseProvider):
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue OpenAI conversation with tool results."""
-        messages = list(messages)  # Copy
+        messages = list(messages)  # copie
+        # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
+        # avant le tour courant, sinon le modèle re-demande le même outil.
+        for turn in prior_turns or []:
+            self._append_openai_tool_turn(
+                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+            )
+        self._append_openai_tool_turn(messages, assistant_content, tool_calls, tool_results)
 
-        # Build assistant message with tool_calls
-        assistant_message = {
-            "role": "assistant",
-            "content": assistant_content or None,
-            "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {
-                        "name": tc.name,
-                        "arguments": json.dumps(tc.arguments) if tc.arguments else "{}",
-                    },
-                }
-                for tc in tool_calls
-            ],
-        }
-        messages.append(assistant_message)
-
-        # Add tool result messages
-        for tr in tool_results:
-            result_content = tr.result
-            if isinstance(result_content, dict):
-                result_content = json.dumps(result_content)
-            elif not isinstance(result_content, str):
-                result_content = str(result_content)
-
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tr.tool_call_id,
-                "content": result_content,
-            })
-
-        # Stream continuation
         async for event in self.stream(system_prompt, messages, tools):
             yield event

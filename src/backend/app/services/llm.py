@@ -35,6 +35,7 @@ from app.services.providers import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 
 logger = logging.getLogger(__name__)
@@ -750,8 +751,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
-        """Continue after tool execution."""
+        """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         await self._ensure_provider()
 
         if self.config.provider == LLMProvider.ANTHROPIC:
@@ -770,7 +772,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         error_detail = ""
 
         async for event in self._provider.continue_with_tool_results(
-            system_prompt, messages, assistant_content, tool_calls, tool_results, tools
+            system_prompt,
+            messages,
+            assistant_content,
+            tool_calls,
+            tool_results,
+            tools,
+            prior_turns=prior_turns,
         ):
             if event.type == "error" and _is_provider_outage(event.content):
                 had_error = True

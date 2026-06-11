@@ -3,16 +3,11 @@ Tests pour le systeme d'agents actionnables (action_agents).
 """
 
 import asyncio
-import json
 
 import pytest
-
 from app.services.action_agents import (
-    ActionAgentDef,
-    ActionAgentStep,
     ActionRunner,
     StepStatus,
-    TaskStatus,
     get_agent_definitions,
     reload_agent_definitions,
 )
@@ -134,7 +129,7 @@ class TestActionRunner:
 
     def test_task_state_serialization(self):
         """La serialisation to_dict fonctionne."""
-        from app.services.action_agents import TaskState, StepResult
+        from app.services.action_agents import StepResult, TaskState
 
         task = TaskState(
             task_id="test-123",
@@ -160,7 +155,7 @@ class TestActionRunner:
 
     def test_progress_calculation(self):
         """Le calcul de progression est correct."""
-        from app.services.action_agents import TaskState, StepResult
+        from app.services.action_agents import StepResult, TaskState
 
         task = TaskState(
             task_id="test-456",
@@ -250,9 +245,8 @@ class TestActionsRouter:
 
         os.environ["THERESE_SKIP_SERVICES"] = "1"
 
-        from fastapi.testclient import TestClient
-
         from app.main import app
+        from fastapi.testclient import TestClient
 
         return TestClient(app)
 

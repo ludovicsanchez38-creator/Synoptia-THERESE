@@ -9,7 +9,6 @@ Convention : un test par bug, nommé test_BUGXXX_description.
 
 import ast
 import inspect
-import textwrap
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -3107,9 +3106,8 @@ class TestBUG050_KeychainFallbackToFile:
         """Test fonctionnel : si le Keychain a une nouvelle clé, le fichier backup est utilisé."""
         import tempfile
 
-        from cryptography.fernet import Fernet
-
         from app.services.encryption import EncryptionService
+        from cryptography.fernet import Fernet
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
@@ -3252,7 +3250,6 @@ class TestBUG098_OllamaDefaultModelDetection:
 
     def test_detect_returns_first_installed_chat_model(self, monkeypatch):
         import httpx
-
         from app.services.llm import detect_default_ollama_model
 
         monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["gemma:2b", "llama3:8b"]))
@@ -3261,7 +3258,6 @@ class TestBUG098_OllamaDefaultModelDetection:
     def test_detect_prefers_installed_over_mistral_nemo(self, monkeypatch):
         """Scénario exact lcjp : gemma:2b installé, mistral-nemo absent."""
         import httpx
-
         from app.services.llm import detect_default_ollama_model
 
         monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["gemma:2b"]))
@@ -3271,7 +3267,6 @@ class TestBUG098_OllamaDefaultModelDetection:
     def test_detect_skips_embedding_models(self, monkeypatch):
         """Un modèle d'embedding (ex: nomic-embed-text, utilisé par Qdrant) ne doit pas être choisi comme modèle de chat."""
         import httpx
-
         from app.services.llm import detect_default_ollama_model
 
         monkeypatch.setattr(httpx, "get", self._fake_httpx_get(["nomic-embed-text:latest"]))
@@ -3279,7 +3274,6 @@ class TestBUG098_OllamaDefaultModelDetection:
 
     def test_detect_fallback_when_ollama_unreachable(self, monkeypatch):
         import httpx
-
         from app.services.llm import detect_default_ollama_model
 
         def _boom(url, timeout=None):
@@ -4575,7 +4569,6 @@ class TestBUG_PptxNbSlides:
 
     def test_build_namespace_accepts_nb_slides(self):
         """_build_namespace doit accepter nb_slides comme paramètre."""
-        import ast
         content = open('src/backend/app/services/skills/code_executor.py').read()
         assert 'nb_slides: int = 10' in content
 
@@ -4672,7 +4665,8 @@ class TestBUGOpenRouterStrftimeWindows:
     def test_get_system_prompt_no_valueerror(self):
         """_get_system_prompt_with_identity ne lève pas ValueError (ex-bug strftime POSIX)."""
         from unittest.mock import MagicMock, patch
-        from app.services.llm import LLMService, LLMConfig, LLMProvider
+
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
 
         config = LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-3-haiku-20240307")
         svc = LLMService(config)
@@ -4838,8 +4832,8 @@ class TestBUGOpenRouter403MessageErreur:
     def _make_provider():
         """Crée un OpenRouterProvider avec un client httpx mock."""
         import httpx
-        from app.services.providers.openrouter import OpenRouterProvider
         from app.services.llm import LLMConfig, LLMProvider
+        from app.services.providers.openrouter import OpenRouterProvider
         config = LLMConfig(
             provider=LLMProvider.OPENROUTER,
             model="anthropic/claude-sonnet-4-6",
@@ -4852,6 +4846,7 @@ class TestBUGOpenRouter403MessageErreur:
         """Un 403 doit générer un message lisible sur les crédits, pas juste le code HTTP."""
         import asyncio
         from unittest.mock import MagicMock, patch
+
         import httpx
 
         provider = self._make_provider()
@@ -4884,6 +4879,7 @@ class TestBUGOpenRouter403MessageErreur:
         """Un 403 avec body vide doit donner un message de fallback lisible."""
         import asyncio
         from unittest.mock import MagicMock, patch
+
         import httpx
 
         provider = self._make_provider()
@@ -4909,6 +4905,7 @@ class TestBUGOpenRouter403MessageErreur:
         """La correction du 403 ne doit pas casser le handler 401."""
         import asyncio
         from unittest.mock import MagicMock, patch
+
         import httpx
 
         provider = self._make_provider()
@@ -4934,6 +4931,7 @@ class TestBUGOpenRouter403MessageErreur:
         """Une 429 doit rester lisible et ne jamais se transformer en UnboundLocalError."""
         import asyncio
         from unittest.mock import MagicMock, patch
+
         import httpx
 
         provider = self._make_provider()
@@ -5838,7 +5836,7 @@ class TestBUG73GoogleCalendarTZ:
 
     def test_to_rfc3339_z_handles_tz_aware(self):
         """Un datetime avec tzinfo doit etre converti en UTC naif avant Z."""
-        from datetime import UTC, datetime, timedelta, timezone
+        from datetime import datetime, timedelta, timezone
 
         from app.services.calendar_service import CalendarService
 
@@ -5847,7 +5845,6 @@ class TestBUG73GoogleCalendarTZ:
         dt = datetime(2026, 4, 22, 10, 0, 0, tzinfo=paris)
 
         # Appel du helper interne via la methode publique
-        import inspect
         src = inspect.getsource(CalendarService.list_events)
         assert "_to_rfc3339_z" in src, "helper _to_rfc3339_z doit etre present"
         assert "astimezone(_UTC)" in src, "conversion UTC requise pour tz-aware"
@@ -6833,9 +6830,8 @@ class TestGlobal_Fixes:
 
     def _render_invoice_pdf(self, tmp_path, currency: str) -> str:
         """Rend un PDF de facture minimal dans la devise donnée, renvoie le texte extrait."""
-        from pypdf import PdfReader
-
         from app.services.invoice_pdf import InvoicePDFGenerator
+        from pypdf import PdfReader
 
         gen = InvoicePDFGenerator(output_dir=str(tmp_path))
         invoice_data = {

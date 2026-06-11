@@ -617,3 +617,140 @@ async def test_grok_arguments_invalides_comportement_fige():
     tool_events = [e for e in events if e.type == "tool_call"]
     assert len(tool_events) == 1
     assert tool_events[0].tool_call.arguments == {}
+
+
+# ---------------------------------------------------------------------------
+# Multi-tours d'outils (bug lcjp 11/06/2026) : les tours PRÉCÉDENTS doivent
+# être rejoués dans le contexte de continuation, sinon le modèle re-demande
+# le même outil en boucle puis invente une explication d'échec.
+# ---------------------------------------------------------------------------
+
+
+def _turn(call_id: str, name: str, result: str):
+    from app.services.providers.base import ToolTurn
+    return ToolTurn(
+        assistant_content="",
+        tool_calls=[ToolCall(id=call_id, name=name, arguments={})],
+        tool_results=[ToolResult(tool_call_id=call_id, result=result)],
+    )
+
+
+@pytest.mark.asyncio
+async def test_grok_prior_turns_rejoues_dans_l_ordre():
+    text_chunk = {"choices": [{"delta": {"content": "Voici tes emails."}, "finish_reason": None}]}
+    client = _FakeClient([f"data: {json.dumps(text_chunk)}", "data: [DONE]"])
+
+    events = await _collect(
+        _grok(client).continue_with_tool_results(
+            None,
+            [{"role": "user", "content": "lis mes emails"}],
+            assistant_content="",
+            tool_calls=[ToolCall(id="call_2", name="read_emails", arguments={})],
+            tool_results=[ToolResult(tool_call_id="call_2", result="3 emails")],
+            tools=OPENAI_TOOLS,
+            prior_turns=[_turn("call_1", "read_emails", "5 emails")],
+        )
+    )
+
+    assert any(e.type == "text" for e in events)
+    sent = client.last_request["json"]["messages"]
+    tool_msgs = [m for m in sent if m.get("role") == "tool"]
+    assistant_tc = [m for m in sent if m.get("role") == "assistant" and m.get("tool_calls")]
+    # Les DEUX tours sont présents, dans l'ordre
+    assert len(tool_msgs) == 2 and len(assistant_tc) == 2
+    assert tool_msgs[0]["tool_call_id"] == "call_1"
+    assert tool_msgs[1]["tool_call_id"] == "call_2"
+
+
+@pytest.mark.asyncio
+async def test_ollama_prior_turns_rejoues_dans_l_ordre():
+    done_chunk = {"message": {"content": "Voici."}, "done": True}
+    client = _FakeClient([json.dumps(done_chunk)])
+
+    await _collect(
+        _ollama(client).continue_with_tool_results(
+            None,
+            [{"role": "user", "content": "lis mes emails"}],
+            assistant_content="",
+            tool_calls=[ToolCall(id="call_2", name="read_emails", arguments={})],
+            tool_results=[ToolResult(tool_call_id="call_2", result="3 emails")],
+            tools=OPENAI_TOOLS,
+            prior_turns=[_turn("call_1", "read_emails", "5 emails")],
+        )
+    )
+
+    sent = client.last_request["json"]["messages"]
+    tool_msgs = [m for m in sent if m.get("role") == "tool"]
+    assert len(tool_msgs) == 2
+    assert tool_msgs[0]["content"] == "5 emails"
+    assert tool_msgs[1]["content"] == "3 emails"
+
+
+@pytest.mark.asyncio
+async def test_gemini_prior_turns_rejoues_dans_l_ordre():
+    text_chunk = {"candidates": [{"content": {"parts": [{"text": "Voici."}]}}]}
+    client = _FakeClient([f"data: {json.dumps(text_chunk)}"])
+
+    await _collect(
+        _gemini(client).continue_with_tool_results(
+            None,
+            [{"role": "user", "parts": [{"text": "lis mes emails"}]}],
+            assistant_content="",
+            tool_calls=[ToolCall(id="call_2", name="read_emails", arguments={})],
+            tool_results=[ToolResult(tool_call_id="call_2", result="3 emails")],
+            tools=OPENAI_TOOLS,
+            prior_turns=[_turn("call_1", "read_emails", "5 emails")],
+        )
+    )
+
+    sent = client.last_request["json"]["contents"]
+    fn_responses = [
+        c for c in sent
+        if any("functionResponse" in p for p in c.get("parts", []))
+    ]
+    fn_calls = [
+        c for c in sent
+        if any("functionCall" in p for p in c.get("parts", []))
+    ]
+    assert len(fn_responses) == 2 and len(fn_calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_anthropic_prior_turns_rejoues_dans_l_ordre():
+    from app.services.providers.anthropic import AnthropicProvider
+
+    text_chunk = {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Voici."}}
+    client = _FakeClient([
+        f"data: {json.dumps(text_chunk)}",
+        'data: {"type": "message_stop"}',
+    ])
+    provider = AnthropicProvider(
+        LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-sonnet-4-6", api_key="k"),
+        client=client,
+    )
+
+    await _collect(
+        provider.continue_with_tool_results(
+            "system",
+            [{"role": "user", "content": "lis mes emails"}],
+            assistant_content="",
+            tool_calls=[ToolCall(id="call_2", name="read_emails", arguments={})],
+            tool_results=[ToolResult(tool_call_id="call_2", result="3 emails")],
+            tools=None,
+            prior_turns=[_turn("call_1", "read_emails", "5 emails")],
+        )
+    )
+
+    sent = client.last_request["json"]["messages"]
+    tool_uses = [
+        m for m in sent
+        if m["role"] == "assistant" and any(b.get("type") == "tool_use" for b in m["content"])
+    ]
+    tool_results_msgs = [
+        m for m in sent
+        if m["role"] == "user" and isinstance(m["content"], list)
+        and any(b.get("type") == "tool_result" for b in m["content"])
+    ]
+    assert len(tool_uses) == 2 and len(tool_results_msgs) == 2
+    assert tool_results_msgs[0]["content"][0]["tool_use_id"] == "call_1"
+    assert tool_results_msgs[1]["content"][0]["tool_use_id"] == "call_2"

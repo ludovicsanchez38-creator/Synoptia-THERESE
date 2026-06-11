@@ -15,7 +15,6 @@ from unittest.mock import MagicMock
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
 
@@ -37,7 +36,6 @@ os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-test-
 os.environ.setdefault("THERESE_DB_KEY", "ad" * 32)
 
 from app.main import app
-from app.models.database import get_session
 
 
 # Remplacer le lifespan par un lifespan minimal pour les tests

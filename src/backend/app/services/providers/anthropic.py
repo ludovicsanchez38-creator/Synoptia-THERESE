@@ -16,6 +16,7 @@ from .base import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 
 logger = logging.getLogger(__name__)
@@ -162,13 +163,32 @@ class AnthropicProvider(BaseProvider):
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
+        prior_turns: list[ToolTurn] | None = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue Anthropic conversation with tool results."""
-        # Build assistant message with tool_use blocks
+        messages = list(messages)  # Copy
+        # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
+        for turn in prior_turns or []:
+            self._append_tool_turn(
+                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+            )
+        self._append_tool_turn(messages, assistant_content, tool_calls, tool_results)
+
+        # Stream continuation
+        async for event in self.stream(system_prompt, messages, tools):
+            yield event
+
+    @staticmethod
+    def _append_tool_turn(
+        messages: list[dict],
+        assistant_content: str,
+        tool_calls: list[ToolCall],
+        tool_results: list[ToolResult],
+    ) -> None:
+        """Ajoute un tour d'outils au format Anthropic (tool_use/tool_result blocks)."""
         assistant_content_blocks = []
         if assistant_content:
             assistant_content_blocks.append({"type": "text", "text": assistant_content})
-
         for tc in tool_calls:
             assistant_content_blocks.append({
                 "type": "tool_use",
@@ -176,14 +196,11 @@ class AnthropicProvider(BaseProvider):
                 "name": tc.name,
                 "input": tc.arguments,
             })
-
-        messages = list(messages)  # Copy
         messages.append({
             "role": "assistant",
             "content": assistant_content_blocks,
         })
 
-        # Build user message with tool_result blocks
         user_content_blocks = []
         for tr in tool_results:
             result_content = tr.result
@@ -191,19 +208,13 @@ class AnthropicProvider(BaseProvider):
                 result_content = json.dumps(result_content)
             elif not isinstance(result_content, str):
                 result_content = str(result_content)
-
             user_content_blocks.append({
                 "type": "tool_result",
                 "tool_use_id": tr.tool_call_id,
                 "content": result_content,
                 "is_error": tr.is_error,
             })
-
         messages.append({
             "role": "user",
             "content": user_content_blocks,
         })
-
-        # Stream continuation
-        async for event in self.stream(system_prompt, messages, tools):
-            yield event

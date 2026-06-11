@@ -14,6 +14,7 @@ from .base import (
     StreamEvent,
     ToolCall,
     ToolResult,
+    ToolTurn,
 )
 from .deepseek import DeepSeekProvider
 from .gemini import GeminiProvider
@@ -32,6 +33,7 @@ __all__ = [
     "Message",
     "ToolCall",
     "ToolResult",
+    "ToolTurn",
     "StreamEvent",
     # Base class
     "BaseProvider",

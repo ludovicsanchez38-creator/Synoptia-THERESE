@@ -5,14 +5,7 @@ Vérifie que freeze_support et le patch resource_tracker fonctionnent
 correctement pour le sidecar PyInstaller.
 """
 
-import importlib
-import multiprocessing
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
-
 
 # ============================================================
 # freeze_support

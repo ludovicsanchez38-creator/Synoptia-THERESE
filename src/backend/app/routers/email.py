@@ -88,9 +88,8 @@ async def get_crm_contact_by_email(session: AsyncSession, email: str | None):
     La table Contact est la source de vérité (score, téléphone, notes) - le
     payload Qdrant des contacts ne contient que name/company/email.
     """
-    from sqlalchemy import func
-
     from app.models.entities import Contact
+    from sqlalchemy import func
 
     if not email:
         return None

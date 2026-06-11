@@ -25,7 +25,7 @@ class _Event:
 class _FakeLLM:
     async def continue_with_tool_results(
         self, context, assistant_content, tool_calls, tool_results, tools
-    ):
+    , prior_turns=None):
         self.received_tool_results = tool_results
         yield _Event("done", stop_reason="end_turn")
 
