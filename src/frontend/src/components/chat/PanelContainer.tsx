@@ -133,7 +133,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
             className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
             onClick={closePromptLibrary}
           >
-            <div className="w-full max-w-3xl max-h-[85vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full max-w-3xl h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <PromptLibrary
                 onSelectPrompt={(text) => {
                   closePromptLibrary();
