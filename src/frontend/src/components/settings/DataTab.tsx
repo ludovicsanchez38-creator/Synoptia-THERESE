@@ -25,8 +25,8 @@ export function DataTab({
       {/* Section stockage local */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-            <Database className="w-5 h-5 text-accent-cyan" />
+          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <Database className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h3 className="font-medium text-text">Stockage des données</h3>

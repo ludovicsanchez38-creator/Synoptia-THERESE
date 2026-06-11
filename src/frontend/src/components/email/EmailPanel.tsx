@@ -256,8 +256,8 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-accent-cyan" />
+            <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+              <Mail className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-text">Email</h2>
@@ -499,8 +499,8 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-accent-cyan" />
+            <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+              <Mail className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-text">Email</h2>

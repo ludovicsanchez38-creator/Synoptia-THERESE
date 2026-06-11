@@ -64,7 +64,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Mail className="w-6 h-6 text-accent-cyan" />
           </div>
 
@@ -102,7 +102,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-text-muted/20 to-text-muted/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-[8px] bg-text-muted/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Server className="w-6 h-6 text-text-muted" />
           </div>
 

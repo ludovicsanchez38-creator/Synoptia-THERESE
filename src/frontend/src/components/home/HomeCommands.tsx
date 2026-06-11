@@ -229,7 +229,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
 
             {/* Header avec icône et question */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20">
+              <div className="flex items-center justify-center w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
                 <selectedCategory.icon className="w-6 h-6 text-accent-cyan" />
               </div>
               <div>

@@ -155,7 +155,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       className="space-y-5"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center mx-auto">
+        <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
           <Server className="w-6 h-6 text-accent-cyan" />
         </div>
         <h3 className="text-lg font-semibold text-text">Configuration SMTP/IMAP</h3>

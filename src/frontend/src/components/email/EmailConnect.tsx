@@ -60,7 +60,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
       <div className="max-w-md w-full mx-auto space-y-6 py-4">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-[10px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
             <Mail className="w-8 h-8 text-accent-cyan" />
           </div>
           <h3 className="text-2xl font-semibold text-text">Connecter Gmail</h3>

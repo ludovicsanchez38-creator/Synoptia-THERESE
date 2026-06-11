@@ -141,7 +141,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {/* Initiating */}
       {state === 'initiating' && (
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
             <Loader2 className="w-8 h-8 text-accent-cyan animate-spin" />
           </div>
           <h3 className="text-lg font-semibold text-text">Préparation de l'autorisation...</h3>
@@ -154,7 +154,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {/* Waiting for authorization */}
       {state === 'waiting' && (
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
             <Loader2 className="w-8 h-8 text-accent-cyan animate-spin" />
           </div>
           <h3 className="text-lg font-semibold text-text">En attente d'autorisation...</h3>

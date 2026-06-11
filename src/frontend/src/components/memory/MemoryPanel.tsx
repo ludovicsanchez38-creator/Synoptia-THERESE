@@ -634,7 +634,7 @@ function ContactsList({
             onClick={() => onSelect(contact)}
             className="flex items-center gap-3 flex-1 min-w-0"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center text-sm font-medium text-text flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-accent-tint border border-border flex items-center justify-center text-sm font-medium text-text flex-shrink-0">
               {getInitials(contact.first_name, contact.last_name)}
             </div>
 

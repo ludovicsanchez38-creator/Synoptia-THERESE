@@ -37,7 +37,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
       animate={{ opacity: 1, y: 0 }}
       className={cn(
         'rounded-2xl border p-6',
-        'bg-gradient-to-br from-surface-elevated to-surface',
+        'bg-surface-elevated',
         'border-accent-cyan/30'
       )}
     >

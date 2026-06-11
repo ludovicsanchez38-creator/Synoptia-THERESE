@@ -190,7 +190,7 @@ export const MessageBubble = memo(function MessageBubble({
         className={cn(
           'relative flex-1 max-w-[85%] rounded-2xl px-4 py-3 transition-all',
           isUser
-            ? 'bg-gradient-to-br from-accent-magenta/12 to-accent-magenta/6 border border-accent-magenta/20 hover:border-accent-magenta/30 hover:shadow-[0_0_20px_rgba(225,29,141,0.1)]'
+            ? 'bg-accent-magenta/10 border-[1.5px] border-accent-magenta/25 hover:border-[var(--btn-ink)] hover:shadow-[3px_3px_0_var(--btn-shadow-color)]'
             : 'bg-surface-elevated border border-border hover:border-accent-cyan/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)]'
         )}
         style={{

@@ -240,7 +240,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         {/* From/To */}
         <div className="space-y-2">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-accent-tint border border-border flex items-center justify-center shrink-0">
               <Mail className="w-5 h-5 text-accent-cyan" />
             </div>
             <div className="flex-1">

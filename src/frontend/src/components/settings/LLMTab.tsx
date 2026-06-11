@@ -250,8 +250,8 @@ export function LLMTab({
       {/* Sélection du provider */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-            <Cpu className="w-5 h-5 text-accent-cyan" />
+          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <Cpu className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h3 className="font-medium text-text">Fournisseur LLM</h3>
@@ -319,7 +319,7 @@ export function LLMTab({
       {needsApiKey && (
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-magenta/20 to-accent-cyan/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Key className="w-5 h-5 text-accent-magenta" />
             </div>
             <div>
@@ -424,7 +424,7 @@ export function LLMTab({
       {selectedProvider === 'ollama' && (
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-accent-cyan/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-[6px] bg-green-500/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Database className="w-5 h-5 text-green-400" />
             </div>
             <div>

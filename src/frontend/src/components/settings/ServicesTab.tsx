@@ -82,7 +82,7 @@ export function ServicesTab({
       {/* Génération d'images */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-accent-magenta/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[6px] bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <ImageIcon className="w-5 h-5 text-purple-400" />
           </div>
           <div>
@@ -198,7 +198,7 @@ export function ServicesTab({
       {/* Transcription vocale Groq */}
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-magenta/20 to-accent-cyan/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Mic className="w-5 h-5 text-accent-magenta" />
           </div>
           <div>
@@ -274,8 +274,8 @@ export function ServicesTab({
       {/* Recherche Web */}
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-            <Globe className="w-5 h-5 text-accent-cyan" />
+          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <Globe className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-text">Recherche Web</h3>
@@ -341,8 +341,8 @@ export function ServicesTab({
       {/* Extraction automatique */}
       <div className="pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-accent-cyan" />
+          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-text">Extraction automatique</h3>

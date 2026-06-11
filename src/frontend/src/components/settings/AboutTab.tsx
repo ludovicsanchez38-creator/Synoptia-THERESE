@@ -132,8 +132,8 @@ export function AboutTab() {
       {/* Version actuelle */}
       <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-cyan to-accent-magenta flex items-center justify-center">
-            <span className="text-lg font-bold text-white">T</span>
+          <div className="w-10 h-10 rounded-[6px] bg-accent-fill border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <span className="text-lg font-bold text-accent-ink">T</span>
           </div>
           <div>
             <h3 className="text-lg font-semibold text-text">THÉRÈSE</h3>

@@ -138,7 +138,7 @@ export function ResponseGeneratorModal({
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-accent-cyan/20 to-accent-magenta/20">
+                  <div className="p-2 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
                     <Sparkles className="w-5 h-5 text-accent-cyan" />
                   </div>
                   <div>
