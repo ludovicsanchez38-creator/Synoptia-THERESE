@@ -92,11 +92,9 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
-> **RELEASE 0.24.1 PRÊTE À LANCER** (11/06/2026 soir) : les 3 fixes lcjp sont
-> sur main (c6ce235, fcc9b48, 675e209), suites vertes (backend 1169, frontend
-> 221, lint OK). Lancer `/release-therese` (bump PATCH 0.24.0 → 0.24.1) - ce
-> sera aussi le 2e test updater (0.24.0 → 0.24.1) et la validation réelle du
-> fix multi-tours avec Mistral. Répondre ensuite à lcjp sur Discord #bugs.
+> **v0.24.1 RELEASÉE le 11/06/2026** (3 fixes lcjp + fix mypy 32f8dae).
+> lcjp répondu sur #bugs. Reste : son retour réel (validation multi-tours
+> Mistral) et le résultat du test updater 0.24.0 → 0.24.1 mené par Ludo.
 
 
 (Section maintenue par le workflow /release-therese et Zezette)
