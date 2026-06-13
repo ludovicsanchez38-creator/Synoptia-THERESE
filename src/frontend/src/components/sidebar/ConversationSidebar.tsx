@@ -60,6 +60,16 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
       loadConversation(id);
       onClose();
 
+      // BUG-107 : ne charger depuis le backend QUE si la conversation est
+      // synchronisée et vide localement (même garde que useConversationSync).
+      // Une conversation locale-only (ex: résultat d'un agent de préparation de
+      // RDV) n'existe pas côté backend : l'interroger renverrait [] (HTTP 200)
+      // et écraserait ses messages → disparition de l'historique.
+      const localConv = useChatStore.getState().conversations.find((c) => c.id === id);
+      if (!localConv?.synced || localConv.messages.length > 0) {
+        return;
+      }
+
       // Load messages from backend
       try {
         const messages = await api.getConversationMessages(id);

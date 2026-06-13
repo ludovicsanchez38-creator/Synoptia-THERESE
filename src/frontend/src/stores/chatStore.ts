@@ -307,6 +307,14 @@ export const useChatStore = create<ChatStore>()(
           const existingConv = state.conversations.find((c) => c.id === conversationId);
 
           if (existingConv) {
+            // BUG-107 (Capov 12/06/2026) : ne pas écraser une conversation locale
+            // NON synchronisée (ex: résultat d'un agent de préparation de RDV) avec
+            // une liste vide. Le backend renvoie [] (HTTP 200) pour un ID local
+            // qu'il ne connaît pas ; écraser ici effacerait le message ET marquerait
+            // synced:true → la conversation disparaîtrait de l'historique.
+            if (messages.length === 0 && !existingConv.synced) {
+              return state;
+            }
             // Update existing conversation
             return {
               conversations: state.conversations.map((c) =>
