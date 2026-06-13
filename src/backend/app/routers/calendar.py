@@ -158,10 +158,11 @@ def _raise_if_google_403(e: Exception) -> None:
         raise HTTPException(
             status_code=403,
             detail=(
-                "Google refuse l'accès au calendrier (403). Vérifie que l'API "
-                "« Google Calendar » est activée dans ta console Google Cloud "
+                "Google refuse l'accès au calendrier (403). Active l'API "
+                "« Google Calendar » dans ta console Google Cloud "
                 "(APIs et services > Bibliothèque > Google Calendar API > Activer), "
-                "puis reconnecte ton compte Google dans Paramètres > Services."
+                "puis relance la synchronisation. Si le souci persiste, vérifie "
+                "que l'accès au calendrier a bien été autorisé pour ce compte."
             ),
         ) from e
 

@@ -739,3 +739,9 @@ class TestGoogle403Actionnable:
         assert exc.value.status_code == 403
         assert "Google Calendar" in exc.value.detail
         assert "console Google Cloud" in exc.value.detail
+        # BUG-109 / boucle "connexion expirée" (lcjp 12/06/2026) : le message ne
+        # doit PAS contenir le radical "reconnect" — sinon l'heuristique du
+        # CalendarPanel (msg.includes('reconnect')) le classe à tort comme un
+        # jeton expiré, masque ce message actionnable et déclenche une boucle de
+        # reconnexion infinie. Un 403 = config serveur Google, pas une expiration.
+        assert "reconnect" not in exc.value.detail.lower()

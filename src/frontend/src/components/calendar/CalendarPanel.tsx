@@ -25,6 +25,7 @@ import { useEmailStore } from '../../stores/emailStore';
 import { CalendarView } from './CalendarView';
 import { EventForm } from './EventForm';
 import { EventDetail } from './EventDetail';
+import { classifyCalendarError } from './calendarErrors';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
@@ -124,12 +125,9 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     } catch (err: any) {
       console.error('Failed to load calendars:', err);
       const msg = err?.message || '';
-      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
-        setError('Connexion Google expirée.');
-        setNeedsReauth(true);
-      } else {
-        setError('Impossible de charger les calendriers');
-      }
+      const action = classifyCalendarError(msg, { fallback: 'Impossible de charger les calendriers' });
+      if (action.error !== null) setError(action.error);
+      if (action.needsReauth !== undefined) setNeedsReauth(action.needsReauth);
       // Si on a du cache, laisser les events se charger quand même
       if (hasCachedCalendars) setCalendarsReady(true);
     } finally {
@@ -157,13 +155,12 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     } catch (err: any) {
       console.error('Failed to load events:', err);
       const msg = err?.message || '';
-      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
-        setError('Connexion Google expirée.');
-        setNeedsReauth(true);
-      } else if (!hasCachedEvents) {
-        // Afficher l'erreur uniquement si pas de cache
-        setError('Impossible de charger les événements');
-      }
+      const action = classifyCalendarError(msg, {
+        fallback: 'Impossible de charger les événements',
+        hasCache: hasCachedEvents,
+      });
+      if (action.error !== null) setError(action.error);
+      if (action.needsReauth !== undefined) setNeedsReauth(action.needsReauth);
     }
   }
 
@@ -188,12 +185,9 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     } catch (err: any) {
       console.error('Failed to sync calendar:', err);
       const msg = err?.message || '';
-      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('reconnect')) {
-        setError('Connexion Google expirée.');
-        setNeedsReauth(true);
-      } else {
-        setError('Échec de la synchronisation');
-      }
+      const action = classifyCalendarError(msg, { fallback: 'Échec de la synchronisation' });
+      if (action.error !== null) setError(action.error);
+      if (action.needsReauth !== undefined) setNeedsReauth(action.needsReauth);
     } finally {
       setSyncing(false);
     }
