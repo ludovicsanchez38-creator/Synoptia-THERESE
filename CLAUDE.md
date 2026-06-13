@@ -92,6 +92,11 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.24.4-alpha RELEASÉE le 13/06/2026** (3 fixes testeurs du 12/06, build 3 OS OK, landing + latest.json à jour, rapport `docs/releases/v0.24.4-alpha.md`). BUG-108 (boucle lecture mails Mistral : message à tool_calls force `content=None` dans `_append_openai_tool_turn`), BUG-109 + boucle « connexion expirée » (403 calendrier reformulé sans « reconnecte » + helper `classifyCalendarError` qui désarme `needsReauth` sur un 403), BUG-107 (historique conv d'agent : `setConversationMessages` ne vide plus une conv non synced + garde sidebar). Dette restante :
+> - [ ] **BUG-108 — validation réelle Mistral en attente** : le contrat `content=None` + tool_calls n'est confirmable qu'en conditions réelles (lcjp, Windows + clé Mistral) après cette release.
+> - [ ] **BUG-109 — 403 chat-agent non couvert** : le 403 calendrier dans le chat passe par `workspace_tools._get_calendar_provider → GoogleCalendarProvider`, pas par `calendar._raise_if_google_403` ; la reformulation ne profite qu'à l'UI CalendarPanel. Mapper le 403 actionnable côté chat-agent si besoin d'un message clair dans la conversation.
+> - [ ] **provider badge au restore** : `useConversationSync.loadConversationMessages` ne mappe pas `msg.provider` (contrairement à `ConversationSidebar`) → badge local/cloud perdu au restore startup. À harmoniser.
+
 > **v0.24.1 RELEASÉE le 11/06/2026** (3 fixes lcjp + fix mypy 32f8dae).
 > lcjp répondu sur #bugs. Reste : son retour réel (validation multi-tours
 > Mistral) et le résultat du test updater 0.24.0 → 0.24.1 mené par Ludo.
