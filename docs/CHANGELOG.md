@@ -7,6 +7,71 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [v0.24.4-alpha] - 13 juin 2026 - Emails, calendrier et historique réparés
+
+Correctifs des bugs remontés par les testeurs le 12 juin.
+
+- **Lecture des emails (Mistral)** : plus de boucle ni de fausse « erreur d'authentification » quand on demande à THÉRÈSE de lire ses mails avec un modèle Mistral.
+- **Calendrier Google** : fini la fausse « connexion expirée » qui tournait en boucle. Si l'API Google Calendar n'est pas activée, THÉRÈSE affiche désormais le message qui explique précisément quoi faire.
+- **Historique du chat** : une conversation lancée par un agent (préparation de RDV) ne disparaît plus de l'historique quand on reclique dessus dans la barre latérale.
+
+6 tests de régression ajoutés.
+
+## [v0.24.3-alpha] - 11 juin 2026 - Le bouton de réponse IA réapparaît
+
+- **Univers Email** : le bouton « Générer une réponse » était toujours rogné sous la fenêtre en 0.24.2, la vraie cause est corrigée et vérifiée visuellement.
+- **Tous les univers** (CRM, Calendrier, Tâches, Factures, Mémoire) : le bas des vues était coupé d'une trentaine de pixels, c'est réglé partout.
+
+222 tests de régression.
+
+## [v0.24.2-alpha] - 11 juin 2026 - Quatre correctifs
+
+- **Génération d'images** : les clés (GPT, Gemini, Fal) sont de nouveau lues, fini le faux « clé non configurée ».
+- **Chat Gemini** : certains outils faisaient planter toute la conversation, c'est réglé.
+- **Email** : le bouton « Générer une réponse » ne déborde plus de la fenêtre.
+- **Bibliothèque de prompts** : la première carte n'est plus coupée en haut.
+
+5 tests de régression.
+
+## [v0.24.1-alpha] - 11 juin 2026 - Tes emails et ton agenda, sans blocage
+
+- **Lecture des emails réparée** : THÉRÈSE perdait les résultats de ses outils en cours de route et finissait par inventer une « erreur d'authentification ». Elle garde maintenant le fil, quel que soit le fournisseur IA.
+- **Calendrier Google** : en cas d'accès refusé, le message explique exactement quoi activer dans la console Google au lieu d'une erreur générique.
+- **Priorisation des emails** : le score CRM des contacts est de nouveau pris en compte.
+- **Guide clarifié** : configuration OAuth Google (client « Application Web », activer les API Gmail et Calendar).
+
+1390 tests de régression.
+
+## [v0.24.0-alpha] - 11 juin 2026 - Nouveau look, mise à jour automatique
+
+- **Mise à jour automatique** : depuis la 0.23, THÉRÈSE propose la nouvelle version d'elle-même (bandeau en haut, téléchargement signé et vérifié).
+- **Nouvelle identité visuelle** : boutons et badges au style net, fini les pastilles dégradées, meilleure lisibilité dans les deux thèmes.
+- **Lancement soigné** : ouverture sur l'Accueil sans panneau par-dessus, la fenêtre retient sa taille et sa position.
+- **Navigation clarifiée** : le bouton Accueil a sa propre barre, séparée des autres outils.
+
+1380 tests de régression.
+
+## [v0.23.0-alpha] - 11 juin 2026 - Souveraineté, outils et mises à jour auto
+
+- **Base chiffrée** : tes données sont chiffrées sur le disque (AES-256). Important : ne reviens pas à une version antérieure après le premier lancement de la 0.23.
+- **Mises à jour automatiques** : l'app détecte les nouvelles versions et les installe en un clic.
+- **Outils sur tous les modèles** : Grok, Gemini et Ollama savent maintenant créer des contacts, des rendez-vous et des documents.
+- **Chat plus fluide** : tableaux enfin affichés, longues conversations sans ralentissement, le scroll ne saute plus pendant que THÉRÈSE écrit.
+- **Accessibilité** : navigation clavier complète, contrastes renforcés, animations réduites au choix.
+- **Gmail simplifié** : connexion en 2 minutes avec un mot de passe d'application, sans console Google Cloud.
+
+1136 tests de régression.
+
+## [v0.22.0-alpha] - 10 juin 2026 - Sécurité et confidentialité renforcées
+
+- **Envoi d'email sous contrôle** : THÉRÈSE demande toujours ta validation avant d'envoyer un mail à ta place.
+- **Génération de documents isolée** : la création de fichiers Word/Excel/PowerPoint tourne à l'écart du reste de l'app.
+- **Effacement RGPD complet** : anonymiser un contact supprime aussi ses emails, et THÉRÈSE ne se fait plus passer pour un humain dans les brouillons.
+- **Conversations réparées** : depuis l'Accueil, ouvrir une conversation ou en créer une (Cmd+N) affiche bien le chat. Merci Capov.
+- **Fermeture propre** : l'app s'arrête correctement (mise à jour Windows débloquée).
+
+Plus de 30 tests de régression.
+
 ## [v0.21.0-alpha] - 9 juin 2026 - Vue Accueil + correctifs des régressions 0.20
 
 Suite aux retours des testeurs après la 0.20, une vague de correctifs et la refonte de l'écran d'accueil. Tests de régression au vert (backend et frontend), avec revues adversariales multi-agents avant publication.
