@@ -163,7 +163,16 @@ class BaseProvider(ABC):
         """
         messages.append({
             "role": "assistant",
-            "content": assistant_content or None,
+            # BUG-108 (lcjp, 12/06/2026) : Mistral rejette en 400 un message
+            # assistant ayant à la fois un content NON vide ET des tool_calls
+            # (le modèle écrivait du texte avant l'appel d'outil → 400 → résultat
+            # read_emails perdu → boucle « Max tool iterations »). Un message
+            # porteur de tool_calls ne transporte donc jamais de texte : on force
+            # `None` (valeur canonique OpenAI/litellm pour un message tool-call,
+            # déjà envoyée par l'ancien code quand le texte était vide, donc
+            # éprouvée côté Mistral). Le texte pré-appel reste affiché/streamé à
+            # l'utilisateur. Couvre aussi OpenRouter/Infomaniak routant vers Mistral.
+            "content": None,
             "tool_calls": [
                 {
                     "id": tc.id,
