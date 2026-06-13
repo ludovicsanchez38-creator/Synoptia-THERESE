@@ -69,6 +69,17 @@ for f in "${FILES[@]}"; do
     echo "  OK  $REL"
 done
 
+# README : badge de version (suffixe -alpha conventionnel ; shields.io escape '-' en '--')
+README="$ROOT/README.md"
+if [ -f "$README" ]; then
+    sed -i '' -E 's|(badge/version-)[0-9]+\.[0-9]+\.[0-9]+(--alpha)|\1'"$NEW"'\2|' "$README"
+    if grep -q "badge/version-$NEW--alpha" "$README"; then
+        echo "  OK  README.md (badge version)"
+    else
+        echo "  ATTENTION  README.md badge non mis a jour (format inattendu, verifier a la main)"
+    fi
+fi
+
 echo ""
 
 # Verification post-bump
@@ -92,4 +103,4 @@ if [ $ERRORS -gt 0 ] || [ $VERIFY_ERRORS -gt 0 ]; then
 fi
 
 echo ""
-echo "Version $NEW appliquee dans les 7 fichiers."
+echo "Version $NEW appliquee dans les 7 fichiers (+ badge README)."
