@@ -836,3 +836,97 @@ async def test_anthropic_prior_turns_rejoues_dans_l_ordre():
     assert len(tool_uses) == 2 and len(tool_results_msgs) == 2
     assert tool_results_msgs[0]["content"][0]["tool_use_id"] == "call_1"
     assert tool_results_msgs[1]["content"][0]["tool_use_id"] == "call_2"
+
+
+# ---------------------------------------------------------------------------
+# Mistral (bug lcjp 12/06/2026, BUG-108) : Mistral refuse en 400 un message
+# assistant ayant à la fois un `content` NON vide ET des `tool_calls`. Quand le
+# modèle écrit du texte avant d'appeler l'outil, `_append_openai_tool_turn`
+# posait ce texte dans le message porteur des tool_calls → 400 → résultat
+# `read_emails` perdu → boucle « Max tool iterations » → fausse erreur d'auth.
+# Le helper doit donc poser un content vide sur TOUT message à tool_calls, pour
+# le tour courant ET les tours rejoués (prior_turns).
+# ---------------------------------------------------------------------------
+
+
+def _mistral(client):
+    from app.services.providers.mistral import MistralProvider
+
+    return MistralProvider(
+        LLMConfig(provider=LLMProvider.MISTRAL, model="mistral-large-latest", api_key="x"),
+        client=client,
+    )
+
+
+class _MistralStrictClient(_FakeClient):
+    """Rejoue un 400 si un message assistant porte un content non vide + tool_calls
+    (contrat réel de l'API Mistral)."""
+
+    def stream(self, method, url, **kwargs):
+        import copy
+
+        captured = {k: copy.deepcopy(v) if k == "json" else v for k, v in kwargs.items()}
+        self.requests.append({"method": method, "url": url, **captured})
+        msgs = (kwargs.get("json") or {}).get("messages", [])
+        bad = any(
+            m.get("role") == "assistant"
+            and m.get("tool_calls")
+            and (m.get("content") or "").strip()
+            for m in msgs
+        )
+        idx = min(self._call_index, len(self._responses) - 1)
+        self._call_index += 1
+        resp = (
+            _FakeStreamResponse([], status=400, body=b'{"message":"content+tool_calls"}')
+            if bad
+            else self._responses[idx]
+        )
+
+        class _CM:
+            async def __aenter__(_s):
+                return resp
+
+            async def __aexit__(_s, *a):
+                return False
+
+        return _CM()
+
+
+@pytest.mark.asyncio
+async def test_mistral_tool_turn_content_vide_pas_de_400_bug108():
+    from app.services.providers.base import ToolTurn
+
+    text_chunk = {"choices": [{"delta": {"content": "Voici tes 3 emails."}, "finish_reason": "stop"}]}
+    client = _MistralStrictClient([f"data: {json.dumps(text_chunk)}", "data: [DONE]"])
+
+    events = await _collect(
+        _mistral(client).continue_with_tool_results(
+            None,
+            [{"role": "user", "content": "lis mes emails"}],
+            # NON vide : c'est ce texte pré-appel qui déclenchait le 400 Mistral
+            assistant_content="Je vais lire tes emails.",
+            tool_calls=[ToolCall(id="call_2", name="read_emails", arguments={})],
+            tool_results=[ToolResult(tool_call_id="call_2", result="3 emails")],
+            tools=OPENAI_TOOLS,
+            prior_turns=[
+                ToolTurn(
+                    assistant_content="Laisse-moi chercher.",  # NON vide aussi
+                    tool_calls=[ToolCall(id="call_1", name="search_emails", arguments={})],
+                    tool_results=[ToolResult(tool_call_id="call_1", result="5 emails")],
+                )
+            ],
+        )
+    )
+
+    # Le 400 n'a PAS été déclenché : aucun event d'erreur, la réponse finale arrive
+    assert not any(e.type == "error" for e in events)
+    assert any(e.type == "text" for e in events)
+
+    sent = client.last_request["json"]["messages"]
+    assistant_tc = [m for m in sent if m.get("role") == "assistant" and m.get("tool_calls")]
+    # Les deux tours (rejoué + courant) sont présents et SANS content non vide
+    assert len(assistant_tc) == 2
+    for m in assistant_tc:
+        assert not (m.get("content") or "").strip(), "content non vide + tool_calls = 400 Mistral"
+    tool_msgs = [m for m in sent if m.get("role") == "tool"]
+    assert [t["tool_call_id"] for t in tool_msgs] == ["call_1", "call_2"]
