@@ -175,4 +175,46 @@ describe('chatStore', () => {
       expect(useChatStore.getState().isStreaming).toBe(false);
     });
   });
+
+  // BUG-107 (régression historique chat, Capov 12/06/2026) : une conversation
+  // créée par un agent (préparation de RDV) est locale et NON synchronisée.
+  // Cliquer dessus dans la sidebar interroge le backend avec un ID inconnu, qui
+  // renvoie [] (HTTP 200) ; setConversationMessages écrasait alors ses messages
+  // et la marquait synced:true → la conversation "disparaissait de l'historique".
+  describe('setConversationMessages - BUG-107 régression historique', () => {
+    it("ne vide PAS une conversation locale non synchronisée si le backend renvoie []", () => {
+      // Conversation créée par un agent : locale, non synced, 1 message
+      useChatStore.getState().addMessage({
+        role: 'assistant',
+        content: 'Voici ta préparation de RDV.',
+      });
+      const convId = useChatStore.getState().currentConversationId!;
+      expect(useChatStore.getState().conversations[0].messages).toHaveLength(1);
+      expect(useChatStore.getState().conversations[0].synced).toBeFalsy();
+
+      // Le clic sidebar interroge le backend → [] pour un ID local inconnu
+      useChatStore.getState().setConversationMessages(convId, []);
+
+      const conv = useChatStore.getState().conversations.find((c) => c.id === convId)!;
+      // Le message de l'agent est préservé (sinon il disparaît de l'historique)
+      expect(conv.messages).toHaveLength(1);
+      expect(conv.messages[0].content).toBe('Voici ta préparation de RDV.');
+      // Et la conversation n'est pas marquée synchronisée à tort
+      expect(conv.synced).toBeFalsy();
+    });
+
+    it('remplace bien les messages quand le backend renvoie du contenu', () => {
+      useChatStore.getState().addMessage({ role: 'user', content: 'question' });
+      const convId = useChatStore.getState().currentConversationId!;
+
+      useChatStore.getState().setConversationMessages(convId, [
+        { id: 'm1', role: 'user', content: 'question', timestamp: new Date() },
+        { id: 'm2', role: 'assistant', content: 'réponse', timestamp: new Date() },
+      ]);
+
+      const conv = useChatStore.getState().conversations.find((c) => c.id === convId)!;
+      expect(conv.messages).toHaveLength(2);
+      expect(conv.synced).toBe(true);
+    });
+  });
 });
