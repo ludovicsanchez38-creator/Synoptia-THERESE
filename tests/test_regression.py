@@ -7126,3 +7126,17 @@ class TestEscalationZeroDivision:
             TokenLimitsRequest(daily_input_limit=0)
         with pytest.raises(ValidationError):
             TokenLimitsRequest(monthly_budget_eur=0.0)
+
+
+class TestInstalledToolMarkdownPrompt:
+    """Régression : InstalledToolSkill n'avait pas get_markdown_prompt_addition() ->
+    POST /api/skills/execute/tool:{id} plantait en 500 (AttributeError) avec un modele
+    non code-capable comme Gemini (provider par defaut). (rapport Syn 14/06)"""
+
+    def test_installed_tool_has_markdown_prompt_addition(self):
+        from app.services.skills.installed_tool import InstalledToolSkill
+
+        assert hasattr(InstalledToolSkill, "get_markdown_prompt_addition"), (
+            "InstalledToolSkill doit exposer get_markdown_prompt_addition (appelee par "
+            "skills.py quand la capacite du modele n'est pas 'code')"
+        )
