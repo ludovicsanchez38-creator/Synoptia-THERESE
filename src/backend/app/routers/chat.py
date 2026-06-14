@@ -716,9 +716,12 @@ async def send_message(
     context = llm_service.prepare_context(messages, memory_context=memory_context)
 
     # Collect full response (non-streaming)
+    # raise_on_error=True : sans ça, un StreamEvent(type="error") d'un provider
+    # était avalé -> assistant_content restait vide et le except ne se déclenchait
+    # jamais (message assistant VIDE renvoyé au lieu d'une erreur). Rapport Syn 14/06.
     assistant_content = ""
     try:
-        async for chunk in llm_service.stream_response(context):
+        async for chunk in llm_service.stream_response(context, raise_on_error=True):
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}")

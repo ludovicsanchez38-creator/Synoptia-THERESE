@@ -7172,3 +7172,54 @@ class TestOAuthRedirectPort:
         for uri in ALLOWED_REDIRECT_URIS:
             assert f":{RUNTIME_PORT}/" in uri, f"{uri} devrait porter le port {RUNTIME_PORT}"
             assert ":8000/" not in uri, f"{uri} ne doit plus pointer sur :8000"
+
+
+class TestStreamResponseRaiseOnError:
+    """Régression : stream_response (wrapper texte) avalait silencieusement un
+    StreamEvent(type="error") d'un provider. En non-stream, assistant_content
+    restait vide -> message assistant VIDE renvoyé au lieu d'une erreur (rapport
+    Syn 14/06). Fix : flag opt-in raise_on_error (défaut False = compat appelants
+    existants ; chat.py non-stream passe True)."""
+
+    @staticmethod
+    def _fake_self_yielding(*events):
+        from app.services.llm import LLMService
+
+        class _FakeLLM:
+            async def stream_response_with_tools(self, context, tools=None, enable_grounding=True):
+                for ev in events:
+                    yield ev
+
+        # On appelle le wrapper réel de LLMService avec un self minimal : il
+        # n'utilise que self.stream_response_with_tools.
+        fake = _FakeLLM()
+        return lambda **kw: LLMService.stream_response(fake, context=None, **kw)
+
+    async def _collect(self, gen):
+        return [chunk async for chunk in gen]
+
+    def test_default_swallows_error_event(self):
+        import asyncio
+
+        from app.services.providers.base import StreamEvent
+
+        call = self._fake_self_yielding(
+            StreamEvent(type="text", content="bonjour"),
+            StreamEvent(type="error", content="boom provider"),
+        )
+        # Défaut raise_on_error=False : l'erreur est avalée, on garde le texte.
+        chunks = asyncio.get_event_loop().run_until_complete(self._collect(call()))
+        assert chunks == ["bonjour"]
+
+    def test_raise_on_error_propagates(self):
+        import asyncio
+
+        import pytest
+
+        from app.services.providers.base import StreamEvent
+
+        call = self._fake_self_yielding(
+            StreamEvent(type="error", content="boom provider"),
+        )
+        with pytest.raises(RuntimeError, match="boom provider"):
+            asyncio.get_event_loop().run_until_complete(self._collect(call(raise_on_error=True)))

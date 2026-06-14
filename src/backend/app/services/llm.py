@@ -659,11 +659,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         context: ContextWindow,
         tools: list[dict] | None = None,
         enable_grounding: bool = True,
+        raise_on_error: bool = False,
     ) -> AsyncGenerator[str, None]:
-        """Stream response (text only, backward compat)."""
+        """Stream response (text only, backward compat).
+
+        raise_on_error : quand un provider émet un StreamEvent(type="error"),
+        le wrapper l'avalait silencieusement -> en mode non-stream, le chat
+        renvoyait un message assistant VIDE au lieu d'une erreur (rapport Syn 14/06).
+        Avec raise_on_error=True, l'événement d'erreur est propagé en RuntimeError
+        (le chat le rattrape et affiche un message clair). Défaut False pour ne pas
+        changer le comportement des appelants existants (board, deep_research,
+        entity_extractor, action_agents, runtime) qui tolèrent une réponse vide.
+        """
         async for event in self.stream_response_with_tools(context, tools, enable_grounding=enable_grounding):
             if event.type == "text" and event.content:
                 yield event.content
+            elif raise_on_error and event.type == "error":
+                raise RuntimeError(event.content or "Erreur du fournisseur LLM")
 
     async def stream_response_with_tools(
         self,
