@@ -7223,3 +7223,76 @@ class TestStreamResponseRaiseOnError:
         )
         with pytest.raises(RuntimeError, match="boom provider"):
             asyncio.get_event_loop().run_until_complete(self._collect(call(raise_on_error=True)))
+
+
+class TestMCPToolCallServerId:
+    """Régression : /api/mcp/tools/call ne respectait pas un server_id explicite.
+    Deux serveurs MCP exposant un outil de même nom -> la recherche linéaire renvoyait
+    le PREMIER trouvé (mauvais serveur). Rapport Syn 14/06. Fix : champ server_id
+    optionnel sur MCPToolCall + routage prioritaire dans l'endpoint."""
+
+    def test_schema_accepts_server_id(self):
+        from app.models.schemas_mcp import MCPToolCall
+
+        call = MCPToolCall(tool_name="search", arguments={}, server_id="srv-b")
+        assert call.server_id == "srv-b"
+        # Rétrocompat : sans server_id -> None (ancien comportement préservé).
+        assert MCPToolCall(tool_name="search").server_id is None
+
+    async def test_endpoint_routes_to_explicit_server(self, monkeypatch):
+        from types import SimpleNamespace
+
+        from app.models.schemas_mcp import MCPToolCall
+        from app.routers import mcp as mcp_router
+
+        called = {}
+
+        def _tool(name, server_id):
+            return SimpleNamespace(name=name, server_id=server_id)
+
+        srv_a = SimpleNamespace(id="srv-a", tools=[_tool("search", "srv-a")])
+        srv_b = SimpleNamespace(id="srv-b", tools=[_tool("search", "srv-b")])
+
+        class _FakeService:
+            servers = {"srv-a": srv_a, "srv-b": srv_b}
+
+            def get_all_tools(self):
+                return srv_a.tools + srv_b.tools  # srv-a listé en premier
+
+            async def call_tool(self, server_id, tool_name, arguments):
+                called["server_id"] = server_id
+                return SimpleNamespace(
+                    tool_name=tool_name, server_id=server_id, success=True,
+                    result={}, error=None, execution_time_ms=1.0,
+                )
+
+            async def execute_tool_call(self, name, args):
+                raise AssertionError("ne doit pas passer par la branche nom qualifié")
+
+        monkeypatch.setattr(mcp_router, "get_mcp_service", lambda: _FakeService())
+
+        # server_id explicite -> srv-b, et NON srv-a (le premier homonyme).
+        await mcp_router.call_tool(MCPToolCall(tool_name="search", server_id="srv-b"))
+        assert called["server_id"] == "srv-b"
+
+    async def test_endpoint_unknown_server_raises_404(self, monkeypatch):
+        import pytest
+        from fastapi import HTTPException
+
+        from app.models.schemas_mcp import MCPToolCall
+        from app.routers import mcp as mcp_router
+
+        class _FakeService:
+            servers: dict = {}
+
+            def get_all_tools(self):
+                return []
+
+            async def call_tool(self, *a, **k):
+                raise AssertionError("ne doit pas être appelé pour un serveur inconnu")
+
+        monkeypatch.setattr(mcp_router, "get_mcp_service", lambda: _FakeService())
+
+        with pytest.raises(HTTPException) as exc:
+            await mcp_router.call_tool(MCPToolCall(tool_name="search", server_id="ghost"))
+        assert exc.value.status_code == 404

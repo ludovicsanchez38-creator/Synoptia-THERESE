@@ -226,13 +226,29 @@ async def call_tool(request: MCPToolCall) -> ToolCallResultResponse:
     """
     Execute a tool call.
 
-    Tool name can be in two formats:
-    - Simple: "tool_name" (will search all servers)
-    - Qualified: "server_id__tool_name" (specific server)
+    Désambiguïsation du serveur, par ordre de priorité :
+    - server_id explicite dans le corps (lève si le serveur est inconnu ou si
+      l'outil n'existe pas sur CE serveur) ;
+    - nom qualifié "server_id__tool_name" ;
+    - sinon recherche linéaire dans tous les serveurs (premier trouvé).
     """
     service = get_mcp_service()
 
-    if "__" in request.tool_name:
+    if request.server_id:
+        # Serveur explicite : on ne tombe plus sur le premier homonyme trouvé.
+        if request.server_id not in service.servers:
+            raise HTTPException(status_code=404, detail=f"Serveur MCP introuvable: {request.server_id}")
+
+        server = service.servers[request.server_id]
+        tool = next((t for t in server.tools if t.name == request.tool_name), None)
+        if not tool:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Outil '{request.tool_name}' absent du serveur '{request.server_id}'",
+            )
+
+        result = await service.call_tool(request.server_id, request.tool_name, request.arguments)
+    elif "__" in request.tool_name:
         # Qualified name
         result = await service.execute_tool_call(request.tool_name, request.arguments)
     else:

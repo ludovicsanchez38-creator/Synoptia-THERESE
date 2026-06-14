@@ -129,11 +129,12 @@ export async function listMCPTools(): Promise<MCPTool[]> {
 
 export async function callMCPTool(
   toolName: string,
-  args: Record<string, unknown> = {}
+  args: Record<string, unknown> = {},
+  serverId?: string
 ): Promise<ToolCallResult> {
   return request<ToolCallResult>('/api/mcp/tools/call', {
     method: 'POST',
-    body: JSON.stringify({ tool_name: toolName, arguments: args }),
+    body: JSON.stringify({ tool_name: toolName, arguments: args, server_id: serverId }),
   });
 }
 

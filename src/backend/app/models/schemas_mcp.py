@@ -34,6 +34,10 @@ class MCPToolCall(BaseModel):
 
     tool_name: str
     arguments: dict[str, Any] = {}
+    # server_id explicite : sans lui, deux serveurs exposant un outil de même nom
+    # étaient ambigus et /tools/call renvoyait le PREMIER trouvé (mauvais serveur).
+    # Rapport Syn 14/06. Optionnel -> rétrocompatible (None = ancien comportement).
+    server_id: str | None = None
 
 
 class MCPServerResponse(BaseModel):
