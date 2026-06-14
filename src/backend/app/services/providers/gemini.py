@@ -182,6 +182,16 @@ class GeminiProvider(BaseProvider):
             grounding_ok = enable_grounding and any(model.startswith(m) for m in grounding_models)
             if declarations and grounding_ok and model.startswith("gemini-3"):
                 request_body["tools"] = [{"google_search": {}, "functionDeclarations": declarations}]
+                # Combiner built-in tools (google_search) + function calling sur Gemini 3
+                # exige toolConfig.include_server_side_tool_invocations=true ET le mode
+                # VALIDATED (le mode AUTO n'est PAS supporte avec ce flag). Sans ce bloc,
+                # l'API renvoie 400 "Please enable tool_config.include_server_side_tool_invocations"
+                # et le chat Gemini avec outils est mort (rapport Syn 14/06).
+                # Source : ai.google.dev/gemini-api/docs/tool-combination (verifie 14/06/2026).
+                request_body["toolConfig"] = {
+                    "functionCallingConfig": {"mode": "VALIDATED"},
+                    "include_server_side_tool_invocations": True,
+                }
             elif declarations:
                 request_body["tools"] = [{"functionDeclarations": declarations}]
             elif grounding_ok:

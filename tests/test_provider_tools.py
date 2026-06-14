@@ -504,6 +504,15 @@ async def test_gemini_3_combine_grounding_et_functions():
     tools_sent = client.last_request["json"]["tools"]
     combined = tools_sent[0]
     assert "google_search" in combined and "functionDeclarations" in combined
+    # Rapport Syn 14/06 : combiner built-in + function calling exige toolConfig avec le flag
+    # ET le mode VALIDATED (AUTO non supporte). Sans ca, l'API Gemini renvoie 400.
+    tool_config = client.last_request["json"].get("toolConfig", {})
+    assert tool_config.get("include_server_side_tool_invocations") is True, (
+        "toolConfig.include_server_side_tool_invocations doit etre true (sinon 400 Gemini)"
+    )
+    assert tool_config.get("functionCallingConfig", {}).get("mode") == "VALIDATED", (
+        "mode VALIDATED requis avec include_server_side_tool_invocations (AUTO non supporte)"
+    )
 
 
 @pytest.mark.asyncio
