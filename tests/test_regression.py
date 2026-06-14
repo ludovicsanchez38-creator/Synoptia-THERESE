@@ -7296,3 +7296,64 @@ class TestMCPToolCallServerId:
         with pytest.raises(HTTPException) as exc:
             await mcp_router.call_tool(MCPToolCall(tool_name="search", server_id="ghost"))
         assert exc.value.status_code == 404
+
+
+class TestBoardTokenTracking:
+    """Régression BUG-027 (volet board) : les délibérations du board faisaient de vrais
+    appels LLM sans jamais alimenter le token tracker -> usage quotidien/mensuel
+    sous-compté (rapport Syn 14/06). Fix : BoardService._track_usage aux 3 points de
+    génération (conseiller souverain, conseiller cloud, synthèse)."""
+
+    def test_board_has_track_usage(self):
+        from app.services.board import BoardService
+
+        assert hasattr(BoardService, "_track_usage")
+
+    def test_track_usage_feeds_token_tracker(self):
+        from types import SimpleNamespace
+
+        from app.services.board import BoardService
+        from app.services.token_tracker import get_token_tracker
+
+        tracker = get_token_tracker()
+        before = tracker.get_daily_usage()
+
+        fake_llm = SimpleNamespace(
+            config=SimpleNamespace(model="claude-sonnet-4-6", provider=SimpleNamespace(value="anthropic"))
+        )
+        # BoardService accepte une session optionnelle (None ici, _track_usage ne l'utilise pas).
+        board = BoardService(session=None)
+        board._track_usage(fake_llm, "un deux trois quatre", "cinq six")
+
+        after = tracker.get_daily_usage()
+        # 4 mots d'entrée * 2 = 8 tokens in, 2 mots * 2 = 4 tokens out.
+        assert after["input_tokens"] == before["input_tokens"] + 8
+        assert after["output_tokens"] == before["output_tokens"] + 4
+
+
+class TestDeepResearchSurfacesSynthesisError:
+    """Régression : la synthèse deep-research avalait les erreurs provider (ex Gemini
+    400 tool_config) -> rapport "done" VIDE silencieux (rapport Syn 14/06). Fix :
+    raise_on_error sur le stream de synthèse + remontée en ResearchProgress type='error'.
+    Le mécanisme raise_on_error est prouvé fonctionnellement dans
+    TestStreamResponseRaiseOnError ; ici on vérifie son câblage côté synthèse."""
+
+    DR_PY = SRC / "app" / "services" / "deep_research.py"
+
+    def _synthesis_section(self) -> str:
+        content = self.DR_PY.read_text(encoding="utf-8")
+        start = content.find("Étape 3")
+        assert start > 0, "la section synthèse (Étape 3) doit exister"
+        return content[start:]
+
+    def test_synthesis_stream_raises_on_error(self):
+        synth = self._synthesis_section()
+        assert "raise_on_error=True" in synth, (
+            "le stream de synthèse doit passer raise_on_error=True pour ne plus avaler "
+            "les erreurs provider"
+        )
+
+    def test_synthesis_emits_error_event(self):
+        synth = self._synthesis_section()
+        assert 'type="error"' in synth, "une erreur de synthèse doit émettre un ResearchProgress type='error'"
+        assert "La synthèse a échoué" in synth

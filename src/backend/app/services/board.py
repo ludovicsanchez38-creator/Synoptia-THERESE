@@ -135,6 +135,25 @@ class BoardService:
             logger.warning(f"Échec recherche web pour Board: {e}")
             return ""
 
+    def _track_usage(self, llm_service, input_text: str, output_text: str) -> None:
+        """BUG-027 : alimente le token tracker global pour les appels LLM du board.
+
+        Sans ça, l'usage quotidien/mensuel sous-comptait les délibérations (le board
+        faisait de vrais appels providers sans jamais nourrir le tracker) - rapport
+        Syn 14/06. Estimation ~2 tokens/mot, alignée sur le chemin chat non-stream.
+        conversation_id="board" : simple étiquette (le tracker ne pose pas de FK)."""
+        try:
+            from app.services.token_tracker import get_token_tracker
+            get_token_tracker().record_usage(
+                conversation_id="board",
+                model=llm_service.config.model,
+                provider=llm_service.config.provider.value,
+                input_tokens=len(input_text.split()) * 2,
+                output_tokens=len(output_text.split()) * 2,
+            )
+        except Exception as e:
+            logger.debug(f"Board token tracking ignoré: {e}")
+
     async def deliberate(
         self,
         request: BoardRequest,
@@ -247,6 +266,7 @@ class BoardService:
                     emoji=config["emoji"],
                     content=full_content,
                 ))
+                self._track_usage(llm_service, advisor_system + context_msg, full_content)
 
                 yield BoardDeliberationChunk(
                     type="advisor_done",
@@ -342,6 +362,7 @@ class BoardService:
                     emoji=config["emoji"],
                     content=full_content,
                 )
+                self._track_usage(llm_service, advisor_system + context_msg, full_content)
 
                 await chunk_queue.put(BoardDeliberationChunk(
                     type="advisor_done",
@@ -472,6 +493,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         full_response = ""
         async for chunk in llm_service.stream_response(context):
             full_response += chunk
+        self._track_usage(llm_service, synthesis_prompt, full_response)
 
         # Parse JSON response
         try:

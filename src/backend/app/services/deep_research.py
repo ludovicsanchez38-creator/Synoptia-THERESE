@@ -257,14 +257,28 @@ async def deep_research(
     messages = [LLMMessage(role="user", content=synthesis_prompt)]
     context = llm_service.prepare_context(messages)
 
+    # raise_on_error=True : sans ça, une erreur provider (ex: Gemini 400 tool_config)
+    # était avalée -> synthesis_content vide -> on émettait un "done" VIDE (échec
+    # silencieux). Rapport Syn 14/06. On la remonte désormais en événement "error".
     synthesis_content = ""
-    async for chunk in llm_service.stream_response(context, enable_grounding=False):
-        synthesis_content += chunk
+    try:
+        async for chunk in llm_service.stream_response(
+            context, enable_grounding=False, raise_on_error=True
+        ):
+            synthesis_content += chunk
+            yield ResearchProgress(
+                type="synthesizing",
+                content=chunk,
+                sources=all_sources,
+            )
+    except Exception as e:
+        logger.error(f"Erreur synthèse deep-research : {e}")
         yield ResearchProgress(
-            type="synthesizing",
-            content=chunk,
+            type="error",
+            content=f"La synthèse a échoué : {e}",
             sources=all_sources,
         )
+        return
 
     yield ResearchProgress(
         type="done",
