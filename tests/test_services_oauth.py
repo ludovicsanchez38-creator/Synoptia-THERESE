@@ -22,6 +22,7 @@ from app.services.oauth import (
     GMAIL_SCOPES,
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
+    RUNTIME_PORT,
     OAuthConfig,
     OAuthPKCEService,
     generate_code_challenge,
@@ -47,7 +48,10 @@ def oauth_config():
         auth_url=GOOGLE_AUTH_URL,
         token_url=GOOGLE_TOKEN_URL,
         scopes=GMAIL_SCOPES,
-        redirect_uri="http://localhost:8000/api/email/auth/callback-redirect",
+        # Dérive le port de RUNTIME_PORT (même source que ALLOWED_REDIRECT_URIS) :
+        # depuis le fix du défaut (8000 -> settings.port), un 8000 codé en dur
+        # n'est plus dans la whitelist et faisait échouer initiate_flow (400).
+        redirect_uri=f"http://localhost:{RUNTIME_PORT}/api/email/auth/callback-redirect",
     )
 
 
