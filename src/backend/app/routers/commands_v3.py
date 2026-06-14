@@ -144,24 +144,26 @@ async def generate_template(request: GenerateTemplateRequest):
         "Réponds UNIQUEMENT avec le JSON, sans markdown ni explication."
     )
 
-    # Construire les messages pour le LLM
-    messages = []
+    # Construire le prompt pour le LLM (brief + contexte optionnel)
+    prompt = request.brief
     if request.context:
-        for msg in request.context:
-            messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
-
-    messages.append({"role": "user", "content": request.brief})
+        historique = "\n".join(
+            f"{msg.get('role', 'user')}: {msg.get('content', '')}"
+            for msg in request.context
+        )
+        prompt = f"{historique}\n\nuser: {request.brief}"
 
     try:
-        response = await llm.generate(
-            messages=messages,
+        # generate_content renvoie directement la chaine de reponse (non-streaming)
+        content = await llm.generate_content(
+            prompt=prompt,
             system_prompt=system_prompt,
             max_tokens=500,
         )
 
         # Parser le JSON de la réponse
         import json
-        content = response.content.strip()
+        content = content.strip()
         # Nettoyer les backticks markdown si présents
         if content.startswith("```"):
             content = content.split("\n", 1)[1] if "\n" in content else content[3:]

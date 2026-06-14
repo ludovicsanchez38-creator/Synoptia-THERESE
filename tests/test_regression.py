@@ -7042,3 +7042,29 @@ class TestSovereigntyHonesty:
         assert "n'est PAS chiffrée au repos" in block
         # Honnête sur ce qui EST chiffré : les secrets, via Fernet (AES-128)
         assert "AES-128" in block and "clés API" in block
+
+
+class TestV3GenerateTemplateLLMCall:
+    """Régression : POST /api/v3/commands/generate-template appelait llm.generate()
+    (méthode inexistante sur LLMService → AttributeError 500). La bonne méthode est
+    generate_content(), qui renvoie directement une str. Bug révélé par la campagne
+    exploratoire de Syn (rapport tests 13/06/2026)."""
+
+    CMD_V3_PY = SRC / "app" / "routers" / "commands_v3.py"
+
+    def test_generate_template_uses_generate_content(self):
+        content = self.CMD_V3_PY.read_text(encoding="utf-8")
+        start = content.find("async def generate_template")
+        assert start > 0, "generate_template doit exister"
+        body = content[start:start + 2000]
+        assert "llm.generate_content(" in body, (
+            "generate_template doit appeler llm.generate_content() (méthode existante)"
+        )
+        assert "llm.generate(" not in body, (
+            "generate_template ne doit plus appeler llm.generate() : méthode inexistante "
+            "sur LLMService (AttributeError 500)"
+        )
+        # generate_content renvoie une str, pas un objet : pas d'accès .content sur le retour
+        assert "response.content" not in body, (
+            "generate_content renvoie une str : ne pas faire response.content"
+        )
