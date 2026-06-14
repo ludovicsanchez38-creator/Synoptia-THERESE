@@ -297,7 +297,8 @@ class TokenTracker:
 
         # Check daily limits
         projected_daily_input = self._today_input + input_tokens
-        daily_input_pct = (projected_daily_input / self._limits.daily_input_limit) * 100
+        # Garde anti division par zero : une limite a 0 ne doit pas planter en 500 (rapport Syn 14/06)
+        daily_input_pct = (projected_daily_input / self._limits.daily_input_limit * 100) if self._limits.daily_input_limit > 0 else 0.0
 
         if daily_input_pct >= 100:
             result["errors"].append(
@@ -315,7 +316,7 @@ class TokenTracker:
         if output_tokens:
             estimated_cost = self.estimate_cost("default", input_tokens, output_tokens)
             projected_month_cost = self._month_cost + estimated_cost
-            budget_pct = (projected_month_cost / self._limits.monthly_budget_eur) * 100
+            budget_pct = (projected_month_cost / self._limits.monthly_budget_eur * 100) if self._limits.monthly_budget_eur > 0 else 0.0
 
             if budget_pct >= 100:
                 result["errors"].append(
@@ -343,8 +344,8 @@ class TokenTracker:
             "cost_eur": self._today_cost,
             "input_limit": self._limits.daily_input_limit,
             "output_limit": self._limits.daily_output_limit,
-            "input_usage_pct": (self._today_input / self._limits.daily_input_limit) * 100,
-            "output_usage_pct": (self._today_output / self._limits.daily_output_limit) * 100,
+            "input_usage_pct": (self._today_input / self._limits.daily_input_limit * 100) if self._limits.daily_input_limit > 0 else 0.0,
+            "output_usage_pct": (self._today_output / self._limits.daily_output_limit * 100) if self._limits.daily_output_limit > 0 else 0.0,
         }
 
     def get_monthly_usage(self) -> dict:
@@ -358,7 +359,7 @@ class TokenTracker:
             "total_tokens": self._month_input + self._month_output,
             "cost_eur": self._month_cost,
             "budget_eur": self._limits.monthly_budget_eur,
-            "budget_usage_pct": (self._month_cost / self._limits.monthly_budget_eur) * 100,
+            "budget_usage_pct": (self._month_cost / self._limits.monthly_budget_eur * 100) if self._limits.monthly_budget_eur > 0 else 0.0,
         }
 
     def get_usage_history(

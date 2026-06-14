@@ -7100,3 +7100,29 @@ class TestChatNonStreamP1:
         assert "tokens_in=input_tokens" in branch and "tokens_out=output_tokens" in branch, (
             "Message et ChatResponse non-stream doivent porter tokens_in/tokens_out"
         )
+
+
+class TestEscalationZeroDivision:
+    """Régression : des limites a 0 (POST /escalation/limits) provoquaient une
+    ZeroDivisionError -> 500 sur /usage/daily, /usage/monthly, /status, /check-limits
+    (rapport Syn 14/06). Double defense : validation Pydantic gt=0 + guards token_tracker."""
+
+    def test_token_tracker_guards_zero_limits(self):
+        from app.services.token_tracker import TokenLimits, TokenTracker
+
+        t = TokenTracker()
+        t.set_limits(TokenLimits(daily_input_limit=0, daily_output_limit=0, monthly_budget_eur=0.0))
+        daily = t.get_daily_usage()
+        assert daily["input_usage_pct"] == 0.0
+        assert daily["output_usage_pct"] == 0.0
+        assert t.get_monthly_usage()["budget_usage_pct"] == 0.0
+
+    def test_limits_request_rejects_zero(self):
+        import pytest
+        from pydantic import ValidationError
+
+        from app.models.schemas_escalation import TokenLimitsRequest
+        with pytest.raises(ValidationError):
+            TokenLimitsRequest(daily_input_limit=0)
+        with pytest.raises(ValidationError):
+            TokenLimitsRequest(monthly_budget_eur=0.0)
