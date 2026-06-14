@@ -662,6 +662,27 @@ async def send_message(
     llm_service = get_llm_service()
     messages = history + [LLMMessage(role="user", content=request.message)]
 
+    # SEC : appliquer le filtre anti-injection AUSSI sur le chemin non-stream.
+    # Il n'etait applique que dans _stream_response -> en stream=false, le prompt
+    # injection passait et le system prompt pouvait etre exfiltre (rapport Syn 14/06).
+    from datetime import UTC, datetime
+
+    from app.services.prompt_security import check_prompt_safety
+    security_check = check_prompt_safety(request.message)
+    if not security_check.is_safe:
+        logger.warning(
+            f"Blocked message (non-stream) due to {security_check.threat_type}: "
+            f"level={security_check.threat_level.value}"
+        )
+        return ChatResponse(
+            id="",
+            conversation_id=conversation.id,
+            content="Message bloqué pour raison de sécurité.",
+            model=llm_service.config.model,
+            provider=llm_service.config.provider.value,
+            created_at=datetime.now(UTC),
+        )
+
     # Get relevant memory context
     memory_context = await _get_memory_context(request.message)
 
@@ -707,12 +728,29 @@ async def send_message(
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
 
+    # BUG-027 : suivi des tokens sur le chemin non-stream (etait absent -> le
+    # token tracker restait aveugle et tokens_in/out remontaient null).
+    # Estimation (~1 mot = 2 tokens), alignee sur le chemin stream existant.
+    # DETTE : propager l'usage reel des providers (usage.input_tokens cote Anthropic,
+    # usageMetadata.promptTokenCount cote Gemini, etc.) plutot qu'estimer (veille 14/06).
+    input_tokens = len(request.message.split()) * 2
+    output_tokens = len(assistant_content.split()) * 2
+    get_token_tracker().record_usage(
+        conversation_id=conversation.id,
+        model=llm_service.config.model,
+        provider=llm_service.config.provider.value,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
+
     assistant_message = Message(
         conversation_id=conversation.id,
         role="assistant",
         content=assistant_content,
         model=llm_service.config.model,
         provider=llm_service.config.provider.value,
+        tokens_in=input_tokens,
+        tokens_out=output_tokens,
     )
     session.add(assistant_message)
     await session.commit()
@@ -723,6 +761,8 @@ async def send_message(
         content=assistant_content,
         model=llm_service.config.model,
         provider=llm_service.config.provider.value,
+        tokens_in=input_tokens,
+        tokens_out=output_tokens,
         created_at=assistant_message.created_at,
     )
 

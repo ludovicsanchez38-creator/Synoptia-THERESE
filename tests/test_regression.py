@@ -7068,3 +7068,35 @@ class TestV3GenerateTemplateLLMCall:
         assert "response.content" not in body, (
             "generate_content renvoie une str : ne pas faire response.content"
         )
+
+
+class TestChatNonStreamP1:
+    """Régressions P1 du chemin chat NON-STREAM (rapport Syn 14/06/2026) :
+    - le filtre anti-injection n'etait applique qu'en streaming (injection + exfiltration
+      du system prompt possibles en stream=false) ;
+    - le token tracker n'etait pas alimente et tokens_in/out remontaient null en non-stream."""
+
+    CHAT_PY = SRC / "app" / "routers" / "chat.py"
+
+    def _nonstream_branch(self) -> str:
+        content = self.CHAT_PY.read_text(encoding="utf-8")
+        start = content.find("Non-streaming response using LLM service")
+        assert start > 0, "la branche non-stream doit exister dans send_message"
+        end = content.find("async def _stream_response", start)
+        return content[start:end if end > 0 else start + 4000]
+
+    def test_nonstream_applies_prompt_safety(self):
+        branch = self._nonstream_branch()
+        assert "check_prompt_safety" in branch, (
+            "le filtre anti-injection doit etre applique sur le chemin non-stream "
+            "(et plus seulement dans _stream_response)"
+        )
+
+    def test_nonstream_tracks_tokens(self):
+        branch = self._nonstream_branch()
+        assert "record_usage" in branch, (
+            "le chemin non-stream doit alimenter le token tracker (BUG-027)"
+        )
+        assert "tokens_in=input_tokens" in branch and "tokens_out=output_tokens" in branch, (
+            "Message et ChatResponse non-stream doivent porter tokens_in/tokens_out"
+        )
