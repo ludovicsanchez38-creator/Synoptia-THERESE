@@ -18,13 +18,17 @@ from dataclasses import dataclass
 from urllib.parse import urlencode
 
 import httpx
+from app.config import settings
 from app.services.http_client import get_http_client
 from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
-# Port runtime du backend (passé par le sidecar Tauri via --port ou THERESE_PORT)
-RUNTIME_PORT = os.environ.get("THERESE_PORT", "8000")
+# Port runtime du backend (passé par le sidecar Tauri via --port ou THERESE_PORT).
+# Fallback sur settings.port (17293) et NON "8000" : l'ancien défaut "8000" fabriquait
+# des redirect_uri OAuth invalides (Google rejetait) quand THERESE_PORT n'était pas
+# exporté, p. ex. en dev/desktop hors sidecar (rapport Syn 14/06).
+RUNTIME_PORT = os.environ.get("THERESE_PORT") or str(settings.port)
 
 
 # ============================================================

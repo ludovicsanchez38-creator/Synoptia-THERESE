@@ -7140,3 +7140,35 @@ class TestInstalledToolMarkdownPrompt:
             "InstalledToolSkill doit exposer get_markdown_prompt_addition (appelee par "
             "skills.py quand la capacite du modele n'est pas 'code')"
         )
+
+
+class TestOAuthRedirectPort:
+    """Régression : oauth.py utilisait RUNTIME_PORT = THERESE_PORT ou "8000" par défaut.
+    Quand le sidecar Tauri n'exporte pas THERESE_PORT (dev/desktop), les redirect_uri OAuth
+    pointaient sur :8000 alors que le backend écoute sur settings.port (17293) -> Google
+    rejetait le redirect_uri (mismatch whitelist). (rapport Syn 14/06).
+    Fix : fallback sur settings.port au lieu de "8000"."""
+
+    def test_runtime_port_defaults_to_settings_port_not_8000(self):
+        import os
+
+        # Sans THERESE_PORT exporté, le défaut doit être settings.port, pas 8000.
+        # (le module est déjà importé sans THERESE_PORT dans l'environnement de test)
+        if "THERESE_PORT" in os.environ:
+            import pytest
+            pytest.skip("THERESE_PORT exporté dans l'env de test, cas couvert ailleurs")
+
+        from app.config import settings
+        from app.services.oauth import RUNTIME_PORT
+
+        assert RUNTIME_PORT == str(settings.port)
+        assert RUNTIME_PORT != "8000"
+
+    def test_allowed_redirect_uris_use_runtime_port(self):
+        from app.services.oauth import ALLOWED_REDIRECT_URIS, RUNTIME_PORT
+
+        assert ALLOWED_REDIRECT_URIS, "la whitelist ne doit pas être vide"
+        # Toutes les URIs autorisées portent le port runtime, aucune ne reste sur 8000.
+        for uri in ALLOWED_REDIRECT_URIS:
+            assert f":{RUNTIME_PORT}/" in uri, f"{uri} devrait porter le port {RUNTIME_PORT}"
+            assert ":8000/" not in uri, f"{uri} ne doit plus pointer sur :8000"
