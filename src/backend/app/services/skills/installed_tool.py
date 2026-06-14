@@ -107,6 +107,16 @@ NE génère PAS de code Python. Génère un JSON avec les paramètres suivants :
 Réponds UNIQUEMENT avec un bloc JSON valide (pas de ```json, juste le JSON brut).
 """
 
+    def get_markdown_prompt_addition(self) -> str:
+        """Instructions pour les modeles non code-capable (ex: Gemini par defaut).
+
+        Le router skills.py appelle cette methode quand la capacite du modele n'est
+        pas 'code'. Sans elle, l'execution d'un outil installe plantait en 500
+        (AttributeError) avec Gemini (rapport Syn 14/06). L'outil installe genere un
+        JSON de parametres (pas du code Python), donc les instructions sont identiques.
+        """
+        return self.get_system_prompt_addition()
+
     async def execute(self, params: SkillParams) -> SkillResult:
         """
         Exécute le script tool.py dans le sandbox existant.
