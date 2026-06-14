@@ -156,4 +156,22 @@ Quand la sortie pytest part dans un pipe/fichier, le hook de sortie forcée
 process AVANT l'écriture du résumé « N passed/failed ». NE PAS conclure au
 vert sur l'absence de FAILED dans le tail : vérifier l'EXIT CODE et compter
 les F des lignes de progression (`grep -oE "^[.sFEx]+ +\[" | fold -w1`).
-A failli masquer 3 FAILED à la release 0.24.
+A failli masquer 3 FAILED à la release 0.24. **Le plus fiable : `--junit-xml`
+et parser le XML** (compte exact + noms des testcase en failure/error),
+insensible à l'os._exit (utilisé pour identifier les 2 FAILED de la 0.24.5).
+
+## Porte qualité release : lancer la SUITE COMPLÈTE, pas juste test_regression (14/06/2026)
+Un fix qui modifie une constante consommée ailleurs casse des tests hors
+`test_regression.py`. Ex 0.24.5 : le fix du défaut de port OAuth (`RUNTIME_PORT`
+8000→settings.port) a cassé 2 tests de `test_services_oauth.py` (fixture
+`redirect_uri` en `:8000` codé en dur, désormais hors `ALLOWED_REDIRECT_URIS`).
+Invisible pendant la session (seul `test_regression.py` était lancé), rattrapé
+par la porte qualité release. Toujours `uv run pytest tests/ --ignore=tests/e2e`
+AVANT le tag (et `uv run`, jamais `.venv/bin/python` direct : package mal
+installé → échecs en masse trompeurs).
+
+## GitHub Actions : Node.js 20 déprécié, bascule forcée Node 24 le 16/06/2026
+Le workflow Release émet une annotation : `actions/checkout@v4`,
+`setup-node@v4`, `setup-python@v5`, `sccache-action@v0.0.7` tournent sur Node 20.
+Non bloquant au 14/06 mais à mettre à jour avant le 16/06/2026 (sinon
+`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` puis suppression Node 20 le 16/09/2026).
