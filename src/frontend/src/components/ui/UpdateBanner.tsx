@@ -122,26 +122,54 @@ export function UpdateBanner() {
       );
     } catch (err) {
       console.error('[UpdateBanner] Erreur installation:', err);
+      
+      // Gestion spécifique des erreurs d'installation Windows
+      let errorMessage = 'Erreur inconnue';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        
+        // Messages d'erreur spécifiques pour diagnostiquer BUG-110
+        if (errorMessage.includes('path') || errorMessage.includes('directory')) {
+          errorMessage = `Erreur d'installation (répertoire): ${errorMessage}. Essayez d'installer THÉRÈSE dans C:\\Program Files\\ ou redémarrez en mode administrateur.`;
+        } else if (errorMessage.includes('permission') || errorMessage.includes('access denied')) {
+          errorMessage = `Permissions insuffisantes: ${errorMessage}. Redémarrez THÉRÈSE en mode administrateur pour installer la mise à jour.`;
+        } else if (errorMessage.includes('signature') || errorMessage.includes('invalid')) {
+          errorMessage = `Erreur de signature: ${errorMessage}. La mise à jour n'est pas authentique.`;
+        }
+      }
+      
       setState({
         phase: 'error',
-        message: err instanceof Error ? err.message : 'Erreur inconnue',
+        message: errorMessage,
       });
     }
   }, []);
 
   const handleRestart = useCallback(async () => {
     try {
+      // Attendre un peu avant le redémarrage pour laisser le temps aux processus de finir
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();
-    } catch {
-      // Fallback : demander un redemarrage manuel
+      
+    } catch (relaunchError) {
+      console.error('[UpdateBanner] Erreur relaunch:', relaunchError);
+      
+      // Fallback : demander un redémarrage manuel avec instructions
+      const isWindows = navigator.platform.toLowerCase().includes('win');
+      const restartInstructions = isWindows
+        ? 'Fermez THÉRÈSE et relancez-la depuis le menu Démarrer ou le raccourci bureau.'
+        : 'Fermez THÉRÈSE et relancez-la depuis le Dock ou Applications.';
+        
       setState({
         phase: 'error',
-        message: 'Redémarre THÉRÈSE manuellement pour appliquer la mise à jour.',
+        message: `Impossible de redémarrer automatiquement. ${restartInstructions}`,
       });
     }
   }, []);
-
+  
   // Rien a afficher
   if (state.phase === 'idle' || dismissed) {
     return null;
