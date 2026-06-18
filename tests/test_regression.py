@@ -26,6 +26,114 @@ FRONTEND = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src"
 API_CORE_TS = FRONTEND / "services" / "api" / "core.ts"
 
 
+class TestBUG110_UpdateBloquee:
+    """BUG-110 : Mise à jour auto bloquée depuis v0.24.3
+    
+    Problème : L'application reste en v0.24.3 après tentative de mise à jour,
+    même si le téléchargement semble réussir et le redémarrage s'effectue.
+    
+    Cause probable d'après la recherche :
+    1. Bug Tauri connu sur installations dans répertoires personnalisés (Windows)
+    2. Configuration installMode incorrecte (quiet échoue silencieusement)
+    3. Problème de format d'installateur (MSI vs NSIS)
+    4. Redémarrage automatique qui échoue ou ne trouve pas la nouvelle version
+    """
+
+    def test_updater_config_has_windows_installmode_passive(self):
+        """Test de régression : la configuration updater doit spécifier installMode passive
+        
+        Le mode 'quiet' peut échouer silencieusement sans permissions admin sur Windows.
+        Le mode 'passive' (par défaut) ou 'basicUi' est plus robuste.
+        """
+        import os
+        import json
+        
+        tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
+        
+        # Lire la configuration Tauri
+        with open(tauri_conf_path, 'r') as f:
+            tauri_conf = json.load(f)
+        
+        # Vérifier que le plugin updater existe
+        assert "updater" in tauri_conf["plugins"], "Plugin updater manquant"
+        
+        updater_config = tauri_conf["plugins"]["updater"]
+        
+        # Vérifier l'endpoint correct
+        assert "endpoints" in updater_config, "Endpoints updater manquants"
+        assert len(updater_config["endpoints"]) > 0, "Aucun endpoint configuré"
+        assert "synoptia.fr/therese/alpha/latest.json" in updater_config["endpoints"][0], \
+            "Endpoint incorrect, devrait pointer sur synoptia.fr"
+        
+        # Si windows est configuré, vérifier installMode
+        if "windows" in updater_config:
+            windows_config = updater_config["windows"]
+            if "installMode" in windows_config:
+                # Si installMode est défini, il ne doit pas être "quiet"
+                assert windows_config["installMode"] != "quiet", \
+                    "installMode 'quiet' peut échouer silencieusement - utiliser 'passive' ou 'basicUi'"
+    def test_updater_endpoint_availability(self):
+        """Test que l'endpoint de mise à jour est accessible et retourne du JSON valide"""
+        pytest.skip("Test réseau désactivé - nécessite connectivité internet")
+        import requests
+        
+        tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
+        
+        with open(tauri_conf_path, 'r') as f:
+            tauri_conf = json.load(f)
+        
+        endpoint = tauri_conf["plugins"]["updater"]["endpoints"][0]
+        
+        try:
+            # Test de connectivité (timeout court pour ne pas bloquer les tests)
+            response = requests.get(endpoint, timeout=10)
+            
+            # Si accessible, vérifier la structure JSON
+            if response.status_code == 200:
+                update_data = response.json()
+                
+                # Structure attendue d'un fichier latest.json Tauri
+                expected_fields = ["version", "pub_date", "platforms"]
+                for field in expected_fields:
+                    assert field in update_data, f"Champ manquant dans latest.json: {field}"
+                
+                # Vérifier que les plateformes incluent Windows
+                platforms = update_data.get("platforms", {})
+                assert "windows-x86_64" in platforms, "Plateforme Windows manquante"
+                
+                # Vérifier que l'URL de téléchargement Windows existe
+                windows_platform = platforms["windows-x86_64"]
+                assert "url" in windows_platform, "URL de téléchargement Windows manquante"
+                assert "signature" in windows_platform, "Signature Windows manquante"
+                
+        except requests.RequestException:
+            # Si l'endpoint n'est pas accessible, c'est un warning, pas une erreur
+            pytest.skip("Endpoint de mise à jour non accessible (normal en développement)")
+    def test_tauri_pubkey_configured(self):
+        """Test que la clé publique de signature est configurée"""
+        import os
+        import json
+        
+        tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
+        
+        with open(tauri_conf_path, 'r') as f:
+            tauri_conf = json.load(f)
+        
+        updater_config = tauri_conf["plugins"]["updater"]
+        
+        # Vérifier que pubkey est configurée et non vide
+        assert "pubkey" in updater_config, "Clé publique de signature manquante"
+        pubkey = updater_config["pubkey"]
+        assert pubkey and len(pubkey) > 50, "Clé publique invalide ou vide"
+        
+        # Vérifier le format minisign (base64)
+        import base64
+        try:
+            decoded = base64.b64decode(pubkey)
+            assert len(decoded) > 30, "Clé publique trop courte"
+        except Exception:
+            pytest.fail("Clé publique mal encodée en base64")
+
 # ============================================================
 # BUG-002 (v0.1.2) - Port dynamique
 # Le backend ne doit PAS utiliser un port hardcodé 8000.
