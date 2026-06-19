@@ -1185,7 +1185,11 @@ async def handle_sheets_oauth_callback(
     if spreadsheet_info:
         result["spreadsheet_id"] = spreadsheet_info["spreadsheet_id"]
         result["spreadsheet_url"] = spreadsheet_info["spreadsheet_url"]
-        result["message"] = "Google Sheets connecté et CRM créé automatiquement"
+        result["message"] = (
+            "Google Sheets connecté. Une nouvelle feuille CRM vide a été créée. "
+            "Si tu as déjà un CRM dans Google Sheets, colle son identifiant dans "
+            "Réglages > Synchronisation CRM puis resynchronise."
+        )
 
     return result
 
@@ -1224,7 +1228,7 @@ async def sync_crm(
     api_key = None
 
     # Try OAuth token first (avec refresh automatique si expiré)
-    from app.services.crm_sync import ensure_valid_crm_token
+    from app.services.crm_sync import build_sync_message, ensure_valid_crm_token
     access_token = await ensure_valid_crm_token(session)
     if access_token:
         logger.info("Using OAuth token for CRM sync (auto-refreshed if needed)")
@@ -1337,7 +1341,7 @@ async def sync_crm(
 
         return CRMSyncResponse(
             success=len(stats["errors"]) == 0,
-            message=f"Synchronisation terminee: {total_synced} elements",
+            message=build_sync_message(total_synced, bool(stats["errors"])),
             stats=CRMSyncStatsResponse(**stats, total_synced=total_synced),
             sync_time=now,
         )

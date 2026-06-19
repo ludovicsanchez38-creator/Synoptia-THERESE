@@ -519,6 +519,23 @@ async def auto_create_crm_spreadsheet(
     }
 
 
+def build_sync_message(total_synced: int, has_errors: bool) -> str:
+    """Message de fin de synchro CRM, actionnable quand la feuille est vide (BUG-B).
+
+    0 element sans erreur = feuille vide : on guide l'utilisateur vers l'option
+    'feuille existante' (au lieu de la feuille vide auto-creee a la connexion),
+    au lieu de laisser un CRM vide sans explication.
+    """
+    if total_synced == 0 and not has_errors:
+        return (
+            "Synchronisation terminee : 0 element. La feuille Google synchronisee "
+            "est vide. Si tu as deja un CRM dans Google Sheets, renseigne son "
+            "identifiant dans Reglages > Synchronisation CRM (champ ID de la "
+            "feuille), puis resynchronise."
+        )
+    return f"Synchronisation terminee: {total_synced} elements"
+
+
 async def get_crm_access_token(session: AsyncSession) -> str | None:
     """Get decrypted CRM Sheets access token."""
     from app.services.encryption import decrypt_value
