@@ -278,16 +278,6 @@ function WeekView({
 
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
 
-  // Scroll to current hour on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const now = new Date();
-      const hour = now.getHours();
-      const scrollTo = Math.max(0, (hour - WEEK_START_HOUR - 1)) * HOUR_HEIGHT_PX;
-      scrollRef.current.scrollTop = scrollTo;
-    }
-  }, [selectedDate]);
-
   // Map events par jour de la semaine
   const { allDayByDate, timedByDate } = useMemo(() => {
     const allDayByDate: Record<string, CalendarEvent[]> = {};
@@ -332,6 +322,16 @@ function WeekView({
     () => Array.from({ length: weekEndHour - weekStartHour }, (_, i) => weekStartHour + i),
     [weekStartHour, weekEndHour]
   );
+
+  // Scroll vers l'heure courante au montage (utilise la plage dynamique :
+  // se réajuste si la grille s'élargit pour un événement tôt/tard).
+  useEffect(() => {
+    if (scrollRef.current) {
+      const hour = new Date().getHours();
+      const scrollTo = Math.max(0, (hour - weekStartHour - 1)) * HOUR_HEIGHT_PX;
+      scrollRef.current.scrollTop = scrollTo;
+    }
+  }, [selectedDate, weekStartHour]);
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
@@ -529,16 +529,6 @@ function DayView({
     return selectedDate.toISOString().split('T')[0];
   }, [selectedDate]);
 
-  // Scroll to current hour on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const now = new Date();
-      const hour = now.getHours();
-      const scrollTo = Math.max(0, (hour - DAY_START_HOUR - 1)) * DAY_SLOT_HEIGHT_PX;
-      scrollRef.current.scrollTop = scrollTo;
-    }
-  }, [selectedDate]);
-
   // Séparer événements journée entière et horaires
   const { allDayEvents, timedEvents } = useMemo(() => {
     const allDayEvents: CalendarEvent[] = [];
@@ -568,6 +558,16 @@ function DayView({
     () => Array.from({ length: dayEndHour - dayStartHour }, (_, i) => dayStartHour + i),
     [dayStartHour, dayEndHour]
   );
+
+  // Scroll vers l'heure courante au montage (plage dynamique : se réajuste
+  // si la grille s'élargit pour un événement tôt/tard).
+  useEffect(() => {
+    if (scrollRef.current) {
+      const hour = new Date().getHours();
+      const scrollTo = Math.max(0, (hour - dayStartHour - 1)) * DAY_SLOT_HEIGHT_PX;
+      scrollRef.current.scrollTop = scrollTo;
+    }
+  }, [selectedDate, dayStartHour]);
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
