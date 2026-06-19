@@ -7465,3 +7465,110 @@ class TestDeepResearchSurfacesSynthesisError:
         synth = self._synthesis_section()
         assert 'type="error"' in synth, "une erreur de synthèse doit émettre un ResearchProgress type='error'"
         assert "La synthèse a échoué" in synth
+
+class TestBUGA_ToggleOuvrirChatDirectement:
+    """BUG-A : Toggle 'Ouvrir sur le chat directement' sans effet (Réglages)
+    
+    Le toggle ne bascule pas visuellement et la préférence n'est pas persistée.
+    Causes : état local React au lieu de store Zustand global, pas de persistance centralisée.
+    """
+
+    PERSONALISATION_STORE = FRONTEND / "stores" / "personalisationStore.ts"
+    ADVANCED_TAB = FRONTEND / "components" / "settings" / "AdvancedTab.tsx"
+    NAVIGATION_STORE = FRONTEND / "stores" / "navigationStore.ts"
+
+    def test_personalisation_store_has_skip_dashboard_preference(self):
+        """Le store de personnalisation doit avoir une préférence skipDashboard"""
+        content = self.PERSONALISATION_STORE.read_text(encoding="utf-8")
+        
+        # Vérifier que la préférence est définie dans l'interface
+        assert "skipDashboard: boolean" in content, (
+            "l'interface PersonalisationState doit déclarer skipDashboard: boolean"
+        )
+        
+        # Vérifier qu'il y a un setter
+        assert "setSkipDashboard:" in content, (
+            "le store doit avoir une action setSkipDashboard"
+        )
+        
+        # Vérifier que la valeur par défaut est false (afficher dashboard par défaut)
+        assert "?? false" in content, (
+            "la valeur par défaut de skipDashboard doit être false"
+        )
+
+    def test_startup_behavior_uses_zustand_store(self):
+        """Le composant StartupBehavior doit utiliser le store Zustand au lieu d'état local"""
+        content = self.ADVANCED_TAB.read_text(encoding="utf-8")
+        
+        # Vérifier l'import du store
+        assert "usePersonalisationStore" in content, (
+            "AdvancedTab doit importer usePersonalisationStore"
+        )
+        
+        # Le composant StartupBehavior ne doit plus utiliser useState local
+        startup_behavior_start = content.find("function StartupBehavior()")
+        startup_behavior_end = content.find("}", startup_behavior_start) + 1
+        startup_behavior_code = content[startup_behavior_start:startup_behavior_end]
+        
+        assert "useState" not in startup_behavior_code, (
+            "StartupBehavior ne doit plus utiliser useState local"
+        )
+        
+        # Doit utiliser le store Zustand
+        assert "usePersonalisationStore" in startup_behavior_code, (
+            "StartupBehavior doit utiliser usePersonalisationStore"
+        )
+        
+        # Ne doit plus utiliser localStorage directement
+        assert "localStorage.getItem('therese-skip-dashboard')" not in startup_behavior_code, (
+            "StartupBehavior ne doit plus accéder directement à localStorage"
+        )
+        
+    def test_navigation_store_respects_skip_dashboard(self):
+        """Le navigationStore doit initialiser activeView selon la préférence skipDashboard"""
+        content = self.NAVIGATION_STORE.read_text(encoding="utf-8")
+        
+        # Vérifier l'import du store de personnalisation
+        assert "usePersonalisationStore" in content, (
+            "navigationStore doit importer usePersonalisationStore"
+        )
+        
+        # Vérifier que l'initialisation de activeView prend en compte skipDashboard
+        # Soit via une fonction d'initialisation, soit via un effet
+        assert "skipDashboard" in content, (
+            "navigationStore doit consulter la préférence skipDashboard pour déterminer la vue initiale"
+        )
+
+    def test_migration_from_localstorage(self):
+        """La migration depuis localStorage doit être implémentée"""
+        content = self.PERSONALISATION_STORE.read_text(encoding="utf-8")
+        
+        # Vérifier qu'il y a une fonction de migration
+        assert "migrateFromLocalStorage" in content, (
+            "le store doit avoir une fonction migrateFromLocalStorage"
+        )
+        
+        # Vérifier que la migration cherche l'ancienne clé
+        assert "therese-skip-dashboard" in content, (
+            "la migration doit chercher l'ancienne clé therese-skip-dashboard"
+        )
+        
+        # Vérifier que la migration nettoie l'ancienne clé
+        assert "removeItem" in content, (
+            "la migration doit nettoyer l'ancienne clé localStorage"
+        )
+
+    def test_fallbacks_for_undefined_values(self):
+        """Les composants doivent avoir des fallbacks pour les valeurs non définies"""
+        advanced_content = self.ADVANCED_TAB.read_text(encoding="utf-8")
+        nav_content = self.NAVIGATION_STORE.read_text(encoding="utf-8")
+        
+        # Vérifier les fallbacks dans StartupBehavior
+        assert "?? false" in advanced_content, (
+            "StartupBehavior doit avoir un fallback ?? false pour skipDashboard"
+        )
+        
+        # Vérifier les fallbacks dans navigationStore
+        assert "?? false" in nav_content, (
+            "navigationStore doit avoir un fallback ?? false pour skipDashboard"
+        )
