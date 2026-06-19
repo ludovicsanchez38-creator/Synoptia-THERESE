@@ -9,6 +9,7 @@ import { useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
+import { getVisibleHourRange } from './calendarHours';
 
 export function CalendarView() {
   const { events, viewMode, selectedDate, showCancelled, searchQuery, setCurrentEvent } =
@@ -258,9 +259,10 @@ function MonthView({
 // WEEK VIEW
 // =============================================================================
 
+// Fenêtre horaire par défaut (élargie dynamiquement par getVisibleHourRange
+// pour qu'aucun RDV tôt/tard ne disparaisse de la grille).
 const WEEK_START_HOUR = 8;
 const WEEK_END_HOUR = 20;
-const WEEK_HOURS = Array.from({ length: WEEK_END_HOUR - WEEK_START_HOUR }, (_, i) => WEEK_START_HOUR + i);
 const HOUR_HEIGHT_PX = 60;
 
 function WeekView({
@@ -275,16 +277,6 @@ function WeekView({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
-
-  // Scroll to current hour on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const now = new Date();
-      const hour = now.getHours();
-      const scrollTo = Math.max(0, (hour - WEEK_START_HOUR - 1)) * HOUR_HEIGHT_PX;
-      scrollRef.current.scrollTop = scrollTo;
-    }
-  }, [selectedDate]);
 
   // Map events par jour de la semaine
   const { allDayByDate, timedByDate } = useMemo(() => {
@@ -316,6 +308,31 @@ function WeekView({
     return { allDayByDate, timedByDate };
   }, [events, weekDates]);
 
+  // Plage horaire dynamique : élargit la fenêtre par défaut pour englober
+  // les événements tôt/tard de la semaine (sinon ils disparaissent).
+  const timedEventsThisWeek = useMemo(
+    () => Object.values(timedByDate).flat(),
+    [timedByDate]
+  );
+  const { startHour: weekStartHour, endHour: weekEndHour } = useMemo(
+    () => getVisibleHourRange(timedEventsThisWeek, WEEK_START_HOUR, WEEK_END_HOUR),
+    [timedEventsThisWeek]
+  );
+  const weekHours = useMemo(
+    () => Array.from({ length: weekEndHour - weekStartHour }, (_, i) => weekStartHour + i),
+    [weekStartHour, weekEndHour]
+  );
+
+  // Scroll vers l'heure courante au montage (utilise la plage dynamique :
+  // se réajuste si la grille s'élargit pour un événement tôt/tard).
+  useEffect(() => {
+    if (scrollRef.current) {
+      const hour = new Date().getHours();
+      const scrollTo = Math.max(0, (hour - weekStartHour - 1)) * HOUR_HEIGHT_PX;
+      scrollRef.current.scrollTop = scrollTo;
+    }
+  }, [selectedDate, weekStartHour]);
+
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const now = new Date();
@@ -329,8 +346,8 @@ function WeekView({
 
   // Position de la ligne rouge (en px depuis le haut de la grille)
   const nowLineTop =
-    weekContainsToday && currentHour >= WEEK_START_HOUR && currentHour < WEEK_END_HOUR
-      ? (currentHour - WEEK_START_HOUR) * HOUR_HEIGHT_PX + (currentMinute / 60) * HOUR_HEIGHT_PX
+    weekContainsToday && currentHour >= weekStartHour && currentHour < weekEndHour
+      ? (currentHour - weekStartHour) * HOUR_HEIGHT_PX + (currentMinute / 60) * HOUR_HEIGHT_PX
       : null;
 
   const hasAnyAllDay = Object.keys(allDayByDate).length > 0;
@@ -403,14 +420,14 @@ function WeekView({
 
       {/* Grille horaire scrollable */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex relative" style={{ height: WEEK_HOURS.length * HOUR_HEIGHT_PX }}>
+        <div className="flex relative" style={{ height: weekHours.length * HOUR_HEIGHT_PX }}>
           {/* Colonne heures */}
           <div className="w-16 shrink-0 relative">
-            {WEEK_HOURS.map((hour) => (
+            {weekHours.map((hour) => (
               <div
                 key={hour}
                 className="absolute w-full text-right pr-3"
-                style={{ top: (hour - WEEK_START_HOUR) * HOUR_HEIGHT_PX - 8 }}
+                style={{ top: (hour - weekStartHour) * HOUR_HEIGHT_PX - 8 }}
               >
                 <span className="text-xs text-text-muted">
                   {String(hour).padStart(2, '0')}:00
@@ -422,11 +439,11 @@ function WeekView({
           {/* Colonnes jours */}
           <div className="flex-1 flex relative">
             {/* Lignes horizontales des heures */}
-            {WEEK_HOURS.map((hour) => (
+            {weekHours.map((hour) => (
               <div
                 key={hour}
                 className="absolute left-0 right-0 border-t border-border/15"
-                style={{ top: (hour - WEEK_START_HOUR) * HOUR_HEIGHT_PX }}
+                style={{ top: (hour - weekStartHour) * HOUR_HEIGHT_PX }}
               />
             ))}
 
@@ -457,7 +474,7 @@ function WeekView({
                   }`}
                 >
                   {dayEvents.map((event) => {
-                    const pos = getEventPosition(event, WEEK_START_HOUR, WEEK_END_HOUR, HOUR_HEIGHT_PX);
+                    const pos = getEventPosition(event, weekStartHour, weekEndHour, HOUR_HEIGHT_PX);
                     if (!pos) return null;
 
                     return (
@@ -492,9 +509,9 @@ function WeekView({
 // DAY VIEW
 // =============================================================================
 
+// Fenêtre horaire par défaut de la vue Jour (élargie dynamiquement).
 const DAY_START_HOUR = 6;
 const DAY_END_HOUR = 22;
-const DAY_HOURS = Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => DAY_START_HOUR + i);
 const DAY_SLOT_HEIGHT_PX = 80; // 30min = 40px, 1h = 80px
 
 function DayView({
@@ -510,16 +527,6 @@ function DayView({
 
   const dateStr = useMemo(() => {
     return selectedDate.toISOString().split('T')[0];
-  }, [selectedDate]);
-
-  // Scroll to current hour on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      const now = new Date();
-      const hour = now.getHours();
-      const scrollTo = Math.max(0, (hour - DAY_START_HOUR - 1)) * DAY_SLOT_HEIGHT_PX;
-      scrollRef.current.scrollTop = scrollTo;
-    }
   }, [selectedDate]);
 
   // Séparer événements journée entière et horaires
@@ -541,6 +548,27 @@ function DayView({
     return { allDayEvents, timedEvents };
   }, [events, dateStr]);
 
+  // Plage horaire dynamique : élargit la fenêtre par défaut pour englober
+  // les événements tôt/tard du jour (sinon ils disparaissent).
+  const { startHour: dayStartHour, endHour: dayEndHour } = useMemo(
+    () => getVisibleHourRange(timedEvents, DAY_START_HOUR, DAY_END_HOUR),
+    [timedEvents]
+  );
+  const dayHours = useMemo(
+    () => Array.from({ length: dayEndHour - dayStartHour }, (_, i) => dayStartHour + i),
+    [dayStartHour, dayEndHour]
+  );
+
+  // Scroll vers l'heure courante au montage (plage dynamique : se réajuste
+  // si la grille s'élargit pour un événement tôt/tard).
+  useEffect(() => {
+    if (scrollRef.current) {
+      const hour = new Date().getHours();
+      const scrollTo = Math.max(0, (hour - dayStartHour - 1)) * DAY_SLOT_HEIGHT_PX;
+      scrollRef.current.scrollTop = scrollTo;
+    }
+  }, [selectedDate, dayStartHour]);
+
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const isToday = dateStr === todayStr;
@@ -550,8 +578,8 @@ function DayView({
 
   // Position de la ligne rouge
   const nowLineTop =
-    isToday && currentHour >= DAY_START_HOUR && currentHour < DAY_END_HOUR
-      ? (currentHour - DAY_START_HOUR) * DAY_SLOT_HEIGHT_PX + (currentMinute / 60) * DAY_SLOT_HEIGHT_PX
+    isToday && currentHour >= dayStartHour && currentHour < dayEndHour
+      ? (currentHour - dayStartHour) * DAY_SLOT_HEIGHT_PX + (currentMinute / 60) * DAY_SLOT_HEIGHT_PX
       : null;
 
   const dayLabel = selectedDate.toLocaleDateString('fr-FR', {
@@ -597,14 +625,14 @@ function DayView({
 
       {/* Grille horaire scrollable */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="flex relative px-2" style={{ height: DAY_HOURS.length * DAY_SLOT_HEIGHT_PX }}>
+        <div className="flex relative px-2" style={{ height: dayHours.length * DAY_SLOT_HEIGHT_PX }}>
           {/* Colonne heures */}
           <div className="w-16 shrink-0 relative">
-            {DAY_HOURS.map((hour) => (
+            {dayHours.map((hour) => (
               <div
                 key={hour}
                 className="absolute w-full text-right pr-3"
-                style={{ top: (hour - DAY_START_HOUR) * DAY_SLOT_HEIGHT_PX - 8 }}
+                style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX - 8 }}
               >
                 <span className="text-xs text-text-muted">
                   {String(hour).padStart(2, '0')}:00
@@ -612,11 +640,11 @@ function DayView({
               </div>
             ))}
             {/* Demi-heures */}
-            {DAY_HOURS.map((hour) => (
+            {dayHours.map((hour) => (
               <div
                 key={`half-${hour}`}
                 className="absolute w-full text-right pr-3"
-                style={{ top: (hour - DAY_START_HOUR) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 - 8 }}
+                style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 - 8 }}
               >
                 <span className="text-xs text-text-muted/50">
                   {String(hour).padStart(2, '0')}:30
@@ -628,19 +656,19 @@ function DayView({
           {/* Zone événements */}
           <div className="flex-1 relative">
             {/* Lignes heures */}
-            {DAY_HOURS.map((hour) => (
+            {dayHours.map((hour) => (
               <div
                 key={hour}
                 className="absolute left-0 right-0 border-t border-border/20"
-                style={{ top: (hour - DAY_START_HOUR) * DAY_SLOT_HEIGHT_PX }}
+                style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX }}
               />
             ))}
             {/* Lignes demi-heures */}
-            {DAY_HOURS.map((hour) => (
+            {dayHours.map((hour) => (
               <div
                 key={`half-line-${hour}`}
                 className="absolute left-0 right-0 border-t border-border/10"
-                style={{ top: (hour - DAY_START_HOUR) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 }}
+                style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 }}
               />
             ))}
 
@@ -662,7 +690,7 @@ function DayView({
 
             {/* Événements */}
             {timedEvents.map((event) => {
-              const pos = getEventPosition(event, DAY_START_HOUR, DAY_END_HOUR, DAY_SLOT_HEIGHT_PX);
+              const pos = getEventPosition(event, dayStartHour, dayEndHour, DAY_SLOT_HEIGHT_PX);
               if (!pos) return null;
 
               return (
