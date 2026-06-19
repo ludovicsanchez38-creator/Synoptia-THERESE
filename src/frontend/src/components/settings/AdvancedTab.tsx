@@ -8,6 +8,7 @@ import { AccessibilityTab } from './AccessibilityTab';
 import { PerformanceTab } from './PerformanceTab';
 import { LimitsTab } from './LimitsTab';
 import { CRMSyncPanel } from './CRMSyncPanel';
+import { usePersonalisationStore } from '../../stores/personalisationStore';
 import * as api from '../../services/api';
 
 export interface AdvancedTabProps {
@@ -131,14 +132,11 @@ export function AdvancedTab({
 }
 
 function StartupBehavior() {
-  const [skipDashboard, setSkipDashboard] = useState(() => {
-    return localStorage.getItem('therese-skip-dashboard') === 'true';
-  });
+  const skipDashboard = usePersonalisationStore((state) => state.skipDashboard ?? false);
+  const setSkipDashboard = usePersonalisationStore((state) => state.setSkipDashboard);
 
   const handleToggle = () => {
-    const newValue = !skipDashboard;
-    setSkipDashboard(newValue);
-    localStorage.setItem('therese-skip-dashboard', newValue ? 'true' : 'false');
+    setSkipDashboard(!skipDashboard);
   };
 
   return (

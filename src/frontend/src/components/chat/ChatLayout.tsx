@@ -82,8 +82,14 @@ export function ChatLayout() {
   const ps = usePanelStore();
   const activeView = useNavigationStore((s) => s.activeView);
   const goBack = useNavigationStore((s) => s.goBack);
+  const initializeView = useNavigationStore((s) => s.initializeView);
 
   useEffect(() => { setGuidedPanelActive(false); }, [currentConversationId]);
+
+  // Initialiser la vue selon les préférences utilisateur au montage
+  useEffect(() => {
+    initializeView();
+  }, [initializeView]);
 
   // Insertion d'un prompt dans le chat depuis ailleurs (⌘K « Produire un document »,
   // bibliothèque de prompts) — correctif KO Syn 2.1/2.2 : ramène au chat et pré-remplit.

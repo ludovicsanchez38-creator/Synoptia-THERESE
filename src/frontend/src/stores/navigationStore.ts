@@ -7,6 +7,7 @@
  */
 
 import { create } from 'zustand';
+import { usePersonalisationStore } from './personalisationStore';
 
 export type AppView =
   | 'chat'
@@ -27,10 +28,12 @@ interface NavigationStore {
   setView: (view: AppView) => void;
   goBack: () => void;
   resetToChat: () => void;
+  /** Initialise la vue selon les préférences utilisateur */
+  initializeView: () => void;
 }
 
 export const useNavigationStore = create<NavigationStore>((set) => ({
-  activeView: 'chat',
+  activeView: 'home', // Vue par défaut, sera ajustée par initializeView()
   history: [],
 
   setView: (view) =>
@@ -53,4 +56,12 @@ export const useNavigationStore = create<NavigationStore>((set) => ({
     }),
 
   resetToChat: () => set({ activeView: 'chat', history: [] }),
+
+  initializeView: () => {
+    const skipDashboard = usePersonalisationStore.getState().skipDashboard ?? false;
+    set({ 
+      activeView: skipDashboard ? 'chat' : 'home', 
+      history: [] 
+    });
+  },
 }));
