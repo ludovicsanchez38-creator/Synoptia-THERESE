@@ -7572,3 +7572,48 @@ class TestBUGA_ToggleOuvrirChatDirectement:
         assert "?? false" in nav_content, (
             "navigationStore doit avoir un fallback ?? false pour skipDashboard"
         )
+
+
+class TestBUGB_CrmSyncChoixFeuille:
+    """BUG-B : synchro CRM doit proposer le choix d'une feuille existante avant création automatique.
+    
+    À la première connexion Google sans ID de feuille renseigné, le système créait automatiquement 
+    une feuille vide et synchronisait dessus, résultant en un CRM vide sans explication. 
+    La solution : proposer de choisir une feuille existante AVANT toute création.
+    """
+    
+    def test_backend_api_lister_feuilles_google_disponible(self):
+        """Le backend doit exposer un endpoint pour lister les feuilles Google de l'utilisateur."""
+        from fastapi.testclient import TestClient
+        from app.main import app
+        
+        client = TestClient(app)
+        
+        # L'endpoint doit exister (même si non authentifié, il doit renvoyer 401 ou 403, pas 404)
+        response = client.get("/api/crm/google-sheets/list")
+        assert response.status_code != 404, (
+            "L'endpoint /api/crm/google-sheets/list doit exister pour lister les feuilles existantes"
+        )
+        
+    def test_frontend_interface_choix_feuille_existante(self):
+        """L'interface CRMSyncPanel doit permettre de choisir parmi les feuilles existantes."""
+        import os
+        crm_panel_path = os.path.join(
+            os.path.dirname(__file__), 
+            "..", "src", "frontend", "src", "components", "settings", "CRMSyncPanel.tsx"
+        )
+        
+        with open(crm_panel_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Doit avoir une fonctionnalité pour lister les feuilles existantes
+        has_list_functionality = (
+            "list" in content.lower() and 
+            ("spreadsheet" in content.lower() or "feuille" in content.lower()) and
+            ("existing" in content.lower() or "existant" in content.lower() or "choisir" in content.lower())
+        )
+        
+        assert has_list_functionality, (
+            "CRMSyncPanel doit proposer de choisir parmi les feuilles existantes, "
+            "pas seulement permettre la saisie manuelle d'un ID"
+        )

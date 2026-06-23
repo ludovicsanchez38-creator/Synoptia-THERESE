@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { RefreshCw, Link2, Check, AlertCircle, Loader2, ExternalLink, Cloud, Key, Upload } from 'lucide-react';
+import { RefreshCw, Link2, Check, AlertCircle, Loader2, ExternalLink, Cloud, Key, Upload, List, Search } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 
@@ -27,6 +27,12 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [lastSyncStats, setLastSyncStats] = useState<api.CRMSyncStats | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState(DEFAULT_SPREADSHEET_ID);
+
+  // BUG-B : choix feuille existante
+  const [showExistingSheets, setShowExistingSheets] = useState(false);
+  const [existingSheets, setExistingSheets] = useState<any[]>([]);
+  const [loadingSheets, setLoadingSheets] = useState(false);
+  const [sheetSearch, setSheetSearch] = useState('');
 
   // F-13 : formulaire re-saisie credentials Google OAuth
   const [showCredentialsForm, setShowCredentialsForm] = useState(false);
@@ -182,6 +188,56 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
     }
   };
 
+  // BUG-B : charger les feuilles Google existantes
+  const handleLoadExistingSheets = async () => {
+    try {
+      setLoadingSheets(true);
+      setError(null);
+
+      const response = await fetch('/api/crm/google-sheets/list', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401) {
+        setError('Authentification Google Sheets requise. Connectez-vous d\'abord.');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      setExistingSheets(data.sheets || []);
+      setShowExistingSheets(true);
+      
+      if (data.sheets?.length === 0) {
+        setError('Aucune feuille Google Sheets trouvée dans votre compte.');
+      }
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des feuilles:', err);
+      setError(err.message || 'Impossible de charger les feuilles existantes');
+    } finally {
+      setLoadingSheets(false);
+    }
+  };
+
+  // BUG-B : sélectionner une feuille existante
+  const handleSelectExistingSheet = (sheet: any) => {
+    setSpreadsheetId(sheet.id);
+    setShowExistingSheets(false);
+    setSuccess(`Feuille sélectionnée : ${sheet.name}`);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  // BUG-B : filtrer les feuilles par recherche
+  const filteredSheets = existingSheets.filter((sheet) =>
+    sheet.name.toLowerCase().includes(sheetSearch.toLowerCase())
+  );
+
   const handleSync = async () => {
     try {
       setSyncing(true);
@@ -259,6 +315,100 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       {/* Spreadsheet ID configuration */}
       <div className="space-y-2">
         <label className="text-sm text-text-muted">ID du Google Spreadsheet CRM</label>
+        
+        {/* BUG-B : Bouton pour choisir une feuille existante */}
+        <div className="mb-3 flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLoadExistingSheets}
+            disabled={loadingSheets || !config?.google_auth_configured}
+            className="flex items-center gap-2"
+          >
+            {loadingSheets ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <List className="w-4 h-4" />
+            )}
+            {loadingSheets ? 'Chargement...' : 'Choisir une feuille existante'}
+          </Button>
+          <span className="text-xs text-text-muted self-center">
+            ou entrez l'ID manuellement ci-dessous
+          </span>
+        </div>
+
+        {/* BUG-B : Liste des feuilles existantes */}
+        {showExistingSheets && (
+          <div className="mb-3 p-3 bg-surface-muted border border-border/50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-text">
+                Vos feuilles Google Sheets ({filteredSheets.length})
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowExistingSheets(false)}
+                className="text-xs"
+              >
+                Fermer
+              </Button>
+            </div>
+            
+            {existingSheets.length > 3 && (
+              <div className="mb-2 flex items-center gap-2">
+                <Search className="w-4 h-4 text-text-muted" />
+                <input
+                  type="text"
+                  value={sheetSearch}
+                  onChange={(e) => setSheetSearch(e.target.value)}
+                  placeholder="Rechercher une feuille..."
+                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded text-xs text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+                />
+              </div>
+            )}
+            
+            <div className="max-h-40 overflow-y-auto space-y-1">
+              {filteredSheets.length === 0 ? (
+                <div className="text-xs text-text-muted text-center py-2">
+                  {sheetSearch ? 'Aucune feuille ne correspond à la recherche' : 'Aucune feuille trouvée'}
+                </div>
+              ) : (
+                filteredSheets.map((sheet) => (
+                  <div
+                    key={sheet.id}
+                    className="flex items-center justify-between p-2 hover:bg-surface rounded border border-border/30 cursor-pointer group"
+                    onClick={() => handleSelectExistingSheet(sheet)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text truncate">
+                        {sheet.name}
+                      </div>
+                      <div className="text-xs text-text-muted truncate">
+                        ID: {sheet.id}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(sheet.url, '_blank');
+                        }}
+                        className="text-xs p-1"
+                        title="Ouvrir dans Google Sheets"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </Button>
+                      <Check className="w-4 h-4 text-accent-cyan" />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <input
             type="text"
