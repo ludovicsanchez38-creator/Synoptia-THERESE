@@ -7617,3 +7617,51 @@ class TestBUGB_CrmSyncChoixFeuille:
             "CRMSyncPanel doit proposer de choisir parmi les feuilles existantes, "
             "pas seulement permettre la saisie manuelle d'un ID"
         )
+
+
+class TestBUG111_UninstallDeleteData:
+    """BUG-111 : la désinstallation Windows avec « supprimer les données » cochée
+    ne supprimait pas le dossier de données backend (~/.therese), laissant
+    paramétrages et projets en place. Fix : hook NSIS POSTUNINSTALL conditionnel.
+    """
+
+    def _src_tauri(self):
+        import os
+        return os.path.join(
+            os.path.dirname(__file__), "..", "src", "frontend", "src-tauri"
+        )
+
+    def test_hook_nsis_supprime_dossier_therese(self):
+        import os
+        hook_path = os.path.join(self._src_tauri(), "installer-hooks.nsh")
+        assert os.path.exists(hook_path), (
+            "Le hook NSIS installer-hooks.nsh doit exister (BUG-111)"
+        )
+        with open(hook_path, encoding="utf-8") as f:
+            content = f.read()
+        assert "NSIS_HOOK_POSTUNINSTALL" in content, (
+            "Le hook doit definir la macro NSIS_HOOK_POSTUNINSTALL"
+        )
+        assert "DeleteAppDataCheckboxState" in content, (
+            "Le hook ne doit supprimer que si la case 'supprimer les donnees' est cochee"
+        )
+        assert ".therese" in content and "RMDir /r" in content, (
+            "Le hook doit supprimer recursivement le dossier de donnees ~/.therese"
+        )
+
+    def test_tauri_conf_reference_le_hook(self):
+        import json
+        import os
+        conf_path = os.path.join(self._src_tauri(), "tauri.conf.json")
+        with open(conf_path, encoding="utf-8") as f:
+            conf = json.load(f)
+        hooks = (
+            conf.get("bundle", {})
+            .get("windows", {})
+            .get("nsis", {})
+            .get("installerHooks")
+        )
+        assert hooks == "installer-hooks.nsh", (
+            "tauri.conf.json doit referencer installer-hooks.nsh "
+            "via bundle.windows.nsis.installerHooks"
+        )
