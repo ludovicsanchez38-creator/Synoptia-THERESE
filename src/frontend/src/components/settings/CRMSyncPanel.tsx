@@ -322,7 +322,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             variant="ghost"
             size="sm"
             onClick={handleLoadExistingSheets}
-            disabled={loadingSheets || !config?.google_auth_configured}
+            disabled={loadingSheets || !config?.has_token}
             className="flex items-center gap-2"
           >
             {loadingSheets ? (

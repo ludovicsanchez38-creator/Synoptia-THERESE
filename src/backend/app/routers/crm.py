@@ -1198,15 +1198,13 @@ async def handle_sheets_oauth_callback(
 async def list_google_sheets(
     session: AsyncSession = Depends(get_session),
 ):
-    """
-    Liste les feuilles Google Sheets de l'utilisateur pour permettre de choisir 
+    """Liste les feuilles Google Sheets de l'utilisateur pour permettre de choisir
     une feuille existante au lieu de créer automatiquement une feuille vide (BUG-B).
-    
+
     Utilise l'API Google Drive pour lister les fichiers de type spreadsheet.
     """
-    from app.services.crm_sync import ensure_valid_crm_token
-    from app.services.sheets_service import GoogleSheetsService
     import httpx
+    from app.services.crm_sync import ensure_valid_crm_token
 
     # Vérifier le token OAuth
     access_token = await ensure_valid_crm_token(session)
@@ -1243,7 +1241,7 @@ async def list_google_sheets(
 
         data = response.json()
         sheets = []
-        
+
         for file in data.get("files", []):
             sheets.append({
                 "id": file["id"],
