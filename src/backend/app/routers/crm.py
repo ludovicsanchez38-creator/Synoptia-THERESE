@@ -1194,6 +1194,82 @@ async def handle_sheets_oauth_callback(
     return result
 
 
+@router.get("/google-sheets/list")
+async def list_google_sheets(
+    session: AsyncSession = Depends(get_session),
+):
+    """Liste les feuilles Google Sheets de l'utilisateur pour permettre de choisir
+    une feuille existante au lieu de créer automatiquement une feuille vide (BUG-B).
+
+    Utilise l'API Google Drive pour lister les fichiers de type spreadsheet.
+    """
+    import httpx
+    from app.services.crm_sync import ensure_valid_crm_token
+
+    # Vérifier le token OAuth
+    access_token = await ensure_valid_crm_token(session)
+    if not access_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentification Google Sheets requise. Connectez-vous d'abord."
+        )
+
+    try:
+        # Utiliser l'API Google Drive pour lister les spreadsheets
+        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=30.0)) as client:
+            response = await client.get(
+                "https://www.googleapis.com/drive/v3/files",
+                headers={"Authorization": f"Bearer {access_token}"},
+                params={
+                    "q": "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+                    "fields": "nextPageToken, files(id, name, modifiedTime)",
+                    "orderBy": "modifiedTime desc",
+                    "pageSize": 20,  # Limiter à 20 feuilles récentes
+                },
+            )
+
+        if response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail="Token Google Sheets expiré. Reconnectez-vous."
+            )
+        elif response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Erreur API Google Drive : {response.text}"
+            )
+
+        data = response.json()
+        sheets = []
+
+        for file in data.get("files", []):
+            sheets.append({
+                "id": file["id"],
+                "name": file["name"],
+                "modified_time": file.get("modifiedTime"),
+                "url": f"https://docs.google.com/spreadsheets/d/{file['id']}/edit"
+            })
+
+        return {
+            "sheets": sheets,
+            "total": len(sheets),
+            "message": f"{len(sheets)} feuille(s) trouvée(s)"
+        }
+
+    except httpx.RequestError as e:
+        logger.error(f"Erreur réseau lors de la liste des feuilles Google : {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Impossible de contacter Google Drive. Vérifiez votre connexion."
+        )
+    except Exception as e:
+        logger.error(f"Erreur interne lors de la liste des feuilles Google : {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur interne lors de la récupération des feuilles"
+        )
+
+
 @router.post("/sync", response_model=CRMSyncResponse)
 async def sync_crm(
     session: AsyncSession = Depends(get_session),
