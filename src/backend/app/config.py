@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     chunk_size: int = 500
     chunk_overlap: int = 50
 
+    # Voix locale souveraine (STT/TTS) - OPTIONNELLE (groupe pip 'voice-local')
+    voice_local_enabled: bool = False
+    voice_local_whisper_model: str = "base"  # tiny | base | small
+
     def model_post_init(self, __context) -> None:
         """Initialize paths after settings are loaded."""
         # Set data_dir from env or default

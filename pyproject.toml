@@ -67,6 +67,14 @@ e2e = [
     "playwright>=1.40.0",
     "pytest-playwright>=0.4.0",
 ]
+# Voix 100% locale et souveraine (STT + TTS), OPTIONNELLE : non incluse dans le
+# build par defaut pour garder le paquet leger. A installer a la demande via
+# `pip install 'therese-backend[voice-local]'`. Modeles telecharges au 1er usage.
+# Prerequis RAM : voir docs/VOICE-LOCAL.md.
+voice-local = [
+    "faster-whisper>=1.0",
+    "piper-tts>=1.2",
+]
 
 [build-system]
 requires = ["hatchling"]
