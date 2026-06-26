@@ -13,3 +13,10 @@ class TranscriptionResponse(BaseModel):
     text: str
     duration_seconds: float | None = None
     language: str | None = None
+
+
+class TTSRequest(BaseModel):
+    """Requête de synthèse vocale locale (Piper)."""
+
+    text: str
+    voice: str | None = None

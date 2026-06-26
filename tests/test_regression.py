@@ -7665,3 +7665,61 @@ class TestBUG111_UninstallDeleteData:
             "tauri.conf.json doit referencer installer-hooks.nsh "
             "via bundle.windows.nsis.installerHooks"
         )
+
+
+class TestVoiceLocalOption:
+    """Voix locale souveraine STT/TTS, OPTIONNELLE (faster-whisper + Piper).
+
+    Les dépendances ne sont pas installées par défaut : les tests vérifient la
+    structure (modèles + prérequis RAM), la disponibilité, le message clair quand
+    c'est indisponible, le groupe pip optionnel et la doc.
+    """
+
+    def test_status_structure_et_prerequis_ram(self):
+        from app.services.voice_local import WHISPER_MODELS, voice_local_status
+
+        st = voice_local_status()
+        for k in ("stt_available", "tts_available", "whisper_models", "tts_ram_mb", "install_hint"):
+            assert k in st, f"voice_local_status doit exposer '{k}'"
+        # chaque modèle Whisper expose taille disque + prérequis RAM
+        assert WHISPER_MODELS, "WHISPER_MODELS ne doit pas être vide"
+        for _name, info in WHISPER_MODELS.items():
+            assert info.get("ram_mb", 0) > 0, "chaque modèle doit indiquer sa RAM nécessaire"
+            assert info.get("size_mb", 0) > 0
+        assert st["tts_ram_mb"] > 0
+
+    def test_availability_renvoie_bool(self):
+        from app.services.voice_local import stt_available, tts_available
+
+        assert isinstance(stt_available(), bool)
+        assert isinstance(tts_available(), bool)
+
+    def test_transcribe_local_leve_erreur_claire_si_indisponible(self):
+        import pytest
+
+        from app.services import voice_local
+
+        if voice_local.stt_available():
+            pytest.skip("faster-whisper installé localement : cas indisponible non testable")
+        with pytest.raises(RuntimeError):
+            voice_local.transcribe_local("/tmp/inexistant.wav")
+
+    def test_groupe_optionnel_voice_local_dans_pyproject(self):
+        import os
+
+        root = os.path.join(os.path.dirname(__file__), "..")
+        with open(os.path.join(root, "pyproject.toml"), encoding="utf-8") as f:
+            content = f.read()
+        assert "voice-local" in content, "le groupe optionnel voice-local doit exister"
+        assert "faster-whisper" in content and "piper-tts" in content
+
+    def test_doc_voice_local_existe_avec_ram(self):
+        import os
+
+        root = os.path.join(os.path.dirname(__file__), "..")
+        doc = os.path.join(root, "docs", "VOICE-LOCAL.md")
+        assert os.path.exists(doc), "docs/VOICE-LOCAL.md doit documenter la voix locale"
+        with open(doc, encoding="utf-8") as f:
+            content = f.read().lower()
+        assert "ram" in content
+        assert "faster-whisper" in content and "piper" in content
