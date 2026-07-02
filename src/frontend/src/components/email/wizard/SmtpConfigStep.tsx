@@ -14,6 +14,8 @@ import {
   Loader2,
   Server,
   Plug,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
@@ -47,6 +49,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
   const [form, setForm] = useState<SmtpFormState>(DEFAULT_FORM);
   const [providers, setProviders] = useState<api.EmailProviderConfig[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -101,8 +104,19 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
     setError(null);
   }
 
+  const trimmedEmail = form.email.trim();
+  const trimmedPassword = form.password.trim();
+  const trimmedImapHost = form.imap_host.trim();
+  const trimmedSmtpHost = form.smtp_host.trim();
+  const hasCredentials = trimmedEmail.length > 0 && trimmedPassword.length > 0;
+  const hasServerConfig = trimmedImapHost.length > 0 && trimmedSmtpHost.length > 0;
+  const hasValidPorts = form.imap_port > 0 && form.smtp_port > 0;
+  const hasCompleteConfiguration = hasCredentials && hasServerConfig && hasValidPorts;
+  const canSave = hasCompleteConfiguration;
+  const canTest = hasCompleteConfiguration;
+
   async function handleTest() {
-    if (!form.email || !form.password || !form.imap_host || !form.smtp_host) {
+    if (!hasCompleteConfiguration) {
       setError('Remplis tous les champs obligatoires');
       return;
     }
@@ -130,6 +144,11 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
   }
 
   async function handleSave() {
+    if (!hasCompleteConfiguration) {
+      setError('Remplis tous les champs obligatoires');
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
@@ -144,8 +163,6 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       setSaving(false);
     }
   }
-
-  const isFormValid = form.email && form.password && form.imap_host && form.smtp_host;
 
   return (
     <motion.div
@@ -167,8 +184,9 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       {/* Provider selector */}
       {providers.length > 0 && (
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Fournisseur email</label>
+          <label htmlFor="smtp-provider" className="text-sm text-text-muted">Fournisseur email</label>
           <select
+            id="smtp-provider"
             value={selectedProvider}
             onChange={(e) => handleProviderSelect(e.target.value)}
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -187,8 +205,9 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       {/* Email + Password */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Adresse email *</label>
+          <label htmlFor="smtp-email" className="text-sm text-text-muted">Adresse email *</label>
           <input
+            id="smtp-email"
             type="email"
             value={form.email}
             onChange={(e) => updateField('email', e.target.value)}
@@ -197,22 +216,36 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Mot de passe / App password *</label>
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => updateField('password', e.target.value)}
-            placeholder="Mot de passe applicatif"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
-          />
+          <label htmlFor="smtp-password" className="text-sm text-text-muted">Mot de passe / App password *</label>
+          <div className="relative">
+            <input
+              id="smtp-password"
+              type={showPassword ? 'text' : 'password'}
+              value={form.password}
+              onChange={(e) => updateField('password', e.target.value)}
+              placeholder="Mot de passe applicatif"
+              className="w-full px-3 py-2 pr-11 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            />
+            <button
+              type="button"
+              aria-controls="smtp-password"
+              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 px-3 text-text-muted transition-colors hover:text-text"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* IMAP Config */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Serveur IMAP *</label>
+          <label htmlFor="smtp-imap-host" className="text-sm text-text-muted">Serveur IMAP *</label>
           <input
+            id="smtp-imap-host"
             type="text"
             value={form.imap_host}
             onChange={(e) => updateField('imap_host', e.target.value)}
@@ -221,8 +254,9 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Port IMAP</label>
+          <label htmlFor="smtp-imap-port" className="text-sm text-text-muted">Port IMAP</label>
           <input
+            id="smtp-imap-port"
             type="number"
             value={form.imap_port}
             onChange={(e) => updateField('imap_port', parseInt(e.target.value) || 993)}
@@ -234,8 +268,9 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       {/* SMTP Config */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Serveur SMTP *</label>
+          <label htmlFor="smtp-smtp-host" className="text-sm text-text-muted">Serveur SMTP *</label>
           <input
+            id="smtp-smtp-host"
             type="text"
             value={form.smtp_host}
             onChange={(e) => updateField('smtp_host', e.target.value)}
@@ -244,8 +279,9 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm text-text-muted">Port SMTP</label>
+          <label htmlFor="smtp-smtp-port" className="text-sm text-text-muted">Port SMTP</label>
           <input
+            id="smtp-smtp-port"
             type="number"
             value={form.smtp_port}
             onChange={(e) => updateField('smtp_port', parseInt(e.target.value) || 587)}
@@ -311,7 +347,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             variant="secondary"
             size="sm"
             onClick={handleTest}
-            disabled={!isFormValid || testing}
+            disabled={!canTest || testing}
           >
             {testing ? (
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
@@ -325,7 +361,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             variant="primary"
             size="sm"
             onClick={handleSave}
-            disabled={!isFormValid || saving}
+            disabled={!canSave || saving}
           >
             {saving ? (
               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
