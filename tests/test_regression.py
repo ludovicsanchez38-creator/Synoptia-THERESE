@@ -7715,6 +7715,45 @@ class TestBUG111_UninstallDeleteData:
         )
 
 
+class TestBUG113_RaccourciBureauLegacyDoublon:
+    """BUG-113 : après une MAJ Windows, deux icônes bureau pointent sur la même
+    cible. Cause : jusqu'à la v0.1.15 le productName était « THÉRÈSE » (accentué),
+    le renommage en « THERESE » (v0.1.16) a laissé l'ancien .lnk orphelin que
+    chaque installation recrée à côté. Fix : hook NSIS POSTINSTALL qui purge les
+    raccourcis legacy (accentué + bureau commun).
+    """
+
+    def _hook_path(self):
+        import os
+        return os.path.join(
+            os.path.dirname(__file__), "..", "src", "frontend", "src-tauri",
+            "installer-hooks.nsh",
+        )
+
+    def test_hook_postinstall_purge_raccourci_legacy(self):
+        with open(self._hook_path(), encoding="utf-8-sig") as f:
+            content = f.read()
+        assert "NSIS_HOOK_POSTINSTALL" in content, (
+            "Le hook doit définir NSIS_HOOK_POSTINSTALL (purge raccourcis legacy)"
+        )
+        assert 'Delete "$DESKTOP\\THÉRÈSE.lnk"' in content, (
+            "Le hook doit supprimer le raccourci legacy accentué THÉRÈSE.lnk"
+        )
+        assert "SetShellVarContext all" in content and "SetShellVarContext current" in content, (
+            "Le hook doit aussi purger le bureau commun puis restaurer le contexte user"
+        )
+
+    def test_hook_fichier_utf8_avec_bom(self):
+        # makensis lit le .nsh en codepage ANSI sans BOM : les littéraux
+        # accentués seraient corrompus et le Delete viserait un mauvais nom.
+        with open(self._hook_path(), "rb") as f:
+            raw = f.read(3)
+        assert raw == b"\xef\xbb\xbf", (
+            "installer-hooks.nsh doit être encodé en UTF-8 AVEC BOM "
+            "(littéraux accentués dans les macros NSIS)"
+        )
+
+
 class TestVoiceLocalOption:
     """Voix locale souveraine STT/TTS, OPTIONNELLE (faster-whisper + Piper).
 
