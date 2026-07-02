@@ -148,6 +148,7 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveProject(null)}
     >
       <div className="divide-y divide-border/30">
         {STATUS_COLUMNS.map((column) => (
@@ -168,6 +169,7 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
             onSelect={() => {}}
             onDelete={() => {}}
             isOverlay
+            showDragHandle
           />
         )}
       </DragOverlay>
@@ -257,13 +259,24 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
     opacity: isDragging ? 0.4 : 1,
   };
 
+  // BUG-041 : les listeners couvrent toute la carte (même idiome que le
+  // PipelineView CRM), pas seulement la poignée - sinon attraper la carte
+  // par son corps ne démarre aucun drag. Les clics simples (ouvrir,
+  // supprimer) restent distingués du drag par l'activationConstraint
+  // (distance 8px) du PointerSensor.
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="cursor-grab active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
       <ProjectCard
         project={project}
         onSelect={onSelect}
         onDelete={onDelete}
-        dragListeners={listeners}
+        showDragHandle
       />
     </div>
   );
@@ -278,10 +291,10 @@ interface ProjectCardProps {
   onSelect: (project: Project) => void;
   onDelete: (project: Project) => void;
   isOverlay?: boolean;
-  dragListeners?: Record<string, unknown>;
+  showDragHandle?: boolean;
 }
 
-function ProjectCard({ project, onSelect, onDelete, isOverlay, dragListeners }: ProjectCardProps) {
+function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }: ProjectCardProps) {
   return (
     <motion.div
       whileHover={isOverlay ? undefined : { scale: 1.01 }}
@@ -291,13 +304,9 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, dragListeners }: 
       }`}
     >
       <div className="flex items-center gap-2">
-        {/* Drag Handle */}
-        {dragListeners && (
-          <div
-            className="cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-text-muted flex-shrink-0"
-            {...dragListeners}
-            onClick={(e) => e.stopPropagation()}
-          >
+        {/* Poignée (repère visuel : toute la carte est draggable) */}
+        {showDragHandle && (
+          <div className="text-text-muted/30 group-hover:text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>
         )}
