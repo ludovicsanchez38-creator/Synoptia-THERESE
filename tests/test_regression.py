@@ -134,6 +134,54 @@ class TestBUG110_UpdateBloquee:
         except Exception:
             pytest.fail("Clé publique mal encodée en base64")
 
+
+class TestBUG112_EmailManuelAutreFournisseur:
+    """BUG-112 : le mode manuel doit garder le toggle mot de passe et autoriser l'enregistrement."""
+
+    SMTP_TSX = FRONTEND / "components" / "email" / "wizard" / "SmtpConfigStep.tsx"
+
+    def test_bug112_password_visibility_toggle_present(self):
+        content = self.SMTP_TSX.read_text(encoding="utf-8")
+        assert "showPassword" in content, (
+            "SmtpConfigStep doit garder un état showPassword pour le mode manuel"
+        )
+        assert "type={showPassword ? 'text' : 'password'}" in content, (
+            "Le champ mot de passe doit pouvoir alterner entre texte et password"
+        )
+
+    def test_bug112_manual_can_save_logic_present(self):
+        content = self.SMTP_TSX.read_text(encoding="utf-8")
+        assert "canSave" in content, (
+            "SmtpConfigStep doit calculer une condition de sauvegarde dédiée"
+        )
+        assert "hasCompleteConfiguration" in content, (
+            "La sauvegarde doit exiger une configuration SMTP/IMAP complète"
+        )
+
+
+class TestBUG114_CalendarOverlappingEvents:
+    """BUG-114 : les événements simultanés doivent avoir un layout dédié."""
+
+    CALENDAR_VIEW_TSX = FRONTEND / "components" / "calendar" / "CalendarView.tsx"
+
+    def test_bug114_week_view_uses_overlap_layout(self):
+        content = self.CALENDAR_VIEW_TSX.read_text(encoding="utf-8")
+        assert "getTimedEventLayout" in content, (
+            "WeekView doit calculer un layout pour les événements qui se chevauchent"
+        )
+        assert "left: `${layout.leftPercent}%`" in content, (
+            "WeekView doit positionner horizontalement les événements simultanés"
+        )
+
+    def test_bug114_day_view_uses_overlap_layout(self):
+        content = self.CALENDAR_VIEW_TSX.read_text(encoding="utf-8")
+        assert "width: `${layout.widthPercent}%`" in content, (
+            "DayView doit réduire la largeur des événements simultanés"
+        )
+        assert "layoutByEventId" in content, (
+            "Le layout chevauché doit être calculé une seule fois par vue"
+        )
+
 # ============================================================
 # BUG-002 (v0.1.2) - Port dynamique
 # Le backend ne doit PAS utiliser un port hardcodé 8000.
