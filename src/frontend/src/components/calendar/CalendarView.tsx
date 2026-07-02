@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
 import { getVisibleHourRange } from './calendarHours';
+import { getTimedEventLayout } from './calendarEventLayout';
 
 export function CalendarView() {
   const { events, viewMode, selectedDate, showCancelled, searchQuery, setCurrentEvent } =
@@ -322,6 +323,15 @@ function WeekView({
     () => Array.from({ length: weekEndHour - weekStartHour }, (_, i) => weekStartHour + i),
     [weekStartHour, weekEndHour]
   );
+  const layoutByEventId = useMemo(() => {
+    const layoutMap: Record<string, ReturnType<typeof getTimedEventLayout>> = {};
+
+    Object.entries(timedByDate).forEach(([dateKey, dayEvents]) => {
+      layoutMap[dateKey] = getTimedEventLayout(dayEvents, weekStartHour, weekEndHour, HOUR_HEIGHT_PX);
+    });
+
+    return layoutMap;
+  }, [timedByDate, weekStartHour, weekEndHour]);
 
   // Scroll vers l'heure courante au montage (utilise la plage dynamique :
   // se réajuste si la grille s'élargit pour un événement tôt/tard).
@@ -465,6 +475,7 @@ function WeekView({
               const dateStr = date.toISOString().split('T')[0];
               const isToday = dateStr === todayStr;
               const dayEvents = timedByDate[dateStr] || [];
+              const dayLayoutByEventId = layoutByEventId[dateStr] || {};
 
               return (
                 <div
@@ -474,8 +485,8 @@ function WeekView({
                   }`}
                 >
                   {dayEvents.map((event) => {
-                    const pos = getEventPosition(event, weekStartHour, weekEndHour, HOUR_HEIGHT_PX);
-                    if (!pos) return null;
+                    const layout = dayLayoutByEventId[event.id];
+                    if (!layout) return null;
 
                     return (
                       <motion.button
@@ -483,8 +494,13 @@ function WeekView({
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         onClick={() => onEventClick(event.id)}
-                        className="absolute left-0.5 right-0.5 bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-2 py-1 text-left overflow-hidden transition-colors z-10"
-                        style={{ top: pos.top, height: Math.max(pos.height, 20) }}
+                        className="absolute bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-2 py-1 text-left overflow-hidden transition-colors z-10"
+                        style={{
+                          top: layout.top,
+                          height: Math.max(layout.height, 20),
+                          left: `${layout.leftPercent}%`,
+                          width: `${layout.widthPercent}%`,
+                        }}
                       >
                         <div className="text-xs font-medium text-text truncate">
                           {event.summary}
@@ -557,6 +573,10 @@ function DayView({
   const dayHours = useMemo(
     () => Array.from({ length: dayEndHour - dayStartHour }, (_, i) => dayStartHour + i),
     [dayStartHour, dayEndHour]
+  );
+  const layoutByEventId = useMemo(
+    () => getTimedEventLayout(timedEvents, dayStartHour, dayEndHour, DAY_SLOT_HEIGHT_PX),
+    [timedEvents, dayStartHour, dayEndHour]
   );
 
   // Scroll vers l'heure courante au montage (plage dynamique : se réajuste
@@ -690,8 +710,8 @@ function DayView({
 
             {/* Événements */}
             {timedEvents.map((event) => {
-              const pos = getEventPosition(event, dayStartHour, dayEndHour, DAY_SLOT_HEIGHT_PX);
-              if (!pos) return null;
+              const layout = layoutByEventId[event.id];
+              if (!layout) return null;
 
               return (
                 <motion.button
@@ -699,8 +719,13 @@ function DayView({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   onClick={() => onEventClick(event.id)}
-                  className="absolute left-1 right-4 bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-3 py-2 text-left overflow-hidden transition-colors z-10"
-                  style={{ top: pos.top, height: Math.max(pos.height, 24) }}
+                  className="absolute bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-3 py-2 text-left overflow-hidden transition-colors z-10"
+                  style={{
+                    top: layout.top,
+                    height: Math.max(layout.height, 24),
+                    left: `${layout.leftPercent}%`,
+                    width: `${layout.widthPercent}%`,
+                  }}
                 >
                   <div className="text-sm font-medium text-text truncate">
                     {event.summary}
@@ -708,7 +733,7 @@ function DayView({
                   <div className="text-xs text-text-muted">
                     {formatTime(event.start_datetime!)} - {formatTime(event.end_datetime!)}
                   </div>
-                  {event.location && pos.height > 50 && (
+                  {event.location && layout.height > 50 && (
                     <div className="text-xs text-text-muted/70 mt-0.5 truncate">
                       {event.location}
                     </div>
@@ -749,34 +774,4 @@ function getWeekDates(date: Date): Date[] {
   return dates;
 }
 
-/**
- * Calcule la position top/height d'un événement horaire dans la grille.
- */
-function getEventPosition(
-  event: CalendarEvent,
-  startHour: number,
-  endHour: number,
-  hourHeightPx: number
-): { top: number; height: number } | null {
-  if (!event.start_datetime || !event.end_datetime) return null;
 
-  const start = new Date(event.start_datetime);
-  const end = new Date(event.end_datetime);
-
-  const startMinutes = start.getHours() * 60 + start.getMinutes();
-  const endMinutes = end.getHours() * 60 + end.getMinutes();
-
-  const gridStartMinutes = startHour * 60;
-  const gridEndMinutes = endHour * 60;
-
-  // Clamper dans les bornes de la grille
-  const clampedStart = Math.max(startMinutes, gridStartMinutes);
-  const clampedEnd = Math.min(endMinutes, gridEndMinutes);
-
-  if (clampedStart >= clampedEnd) return null;
-
-  const top = ((clampedStart - gridStartMinutes) / 60) * hourHeightPx;
-  const height = ((clampedEnd - clampedStart) / 60) * hourHeightPx;
-
-  return { top, height };
-}
