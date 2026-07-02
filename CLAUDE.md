@@ -122,6 +122,9 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis BUG-041 drag & drop projets (02/07/2026, PR #92 mergée, PAS releasé)
+- [ ] **TaskKanban : même pattern poignée-seule que le BUG-041** : dans `TaskKanban.tsx`, les listeners `useSortable` ne couvrent que le `GripVertical` (16px quasi invisible) - attraper la carte tâche par son corps ne démarre aucun drag. Aucun bug testeur ouvert dessus, mais à harmoniser avec le fix `ProjectsKanban.tsx` (listeners sur le wrapper entier + `onDragCancel`, clics préservés par l'activationConstraint 8px ; test de régression modèle : `ProjectsKanban.test.tsx`).
+
 - [x] **Calendrier Google 403 → RÉSOLU fcc9b48 (message actionnable + guide corrigé)**. Historique : : `calendarList` 403 (API Calendar non activée dans le projet GCP du testeur) remonte en 500 + « ça coince » dans le chat. Mapper accessNotConfigured/403 vers un message actionnable (« Active l'API Google Calendar dans ta console GCP puis reconnecte »). Et compléter USER_GUIDE_ALPHA : activer Gmail API ET Google Calendar API, type de client « Application Web » (l'URI de redirection de la consigne 403 n'existe pas sur un client Desktop).
 - [x] **Score CRM expéditeurs → RÉSOLU c6ce235 (lookup SQL get_crm_contact_by_email)**. Historique : : email.py:1283/1350 `qdrant.search(entity_type='contact')` = TypeError (le paramètre est `memory_types`) + `results[0].payload` sur des dicts. Warnings en rafale, contact_score toujours None. Double fix + test.
 
