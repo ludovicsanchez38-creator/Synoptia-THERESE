@@ -177,6 +177,17 @@ def build_section_context(
     )
 
     if instruction:
+        # Cas « Retoucher » : la cible a déjà du contenu -> on le donne au
+        # LLM (bloc dédié, JAMAIS pour les autres sections) pour qu'une
+        # instruction comme « raccourcis le 2e paragraphe » ait un sens.
+        if target.content.strip():
+            parts.extend(
+                [
+                    "CONTENU ACTUEL DE LA SECTION (à retoucher) :",
+                    target.content,
+                    "",
+                ]
+            )
         parts.extend(
             [
                 "INSTRUCTION DE RETOUCHE DEMANDÉE PAR L'UTILISATEUR :",

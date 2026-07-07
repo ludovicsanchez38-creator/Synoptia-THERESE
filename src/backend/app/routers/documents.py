@@ -1,9 +1,9 @@
 """
 THÉRÈSE v2 - Documents Router
 
-CRUD de l'atelier documentaire : documents, sections, pistes, et
-génération de trame via le LLM (rédaction et export = tâches suivantes
-du plan - lots B et C).
+CRUD de l'atelier documentaire : documents, sections, pistes, génération
+de trame, rédaction en streaming SSE et validation d'une section via le
+LLM (export = tâche suivante du plan - lot C).
 
 L'invariant du design vit dans la réorganisation ET la génération de la
 trame : jamais de perte de travail déjà engagé. À la réorganisation,
@@ -15,25 +15,34 @@ section non vide (statut != 'vide' ou contenu non vide) bloque l'appel au
 LLM avec un 409 - aucune régénération silencieuse.
 """
 
+import json
 import logging
+import time
 from datetime import UTC, datetime
-from typing import cast
+from typing import AsyncGenerator, cast
 
 from app.models.database import get_session
 from app.models.entities import Document, DocumentPiste, DocumentSection
 from app.models.schemas_documents import (
     DocumentCreate,
     DocumentResponse,
+    DraftRequest,
     PisteResponse,
     PisteUpdate,
     SectionResponse,
     SectionsReorder,
     SectionUpdate,
 )
-from app.services.document_orchestrator import build_outline_prompt, parse_outline_response
-from app.services.llm import get_llm_service
+from app.services.document_orchestrator import (
+    build_outline_prompt,
+    build_section_context,
+    build_summary_prompt,
+    parse_draft_output,
+    parse_outline_response,
+)
+from app.services.llm import Message, get_llm_service
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import case, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,6 +50,11 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Persistance au fil de l'eau du brouillon streamé (design : zéro perte de
+# contenu, même sur fermeture d'app). Constante de module pour que les tests
+# puissent la réduire (monkeypatch) sans dépendre d'un vrai sleep de 2 s.
+DRAFT_FLUSH_INTERVAL_SECONDS = 2.0
 
 
 # =============================================================================
@@ -242,6 +256,176 @@ async def update_section(
     return _section_to_response(section)
 
 
+async def _draft_stream(
+    document: Document,
+    sections: list[DocumentSection],
+    target: DocumentSection,
+    instruction: str | None,
+    session: AsyncSession,
+) -> AsyncGenerator[str, None]:
+    """Génère le SSE de rédaction d'une section, avec persistance continue.
+
+    Invariant de design (zéro perte) : le contenu accumulé est écrit en base
+    toutes les ~2 s (`DRAFT_FLUSH_INTERVAL_SECONDS`), statut 'brouillon' dès
+    la première écriture. Si le fournisseur LLM échoue en cours de route, le
+    partiel accumulé jusqu'ici est flushé une dernière fois AVANT le chunk
+    d'erreur - il reste en base, jamais perdu.
+    """
+    llm_service = get_llm_service()
+    prompt = build_section_context(document, sections, target, instruction)
+    context = llm_service.prepare_context(messages=[Message(role="user", content=prompt)])
+
+    accumulated = ""
+    last_flush = time.monotonic()
+
+    async def _flush() -> None:
+        target.content = accumulated
+        target.status = "brouillon"
+        target.updated_at = datetime.now(UTC)
+        session.add(target)
+        await session.commit()
+
+    try:
+        async for chunk in llm_service.stream_response(context, raise_on_error=True):
+            accumulated += chunk
+            yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
+
+            now = time.monotonic()
+            if now - last_flush >= DRAFT_FLUSH_INTERVAL_SECONDS:
+                await _flush()
+                last_flush = now
+    except Exception as exc:  # erreur provider (réseau, quota, etc.) à reporter en SSE
+        if accumulated:
+            await _flush()
+        logger.warning(
+            "Draft SSE : échec du fournisseur LLM pour la section %s : %s",
+            target.id,
+            exc,
+        )
+        message = f"Erreur du fournisseur IA pendant la rédaction : {exc}"
+        yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
+        return
+
+    content, pistes_texts = parse_draft_output(accumulated)
+    target.content = content
+    target.status = "brouillon"
+    target.updated_at = datetime.now(UTC)
+    session.add(target)
+
+    for piste_text in pistes_texts:
+        session.add(
+            DocumentPiste(
+                document_id=document.id,
+                section_origine_id=target.id,
+                texte=piste_text,
+            )
+        )
+
+    await session.commit()
+
+    yield f"data: {json.dumps({'type': 'done', 'section_id': target.id})}\n\n"
+
+
+@router.post("/sections/{section_id}/draft", response_model=None)
+async def draft_section(
+    section_id: str,
+    payload: DraftRequest,
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    """
+    Rédige (ou retouche) une section via le LLM, en streaming SSE.
+
+    Format des chunks (un par ligne `data: {...}\\n\\n`, cf `_command_stream`
+    de chat.py) : {"type": "text", "content": ...} pendant la génération,
+    {"type": "done", "section_id": ...} à la fin, ou {"type": "error",
+    "content": message français} si le fournisseur échoue en cours de route
+    (le contenu déjà généré reste en base, statut 'brouillon' - zéro perte).
+    """
+    target = await session.get(DocumentSection, section_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Section introuvable")
+
+    document = await _get_document_or_404(session, target.document_id)
+
+    sections_result = await session.execute(
+        select(DocumentSection)
+        .where(DocumentSection.document_id == document.id)
+        .order_by(DocumentSection.order)
+    )
+    sections = list(sections_result.scalars().all())
+
+    return StreamingResponse(
+        _draft_stream(document, sections, target, payload.instruction, session),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/sections/{section_id}/validate")
+async def validate_section(
+    section_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> SectionResponse:
+    """
+    Valide une section : génère son résumé (contexte des sections suivantes,
+    jamais son texte intégral) et passe son statut à 'validee'.
+
+    La validation ne bloque JAMAIS sur un échec LLM : si le résumé ne peut
+    pas être généré, on retombe sur les 300 premiers caractères du contenu.
+    Si toutes les sections non-orphelines du document sont désormais
+    'validee', le document entier passe à 'termine'.
+    """
+    section = await session.get(DocumentSection, section_id)
+    if not section:
+        raise HTTPException(status_code=404, detail="Section introuvable")
+
+    if not section.content.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Impossible de valider une section sans contenu.",
+        )
+
+    llm_service = get_llm_service()
+    try:
+        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section))).strip()
+        if not summary:
+            summary = section.content[:300]
+    except Exception as exc:  # fallback volontaire : la validation ne bloque jamais
+        logger.warning(
+            "Validation section %s : résumé LLM indisponible (%s), fallback 300 caractères",
+            section_id,
+            exc,
+        )
+        summary = section.content[:300]
+
+    section.summary = summary
+    section.status = "validee"
+    section.updated_at = datetime.now(UTC)
+    session.add(section)
+
+    document = await _get_document_or_404(session, section.document_id)
+    siblings_result = await session.execute(
+        select(DocumentSection).where(
+            DocumentSection.document_id == document.id,
+            DocumentSection.orphan.is_(False),
+        )
+    )
+    siblings = siblings_result.scalars().all()
+    if siblings and all(s.status == "validee" for s in siblings):
+        document.status = "termine"
+        document.updated_at = datetime.now(UTC)
+        session.add(document)
+
+    await session.commit()
+    await session.refresh(section)
+
+    return _section_to_response(section)
+
+
 @router.post("/{document_id}/sections")
 async def create_section(
     document_id: str,
@@ -280,6 +464,13 @@ async def generate_outline(
 
     Si la réponse du LLM est illisible (`parse_outline_response` lève
     `ValueError`), répond 502 sans créer la moindre section.
+
+    Durcissement (revue B2) : si la trame existante est déjà entièrement
+    vide (le garde-fou ci-dessus ne s'est pas déclenché), elle est
+    REMPLACÉE par la nouvelle plutôt qu'additionnée - sinon un double appel
+    (double-clic, ou re-génération après une 1re trame jamais retouchée)
+    laisserait des doublons d'order 10/20/30 en base. Remplacement sans
+    perte : ces sections sont par construction vides de tout contenu.
     """
     document = await _get_document_or_404(session, document_id)
 
@@ -306,6 +497,11 @@ async def generate_outline(
         parsed_sections = parse_outline_response(raw_response)
     except ValueError:
         raise HTTPException(status_code=502, detail="Trame illisible, réessaie.")
+
+    # Idempotence : la trame existante (si elle existe) est entièrement
+    # vide à ce stade - on la remplace au lieu de l'additionner.
+    for old_section in existing_sections:
+        await session.delete(old_section)
 
     sections: list[DocumentSection] = []
     for index, item in enumerate(parsed_sections):

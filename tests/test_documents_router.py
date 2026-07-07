@@ -321,6 +321,38 @@ class TestOutlineGeneration:
         assert response.status_code == 404
         mock_generate.assert_not_called()
 
+    @pytest.mark.asyncio
+    async def test_outline_double_appel_remplace_sans_doublons(self, client: AsyncClient):
+        """Durcissement issu de la revue B2 : double-clic (ou re-génération
+        après une 1re trame jamais retouchée) - la trame reste entièrement
+        vide entre les deux appels, donc le garde-fou 409 ne se déclenche
+        pas. Le 2e appel doit REMPLACER la 1re trame, jamais s'additionner
+        (pas de doublons d'order 10/20)."""
+        doc = await _create_document(client)
+
+        raw_outline = json.dumps(
+            [
+                {"title": "Contexte", "brief": "Poser le décor", "depth": 0},
+                {"title": "Conclusion", "brief": "Résumer et conclure", "depth": 0},
+            ]
+        )
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+            return_value=raw_outline,
+        ):
+            first = await client.post(f"/api/documents/{doc['id']}/outline")
+            assert first.status_code == 200, first.text
+            second = await client.post(f"/api/documents/{doc['id']}/outline")
+            assert second.status_code == 200, second.text
+
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        sections = detail.json()["sections"]
+        assert len(sections) == 2
+        assert [s["order"] for s in sections] == [10.0, 20.0]
+        assert [s["title"] for s in sections] == ["Contexte", "Conclusion"]
+
 
 class TestSectionsReorderInvariant:
     """L'invariant de complétude - le cœur du design de l'atelier documentaire."""

@@ -285,6 +285,88 @@ class TestBuildSectionContext:
 
 
 # =============================================================================
+# build_section_context - amendement retouche (tâche B3)
+# =============================================================================
+
+
+class TestBuildSectionContextRetouche:
+    """Cas « Retoucher » : quand une instruction est fournie ET que la
+    section cible a déjà du contenu, ce contenu doit entrer dans le contexte
+    (bloc dédié) pour qu'une instruction comme « raccourcis le 2e paragraphe »
+    ait un sens. Les autres sections restent résumées uniquement."""
+
+    def _document(self) -> Document:
+        return Document(id="doc-1", title="Guide financement", brief="Brief du besoin.")
+
+    def test_retouche_avec_contenu_existant_inclut_le_contenu_actuel(self):
+        document = self._document()
+        target = DocumentSection(
+            id="s1",
+            document_id="doc-1",
+            title="Financement bancaire",
+            brief="Détailler les prêts bancaires classiques",
+            order=10.0,
+            depth=0,
+            content="Voici le paragraphe déjà rédigé sur les prêts bancaires.",
+            status="brouillon",
+        )
+        ctx = build_section_context(
+            document, [target], target, instruction="Raccourcis le 2e paragraphe."
+        )
+        assert "CONTENU ACTUEL DE LA SECTION" in ctx
+        assert "Voici le paragraphe déjà rédigé sur les prêts bancaires." in ctx
+
+    def test_sans_contenu_existant_pas_de_bloc_contenu_actuel_meme_avec_instruction(self):
+        document = self._document()
+        target = DocumentSection(
+            id="s1",
+            document_id="doc-1",
+            title="Financement bancaire",
+            brief="Détailler les prêts bancaires classiques",
+            order=10.0,
+            depth=0,
+            content="",
+            status="vide",
+        )
+        ctx = build_section_context(
+            document, [target], target, instruction="Commence par une accroche chiffrée."
+        )
+        assert "CONTENU ACTUEL DE LA SECTION" not in ctx
+
+    def test_autres_sections_gardent_uniquement_leur_resume_meme_en_retouche(self):
+        """Le mode retouche ajoute le contenu de la CIBLE seulement - les
+        autres sections restent résumées (pas de fuite de contenu intégral)."""
+        document = self._document()
+        other = DocumentSection(
+            id="s0",
+            document_id="doc-1",
+            title="Introduction",
+            brief="Poser le contexte",
+            order=5.0,
+            depth=0,
+            content="TEXTE INTEGRAL DE L'INTRODUCTION, très long.",
+            summary="Résumé de l'introduction.",
+            status="validee",
+        )
+        target = DocumentSection(
+            id="s1",
+            document_id="doc-1",
+            title="Financement bancaire",
+            brief="Détailler les prêts bancaires classiques",
+            order=10.0,
+            depth=0,
+            content="Contenu actuel de la section cible.",
+            status="brouillon",
+        )
+        ctx = build_section_context(
+            document, [other, target], target, instruction="Retouche ce paragraphe."
+        )
+        assert "TEXTE INTEGRAL DE L'INTRODUCTION" not in ctx
+        assert "Résumé de l'introduction." in ctx
+        assert "Contenu actuel de la section cible." in ctx
+
+
+# =============================================================================
 # build_summary_prompt
 # =============================================================================
 
