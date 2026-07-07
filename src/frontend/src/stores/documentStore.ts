@@ -17,7 +17,11 @@
  * - nouveaux tableaux/objets, jamais de mutation en place) pendant que
  * `isStreaming` reste vrai. Sur chunk `error`, le contenu déjà streamé
  * depuis CE démarrage est conservé tel quel (le backend a lui-même persisté
- * le partiel, zéro perte) et `error` est posé. Sur chunk `done`, le document
+ * le partiel, zéro perte) et `error` est posé - SAUF si l'erreur (chunk
+ * `error` en tête de flux ou exception réseau immédiate) survient AVANT le
+ * premier chunk texte : le backend n'a alors rien flushé (la base garde
+ * l'ancien contenu), donc le store RESTAURE le contenu pré-reset au lieu de
+ * laisser la section vide (résidu de revue lot D). Sur chunk `done`, le document
  * est rechargé pour récupérer le contenu canonique (sans bloc PISTES) et les
  * nouvelles pistes détectées - SAUF si le document actif a changé depuis le
  * démarrage du draft (id capturé au départ, comparé à `get().currentDocument
@@ -126,6 +130,16 @@ interface DocumentStore {
  */
 let draftAbortController: AbortController | null = null;
 
+/**
+ * Jeton d'ordonnancement des `openDocument` (résidu de revue lot D) -
+ * incrémenté à chaque appel ; une réponse qui résout alors qu'un
+ * `openDocument` plus récent est parti est PÉRIMÉE et ne doit pas écrire
+ * `currentDocument` (sinon un fetch A lent écrase le document B fraîchement
+ * ouvert). Module-scope pour la même raison que `draftAbortController` :
+ * pas une donnée affichable.
+ */
+let openDocumentToken = 0;
+
 /** Applique une mise à jour à une section précise de currentDocument (immuable). */
 function patchSection(
   document: DocumentDetail,
@@ -162,11 +176,18 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   openDocument: async (id) => {
+    // Garde anti-stale : seule la réponse du DERNIER openDocument a le droit
+    // d'écrire (deux ouvertures entrelacées = la lente ne doit pas écraser
+    // la récente, même si la garde d'affichage du composant masquerait le
+    // mauvais contenu derrière un spinner persistant).
+    const token = ++openDocumentToken;
     set({ isLoading: true, error: null });
     try {
       const document = await apiGetDocument(id);
+      if (token !== openDocumentToken) return; // réponse périmée - un appel plus récent gère l'état
       set({ currentDocument: document, isLoading: false });
     } catch (e: any) {
+      if (token !== openDocumentToken) return;
       set({ isLoading: false, error: e?.message || 'Impossible de charger le document.' });
     }
   },
@@ -296,6 +317,22 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // stream (sinon on rechargerait le mauvais document après une bascule).
     const documentId = get().currentDocument?.id;
 
+    // Contenu pré-reset capturé AVANT le reset (résidu de revue lot D) : si
+    // l'erreur survient avant le PREMIER chunk texte, le backend n'a rien
+    // flushé (la base garde ce contenu) - on le restaure au lieu de laisser
+    // la section vide dans le store jusqu'au prochain rechargement.
+    const previousContent =
+      get().currentDocument?.sections.find((section) => section.id === sectionId)?.content ?? '';
+    let receivedText = false;
+
+    // Restaure le contenu pré-reset sur la section ciblée (utilisé UNIQUEMENT
+    // quand 0 caractère a été streamé - dès le 1er chunk reçu, le partiel
+    // accumulé fait foi, le backend l'ayant persisté de son côté).
+    const restorePreviousContent = (s: { currentDocument: DocumentDetail | null }) =>
+      s.currentDocument
+        ? patchSection(s.currentDocument, sectionId, (section) => ({ ...section, content: previousContent }))
+        : s.currentDocument;
+
     // Finding A : reset du contenu de la section ciblée AVANT toute
     // consommation du stream (retouche ET première rédaction) - le backend
     // émet des deltas et remplace `content` par l'accumulé côté base, le
@@ -312,6 +349,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     try {
       for await (const chunk of apiDraftSection(sectionId, instruction, controller.signal)) {
         if (chunk.type === 'text') {
+          receivedText = true;
           const delta = chunk.content ?? '';
           set((s) => {
             if (!s.currentDocument) return s;
@@ -326,8 +364,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         } else if (chunk.type === 'error') {
           // Le contenu déjà streamé depuis CE démarrage (chunks 'text'
           // précédents) reste en l'état - le backend l'a lui-même persisté,
-          // zéro perte.
-          set({ isStreaming: false, error: chunk.content || 'Erreur pendant la rédaction.' });
+          // zéro perte. Erreur AVANT tout chunk texte : le backend n'a rien
+          // flushé, on restaure le contenu pré-reset (sinon l'éditeur
+          // afficherait vide alors que la base garde l'ancien contenu).
+          set((s) => ({
+            isStreaming: false,
+            error: chunk.content || 'Erreur pendant la rédaction.',
+            currentDocument: receivedText ? s.currentDocument : restorePreviousContent(s),
+          }));
           return;
         } else if (chunk.type === 'done') {
           // Contenu canonique (sans bloc PISTES) + nouvelles pistes : on
@@ -350,7 +394,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         // côté (son propre `finally`). Rien à afficher, rien à écraser.
         return;
       }
-      set({ isStreaming: false, error: e?.message || 'Erreur réseau pendant la rédaction.' });
+      // Exception AVANT tout chunk texte (erreur réseau immédiate) : même
+      // logique que le chunk `error` en tête de flux - restaurer le contenu
+      // pré-reset (la base n'a rien reçu, elle garde l'ancien contenu).
+      set((s) => ({
+        isStreaming: false,
+        error: e?.message || 'Erreur réseau pendant la rédaction.',
+        currentDocument: receivedText ? s.currentDocument : restorePreviousContent(s),
+      }));
     } finally {
       if (draftAbortController === controller) {
         draftAbortController = null;

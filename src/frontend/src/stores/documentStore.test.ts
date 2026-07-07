@@ -135,6 +135,52 @@ describe('documentStore', () => {
       expect(getDocument).toHaveBeenCalledWith('d1');
       expect(useDocumentStore.getState().currentDocument?.sections).toHaveLength(1);
     });
+
+    // Résidu de revue lot D : deux openDocument entrelacés - la réponse
+    // TARDIVE du premier ne doit pas écraser le document du second (jeton
+    // d'ordonnancement module-scope, seule la réponse du dernier appel écrit).
+    it('deux openDocument entrelacés : la réponse tardive du premier n\'écrase pas le second', async () => {
+      let resolveA!: (v: DocumentDetail) => void;
+      let resolveB!: (v: DocumentDetail) => void;
+      vi.mocked(getDocument)
+        .mockImplementationOnce(() => new Promise<DocumentDetail>((r) => { resolveA = r; }))
+        .mockImplementationOnce(() => new Promise<DocumentDetail>((r) => { resolveB = r; }));
+
+      const pA = useDocumentStore.getState().openDocument('dA');
+      const pB = useDocumentStore.getState().openDocument('dB');
+
+      // B (le plus récent) résout EN PREMIER : il écrit currentDocument.
+      resolveB(makeDetail({ id: 'dB', title: 'Document B' }));
+      await pB;
+      expect(useDocumentStore.getState().currentDocument?.id).toBe('dB');
+      expect(useDocumentStore.getState().isLoading).toBe(false);
+
+      // A (périmé) résout APRÈS : il ne doit RIEN écrire.
+      resolveA(makeDetail({ id: 'dA', title: 'Document A' }));
+      await pA;
+      expect(useDocumentStore.getState().currentDocument?.id).toBe('dB');
+      expect(useDocumentStore.getState().isLoading).toBe(false);
+    });
+
+    it('un openDocument périmé qui ÉCHOUE ne pose pas non plus d\'erreur (le plus récent gère l\'état)', async () => {
+      let rejectA!: (e: Error) => void;
+      let resolveB!: (v: DocumentDetail) => void;
+      vi.mocked(getDocument)
+        .mockImplementationOnce(() => new Promise<DocumentDetail>((_r, rej) => { rejectA = rej; }))
+        .mockImplementationOnce(() => new Promise<DocumentDetail>((r) => { resolveB = r; }));
+
+      const pA = useDocumentStore.getState().openDocument('dA');
+      const pB = useDocumentStore.getState().openDocument('dB');
+
+      resolveB(makeDetail({ id: 'dB' }));
+      await pB;
+
+      rejectA(new Error('Impossible de contacter le serveur'));
+      await pA;
+
+      expect(useDocumentStore.getState().currentDocument?.id).toBe('dB');
+      expect(useDocumentStore.getState().error).toBeNull();
+    });
   });
 
   describe('createDocument', () => {
@@ -576,6 +622,51 @@ describe('documentStore', () => {
         await useDocumentStore.getState().draftSection('s1');
 
         expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Bonjour');
+      });
+
+      // Résidu de revue lot D : erreur AVANT le premier chunk texte - le
+      // backend n'a rien flushé (la base garde l'ancien contenu), le store
+      // doit RESTAURER le contenu pré-reset au lieu de laisser '' (sinon
+      // l'utilisateur voit son paragraphe disparaître jusqu'au rechargement).
+      it("chunk 'error' en tête de flux (0 chunk texte) sur une section rédigée : le contenu d'origine est restauré et l'erreur posée", async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({
+            id: 'd1',
+            sections: [makeSection({ id: 's1', content: 'Paragraphe déjà rédigé.', status: 'brouillon' })],
+          }),
+        });
+
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'error', content: 'Erreur du fournisseur IA pendant la rédaction : surcharge' };
+        });
+
+        await useDocumentStore.getState().draftSection('s1', 'Reprends tout');
+
+        const state = useDocumentStore.getState();
+        expect(state.currentDocument?.sections[0].content).toBe('Paragraphe déjà rédigé.');
+        expect(state.error).toBe('Erreur du fournisseur IA pendant la rédaction : surcharge');
+        expect(state.isStreaming).toBe(false);
+      });
+
+      it("exception réseau immédiate (0 chunk) sur une section rédigée : le contenu d'origine est restauré et l'erreur posée", async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({
+            id: 'd1',
+            sections: [makeSection({ id: 's1', content: 'Paragraphe déjà rédigé.', status: 'brouillon' })],
+          }),
+        });
+
+        // eslint-disable-next-line require-yield -- la fonction ne doit justement JAMAIS yield ici (échec avant tout chunk)
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          throw new Error('Impossible de contacter le serveur');
+        });
+
+        await useDocumentStore.getState().draftSection('s1', 'Reprends tout');
+
+        const state = useDocumentStore.getState();
+        expect(state.currentDocument?.sections[0].content).toBe('Paragraphe déjà rédigé.');
+        expect(state.error).toBe('Impossible de contacter le serveur');
+        expect(state.isStreaming).toBe(false);
       });
     });
 
