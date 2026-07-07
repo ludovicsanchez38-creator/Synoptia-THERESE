@@ -181,4 +181,20 @@ describe('DocumentsList', () => {
     expect(await within(dialog).findByText(/titre du document est requis/i)).toBeInTheDocument();
     expect(useDocumentStore.getState().createDocument).not.toHaveBeenCalled();
   });
+
+  it('état dégradé : si listProjects échoue, la modale affiche « Projets indisponibles » à la place du select', async () => {
+    // L'échec est loggé en console.error par la modale : neutralisé pour ne
+    // pas polluer la sortie du test.
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockListProjects.mockRejectedValue(new Error('backend indisponible'));
+
+    render(<DocumentsList />);
+    fireEvent.click(screen.getAllByRole('button', { name: /Nouveau document/i })[0]);
+    const dialog = await screen.findByRole('dialog', { name: /Nouveau document/i });
+
+    expect(await within(dialog).findByText(/Projets indisponibles/i)).toBeInTheDocument();
+    expect(within(dialog).queryByRole('combobox')).not.toBeInTheDocument();
+
+    consoleSpy.mockRestore();
+  });
 });

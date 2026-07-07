@@ -33,6 +33,9 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
   const [projectId, setProjectId] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  // État dégradé : l'API projets a échoué. Affiché discrètement à la place du
+  // select (le document reste créable sans projet lié) - pas d'échec muet.
+  const [projectsUnavailable, setProjectsUnavailable] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -47,6 +50,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
     setBrief('');
     setProjectId('');
     setFormError(null);
+    setProjectsUnavailable(false);
     clearError();
 
     let cancelled = false;
@@ -57,7 +61,10 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
       })
       .catch((err) => {
         console.error('Impossible de charger les projets :', err);
-        if (!cancelled) setProjects([]);
+        if (!cancelled) {
+          setProjects([]);
+          setProjectsUnavailable(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingProjects(false);
@@ -174,20 +181,26 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                   <Briefcase className="w-4 h-4" />
                   Projet lié (optionnel)
                 </label>
-                <select
-                  id="document-project"
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
-                  disabled={loadingProjects}
-                >
-                  <option value="">Aucun projet</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
+                {projectsUnavailable ? (
+                  <p className="px-4 py-2.5 bg-background/40 border border-border/40 rounded-lg text-sm text-text-muted">
+                    Projets indisponibles - le document sera créé sans projet lié.
+                  </p>
+                ) : (
+                  <select
+                    id="document-project"
+                    value={projectId}
+                    onChange={(e) => setProjectId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                    disabled={loadingProjects}
+                  >
+                    <option value="">Aucun projet</option>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {loadingProjects && (
                   <p className="text-xs text-text-muted flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" />

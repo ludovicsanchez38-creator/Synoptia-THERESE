@@ -1,4 +1,4 @@
-import { Settings, Mail, Calendar, CheckSquare, FileText, Users, Briefcase, Zap, Play, Home } from 'lucide-react';
+import { Settings, Mail, Calendar, CheckSquare, FileText, FileStack, Users, Briefcase, Zap, Play, Home } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { useChatStore } from '../../stores/chatStore';
@@ -16,6 +16,7 @@ interface ChatHeaderProps {
   onToggleInvoicesPanel?: () => void;
   onToggleCRMPanel?: () => void;
   onToggleProjectsPanel?: () => void;
+  onToggleDocumentsPanel?: () => void;
   onToggleBoardPanel?: () => void;
   onToggleAtelierPanel?: () => void;
 }
@@ -29,6 +30,7 @@ export function ChatHeader({
   onToggleInvoicesPanel,
   onToggleCRMPanel,
   onToggleProjectsPanel,
+  onToggleDocumentsPanel,
   onToggleBoardPanel,
   onToggleAtelierPanel,
 }: ChatHeaderProps) {
@@ -122,7 +124,7 @@ export function ChatHeader({
           </Button>
         </div>
 
-        {/* Navigation (6 boutons icônes) */}
+        {/* Navigation (7 boutons icônes, + Board en mode Contributeur) */}
         <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
         <Button
           variant="ghost"
@@ -183,6 +185,17 @@ export function ChatHeader({
           aria-label="Projets"
         >
           <Briefcase className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleDocumentsPanel}
+          className="w-8 h-8 hover:bg-accent-cyan/10"
+          title="Documents"
+          aria-label="Documents"
+        >
+          <FileStack className="w-4 h-4" />
         </Button>
 
         <Button
