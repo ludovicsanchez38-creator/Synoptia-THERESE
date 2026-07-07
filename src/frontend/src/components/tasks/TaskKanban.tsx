@@ -133,6 +133,7 @@ export function TaskKanban() {
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveTask(null)}
     >
       <div className="h-full flex gap-4 p-6 overflow-x-auto">
         {COLUMNS.map((column) => (
@@ -168,6 +169,7 @@ export function TaskKanban() {
             onClick={() => {}}
             onStatusChange={() => {}}
             isOverlay
+            showDragHandle
             maskTextFn={maskText}
           />
         )}
@@ -236,13 +238,23 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
     opacity: isDragging ? 0.4 : 1,
   };
 
+  // Même fix que le BUG-041 (ProjectsKanban) : les listeners couvrent toute
+  // la carte, pas seulement la poignée - sinon attraper la carte par son
+  // corps ne démarre aucun drag. Les clics simples (ouvrir, quick actions)
+  // restent distingués du drag par l'activationConstraint (distance 8px).
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="cursor-grab active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
       <TaskCard
         task={task}
         onClick={onClick}
         onStatusChange={onStatusChange}
-        dragListeners={listeners}
+        showDragHandle
         maskTextFn={maskTextFn}
       />
     </div>
@@ -258,11 +270,11 @@ interface TaskCardProps {
   onClick: () => void;
   onStatusChange: (newStatus: string) => void;
   isOverlay?: boolean;
-  dragListeners?: Record<string, unknown>;
+  showDragHandle?: boolean;
   maskTextFn?: (text: string) => string;
 }
 
-function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, maskTextFn }: TaskCardProps) {
+function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, maskTextFn }: TaskCardProps) {
   const [showActions, setShowActions] = useState(false);
 
   const priorityColors = {
@@ -285,18 +297,14 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, dragListeners, mas
       }`}
       onClick={onClick}
     >
-      {/* Drag Handle */}
-      {dragListeners && (
-        <div
-          className="absolute top-3 left-1 cursor-grab active:cursor-grabbing text-text-muted/40 hover:text-text-muted"
-          {...dragListeners}
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* Poignée (repère visuel : toute la carte est draggable) */}
+      {showDragHandle && (
+        <div className="absolute top-3 left-1 text-text-muted/40 hover:text-text-muted">
           <GripVertical className="w-4 h-4" />
         </div>
       )}
 
-      <div className={dragListeners ? 'pl-5' : ''}>
+      <div className={showDragHandle ? 'pl-5' : ''}>
         {/* Priority Badge */}
         <div className="flex items-center gap-2 mb-2">
           <span
