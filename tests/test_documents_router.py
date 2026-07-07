@@ -7,6 +7,9 @@ de la trame : un écart entre les ids reçus et les ids en base doit renvoyer
 409 SANS AUCUNE écriture (garde-fou anti-perte de données).
 """
 
+import json
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -213,6 +216,110 @@ class TestSections:
             json={"title": "X"},
         )
         assert response.status_code == 404
+
+
+class TestOutlineGeneration:
+    """POST /api/documents/{id}/outline - génération de trame via le LLM (mocké)."""
+
+    @pytest.mark.asyncio
+    async def test_outline_nominal_creates_sorted_sections(self, client: AsyncClient):
+        """Une réponse LLM lisible crée les sections triées, order 10/20/30, depths respectés."""
+        doc = await _create_document(client, title="Proposition ISOCUBE", brief="Formation Claude 2h30")
+
+        raw_outline = json.dumps(
+            [
+                {"title": "Contexte", "brief": "Poser le décor", "depth": 0},
+                {"title": "Détail", "brief": "Approfondir un point", "depth": 1},
+                {"title": "Conclusion", "brief": "Résumer et conclure", "depth": 0},
+            ]
+        )
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+            return_value=raw_outline,
+        ) as mock_generate:
+            response = await client.post(f"/api/documents/{doc['id']}/outline")
+
+        assert response.status_code == 200, response.text
+        mock_generate.assert_called_once()
+
+        sections = response.json()
+        assert len(sections) == 3
+        assert [s["title"] for s in sections] == ["Contexte", "Détail", "Conclusion"]
+        assert [s["order"] for s in sections] == [10.0, 20.0, 30.0]
+        assert [s["depth"] for s in sections] == [0, 1, 0]
+        assert all(s["status"] == "vide" for s in sections)
+        assert all(s["document_id"] == doc["id"] for s in sections)
+        # Les ids sont stables : uniques et posés une fois pour toutes.
+        assert len({s["id"] for s in sections}) == 3
+
+        # Persisté en base : GET retrouve la trame triée.
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        assert [s["title"] for s in detail.json()["sections"]] == [
+            "Contexte",
+            "Détail",
+            "Conclusion",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_outline_unreadable_llm_response_returns_502_and_creates_nothing(
+        self, client: AsyncClient
+    ):
+        """Une réponse LLM illisible -> 502 'trame illisible' et AUCUNE section créée."""
+        doc = await _create_document(client)
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+            return_value="ceci n'est pas du JSON du tout",
+        ):
+            response = await client.post(f"/api/documents/{doc['id']}/outline")
+
+        assert response.status_code == 502
+        assert "trame illisible" in response.json()["message"].lower()
+
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        assert detail.json()["sections"] == []
+        assert detail.json()["sections_total"] == 0
+
+    @pytest.mark.asyncio
+    async def test_outline_existing_non_empty_sections_returns_409_without_llm_call(
+        self, client: AsyncClient
+    ):
+        """Un document avec une section déjà rédigée -> 409, aucun appel LLM."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Section 1", order=0.0)
+        await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"content": "Contenu déjà rédigé."},
+        )
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+        ) as mock_generate:
+            response = await client.post(f"/api/documents/{doc['id']}/outline")
+
+        assert response.status_code == 409
+        mock_generate.assert_not_called()
+
+        # AUCUNE écriture : la section rédigée d'origine est intacte, pas de nouvelle section.
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        assert detail.json()["sections_total"] == 1
+        assert detail.json()["sections"][0]["content"] == "Contenu déjà rédigé."
+
+    @pytest.mark.asyncio
+    async def test_outline_document_not_found(self, client: AsyncClient):
+        """POST .../outline renvoie 404 si le document n'existe pas."""
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+        ) as mock_generate:
+            response = await client.post("/api/documents/id-inexistant/outline")
+
+        assert response.status_code == 404
+        mock_generate.assert_not_called()
 
 
 class TestSectionsReorderInvariant:

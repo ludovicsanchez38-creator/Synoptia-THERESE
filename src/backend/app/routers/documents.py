@@ -1,19 +1,23 @@
 """
 THÉRÈSE v2 - Documents Router
 
-CRUD pur de l'atelier documentaire : documents, sections, pistes.
-Aucun appel LLM ici (génération de trame, rédaction, export = tâches
-suivantes du plan - lots B et C).
+CRUD de l'atelier documentaire : documents, sections, pistes, et
+génération de trame via le LLM (rédaction et export = tâches suivantes
+du plan - lots B et C).
 
-L'invariant du design vit dans la réorganisation de la trame : l'ensemble
-des ids de sections reçus doit être EXACTEMENT l'ensemble des ids de
-sections non-orphelines en base, vérifié AVANT toute écriture. Un écart
-(id manquant ou inconnu) renvoie un 409 avec le détail, sans toucher à la
-moindre ligne - c'est le garde-fou anti-perte de données de la trame.
+L'invariant du design vit dans la réorganisation ET la génération de la
+trame : jamais de perte de travail déjà engagé. À la réorganisation,
+l'ensemble des ids de sections reçus doit être EXACTEMENT l'ensemble des
+ids de sections non-orphelines en base, vérifié AVANT toute écriture. Un
+écart (id manquant ou inconnu) renvoie un 409 avec le détail, sans toucher
+à la moindre ligne. À la génération de trame, la présence d'une seule
+section non vide (statut != 'vide' ou contenu non vide) bloque l'appel au
+LLM avec un 409 - aucune régénération silencieuse.
 """
 
 import logging
 from datetime import UTC, datetime
+from typing import cast
 
 from app.models.database import get_session
 from app.models.entities import Document, DocumentPiste, DocumentSection
@@ -26,6 +30,8 @@ from app.models.schemas_documents import (
     SectionsReorder,
     SectionUpdate,
 )
+from app.services.document_orchestrator import build_outline_prompt, parse_outline_response
+from app.services.llm import get_llm_service
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -257,6 +263,68 @@ async def create_section(
     await session.refresh(section)
 
     return _section_to_response(section)
+
+
+@router.post("/{document_id}/outline")
+async def generate_outline(
+    document_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> list[SectionResponse]:
+    """
+    Génère la trame (plan détaillé) d'un document via le LLM.
+
+    Garde-fou anti-régénération silencieuse : si le document a déjà des
+    sections non vides (statut différent de 'vide' OU contenu non vide),
+    refuse avec 409 SANS APPELER LE LLM - la création manuelle de section
+    reste possible pour compléter une trame existante.
+
+    Si la réponse du LLM est illisible (`parse_outline_response` lève
+    `ValueError`), répond 502 sans créer la moindre section.
+    """
+    document = await _get_document_or_404(session, document_id)
+
+    existing_result = await session.execute(
+        select(DocumentSection).where(DocumentSection.document_id == document_id)
+    )
+    existing_sections = existing_result.scalars().all()
+    if any(s.status != "vide" or s.content != "" for s in existing_sections):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ce document a déjà des sections rédigées - la génération de "
+                "trame ne peut pas les écraser. Crée une section manuellement "
+                "pour compléter la trame existante."
+            ),
+        )
+
+    llm_service = get_llm_service()
+    raw_response = await llm_service.generate_content(
+        prompt=build_outline_prompt(document.title, document.brief)
+    )
+
+    try:
+        parsed_sections = parse_outline_response(raw_response)
+    except ValueError:
+        raise HTTPException(status_code=502, detail="Trame illisible, réessaie.")
+
+    sections: list[DocumentSection] = []
+    for index, item in enumerate(parsed_sections):
+        section = DocumentSection(
+            document_id=document_id,
+            title=cast(str, item["title"]),
+            brief=cast(str, item["brief"]),
+            order=(index + 1) * 10.0,
+            depth=cast(int, item["depth"]),
+        )
+        session.add(section)
+        sections.append(section)
+
+    await session.commit()
+    for section in sections:
+        await session.refresh(section)
+
+    sections.sort(key=lambda s: s.order)
+    return [_section_to_response(s) for s in sections]
 
 
 @router.post("/{document_id}/sections/reorder", response_model=None)
