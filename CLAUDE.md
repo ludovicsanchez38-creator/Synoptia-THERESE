@@ -92,6 +92,8 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.27.0-alpha RELEASÉE le 08/07/2026** (PR #94 atelier documentaire + voix locale un clic + export conversations + directives inline + email/calendrier, build 3 OS OK, landing + latest.json à jour, app installée localement, rapport `docs/releases/v0.27.0-alpha.md`). Dette de l'atelier : section « Depuis atelier documentaire (07/07/2026) » ci-dessous. À valider en recette : geste drag & drop au doigt, boutons export dans l'app packagée, libellé « Trame non générée ».
+
 > **v0.24.5-alpha RELEASÉE le 14/06/2026** (12 P1 du rapport tests Syn 14/06, build 3 OS OK, landing + latest.json à jour, app installée localement, rapport `docs/releases/v0.24.5-alpha.md`). Détail des fixes + dette résiduelle : section « Depuis fixes P1 rapport Syn 14/06 » ci-dessous. À valider en réel : Gemini 3 + outils (A1), connexion OAuth Google, coûts/tokens affichés.
 
 > **v0.24.4-alpha RELEASÉE le 13/06/2026** (3 fixes testeurs du 12/06, build 3 OS OK, landing + latest.json à jour, rapport `docs/releases/v0.24.4-alpha.md`). BUG-108 (boucle lecture mails Mistral : message à tool_calls force `content=None` dans `_append_openai_tool_turn`), BUG-109 + boucle « connexion expirée » (403 calendrier reformulé sans « reconnecte » + helper `classifyCalendarError` qui désarme `needsReauth` sur un 403), BUG-107 (historique conv d'agent : `setConversationMessages` ne vide plus une conv non synced + garde sidebar). Dette restante :
