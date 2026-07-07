@@ -30,6 +30,9 @@ from app.routers.crm import router as crm_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.data import router as data_router
 
+# Atelier documentaire (design 07/07/2026)
+from app.routers.documents import router as documents_router
+
 # Phase 1-4 routers (ACTIVATED)
 from app.routers.email import router as email_router
 
@@ -94,4 +97,5 @@ __all__ = [
     "follow_ups_router",  # Email Backlog - Follow-ups
     "prompts_router",  # Bibliotheque de prompts
     "actions_router",  # Action Agents multi-etapes
+    "documents_router",  # Atelier documentaire
 ]
