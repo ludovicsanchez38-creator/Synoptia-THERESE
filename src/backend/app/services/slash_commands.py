@@ -10,6 +10,12 @@ Syntaxe :
   /contact Prenom Nom [email=... tel=... societe=... role=...]
   /projet Nom du projet [budget=1000 statut=active desc=...]
   /rdv Titre [date=2026-06-03T14:00]
+
+Directives inline (suggestion Dr_logic-3D, avril + 07/07/2026) : les memes
+commandes deterministes, insérables N'IMPORTE OU dans un prompt et cumulables :
+  [contact: Jean Dupont email=jean@exemple.fr]
+  [rdv: Point projet date=2026-07-10T14:00]
+Elles sont executees AVANT l'appel LLM ; le reste du message suit le flux normal.
 """
 
 import json
@@ -24,6 +30,54 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 DETERMINISTIC_COMMANDS = {"contact", "projet", "rdv"}
+
+# Alias acceptes dans les directives inline [action: ...]
+_INLINE_ALIASES = {
+    "contact": "contact",
+    "projet": "projet",
+    "project": "projet",
+    "rdv": "rdv",
+    "rendez-vous": "rdv",
+    "rendezvous": "rdv",
+    "evenement": "rdv",
+    "événement": "rdv",
+}
+
+# Directive inline [action: arguments] - action alphabetique, arguments sans ']'
+_INLINE_CMD = re.compile(r"\[([a-zà-ÿ-]+)\s*:\s*([^\]\n]*)\]", re.IGNORECASE)
+
+# Garde-fou anti-abus : au-dela, les directives suivantes sont ignorees
+MAX_INLINE_COMMANDS = 10
+
+
+def parse_inline_commands(message: str) -> tuple[str, list[tuple[str, str]]]:
+    """Extrait les directives inline [action: arguments] d'un message.
+
+    Seules les actions connues (_INLINE_ALIASES) sont extraites - un simple
+    « [note: penser à X] » dans un texte n'est PAS une directive et reste
+    intact dans le message.
+
+    Retourne (message nettoye, [(commande canonique, arguments), ...]).
+    """
+    if not message or "[" not in message:
+        return (message or "").strip(), []
+
+    commands: list[tuple[str, str]] = []
+
+    def _extract(m: re.Match[str]) -> str:
+        action = m.group(1).strip().lower()
+        canonical = _INLINE_ALIASES.get(action)
+        if canonical is None or len(commands) >= MAX_INLINE_COMMANDS:
+            return m.group(0)  # pas une directive connue : on laisse tel quel
+        commands.append((canonical, m.group(2).strip()))
+        return ""
+
+    cleaned = _INLINE_CMD.sub(_extract, message)
+    # Nettoyage des espaces laisses par les extractions
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"^[ \t]+$", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned, commands
 
 # Alias de cles -> nom canonique d'argument
 _KEY_ALIASES = {

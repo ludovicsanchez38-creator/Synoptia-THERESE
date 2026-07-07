@@ -136,6 +136,32 @@ class TestSlashCommands:
 
         assert response.status_code in [200, 400, 401, 404, 503]
 
+    @pytest.mark.asyncio
+    async def test_directive_inline_pure_sans_llm(self, client: AsyncClient):
+        """Directives inline [action: ...] seules : réponse déterministe, zéro appel LLM."""
+        response = await client.post("/api/chat/send", json={
+            "message": "[contact: Ines Testinline email=ines@test.fr]",
+            "stream": False,
+        })
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "Ines" in data["content"]
+        assert "créé" in data["content"] or "déjà en mémoire" in data["content"]
+
+    @pytest.mark.asyncio
+    async def test_directives_inline_multiples_cumulees(self, client: AsyncClient):
+        """Plusieurs directives dans un même message : toutes exécutées, confirmations listées."""
+        response = await client.post("/api/chat/send", json={
+            "message": "[contact: Paul Testinline]\n[projet: Chantier Testinline budget=1500]",
+            "stream": False,
+        })
+
+        assert response.status_code == 200
+        content = response.json()["content"]
+        assert "Paul" in content
+        assert "Chantier Testinline" in content
+
 
 class TestLLMProviders:
     """Tests for US-CHAT-01: Multiple LLM providers."""

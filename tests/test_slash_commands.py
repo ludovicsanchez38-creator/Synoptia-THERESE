@@ -9,8 +9,10 @@ s'executer en CRUD direct, sans LLM, sans creation en masse.
 import pytest
 from app.models.entities import Contact, Project
 from app.services.slash_commands import (
+    MAX_INLINE_COMMANDS,
     _split_positional_and_kwargs,
     execute_slash_command,
+    parse_inline_commands,
     parse_slash_command,
 )
 from sqlmodel import select
@@ -31,6 +33,48 @@ def test_parse_ignores_non_commands():
     assert parse_slash_command("/resume") is None  # commande non deterministe
     assert parse_slash_command("/inconnue truc") is None
     assert parse_slash_command("") is None
+
+
+# -------- Directives inline [action: ...] (Dr_logic-3D) --------
+
+def test_inline_extrait_une_directive_et_nettoie_le_message():
+    cleaned, cmds = parse_inline_commands(
+        "Prépare l'ordre du jour. [rdv: Point projet date=2026-07-10T14:00] Merci !"
+    )
+    assert cmds == [("rdv", "Point projet date=2026-07-10T14:00")]
+    assert "[rdv" not in cleaned
+    assert "Prépare l'ordre du jour." in cleaned
+    assert "Merci !" in cleaned
+
+
+def test_inline_directives_multiples_et_alias():
+    cleaned, cmds = parse_inline_commands(
+        "[contact: Jean Dupont email=j@d.fr]\n[rendez-vous: Kickoff date=2026-07-11T09:00]"
+    )
+    assert cmds == [
+        ("contact", "Jean Dupont email=j@d.fr"),
+        ("rdv", "Kickoff date=2026-07-11T09:00"),
+    ]
+    assert cleaned == ""  # message composé uniquement de directives
+
+
+def test_inline_ignore_les_crochets_non_directives():
+    msg = "Voir [note: penser à X] et [1] la référence [contact sans deux-points]"
+    cleaned, cmds = parse_inline_commands(msg)
+    assert cmds == []
+    assert cleaned == msg.strip()
+
+
+def test_inline_cap_anti_abus():
+    msg = "\n".join(f"[contact: Personne {i}]" for i in range(MAX_INLINE_COMMANDS + 5))
+    _cleaned, cmds = parse_inline_commands(msg)
+    assert len(cmds) == MAX_INLINE_COMMANDS
+
+
+def test_inline_message_sans_crochets_inchange():
+    cleaned, cmds = parse_inline_commands("Bonjour Thérèse, quel temps fait-il ?")
+    assert cmds == []
+    assert cleaned == "Bonjour Thérèse, quel temps fait-il ?"
 
 
 # -------- Parsing arguments --------

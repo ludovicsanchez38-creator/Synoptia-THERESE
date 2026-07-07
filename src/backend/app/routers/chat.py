@@ -44,7 +44,11 @@ from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
-from app.services.slash_commands import execute_slash_command, parse_slash_command
+from app.services.slash_commands import (
+    execute_slash_command,
+    parse_inline_commands,
+    parse_slash_command,
+)
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     pop_pending,
@@ -642,13 +646,83 @@ async def send_message(
             created_at=assistant_message.created_at,
         )
 
+    # Directives inline [action: arguments] (suggestion Dr_logic-3D) : les mêmes
+    # commandes déterministes, insérables n'importe où dans le prompt et
+    # cumulables. Exécutées AVANT le LLM ; leurs confirmations s'affichent en
+    # tête de réponse et le LLM est informé de ce qui est déjà fait.
+    inline_preamble = ""
+    actions_context: str | None = None
+    llm_user_message = request.message
+    cleaned_message, inline_cmds = parse_inline_commands(request.message)
+    if inline_cmds:
+        confirmations = [
+            await execute_slash_command(name, rest, session)
+            for name, rest in inline_cmds
+        ]
+        inline_block = (
+            "\n".join(f"- {c}" for c in confirmations)
+            if len(confirmations) > 1
+            else confirmations[0]
+        )
+
+        if not cleaned_message:
+            # Message composé uniquement de directives : réponse déterministe pure
+            assistant_message = Message(
+                conversation_id=conversation.id,
+                role="assistant",
+                content=inline_block,
+                model="commande-deterministe",
+            )
+            session.add(assistant_message)
+            await session.commit()
+
+            if request.stream:
+                async def _inline_stream() -> AsyncGenerator[str, None]:
+                    text_chunk = StreamChunk(
+                        type="text", content=inline_block, conversation_id=conversation.id
+                    )
+                    yield f"data: {json.dumps(text_chunk.model_dump())}\n\n"
+                    done_chunk = StreamChunk(
+                        type="done",
+                        content="",
+                        conversation_id=conversation.id,
+                        message_id=assistant_message.id,
+                    )
+                    yield f"data: {json.dumps(done_chunk.model_dump())}\n\n"
+
+                return StreamingResponse(
+                    _inline_stream(),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Accel-Buffering": "no",
+                    },
+                )
+
+            return ChatResponse(
+                id=assistant_message.id,
+                conversation_id=conversation.id,
+                content=inline_block,
+                created_at=assistant_message.created_at,
+            )
+
+        # Message mixte : le LLM reçoit le message nettoyé + le récap des actions
+        inline_preamble = inline_block + "\n\n"
+        llm_user_message = cleaned_message
+        actions_context = (
+            "ACTIONS DÉJÀ EXÉCUTÉES par des commandes déterministes (confirmées, "
+            "ne PAS les refaire ni les remettre en question) :\n" + inline_block
+        )
+
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
             _stream_response(
-                conversation.id, request.message, session, history,
+                conversation.id, llm_user_message, session, history,
                 skill_id=request.skill_id, file_paths=request.file_paths,
                 disable_tools=request.disable_tools,
+                preamble=inline_preamble, actions_context=actions_context,
             ),
             media_type="text/event-stream",
             headers={
@@ -660,7 +734,7 @@ async def send_message(
 
     # Non-streaming response using LLM service
     llm_service = get_llm_service()
-    messages = history + [LLMMessage(role="user", content=request.message)]
+    messages = history + [LLMMessage(role="user", content=llm_user_message)]
 
     # SEC : appliquer le filtre anti-injection AUSSI sur le chemin non-stream.
     # Il n'etait applique que dans _stream_response -> en stream=false, le prompt
@@ -713,6 +787,12 @@ async def send_message(
         else:
             memory_context = file_context_str
 
+    # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
+    if actions_context:
+        memory_context = (
+            f"{actions_context}\n\n{memory_context}" if memory_context else actions_context
+        )
+
     context = llm_service.prepare_context(messages, memory_context=memory_context)
 
     # Collect full response (non-streaming)
@@ -730,6 +810,10 @@ async def send_message(
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
     assistant_content = convert_markdown_tables_to_bullets(assistant_content)
+
+    # Confirmations des directives inline en tête de réponse (vérité d'exécution)
+    if inline_preamble:
+        assistant_content = inline_preamble + assistant_content
 
     # BUG-027 : suivi des tokens sur le chemin non-stream (etait absent -> le
     # token tracker restait aveugle et tokens_in/out remontaient null).
@@ -778,6 +862,8 @@ async def _stream_response(
     skill_id: str | None = None,
     file_paths: list[str] | None = None,
     disable_tools: bool = False,
+    preamble: str = "",
+    actions_context: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -788,6 +874,7 @@ async def _stream_response(
             conversation_id, user_message, session, history,
             skill_id=skill_id, file_paths=file_paths,
             disable_tools=disable_tools,
+            preamble=preamble, actions_context=actions_context,
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -806,6 +893,8 @@ async def _do_stream_response(
     skill_id: str | None = None,
     file_paths: list[str] | None = None,
     disable_tools: bool = False,
+    preamble: str = "",
+    actions_context: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}
@@ -893,6 +982,12 @@ async def _do_stream_response(
         else:
             memory_context = file_context_str
 
+    # Directives inline déjà exécutées : le LLM doit le savoir (pas de re-création)
+    if actions_context:
+        memory_context = (
+            f"{actions_context}\n\n{memory_context}" if memory_context else actions_context
+        )
+
     context = llm_service.prepare_context(messages, memory_context=memory_context)
 
     # Injecter le system prompt du skill si skill_id fourni (Phase 1 v0.2.4)
@@ -965,6 +1060,14 @@ async def _do_stream_response(
         context.system_prompt += capabilities
 
     full_content = ""
+    # Confirmations des directives inline [action: ...] : émises en tête de
+    # réponse (vérité d'exécution) et incluses dans le contenu sauvegardé.
+    if preamble:
+        full_content = preamble
+        preamble_chunk = StreamChunk(
+            type="text", content=preamble, conversation_id=conversation_id
+        )
+        yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
     tool_calls_collected: list[ToolCall] = []
     max_tool_iterations = 5  # Prevent infinite tool loops
 
