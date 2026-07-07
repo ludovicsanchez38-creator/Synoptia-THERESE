@@ -11,6 +11,7 @@ import json
 import pytest
 from app.models.entities import Document, DocumentSection
 from app.services.document_orchestrator import (
+    assemble_markdown,
     build_outline_prompt,
     build_section_context,
     build_summary_prompt,
@@ -497,3 +498,173 @@ class TestParseDraftOutput:
         content, pistes = parse_draft_output(raw)
         assert content == "Contenu de la section."
         assert pistes == ["Piste avec tiret", "Piste sans tiret"]
+
+
+# =============================================================================
+# assemble_markdown (Lot C, tâche C1)
+# =============================================================================
+
+
+class TestAssembleMarkdown:
+    """Fonction pure d'assemblage du markdown complet d'un document."""
+
+    def _document(self) -> Document:
+        return Document(id="doc-1", title="Guide financement", brief="Brief du besoin.")
+
+    def test_titre_document_en_h1(self):
+        document = self._document()
+        markdown = assemble_markdown(document, [])
+        assert markdown.startswith("# Guide financement")
+
+    def test_ordre_et_profondeurs_respectes(self):
+        """3 sections, ordre volontairement mélangé en entrée - la sortie
+        doit suivre `order`, pas l'ordre de la liste passée, avec ## pour
+        depth 0 et ### pour depth 1."""
+        document = self._document()
+        sections = [
+            DocumentSection(
+                id="s3",
+                document_id="doc-1",
+                title="Conclusion",
+                order=30.0,
+                depth=0,
+                content="Le mot de la fin.",
+            ),
+            DocumentSection(
+                id="s1",
+                document_id="doc-1",
+                title="Contexte",
+                order=10.0,
+                depth=0,
+                content="Le décor est posé.",
+            ),
+            DocumentSection(
+                id="s2",
+                document_id="doc-1",
+                title="Détail du financement bancaire",
+                order=20.0,
+                depth=1,
+                content="Le prêt bancaire classique.",
+            ),
+        ]
+
+        markdown = assemble_markdown(document, sections)
+
+        assert "## Contexte" in markdown
+        assert "### Détail du financement bancaire" in markdown
+        assert "## Conclusion" in markdown
+        # L'ordre de sortie suit `order`, pas l'ordre de la liste en entrée.
+        assert markdown.index("## Contexte") < markdown.index(
+            "### Détail du financement bancaire"
+        )
+        assert markdown.index("### Détail du financement bancaire") < markdown.index(
+            "## Conclusion"
+        )
+        # Le contenu de chaque section suit son titre.
+        assert "Le décor est posé." in markdown
+        assert "Le prêt bancaire classique." in markdown
+        assert "Le mot de la fin." in markdown
+
+    def test_section_orpheline_non_vide_en_annexe_pas_dans_le_corps(self):
+        document = self._document()
+        sections = [
+            DocumentSection(
+                id="s1",
+                document_id="doc-1",
+                title="Contexte",
+                order=10.0,
+                depth=0,
+                content="Contenu du corps.",
+                orphan=False,
+            ),
+            DocumentSection(
+                id="s2",
+                document_id="doc-1",
+                title="Ancienne section détachée",
+                order=20.0,
+                depth=0,
+                content="Contenu détaché mais toujours présent.",
+                orphan=True,
+            ),
+        ]
+
+        markdown = assemble_markdown(document, sections)
+
+        assert "Annexe - sections détachées" in markdown
+        assert "Ancienne section détachée" in markdown
+        assert "Contenu détaché mais toujours présent." in markdown
+        # L'orpheline est bien APRÈS l'annexe (hors du corps), pas mélangée
+        # aux sections du corps qui la précèdent dans le document.
+        assert markdown.index("Annexe - sections détachées") > markdown.index("## Contexte")
+        assert markdown.index("Ancienne section détachée") > markdown.index(
+            "Annexe - sections détachées"
+        )
+
+    def test_section_orpheline_vide_exclue_partout(self):
+        """Une orpheline restée vide n'apparaît NI dans le corps NI en
+        annexe - il n'y a rien à préserver."""
+        document = self._document()
+        sections = [
+            DocumentSection(
+                id="s1",
+                document_id="doc-1",
+                title="Contexte",
+                order=10.0,
+                depth=0,
+                content="Contenu du corps.",
+                orphan=False,
+            ),
+            DocumentSection(
+                id="s2",
+                document_id="doc-1",
+                title="Orpheline vide",
+                order=20.0,
+                depth=0,
+                content="",
+                orphan=True,
+            ),
+        ]
+
+        markdown = assemble_markdown(document, sections)
+
+        assert "Orpheline vide" not in markdown
+        assert "Annexe" not in markdown
+
+    def test_aucune_annexe_sans_orpheline_non_vide(self):
+        """Pas de section « Annexe » du tout quand il n'y a aucune
+        orpheline non vide (même si des orphelines vides existent)."""
+        document = self._document()
+        sections = [
+            DocumentSection(
+                id="s1",
+                document_id="doc-1",
+                title="Contexte",
+                order=10.0,
+                depth=0,
+                content="Contenu du corps.",
+                orphan=False,
+            ),
+        ]
+
+        markdown = assemble_markdown(document, sections)
+        assert "Annexe" not in markdown
+
+    def test_section_non_orpheline_vide_reste_dans_le_corps(self):
+        """Une section non-orpheline vide (trame pas encore rédigée) garde
+        sa place dans le corps (titre affiché), contrairement à une
+        orpheline vide qui disparaît complètement."""
+        document = self._document()
+        sections = [
+            DocumentSection(
+                id="s1",
+                document_id="doc-1",
+                title="Section pas encore rédigée",
+                order=10.0,
+                depth=0,
+                content="",
+                orphan=False,
+            ),
+        ]
+
+        markdown = assemble_markdown(document, sections)
+        assert "## Section pas encore rédigée" in markdown

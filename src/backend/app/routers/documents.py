@@ -2,17 +2,19 @@
 THÉRÈSE v2 - Documents Router
 
 CRUD de l'atelier documentaire : documents, sections, pistes, génération
-de trame, rédaction en streaming SSE et validation d'une section via le
-LLM (export = tâche suivante du plan - lot C).
+de trame, rédaction en streaming SSE, validation d'une section via le LLM
+et export md/docx (assemblage : `app.services.document_orchestrator.assemble_markdown`).
 
-L'invariant du design vit dans la réorganisation ET la génération de la
-trame : jamais de perte de travail déjà engagé. À la réorganisation,
-l'ensemble des ids de sections reçus doit être EXACTEMENT l'ensemble des
-ids de sections non-orphelines en base, vérifié AVANT toute écriture. Un
-écart (id manquant ou inconnu) renvoie un 409 avec le détail, sans toucher
-à la moindre ligne. À la génération de trame, la présence d'une seule
-section non vide (statut != 'vide' ou contenu non vide) bloque l'appel au
-LLM avec un 409 - aucune régénération silencieuse.
+L'invariant du design vit dans la réorganisation, la génération de trame
+ET l'export. À la réorganisation, l'ensemble des ids de sections reçus
+doit être EXACTEMENT l'ensemble des ids de sections non-orphelines en
+base, vérifié AVANT toute écriture. Un écart (id manquant ou inconnu)
+renvoie un 409 avec le détail, sans toucher à la moindre ligne. À la
+génération de trame, la présence d'une seule section non vide (statut !=
+'vide' ou contenu non vide) bloque l'appel au LLM avec un 409 - aucune
+régénération silencieuse. À l'export, la trame est lue UNE SEULE FOIS et
+cette lecture alimente à la fois la vérification de complétude et
+l'assemblage - jamais deux lectures qui pourraient diverger.
 """
 
 import json
@@ -34,6 +36,7 @@ from app.models.schemas_documents import (
     SectionUpdate,
 )
 from app.services.document_orchestrator import (
+    assemble_markdown,
     build_outline_prompt,
     build_section_context,
     build_summary_prompt,
@@ -707,6 +710,110 @@ async def update_piste_status(
     await session.refresh(piste)
 
     return _piste_to_response(piste)
+
+
+# =============================================================================
+# EXPORT (lot C, tâche C1)
+# =============================================================================
+# NB routage : /{document_id}/export a deux segments de chemin, donc ne
+# risque déjà aucune collision avec /{document_id} (un seul segment) -
+# déclarée avant quand même, par cohérence avec la convention du fichier
+# (chemins spécifiques avant les chemins génériques).
+
+
+@router.get("/{document_id}/export")
+async def export_document(
+    document_id: str,
+    format: str = "md",
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    """
+    Exporte un document en fichier téléchargeable (md ou docx).
+
+    Réutilise TEL QUEL le circuit d'export des conversations
+    (`chat.py::export_conversation`, commit e6c25b1) : le markdown assemblé
+    est écrit directement dans `registry.output_dir` (format md) ou passé à
+    `registry.execute("docx-pro", ...)` (format docx), téléchargement via
+    `GET /api/skills/download/{file_id}` dans les deux cas.
+
+    Invariant de complétude (même principe que `reorder_sections` plus
+    haut) : la trame est lue UNE SEULE FOIS (`sections` ci-dessous) et
+    c'est CETTE lecture qui alimente à la fois la vérification et
+    `assemble_markdown` - jamais une deuxième requête qui pourrait diverger
+    de la première. Contrairement à la réorganisation (qui compare à un
+    ensemble d'ids reçu du client), la seule source d'ids possible ici est
+    la base elle-même : le garde-fou est donc structurel (single-read),
+    pas un scénario de désaccord réel à ce stade du design.
+
+    Document sans aucune section non-orpheline non vide -> 400 (« rien à
+    exporter »). Format inconnu -> 400.
+    """
+    from app.services.skills import get_skills_registry
+    from app.services.skills.base import SkillExecuteRequest
+
+    fmt = (format or "md").lower()
+    if fmt not in ("md", "docx"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Format non supporté : {fmt}. Formats disponibles : md, docx.",
+        )
+
+    document = await _get_document_or_404(session, document_id)
+
+    sections_result = await session.execute(
+        select(DocumentSection)
+        .where(DocumentSection.document_id == document_id)
+        .order_by(DocumentSection.order)
+    )
+    sections = list(sections_result.scalars().all())
+
+    non_orphan_with_content = [s for s in sections if not s.orphan and s.content.strip()]
+    if not non_orphan_with_content:
+        raise HTTPException(
+            status_code=400,
+            detail="Document vide : rien à exporter.",
+        )
+
+    markdown = assemble_markdown(document, sections)
+    registry = get_skills_registry()
+
+    if fmt == "docx":
+        resp = await registry.execute(
+            "docx-pro",
+            SkillExecuteRequest(prompt=document.title, title=document.title),
+            markdown,
+        )
+        if not resp.success:
+            raise HTTPException(
+                status_code=500, detail=f"Échec de l'export Word : {resp.error}"
+            )
+        return {
+            "success": True,
+            "format": "docx",
+            "file_name": resp.file_name,
+            "download_url": resp.download_url,
+        }
+
+    # Markdown : fichier écrit directement dans le dossier des documents
+    # générés (même convention de nommage {titre}_{id8}.md que
+    # export_conversation, retrouvé par le download endpoint via glob même
+    # sans cache).
+    from uuid import uuid4
+
+    file_id = str(uuid4())
+    safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in document.title)[
+        :50
+    ].strip()
+    file_name = f"{safe_title}_{file_id[:8]}.md"
+    output_path = registry.output_dir / file_name
+    output_path.write_text(markdown, encoding="utf-8")
+
+    return {
+        "success": True,
+        "format": "md",
+        "file_name": file_name,
+        "download_url": f"/api/skills/download/{file_id}",
+    }
 
 
 # =============================================================================

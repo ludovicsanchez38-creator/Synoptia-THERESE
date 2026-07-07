@@ -523,3 +523,179 @@ class TestPistes:
             json={"status": "exploree"},
         )
         assert response.status_code == 404
+
+
+class TestExport:
+    """GET /api/documents/{id}/export - réutilise TEL QUEL le circuit des
+    documents générés (chat.py::export_conversation) : md écrit dans
+    registry.output_dir, docx via registry.execute("docx-pro", ...),
+    téléchargement via /api/skills/download/{file_id}."""
+
+    @pytest.mark.asyncio
+    async def test_export_markdown_titres_dans_l_ordre_et_telechargement_reel(
+        self, client: AsyncClient
+    ):
+        """3 sections (profondeurs mêlées, ordre non trivial) -> le fichier
+        réellement téléchargé contient les titres dans l'ordre `order`,
+        avec ## pour depth 0 et ### pour depth 1."""
+        doc = await _create_document(client, title="Guide export", brief="Brief du besoin")
+        intro = await _create_section(client, doc["id"], "Introduction", order=10.0, depth=0)
+        detail = await _create_section(
+            client, doc["id"], "Détail bancaire", order=20.0, depth=1
+        )
+        conclusion = await _create_section(client, doc["id"], "Conclusion", order=30.0, depth=0)
+        await client.patch(
+            f"/api/documents/sections/{intro['id']}",
+            json={"content": "Contenu de l'introduction."},
+        )
+        await client.patch(
+            f"/api/documents/sections/{detail['id']}",
+            json={"content": "Contenu du détail bancaire."},
+        )
+        await client.patch(
+            f"/api/documents/sections/{conclusion['id']}",
+            json={"content": "Contenu de la conclusion."},
+        )
+
+        response = await client.get(f"/api/documents/{doc['id']}/export?format=md")
+
+        assert response.status_code == 200, response.text
+        data = response.json()
+        assert data["success"] is True
+        assert data["format"] == "md"
+        assert data["file_name"].endswith(".md")
+
+        # Le fichier est servi par le circuit des documents générés (round-trip réel).
+        download = await client.get(data["download_url"])
+        assert download.status_code == 200
+        text = download.text
+
+        assert text.startswith("# Guide export")
+        assert "## Introduction" in text
+        assert "### Détail bancaire" in text
+        assert "## Conclusion" in text
+        assert "Contenu de l'introduction." in text
+        assert "Contenu du détail bancaire." in text
+        assert "Contenu de la conclusion." in text
+        # Ordre respecté : Introduction < Détail bancaire < Conclusion.
+        assert text.index("## Introduction") < text.index("### Détail bancaire")
+        assert text.index("### Détail bancaire") < text.index("## Conclusion")
+
+    @pytest.mark.asyncio
+    async def test_export_section_orpheline_non_vide_en_annexe_pas_dans_le_corps(
+        self, client: AsyncClient, db_session
+    ):
+        """Une section orpheline non vide n'apparaît jamais dans le corps du
+        document exporté, mais reste récupérable en annexe (zéro perte)."""
+        from app.models.entities import DocumentSection
+
+        doc = await _create_document(client)
+        body_section = await _create_section(client, doc["id"], "Corps", order=10.0)
+        await client.patch(
+            f"/api/documents/sections/{body_section['id']}",
+            json={"content": "Contenu du corps."},
+        )
+
+        orphan_section = await _create_section(
+            client, doc["id"], "Ancienne section détachée", order=20.0
+        )
+        await client.patch(
+            f"/api/documents/sections/{orphan_section['id']}",
+            json={"content": "Contenu détaché mais toujours présent."},
+        )
+
+        # Aucune route ne pose encore orphan=True (régénération de trame
+        # actuelle = remplacement, jamais détachement) - manipulation directe
+        # en base, seul moyen de fabriquer ce cas pour l'instant.
+        row = await db_session.get(DocumentSection, orphan_section["id"])
+        row.orphan = True
+        db_session.add(row)
+        await db_session.commit()
+
+        response = await client.get(f"/api/documents/{doc['id']}/export?format=md")
+        assert response.status_code == 200, response.text
+
+        download = await client.get(response.json()["download_url"])
+        text = download.text
+
+        assert "Annexe - sections détachées" in text
+        assert "Ancienne section détachée" in text
+        assert "Contenu détaché mais toujours présent." in text
+        # Pas dans le corps : le titre orphelin n'apparaît qu'APRÈS l'annexe.
+        assert text.index("## Corps") < text.index("Annexe - sections détachées")
+        assert text.index("Annexe - sections détachées") < text.index(
+            "Ancienne section détachée"
+        )
+
+    @pytest.mark.asyncio
+    async def test_export_document_vide_400(self, client: AsyncClient):
+        """Document sans aucune section non-orpheline non vide -> 400."""
+        doc = await _create_document(client)
+        # Une section existe mais reste vide (statut 'vide', contenu "").
+        await _create_section(client, doc["id"], "Section jamais rédigée", order=10.0)
+
+        response = await client.get(f"/api/documents/{doc['id']}/export?format=md")
+
+        assert response.status_code == 400
+        assert "rien à exporter" in response.json()["message"].lower()
+
+    @pytest.mark.asyncio
+    async def test_export_document_sans_aucune_section_400(self, client: AsyncClient):
+        """Document sans la moindre section -> 400 également."""
+        doc = await _create_document(client)
+
+        response = await client.get(f"/api/documents/{doc['id']}/export?format=md")
+
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_export_format_inconnu_400(self, client: AsyncClient):
+        """Format inconnu -> 400, avant même la résolution du document."""
+        response = await client.get("/api/documents/nimporte/export?format=pdf")
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_export_document_inexistant_404(self, client: AsyncClient):
+        response = await client.get("/api/documents/id-inexistant/export?format=md")
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_export_docx_round_trip_reel(self, client: AsyncClient):
+        """Le format docx passe par registry.execute("docx-pro", ...). Sans
+        bloc de code Python dans le markdown assemblé, CodeGenSkill.execute()
+        ne tente AUCUN appel LLM : extract_python_code() ne trouve rien,
+        retombe directement sur _fallback_execute() (parser markdown ->
+        python-docx, 100% local) - ce chemin est donc exerçable réellement
+        en test, sans mock. Le registre de skills n'étant initialisé nulle
+        part ailleurs dans cette suite (lifespan de test minimal, cf
+        conftest.py - même constat que test_routers_skills.py), on
+        l'initialise ici et on le referme en finally pour ne pas polluer le
+        reste de la suite (le registre est un singleton de module)."""
+        from app.services.skills import close_skills, init_skills
+
+        await init_skills()
+        try:
+            doc = await _create_document(client, title="Guide export docx")
+            section = await _create_section(client, doc["id"], "Corps", order=10.0)
+            await client.patch(
+                f"/api/documents/sections/{section['id']}",
+                json={"content": "Contenu du corps pour le docx."},
+            )
+
+            response = await client.get(f"/api/documents/{doc['id']}/export?format=docx")
+
+            assert response.status_code == 200, response.text
+            data = response.json()
+            assert data["success"] is True
+            assert data["format"] == "docx"
+            assert data["file_name"].endswith(".docx")
+
+            download = await client.get(data["download_url"])
+            assert download.status_code == 200
+            assert (
+                download.headers["content-type"]
+                == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+            assert len(download.content) > 0
+        finally:
+            await close_skills()

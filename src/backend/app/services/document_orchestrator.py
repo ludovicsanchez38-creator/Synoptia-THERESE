@@ -292,3 +292,53 @@ def parse_draft_output(raw: str) -> tuple[str, list[str]]:
             pistes.append(piste)
 
     return content, pistes
+
+
+# =============================================================================
+# Assemblage export (lot C, tâche C1)
+# =============================================================================
+
+
+def assemble_markdown(document: "Document", sections: list["DocumentSection"]) -> str:
+    """Assemble le markdown complet d'un document depuis sa trame.
+
+    Titre du document en `#` en tête. Les sections NON-orphelines sont
+    triées par `order` et titrées `##` (depth 0) / `###` (depth 1, et plus
+    profond pour une hiérarchie future) - le corps du document.
+
+    Les sections orphelines (détachées d'une régénération de trame, jamais
+    supprimées automatiquement - cf `DocumentSection.orphan`) sont EXCLUES
+    du corps : elles ne représentent plus la trame actuelle. Zéro perte de
+    contenu pour autant - si une section orpheline contient du texte, elle
+    est listée dans une annexe finale (« Annexe - sections détachées »),
+    à part du corps, pour qu'un auteur puisse la retrouver et la reprendre
+    consciemment sans qu'elle pollue le document courant. Une section
+    orpheline restée vide n'apparaît NULLE PART (ni corps, ni annexe) - il
+    n'y a rien à préserver.
+    """
+    body_sections = sorted((s for s in sections if not s.orphan), key=lambda s: s.order)
+    orphan_sections = sorted(
+        (s for s in sections if s.orphan and s.content.strip()),
+        key=lambda s: s.order,
+    )
+
+    lines: list[str] = [f"# {document.title}", ""]
+
+    for section in body_sections:
+        marker = "#" * (section.depth + 2)
+        lines.append(f"{marker} {section.title}")
+        lines.append("")
+        if section.content.strip():
+            lines.append(section.content.strip())
+            lines.append("")
+
+    if orphan_sections:
+        lines.append("## Annexe - sections détachées")
+        lines.append("")
+        for section in orphan_sections:
+            lines.append(f"### {section.title}")
+            lines.append("")
+            lines.append(section.content.strip())
+            lines.append("")
+
+    return "\n".join(lines).strip() + "\n"
