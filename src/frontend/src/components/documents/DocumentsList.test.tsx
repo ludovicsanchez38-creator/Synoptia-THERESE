@@ -212,6 +212,33 @@ describe('DocumentsList', () => {
     expect(useDocumentStore.getState().clearCreateModalRequest).toHaveBeenCalledTimes(1);
   });
 
+  it('modale ⌘K fantôme (revue finale, finding minor 4) : createModalRequested pendant que l\'atelier est ouvert efface le drapeau SANS afficher la modale, et elle ne surgit pas au retour à la liste', async () => {
+    useDocumentStore.setState({
+      documents: [makeDocument({ id: 'doc-42', title: 'Rapport annuel' })],
+    });
+
+    const { rerender } = render(<DocumentsList />);
+    fireEvent.click(screen.getByText('Rapport annuel'));
+    expect(screen.getByTestId('document-workspace-mock')).toBeInTheDocument();
+
+    // Simule une requête ⌘K « Nouveau document » déclenchée pendant que
+    // l'atelier est affiché (le store n'est pas réactif dans ce mock -
+    // rerender force DocumentsList à relire l'état frais).
+    useDocumentStore.setState({ createModalRequested: true });
+    rerender(<DocumentsList />);
+
+    // Rien ne s'affiche pendant que l'atelier est ouvert (pas de dialog) ET
+    // le drapeau est bien consommé (pas laissé en attente).
+    expect(screen.queryByRole('dialog', { name: /Nouveau document/i })).not.toBeInTheDocument();
+    expect(useDocumentStore.getState().clearCreateModalRequest).toHaveBeenCalledTimes(1);
+    expect(useDocumentStore.getState().createModalRequested).toBe(false);
+
+    // Retour à la liste : la modale ne doit PAS surgir après coup.
+    fireEvent.click(screen.getByRole('button', { name: /Retour \(mock atelier\)/i }));
+    expect(screen.getByTestId('documents-list')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /Nouveau document/i })).not.toBeInTheDocument();
+  });
+
   it('état dégradé : si listProjects échoue, la modale affiche « Projets indisponibles » à la place du select', async () => {
     // L'échec est loggé en console.error par la modale : neutralisé pour ne
     // pas polluer la sortie du test.

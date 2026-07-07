@@ -12,6 +12,7 @@ Le provider LLM est mocké au niveau de `LLMService.stream_response` /
 """
 
 import json
+from datetime import datetime
 from typing import AsyncGenerator
 from unittest.mock import AsyncMock, patch
 
@@ -34,6 +35,12 @@ async def _create_section(
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+async def _document_updated_at(client: AsyncClient, document_id: str) -> datetime:
+    response = await client.get(f"/api/documents/{document_id}")
+    assert response.status_code == 200, response.text
+    return datetime.fromisoformat(response.json()["updated_at"])
 
 
 def _fake_stream_response(chunks: list[str], then_raise: Exception | None = None):
@@ -117,6 +124,28 @@ class TestDraftSectionStream:
         assert pistes[0]["texte"] == "Comparer avec le crédit-bail"
         assert pistes[0]["section_origine_id"] == section["id"]
         assert pistes[0]["status"] == "nouvelle"
+
+    @pytest.mark.asyncio
+    async def test_draft_nominal_bumps_document_updated_at(self, client: AsyncClient):
+        """La liste des documents est triée par updated_at desc : un document
+        en cours de rédaction doit remonter - une rédaction persistée sans
+        toucher `Document.updated_at` le laisserait figé en place."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+        before = await _document_updated_at(client, doc["id"])
+
+        with patch(
+            "app.services.llm.LLMService.stream_response",
+            new=_fake_stream_response(["Contenu rédigé."]),
+        ):
+            response = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": None},
+            )
+        assert response.status_code == 200, response.text
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
 
     @pytest.mark.asyncio
     async def test_erreur_provider_a_mi_course_garde_le_partiel_en_base(
@@ -502,6 +531,36 @@ class TestValidateSection:
 
         final = await client.get(f"/api/documents/{doc['id']}")
         assert final.json()["status"] == "termine"
+
+    @pytest.mark.asyncio
+    async def test_validate_bumps_document_updated_at_even_without_termine_transition(
+        self, client: AsyncClient
+    ):
+        """Valider UNE section parmi plusieurs (document qui reste
+        'en_cours', pas de transition vers 'termine') doit quand même faire
+        remonter le document dans la liste triée par updated_at desc."""
+        doc = await _create_document(client)
+        section_a = await _create_section(client, doc["id"], "Section A", order=10.0)
+        await _create_section(client, doc["id"], "Section B", order=20.0)
+        await client.patch(
+            f"/api/documents/sections/{section_a['id']}",
+            json={"content": "Contenu rédigé."},
+        )
+        before = await _document_updated_at(client, doc["id"])
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+            return_value="Résumé.",
+        ):
+            response = await client.post(f"/api/documents/sections/{section_a['id']}/validate")
+        assert response.status_code == 200, response.text
+
+        mid = await client.get(f"/api/documents/{doc['id']}")
+        assert mid.json()["status"] == "en_cours"  # pas de transition termine
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
 
     @pytest.mark.asyncio
     async def test_validate_section_vide_renvoie_400(self, client: AsyncClient):

@@ -130,12 +130,23 @@ export function DocumentsList() {
   // D4 : ouverture de la modale demandée depuis ⌘K/Accueil (documents.new).
   // Dépend de createModalRequested (pas juste [] au montage) pour couvrir
   // aussi le cas où la vue est DÉJÀ montée quand l'action se déclenche.
+  //
+  // Revue finale (finding minor 4) : si l'atelier (DocumentWorkspace) est
+  // ouvert, cette vue rend la branche `workspaceOpenId` plus bas - le bloc
+  // qui contient la modale n'est PAS monté. Consommer quand même le drapeau
+  // (poser modalOpen=true + le clear) ne produisait aucun effet visible
+  // immédiat, mais laissait modalOpen=true en mémoire : au retour à la liste
+  // (fermeture de l'atelier), la modale surgissait sans geste explicite de
+  // l'utilisateur. Fix : le drapeau est TOUJOURS effacé (la demande est
+  // consommée, jamais mise en file d'attente), mais l'ouverture de la
+  // modale elle-même n'a lieu que si l'atelier n'est pas ouvert.
   useEffect(() => {
-    if (createModalRequested) {
+    if (!createModalRequested) return;
+    if (workspaceOpenId === null) {
       setModalOpen(true);
-      clearCreateModalRequest();
     }
-  }, [createModalRequested, clearCreateModalRequest]);
+    clearCreateModalRequest();
+  }, [createModalRequested, clearCreateModalRequest, workspaceOpenId]);
 
   // La modale de création s'inscrit sur la pile Échap unifiée (comme
   // ProjectsPanel pour ProjectModal) - PAS d'écouteur clavier local ici.

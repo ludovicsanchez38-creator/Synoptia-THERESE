@@ -158,6 +158,18 @@ class TestParseOutlineResponse:
         with pytest.raises(ValueError, match="trame illisible"):
             parse_outline_response(raw)
 
+    def test_depth_hors_bornes_haut_clampe_a_1(self):
+        """Un modèle qui répond depth=7 (sous-sous-section imaginée) ne doit
+        pas produire un titre `#######` illisible à l'export - clampé à 1."""
+        raw = json.dumps([{"title": "Intro", "brief": "b", "depth": 7}])
+        result = parse_outline_response(raw)
+        assert result[0]["depth"] == 1
+
+    def test_depth_hors_bornes_bas_clampe_a_0(self):
+        raw = json.dumps([{"title": "Intro", "brief": "b", "depth": -1}])
+        result = parse_outline_response(raw)
+        assert result[0]["depth"] == 0
+
 
 # =============================================================================
 # build_section_context

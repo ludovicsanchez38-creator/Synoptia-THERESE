@@ -163,6 +163,15 @@ async def _get_document_or_404(session: AsyncSession, document_id: str) -> Docum
     return document
 
 
+def _touch_document(document: Document, session: AsyncSession) -> None:
+    """Bump `Document.updated_at` (finding minor 9, revue finale) : la liste
+    des documents est triée par updated_at desc - un document en cours de
+    rédaction (section retouchée, réordonnée, validée, ou nouvelle
+    section/piste) doit remonter, pas rester figé à sa date de création."""
+    document.updated_at = datetime.now(UTC)
+    session.add(document)
+
+
 # =============================================================================
 # CRUD DOCUMENTS
 # =============================================================================
@@ -238,12 +247,18 @@ async def update_section(
 
     Une modification du contenu fait passer une section 'vide' à 'brouillon' -
     c'est la trace que la rédaction a démarré sur cette section.
+
+    Un `null` explicite sur un champ (ex. `{"title": null}`) est traité comme
+    une absence de changement plutôt que comme une tentative d'écrire NULL -
+    tous les champs de `SectionUpdate` correspondent à des colonnes
+    non-nullables (`title`, `order`, `depth`...), un null écrit tel quel
+    aurait fait échouer le commit avec une 500 (revue finale, finding 5).
     """
     section = await session.get(DocumentSection, section_id)
     if not section:
         raise HTTPException(status_code=404, detail="Section introuvable")
 
-    updates = payload.model_dump(exclude_unset=True)
+    updates = payload.model_dump(exclude_unset=True, exclude_none=True)
 
     if "content" in updates and section.status == "vide":
         section.status = "brouillon"
@@ -253,6 +268,11 @@ async def update_section(
 
     section.updated_at = datetime.now(UTC)
     session.add(section)
+
+    document = await session.get(Document, section.document_id)
+    if document:
+        _touch_document(document, session)
+
     await session.commit()
     await session.refresh(section)
 
@@ -307,8 +327,6 @@ async def _draft_stream(
     def _reopen_document_if_termine() -> None:
         if document.status == "termine":
             document.status = "en_cours"
-            document.updated_at = datetime.now(UTC)
-            session.add(document)
 
     async def _flush(raw_content: str) -> None:
         nonlocal last_flushed_raw
@@ -317,6 +335,9 @@ async def _draft_stream(
         target.updated_at = datetime.now(UTC)
         session.add(target)
         _reopen_document_if_termine()
+        # Finding minor 9 : chaque flush (périodique ou final) fait vivre le
+        # document, pas seulement une transition termine -> en_cours.
+        _touch_document(document, session)
         await session.commit()
         last_flushed_raw = raw_content
 
@@ -360,6 +381,7 @@ async def _draft_stream(
         target.updated_at = datetime.now(UTC)
         session.add(target)
         _reopen_document_if_termine()
+        _touch_document(document, session)
 
         for piste_text in pistes_texts:
             session.add(
@@ -474,8 +496,9 @@ async def validate_section(
     siblings = siblings_result.scalars().all()
     if siblings and all(s.status == "validee" for s in siblings):
         document.status = "termine"
-        document.updated_at = datetime.now(UTC)
-        session.add(document)
+    # Finding minor 9 : valider une section fait vivre le document même sans
+    # transition vers 'termine' (liste triée par updated_at desc).
+    _touch_document(document, session)
 
     await session.commit()
     await session.refresh(section)
@@ -490,7 +513,7 @@ async def create_section(
     session: AsyncSession = Depends(get_session),
 ) -> SectionResponse:
     """Crée une section manuelle (hors génération de trame par l'IA)."""
-    await _get_document_or_404(session, document_id)
+    document = await _get_document_or_404(session, document_id)
 
     section = DocumentSection(
         document_id=document_id,
@@ -500,6 +523,7 @@ async def create_section(
         depth=payload.depth,
     )
     session.add(section)
+    _touch_document(document, session)  # finding minor 9
     await session.commit()
     await session.refresh(section)
 
@@ -599,7 +623,7 @@ async def reorder_sections(
     ce qui aurait transformé missing_ids/unknown_ids en repr Python illisible
     plutôt qu'en tableaux JSON exploitables par le front.
     """
-    await _get_document_or_404(session, document_id)
+    document = await _get_document_or_404(session, document_id)
 
     result = await session.execute(
         select(DocumentSection).where(
@@ -635,6 +659,7 @@ async def reorder_sections(
         section.updated_at = datetime.now(UTC)
         session.add(section)
 
+    _touch_document(document, session)  # finding minor 9
     await session.commit()
 
     refreshed = await session.execute(
@@ -673,7 +698,7 @@ async def create_piste(
     session: AsyncSession = Depends(get_session),
 ) -> PisteResponse:
     """Capture manuellement une piste pour un document."""
-    await _get_document_or_404(session, document_id)
+    document = await _get_document_or_404(session, document_id)
 
     piste = DocumentPiste(
         document_id=document_id,
@@ -681,6 +706,7 @@ async def create_piste(
         texte=payload.texte,
     )
     session.add(piste)
+    _touch_document(document, session)  # finding minor 9
     await session.commit()
     await session.refresh(piste)
 

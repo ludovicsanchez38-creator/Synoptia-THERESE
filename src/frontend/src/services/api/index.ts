@@ -541,6 +541,7 @@ export {
   createPiste,
   updatePiste,
   exportDocument,
+  downloadExportedDocument,
   ReorderConflictError,
   type DocumentStatus,
   type SectionStatus,

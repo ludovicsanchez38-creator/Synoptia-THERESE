@@ -8,6 +8,7 @@ de la trame : un écart entre les ids reçus et les ids en base doit renvoyer
 """
 
 import json
+from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -29,6 +30,12 @@ async def _create_section(
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+async def _document_updated_at(client: AsyncClient, document_id: str) -> datetime:
+    response = await client.get(f"/api/documents/{document_id}")
+    assert response.status_code == 200, response.text
+    return datetime.fromisoformat(response.json()["updated_at"])
 
 
 class TestDocumentsCRUD:
@@ -176,6 +183,18 @@ class TestSections:
         assert response.status_code == 404
 
     @pytest.mark.asyncio
+    async def test_create_section_bumps_document_updated_at(self, client: AsyncClient):
+        """Créer une section fait remonter le document dans la liste triée
+        par updated_at desc."""
+        doc = await _create_document(client)
+        before = await _document_updated_at(client, doc["id"])
+
+        await _create_section(client, doc["id"], "Nouvelle section", order=0.0)
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
+
+    @pytest.mark.asyncio
     async def test_patch_content_sets_status_brouillon(self, client: AsyncClient):
         """PATCH content sur une section 'vide' fait passer le statut à 'brouillon'."""
         doc = await _create_document(client)
@@ -216,6 +235,41 @@ class TestSections:
             json={"title": "X"},
         )
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_patch_title_null_does_not_500_and_keeps_title(self, client: AsyncClient):
+        """PATCH {"title": null} : un null explicite ne doit jamais tenter
+        d'écrire NULL sur une colonne non-nullable (500 IntegrityError) - il
+        est traité comme une absence de changement, comme un champ omis."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Titre original", order=0.0)
+
+        response = await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"title": None},
+        )
+
+        assert response.status_code == 200, response.text
+        updated = response.json()
+        assert updated["title"] == "Titre original"
+
+    @pytest.mark.asyncio
+    async def test_update_section_bumps_document_updated_at(self, client: AsyncClient):
+        """Une section retouchée fait remonter son document (liste triée par
+        updated_at desc) - PATCH doit bumper `Document.updated_at`, pas
+        seulement `DocumentSection.updated_at`."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Section 1", order=0.0)
+        before = await _document_updated_at(client, doc["id"])
+
+        response = await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"content": "Un contenu qui fait vivre le document."},
+        )
+        assert response.status_code == 200, response.text
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
 
 
 class TestOutlineGeneration:
@@ -446,6 +500,23 @@ class TestSectionsReorderInvariant:
         )
         assert response.status_code == 404
 
+    @pytest.mark.asyncio
+    async def test_reorder_valid_bumps_document_updated_at(self, client: AsyncClient):
+        """Une réorganisation réussie fait remonter le document dans la
+        liste triée par updated_at desc."""
+        doc = await _create_document(client)
+        section_a = await _create_section(client, doc["id"], "Section A", order=0.0)
+        before = await _document_updated_at(client, doc["id"])
+
+        response = await client.post(
+            f"/api/documents/{doc['id']}/sections/reorder",
+            json={"items": [{"id": section_a["id"], "order": 5.0, "depth": 0}]},
+        )
+        assert response.status_code == 200, response.text
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
+
 
 class TestPistes:
     """Liste, création manuelle et changement de statut des pistes."""
@@ -479,6 +550,21 @@ class TestPistes:
             json={"texte": "X"},
         )
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_create_piste_bumps_document_updated_at(self, client: AsyncClient):
+        """Capturer une piste fait remonter le document dans la liste triée
+        par updated_at desc."""
+        doc = await _create_document(client)
+        before = await _document_updated_at(client, doc["id"])
+
+        await client.post(
+            f"/api/documents/{doc['id']}/pistes",
+            json={"texte": "Une piste qui fait vivre le document"},
+        )
+
+        after = await _document_updated_at(client, doc["id"])
+        assert after > before
 
     @pytest.mark.asyncio
     async def test_update_piste_status(self, client: AsyncClient):

@@ -262,8 +262,12 @@ export async function* draftSection(
   });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, errorText || undefined);
+    // Corps brut JSON parsé et enveloppe {detail,message} extraite - même
+    // convention que `request()` (core.ts) - plutôt que de mettre le JSON
+    // tel quel dans `error.message` (revue finale, finding minor 7).
+    const data = await response.json().catch(() => null);
+    const message = data?.detail || data?.message || `Erreur ${response.status}`;
+    throw new ApiError(response.status, response.statusText, message);
   }
 
   const reader = response.body?.getReader();
@@ -349,9 +353,16 @@ export async function exportDocument(
  * par `exportDocument` (qui, lui, ne télécharge rien - décision D1). Même
  * mécanique que `exportConversation` (chat.ts:282) : fetch du blob, lien
  * `<a download>` éphémère cliqué puis retiré, URL objet révoquée.
+ *
+ * `download_url` renvoyé par le backend est un chemin RELATIF
+ * (`/api/skills/download/...`) - `apiFetch` ne le préfixe jamais (revue
+ * finale, finding bloquant 2). Sans `API_BASE`, cassé dès que le front n'est
+ * pas sur l'origine backend (toujours le cas : localhost:1420 en dev,
+ * tauri://localhost packagé). Convention du repo (`skills.ts:72`) : URL
+ * absolue.
  */
 export async function downloadExportedDocument(exported: DocumentExportResponse): Promise<void> {
-  const response = await apiFetch(exported.download_url);
+  const response = await apiFetch(`${API_BASE}${exported.download_url}`);
   if (!response.ok) {
     throw new ApiError(response.status, response.statusText, 'Téléchargement impossible');
   }

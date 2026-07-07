@@ -104,6 +104,11 @@ def parse_outline_response(raw: str) -> list[dict[str, str | int]]:
             raise ValueError(
                 "trame illisible : la profondeur d'une section doit être un nombre"
             ) from exc
+        # Clamp à {0, 1} : seules ces deux profondeurs sont rendues (section /
+        # sous-section, cf `assemble_markdown`) - un modèle qui répond une
+        # profondeur hors bornes (ex. 7) ne doit pas produire un titre
+        # `#######` illisible à l'export, ni un depth négatif incohérent.
+        depth = min(max(depth, 0), 1)
         sections.append(
             {
                 "title": title.strip(),
