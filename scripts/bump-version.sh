@@ -82,6 +82,27 @@ fi
 
 echo ""
 
+# Regeneration des lockfiles (oublis des releases 0.23/0.24 : uv.lock et
+# package-lock.json partaient avec l'ancienne version).
+echo "Lockfiles:"
+if command -v npm >/dev/null 2>&1; then
+    (cd "$ROOT/src/frontend" && npm install --package-lock-only --silent) && echo "  OK  src/frontend/package-lock.json"
+else
+    echo "  ATTENTION  npm introuvable, package-lock.json non regenere"
+fi
+if command -v cargo >/dev/null 2>&1; then
+    (cd "$ROOT/src/frontend/src-tauri" && cargo update -p therese --quiet 2>/dev/null) && echo "  OK  src/frontend/src-tauri/Cargo.lock" || echo "  ATTENTION  Cargo.lock non regenere (verifier a la main)"
+else
+    echo "  ATTENTION  cargo introuvable, Cargo.lock non regenere"
+fi
+if command -v uv >/dev/null 2>&1; then
+    (cd "$ROOT" && uv lock --quiet) && echo "  OK  uv.lock"
+else
+    echo "  ATTENTION  uv introuvable, uv.lock non regenere"
+fi
+
+echo ""
+
 # Verification post-bump
 echo "Verification:"
 VERIFY_ERRORS=0
@@ -103,4 +124,4 @@ if [ $ERRORS -gt 0 ] || [ $VERIFY_ERRORS -gt 0 ]; then
 fi
 
 echo ""
-echo "Version $NEW appliquee dans les 7 fichiers (+ badge README)."
+echo "Version $NEW appliquee dans les 7 fichiers (+ badge README + lockfiles)."

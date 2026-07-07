@@ -44,7 +44,6 @@ class Settings(BaseSettings):
     # Default models
     claude_model: str = "claude-sonnet-4-6"
     mistral_model: str = "mistral-large-latest"
-    ollama_model: str = "mistral:7b"
 
     # Embeddings
     embedding_model: str = "nomic-ai/nomic-embed-text-v1.5"
