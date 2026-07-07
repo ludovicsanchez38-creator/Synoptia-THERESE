@@ -271,6 +271,36 @@ export async function deleteConversation(id: string): Promise<void> {
   });
 }
 
+export interface ConversationExportResponse {
+  success: boolean;
+  format: 'md' | 'docx';
+  file_name: string;
+  download_url: string;
+}
+
+/** Exporte une conversation en fichier (md/docx) puis déclenche le téléchargement. */
+export async function exportConversation(
+  id: string,
+  format: 'md' | 'docx'
+): Promise<void> {
+  const exported = await request<ConversationExportResponse>(
+    `/api/chat/conversations/${id}/export?format=${format}`
+  );
+  const response = await apiFetch(exported.download_url);
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, 'Téléchargement impossible');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = exported.file_name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export interface ConfirmToolResponse {
   status: 'executed' | 'cancelled';
   tool_name: string;

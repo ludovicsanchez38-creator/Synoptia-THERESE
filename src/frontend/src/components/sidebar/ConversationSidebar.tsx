@@ -8,6 +8,7 @@ import {
   Search,
   MoreHorizontal,
   Calendar,
+  FileDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
@@ -284,12 +285,29 @@ function ConversationItem({
   onContextMenu,
   onRename,
   onDelete,
-  onCloseContextMenu: _onCloseContextMenu,
+  onCloseContextMenu,
   maskTextFn,
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(conversation.title);
+  const [exporting, setExporting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Export de la conversation en fichier téléchargeable (md/docx)
+  const handleExport = useCallback(
+    async (format: 'md' | 'docx') => {
+      setExporting(true);
+      try {
+        await api.exportConversation(conversation.id, format);
+        onCloseContextMenu();
+      } catch (err) {
+        console.error('Export de conversation impossible:', err);
+      } finally {
+        setExporting(false);
+      }
+    },
+    [conversation.id, onCloseContextMenu]
+  );
 
   const messageCount = conversation.messages?.length || conversation.messageCount || 0;
   const lastMessage = conversation.messages?.[conversation.messages.length - 1];
@@ -433,6 +451,26 @@ function ConversationItem({
             >
               <Pencil className="w-4 h-4" />
               Renommer
+            </motion.button>
+            <motion.button
+              onClick={() => handleExport('md')}
+              disabled={exporting}
+              whileHover={{ x: 2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:bg-background/40 transition-colors disabled:opacity-50"
+            >
+              <FileDown className="w-4 h-4" />
+              Exporter (.md)
+            </motion.button>
+            <motion.button
+              onClick={() => handleExport('docx')}
+              disabled={exporting}
+              whileHover={{ x: 2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:bg-background/40 transition-colors disabled:opacity-50"
+            >
+              <FileDown className="w-4 h-4" />
+              Exporter (.docx)
             </motion.button>
             <motion.button
               onClick={onDelete}

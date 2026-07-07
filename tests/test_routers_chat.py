@@ -163,6 +163,42 @@ class TestSlashCommands:
         assert "Chantier Testinline" in content
 
 
+class TestConversationExport:
+    """Export d'une conversation en fichier téléchargeable (md/docx)."""
+
+    @pytest.mark.asyncio
+    async def test_export_markdown_et_telechargement(self, client: AsyncClient):
+        # Créer une conversation avec un échange déterministe (sans LLM)
+        response = await client.post("/api/chat/send", json={
+            "message": "[contact: Zoe Testexport]",
+            "stream": False,
+        })
+        assert response.status_code == 200
+        conv_id = response.json()["conversation_id"]
+
+        # Export markdown
+        response = await client.get(f"/api/chat/conversations/{conv_id}/export?format=md")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["file_name"].endswith(".md")
+
+        # Le fichier est servi par le circuit des documents générés
+        response = await client.get(data["download_url"])
+        assert response.status_code == 200
+        assert "Zoe" in response.text
+
+    @pytest.mark.asyncio
+    async def test_export_format_inconnu_400(self, client: AsyncClient):
+        response = await client.get("/api/chat/conversations/nimporte/export?format=pdf")
+        assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_export_conversation_inconnue_404(self, client: AsyncClient):
+        response = await client.get("/api/chat/conversations/inexistante/export?format=md")
+        assert response.status_code == 404
+
+
 class TestLLMProviders:
     """Tests for US-CHAT-01: Multiple LLM providers."""
 

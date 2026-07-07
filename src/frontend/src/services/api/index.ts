@@ -38,6 +38,7 @@ export {
   createConversation,
   getConversationMessages,
   deleteConversation,
+  exportConversation,
   type ChatMessage,
   type ChatRequest,
   type ChatResponse,

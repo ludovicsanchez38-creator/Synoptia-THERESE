@@ -1770,3 +1770,103 @@ async def delete_conversation(
     await session.commit()
 
     return {"deleted": True, "id": conversation_id}
+
+
+def _conversation_to_markdown(conversation: Conversation, messages: list[Message]) -> str:
+    """Assemble le markdown lisible d'une conversation (export unitaire)."""
+    from datetime import UTC, datetime
+
+    lines = [
+        f"# {conversation.title or 'Conversation'}",
+        "",
+        f"*Conversation du {conversation.created_at.strftime('%d/%m/%Y')} - "
+        f"exportée le {datetime.now(UTC).strftime('%d/%m/%Y à %H:%M')} depuis THÉRÈSE*",
+        "",
+        "---",
+        "",
+    ]
+    for msg in messages:
+        who = "Vous" if msg.role == "user" else "THÉRÈSE"
+        stamp = msg.created_at.strftime("%d/%m/%Y %H:%M")
+        suffix = f" ({msg.model})" if msg.role == "assistant" and msg.model else ""
+        lines.append(f"## {who}{suffix} - {stamp}")
+        lines.append("")
+        lines.append(msg.content or "")
+        lines.append("")
+    return "\n".join(lines).strip() + "\n"
+
+
+@router.get("/conversations/{conversation_id}/export")
+async def export_conversation(
+    conversation_id: str,
+    format: str = "md",
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    """Exporte UNE conversation en fichier téléchargeable (md ou docx).
+
+    Suggestion testeurs (Dr_logic-3D, avril 2026) : sortir une conversation
+    de l'app sans copier-coller. Réutilise le circuit des documents générés :
+    fichier déposé dans le dossier de sortie des skills, servi par
+    GET /api/skills/download/{file_id}.
+    """
+    from app.services.skills import get_skills_registry
+    from app.services.skills.base import SkillExecuteRequest
+
+    fmt = (format or "md").lower()
+    if fmt not in ("md", "docx"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Format non supporté : {fmt}. Formats disponibles : md, docx.",
+        )
+
+    conversation = await session.get(Conversation, conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    result = await session.execute(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at)
+    )
+    messages = list(result.scalars().all())
+    if not messages:
+        raise HTTPException(status_code=400, detail="Conversation vide : rien à exporter.")
+
+    title = conversation.title or "Conversation"
+    markdown = _conversation_to_markdown(conversation, messages)
+    registry = get_skills_registry()
+
+    if fmt == "docx":
+        resp = await registry.execute(
+            "docx-pro",
+            SkillExecuteRequest(prompt=title, title=title),
+            markdown,
+        )
+        if not resp.success:
+            raise HTTPException(
+                status_code=500, detail=f"Échec de l'export Word : {resp.error}"
+            )
+        return {
+            "success": True,
+            "format": "docx",
+            "file_name": resp.file_name,
+            "download_url": resp.download_url,
+        }
+
+    # Markdown : fichier écrit directement dans le dossier des documents générés
+    # (même convention de nommage {titre}_{id8}.md, retrouvé par le download
+    # endpoint via glob même sans cache).
+    from uuid import uuid4
+
+    file_id = str(uuid4())
+    safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)[:50].strip()
+    file_name = f"{safe_title}_{file_id[:8]}.md"
+    output_path = registry.output_dir / file_name
+    output_path.write_text(markdown, encoding="utf-8")
+
+    return {
+        "success": True,
+        "format": "md",
+        "file_name": file_name,
+        "download_url": f"/api/skills/download/{file_id}",
+    }
