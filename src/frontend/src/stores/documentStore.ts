@@ -304,6 +304,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   // ============================================================
 
   loadPistes: async (documentId) => {
+    set({ error: null });
     try {
       const pistes = await apiListPistes(documentId);
       set((s) => {
@@ -316,6 +317,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   createPiste: async (documentId, payload) => {
+    set({ error: null });
     try {
       const piste = await apiCreatePiste(documentId, payload);
       set((s) => {
@@ -328,6 +330,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   updatePiste: async (pisteId, status) => {
+    set({ error: null });
     try {
       const updated = await apiUpdatePiste(pisteId, status);
       set((s) => {

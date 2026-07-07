@@ -45,11 +45,14 @@ import {
   createDocument,
   deleteDocument,
   generateOutline,
+  createSection,
   updateSection,
   reorderSections,
   draftSection,
   validateSection,
+  exportDocument,
   listPistes,
+  createPiste,
   updatePiste,
   ReorderConflictError,
 } from '../services/api/documents';
@@ -173,6 +176,44 @@ describe('documentStore', () => {
     });
   });
 
+  describe('createSection', () => {
+    it('insère la section à sa place (tri par order) et recalcule sections_total', async () => {
+      useDocumentStore.setState({
+        currentDocument: makeDetail({
+          id: 'd1',
+          sections: [makeSection({ id: 's1', order: 10 }), makeSection({ id: 's3', order: 30 })],
+          sections_total: 2,
+        }),
+      });
+      // Section intercalée entre s1 et s3 (order 20) : doit finir au MILIEU, pas en fin.
+      vi.mocked(createSection).mockResolvedValueOnce(makeSection({ id: 's2', order: 20, title: 'Intercalée' }));
+      await useDocumentStore.getState().createSection('d1', { title: 'Intercalée', order: 20 });
+      const state = useDocumentStore.getState();
+      expect(state.currentDocument?.sections.map((s) => s.id)).toEqual(['s1', 's2', 's3']);
+      expect(state.currentDocument?.sections_total).toBe(3);
+    });
+
+    it("ne touche pas au currentDocument d'un AUTRE document", async () => {
+      useDocumentStore.setState({
+        currentDocument: makeDetail({ id: 'd-autre', sections: [], sections_total: 0 }),
+      });
+      vi.mocked(createSection).mockResolvedValueOnce(makeSection({ id: 's1', document_id: 'd1' }));
+      await useDocumentStore.getState().createSection('d1', { title: 'Ailleurs', order: 10 });
+      expect(useDocumentStore.getState().currentDocument?.sections).toHaveLength(0);
+    });
+
+    it("pose une erreur affichable en cas d'échec, sans modifier la trame", async () => {
+      useDocumentStore.setState({
+        currentDocument: makeDetail({ id: 'd1', sections: [makeSection({ id: 's1' })], sections_total: 1 }),
+      });
+      vi.mocked(createSection).mockRejectedValueOnce(new Error('Document introuvable'));
+      await useDocumentStore.getState().createSection('d1', { title: 'X', order: 20 });
+      const state = useDocumentStore.getState();
+      expect(state.error).toBe('Document introuvable');
+      expect(state.currentDocument?.sections).toHaveLength(1);
+    });
+  });
+
   describe('reorderSections', () => {
     it('applique la nouvelle trame renvoyée par le backend en cas de succès', async () => {
       useDocumentStore.setState({
@@ -242,7 +283,31 @@ describe('documentStore', () => {
     });
   });
 
-  describe('loadPistes / updatePiste', () => {
+  describe('exportDocument', () => {
+    it("retourne les métadonnées d'export en cas de succès et nettoie l'erreur", async () => {
+      useDocumentStore.setState({ error: 'Erreur périmée' });
+      vi.mocked(exportDocument).mockResolvedValueOnce({
+        success: true,
+        format: 'docx',
+        file_name: 'Proposition_abc12345.docx',
+        download_url: '/api/skills/download/abc12345',
+      });
+      const result = await useDocumentStore.getState().exportDocument('d1', 'docx');
+      expect(exportDocument).toHaveBeenCalledWith('d1', 'docx');
+      expect(result?.file_name).toBe('Proposition_abc12345.docx');
+      expect(result?.download_url).toBe('/api/skills/download/abc12345');
+      expect(useDocumentStore.getState().error).toBeNull();
+    });
+
+    it("retourne null et pose l'erreur en cas d'échec (ex. document vide)", async () => {
+      vi.mocked(exportDocument).mockRejectedValueOnce(new Error('Document vide : rien à exporter.'));
+      const result = await useDocumentStore.getState().exportDocument('d1');
+      expect(result).toBeNull();
+      expect(useDocumentStore.getState().error).toBe('Document vide : rien à exporter.');
+    });
+  });
+
+  describe('loadPistes / createPiste / updatePiste', () => {
     it('loadPistes peuple les pistes du currentDocument', async () => {
       useDocumentStore.setState({ currentDocument: makeDetail({ id: 'd1', pistes: [] }) });
       vi.mocked(listPistes).mockResolvedValueOnce([
@@ -250,6 +315,57 @@ describe('documentStore', () => {
       ]);
       await useDocumentStore.getState().loadPistes('d1');
       expect(useDocumentStore.getState().currentDocument?.pistes).toHaveLength(1);
+    });
+
+    it('createPiste ajoute la piste au currentDocument après confirmation API', async () => {
+      useDocumentStore.setState({ currentDocument: makeDetail({ id: 'd1', pistes: [] }) });
+      vi.mocked(createPiste).mockResolvedValueOnce({
+        id: 'p1',
+        document_id: 'd1',
+        section_origine_id: 's1',
+        texte: 'Idée capturée à la main',
+        status: 'nouvelle',
+        created_at: '2026-07-01T00:00:00Z',
+      });
+      await useDocumentStore.getState().createPiste('d1', { texte: 'Idée capturée à la main', section_origine_id: 's1' });
+      expect(createPiste).toHaveBeenCalledWith('d1', { texte: 'Idée capturée à la main', section_origine_id: 's1' });
+      const pistes = useDocumentStore.getState().currentDocument?.pistes;
+      expect(pistes).toHaveLength(1);
+      expect(pistes?.[0].texte).toBe('Idée capturée à la main');
+    });
+
+    it("createPiste pose une erreur affichable en cas d'échec, sans ajouter de piste", async () => {
+      useDocumentStore.setState({ currentDocument: makeDetail({ id: 'd1', pistes: [] }) });
+      vi.mocked(createPiste).mockRejectedValueOnce(new Error('Document introuvable'));
+      await useDocumentStore.getState().createPiste('d1', { texte: 'X' });
+      expect(useDocumentStore.getState().error).toBe('Document introuvable');
+      expect(useDocumentStore.getState().currentDocument?.pistes).toHaveLength(0);
+    });
+
+    // Régression revue D1 : une erreur périmée d'une action précédente ne doit
+    // PAS survivre à un appel piste réussi (bannière d'erreur fantôme en UI).
+    it("les actions pistes nettoient l'erreur périmée en cas de succès", async () => {
+      useDocumentStore.setState({
+        currentDocument: makeDetail({ id: 'd1', pistes: [] }),
+        error: 'Erreur périmée d\'une action précédente',
+      });
+      vi.mocked(listPistes).mockResolvedValueOnce([]);
+      await useDocumentStore.getState().loadPistes('d1');
+      expect(useDocumentStore.getState().error).toBeNull();
+
+      useDocumentStore.setState({ error: 'Erreur périmée' });
+      vi.mocked(createPiste).mockResolvedValueOnce({
+        id: 'p1', document_id: 'd1', section_origine_id: null, texte: 'Piste', status: 'nouvelle', created_at: '2026-07-01T00:00:00Z',
+      });
+      await useDocumentStore.getState().createPiste('d1', { texte: 'Piste' });
+      expect(useDocumentStore.getState().error).toBeNull();
+
+      useDocumentStore.setState({ error: 'Erreur périmée' });
+      vi.mocked(updatePiste).mockResolvedValueOnce({
+        id: 'p1', document_id: 'd1', section_origine_id: null, texte: 'Piste', status: 'exploree', created_at: '2026-07-01T00:00:00Z',
+      });
+      await useDocumentStore.getState().updatePiste('p1', 'exploree');
+      expect(useDocumentStore.getState().error).toBeNull();
     });
 
     it('updatePiste met à jour le statut de la bonne piste', async () => {
