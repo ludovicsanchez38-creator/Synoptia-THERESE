@@ -18,14 +18,11 @@ optionnel `PISTES:` (une idée par ligne, préfixe `- `) que
 from __future__ import annotations
 
 import json
-import logging
 import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.entities import Document, DocumentSection
-
-logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -89,10 +86,18 @@ def parse_outline_response(raw: str) -> list[dict[str, str | int]]:
 
     sections: list[dict[str, str | int]] = []
     for item in data:
-        if not isinstance(item, dict) or "title" not in item:
+        if not isinstance(item, dict):
             raise ValueError(
-                "trame illisible : chaque section doit contenir au moins un titre"
+                "trame illisible : chaque section doit être un objet JSON"
             )
+        title = item.get("title")
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError(
+                "trame illisible : chaque section doit contenir un titre non vide"
+            )
+        # brief null ou absent = toléré (chaîne vide), mais jamais « None ».
+        brief = item.get("brief")
+        brief_text = brief.strip() if isinstance(brief, str) else ""
         try:
             depth = int(item.get("depth") or 0)
         except (TypeError, ValueError) as exc:
@@ -101,8 +106,8 @@ def parse_outline_response(raw: str) -> list[dict[str, str | int]]:
             ) from exc
         sections.append(
             {
-                "title": str(item.get("title", "")).strip(),
-                "brief": str(item.get("brief", "")).strip(),
+                "title": title.strip(),
+                "brief": brief_text,
                 "depth": depth,
             }
         )

@@ -125,6 +125,38 @@ class TestParseOutlineResponse:
         result = parse_outline_response(raw)
         assert result[0]["depth"] == 0
 
+    def test_item_non_objet_leve_value_error(self):
+        raw = json.dumps(["juste une chaîne, pas un objet"])
+        with pytest.raises(ValueError, match="trame illisible"):
+            parse_outline_response(raw)
+
+    def test_title_null_leve_value_error(self):
+        """title: null ne doit JAMAIS devenir la chaîne « None »."""
+        raw = json.dumps([{"title": None, "brief": "b", "depth": 0}])
+        with pytest.raises(ValueError, match="trame illisible"):
+            parse_outline_response(raw)
+
+    def test_title_vide_leve_value_error(self):
+        raw = json.dumps([{"title": "   ", "brief": "b", "depth": 0}])
+        with pytest.raises(ValueError, match="trame illisible"):
+            parse_outline_response(raw)
+
+    def test_title_non_chaine_leve_value_error(self):
+        raw = json.dumps([{"title": 42, "brief": "b", "depth": 0}])
+        with pytest.raises(ValueError, match="trame illisible"):
+            parse_outline_response(raw)
+
+    def test_brief_null_devient_chaine_vide(self):
+        """brief: null est toléré mais ne doit pas devenir la chaîne « None »."""
+        raw = json.dumps([{"title": "Intro", "brief": None, "depth": 0}])
+        result = parse_outline_response(raw)
+        assert result[0]["brief"] == ""
+
+    def test_depth_non_numerique_leve_value_error(self):
+        raw = json.dumps([{"title": "Intro", "brief": "b", "depth": "abc"}])
+        with pytest.raises(ValueError, match="trame illisible"):
+            parse_outline_response(raw)
+
 
 # =============================================================================
 # build_section_context
@@ -239,18 +271,17 @@ class TestBuildSectionContext:
         document = self._document()
         sections = [s for s in self._sections() if s.status != "validee"]
         ctx = build_section_context(document, sections, sections[0])
-        assert "RÉSUMÉ" not in ctx.upper() or "SECTIONS DÉJÀ VALIDÉES" not in ctx.upper()
+        assert "RÉSUMÉS DES SECTIONS DÉJÀ VALIDÉES" not in ctx
 
-    def test_section_cible_validee_pas_dupliquee_dans_les_resumes(self):
+    def test_section_cible_validee_pas_dans_les_resumes(self):
         """Retoucher une section déjà validée : son propre résumé ne doit
-        pas polluer la liste des « autres sections validées »."""
+        pas apparaître dans la liste des sections validées (la cible est
+        exclue du bloc de résumés, et il n'est émis nulle part ailleurs)."""
         document = self._document()
         sections = self._sections()
         target = sections[0]  # déjà "validee"
         ctx = build_section_context(document, sections, target)
-        # Le résumé de la cible ne doit apparaître qu'une fois maximum
-        # (pas listé en plus dans le bloc des sections validées "autres").
-        assert ctx.count("L'introduction pose le contexte du financement des TPE.") <= 1
+        assert ctx.count("L'introduction pose le contexte du financement des TPE.") == 0
 
 
 # =============================================================================
@@ -331,3 +362,16 @@ class TestParseDraftOutput:
         content, pistes = parse_draft_output(raw)
         assert content == ""
         assert pistes == ["Piste unique"]
+
+    def test_piste_sans_prefixe_tiret_toleree(self):
+        """Tolérance volontaire : une ligne de piste sans le préfixe « - »
+        est quand même capturée (les LLM oublient parfois le tiret)."""
+        raw = (
+            "Contenu de la section.\n\n"
+            "PISTES:\n"
+            "- Piste avec tiret\n"
+            "Piste sans tiret\n"
+        )
+        content, pistes = parse_draft_output(raw)
+        assert content == "Contenu de la section."
+        assert pistes == ["Piste avec tiret", "Piste sans tiret"]
