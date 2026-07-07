@@ -48,6 +48,7 @@ from app.routers import (
     crm_router,  # Phase 5 - Implemented
     dashboard_router,  # US-005 - Dashboard Ma journée
     data_router,
+    documents_router,  # Atelier documentaire
     email_router,  # Phase 1 - ACTIVATED
     email_setup_router,  # Phase 1.2 - Email Setup Wizard
     escalation_router,
@@ -684,6 +685,9 @@ app.include_router(notifications_router, prefix="/api/notifications", tags=["Not
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(prompts_router, prefix="/api/prompts", tags=["Prompts"])
 app.include_router(actions_router, prefix="/api/actions", tags=["Actions"])
+
+# Atelier documentaire (design 07/07/2026) - CRUD documents/sections/pistes
+app.include_router(documents_router, prefix="/api/documents", tags=["Documents"])
 
 
 # Health endpoints

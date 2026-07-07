@@ -24,6 +24,37 @@ async def _create_contact(client: AsyncClient, first_name: str = "Jean") -> str:
     return response.json()["id"]
 
 
+async def _create_document_with_section_and_piste(client: AsyncClient) -> dict:
+    """Cree un document de l'atelier documentaire avec une section redigee
+    et une piste, pour verrouiller sa presence dans export/delete RGPD."""
+    doc_response = await client.post(
+        "/api/documents", json={"title": "Doc RGPD", "brief": "Brief du besoin"}
+    )
+    assert doc_response.status_code == 200, doc_response.text
+    document = doc_response.json()
+
+    section_response = await client.post(
+        f"/api/documents/{document['id']}/sections",
+        json={"title": "Section RGPD", "brief": "", "order": 0.0, "depth": 0},
+    )
+    assert section_response.status_code == 200, section_response.text
+    section = section_response.json()
+
+    await client.patch(
+        f"/api/documents/sections/{section['id']}",
+        json={"content": "Contenu redige a exporter/supprimer."},
+    )
+
+    piste_response = await client.post(
+        f"/api/documents/{document['id']}/pistes",
+        json={"texte": "Piste RGPD a retrouver dans l'export"},
+    )
+    assert piste_response.status_code == 200, piste_response.text
+    piste = piste_response.json()
+
+    return {"document": document, "section": section, "piste": piste}
+
+
 # ============================================================
 # Export Tests
 # ============================================================
@@ -70,6 +101,43 @@ class TestDataExport:
         first_names = [c["first_name"] for c in data["contacts"]]
         assert "Alice" in first_names
         assert "Bob" in first_names
+
+    @pytest.mark.asyncio
+    async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):
+        """GET /api/data/export (RGPD Art. 20) restitue l'atelier documentaire :
+        un « supprimer toutes mes donnees » sans ces 3 tables laisserait un
+        trou dans le droit a la portabilite."""
+        created = await _create_document_with_section_and_piste(client)
+
+        response = await client.get("/api/data/export")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "documents" in data
+        assert "document_sections" in data
+        assert "document_pistes" in data
+        assert isinstance(data["documents"], list)
+        assert isinstance(data["document_sections"], list)
+        assert isinstance(data["document_pistes"], list)
+
+        doc_ids = [d["id"] for d in data["documents"]]
+        assert created["document"]["id"] in doc_ids
+
+        section_ids = [s["id"] for s in data["document_sections"]]
+        assert created["section"]["id"] in section_ids
+        exported_section = next(
+            s for s in data["document_sections"] if s["id"] == created["section"]["id"]
+        )
+        assert exported_section["content"] == "Contenu redige a exporter/supprimer."
+        assert exported_section["document_id"] == created["document"]["id"]
+
+        piste_ids = [p["id"] for p in data["document_pistes"]]
+        assert created["piste"]["id"] in piste_ids
+        exported_piste = next(
+            p for p in data["document_pistes"] if p["id"] == created["piste"]["id"]
+        )
+        assert exported_piste["texte"] == "Piste RGPD a retrouver dans l'export"
 
     @pytest.mark.asyncio
     async def test_export_conversations_json(self, client: AsyncClient):
@@ -128,6 +196,25 @@ class TestDataDeletion:
         list_response = await client.get("/api/memory/contacts")
         assert list_response.status_code == 200
         assert len(list_response.json()) == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_all_data_purges_documents_sections_pistes(self, client: AsyncClient):
+        """DELETE /api/data/all?confirm=true (RGPD Art. 17) purge aussi
+        l'atelier documentaire - sinon le droit a l'oubli laisse des
+        documents en base apres un 'supprimer toutes mes donnees'."""
+        created = await _create_document_with_section_and_piste(client)
+
+        response = await client.delete("/api/data/all?confirm=true")
+
+        assert response.status_code == 200
+        assert response.json()["deleted"] is True
+
+        list_response = await client.get("/api/documents")
+        assert list_response.status_code == 200
+        assert list_response.json() == []
+
+        get_response = await client.get(f"/api/documents/{created['document']['id']}")
+        assert get_response.status_code == 404
 
 
 # ============================================================

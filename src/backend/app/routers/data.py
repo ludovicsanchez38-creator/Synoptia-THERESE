@@ -22,6 +22,9 @@ from app.models.entities import (
     Contact,
     Conversation,
     Deliverable,
+    Document,
+    DocumentPiste,
+    DocumentSection,
     EmailAccount,
     EmailLabel,
     EmailMessage,
@@ -108,6 +111,16 @@ async def export_all_data(
     # Board decisions
     decisions_result = await session.execute(select(BoardDecisionDB))
     decisions = decisions_result.scalars().all()
+
+    # Documents (atelier documentaire - US-SEC-02 / Art. 20)
+    documents_result = await session.execute(select(Document))
+    documents = documents_result.scalars().all()
+
+    document_sections_result = await session.execute(select(DocumentSection))
+    document_sections = document_sections_result.scalars().all()
+
+    document_pistes_result = await session.execute(select(DocumentPiste))
+    document_pistes = document_pistes_result.scalars().all()
 
     # Activity logs
     logs_result = await session.execute(
@@ -213,6 +226,47 @@ async def export_all_data(
                 "created_at": d.created_at.isoformat(),
             }
             for d in decisions
+        ],
+        "documents": [
+            {
+                "id": doc.id,
+                "title": doc.title,
+                "brief": doc.brief,
+                "status": doc.status,
+                "project_id": doc.project_id,
+                "contact_id": doc.contact_id,
+                "created_at": doc.created_at.isoformat(),
+                "updated_at": doc.updated_at.isoformat(),
+            }
+            for doc in documents
+        ],
+        "document_sections": [
+            {
+                "id": s.id,
+                "document_id": s.document_id,
+                "title": s.title,
+                "brief": s.brief,
+                "order": s.order,
+                "depth": s.depth,
+                "content": s.content,
+                "summary": s.summary,
+                "status": s.status,
+                "orphan": s.orphan,
+                "created_at": s.created_at.isoformat(),
+                "updated_at": s.updated_at.isoformat(),
+            }
+            for s in document_sections
+        ],
+        "document_pistes": [
+            {
+                "id": p.id,
+                "document_id": p.document_id,
+                "section_origine_id": p.section_origine_id,
+                "texte": p.texte,
+                "status": p.status,
+                "created_at": p.created_at.isoformat(),
+            }
+            for p in document_pistes
         ],
         "activity_logs": [
             {
@@ -343,6 +397,10 @@ async def delete_all_data(
     await session.execute(delete(CodeChange))
     await session.execute(delete(AgentMessage))
     await session.execute(delete(AgentTask))
+    # -- Atelier documentaire (RGPD Art. 17) : pistes -> sections -> documents
+    await session.execute(delete(DocumentPiste))
+    await session.execute(delete(DocumentSection))
+    await session.execute(delete(Document))
     # -- Tables avec FK
     await session.execute(delete(InvoiceLine))
     await session.execute(delete(Invoice))

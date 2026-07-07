@@ -3,6 +3,7 @@ import { getActions, runAction, APP_ACTIONS } from './actionRegistry';
 import { useNavigationStore } from '../stores/navigationStore';
 import { usePanelStore } from '../stores/panelStore';
 import { useActionsStore } from '../stores/actionsStore';
+import { useDocumentStore } from '../stores/documentStore';
 
 beforeEach(() => {
   useNavigationStore.setState({ activeView: 'chat', history: [] });
@@ -16,6 +17,7 @@ beforeEach(() => {
     showConversationSidebar: false,
   });
   useActionsStore.setState({ isPanelOpen: false });
+  useDocumentStore.setState({ createModalRequested: false });
 });
 
 describe('actionRegistry (L8 - registre d\'actions invocable)', () => {
@@ -48,6 +50,17 @@ describe('actionRegistry (L8 - registre d\'actions invocable)', () => {
   it("runAction('files.open') bascule sur la vue Indexation (arbitrage A/B)", () => {
     runAction('files.open');
     expect(useNavigationStore.getState().activeView).toBe('files');
+  });
+
+  it("runAction('documents.open') bascule sur la vue Documents (D2)", () => {
+    runAction('documents.open');
+    expect(useNavigationStore.getState().activeView).toBe('documents');
+  });
+
+  it("runAction('documents.new') bascule sur la vue Documents ET pose la demande d'ouverture de la modale (D4)", () => {
+    runAction('documents.new');
+    expect(useNavigationStore.getState().activeView).toBe('documents');
+    expect(useDocumentStore.getState().createModalRequested).toBe(true);
   });
 
   it("runAction('contact.new') ouvre la modale de contact", () => {

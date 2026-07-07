@@ -68,6 +68,11 @@ const FileBrowser = lazy(() =>
 const ProjectsPanel = lazy(() =>
   import('../memory/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel }))
 );
+// Atelier documentaire (D2) : liste des documents + création. L'atelier de
+// rédaction proprement dit (D3) remplacera le placeholder interne.
+const DocumentsList = lazy(() =>
+  import('../documents/DocumentsList').then((m) => ({ default: m.DocumentsList }))
+);
 
 export function ChatLayout() {
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
@@ -153,6 +158,8 @@ export function ChatLayout() {
   const handleToggleCRM = useCallback(() => useNavigationStore.getState().setView('crm'), []);
   // BUG-104 : le bouton « Projet » du header ouvre la vue Projets (et non la Mémoire).
   const handleToggleProjects = useCallback(() => useNavigationStore.getState().setView('projects'), []);
+  // D2 : le bouton « Documents » du header ouvre la vue Atelier documentaire.
+  const handleToggleDocuments = useCallback(() => useNavigationStore.getState().setView('documents'), []);
   // L6 : la Mémoire est une vue. ⌘M garde une sémantique « toggle » :
   // déjà sur la vue Mémoire -> retour, sinon -> bascule vers la vue Mémoire.
   const handleToggleMemory = useCallback(() => {
@@ -206,7 +213,7 @@ export function ChatLayout() {
       <SideToggle side="right" isOpen={activeView === 'memory'} onClick={handleToggleMemory} label="Mémoire" shortcut={isMac ? '⌘M' : 'Ctrl+M'} />
 
       <header role="banner" aria-label="Barre d'outils Thérèse">
-        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} onHome={() => useNavigationStore.getState().setView('home')} />
+        <ChatHeader onOpenSettings={ps.openSettings} onToggleEmailPanel={handleToggleEmail} onToggleCalendarPanel={handleToggleCalendar} onToggleTasksPanel={handleToggleTasks} onToggleInvoicesPanel={handleToggleInvoices} onToggleCRMPanel={handleToggleCRM} onToggleProjectsPanel={handleToggleProjects} onToggleDocumentsPanel={handleToggleDocuments} onToggleBoardPanel={ps.toggleBoardPanel} onToggleAtelierPanel={toggleAtelier} onHome={() => useNavigationStore.getState().setView('home')} />
       </header>
 
       <main id="main-content" role="main" aria-label="Conversation" className="flex-1 overflow-hidden flex flex-col">
@@ -248,6 +255,7 @@ export function ChatLayout() {
                 </div>
               )}
               {activeView === 'projects' && <ProjectsPanel />}
+              {activeView === 'documents' && <DocumentsList />}
             </Suspense>
           </div>
         ) : (

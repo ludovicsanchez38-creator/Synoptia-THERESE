@@ -1,7 +1,19 @@
 /**
  * THÉRÈSE v2 - QuickActions : lanceur d'actions rapides depuis le registre unique.
+ *
+ * « Rédiger un document » (D4) déclenche `documents.new` (atelier
+ * documentaire : trame + sections, D2-D3) - à distinguer de « Produire un
+ * document » (`guided.open`, Skills Office DOCX/PPTX/XLSX). Icône `FileStack`
+ * pour cohérence avec le bouton Documents de l'en-tête et la palette ⌘K.
+ *
+ * Revue adversariale lot D (finding F) : `documents.new` est en DERNIÈRE
+ * position (pas insérée au milieu) - les pastilles couleur sont dérivées de
+ * l'index `i % 4` ; l'insérer en position 2 décalait les couleurs des cartes
+ * préexistantes (collision Factures/Nouvelle conversation). En fin de
+ * tableau, les 4 premières cartes retrouvent leurs couleurs historiques et
+ * la 5e reprend simplement la couleur k1 (index 4 % 4 = 0).
  */
-import { MessageSquarePlus, FileText, UserPlus, Receipt } from 'lucide-react';
+import { MessageSquarePlus, FileText, FileStack, UserPlus, Receipt } from 'lucide-react';
 import { runAction } from '../../lib/actionRegistry';
 import { useNavigationStore } from '../../stores/navigationStore';
 
@@ -10,6 +22,7 @@ const ACTIONS: { id: string; label: string; icon: React.ElementType }[] = [
   { id: 'guided.open', label: 'Produire un document', icon: FileText },
   { id: 'contact.new', label: 'Ajouter un contact', icon: UserPlus },
   { id: 'invoices.open', label: 'Factures', icon: Receipt },
+  { id: 'documents.new', label: 'Rédiger un document', icon: FileStack },
 ];
 
 export function QuickActions() {

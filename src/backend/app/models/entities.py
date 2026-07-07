@@ -570,3 +570,57 @@ class EmailFollowUp(SQLModel, table=True):
     note: str | None = None
     status: str = Field(default="pending", index=True)  # pending, done, cancelled
     created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+
+# =============================================================================
+# DOCUMENT MODELS (Atelier Documentaire)
+# =============================================================================
+
+
+class Document(SQLModel, table=True):
+    """Document long construit dans l'atelier documentaire (design 07/07/2026)."""
+
+    __tablename__ = "documents"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    title: str
+    brief: str = ""  # description du besoin, nourrit chaque section
+    status: str = Field(default="en_cours")  # en_cours | termine
+    project_id: str | None = Field(default=None, foreign_key="projects.id")
+    contact_id: str | None = Field(default=None, foreign_key="contacts.id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class DocumentSection(SQLModel, table=True):
+    """Section d'un document. L'id est STABLE : posé à la création, jamais
+    recalculé - c'est l'invariant anti-perte (vérification de complétude par
+    comparaison d'ensembles d'ids à chaque réorganisation et à l'export)."""
+
+    __tablename__ = "document_sections"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    document_id: str = Field(foreign_key="documents.id", index=True)
+    title: str
+    brief: str = ""  # consigne d'une ligne : ce que la section doit couvrir
+    order: float = 0.0  # rang trié (float = insertion entre deux sans renuméroter)
+    depth: int = 0  # 0 = section, 1 = sous-section
+    content: str = ""  # markdown rédigé
+    summary: str = ""  # résumé ~150 mots généré à la validation (contexte des suivantes)
+    status: str = Field(default="vide")  # vide | brouillon | validee
+    orphan: bool = False  # section détachée par une regénération de trame (jamais supprimée auto)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class DocumentPiste(SQLModel, table=True):
+    """Idée annexe capturée pendant la rédaction (les « relances » de Dr_logic)."""
+
+    __tablename__ = "document_pistes"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    document_id: str = Field(foreign_key="documents.id", index=True)
+    section_origine_id: str | None = Field(default=None)
+    texte: str
+    status: str = Field(default="nouvelle")  # nouvelle | exploree | ignoree
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

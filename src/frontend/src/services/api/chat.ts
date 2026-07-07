@@ -278,7 +278,17 @@ export interface ConversationExportResponse {
   download_url: string;
 }
 
-/** Exporte une conversation en fichier (md/docx) puis déclenche le téléchargement. */
+/**
+ * Exporte une conversation en fichier (md/docx) puis déclenche le
+ * téléchargement.
+ *
+ * `download_url` renvoyé par le backend est un chemin RELATIF - `apiFetch`
+ * ne le préfixe jamais (revue finale du 07/07/2026, jumeau du finding
+ * bloquant 2 de `documents.ts::downloadExportedDocument`, même bug, même
+ * fix). Sans `API_BASE`, cassé dès que le front n'est pas sur l'origine
+ * backend (toujours le cas : localhost:1420 en dev, tauri://localhost
+ * packagé).
+ */
 export async function exportConversation(
   id: string,
   format: 'md' | 'docx'
@@ -286,7 +296,7 @@ export async function exportConversation(
   const exported = await request<ConversationExportResponse>(
     `/api/chat/conversations/${id}/export?format=${format}`
   );
-  const response = await apiFetch(exported.download_url);
+  const response = await apiFetch(`${API_BASE}${exported.download_url}`);
   if (!response.ok) {
     throw new ApiError(response.status, response.statusText, 'Téléchargement impossible');
   }

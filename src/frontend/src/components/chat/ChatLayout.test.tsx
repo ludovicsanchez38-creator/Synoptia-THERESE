@@ -7,7 +7,16 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 
 vi.mock('./ChatHeader', () => ({
-  ChatHeader: () => <div data-testid="chat-header" />,
+  // Mock minimal exposant le bouton Documents : teste le câblage ChatLayout
+  // (onToggleDocumentsPanel -> setView('documents')) sans rendre le vrai
+  // header (Tauri). Le vrai bouton est couvert par ChatHeader.test.tsx.
+  ChatHeader: ({ onToggleDocumentsPanel }: { onToggleDocumentsPanel?: () => void }) => (
+    <div data-testid="chat-header">
+      <button data-testid="header-documents-btn" onClick={onToggleDocumentsPanel}>
+        Documents
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('./MessageList', () => ({
@@ -45,6 +54,12 @@ vi.mock('../files/DropZone', () => ({
 
 vi.mock('./PanelContainer', () => ({
   PanelContainer: () => null,
+}));
+
+// Vue Documents (lazy) : mockée pour ne pas déclencher le vrai documentStore
+// (appels réseau) - on teste ici le routage, pas le contenu de la vue.
+vi.mock('../documents/DocumentsList', () => ({
+  DocumentsList: () => <div data-testid="documents-list-view" />,
 }));
 
 vi.mock('../ui/SideToggle', () => ({
@@ -94,5 +109,20 @@ describe('ChatLayout', () => {
 
     expect(await screen.findByText("Confirmer l'envoi de l'email")).toBeInTheDocument();
     expect(screen.getByText('merci@example.fr')).toBeInTheDocument();
+  });
+
+  it('D2 : le bouton Documents du header navigue vers la vue documents', async () => {
+    render(<ChatLayout />);
+    act(() => {
+      useNavigationStore.setState({ activeView: 'chat' });
+    });
+
+    act(() => {
+      screen.getByTestId('header-documents-btn').click();
+    });
+
+    expect(useNavigationStore.getState().activeView).toBe('documents');
+    // La vue Documents (lazy, mockée) est bien rendue dans la zone principale.
+    expect(await screen.findByTestId('documents-list-view')).toBeInTheDocument();
   });
 });
