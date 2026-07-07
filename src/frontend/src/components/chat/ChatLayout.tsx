@@ -68,6 +68,11 @@ const FileBrowser = lazy(() =>
 const ProjectsPanel = lazy(() =>
   import('../memory/ProjectsPanel').then((m) => ({ default: m.ProjectsPanel }))
 );
+// Atelier documentaire (D2) : liste des documents + création. L'atelier de
+// rédaction proprement dit (D3) remplacera le placeholder interne.
+const DocumentsList = lazy(() =>
+  import('../documents/DocumentsList').then((m) => ({ default: m.DocumentsList }))
+);
 
 export function ChatLayout() {
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>(undefined);
@@ -248,6 +253,7 @@ export function ChatLayout() {
                 </div>
               )}
               {activeView === 'projects' && <ProjectsPanel />}
+              {activeView === 'documents' && <DocumentsList />}
             </Suspense>
           </div>
         ) : (

@@ -50,6 +50,11 @@ describe('actionRegistry (L8 - registre d\'actions invocable)', () => {
     expect(useNavigationStore.getState().activeView).toBe('files');
   });
 
+  it("runAction('documents.open') bascule sur la vue Documents (D2)", () => {
+    runAction('documents.open');
+    expect(useNavigationStore.getState().activeView).toBe('documents');
+  });
+
   it("runAction('contact.new') ouvre la modale de contact", () => {
     runAction('contact.new');
     expect(usePanelStore.getState().showContactModal).toBe(true);

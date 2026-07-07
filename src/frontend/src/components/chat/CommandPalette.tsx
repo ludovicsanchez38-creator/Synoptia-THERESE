@@ -23,6 +23,7 @@ import {
   Sparkles,
   BookOpen,
   Play,
+  FileText,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useUXMode } from '../../hooks/useUXMode';
@@ -58,6 +59,7 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   'calendar.open': <Calendar className="w-4 h-4" />,
   'tasks.open': <ListTodo className="w-4 h-4" />,
   'invoices.open': <Receipt className="w-4 h-4" />,
+  'documents.open': <FileText className="w-4 h-4" />,
   'board.open': <Gavel className="w-4 h-4" />,
   'actions.open': <Play className="w-4 h-4 text-cyan-400" />,
   'data.export': <Download className="w-4 h-4" />,

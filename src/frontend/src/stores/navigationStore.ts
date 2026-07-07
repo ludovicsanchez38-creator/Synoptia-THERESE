@@ -19,7 +19,8 @@ export type AppView =
   | 'tasks'
   | 'invoices'
   | 'files' // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
-  | 'projects'; // Vue Projets dédiée (BUG-104 : surface perdue à la refonte 0.20)
+  | 'projects' // Vue Projets dédiée (BUG-104 : surface perdue à la refonte 0.20)
+  | 'documents'; // Atelier documentaire : liste + création (D2), atelier de rédaction (D3)
 
 interface NavigationStore {
   activeView: AppView;

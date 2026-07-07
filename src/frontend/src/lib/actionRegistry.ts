@@ -64,6 +64,7 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'invoices.open', label: 'Ouvrir les Factures', description: 'Factures et devis', group: 'Navigation', shortcut: 'I', keywords: ['devis'], run: () => nav().setView('invoices') },
   { id: 'projects.open', label: 'Ouvrir les Projets', description: 'Tes projets et leur avancement (kanban par statut)', group: 'Navigation', keywords: ['projets', 'kanban', 'avancement'], run: () => nav().setView('projects') },
   { id: 'files.open', label: 'Indexation des fichiers', description: 'Parcourir et indexer des fichiers locaux', group: 'Navigation', keywords: ['fichiers', 'indexation', 'documents'], run: () => nav().setView('files') },
+  { id: 'documents.open', label: 'Ouvrir les Documents', description: 'Atelier documentaire : propositions, dossiers, rapports', group: 'Navigation', keywords: ['documents', 'atelier', 'trame', 'sections', 'rédaction'], run: () => nav().setView('documents') },
   { id: 'board.open', label: 'Board de décision', description: 'Convoquer le board de conseillers IA', group: 'Navigation', shortcut: 'D', run: () => panel().toggleBoardPanel() },
   { id: 'actions.open', label: 'Actions', description: 'Lancer un agent actionnable (rapport, relance, audit...)', group: 'Actions', run: () => useActionsStore.getState().openPanel() },
 
