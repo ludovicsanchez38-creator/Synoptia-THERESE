@@ -101,14 +101,22 @@ class TestCalendarList:
     """Tests for listing calendars."""
 
     @pytest.mark.asyncio
-    async def test_list_calendars_empty(self, client: AsyncClient):
-        """GET /api/calendar/calendars - should return empty list initially."""
+    async def test_list_calendars_cree_le_calendrier_local_par_defaut(self, client: AsyncClient):
+        """GET /api/calendar/calendars - sans compte, un calendrier local par défaut
+        est créé au premier passage (impasse hors Google, Dr_logic-3D 05/07/2026),
+        et l'appel est idempotent (pas de doublon au second passage)."""
         response = await client.get("/api/calendar/calendars")
         assert_response_ok(response)
         data = response.json()
 
-        assert isinstance(data, list)
-        assert len(data) == 0
+        assert len(data) == 1
+        assert data[0]["summary"] == "Mon calendrier"
+        assert data[0]["primary"] is True
+
+        # Idempotent : un second appel ne crée pas de doublon.
+        response2 = await client.get("/api/calendar/calendars")
+        assert_response_ok(response2)
+        assert len(response2.json()) == 1
 
     @pytest.mark.asyncio
     async def test_list_calendars_with_local(self, client: AsyncClient):

@@ -132,6 +132,21 @@ async def list_calendars(
     result = await session.execute(statement)
     calendars = result.scalars().all()
 
+    # Sans compte connecté, la liste était VIDE : le formulaire d'événement
+    # exigeait « un calendrier dans le menu déroulant » qui ne proposait rien -
+    # impasse totale hors Google (retour Dr_logic-3D, 05/07/2026). On crée
+    # donc un calendrier local par défaut au premier passage (idempotent).
+    if not calendars and not account_id and provider in (None, "local"):
+        from app.services.calendar.local_provider import LocalCalendarProvider
+
+        local = LocalCalendarProvider(session)
+        await local.create_calendar(
+            name="Mon calendrier",
+            description="Calendrier local créé automatiquement (aucun compte connecté)",
+        )
+        result = await session.execute(statement)
+        calendars = result.scalars().all()
+
     return [
         CalendarResponse(
             id=cal.id,
