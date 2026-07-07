@@ -122,12 +122,18 @@ jobs:
       - name: Installer pip-audit et uv
         run: pip install pip-audit uv
 
-      # Exceptions documentées (état au 11/06/2026, à réviser à chaque bump) :
+      # Exceptions documentées (état au 07/07/2026, à réviser à chaque bump) :
       # - torch 2.9.1 : PYSEC-2026-139 / CVE-2025-3000 / CVE-2025-3001 -
       #   fix = torch 2.10, bump non trivial (PyInstaller 3 OS + version CPU
       #   épinglée dans release.yml). Surface réduite : modèle local fixe.
-      # - transformers 4.57.6 : PYSEC-2025-217 / CVE-2026-1839 - fix = 5.0.0rc3
-      #   (release candidate, pas raisonnable en prod).
+      # - transformers 4.57.6 : PYSEC-2025-217 / CVE-2026-1839 / CVE-2026-4372 -
+      #   fix = 5.x, saut majeur à planifier avec le bump torch 2.10 (PyInstaller
+      #   3 OS + embeddings). Surface réduite : usage local via sentence-transformers.
+      # - starlette 1.2.1 : PYSEC-2026-248 (spoofing request.url) / PYSEC-2026-249
+      #   (limites form-urlencoded ignorées, DoS) - fix = 1.3.x, mais son TestClient
+      #   passe à httpx2 et désynchronise les requêtes longues de la suite locale
+      #   (AttributeError ByteStream.write). Surface réduite : serveur strictement
+      #   loopback 127.0.0.1 + token de session. Bump à faire à froid, hors release.
       - name: Audit Python (prod) - BLOQUANT avec exceptions justifiées
         shell: bash
         run: |
@@ -136,7 +142,10 @@ jobs:
             --ignore-vuln CVE-2025-3000 \
             --ignore-vuln CVE-2025-3001 \
             --ignore-vuln PYSEC-2025-217 \
-            --ignore-vuln CVE-2026-1839
+            --ignore-vuln CVE-2026-1839 \
+            --ignore-vuln CVE-2026-4372 \
+            --ignore-vuln PYSEC-2026-248 \
+            --ignore-vuln PYSEC-2026-249
 
   mypy:
     name: Typage (mypy, baseline)

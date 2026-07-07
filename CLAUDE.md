@@ -122,6 +122,10 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 (Section maintenue par le workflow /release-therese et Zezette)
 
+### Depuis bump sécurité dépendances (07/07/2026, pré-release 0.26.2)
+- [ ] **Bump starlette 1.3.x + httpx2 - à faire À FROID, hors release** : starlette 1.2.1 gardé volontairement avec 2 exceptions pip-audit (PYSEC-2026-248 spoofing request.url, PYSEC-2026-249 limites form-urlencoded ignorées - surface réduite : serveur loopback + token de session). Le TestClient de starlette 1.3 passe à `httpx2` (à ajouter au groupe dev) et le fallback httpx est cassé (`AttributeError: 'ByteStream' object has no attribute 'write'`) ; même avec httpx2, les requêtes longues (vrai appel LLM local pendant les tests) se désynchronisent : le POST rend un 500 immédiat pendant que le handler continue en fond. À investiguer posément (timeout du TestClient httpx2, interaction BaseHTTPMiddleware + GZip) avec la suite complète en local AVANT de merger.
+- [ ] **Gotcha suite locale** : si un Ollama local répond sur 11434 (ex. Tïa), certains tests `test_routers_chat.py` font de VRAIS appels LLM (le mock ne couvre pas ce chemin) - durées de tests gonflées et résultats dépendants du modèle local. Mocker le provider dans ces tests ou forcer un `OLLAMA_BASE_URL` mort dans le conftest.
+
 ### Depuis BUG-041 drag & drop projets (02/07/2026, PR #92 mergée, PAS releasé)
 - [ ] **TaskKanban : même pattern poignée-seule que le BUG-041** : dans `TaskKanban.tsx`, les listeners `useSortable` ne couvrent que le `GripVertical` (16px quasi invisible) - attraper la carte tâche par son corps ne démarre aucun drag. Aucun bug testeur ouvert dessus, mais à harmoniser avec le fix `ProjectsKanban.tsx` (listeners sur le wrapper entier + `onDragCancel`, clics préservés par l'activationConstraint 8px ; test de régression modèle : `ProjectsKanban.test.tsx`).
 
