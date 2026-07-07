@@ -24,12 +24,22 @@
  * parent (`onBack`, bascule locale D2) - sinon le document actuel pourrait
  * flasher au prochain montage de l'atelier (lifecycle laissé ouvert par D2).
  *
+ * Revue adversariale lot D (finding E) : le bouton interne « Retour » n'est
+ * PAS le seul chemin de sortie de l'atelier - la back-bar « ← Chat » de
+ * ChatLayout, Échap (resolveEscape -> goBack) et les boutons header/⌘K
+ * (setView) démontent ce composant SANS passer par `handleBack`. Un effet de
+ * nettoyage au DÉMONTAGE appelle donc `closeDocument()` inconditionnellement
+ * (idempotent - déjà appelé ou non par `handleBack`), et le rendu est gardé
+ * par `doc` (currentDocument SEULEMENT s'il correspond à `documentId`) pour
+ * qu'un document précédent encore en mémoire au moment du montage (fenêtre
+ * where le nettoyage précédent n'a pas encore été traité) ne flashe jamais.
+ *
  * Export : `exportDocument` du store renvoie les métadonnées
  * ({download_url, file_name}) SANS déclencher le téléchargement (décision
  * D1) - le déclenchement navigateur suit la même mécanique que
  * `exportConversation` (chat.ts:282) via `downloadExportedDocument`.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDocumentStore } from '../../stores/documentStore';
@@ -69,6 +79,15 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
     closeDocument();
     onBack();
   }, [closeDocument, onBack]);
+
+  // Finding E : filet de sécurité au démontage, pour les 3 chemins de sortie
+  // qui ne passent PAS par handleBack (back-bar ChatLayout, Échap, boutons
+  // header/⌘K). Idempotent avec l'appel déjà fait par handleBack (« Retour »).
+  useEffect(() => {
+    return () => {
+      closeDocument();
+    };
+  }, [closeDocument]);
 
   const handleExport = useCallback(
     async (format: 'md' | 'docx') => {
@@ -111,7 +130,14 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
     [updatePiste]
   );
 
-  const activeSection = currentDocument?.sections.find((s) => s.id === sectionActive) ?? null;
+  // Finding E : currentDocument peut encore porter un AUTRE document au
+  // moment du montage (nettoyage précédent pas encore traité, ou store
+  // partagé entre deux instances successives) - `doc` ne vaut le document du
+  // store QUE s'il correspond à `documentId`, sinon on reste en chargement
+  // (aucun contenu d'un document précédent ne doit apparaître, même
+  // brièvement).
+  const doc = currentDocument && currentDocument.id === documentId ? currentDocument : null;
+  const activeSection = doc?.sections.find((s) => s.id === sectionActive) ?? null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="document-workspace">
@@ -121,9 +147,9 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Retour aux documents
           </Button>
-          {currentDocument && <p className="text-sm font-medium text-text truncate">{currentDocument.title}</p>}
+          {doc && <p className="text-sm font-medium text-text truncate">{doc.title}</p>}
         </div>
-        {currentDocument && (
+        {doc && (
           <div className="flex items-center gap-2 shrink-0">
             <Button variant="ghost" size="sm" onClick={() => handleExport('md')} disabled={exportingFormat !== null}>
               {exportingFormat === 'md' ? (
@@ -145,7 +171,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
         )}
       </div>
 
-      {!currentDocument ? (
+      {!doc ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -156,7 +182,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
         <div className="flex-1 min-h-0 flex overflow-hidden">
           <div className="w-72 shrink-0 border-r border-border/40 overflow-y-auto">
             <OutlineTree
-              sections={currentDocument.sections}
+              sections={doc.sections}
               activeSectionId={sectionActive}
               isLoading={isLoading}
               error={error}
@@ -178,7 +204,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             onInstructionPrefillApplied={() => setInstructionPrefill(null)}
           />
 
-          <PistesPanel pistes={currentDocument.pistes} onExplore={handleExplorePiste} onIgnore={handleIgnorePiste} />
+          <PistesPanel pistes={doc.pistes} onExplore={handleExplorePiste} onIgnore={handleIgnorePiste} />
         </div>
       )}
     </div>

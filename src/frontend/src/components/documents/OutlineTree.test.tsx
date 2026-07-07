@@ -153,6 +153,25 @@ describe('OutlineTree', () => {
     it('retourne null si un id est introuvable dans la trame', () => {
       expect(computeReorderPayload(sections, 's-inconnu', 's-alpha')).toBeNull();
     });
+
+    // Revue adversariale lot D (finding D) : le backend exige EXACTEMENT
+    // l'ensemble des sections non-orphelines (409 sinon) - une section
+    // orpheline présente dans sortedSections ne doit JAMAIS finir dans items.
+    it('exclut les sections orphelines du payload (contrat backend anti-409)', () => {
+      const withOrphan = [
+        makeSection({ id: 's1', title: 'A', order: 10, depth: 0 }),
+        makeSection({ id: 's2', title: 'B', order: 20, depth: 0, orphan: true }),
+        makeSection({ id: 's3', title: 'C', order: 30, depth: 0 }),
+      ];
+
+      const items = computeReorderPayload(withOrphan, 's3', 's1');
+
+      expect(items?.some((i) => i.id === 's2')).toBe(false);
+      expect(items).toEqual([
+        { id: 's3', order: 10, depth: 0 },
+        { id: 's1', order: 20, depth: 0 },
+      ]);
+    });
   });
 
   it('affiche les sections triées par order (pas par ordre d\'arrivée dans le tableau)', () => {

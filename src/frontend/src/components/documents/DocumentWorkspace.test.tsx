@@ -153,6 +153,37 @@ describe('DocumentWorkspace', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  // Revue adversariale lot D (finding E) : currentDocument peut encore porter
+  // un AUTRE document que celui demandé par `documentId` (nettoyage d'une
+  // instance précédente pas encore traité, ou navigation directe list ->
+  // autre doc). Aucun contenu de ce document précédent ne doit apparaître.
+  it("currentDocument d'un AUTRE document que documentId : reste en chargement, ne rend RIEN de l'ancien document", () => {
+    useDocumentStore.setState({
+      currentDocument: makeDetail({ id: 'doc-A', title: 'Document A', sections: [makeSection({ id: 'sA' })] }),
+    });
+
+    render(<DocumentWorkspace documentId="doc-B" onBack={vi.fn()} />);
+
+    expect(screen.getByText(/Chargement du document/i)).toBeInTheDocument();
+    expect(screen.queryByText('Document A')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('outline-tree')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Exporter/i })).not.toBeInTheDocument();
+  });
+
+  // Revue adversariale lot D (finding E) : les chemins de sortie autres que
+  // le bouton « Retour » (back-bar ChatLayout, Échap, header/⌘K) démontent ce
+  // composant sans jamais appeler closeDocument - un effet de nettoyage au
+  // démontage doit le faire à leur place.
+  it('démontage (navigation externe, hors bouton Retour) appelle closeDocument', () => {
+    useDocumentStore.setState({ currentDocument: makeDetail() });
+    const { unmount } = render(<DocumentWorkspace documentId="doc-1" onBack={vi.fn()} />);
+
+    expect(useDocumentStore.getState().closeDocument).not.toHaveBeenCalled();
+    unmount();
+
+    expect(useDocumentStore.getState().closeDocument).toHaveBeenCalledTimes(1);
+  });
+
   it('« Exporter .docx » récupère les métadonnées puis déclenche le téléchargement', async () => {
     useDocumentStore.setState({ currentDocument: makeDetail() });
     const exported: DocumentExportResponse = {

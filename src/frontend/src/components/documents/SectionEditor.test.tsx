@@ -98,6 +98,16 @@ describe('SectionEditor', () => {
     expect(screen.getByRole('button', { name: /^Valider$/i })).toBeDisabled();
   });
 
+  // Revue adversariale lot D (finding C) : un blur pendant le stream déclenche
+  // un PATCH qui écrase le contenu affiché par l'état DB du dernier flush -
+  // les champs doivent être verrouillés tant que isStreaming est vrai.
+  it('pendant le stream, les champs Titre et Consigne sont désactivés', () => {
+    renderEditor({ section: makeSection({ content: 'En cours de rédaction', status: 'brouillon' }), isStreaming: true });
+
+    expect(screen.getByLabelText('Titre de la section')).toBeDisabled();
+    expect(screen.getByLabelText('Consigne de la section')).toBeDisabled();
+  });
+
   it('blur du titre appelle updateSection avec le nouveau titre', () => {
     const { onUpdateSection } = renderEditor();
     const titleInput = screen.getByLabelText('Titre de la section');
@@ -187,6 +197,37 @@ describe('SectionEditor', () => {
     expect(onDraft).toHaveBeenCalledWith('s1');
   });
 
+  // Revue adversariale lot D (finding G) : le seul test « Reprendre »
+  // existant couvre la branche SANS instruction (Rédiger). Cette branche
+  // couvre Retoucher (AVEC instruction) : « Reprendre » doit relancer avec
+  // la MÊME instruction, pas une rédaction vierge.
+  it('Retoucher avec instruction puis erreur : « Reprendre » relance avec LA MÊME instruction', () => {
+    const { onDraft, rerender } = renderEditor({
+      section: makeSection({ content: 'Contenu existant.', status: 'brouillon' }),
+    });
+
+    fireEvent.change(screen.getByLabelText('Instruction de retouche'), { target: { value: 'Plus concis' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Retoucher$/i }));
+    expect(onDraft).toHaveBeenCalledWith('s1', 'Plus concis');
+
+    // Le store signale l'erreur en repassant `error` (le champ instruction,
+    // lui, a déjà été vidé par handleRetouch - lastInstruction seul survit).
+    rerender(
+      <SectionEditor
+        section={makeSection({ content: 'Contenu existant.', status: 'brouillon' })}
+        isStreaming={false}
+        error="Erreur du fournisseur IA pendant la rédaction : timeout"
+        onUpdateSection={vi.fn()}
+        onDraft={onDraft}
+        onValidate={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Reprendre/i }));
+
+    expect(onDraft).toHaveBeenLastCalledWith('s1', 'Plus concis');
+  });
+
   it('section validée : « Rédiger » et « Valider » disparaissent, seul « Retoucher » reste', () => {
     renderEditor({ section: makeSection({ content: 'Contenu final.', status: 'validee', summary: 'Résumé.' }) });
 
@@ -222,6 +263,36 @@ describe('SectionEditor', () => {
       />
     );
     expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Piste sur la même section');
+  });
+
+  // Revue adversariale lot D (finding H) : le champ instruction vide se fait
+  // simplement remplir (pas de préfixe parasite) - cas déjà couvert plus haut
+  // ('pose le texte dans le champ instruction'), répété ici explicitement
+  // pour documenter le contraste avec le cas « saisie en cours » ci-dessous.
+  it('instructionPrefill sur un champ VIDE : pose directement le texte (pas de séparateur)', () => {
+    renderEditor({ section: makeSection({ id: 's1' }), instructionPrefill: 'Ajouter un exemple chiffré' });
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Ajouter un exemple chiffré');
+  });
+
+  it('instructionPrefill sur une saisie EN COURS : AJOUTE le texte de la piste (ne l\'écrase pas)', () => {
+    const { rerender } = renderEditor({ section: makeSection({ id: 's1' }), instructionPrefill: null });
+
+    fireEvent.change(screen.getByLabelText('Instruction de retouche'), { target: { value: 'Ma saisie en cours' } });
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Ma saisie en cours');
+
+    rerender(
+      <SectionEditor
+        section={makeSection({ id: 's1' })}
+        isStreaming={false}
+        error={null}
+        onUpdateSection={vi.fn()}
+        onDraft={vi.fn()}
+        onValidate={vi.fn()}
+        instructionPrefill="Piste sur la même section"
+      />
+    );
+
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Ma saisie en cours; Piste sur la même section');
   });
 
   it('changer de section réinitialise les buffers titre/consigne (pas de fuite entre sections)', () => {

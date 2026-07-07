@@ -20,6 +20,11 @@ import type { DocumentSection, SectionsReorderItem } from '../../services/api/do
  * profondeur inchangée) après un déplacement `activeId` -> `overId`.
  * Retourne `null` si le déplacement est un no-op (mêmes ids, ou ids
  * introuvables dans `sortedSections`).
+ *
+ * Revue adversariale lot D (finding D) : le backend exige EXACTEMENT
+ * l'ensemble des sections non-orphelines (409 sinon, `documents.py
+ * reorder_sections`) - les sections `orphan: true` sont exclues du payload
+ * (ordre recalculé sur les seules sections restantes).
  */
 export function computeReorderPayload(
   sortedSections: DocumentSection[],
@@ -32,9 +37,11 @@ export function computeReorderPayload(
   if (oldIndex === -1 || newIndex === -1) return null;
 
   const reordered = arrayMove(sortedSections, oldIndex, newIndex);
-  return reordered.map((section, index) => ({
-    id: section.id,
-    order: (index + 1) * 10,
-    depth: section.depth,
-  }));
+  return reordered
+    .filter((section) => !section.orphan)
+    .map((section, index) => ({
+      id: section.id,
+      order: (index + 1) * 10,
+      depth: section.depth,
+    }));
 }

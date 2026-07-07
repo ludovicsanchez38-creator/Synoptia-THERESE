@@ -505,6 +505,210 @@ describe('documentStore', () => {
       expect(useDocumentStore.getState().error).toBe('Impossible de contacter le serveur');
       expect(useDocumentStore.getState().isStreaming).toBe(false);
     });
+
+    // Revue adversariale lot D (finding A) : le backend émet des DELTAS et
+    // REMPLACE le contenu accumulé côté base - sans reset au démarrage du
+    // draft, une retouche sur une section déjà rédigée afficherait
+    // ancien+nouveau pendant tout le stream (divergence avec le backend).
+    describe('reset du contenu au démarrage (finding A)', () => {
+      it('retouche sur une section AVEC contenu existant : pendant le stream, le contenu est SEULEMENT la concat des chunks (jamais ancien+nouveau)', async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({
+            id: 'd1',
+            sections: [makeSection({ id: 's1', content: 'Ancien contenu déjà rédigé.', status: 'brouillon' })],
+          }),
+        });
+
+        let releaseChunk: () => void = () => {};
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'text', content: 'Nouveau' };
+          await new Promise<void>((resolve) => {
+            releaseChunk = resolve;
+          });
+          yield { type: 'text', content: ' contenu' };
+        });
+
+        const streaming = useDocumentStore.getState().draftSection('s1', 'Reprends tout');
+
+        await waitFor(() => {
+          expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Nouveau');
+        });
+        // L'ancien contenu ne doit JAMAIS réapparaître pendant le stream.
+        expect(useDocumentStore.getState().currentDocument?.sections[0].content).not.toContain('Ancien contenu');
+
+        releaseChunk();
+        await waitFor(() => {
+          expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Nouveau contenu');
+        });
+
+        await streaming;
+      });
+
+      it('erreur mi-stream sur une retouche : le contenu reste le PARTIEL streamé depuis ce démarrage (pas ancien+partiel)', async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({
+            id: 'd1',
+            sections: [makeSection({ id: 's1', content: 'Ancien paragraphe complet.', status: 'brouillon' })],
+          }),
+        });
+
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'text', content: 'Début du nouveau texte' };
+          yield { type: 'error', content: 'Erreur du fournisseur IA pendant la rédaction : timeout' };
+        });
+
+        await useDocumentStore.getState().draftSection('s1', 'Reprends tout');
+
+        const state = useDocumentStore.getState();
+        expect(state.currentDocument?.sections[0].content).toBe('Début du nouveau texte');
+        expect(state.error).toBe('Erreur du fournisseur IA pendant la rédaction : timeout');
+        expect(state.isStreaming).toBe(false);
+      });
+
+      it('première rédaction (section vide) : le reset au démarrage est un no-op, comportement inchangé', async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({ id: 'd1', sections: [makeSection({ id: 's1', content: '', status: 'vide' })] }),
+        });
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'text', content: 'Bonjour' };
+        });
+
+        await useDocumentStore.getState().draftSection('s1');
+
+        expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Bonjour');
+      });
+    });
+
+    // Revue adversariale lot D (finding B) : stream abandonné (fermeture du
+    // document, ou bascule pendant le stream) - isStreaming ne doit pas
+    // rester bloqué, le flux transmis doit être annulable, et un `done`
+    // tardif ne doit pas recharger le mauvais document.
+    describe('annulation du stream (finding B)', () => {
+      it('closeDocument pendant un stream : isStreaming repasse à false ET le signal transmis à l\'API est annulé', async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({ id: 'd1', sections: [makeSection({ id: 's1', content: '', status: 'vide' })] }),
+        });
+
+        let capturedSignal: AbortSignal | undefined;
+        let releaseChunk: () => void = () => {};
+        vi.mocked(draftSection).mockImplementation(async function* (
+          _sectionId: string,
+          _instruction?: string,
+          signal?: AbortSignal
+        ): AsyncGenerator<DraftStreamChunk> {
+          capturedSignal = signal;
+          yield { type: 'text', content: 'Début' };
+          await new Promise<void>((resolve) => {
+            releaseChunk = resolve;
+          });
+          if (signal?.aborted) {
+            const abortError = new Error('The operation was aborted.');
+            abortError.name = 'AbortError';
+            throw abortError;
+          }
+          yield { type: 'text', content: ' suite' };
+        });
+
+        const streaming = useDocumentStore.getState().draftSection('s1');
+
+        await waitFor(() => {
+          expect(useDocumentStore.getState().isStreaming).toBe(true);
+          expect(capturedSignal).toBeDefined();
+        });
+
+        useDocumentStore.getState().closeDocument();
+
+        expect(useDocumentStore.getState().isStreaming).toBe(false);
+        expect(capturedSignal?.aborted).toBe(true);
+
+        releaseChunk();
+        await streaming; // ne doit pas planter (sortie silencieuse sur AbortError)
+
+        expect(useDocumentStore.getState().error).toBeNull();
+      });
+
+      it("un nouveau draftSection annule silencieusement le stream précédent encore actif", async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({
+            id: 'd1',
+            sections: [makeSection({ id: 's1', content: '', status: 'vide' }), makeSection({ id: 's2', content: '', status: 'vide' })],
+          }),
+        });
+
+        let firstSignal: AbortSignal | undefined;
+        let releaseFirst: () => void = () => {};
+        vi.mocked(draftSection).mockImplementationOnce(async function* (
+          _sectionId: string,
+          _instruction?: string,
+          signal?: AbortSignal
+        ): AsyncGenerator<DraftStreamChunk> {
+          firstSignal = signal;
+          yield { type: 'text', content: 'Premier flux' };
+          await new Promise<void>((resolve) => {
+            releaseFirst = resolve;
+          });
+          if (signal?.aborted) {
+            const abortError = new Error('The operation was aborted.');
+            abortError.name = 'AbortError';
+            throw abortError;
+          }
+          yield { type: 'text', content: ' jamais vu' };
+        });
+        vi.mocked(draftSection).mockImplementationOnce(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'text', content: 'Second flux' };
+        });
+
+        const firstStreaming = useDocumentStore.getState().draftSection('s1');
+        await waitFor(() => expect(firstSignal).toBeDefined());
+
+        const secondStreaming = useDocumentStore.getState().draftSection('s2');
+
+        expect(firstSignal?.aborted).toBe(true);
+        releaseFirst();
+
+        await Promise.all([firstStreaming, secondStreaming]);
+
+        expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Premier flux');
+        expect(useDocumentStore.getState().currentDocument?.sections[1].content).toBe('Second flux');
+        expect(useDocumentStore.getState().error).toBeNull();
+      });
+
+      it("le chunk 'done' ne recharge PAS un document différent de celui actif au démarrage du draft (bascule pendant le stream)", async () => {
+        useDocumentStore.setState({
+          currentDocument: makeDetail({ id: 'd1', sections: [makeSection({ id: 's1', content: '', status: 'vide' })] }),
+        });
+
+        let releaseDone: () => void = () => {};
+        vi.mocked(draftSection).mockImplementation(async function* (): AsyncGenerator<DraftStreamChunk> {
+          yield { type: 'text', content: 'Partiel' };
+          // Gate : le chunk 'done' n'arrive qu'APRÈS que le test ait basculé
+          // le document actif (sinon les deux chunks s'enchaînent dans le
+          // même tick et le test ne peut jamais observer l'état intermédiaire).
+          await new Promise<void>((resolve) => {
+            releaseDone = resolve;
+          });
+          yield { type: 'done', section_id: 's1' };
+        });
+
+        const streaming = useDocumentStore.getState().draftSection('s1');
+
+        await waitFor(() => {
+          expect(useDocumentStore.getState().currentDocument?.sections[0].content).toBe('Partiel');
+        });
+
+        // Bascule vers un AUTRE document PENDANT le stream (chemin réel :
+        // finding E, un nouveau document est ouvert sans que le précédent
+        // ait été proprement fermé).
+        useDocumentStore.setState({ currentDocument: makeDetail({ id: 'd2', sections: [] }) });
+
+        releaseDone();
+        await streaming;
+
+        expect(getDocument).not.toHaveBeenCalled();
+        expect(useDocumentStore.getState().currentDocument?.id).toBe('d2');
+        expect(useDocumentStore.getState().isStreaming).toBe(false);
+      });
+    });
   });
 
   describe('closeDocument', () => {

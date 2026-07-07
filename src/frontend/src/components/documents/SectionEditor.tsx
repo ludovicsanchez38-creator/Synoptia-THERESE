@@ -26,6 +26,13 @@
  * parent (`DocumentWorkspace`) efface son état après consommation via
  * `onInstructionPrefillApplied` (évite un réemploi si l'utilisateur navigue
  * plus tard vers une autre section puis revient sur celle-ci).
+ *
+ * Revue adversariale lot D (finding H) : si le champ instruction contient
+ * déjà une saisie de l'utilisateur au moment où le préremplissage arrive, on
+ * ne l'ÉCRASE PAS - on l'AJOUTE (séparateur « ; », le champ est un `<input>`
+ * mono-ligne). `setInstruction` utilise une mise à jour fonctionnelle pour
+ * lire l'état courant sans dépendre de `instruction` dans les deps de l'effet
+ * (qui ne doit se déclencher qu'au changement de `instructionPrefill`).
  */
 import { useEffect, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
@@ -170,10 +177,11 @@ export function SectionEditor({
   // le texte de la piste, jamais un champ vide.
   useEffect(() => {
     if (instructionPrefill) {
-      setInstruction(instructionPrefill);
+      // Finding H : préserve une saisie en cours plutôt que de l'écraser.
+      setInstruction((prev) => (prev.trim() ? `${prev}; ${instructionPrefill}` : instructionPrefill));
       onInstructionPrefillApplied?.();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- volontaire : uniquement au changement du préremplissage
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- volontaire : uniquement au changement du préremplissage (mise à jour fonctionnelle, pas besoin de `instruction` en dep)
   }, [instructionPrefill]);
 
   if (!section) {
@@ -244,7 +252,8 @@ export function SectionEditor({
             onBlur={handleTitleBlur}
             placeholder="Titre de la section"
             aria-label="Titre de la section"
-            className="flex-1 min-w-0 px-2.5 py-1.5 bg-transparent text-lg font-semibold text-text focus:outline-none focus:bg-background/40 rounded-md transition-colors"
+            disabled={isStreaming}
+            className="flex-1 min-w-0 px-2.5 py-1.5 bg-transparent text-lg font-semibold text-text focus:outline-none focus:bg-background/40 rounded-md transition-colors disabled:opacity-60"
           />
           <span className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-[6px] border ${meta.className}`}>
             {meta.label}
@@ -257,7 +266,8 @@ export function SectionEditor({
           placeholder="Consigne de rédaction"
           aria-label="Consigne de la section"
           rows={2}
-          className="w-full px-2.5 py-1.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+          disabled={isStreaming}
+          className="w-full px-2.5 py-1.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none disabled:opacity-60"
         />
       </div>
 

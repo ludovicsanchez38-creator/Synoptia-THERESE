@@ -8,12 +8,29 @@
  * affichable dans `error` plutôt que des exceptions non gérées.
  *
  * Streaming de rédaction (`draftSection`) : le contenu de la section ciblée
- * est mis à jour AU FIL DE L'EAU (chunk par chunk, immuable - nouveaux
- * tableaux/objets, jamais de mutation en place) pendant que `isStreaming`
- * reste vrai. Sur chunk `error`, le contenu déjà streamé est conservé tel
- * quel (le backend a lui-même persisté le partiel, zéro perte) et `error`
- * est posé. Sur chunk `done`, le document est rechargé pour récupérer le
- * contenu canonique (sans bloc PISTES) et les nouvelles pistes détectées.
+ * est RÉINITIALISÉ à `''` AU DÉMARRAGE du draft (retouche ET première
+ * rédaction) - le backend émet des DELTAS et REMPLACE `target.content` par
+ * l'accumulé côté base, donc le store doit reconstruire le contenu de zéro
+ * pour rester en miroir exact (sinon une retouche affiche ancien+nouveau
+ * pendant tout le stream, cf revue adversariale lot D, finding A). Le
+ * contenu est ensuite mis à jour AU FIL DE L'EAU (chunk par chunk, immuable
+ * - nouveaux tableaux/objets, jamais de mutation en place) pendant que
+ * `isStreaming` reste vrai. Sur chunk `error`, le contenu déjà streamé
+ * depuis CE démarrage est conservé tel quel (le backend a lui-même persisté
+ * le partiel, zéro perte) et `error` est posé. Sur chunk `done`, le document
+ * est rechargé pour récupérer le contenu canonique (sans bloc PISTES) et les
+ * nouvelles pistes détectées - SAUF si le document actif a changé depuis le
+ * démarrage du draft (id capturé au départ, comparé à `get().currentDocument
+ * ?.id` : sinon on rechargerait le mauvais document, finding B).
+ *
+ * Annulation (finding B) : un `AbortController` module-scope (`draftAbort
+ * Controller`, un seul flux de rédaction actif à la fois puisque
+ * `isStreaming` est global) est créé à chaque `draftSection` et transmis en
+ * `signal` à `services/api/documents.draftSection`. Un nouveau draft annule
+ * silencieusement un stream encore actif ; `closeDocument` fait de même. Sur
+ * `AbortError`, sortie silencieuse - ni `error` ni `isStreaming` ne sont
+ * posés ici (déjà gérés par le déclencheur de l'abort), le contenu partiel
+ * reste tel quel (le backend l'a déjà persisté via son propre `finally`).
  */
 
 import { create } from 'zustand';
@@ -101,6 +118,14 @@ interface DocumentStore {
   clearError: () => void;
 }
 
+/**
+ * AbortController du flux de rédaction en cours (D4, finding B) - module-
+ * scope plutôt que dans le state Zustand : ce n'est pas une donnée
+ * affichable, et un seul flux de rédaction est actif à la fois (`isStreaming`
+ * est global, pas par section).
+ */
+let draftAbortController: AbortController | null = null;
+
 /** Applique une mise à jour à une section précise de currentDocument (immuable). */
 function patchSection(
   document: DocumentDetail,
@@ -172,7 +197,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     }
   },
 
-  closeDocument: () => set({ currentDocument: null, sectionActive: null, error: null }),
+  closeDocument: () => {
+    // Finding B : abandonner un stream en cours plutôt que le laisser tourner
+    // dans le vide (isStreaming resterait bloqué à `true`, et un `done`
+    // tardif rechargerait un document qu'on vient de quitter).
+    draftAbortController?.abort();
+    draftAbortController = null;
+    set({ currentDocument: null, sectionActive: null, error: null, isStreaming: false });
+  },
 
   requestCreateModal: () => set({ createModalRequested: true }),
   clearCreateModalRequest: () => set({ createModalRequested: false }),
@@ -254,9 +286,31 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   // ============================================================
 
   draftSection: async (sectionId, instruction) => {
-    set({ isStreaming: true, error: null, sectionActive: sectionId });
+    // Un nouveau draft annule silencieusement un stream précédent encore actif.
+    draftAbortController?.abort();
+    const controller = new AbortController();
+    draftAbortController = controller;
+
+    // Id du document actif capturé AU DÉMARRAGE (finding B) : le chunk `done`
+    // ne doit recharger que si ce document est TOUJOURS l'actif à la fin du
+    // stream (sinon on rechargerait le mauvais document après une bascule).
+    const documentId = get().currentDocument?.id;
+
+    // Finding A : reset du contenu de la section ciblée AVANT toute
+    // consommation du stream (retouche ET première rédaction) - le backend
+    // émet des deltas et remplace `content` par l'accumulé côté base, le
+    // store doit repartir de zéro pour rester en miroir exact.
+    set((s) => ({
+      isStreaming: true,
+      error: null,
+      sectionActive: sectionId,
+      currentDocument: s.currentDocument
+        ? patchSection(s.currentDocument, sectionId, (section) => ({ ...section, content: '' }))
+        : s.currentDocument,
+    }));
+
     try {
-      for await (const chunk of apiDraftSection(sectionId, instruction)) {
+      for await (const chunk of apiDraftSection(sectionId, instruction, controller.signal)) {
         if (chunk.type === 'text') {
           const delta = chunk.content ?? '';
           set((s) => {
@@ -270,15 +324,16 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
             };
           });
         } else if (chunk.type === 'error') {
-          // Le contenu déjà streamé (chunks 'text' précédents) reste en
-          // l'état - le backend l'a lui-même persisté, zéro perte.
+          // Le contenu déjà streamé depuis CE démarrage (chunks 'text'
+          // précédents) reste en l'état - le backend l'a lui-même persisté,
+          // zéro perte.
           set({ isStreaming: false, error: chunk.content || 'Erreur pendant la rédaction.' });
           return;
         } else if (chunk.type === 'done') {
           // Contenu canonique (sans bloc PISTES) + nouvelles pistes : on
-          // recharge le document plutôt que de faire confiance au flux.
-          const documentId = get().currentDocument?.id;
-          if (documentId) {
+          // recharge le document plutôt que de faire confiance au flux -
+          // MAIS seulement si le document actif n'a pas changé entretemps.
+          if (documentId && get().currentDocument?.id === documentId) {
             await get().openDocument(documentId);
           }
           set({ isStreaming: false });
@@ -288,7 +343,18 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       // Générateur épuisé sans chunk terminal explicite : on arrête proprement.
       set({ isStreaming: false });
     } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        // Annulation volontaire (nouveau draft ou fermeture/changement de
+        // document) : sortie silencieuse - le déclencheur de l'abort a déjà
+        // géré `isStreaming`, et le backend a persisté le partiel de son
+        // côté (son propre `finally`). Rien à afficher, rien à écraser.
+        return;
+      }
       set({ isStreaming: false, error: e?.message || 'Erreur réseau pendant la rédaction.' });
+    } finally {
+      if (draftAbortController === controller) {
+        draftAbortController = null;
+      }
     }
   },
 
