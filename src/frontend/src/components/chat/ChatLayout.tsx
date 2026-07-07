@@ -255,10 +255,11 @@ export function ChatLayout() {
             <div className="flex-1 overflow-hidden">
               <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={(u, a) => ps.openSaveCommand(u, a)} onGuidedPanelChange={setGuidedPanelActive} />
             </div>
+            {/* BUG-114 : la confirmation d'envoi doit rester visible même si un
+                panneau guidé est encore ouvert, sinon l'action semble bloquée. */}
+            <ToolConfirmationCard />
             {!guidedPanelActive && (
               <>
-                {/* US-002 : actions sensibles (envoi d'email) à valider */}
-                <ToolConfirmationCard />
                 {/* L6 : pastille de glance « N contacts liés à cette conversation » */}
                 <ConversationMemoryChip />
                 <div className="border-t border-border">
