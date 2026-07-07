@@ -433,11 +433,51 @@ class TestParseDraftOutput:
         assert content == "Contenu de la section."
         assert pistes == []
 
-    def test_marqueur_pistes_insensible_a_la_casse(self):
+    def test_marqueur_pistes_minuscule_nest_plus_reconnu_comme_marqueur(self):
+        """Durci (revue adversariale lot B, finding 2) : le marqueur est
+        désormais STRICTEMENT sensible à la casse - une ligne « pistes: »
+        en minuscule n'est plus prise pour le sentinelle, elle reste du
+        contenu tel quel (l'ancien comportement insensible à la casse
+        verrouillait le bug : « Pistes : » est un mot courant en français
+        qui tronquait du contenu réel)."""
         raw = "Contenu.\n\npistes:\n- Une piste\n"
         content, pistes = parse_draft_output(raw)
-        assert content == "Contenu."
-        assert pistes == ["Une piste"]
+        assert content == raw.strip()
+        assert pistes == []
+
+    def test_ligne_pistes_en_plein_texte_reste_du_contenu(self):
+        """Repro confirmée (finding 2) : « Pistes : » au milieu d'une
+        section rédigée (mot courant en français, casse mixte) ne doit
+        JAMAIS être pris pour le marqueur - le contenu entier est
+        conservé, aucune piste créée."""
+        raw = (
+            "Le budget prévisionnel doit couvrir plusieurs volets.\n\n"
+            "Pistes : financement bancaire, aides publiques, apport personnel.\n\n"
+            "Cette section se termine ici."
+        )
+        content, pistes = parse_draft_output(raw)
+        assert content == raw.strip()
+        assert pistes == []
+
+    def test_bloc_pistes_final_apres_une_ligne_pistes_mi_texte(self):
+        """Une ligne « Pistes : » mi-texte (mot courant, casse mixte) suivie
+        PLUS LOIN d'un vrai bloc `PISTES:` final (majuscules strictes) :
+        seul le bloc final doit être découpé, la ligne mi-texte reste dans
+        le contenu (le marqueur le plus tardif ET valide gagne)."""
+        raw = (
+            "Introduction du sujet.\n\n"
+            "Pistes : plusieurs options existent pour financer ce projet.\n\n"
+            "Développement du propos jusqu'à la fin de la section.\n\n"
+            "PISTES:\n"
+            "- Comparer avec le crédit-bail\n"
+        )
+        content, pistes = parse_draft_output(raw)
+        assert content == (
+            "Introduction du sujet.\n\n"
+            "Pistes : plusieurs options existent pour financer ce projet.\n\n"
+            "Développement du propos jusqu'à la fin de la section."
+        )
+        assert pistes == ["Comparer avec le crédit-bail"]
 
     def test_contenu_vide_avec_seulement_des_pistes(self):
         raw = "PISTES:\n- Piste unique\n"

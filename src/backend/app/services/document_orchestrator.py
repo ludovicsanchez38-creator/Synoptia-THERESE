@@ -241,25 +241,38 @@ def build_summary_prompt(section: "DocumentSection") -> str:
 # Parsing du brouillon rédigé
 # =============================================================================
 
-_PISTES_MARKER_RE = re.compile(r"^pistes\s*:?\s*$", re.IGNORECASE)
+_PISTES_MARKER_RE = re.compile(r"^PISTES\s*:?\s*$")
 
 
 def parse_draft_output(raw: str) -> tuple[str, list[str]]:
     """Sépare le contenu markdown rédigé des pistes annexes.
 
     Le prompt (`build_section_context`) demande un bloc final optionnel qui
-    commence par la ligne exacte `PISTES:` (tolérant `PISTES :` et la
-    casse), suivie d'une idée par ligne préfixée par `- `. Retourne
+    commence par la ligne exacte `PISTES:` (tolérant `PISTES :`), suivie
+    d'une idée par ligne préfixée par `- `. Retourne
     `(contenu_sans_bloc, [pistes])` ; si aucun bloc n'est présent, retourne
     tout le texte tel quel et une liste de pistes vide.
+
+    Le marqueur est STRICTEMENT sensible à la casse (revue adversariale lot
+    B, finding 2) : une ligne de contenu « Pistes : » (mot courant en
+    français, ex. « Pistes : financement bancaire, aides publiques... »)
+    n'est JAMAIS prise pour le sentinelle - seule la ligne EXACTE `PISTES:`
+    (majuscules, cohérent avec le prompt) déclenche la coupure. En
+    complément, c'est le marqueur le plus TARDIF qui fait foi : si le texte
+    contient plusieurs lignes qui matchent exactement `PISTES:` (cas
+    limite), seul le DERNIER délimite le bloc de pistes - tout ce qui
+    précède, y compris un candidat plus tôt dans le texte, reste du
+    contenu. Ça garantit que le bloc reconnu est bien en QUEUE de réponse :
+    par construction, il n'y a plus aucune ligne après le marqueur choisi
+    qui ressemble à un nouveau paragraphe suivi d'un autre marqueur -
+    sinon ce serait ce marqueur-là qui aurait été retenu.
     """
     lines = raw.splitlines()
 
     marker_index: int | None = None
     for index, line in enumerate(lines):
         if _PISTES_MARKER_RE.match(line.strip()):
-            marker_index = index
-            break
+            marker_index = index  # pas de break : le dernier match gagne
 
     if marker_index is None:
         return raw.strip(), []

@@ -7514,6 +7514,34 @@ class TestDeepResearchSurfacesSynthesisError:
         assert 'type="error"' in synth, "une erreur de synthèse doit émettre un ResearchProgress type='error'"
         assert "La synthèse a échoué" in synth
 
+
+class TestDocumentsDraftSurfacesProviderErrors:
+    """Régression (revue adversariale lot B, finding 4) : verrou source sur
+    raise_on_error=True dans la route de rédaction (draft) de l'atelier
+    documentaire. Sans ce flag, `LLMService.stream_response` avale
+    silencieusement les `StreamEvent(type="error")` du provider - la route
+    ne verrait alors jamais d'erreur (juste un stream vide), ce qui casse
+    l'exigence "chunk error" du design. Les mocks des tests draft ignorent
+    les kwargs, donc sa suppression ne casserait aucun test fonctionnel -
+    même précédent exact que TestDeepResearchSurfacesSynthesisError
+    ci-dessus, verrouillé ici par assertion sur le code source."""
+
+    DOCUMENTS_PY = SRC / "app" / "routers" / "documents.py"
+
+    def _draft_stream_section(self) -> str:
+        content = self.DOCUMENTS_PY.read_text(encoding="utf-8")
+        start = content.find("async def _draft_stream")
+        assert start > 0, "la fonction _draft_stream doit exister"
+        return content[start:]
+
+    def test_draft_stream_raises_on_error(self):
+        section = self._draft_stream_section()
+        assert "raise_on_error=True" in section, (
+            "la route de rédaction (draft) doit passer raise_on_error=True à "
+            "stream_response pour ne plus avaler les erreurs provider"
+        )
+
+
 class TestBUGA_ToggleOuvrirChatDirectement:
     """BUG-A : Toggle 'Ouvrir sur le chat directement' sans effet (Réglages)
     

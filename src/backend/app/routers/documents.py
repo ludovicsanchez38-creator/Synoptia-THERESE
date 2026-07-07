@@ -270,6 +270,27 @@ async def _draft_stream(
     la première écriture. Si le fournisseur LLM échoue en cours de route, le
     partiel accumulé jusqu'ici est flushé une dernière fois AVANT le chunk
     d'erreur - il reste en base, jamais perdu.
+
+    Filet de dernier recours (revue adversariale lot B, finding 3) : le
+    `finally` global flushe l'accumulé s'il n'a pas déjà été persisté par un
+    chemin normal, y compris sur `asyncio.CancelledError` ou `GeneratorExit`
+    (fermeture d'app, déconnexion réelle du client) - ces deux exceptions
+    sont des `BaseException`, jamais interceptées par le `except Exception`
+    ci-dessous, donc elles remontent bien jusqu'au `finally` puis continuent
+    de se propager (rien n'est avalé). Aucun chunk n'est émis dans ce cas :
+    la connexion est déjà morte, et `yield` dans un `finally` qui gère un
+    `GeneratorExit` lèverait de toute façon une `RuntimeError`.
+
+    Complétion vide (finding 1) : si le contenu rédigé final est vide après
+    parsing (0 chunk reçu, ou réponse ne contenant qu'un bloc PISTES sans
+    aucun contenu réel), on n'écrase JAMAIS `target.content` ni son statut,
+    et aucune piste n'est créée - seul un chunk `error` est émis.
+
+    Document rouvert (finding 5) : dès qu'un draft persiste effectivement du
+    contenu (flush périodique, filet de fermeture, ou fin de rédaction), un
+    document déjà `termine` repasse à `en_cours` - une retouche ne doit
+    jamais laisser un document affiché comme terminé avec une section
+    redevenue `brouillon`.
     """
     llm_service = get_llm_service()
     prompt = build_section_context(document, sections, target, instruction)
@@ -277,53 +298,82 @@ async def _draft_stream(
 
     accumulated = ""
     last_flush = time.monotonic()
+    last_flushed_raw: str | None = None
+    completed = False
 
-    async def _flush() -> None:
-        target.content = accumulated
+    def _reopen_document_if_termine() -> None:
+        if document.status == "termine":
+            document.status = "en_cours"
+            document.updated_at = datetime.now(UTC)
+            session.add(document)
+
+    async def _flush(raw_content: str) -> None:
+        nonlocal last_flushed_raw
+        target.content = raw_content
         target.status = "brouillon"
         target.updated_at = datetime.now(UTC)
         session.add(target)
+        _reopen_document_if_termine()
         await session.commit()
+        last_flushed_raw = raw_content
 
     try:
-        async for chunk in llm_service.stream_response(context, raise_on_error=True):
-            accumulated += chunk
-            yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
+        try:
+            async for chunk in llm_service.stream_response(context, raise_on_error=True):
+                accumulated += chunk
+                yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
 
-            now = time.monotonic()
-            if now - last_flush >= DRAFT_FLUSH_INTERVAL_SECONDS:
-                await _flush()
-                last_flush = now
-    except Exception as exc:  # erreur provider (réseau, quota, etc.) à reporter en SSE
-        if accumulated:
-            await _flush()
-        logger.warning(
-            "Draft SSE : échec du fournisseur LLM pour la section %s : %s",
-            target.id,
-            exc,
-        )
-        message = f"Erreur du fournisseur IA pendant la rédaction : {exc}"
-        yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
-        return
-
-    content, pistes_texts = parse_draft_output(accumulated)
-    target.content = content
-    target.status = "brouillon"
-    target.updated_at = datetime.now(UTC)
-    session.add(target)
-
-    for piste_text in pistes_texts:
-        session.add(
-            DocumentPiste(
-                document_id=document.id,
-                section_origine_id=target.id,
-                texte=piste_text,
+                now = time.monotonic()
+                if now - last_flush >= DRAFT_FLUSH_INTERVAL_SECONDS:
+                    await _flush(accumulated)
+                    last_flush = now
+        except Exception as exc:  # erreur provider (réseau, quota, etc.) à reporter en SSE
+            if accumulated and accumulated != last_flushed_raw:
+                await _flush(accumulated)
+            completed = True
+            logger.warning(
+                "Draft SSE : échec du fournisseur LLM pour la section %s : %s",
+                target.id,
+                exc,
             )
-        )
+            message = f"Erreur du fournisseur IA pendant la rédaction : {exc}"
+            yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
+            return
 
-    await session.commit()
+        content, pistes_texts = parse_draft_output(accumulated)
+        if not content.strip():
+            completed = True
+            logger.warning(
+                "Draft SSE : complétion vide pour la section %s (aucun contenu "
+                "exploitable après parsing) - contenu existant préservé",
+                target.id,
+            )
+            message = "Le modèle n'a produit aucun contenu, réessaie."
+            yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
+            return
 
-    yield f"data: {json.dumps({'type': 'done', 'section_id': target.id})}\n\n"
+        target.content = content
+        target.status = "brouillon"
+        target.updated_at = datetime.now(UTC)
+        session.add(target)
+        _reopen_document_if_termine()
+
+        for piste_text in pistes_texts:
+            session.add(
+                DocumentPiste(
+                    document_id=document.id,
+                    section_origine_id=target.id,
+                    texte=piste_text,
+                )
+            )
+
+        await session.commit()
+        completed = True
+
+        yield f"data: {json.dumps({'type': 'done', 'section_id': target.id})}\n\n"
+    finally:
+        if not completed and accumulated and accumulated != last_flushed_raw:
+            await _flush(accumulated)
 
 
 @router.post("/sections/{section_id}/draft", response_model=None)
@@ -339,7 +389,11 @@ async def draft_section(
     de chat.py) : {"type": "text", "content": ...} pendant la génération,
     {"type": "done", "section_id": ...} à la fin, ou {"type": "error",
     "content": message français} si le fournisseur échoue en cours de route
-    (le contenu déjà généré reste en base, statut 'brouillon' - zéro perte).
+    (le contenu déjà généré reste en base, statut 'brouillon' - zéro perte)
+    OU si la complétion finale est vide une fois parsée (aucun chunk reçu,
+    ou réponse ne contenant qu'un bloc PISTES sans contenu réel) - dans ce
+    dernier cas, le contenu existant de la section n'est JAMAIS écrasé et
+    son statut reste inchangé.
     """
     target = await session.get(DocumentSection, section_id)
     if not target:

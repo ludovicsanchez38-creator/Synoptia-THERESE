@@ -199,6 +199,230 @@ class TestDraftSectionStream:
         assert response.status_code == 404
 
 
+class TestDraftCompletionVide:
+    """Revue adversariale lot B, finding 1 (CRITIQUE) : une complétion vide
+    (0 chunk, ou bloc PISTES sans aucun contenu réel) ne doit JAMAIS
+    écraser le contenu existant d'une section, ni son statut - seul un
+    chunk `error` est émis, sans `done`."""
+
+    @pytest.mark.asyncio
+    async def test_completion_vide_sur_section_redigee_garde_le_contenu_intact(
+        self, client: AsyncClient
+    ):
+        """Repro confirmée : un provider mocké qui ne yield aucun chunk sur
+        une section déjà rédigée ne doit PAS écraser son contenu par du
+        vide."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+        await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"content": "Contenu déjà rédigé, à préserver."},
+        )
+
+        with patch(
+            "app.services.llm.LLMService.stream_response",
+            new=_fake_stream_response([]),
+        ):
+            response = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": "Continue la rédaction."},
+            )
+
+        assert response.status_code == 200, response.text
+        events = _parse_sse(response.text)
+        assert [e["type"] for e in events] == ["error"]
+        assert "aucun contenu" in events[0]["content"].lower()
+
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        saved = detail.json()["sections"][0]
+        assert saved["content"] == "Contenu déjà rédigé, à préserver."
+        assert saved["status"] == "brouillon"
+
+    @pytest.mark.asyncio
+    async def test_completion_vide_sur_section_vide_garde_le_statut_vide(
+        self, client: AsyncClient
+    ):
+        """Même repro sur une section jamais rédigée : elle doit rester
+        'vide' (pas de brouillon vide + done)."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Section neuve", order=10.0)
+
+        with patch(
+            "app.services.llm.LLMService.stream_response",
+            new=_fake_stream_response([]),
+        ):
+            response = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": None},
+            )
+
+        assert response.status_code == 200, response.text
+        events = _parse_sse(response.text)
+        assert [e["type"] for e in events] == ["error"]
+
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        saved = detail.json()["sections"][0]
+        assert saved["status"] == "vide"
+        assert saved["content"] == ""
+
+    @pytest.mark.asyncio
+    async def test_completion_pistes_only_sur_section_redigee_ne_cree_aucune_piste(
+        self, client: AsyncClient
+    ):
+        """Une réponse qui ne contient QUE le bloc PISTES (aucun contenu
+        réel avant) doit être traitée comme une complétion vide : contenu
+        intact, error, et AUCUNE piste créée."""
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+        await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"content": "Contenu déjà rédigé, à préserver."},
+        )
+
+        chunks = ["PISTES:\n", "- Une idée annexe seulement\n"]
+        with patch(
+            "app.services.llm.LLMService.stream_response",
+            new=_fake_stream_response(chunks),
+        ):
+            response = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": "Continue la rédaction."},
+            )
+
+        assert response.status_code == 200, response.text
+        events = _parse_sse(response.text)
+        assert events[-1]["type"] == "error"
+
+        detail = await client.get(f"/api/documents/{doc['id']}")
+        saved = detail.json()["sections"][0]
+        assert saved["content"] == "Contenu déjà rédigé, à préserver."
+
+        pistes_resp = await client.get(f"/api/documents/{doc['id']}/pistes")
+        assert pistes_resp.json() == []
+
+
+class TestDraftFlushPeriodiqueEtFermeture:
+    """Revue adversariale lot B, finding 3 (CRITIQUE, honnêteté) : la
+    branche de flush périodique doit vraiment écrire en base PENDANT le
+    stream, et une fermeture réelle (GeneratorExit/CancelledError) doit
+    persister le partiel via le filet `finally` - sans chunk error (la
+    connexion est déjà morte)."""
+
+    @pytest.mark.asyncio
+    async def test_flush_periodique_persiste_pendant_le_stream(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Preuve que la persistance a lieu PENDANT le stream (pas
+        seulement à la fin) : le fake provider lit la section en base,
+        depuis une session fraîche, ENTRE deux chunks - avec l'intervalle
+        de flush ramené à 0, cette lecture doit déjà voir le premier
+        fragment persisté."""
+        import app.models.database as db_module
+        from app.models.entities import DocumentSection
+        from app.routers import documents as documents_router
+
+        monkeypatch.setattr(documents_router, "DRAFT_FLUSH_INTERVAL_SECONDS", 0.0)
+
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+
+        captured: dict[str, str | None] = {}
+
+        async def fake_stream(self, context, **kwargs) -> AsyncGenerator[str, None]:
+            yield "Premier fragment. "
+            async with db_module.AsyncSessionLocal() as fresh_session:
+                fresh = await fresh_session.get(DocumentSection, section["id"])
+                captured["mid_stream_content"] = fresh.content if fresh else None
+            yield "Second fragment."
+
+        with patch("app.services.llm.LLMService.stream_response", new=fake_stream):
+            response = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": None},
+            )
+
+        assert response.status_code == 200, response.text
+        assert captured["mid_stream_content"] == "Premier fragment. "
+
+    @pytest.mark.asyncio
+    async def test_fermeture_generator_exit_persiste_le_partiel(self, client: AsyncClient):
+        """Fermeture réelle du flux (déconnexion, fermeture d'app) :
+        consomme directement le générateur `_draft_stream`, puis
+        `aclose()` (lève GeneratorExit) - le partiel accumulé jusque-là
+        doit être en base après coup, sans avoir eu besoin du flush
+        périodique (intervalle par défaut, jamais écoulé ici)."""
+        import app.models.database as db_module
+        from app.models.entities import Document, DocumentSection
+        from app.routers.documents import _draft_stream
+
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+
+        async def fake_stream(self, context, **kwargs) -> AsyncGenerator[str, None]:
+            yield "Premier fragment. "
+            yield "Second fragment."
+            yield "Jamais consommé."
+
+        async with db_module.AsyncSessionLocal() as session:
+            document = await session.get(Document, doc["id"])
+            target = await session.get(DocumentSection, section["id"])
+            assert document is not None and target is not None
+            sections = [target]
+
+            with patch("app.services.llm.LLMService.stream_response", new=fake_stream):
+                gen = _draft_stream(document, sections, target, None, session)
+                await gen.__anext__()  # chunk "Premier fragment. "
+                await gen.__anext__()  # chunk "Second fragment."
+                await gen.aclose()
+
+        async with db_module.AsyncSessionLocal() as fresh_session:
+            reread = await fresh_session.get(DocumentSection, section["id"])
+            assert reread is not None
+            assert reread.content == "Premier fragment. Second fragment."
+            assert reread.status == "brouillon"
+
+
+class TestDraftRedigeDocumentTermine:
+    """Revue adversariale lot B, finding 5 (MINEUR) : retoucher une section
+    d'un document déjà 'termine' doit le repasser à 'en_cours' - sinon un
+    document affiché comme terminé contiendrait une section 'brouillon'."""
+
+    @pytest.mark.asyncio
+    async def test_redraft_section_document_termine_repasse_en_cours(
+        self, client: AsyncClient
+    ):
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Section unique", order=10.0)
+        await client.patch(
+            f"/api/documents/sections/{section['id']}",
+            json={"content": "Contenu suffisant pour valider."},
+        )
+
+        with patch(
+            "app.services.llm.LLMService.generate_content",
+            new_callable=AsyncMock,
+            return_value="Résumé.",
+        ):
+            validate_resp = await client.post(f"/api/documents/sections/{section['id']}/validate")
+        assert validate_resp.status_code == 200, validate_resp.text
+
+        doc_after_validate = await client.get(f"/api/documents/{doc['id']}")
+        assert doc_after_validate.json()["status"] == "termine"
+
+        with patch(
+            "app.services.llm.LLMService.stream_response",
+            new=_fake_stream_response(["Nouveau texte retouché."]),
+        ):
+            draft_resp = await client.post(
+                f"/api/documents/sections/{section['id']}/draft",
+                json={"instruction": "Retouche."},
+            )
+        assert draft_resp.status_code == 200, draft_resp.text
+
+        doc_after_draft = await client.get(f"/api/documents/{doc['id']}")
+        assert doc_after_draft.json()["status"] == "en_cours"
+
+
 class TestValidateSection:
     """POST /api/documents/sections/{id}/validate - résumé + statut 'validee'."""
 
