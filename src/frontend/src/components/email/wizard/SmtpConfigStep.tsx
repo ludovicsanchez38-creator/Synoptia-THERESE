@@ -45,6 +45,30 @@ const DEFAULT_FORM: SmtpFormState = {
   smtp_use_tls: true,
 };
 
+// Ports courants avec leur mode de sécurité conventionnel : choisir un port
+// règle aussi la sécurité (un non-technicien ne peut pas déduire SSL direct
+// vs STARTTLS depuis « SMTP : 465/587 » - retour Dr_logic-3D, 05/07/2026).
+const SMTP_PORT_OPTIONS = [
+  { value: 587, label: '587 - STARTTLS (le plus courant)', use_tls: true },
+  { value: 465, label: '465 - SSL/TLS direct', use_tls: false },
+  { value: 25, label: '25 - non chiffré (rare)', use_tls: false },
+];
+const IMAP_PORT_OPTIONS = [
+  { value: 993, label: '993 - SSL (recommandé)' },
+  { value: 143, label: '143 - sans chiffrement' },
+];
+
+/** Incohérence port/mode : la cause n°1 des faux « délai de connexion dépassé ». */
+function smtpSecurityMismatch(port: number, useTls: boolean): string | null {
+  if (port === 465 && useTls) {
+    return 'Le port 465 attend une connexion SSL/TLS directe : décoche cette case (ou choisis le port 587).';
+  }
+  if (port === 587 && !useTls) {
+    return 'Le port 587 attend du STARTTLS : coche cette case (ou choisis le port 465).';
+  }
+  return null;
+}
+
 export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
   const [form, setForm] = useState<SmtpFormState>(DEFAULT_FORM);
   const [providers, setProviders] = useState<api.EmailProviderConfig[]>([]);
@@ -255,13 +279,19 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
         </div>
         <div className="space-y-1.5">
           <label htmlFor="smtp-imap-port" className="text-sm text-text-muted">Port IMAP</label>
-          <input
+          <select
             id="smtp-imap-port"
-            type="number"
-            value={form.imap_port}
-            onChange={(e) => updateField('imap_port', parseInt(e.target.value) || 993)}
+            value={IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port) ? String(form.imap_port) : 'custom'}
+            onChange={(e) => {
+              if (e.target.value !== 'custom') updateField('imap_port', parseInt(e.target.value));
+            }}
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
-          />
+          >
+            {IMAP_PORT_OPTIONS.map((o) => (
+              <option key={o.value} value={String(o.value)}>{o.label}</option>
+            ))}
+            <option value="custom">Autre : {form.imap_port}</option>
+          </select>
         </div>
       </div>
 
@@ -280,13 +310,26 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
         </div>
         <div className="space-y-1.5">
           <label htmlFor="smtp-smtp-port" className="text-sm text-text-muted">Port SMTP</label>
-          <input
+          <select
             id="smtp-smtp-port"
-            type="number"
-            value={form.smtp_port}
-            onChange={(e) => updateField('smtp_port', parseInt(e.target.value) || 587)}
+            value={SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port) ? String(form.smtp_port) : 'custom'}
+            onChange={(e) => {
+              if (e.target.value === 'custom') return;
+              const option = SMTP_PORT_OPTIONS.find((o) => String(o.value) === e.target.value);
+              if (option) {
+                // Choisir un port courant règle aussi le mode de sécurité.
+                setForm((prev) => ({ ...prev, smtp_port: option.value, smtp_use_tls: option.use_tls }));
+                setTestResult(null);
+                setError(null);
+              }
+            }}
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
-          />
+          >
+            {SMTP_PORT_OPTIONS.map((o) => (
+              <option key={o.value} value={String(o.value)}>{o.label}</option>
+            ))}
+            <option value="custom">Autre : {form.smtp_port}</option>
+          </select>
         </div>
       </div>
 
@@ -298,8 +341,20 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           onChange={(e) => updateField('smtp_use_tls', e.target.checked)}
           className="w-4 h-4 rounded border-border/50 bg-background/60 text-accent-cyan focus:ring-accent-cyan/50"
         />
-        <span className="text-sm text-text-muted">Utiliser TLS/STARTTLS (recommandé)</span>
+        <span className="text-sm text-text-muted">Utiliser TLS/STARTTLS (587) - décocher pour le SSL direct (465)</span>
       </label>
+
+      {/* Incohérence port/mode : dite AVANT le test, au lieu d'un faux timeout après */}
+      {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls) && (
+        <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+            <span className="text-sm text-warning">
+              {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (

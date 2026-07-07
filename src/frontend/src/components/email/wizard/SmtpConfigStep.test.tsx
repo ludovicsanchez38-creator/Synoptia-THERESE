@@ -61,6 +61,29 @@ describe('SmtpConfigStep', () => {
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeEnabled();
   });
 
+  it('choisir le port SMTP 465 dans la liste règle aussi le mode de sécurité (SSL direct)', async () => {
+    render(<SmtpConfigStep onBack={vi.fn()} onSuccess={vi.fn()} />);
+
+    const portSelect = await screen.findByLabelText('Port SMTP');
+    const tlsCheckbox = screen.getByRole('checkbox');
+
+    expect(tlsCheckbox).toBeChecked(); // défaut 587 = STARTTLS
+    fireEvent.change(portSelect, { target: { value: '465' } });
+
+    expect(tlsCheckbox).not.toBeChecked(); // 465 = SSL direct, la case suit
+    expect(screen.queryByText(/Le port 465 attend/)).not.toBeInTheDocument();
+  });
+
+  it('affiche un avertissement causal si le mode de sécurité contredit le port (465 + STARTTLS)', async () => {
+    render(<SmtpConfigStep onBack={vi.fn()} onSuccess={vi.fn()} />);
+
+    const portSelect = await screen.findByLabelText('Port SMTP');
+    fireEvent.change(portSelect, { target: { value: '465' } });
+    fireEvent.click(screen.getByRole('checkbox')); // re-coche STARTTLS = incohérent
+
+    expect(screen.getByText(/Le port 465 attend une connexion SSL\/TLS directe/)).toBeInTheDocument();
+  });
+
   it('BUG-112 : un fournisseur prérempli ne peut pas être enregistré si un hôte est vidé', async () => {
     render(<SmtpConfigStep onBack={vi.fn()} onSuccess={vi.fn()} />);
 
