@@ -7,6 +7,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [Non releasé] - Atelier documentaire
+
+- **Atelier documentaire (nouveau)** : rédige des documents longs (proposition, dossier, rapport) directement dans THÉRÈSE - trame générée par l'IA (sections/sous-sections), rédaction guidée section par section en streaming, capture de « pistes » (idées annexes pendant la rédaction) explorables ou ignorables, export en Markdown ou Word (.docx).
+- **RGPD** : l'export complet de données et le droit à l'oubli couvrent désormais les documents de l'atelier (documents, sections, pistes), qui en étaient absents.
+- **Correctif export de conversation** : le téléchargement d'un export de conversation (Markdown/Word) utilisait une adresse incomplète et pouvait échouer selon le mode de lancement de l'app - corrigé.
+
 ## [v0.24.4-alpha] - 13 juin 2026 - Emails, calendrier et historique réparés
 
 Correctifs des bugs remontés par les testeurs le 12 juin.
