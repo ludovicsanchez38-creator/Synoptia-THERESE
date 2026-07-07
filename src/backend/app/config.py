@@ -6,7 +6,7 @@ Settings with pydantic-settings for type-safe configuration.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     voice_local_enabled: bool = False
     voice_local_whisper_model: str = "base"  # tiny | base | small
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, __context: Any) -> None:
         """Initialize paths after settings are loaded."""
         # Set data_dir from env or default
         if self.data_dir is None:

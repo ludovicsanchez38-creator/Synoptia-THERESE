@@ -8,6 +8,7 @@ Phase 5 - CRM Features + Local First Export/Import
 import json
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import Activity, Contact, Deliverable, EmailAccount, Preference, Project
@@ -1273,7 +1274,7 @@ async def list_google_sheets(
 @router.post("/sync", response_model=CRMSyncResponse)
 async def sync_crm(
     session: AsyncSession = Depends(get_session),
-):
+) -> CRMSyncResponse:
     """
     Lance la synchronisation CRM depuis Google Sheets.
 
@@ -1434,12 +1435,12 @@ async def sync_crm(
 
 @router.post("/sync/import", response_model=CRMSyncResponse)
 async def import_crm_data(
-    clients: list[dict] | None = None,
-    projects: list[dict] | None = None,
-    deliverables: list[dict] | None = None,
-    tasks: list[dict] | None = None,
+    clients: list[dict[str, Any]] | None = None,
+    projects: list[dict[str, Any]] | None = None,
+    deliverables: list[dict[str, Any]] | None = None,
+    tasks: list[dict[str, Any]] | None = None,
     session: AsyncSession = Depends(get_session),
-):
+) -> CRMSyncResponse:
     """
     Importe les donnees CRM directement (sans passer par Google Sheets API).
 

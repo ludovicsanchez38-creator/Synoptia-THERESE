@@ -15,12 +15,16 @@ from __future__ import annotations
 import importlib.util
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from faster_whisper import WhisperModel
 
 logger = logging.getLogger(__name__)
 
 # Modèles Whisper supportés (faster-whisper, quantization int8 CPU).
 # ram_mb = RAM approximative nécessaire au modèle chargé (hors OS/app).
-WHISPER_MODELS: dict[str, dict] = {
+WHISPER_MODELS: dict[str, dict[str, int | str]] = {
     "tiny": {"size_mb": 75, "ram_mb": 1024, "label": "Tiny - le plus léger, qualité basique"},
     "base": {"size_mb": 145, "ram_mb": 1024, "label": "Base - recommandé, bon compromis"},
     "small": {"size_mb": 480, "ram_mb": 2048, "label": "Small - meilleure qualité, plus lourd"},
@@ -54,7 +58,7 @@ def voices_dir() -> Path:
     return Path(get_settings().data_dir) / "voices"
 
 
-def voice_local_status() -> dict:
+def voice_local_status() -> dict[str, object]:
     """État de la voix locale : disponibilité + modèles + prérequis RAM."""
     from app.config import get_settings
 
@@ -71,7 +75,7 @@ def voice_local_status() -> dict:
     }
 
 
-_whisper_cache: dict[str, object] = {}
+_whisper_cache: dict[str, WhisperModel] = {}
 
 
 def transcribe_local(audio_path: str, model_size: str | None = None, language: str = "fr") -> str:

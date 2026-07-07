@@ -14,6 +14,7 @@ from app.models.entities import Preference
 from app.models.schemas_voice import TranscriptionResponse, TTSRequest
 from app.services.http_client import get_http_client
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -39,11 +40,11 @@ async def _get_groq_api_key(session: AsyncSession) -> str | None:
 
         if is_value_encrypted(pref.value):
             try:
-                return decrypt_value(pref.value)
+                return str(decrypt_value(pref.value))
             except Exception:
                 logger.warning("Échec déchiffrement clé Groq")
                 return None
-        return pref.value
+        return str(pref.value)
 
     return None
 
@@ -52,7 +53,7 @@ async def _get_groq_api_key(session: AsyncSession) -> str | None:
 async def transcribe_audio(
     audio: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
-):
+) -> TranscriptionResponse:
     """
     Transcribe audio to text using Groq Whisper API.
 
@@ -157,7 +158,7 @@ async def transcribe_audio(
 
 
 @router.get("/local/status")
-async def voice_local_status_route():
+async def voice_local_status_route() -> dict[str, object]:
     """Disponibilité de la voix locale (STT/TTS) + modèles + prérequis RAM.
 
     Permet à l'UI d'afficher si la voix souveraine est installée, et sinon
@@ -165,14 +166,15 @@ async def voice_local_status_route():
     """
     from app.services.voice_local import voice_local_status
 
-    return voice_local_status()
+    status: dict[str, object] = voice_local_status()
+    return status
 
 
 @router.post("/local/transcribe", response_model=TranscriptionResponse)
 async def transcribe_audio_local(
     audio: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
-):
+) -> TranscriptionResponse:
     """Transcription 100% locale et souveraine (faster-whisper), sans cloud.
 
     Nécessite le groupe optionnel `voice-local` installé (sinon 503 + indication).
@@ -211,13 +213,12 @@ async def transcribe_audio_local(
 
 
 @router.post("/tts")
-async def text_to_speech_local(payload: TTSRequest):
+async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
     """Synthèse vocale 100% locale et souveraine (Piper) -> audio WAV.
 
     Nécessite le groupe optionnel `voice-local` + la voix téléchargée (sinon 503).
     """
     from app.services.voice_local import DEFAULT_PIPER_VOICE, synthesize_local, tts_available
-    from fastapi.responses import FileResponse
 
     if not tts_available():
         from app.services.voice_local import INSTALL_HINT
