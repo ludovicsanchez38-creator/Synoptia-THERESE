@@ -35,6 +35,71 @@ IMAP_CONNECT_TIMEOUT = 15
 IMAP_OPERATION_TIMEOUT = 30
 
 
+def _smtp_security_hint(port: int, use_starttls: bool) -> str | None:
+    """Détecte une combinaison port/mode de sécurité incohérente.
+
+    Les deux conventions dominantes : 465 = SSL/TLS direct (implicite),
+    587 = STARTTLS. Une inversion ne produit AUCUNE erreur explicite côté
+    serveur (chacun attend l'autre) - juste un timeout muet, illisible pour
+    un non-technicien (retour Dr_logic-3D, 05/07/2026).
+    """
+    if port == 465 and use_starttls:
+        return (
+            "Le port 465 attend une connexion SSL/TLS directe : "
+            "décoche « Utiliser TLS/STARTTLS » (ou passe au port 587 en gardant STARTTLS)."
+        )
+    if port == 587 and not use_starttls:
+        return (
+            "Le port 587 attend du STARTTLS : "
+            "coche « Utiliser TLS/STARTTLS » (ou passe au port 465 en SSL direct)."
+        )
+    return None
+
+
+def _humanize_smtp_error(e: Exception, port: int, use_starttls: bool) -> str:
+    """Traduit une erreur SMTP brute en message français actionnable."""
+    text = str(e)
+    lower = text.lower()
+    if isinstance(e, aiosmtplib.SMTPAuthenticationError) or "535" in text or "authentication" in lower:
+        return (
+            "SMTP : identifiants refusés par le serveur. Vérifie l'adresse email et le "
+            "mot de passe - pour Gmail, Outlook ou Yahoo, il faut un « mot de passe "
+            "d'application », pas le mot de passe du compte."
+        )
+    if isinstance(e, (ConnectionRefusedError, aiosmtplib.SMTPConnectError)) or "refused" in lower:
+        hint = _smtp_security_hint(port, use_starttls)
+        return f"SMTP : connexion refusée par le serveur (port {port}). " + (
+            hint or "Vérifie l'adresse du serveur et le port."
+        )
+    if "getaddrinfo" in lower or "name or service" in lower or "nodename" in lower:
+        return "SMTP : serveur introuvable. Vérifie l'adresse du serveur SMTP (ex. smtp.monfournisseur.fr)."
+    if isinstance(e, ssl.SSLError) or "ssl" in lower or "tls" in lower:
+        hint = _smtp_security_hint(port, use_starttls)
+        return "SMTP : échec de la négociation SSL/TLS. " + (
+            hint or "Vérifie le mode de sécurité choisi et le port."
+        )
+    return f"SMTP : {text}"
+
+
+def _humanize_imap_error(e: Exception) -> str:
+    """Traduit une erreur IMAP brute en message français actionnable."""
+    text = str(e)
+    lower = text.lower()
+    if "authenticationfailed" in lower.replace(" ", "") or "login failed" in lower or "invalid credentials" in lower:
+        return (
+            "IMAP : identifiants refusés par le serveur. Vérifie l'adresse email et le "
+            "mot de passe - pour Gmail, Outlook ou Yahoo, il faut un « mot de passe "
+            "d'application », pas le mot de passe du compte."
+        )
+    if "getaddrinfo" in lower or "name or service" in lower or "nodename" in lower:
+        return "IMAP : serveur introuvable. Vérifie l'adresse du serveur IMAP (ex. imap.monfournisseur.fr)."
+    if isinstance(e, ConnectionRefusedError) or "refused" in lower:
+        return "IMAP : connexion refusée par le serveur. Vérifie l'adresse du serveur et le port (993 en SSL)."
+    if isinstance(e, ssl.SSLError) or "ssl" in lower:
+        return "IMAP : échec de la négociation SSL. Vérifie le port (993 = SSL, 143 = sans SSL) et l'option SSL."
+    return f"IMAP : {text}"
+
+
 def _make_ssl_context() -> ssl.SSLContext:
     """
     Create a permissive SSL context for private/self-signed IMAP servers.
@@ -301,15 +366,32 @@ class ImapSmtpProvider(EmailProvider):
         # Send via SMTP
         all_recipients = request.to + request.cc + request.bcc
 
-        await aiosmtplib.send(
-            msg,
-            hostname=self._smtp_host,
-            port=self._smtp_port,
-            username=self._email,
-            password=self._password,
-            start_tls=self._smtp_use_tls,
-            recipients=all_recipients,
-        )
+        # Mêmes options de sécurité que test_connection : sans `use_tls`
+        # explicite, un compte configuré en SSL direct (port 465, STARTTLS
+        # décoché) passait le TEST mais l'ENVOI partait en clair et expirait
+        # (retour Dr_logic-3D, 05/07/2026).
+        try:
+            await aiosmtplib.send(
+                msg,
+                hostname=self._smtp_host,
+                port=self._smtp_port,
+                username=self._email,
+                password=self._password,
+                use_tls=not self._smtp_use_tls,
+                start_tls=self._smtp_use_tls,
+                timeout=IMAP_OPERATION_TIMEOUT,
+                recipients=all_recipients,
+            )
+        except asyncio.TimeoutError:
+            hint = _smtp_security_hint(self._smtp_port, self._smtp_use_tls)
+            raise RuntimeError(
+                f"SMTP : délai dépassé ({IMAP_OPERATION_TIMEOUT}s) pendant l'envoi. "
+                + (hint or "Vérifie la connexion et la configuration du serveur SMTP.")
+            ) from None
+        except aiosmtplib.errors.SMTPException as e:
+            raise RuntimeError(
+                _humanize_smtp_error(e, self._smtp_port, self._smtp_use_tls)
+            ) from e
 
         # Return a generated ID (SMTP doesn't return one)
         return f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
@@ -560,7 +642,7 @@ class ImapSmtpProvider(EmailProvider):
                     return {"ok": True, "message": "IMAP OK"}
             except Exception as e:
                 logger.error(f"IMAP connection test failed: {e}")
-                return {"ok": False, "message": f"IMAP : {e}"}
+                return {"ok": False, "message": _humanize_imap_error(e)}
 
         loop = asyncio.get_running_loop()
         try:
@@ -588,13 +670,22 @@ class ImapSmtpProvider(EmailProvider):
             await smtp.quit()
             smtp_result = {"ok": True, "message": "SMTP OK"}
         except asyncio.TimeoutError:
+            # Un timeout muet cache le plus souvent une inversion port/mode
+            # de sécurité (465 = SSL direct, 587 = STARTTLS) : le dire.
+            hint = _smtp_security_hint(self._smtp_port, self._smtp_use_tls)
             smtp_result = {
                 "ok": False,
-                "message": f"SMTP : delai de connexion depasse ({IMAP_CONNECT_TIMEOUT}s)",
+                "message": (
+                    f"SMTP : délai de connexion dépassé ({IMAP_CONNECT_TIMEOUT}s). "
+                    + (hint or "Vérifie l'adresse du serveur, le port et le mode de sécurité.")
+                ),
             }
         except Exception as e:
             logger.error(f"SMTP connection test failed: {e}")
-            smtp_result = {"ok": False, "message": f"SMTP : {e}"}
+            smtp_result = {
+                "ok": False,
+                "message": _humanize_smtp_error(e, self._smtp_port, self._smtp_use_tls),
+            }
 
         success = imap_result["ok"] and smtp_result["ok"]
         if success:
