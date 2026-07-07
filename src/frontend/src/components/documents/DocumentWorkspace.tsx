@@ -3,12 +3,21 @@
  *
  * Remplace le placeholder posé par `DocumentsList` en D2. Layout : trame
  * (`OutlineTree`) à gauche, éditeur de la section active (`SectionEditor`)
- * au centre - le volet Pistes (D4) prendra sa place à droite, emplacement
- * réservé en commentaire ci-dessous plutôt qu'une zone vide rendue à vide.
+ * au centre, volet Pistes (`PistesPanel`, D4) à droite.
  *
- * Seul composant connecté au store de l'atelier - `OutlineTree` et
- * `SectionEditor` restent des composants présentationnels (props), pattern
- * identique à `ProjectsPanel` -> `ProjectsKanban`.
+ * Seul composant connecté au store de l'atelier - `OutlineTree`,
+ * `SectionEditor` et `PistesPanel` restent des composants présentationnels
+ * (props), pattern identique à `ProjectsPanel` -> `ProjectsKanban`.
+ *
+ * « Explorer » une piste (D4) : passe son statut à `exploree` (updatePiste),
+ * sélectionne sa section d'origine (`section_origine_id`) comme section
+ * active ET préremplit le champ instruction de `SectionEditor` avec le texte
+ * de la piste. Le préremplissage est un état LOCAL à ce composant
+ * (`instructionPrefill`, pas dans le store) : c'est une intention UI
+ * ponctuelle (« pose ce texte dans ce champ maintenant »), pas une donnée du
+ * document - `SectionEditor` la consomme puis appelle
+ * `onInstructionPrefillApplied` pour l'effacer ici (anti-réemploi si
+ * l'utilisateur revient plus tard sur la même section sans re-explorer).
  *
  * « Retour aux documents » appelle `closeDocument()` du store (reset
  * currentDocument/sectionActive/error, D3) AVANT de rendre la main au
@@ -24,9 +33,10 @@ import { useCallback, useState } from 'react';
 import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDocumentStore } from '../../stores/documentStore';
-import { downloadExportedDocument } from '../../services/api/documents';
+import { downloadExportedDocument, type DocumentPiste } from '../../services/api/documents';
 import { OutlineTree } from './OutlineTree';
 import { SectionEditor } from './SectionEditor';
+import { PistesPanel } from './PistesPanel';
 
 export interface DocumentWorkspaceProps {
   documentId: string;
@@ -48,8 +58,12 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
   const validateSection = useDocumentStore((s) => s.validateSection);
   const exportDocument = useDocumentStore((s) => s.exportDocument);
   const closeDocument = useDocumentStore((s) => s.closeDocument);
+  const updatePiste = useDocumentStore((s) => s.updatePiste);
 
   const [exportingFormat, setExportingFormat] = useState<'md' | 'docx' | null>(null);
+  // Préremplissage ponctuel de l'instruction de SectionEditor (D4, cf.
+  // commentaire d'en-tête) - PAS une donnée du document, un état UI local.
+  const [instructionPrefill, setInstructionPrefill] = useState<string | null>(null);
 
   const handleBack = useCallback(() => {
     closeDocument();
@@ -74,6 +88,27 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
       }
     },
     [documentId, exportDocument]
+  );
+
+  // « Explorer » (D4) : la piste peut ne pas avoir de section d'origine
+  // (section_origine_id null) - dans ce cas, on marque juste la piste
+  // explorée sans toucher à la sélection ni à l'instruction.
+  const handleExplorePiste = useCallback(
+    (piste: DocumentPiste) => {
+      updatePiste(piste.id, 'exploree');
+      if (piste.section_origine_id) {
+        setSectionActive(piste.section_origine_id);
+        setInstructionPrefill(piste.texte);
+      }
+    },
+    [updatePiste, setSectionActive]
+  );
+
+  const handleIgnorePiste = useCallback(
+    (piste: DocumentPiste) => {
+      updatePiste(piste.id, 'ignoree');
+    },
+    [updatePiste]
   );
 
   const activeSection = currentDocument?.sections.find((s) => s.id === sectionActive) ?? null;
@@ -139,10 +174,11 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             onUpdateSection={updateSection}
             onDraft={draftSection}
             onValidate={validateSection}
+            instructionPrefill={instructionPrefill}
+            onInstructionPrefillApplied={() => setInstructionPrefill(null)}
           />
 
-          {/* Emplacement du volet Pistes (D4) :
-              <PistesPanel documentId={documentId} pistes={currentDocument.pistes} /> */}
+          <PistesPanel pistes={currentDocument.pistes} onExplore={handleExplorePiste} onIgnore={handleIgnorePiste} />
         </div>
       )}
     </div>

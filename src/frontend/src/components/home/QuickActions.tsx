@@ -1,13 +1,19 @@
 /**
  * THÉRÈSE v2 - QuickActions : lanceur d'actions rapides depuis le registre unique.
+ *
+ * « Rédiger un document » (D4) déclenche `documents.new` (atelier
+ * documentaire : trame + sections, D2-D3) - à distinguer de « Produire un
+ * document » (`guided.open`, Skills Office DOCX/PPTX/XLSX). Icône `FileStack`
+ * pour cohérence avec le bouton Documents de l'en-tête et la palette ⌘K.
  */
-import { MessageSquarePlus, FileText, UserPlus, Receipt } from 'lucide-react';
+import { MessageSquarePlus, FileText, FileStack, UserPlus, Receipt } from 'lucide-react';
 import { runAction } from '../../lib/actionRegistry';
 import { useNavigationStore } from '../../stores/navigationStore';
 
 const ACTIONS: { id: string; label: string; icon: React.ElementType }[] = [
   { id: 'chat.new', label: 'Nouvelle conversation', icon: MessageSquarePlus },
   { id: 'guided.open', label: 'Produire un document', icon: FileText },
+  { id: 'documents.new', label: 'Rédiger un document', icon: FileStack },
   { id: 'contact.new', label: 'Ajouter un contact', icon: UserPlus },
   { id: 'invoices.open', label: 'Factures', icon: Receipt },
 ];

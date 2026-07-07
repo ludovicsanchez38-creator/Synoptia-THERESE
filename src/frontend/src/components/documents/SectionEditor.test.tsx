@@ -195,6 +195,35 @@ describe('SectionEditor', () => {
     expect(screen.getByRole('button', { name: /^Retoucher$/i })).toBeInTheDocument();
   });
 
+  it('instructionPrefill (D4, « Explorer » d\'une piste) pose le texte dans le champ instruction', () => {
+    renderEditor({ instructionPrefill: 'Ajouter un exemple chiffré sur le ROI' });
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Ajouter un exemple chiffré sur le ROI');
+  });
+
+  it('instructionPrefill appelle onInstructionPrefillApplied une fois consommé', () => {
+    const onInstructionPrefillApplied = vi.fn();
+    renderEditor({ instructionPrefill: 'Plus concis', onInstructionPrefillApplied });
+    expect(onInstructionPrefillApplied).toHaveBeenCalledTimes(1);
+  });
+
+  it('instructionPrefill s\'applique même si la section d\'origine est DÉJÀ active (pas de changement de section.id)', () => {
+    const { rerender } = renderEditor({ section: makeSection({ id: 's1' }), instructionPrefill: null });
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('');
+
+    rerender(
+      <SectionEditor
+        section={makeSection({ id: 's1' })}
+        isStreaming={false}
+        error={null}
+        onUpdateSection={vi.fn()}
+        onDraft={vi.fn()}
+        onValidate={vi.fn()}
+        instructionPrefill="Piste sur la même section"
+      />
+    );
+    expect(screen.getByLabelText('Instruction de retouche')).toHaveValue('Piste sur la même section');
+  });
+
   it('changer de section réinitialise les buffers titre/consigne (pas de fuite entre sections)', () => {
     const { rerender } = renderEditor({ section: makeSection({ id: 's1', title: 'Section A', brief: 'Brief A' }) });
     expect(screen.getByLabelText('Titre de la section')).toHaveValue('Section A');

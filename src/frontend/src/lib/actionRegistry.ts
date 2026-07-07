@@ -15,6 +15,7 @@ import { useNavigationStore } from '../stores/navigationStore';
 import { usePanelStore } from '../stores/panelStore';
 import { useChatStore } from '../stores/chatStore';
 import { useActionsStore } from '../stores/actionsStore';
+import { useDocumentStore } from '../stores/documentStore';
 
 export type ActionGroup = 'Chat' | 'Mémoire' | 'Navigation' | 'Réglages' | 'Actions';
 
@@ -40,6 +41,7 @@ function insertChatPrompt(text: string): void {
 const nav = () => useNavigationStore.getState();
 const panel = () => usePanelStore.getState();
 const chat = () => useChatStore.getState();
+const documents = () => useDocumentStore.getState();
 
 export const APP_ACTIONS: AppAction[] = [
   // -- Chat --
@@ -65,6 +67,7 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'projects.open', label: 'Ouvrir les Projets', description: 'Tes projets et leur avancement (kanban par statut)', group: 'Navigation', keywords: ['projets', 'kanban', 'avancement'], run: () => nav().setView('projects') },
   { id: 'files.open', label: 'Indexation des fichiers', description: 'Parcourir et indexer des fichiers locaux', group: 'Navigation', keywords: ['fichiers', 'indexation', 'documents'], run: () => nav().setView('files') },
   { id: 'documents.open', label: 'Ouvrir les Documents', description: 'Atelier documentaire : propositions, dossiers, rapports', group: 'Navigation', keywords: ['documents', 'atelier', 'trame', 'sections', 'rédaction'], run: () => nav().setView('documents') },
+  { id: 'documents.new', label: 'Nouveau document', description: 'Créer une proposition, un dossier ou un rapport structuré', group: 'Navigation', keywords: ['document', 'rédiger', 'dossier', 'atelier'], run: () => { nav().setView('documents'); documents().requestCreateModal(); } },
   { id: 'board.open', label: 'Board de décision', description: 'Convoquer le board de conseillers IA', group: 'Navigation', shortcut: 'D', run: () => panel().toggleBoardPanel() },
   { id: 'actions.open', label: 'Actions', description: 'Lancer un agent actionnable (rapport, relance, audit...)', group: 'Actions', run: () => useActionsStore.getState().openPanel() },
 

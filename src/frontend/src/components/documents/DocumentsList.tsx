@@ -14,6 +14,17 @@
  * Échap : NE PAS ajouter d'écouteur clavier local - `resolveEscape` gère
  * déjà le retour de vue (content-swap) et la pile pushEscapeHandler gère
  * la modale de création (comme ProjectsPanel pour ProjectModal).
+ *
+ * Ouverture de la modale depuis ⌘K/Accueil (D4, action `documents.new`) :
+ * `modalOpen` reste un état LOCAL (comme avant D4) pour tous les chemins
+ * d'ouverture existants (clic sur les boutons « Nouveau document » de cette
+ * vue) - seul un nouveau chemin s'y ajoute, `documentStore.createModalRequested`,
+ * un drapeau ponctuel consommé une fois au montage (et à chaque fois qu'il
+ * passe à `true` pendant que la vue est déjà montée). Ce drapeau vit dans le
+ * store plutôt qu'un CustomEvent car l'action peut se déclencher AVANT que
+ * cette vue ne soit montée (⌘K depuis une autre vue) - un event DOM dispatché
+ * avant l'attache du listener serait perdu, un state Zustand déjà posé est lu
+ * correctement au premier rendu.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { FileText, Loader2, Plus } from 'lucide-react';
@@ -103,6 +114,8 @@ export function DocumentsList() {
   const error = useDocumentStore((s) => s.error);
   const loadDocuments = useDocumentStore((s) => s.loadDocuments);
   const openDocument = useDocumentStore((s) => s.openDocument);
+  const createModalRequested = useDocumentStore((s) => s.createModalRequested);
+  const clearCreateModalRequest = useDocumentStore((s) => s.clearCreateModalRequest);
 
   const [modalOpen, setModalOpen] = useState(false);
   // Bascule liste <-> atelier (DocumentWorkspace, D3). État local
@@ -113,6 +126,16 @@ export function DocumentsList() {
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
+
+  // D4 : ouverture de la modale demandée depuis ⌘K/Accueil (documents.new).
+  // Dépend de createModalRequested (pas juste [] au montage) pour couvrir
+  // aussi le cas où la vue est DÉJÀ montée quand l'action se déclenche.
+  useEffect(() => {
+    if (createModalRequested) {
+      setModalOpen(true);
+      clearCreateModalRequest();
+    }
+  }, [createModalRequested, clearCreateModalRequest]);
 
   // La modale de création s'inscrit sur la pile Échap unifiée (comme
   // ProjectsPanel pour ProjectModal) - PAS d'écouteur clavier local ici.

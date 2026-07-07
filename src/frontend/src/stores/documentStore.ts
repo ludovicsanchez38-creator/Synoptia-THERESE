@@ -55,6 +55,15 @@ interface DocumentStore {
   isStreaming: boolean;
   isLoading: boolean;
   error: string | null;
+  /** Drapeau UI ponctuel (D4) : posé par l'action ⌘K/Accueil `documents.new`
+   * AVANT que la vue Documents ne soit montée (ou pendant qu'elle l'est
+   * déjà) - `DocumentsList` le consomme (ouvre sa modale de création locale)
+   * puis l'efface via `clearCreateModalRequest`. Vit dans le store (pas un
+   * CustomEvent) précisément parce que la vue peut ne pas encore être
+   * montée au moment où l'action se déclenche (⌘K depuis une autre vue) :
+   * un event DOM dispatché avant le montage du listener serait perdu, alors
+   * qu'un state Zustand déjà posé est lu correctement au premier rendu. */
+  createModalRequested: boolean;
 
   // Documents
   loadDocuments: () => Promise<void>;
@@ -64,6 +73,10 @@ interface DocumentStore {
   /** Referme l'atelier (D3) : reset currentDocument/sectionActive/error - évite
    * qu'un document précédent flashe au prochain montage de l'atelier. */
   closeDocument: () => void;
+  /** Pose le drapeau `createModalRequested` (D4, action `documents.new`). */
+  requestCreateModal: () => void;
+  /** Efface le drapeau `createModalRequested` (D4, consommé par `DocumentsList`). */
+  clearCreateModalRequest: () => void;
 
   // Trame / sections
   generateOutline: (documentId: string) => Promise<void>;
@@ -107,6 +120,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   isStreaming: false,
   isLoading: false,
   error: null,
+  createModalRequested: false,
 
   // ============================================================
   // Documents
@@ -159,6 +173,9 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   },
 
   closeDocument: () => set({ currentDocument: null, sectionActive: null, error: null }),
+
+  requestCreateModal: () => set({ createModalRequested: true }),
+  clearCreateModalRequest: () => set({ createModalRequested: false }),
 
   // ============================================================
   // Trame / sections

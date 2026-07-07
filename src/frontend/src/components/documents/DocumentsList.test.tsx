@@ -23,10 +23,12 @@ interface MockDocumentState {
   documents: DocumentResponse[];
   isLoading: boolean;
   error: string | null;
+  createModalRequested: boolean;
   loadDocuments: ReturnType<typeof vi.fn>;
   openDocument: ReturnType<typeof vi.fn>;
   createDocument: ReturnType<typeof vi.fn>;
   clearError: ReturnType<typeof vi.fn>;
+  clearCreateModalRequest: ReturnType<typeof vi.fn>;
 }
 
 vi.mock('../../stores/documentStore', () => {
@@ -34,10 +36,14 @@ vi.mock('../../stores/documentStore', () => {
     documents: [],
     isLoading: false,
     error: null,
+    createModalRequested: false,
     loadDocuments: vi.fn(),
     openDocument: vi.fn(),
     createDocument: vi.fn(),
     clearError: vi.fn(),
+    clearCreateModalRequest: vi.fn(() => {
+      state.createModalRequested = false;
+    }),
   };
   const useDocumentStore = Object.assign(
     (selector?: (s: MockDocumentState) => unknown) => (selector ? selector(state) : state),
@@ -93,6 +99,7 @@ describe('DocumentsList', () => {
       documents: [],
       isLoading: false,
       error: null,
+      createModalRequested: false,
     });
   });
 
@@ -194,6 +201,15 @@ describe('DocumentsList', () => {
 
     expect(await within(dialog).findByText(/titre du document est requis/i)).toBeInTheDocument();
     expect(useDocumentStore.getState().createDocument).not.toHaveBeenCalled();
+  });
+
+  it('createModalRequested (D4, ⌘K/Accueil « Nouveau document ») ouvre la modale et efface le drapeau', async () => {
+    useDocumentStore.setState({ createModalRequested: true });
+
+    render(<DocumentsList />);
+
+    await screen.findByRole('dialog', { name: /Nouveau document/i });
+    expect(useDocumentStore.getState().clearCreateModalRequest).toHaveBeenCalledTimes(1);
   });
 
   it('état dégradé : si listProjects échoue, la modale affiche « Projets indisponibles » à la place du select', async () => {

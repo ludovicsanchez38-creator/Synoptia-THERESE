@@ -17,6 +17,15 @@
  * syntaxique de code, les sections de document sont surtout de la prose).
  * Pendant le stream, texte brut préformaté (mêmes raisons que MessageBubble :
  * éviter les sauts de mise en page d'un parsing markdown partiel).
+ *
+ * Préremplissage de l'instruction (D4, « Explorer » d'une piste) :
+ * `instructionPrefill` est un prop consommé UNE FOIS par un effet dédié,
+ * indépendant de l'effet de reset section?.id ci-dessous - il doit s'appliquer
+ * que la section d'origine de la piste devienne active à cet instant OU
+ * qu'elle le soit déjà (pas de dépendance à un changement de section). Le
+ * parent (`DocumentWorkspace`) efface son état après consommation via
+ * `onInstructionPrefillApplied` (évite un réemploi si l'utilisateur navigue
+ * plus tard vers une autre section puis revient sur celle-ci).
  */
 import { useEffect, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
@@ -117,13 +126,26 @@ export interface SectionEditorProps {
   onUpdateSection: (sectionId: string, payload: SectionUpdateRequest) => void;
   onDraft: (sectionId: string, instruction?: string) => void;
   onValidate: (sectionId: string) => void;
+  /** Texte à poser dans le champ instruction (D4, « Explorer » d'une piste). */
+  instructionPrefill?: string | null;
+  /** Appelé juste après consommation de `instructionPrefill` (le parent efface son état). */
+  onInstructionPrefillApplied?: () => void;
 }
 
 // =============================================================================
 // COMPOSANT
 // =============================================================================
 
-export function SectionEditor({ section, isStreaming, error, onUpdateSection, onDraft, onValidate }: SectionEditorProps) {
+export function SectionEditor({
+  section,
+  isStreaming,
+  error,
+  onUpdateSection,
+  onDraft,
+  onValidate,
+  instructionPrefill,
+  onInstructionPrefillApplied,
+}: SectionEditorProps) {
   const [titleDraft, setTitleDraft] = useState('');
   const [briefDraft, setBriefDraft] = useState('');
   const [instruction, setInstruction] = useState('');
@@ -139,6 +161,20 @@ export function SectionEditor({ section, isStreaming, error, onUpdateSection, on
     setLastInstruction(undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- volontaire : uniquement au changement de section.id
   }, [section?.id]);
+
+  // Préremplissage (D4, « Explorer » d'une piste) : effet SÉPARÉ du reset
+  // ci-dessus - doit s'appliquer même si la section d'origine était DÉJÀ la
+  // section active (donc section?.id n'a pas changé). Dans le même commit où
+  // le parent change aussi la section active, les deux effets s'exécutent
+  // dans l'ordre déclaré (reset puis préremplissage) : le résultat net est
+  // le texte de la piste, jamais un champ vide.
+  useEffect(() => {
+    if (instructionPrefill) {
+      setInstruction(instructionPrefill);
+      onInstructionPrefillApplied?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- volontaire : uniquement au changement du préremplissage
+  }, [instructionPrefill]);
 
   if (!section) {
     return (

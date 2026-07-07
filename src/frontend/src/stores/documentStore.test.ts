@@ -105,6 +105,7 @@ describe('documentStore', () => {
       isStreaming: false,
       isLoading: false,
       error: null,
+      createModalRequested: false,
     });
   });
 
@@ -526,6 +527,16 @@ describe('documentStore', () => {
       useDocumentStore.setState({ error: 'Un souci' });
       useDocumentStore.getState().clearError();
       expect(useDocumentStore.getState().error).toBeNull();
+    });
+  });
+
+  describe('requestCreateModal / clearCreateModalRequest (D4, documents.new)', () => {
+    it('requestCreateModal pose le drapeau, clearCreateModalRequest l\'efface', () => {
+      expect(useDocumentStore.getState().createModalRequested).toBe(false);
+      useDocumentStore.getState().requestCreateModal();
+      expect(useDocumentStore.getState().createModalRequested).toBe(true);
+      useDocumentStore.getState().clearCreateModalRequest();
+      expect(useDocumentStore.getState().createModalRequested).toBe(false);
     });
   });
 });
