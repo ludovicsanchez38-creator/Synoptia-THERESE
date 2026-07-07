@@ -6,22 +6,23 @@
  * (titre + brief + projet lié optionnel), vide guidé.
  *
  * Le clic sur un document appelle `openDocument` du documentStore (D1) ;
- * la bascule liste <-> atelier est un état LOCAL (workspaceOpenId) - D3
- * remplacera le placeholder ci-dessous par le véritable atelier (trame
- * draggable + éditeur de section). currentDocument reste dans le store
- * tel quel : D3 décidera de son propre cycle de vie (fermeture explicite).
+ * la bascule liste <-> atelier est un état LOCAL (workspaceOpenId).
+ * L'atelier lui-même (trame draggable + éditeur de section, D3) vit dans
+ * `DocumentWorkspace` - il gère son propre cycle de vie de fermeture
+ * (`closeDocument()` du store, appelé avant `onBack`).
  *
  * Échap : NE PAS ajouter d'écouteur clavier local - `resolveEscape` gère
  * déjà le retour de vue (content-swap) et la pile pushEscapeHandler gère
  * la modale de création (comme ProjectsPanel pour ProjectModal).
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, FileText, Loader2, Plus } from 'lucide-react';
+import { FileText, Loader2, Plus } from 'lucide-react';
 import { useDocumentStore } from '../../stores/documentStore';
 import type { DocumentResponse } from '../../services/api/documents';
 import { Button } from '../ui/Button';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { DocumentCreateModal } from './DocumentCreateModal';
+import { DocumentWorkspace } from './DocumentWorkspace';
 
 // =============================================================================
 // PROGRESSION
@@ -98,16 +99,15 @@ function DocumentCard({ document, onOpen }: DocumentCardProps) {
 
 export function DocumentsList() {
   const documents = useDocumentStore((s) => s.documents);
-  const currentDocument = useDocumentStore((s) => s.currentDocument);
   const isLoading = useDocumentStore((s) => s.isLoading);
   const error = useDocumentStore((s) => s.error);
   const loadDocuments = useDocumentStore((s) => s.loadDocuments);
   const openDocument = useDocumentStore((s) => s.openDocument);
 
   const [modalOpen, setModalOpen] = useState(false);
-  // Bascule liste <-> atelier (D3 remplacera le placeholder par le véritable
-  // atelier). État local volontairement : le store ne porte pas de notion
-  // de "vue courante", seulement les données du document ouvert.
+  // Bascule liste <-> atelier (DocumentWorkspace, D3). État local
+  // volontairement : le store ne porte pas de notion de "vue courante",
+  // seulement les données du document ouvert.
   const [workspaceOpenId, setWorkspaceOpenId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -133,34 +133,8 @@ export function DocumentsList() {
     setWorkspaceOpenId(null);
   }, []);
 
-  // Placeholder minimal de l'atelier - D3 le remplace par la trame
-  // draggable + l'éditeur de section.
   if (workspaceOpenId) {
-    return (
-      <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="document-workspace-placeholder">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 shrink-0">
-          <Button variant="ghost" size="sm" onClick={handleBackToList}>
-            <ArrowLeft className="w-4 h-4 mr-1.5" />
-            Retour aux documents
-          </Button>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-text-muted">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Chargement du document...
-            </div>
-          ) : (
-            <div className="text-center max-w-sm px-4">
-              <p className="text-sm font-medium text-text">{currentDocument?.title ?? 'Document'}</p>
-              <p className="text-xs text-text-muted mt-2">
-                L&apos;atelier de rédaction (trame, sections, pistes) arrive bientôt.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    return <DocumentWorkspace documentId={workspaceOpenId} onBack={handleBackToList} />;
   }
 
   return (

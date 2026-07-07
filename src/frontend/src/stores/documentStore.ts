@@ -61,6 +61,9 @@ interface DocumentStore {
   openDocument: (id: string) => Promise<void>;
   createDocument: (payload: DocumentCreateRequest) => Promise<DocumentResponse | null>;
   deleteDocument: (id: string) => Promise<void>;
+  /** Referme l'atelier (D3) : reset currentDocument/sectionActive/error - évite
+   * qu'un document précédent flashe au prochain montage de l'atelier. */
+  closeDocument: () => void;
 
   // Trame / sections
   generateOutline: (documentId: string) => Promise<void>;
@@ -154,6 +157,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       set({ error: e?.message || 'Impossible de supprimer le document.' });
     }
   },
+
+  closeDocument: () => set({ currentDocument: null, sectionActive: null, error: null }),
 
   // ============================================================
   // Trame / sections

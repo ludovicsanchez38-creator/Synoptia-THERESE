@@ -343,3 +343,25 @@ export async function exportDocument(
 ): Promise<DocumentExportResponse> {
   return request<DocumentExportResponse>(`/api/documents/${documentId}/export?format=${format}`);
 }
+
+/**
+ * Déclenche le téléchargement navigateur depuis les métadonnées renvoyées
+ * par `exportDocument` (qui, lui, ne télécharge rien - décision D1). Même
+ * mécanique que `exportConversation` (chat.ts:282) : fetch du blob, lien
+ * `<a download>` éphémère cliqué puis retiré, URL objet révoquée.
+ */
+export async function downloadExportedDocument(exported: DocumentExportResponse): Promise<void> {
+  const response = await apiFetch(exported.download_url);
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText, 'Téléchargement impossible');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = exported.file_name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}

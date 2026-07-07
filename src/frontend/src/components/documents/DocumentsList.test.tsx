@@ -1,21 +1,26 @@
 /**
- * THÉRÈSE v2 - Tests DocumentsList (Atelier documentaire, D2)
+ * THÉRÈSE v2 - Tests DocumentsList (Atelier documentaire, D2/D3)
  *
  * Vérifie : rendu de la liste mockée + progression (« x/y sections
- * validées »), vide guidé, bascule vers le placeholder d'atelier au clic,
- * et la création via la modale (mock du documentStore - pas d'appel réseau
- * réel). Régression layout (leçon 0.24.3) : la racine doit être
- * `flex-1 min-h-0`, jamais `h-full` (sinon la vue déborde de son conteneur).
+ * validées »), vide guidé, bascule vers l'atelier au clic, et la création
+ * via la modale (mock du documentStore - pas d'appel réseau réel).
+ * Régression layout (leçon 0.24.3) : la racine doit être `flex-1 min-h-0`,
+ * jamais `h-full` (sinon la vue déborde de son conteneur).
+ *
+ * `DocumentWorkspace` (D3, trame draggable + éditeur de section) est mocké
+ * ici en composant enfant superficiel - sa propre logique (dont l'appel à
+ * `closeDocument()` au retour) est testée dans `DocumentWorkspace.test.tsx`.
+ * Ce fichier ne teste que la responsabilité de `DocumentsList` : bascule
+ * liste <-> atelier + transmission de `documentId`/`onBack`.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DocumentDetail, DocumentResponse } from '../../services/api/documents';
+import type { DocumentResponse } from '../../services/api/documents';
 
 // --- Mock documentStore (pattern getState/setState, fidèle à Zustand) ------
 
 interface MockDocumentState {
   documents: DocumentResponse[];
-  currentDocument: DocumentDetail | null;
   isLoading: boolean;
   error: string | null;
   loadDocuments: ReturnType<typeof vi.fn>;
@@ -27,7 +32,6 @@ interface MockDocumentState {
 vi.mock('../../stores/documentStore', () => {
   const state: MockDocumentState = {
     documents: [],
-    currentDocument: null,
     isLoading: false,
     error: null,
     loadDocuments: vi.fn(),
@@ -50,6 +54,16 @@ vi.mock('../../stores/documentStore', () => {
 const mockListProjects = vi.fn();
 vi.mock('../../services/api', () => ({
   listProjects: (...args: unknown[]) => mockListProjects(...args),
+}));
+
+// --- Mock de DocumentWorkspace (D3 - testé isolément ailleurs) -------------
+
+vi.mock('./DocumentWorkspace', () => ({
+  DocumentWorkspace: ({ documentId, onBack }: { documentId: string; onBack: () => void }) => (
+    <div data-testid="document-workspace-mock" data-document-id={documentId}>
+      <button onClick={onBack}>Retour (mock atelier)</button>
+    </div>
+  ),
 }));
 
 import { useDocumentStore } from '../../stores/documentStore';
@@ -77,7 +91,6 @@ describe('DocumentsList', () => {
     mockListProjects.mockResolvedValue([]);
     useDocumentStore.setState({
       documents: [],
-      currentDocument: null,
       isLoading: false,
       error: null,
     });
@@ -117,7 +130,7 @@ describe('DocumentsList', () => {
     expect(screen.getAllByRole('button', { name: /Nouveau document/i }).length).toBeGreaterThan(0);
   });
 
-  it('clic sur un document appelle openDocument et affiche le placeholder atelier (D3 le remplacera)', () => {
+  it('clic sur un document appelle openDocument et affiche l\'atelier (DocumentWorkspace, D3)', () => {
     useDocumentStore.setState({
       documents: [makeDocument({ id: 'doc-42', title: 'Rapport annuel' })],
     });
@@ -126,20 +139,21 @@ describe('DocumentsList', () => {
     fireEvent.click(screen.getByText('Rapport annuel'));
 
     expect(useDocumentStore.getState().openDocument).toHaveBeenCalledWith('doc-42');
-    expect(screen.getByTestId('document-workspace-placeholder')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Retour aux documents/i })).toBeInTheDocument();
+    const workspace = screen.getByTestId('document-workspace-mock');
+    expect(workspace).toBeInTheDocument();
+    expect(workspace).toHaveAttribute('data-document-id', 'doc-42');
   });
 
-  it('le bouton « Retour aux documents » revient à la liste', () => {
+  it('le retour de l\'atelier (onBack de DocumentWorkspace) revient à la liste', () => {
     useDocumentStore.setState({
       documents: [makeDocument({ id: 'doc-42', title: 'Rapport annuel' })],
     });
 
     render(<DocumentsList />);
     fireEvent.click(screen.getByText('Rapport annuel'));
-    expect(screen.getByTestId('document-workspace-placeholder')).toBeInTheDocument();
+    expect(screen.getByTestId('document-workspace-mock')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Retour aux documents/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Retour \(mock atelier\)/i }));
     expect(screen.getByTestId('documents-list')).toBeInTheDocument();
   });
 

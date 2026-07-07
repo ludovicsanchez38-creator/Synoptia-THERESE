@@ -506,6 +506,21 @@ describe('documentStore', () => {
     });
   });
 
+  describe('closeDocument', () => {
+    it('réinitialise currentDocument, sectionActive et error (anti-flash D2/D3)', () => {
+      useDocumentStore.setState({
+        currentDocument: makeDetail({ id: 'd1', sections: [makeSection({ id: 's1' })] }),
+        sectionActive: 's1',
+        error: 'Une erreur périmée',
+      });
+      useDocumentStore.getState().closeDocument();
+      const state = useDocumentStore.getState();
+      expect(state.currentDocument).toBeNull();
+      expect(state.sectionActive).toBeNull();
+      expect(state.error).toBeNull();
+    });
+  });
+
   describe('clearError', () => {
     it('remet error à null', () => {
       useDocumentStore.setState({ error: 'Un souci' });
