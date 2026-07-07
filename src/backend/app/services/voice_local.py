@@ -58,19 +58,146 @@ def voices_dir() -> Path:
     return Path(get_settings().data_dir) / "voices"
 
 
+def whisper_models_dir() -> Path:
+    """Dossier des modèles Whisper (dans ~/.therese, pas ~/.cache/huggingface).
+
+    Sans download_root explicite, faster-whisper télécharge dans le cache
+    HuggingFace global - hors du périmètre de données de THÉRÈSE (backup,
+    RGPD, désinstallation propre).
+    """
+    from app.config import get_settings
+
+    return Path(get_settings().data_dir) / "models" / "whisper"
+
+
+def stt_model_downloaded(size: str) -> bool:
+    """Le modèle Whisper est-il déjà téléchargé localement ?"""
+    # Convention de cache HuggingFace Hub : models--{org}--{repo}
+    model_dir = whisper_models_dir() / f"models--Systran--faster-whisper-{size}"
+    return model_dir.exists() and any(model_dir.rglob("model.bin"))
+
+
+def tts_voice_downloaded(voice: str = "") -> bool:
+    """La voix Piper est-elle déjà téléchargée ?"""
+    name = voice or DEFAULT_PIPER_VOICE
+    return (voices_dir() / f"{name}.onnx").exists()
+
+
+# Voix Piper officielles (repo HuggingFace rhasspy/piper-voices)
+_PIPER_VOICE_URLS = {
+    "fr_FR-siwis-medium": (
+        "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/"
+    ),
+}
+
+
+def download_piper_voice(voice: str = DEFAULT_PIPER_VOICE) -> Path:
+    """Télécharge une voix Piper (.onnx + .onnx.json) dans voices_dir().
+
+    Écriture atomique (fichier temporaire puis rename) : un téléchargement
+    interrompu ne laisse jamais une voix corrompue considérée comme présente.
+    """
+    import httpx
+
+    base_url = _PIPER_VOICE_URLS.get(voice)
+    if not base_url:
+        raise RuntimeError(f"Voix Piper inconnue : {voice}")
+
+    target_dir = voices_dir()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    for suffix in (f"{voice}.onnx", f"{voice}.onnx.json"):
+        target = target_dir / suffix
+        if target.exists():
+            continue
+        tmp = target.with_suffix(target.suffix + ".part")
+        logger.info("Téléchargement de la voix Piper : %s", suffix)
+        with httpx.stream("GET", base_url + suffix, follow_redirects=True, timeout=120) as resp:
+            resp.raise_for_status()
+            with open(tmp, "wb") as f:
+                for chunk in resp.iter_bytes(chunk_size=1 << 20):
+                    f.write(chunk)
+        tmp.rename(target)
+    return target_dir / f"{voice}.onnx"
+
+
+# État du setup en cours (téléchargement des modèles) - module-level, un seul
+# setup à la fois (protégé par le router).
+_setup_state: dict[str, object] = {"state": "idle", "step": "", "error": ""}
+
+
+def get_setup_state() -> dict[str, object]:
+    return dict(_setup_state)
+
+
+def run_voice_setup(model_size: str) -> None:
+    """Télécharge le modèle Whisper + la voix Piper (SYNCHRONE, à lancer en executor).
+
+    Met à jour _setup_state au fil des étapes pour l'UI (polling /local/status).
+    """
+    size = model_size if model_size in WHISPER_MODELS else DEFAULT_WHISPER_MODEL
+    try:
+        _setup_state.update(state="running", step=f"Téléchargement du modèle Whisper « {size} »", error="")
+        if stt_available():
+            from faster_whisper import WhisperModel
+
+            # Instancier = télécharger (si absent) + valider le chargement
+            model = WhisperModel(
+                size, device="cpu", compute_type="int8",
+                download_root=str(whisper_models_dir()),
+            )
+            _whisper_cache[size] = model
+
+        _setup_state.update(step="Téléchargement de la voix française")
+        if tts_available():
+            download_piper_voice(DEFAULT_PIPER_VOICE)
+
+        _setup_state.update(state="done", step="Voix locale prête")
+    except Exception as e:  # noqa: BLE001 - l'état d'erreur EST le contrat de l'UI
+        logger.exception("Échec du setup voix locale")
+        _setup_state.update(state="error", error=str(e))
+
+
+def active_whisper_model() -> str | None:
+    """Le modèle Whisper réellement utilisable : le défaut s'il est téléchargé,
+    sinon le premier modèle présent sur disque (l'utilisateur a pu choisir
+    tiny ou small au setup), sinon None."""
+    from app.config import get_settings
+
+    default = getattr(get_settings(), "voice_local_whisper_model", DEFAULT_WHISPER_MODEL)
+    if stt_model_downloaded(default):
+        return default
+    for size in WHISPER_MODELS:
+        if stt_model_downloaded(size):
+            return size
+    return None
+
+
 def voice_local_status() -> dict[str, object]:
     """État de la voix locale : disponibilité + modèles + prérequis RAM."""
     from app.config import get_settings
 
     settings = get_settings()
+    default_model = getattr(settings, "voice_local_whisper_model", DEFAULT_WHISPER_MODEL)
+    stt_ok = stt_available()
+    tts_ok = tts_available()
+    models_downloaded = {size: stt_model_downloaded(size) for size in WHISPER_MODELS}
+    active = active_whisper_model()
+    voice_ok = tts_voice_downloaded()
     return {
         "enabled": bool(getattr(settings, "voice_local_enabled", False)),
-        "stt_available": stt_available(),
-        "tts_available": tts_available(),
+        "stt_available": stt_ok,
+        "tts_available": tts_ok,
         "whisper_models": WHISPER_MODELS,
-        "default_whisper_model": getattr(settings, "voice_local_whisper_model", DEFAULT_WHISPER_MODEL),
+        "default_whisper_model": default_model,
+        "active_whisper_model": active,
+        "models_downloaded": models_downloaded,
         "tts_voice": DEFAULT_PIPER_VOICE,
+        "tts_voice_downloaded": voice_ok,
         "tts_ram_mb": PIPER_TTS_RAM_MB,
+        # Prêt à l'emploi = libs embarquées ET au moins un modèle sur disque
+        "ready": stt_ok and active is not None,
+        "setup": get_setup_state(),
         "install_hint": INSTALL_HINT,
     }
 
@@ -94,7 +221,10 @@ def transcribe_local(audio_path: str, model_size: str | None = None, language: s
     model = _whisper_cache.get(size)
     if model is None:
         logger.info("Chargement du modèle Whisper local '%s' (CPU, int8)", size)
-        model = WhisperModel(size, device="cpu", compute_type="int8")
+        model = WhisperModel(
+            size, device="cpu", compute_type="int8",
+            download_root=str(whisper_models_dir()),
+        )
         _whisper_cache[size] = model
 
     segments, _info = model.transcribe(audio_path, language=language)
@@ -121,6 +251,9 @@ def synthesize_local(text: str, out_path: str, voice: str = DEFAULT_PIPER_VOICE)
         )
 
     loaded = PiperVoice.load(str(onnx))
+    # piper-tts >= 1.3 : synthesize() renvoie un flux d'AudioChunk ; l'écriture
+    # WAV passe par synthesize_wav (l'ancien synthesize(text, wav) de la 1.2
+    # laissait un WAV vide - jamais exécuté en réel avant le 07/07/2026).
     with wave.open(out_path, "wb") as wav:
-        loaded.synthesize(text, wav)
+        loaded.synthesize_wav(text, wav)
     return out_path

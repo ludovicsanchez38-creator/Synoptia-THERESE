@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Database, Clock, UserCheck, HardDrive, Loader2, Download, Trash2, EyeOff } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { getPurgeSettings, updatePurgeSettings } from '../../services/api/rgpd';
+import { VoiceLocalSection } from './VoiceLocalSection';
 
 // Types de données stockées
 const DATA_TYPES = [
@@ -109,6 +110,9 @@ export function PrivacyTab() {
           </p>
         </div>
       </section>
+
+      {/* Section : Voix locale souveraine (activation un clic) */}
+      <VoiceLocalSection />
 
       {/* Section : Tes données */}
       <section className="rounded-lg border border-border/50 p-4">

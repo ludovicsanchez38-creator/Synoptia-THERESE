@@ -159,15 +159,49 @@ async def transcribe_audio(
 
 @router.get("/local/status")
 async def voice_local_status_route() -> dict[str, object]:
-    """Disponibilité de la voix locale (STT/TTS) + modèles + prérequis RAM.
+    """Disponibilité de la voix locale (STT/TTS) + modèles + état du setup.
 
-    Permet à l'UI d'afficher si la voix souveraine est installée, et sinon
-    comment l'activer (et la RAM nécessaire).
+    Permet à l'UI d'afficher si la voix souveraine est prête, et sinon
+    de proposer l'activation en un clic (téléchargement des modèles).
     """
     from app.services.voice_local import voice_local_status
 
     status: dict[str, object] = voice_local_status()
     return status
+
+
+@router.post("/local/setup")
+async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict[str, object]:
+    """Active la voix locale : télécharge le modèle Whisper + la voix Piper.
+
+    Lancé en tâche de fond (les modèles pèsent ~150-250 Mo) ; l'UI suit la
+    progression en interrogeant GET /local/status (champ `setup`).
+    """
+    import asyncio
+
+    from app.services.voice_local import (
+        DEFAULT_WHISPER_MODEL,
+        get_setup_state,
+        run_voice_setup,
+        stt_available,
+    )
+
+    if not stt_available():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "La voix locale n'est pas embarquée dans cette version de THÉRÈSE. "
+                "Mets l'application à jour."
+            ),
+        )
+    if get_setup_state().get("state") == "running":
+        raise HTTPException(status_code=409, detail="Un téléchargement est déjà en cours.")
+
+    model_size = (payload or {}).get("model", DEFAULT_WHISPER_MODEL)
+    loop = asyncio.get_running_loop()
+    # Fire-and-forget dans l'executor : l'état est suivi via /local/status
+    loop.run_in_executor(None, run_voice_setup, model_size)
+    return {"started": True, "model": model_size}
 
 
 @router.post("/local/transcribe", response_model=TranscriptionResponse)
@@ -179,13 +213,22 @@ async def transcribe_audio_local(
 
     Nécessite le groupe optionnel `voice-local` installé (sinon 503 + indication).
     """
-    from app.config import get_settings
-    from app.services.voice_local import stt_available, transcribe_local
+    from app.services.voice_local import active_whisper_model, stt_available, transcribe_local
 
     if not stt_available():
         from app.services.voice_local import INSTALL_HINT
 
         raise HTTPException(status_code=503, detail=f"Voix locale non installée. {INSTALL_HINT}")
+
+    # Le modèle réellement téléchargé (l'utilisateur a pu choisir tiny/small
+    # au setup) - pas le défaut de config, qui peut ne pas être sur disque.
+    model = active_whisper_model()
+    if model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Aucun modèle vocal téléchargé. Active la voix locale dans "
+            "Paramètres > Confidentialité.",
+        )
 
     audio_data = await audio.read()
     if not audio_data:
@@ -197,7 +240,6 @@ async def transcribe_audio_local(
         tmp_path = tmp.name
 
     try:
-        model = get_settings().voice_local_whisper_model
         text = transcribe_local(tmp_path, model_size=model)
         return TranscriptionResponse(text=text, language="fr")
     except RuntimeError as e:

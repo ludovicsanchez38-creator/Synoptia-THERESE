@@ -1,8 +1,7 @@
-# Voix locale souveraine (STT + TTS) — option
+# Voix locale souveraine (STT + TTS)
 
 THÉRÈSE peut fonctionner avec une voix **100 % locale et souveraine**, sans envoyer
-l'audio à un service cloud. C'est une **option** : elle n'est pas incluse par défaut
-pour garder le paquet léger. Tu l'installes seulement si tu en as besoin.
+l'audio à un service cloud.
 
 - **STT** (reconnaissance vocale) : [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (Whisper via CTranslate2, CPU, quantization int8).
 - **TTS** (synthèse vocale) : [Piper](https://github.com/rhasspy/piper) (modèles ONNX légers, CPU).
@@ -10,7 +9,22 @@ pour garder le paquet léger. Tu l'installes seulement si tu en as besoin.
 Les deux sont open source et tournent entièrement sur ta machine. C'est l'alternative
 souveraine à la transcription via Groq Whisper (cloud) déjà présente.
 
-## Installation (option)
+## Activation en un clic (depuis la 0.27)
+
+Les bibliothèques sont **embarquées dans l'application** (builds officiels).
+Rien à installer :
+
+1. Paramètres → **Confidentialité** → section « Voix locale souveraine »
+2. Choisis un modèle (Base recommandé) et clique **Activer la voix locale**
+3. Le modèle Whisper et la voix française Piper se téléchargent (~150-250 Mo,
+   une seule fois, dans ton dossier `~/.therese`)
+4. Active « Utiliser pour le micro » : ton audio ne quitte plus jamais ta machine
+
+Si la voix locale est activée pour le micro et qu'elle échoue, THÉRÈSE affiche
+l'erreur - elle ne bascule JAMAIS silencieusement vers le cloud.
+
+## Installation depuis les sources (dev uniquement)
+
 
 ```bash
 pip install 'therese-backend[voice-local]'

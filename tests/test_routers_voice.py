@@ -4,6 +4,8 @@ THERESE v2 - Voice Router Tests
 Tests for US-VOICE-01 to US-VOICE-05.
 """
 
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -124,3 +126,105 @@ class TestVoiceFormats:
         response = await client.post("/api/voice/transcribe", files=files)
 
         assert response.status_code in [200, 400, 401, 422, 503]
+
+
+# =============================================================================
+# Voix locale « un clic » (0.27) - status enrichi + setup + garde-fous
+# =============================================================================
+
+
+class TestVoiceLocalStatus:
+    """GET /api/voice/local/status - contrat de l'UI réglages."""
+
+    @pytest.mark.asyncio
+    async def test_status_expose_le_contrat_ui(self, client: AsyncClient):
+        response = await client.get("/api/voice/local/status")
+        assert response.status_code == 200
+        data = response.json()
+        # Le contrat que l'écran de réglages consomme
+        for key in ("stt_available", "tts_available", "ready", "models_downloaded",
+                    "tts_voice_downloaded", "setup", "whisper_models", "default_whisper_model"):
+            assert key in data, f"clé manquante : {key}"
+        assert data["setup"]["state"] in ("idle", "running", "done", "error")
+        # models_downloaded couvre chaque modèle proposé
+        assert set(data["models_downloaded"].keys()) == set(data["whisper_models"].keys())
+
+    @pytest.mark.asyncio
+    async def test_models_whisper_isoles_dans_le_data_dir(self, client: AsyncClient):
+        """Les modèles doivent vivre dans ~/.therese (backup/RGPD), pas ~/.cache."""
+        from app.config import get_settings
+        from app.services.voice_local import whisper_models_dir
+
+        assert str(get_settings().data_dir) in str(whisper_models_dir())
+
+
+class TestVoiceLocalSetup:
+    """POST /api/voice/local/setup - activation en un clic."""
+
+    @pytest.mark.asyncio
+    async def test_setup_refuse_si_libs_absentes(self, client: AsyncClient):
+        with patch("app.services.voice_local.stt_available", return_value=False):
+            response = await client.post("/api/voice/local/setup", json={})
+        assert response.status_code == 503
+        assert "à jour" in response.json()["message"]
+
+    @pytest.mark.asyncio
+    async def test_setup_refuse_double_lancement(self, client: AsyncClient):
+        from app.services import voice_local
+
+        with patch("app.services.voice_local.stt_available", return_value=True), \
+             patch.dict(voice_local._setup_state, {"state": "running"}):
+            response = await client.post("/api/voice/local/setup", json={})
+        assert response.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_setup_lance_le_telechargement_en_fond(self, client: AsyncClient):
+        calls = {}
+
+        def fake_setup(model_size):
+            calls["model"] = model_size
+
+        with patch("app.services.voice_local.stt_available", return_value=True), \
+             patch("app.services.voice_local.run_voice_setup", side_effect=fake_setup):
+            response = await client.post("/api/voice/local/setup", json={"model": "small"})
+            assert response.status_code == 200
+            assert response.json() == {"started": True, "model": "small"}
+            # L'executor est fire-and-forget : laisser un tick au thread
+            import asyncio
+            await asyncio.sleep(0.2)
+        assert calls.get("model") == "small"
+
+
+class TestPiperVoiceDownload:
+    """download_piper_voice - écriture atomique, pas de voix corrompue."""
+
+    def test_voix_inconnue_refusee(self):
+        from app.services.voice_local import download_piper_voice
+
+        with pytest.raises(RuntimeError, match="inconnue"):
+            download_piper_voice("xx_XX-fantome-large")
+
+    def test_telechargement_atomique(self, tmp_path):
+        """Un flux interrompu ne doit jamais laisser un .onnx partiel visible."""
+        from app.services import voice_local
+
+        class _BoomStream:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def raise_for_status(self):
+                pass
+
+            def iter_bytes(self, chunk_size):
+                yield b"debut"
+                raise OSError("connexion coupee")
+
+        with patch.object(voice_local, "voices_dir", return_value=tmp_path), \
+             patch("httpx.stream", return_value=_BoomStream()), pytest.raises(OSError):
+            voice_local.download_piper_voice()
+
+        assert not list(tmp_path.glob("*.onnx")), "un .onnx partiel est visible"
+        assert list(tmp_path.glob("*.part")), "le fichier temporaire devrait rester en .part"

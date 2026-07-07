@@ -4,9 +4,10 @@ THÉRÈSE v2 - PyInstaller Spec
 Produit un exécutable unique pour le sidecar Tauri.
 """
 
+import importlib.util
 import os
 import sys
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_data_files, collect_submodules
 
 block_cipher = None
 
@@ -112,10 +113,27 @@ datas += collect_data_files("pptx")
 # Or PyInstaller met les modules dans PYZ, donc docx/parts/ n'existe pas sur disque.
 # Le runtime hook runtime_hook_templates.py crée ces répertoires vides au démarrage.
 
+# Voix locale souveraine (0.27) : STT faster-whisper (ctranslate2 natif) +
+# TTS Piper (onnxruntime + données espeak-ng). Embarquées UNIQUEMENT si le
+# groupe optionnel voice-local est installé dans l'env de build (release.yml
+# fait `uv sync --extra voice-local`) - un build local sans l'extra reste
+# possible et produit simplement une app sans la voix locale.
+binaries = []
+_VOICE_PKGS = ("faster_whisper", "ctranslate2", "piper", "onnxruntime")
+if all(importlib.util.find_spec(p) for p in _VOICE_PKGS):
+    for _pkg in _VOICE_PKGS:
+        _datas, _binaries, _hidden = collect_all(_pkg)
+        datas += _datas
+        binaries += _binaries
+        hidden_imports += _hidden
+    print("backend.spec : voix locale EMBARQUEE (faster-whisper + piper)")
+else:
+    print("backend.spec : voix locale absente de l'env de build, non embarquee")
+
 a = Analysis(
     [os.path.join(backend_dir, "main.py")],
     pathex=[backend_dir],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hidden_imports,
     hookspath=[],

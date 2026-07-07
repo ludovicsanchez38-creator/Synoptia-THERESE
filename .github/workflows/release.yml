@@ -87,7 +87,9 @@ jobs:
           python-version: "3.13"
 
       - name: Installer UV et dépendances Python
-        run: pip install uv && uv sync --dev
+        # --extra voice-local : embarque faster-whisper + Piper dans le sidecar
+        # (voix locale « un clic », les modèles restent téléchargés au 1er usage)
+        run: pip install uv && uv sync --dev --extra voice-local
 
       - name: Installer torch CPU-only (réduction ~1 Go)
         if: runner.os != 'macOS'
