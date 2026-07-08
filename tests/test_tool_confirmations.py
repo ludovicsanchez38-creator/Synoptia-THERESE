@@ -33,3 +33,19 @@ def test_register_puis_pop_rend_l_action_une_seule_fois():
 
 def test_pop_d_un_id_inconnu_retourne_none():
     assert pop_pending("inconnu-xyz") is None
+
+
+def test_send_email_mcp_prefixe_requiert_aussi_confirmation():
+    """BUG-121 : un send_email exposé via MCP est nommé '{server_id}__send_email'.
+
+    Il doit être gaté comme le send_email natif, sinon il échappe au contrôle
+    (nom préfixé) et s'exécute sans validation - violation de l'invariant US-002.
+    """
+    assert requires_confirmation("therese__send_email") is True
+    assert requires_confirmation("mon-serveur__send_email") is True
+
+
+def test_prefixe_mcp_ne_gate_pas_les_outils_non_sensibles():
+    """Le préfixe MCP ne doit pas transformer un outil lecture-seule en sensible."""
+    assert requires_confirmation("therese__read_emails") is False
+    assert requires_confirmation("therese__list_invoices") is False

@@ -19,9 +19,24 @@ SENSITIVE_TOOL_NAMES: set[str] = {"send_email"}
 _pending: dict[str, tuple[str, dict[str, Any]]] = {}
 
 
+def _base_tool_name(tool_name: str) -> str:
+    """Nom d'outil sans le préfixe serveur MCP.
+
+    Les outils exposés via un serveur MCP sont nommés '{server_id}__{tool}'
+    (cf. mcp_service.get_tools_for_llm). On isole le nom réel de l'outil pour
+    que le gate de confirmation s'applique quelle que soit sa provenance.
+    """
+    return tool_name.split("__", 1)[1] if "__" in tool_name else tool_name
+
+
 def requires_confirmation(tool_name: str) -> bool:
-    """True si l'outil ne doit jamais s'exécuter sans validation utilisateur."""
-    return tool_name in SENSITIVE_TOOL_NAMES
+    """True si l'outil ne doit jamais s'exécuter sans validation utilisateur.
+
+    BUG-121 : couvre aussi un send_email exposé via MCP ('{server_id}__send_email').
+    Sans ça, un tel outil échapperait au gate (nom préfixé) et s'exécuterait
+    directement sans confirmation - violation de l'invariant US-002.
+    """
+    return _base_tool_name(tool_name) in SENSITIVE_TOOL_NAMES
 
 
 def register_pending(tool_name: str, arguments: dict[str, Any]) -> str:

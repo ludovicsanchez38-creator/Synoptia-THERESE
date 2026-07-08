@@ -1325,15 +1325,26 @@ async def _execute_tools_and_continue(
     from app.services.execution_truth import enforce_create_cap, summarize_executions
     allowed_calls, blocked_calls = enforce_create_cap(tool_calls)
     exec_records: list[tuple[str, str, bool]] = []
+    # BUG-121 : une fois une action sensible mise en attente de confirmation, on
+    # ne relance pas la chaîne d'outils (voir plus bas). Sinon le modèle - surtout
+    # les modèles faibles - re-émet send_email en boucle et empile plusieurs
+    # cartes de confirmation quasi identiques.
+    sensitive_pending = False
 
     for tc in allowed_calls:
-        logger.info(f"Executing tool: {tc.name} with args: {tc.arguments}")
-
         # US-002 : les outils sensibles (envoi de mail) ne s'exécutent jamais
         # automatiquement sur décision du LLM. On met l'action en attente et on
         # demande validation à l'utilisateur ; l'exécution réelle a lieu via
-        # POST /api/chat/confirm-tool une fois l'action confirmée.
+        # POST /api/chat/confirm-tool une fois l'action confirmée. Le gate est
+        # AVANT tout log d'exécution : BUG-121 a été mal lu parce que le log
+        # "Executing tool: send_email" laissait croire à un envoi réel alors que
+        # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
+            logger.info(
+                f"Outil sensible {tc.name} mis en attente de confirmation utilisateur "
+                f"(NON exécuté) - args: {tc.arguments}"
+            )
+            sensitive_pending = True
             confirmation_id = register_pending(tc.name, tc.arguments)
             confirm_chunk = StreamChunk(
                 type="confirmation_required",
@@ -1356,6 +1367,8 @@ async def _execute_tools_and_continue(
             ))
             exec_records.append((tc.name, "en attente de confirmation utilisateur", False))
             continue
+
+        logger.info(f"Executing tool: {tc.name} with args: {tc.arguments}")
 
         # Execute based on tool type
         if tc.name == "web_search":
@@ -1563,7 +1576,15 @@ async def _execute_tools_and_continue(
                     usage_totals["estimated"] = True
 
             # Check if more tools need to be called
-            if new_tool_calls and event.stop_reason in ("tool_calls", "tool_use"):
+            # BUG-121 : si une action sensible attend confirmation, on NE relance
+            # PAS la chaîne d'outils. Le modèle a déjà sa carte de confirmation ;
+            # continuer laisserait un modèle faible re-émettre send_email en boucle
+            # (4 cartes quasi identiques observées, args hallucinés body/content).
+            if (
+                new_tool_calls
+                and event.stop_reason in ("tool_calls", "tool_use")
+                and not sensitive_pending
+            ):
                 # Recursive call for chained tools
                 async for nested_event in _execute_tools_and_continue(
                     llm_service,
@@ -1643,7 +1664,20 @@ async def confirm_tool(
     if not request.approved:
         return {"status": "cancelled", "tool_name": tool_name}
 
-    result = await execute_workspace_tool(tool_name, arguments, session)
+    # BUG-121 : un outil sensible exposé via MCP est nommé '{server_id}__{tool}'
+    # et doit être exécuté via le service MCP, pas via les workspace tools (qui
+    # ne connaissent pas ce nom préfixé). Le gate laisse désormais passer ces
+    # outils en attente ; l'exécution confirmée doit donc router correctement.
+    if "__" in tool_name:
+        mcp_service = get_mcp_service()
+        mcp_result = await mcp_service.execute_tool_call(tool_name, arguments)
+        result = (
+            mcp_result.result
+            if mcp_result.success
+            else f"Erreur lors de l'envoi : {mcp_result.error}"
+        )
+    else:
+        result = await execute_workspace_tool(tool_name, arguments, session)
     return {"status": "executed", "tool_name": tool_name, "result": result}
 
 
