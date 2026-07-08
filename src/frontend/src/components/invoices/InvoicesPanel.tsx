@@ -29,12 +29,14 @@ import { Z_LAYER } from '../../styles/z-layers';
 
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badgeBg?: string }> = {
   draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
-  sent: { label: 'Envoyée', icon: Mail, color: 'text-blue-500', badgeBg: 'bg-blue-500/20' },
-  accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-emerald-500', badgeBg: 'bg-emerald-500/20' },
+  sent: { label: 'Envoyée', icon: Mail, color: 'text-info', badgeBg: 'bg-info/20' },
+  accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
+  // refused/converted : pas de token sémantique dédié (orange/purple hors success/warning/error/info) -
+  // laissés en couleur Tailwind brute, cf dette CLAUDE.md contraste clair
   refused: { label: 'Refusé', icon: ThumbsDown, color: 'text-orange-500', badgeBg: 'bg-orange-500/20' },
-  expired: { label: 'Expiré', icon: Clock, color: 'text-amber-500', badgeBg: 'bg-amber-500/20' },
-  paid: { label: 'Payée', icon: CheckCircle2, color: 'text-green-500', badgeBg: 'bg-green-500/20' },
-  overdue: { label: 'En retard', icon: AlertCircle, color: 'text-red-500', badgeBg: 'bg-red-500/20' },
+  expired: { label: 'Expiré', icon: Clock, color: 'text-warning', badgeBg: 'bg-warning/20' },
+  paid: { label: 'Payée', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
+  overdue: { label: 'En retard', icon: AlertCircle, color: 'text-error', badgeBg: 'bg-error/20' },
   converted: { label: 'Converti', icon: ArrowRightLeft, color: 'text-purple-500', badgeBg: 'bg-purple-500/20' },
   cancelled: { label: 'Annulée', icon: Ban, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
 };

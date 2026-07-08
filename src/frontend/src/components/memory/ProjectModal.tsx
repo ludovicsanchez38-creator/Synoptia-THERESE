@@ -35,10 +35,10 @@ const initialFormData: FormData = {
 };
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: 'Actif', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-  { value: 'on_hold', label: 'En attente', color: 'bg-yellow-500/20 text-warning border-yellow-500/30' },
-  { value: 'completed', label: 'Terminé', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  { value: 'cancelled', label: 'Annulé', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+  { value: 'active', label: 'Actif', color: 'bg-success/20 text-success border-success/30' },
+  { value: 'on_hold', label: 'En attente', color: 'bg-warning/20 text-warning border-warning/30' },
+  { value: 'completed', label: 'Terminé', color: 'bg-info/20 text-info border-info/30' },
+  { value: 'cancelled', label: 'Annulé', color: 'bg-error/20 text-error border-error/30' },
 ];
 
 export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModalProps) {
