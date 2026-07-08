@@ -24,6 +24,7 @@ from app.services.email.base_provider import (
     EmailProvider,
     SendEmailRequest,
 )
+from app.services.html_sanitizer import sanitize_html
 from imap_tools import AND, OR, MailBox, MailMessage
 
 logger = logging.getLogger(__name__)
@@ -742,7 +743,9 @@ class ImapSmtpProvider(EmailProvider):
             is_read=r"\Seen" in msg.flags,
             is_starred=r"\Flagged" in msg.flags,
             body_plain=msg.text,
-            body_html=msg.html,
+            # Défense en profondeur : sanitisé aussi ici (cf gmail_service.py
+            # format_message_for_storage, même politique nh3).
+            body_html=sanitize_html(msg.html) if msg.html else msg.html,
             has_attachments=len(msg.attachments) > 0,
             attachment_count=len(msg.attachments),
             attachments=attachments,

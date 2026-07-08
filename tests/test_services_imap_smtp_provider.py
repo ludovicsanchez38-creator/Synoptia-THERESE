@@ -152,3 +152,43 @@ class TestConnectionTimeoutMessage:
         assert result["smtp_ok"] is False
         assert "465" in result["message"]
         assert "SSL/TLS directe" in result["message"]
+
+
+class TestImapToDtoSanitizesHtml:
+    """Défense en profondeur (dette 09/06/2026) : le body_html d'un mail IMAP
+    n'était jamais sanitisé côté backend, contrairement aux signatures (nh3).
+    Sûr tant que le seul point de rendu est le sanitizer front, fragile sinon.
+    """
+
+    def _fake_msg(self, html: str | None):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            uid="42",
+            subject="Sujet",
+            text="Corps texte",
+            html=html,
+            from_="expediteur@exemple.fr",
+            to=("dest@exemple.fr",),
+            cc=(),
+            date=None,
+            flags=(),
+            attachments=[],
+        )
+
+    def test_retire_le_script_du_body_html(self):
+        provider = make_provider()
+        msg = self._fake_msg("<p>Bonjour</p><script>alert(1)</script>")
+
+        dto = provider._imap_to_dto(msg)
+
+        assert "<script>" not in dto.body_html
+        assert "Bonjour" in dto.body_html
+
+    def test_laisse_le_body_html_absent_intact(self):
+        provider = make_provider()
+        msg = self._fake_msg(None)
+
+        dto = provider._imap_to_dto(msg)
+
+        assert dto.body_html is None

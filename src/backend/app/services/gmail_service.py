@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import httpx
+from app.services.html_sanitizer import sanitize_html
 from app.services.http_client import get_http_client
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
@@ -412,6 +413,12 @@ def format_message_for_storage(gmail_message: dict) -> dict:
 
     # Extract body
     body_plain, body_html = parse_email_body(gmail_message.get('payload', {}))
+    # Défense en profondeur : le body_html est aujourd'hui sanitisé côté front
+    # (sanitizeEmailHtml) au seul point de rendu actuel. Sanitiser aussi ici, au
+    # moment du cache, protège un futur écran qui afficherait le corps sans
+    # repasser par le sanitizer front.
+    if body_html:
+        body_html = sanitize_html(body_html)
 
     # Parse date
     internal_date = datetime.fromtimestamp(int(gmail_message['internalDate']) / 1000)
