@@ -667,7 +667,7 @@ class ImapSmtpProvider(EmailProvider):
     # Account Operations
     # ============================================================
 
-    async def get_profile(self) -> dict:
+    async def get_profile(self) -> dict[str, str]:
         """Get account profile (email address)."""
         return {
             "email": self._email,
