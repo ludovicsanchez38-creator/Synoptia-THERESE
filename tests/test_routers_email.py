@@ -257,6 +257,62 @@ class TestEmailMessages:
             assert data["messages"][0]["subject"] == "Test subject"
 
     @pytest.mark.asyncio
+    async def test_list_messages_imap_onglet_envoye_selectionne_dossier_sent(
+        self, client: AsyncClient, sample_imap_setup
+    ):
+        """BUG-122 : l'onglet Envoyé (label_ids=SENT) doit lister le dossier Sent
+        du serveur IMAP, pas l'INBOX. label_ids était ignoré côté IMAP."""
+        create_resp = await client.post("/api/email/auth/imap-setup", json=sample_imap_setup)
+        account_id = create_resp.json()["id"]
+
+        captured: dict = {}
+
+        async def _fake_list(**kwargs):
+            captured.update(kwargs)
+            return ([], None)
+
+        with patch("app.routers.email.get_email_provider") as mock_provider:
+            mock_instance = MagicMock()
+            mock_instance.resolve_folder_for_label = AsyncMock(return_value="INBOX.Sent")
+            mock_instance.list_messages = AsyncMock(side_effect=_fake_list)
+            mock_provider.return_value = mock_instance
+
+            response = await client.get(
+                f"/api/email/messages?account_id={account_id}&label_ids=SENT"
+            )
+            assert_response_ok(response)
+
+        mock_instance.resolve_folder_for_label.assert_awaited_once_with("SENT")
+        # Le dossier réel est bien passé à list_messages (pas l'INBOX par défaut).
+        assert captured.get("folder") == "INBOX.Sent"
+
+    @pytest.mark.asyncio
+    async def test_list_messages_imap_inbox_reste_defaut(
+        self, client: AsyncClient, sample_imap_setup
+    ):
+        """Sans label_ids (ou INBOX), on ne résout aucun dossier : INBOX par défaut."""
+        create_resp = await client.post("/api/email/auth/imap-setup", json=sample_imap_setup)
+        account_id = create_resp.json()["id"]
+
+        captured: dict = {}
+
+        async def _fake_list(**kwargs):
+            captured.update(kwargs)
+            return ([], None)
+
+        with patch("app.routers.email.get_email_provider") as mock_provider:
+            mock_instance = MagicMock()
+            mock_instance.resolve_folder_for_label = AsyncMock(return_value="INBOX.Sent")
+            mock_instance.list_messages = AsyncMock(side_effect=_fake_list)
+            mock_provider.return_value = mock_instance
+
+            response = await client.get(f"/api/email/messages?account_id={account_id}")
+            assert_response_ok(response)
+
+        mock_instance.resolve_folder_for_label.assert_not_awaited()
+        assert captured.get("folder") is None
+
+    @pytest.mark.asyncio
     async def test_get_message_imap_route_provider_pas_gmail(self, client: AsyncClient, sample_imap_setup):
         """BUG-123 : GET /messages/{id} d'un compte IMAP doit passer par le
         provider IMAP, JAMAIS par Gmail. Forcer Gmail envoyait un token OAuth

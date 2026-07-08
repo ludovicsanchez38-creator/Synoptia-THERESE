@@ -313,6 +313,49 @@ class ImapSmtpProvider(EmailProvider):
             operation_name="IMAP list_messages",
         )
 
+    # BUG-122 : correspondance label Gmail-style -> dossier IMAP réel.
+    # (flag special-use RFC 6154, puis heuristique de nom multi-langue).
+    _SPECIAL_FOLDER_MATCH: dict[str, tuple[str, tuple[str, ...]]] = {
+        "SENT": ("\\Sent", ("sent", "envoy", "gesendet", "enviad")),
+        "DRAFTS": ("\\Drafts", ("draft", "brouillon")),
+        "DRAFT": ("\\Drafts", ("draft", "brouillon")),
+        "TRASH": ("\\Trash", ("trash", "deleted", "corbeille")),
+        "SPAM": ("\\Junk", ("junk", "spam", "pourriel", "indésirable")),
+    }
+
+    async def resolve_folder_for_label(self, label: str) -> str | None:
+        """Nom réel du dossier IMAP pour un label Gmail-style (SENT, DRAFTS...).
+
+        Priorité aux flags special-use RFC 6154 (\\Sent, \\Drafts...), repli sur
+        une heuristique de nom (multi-langue). None pour INBOX/label inconnu :
+        l'appelant garde alors l'INBOX. Corrige BUG-122 (onglet Envoyé montrait
+        l'INBOX car label_ids était ignoré côté IMAP)."""
+        match = self._SPECIAL_FOLDER_MATCH.get((label or "").upper())
+        if match is None:
+            return None
+        wanted_flag, name_hints = match
+
+        def _sync() -> str | None:
+            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                infos = list(mailbox.folder.list())
+                # 1. Flag special-use (fiable, indépendant de la langue).
+                for fi in infos:
+                    if any(f.lower() == wanted_flag.lower() for f in (fi.flags or ())):
+                        return fi.name
+                # 2. Heuristique de nom sur la feuille du chemin.
+                for fi in infos:
+                    leaf = fi.name.split(fi.delim)[-1] if fi.delim else fi.name
+                    if any(h in leaf.lower() for h in name_hints):
+                        return fi.name
+            return None
+
+        folder_name: str | None = await self._run_imap_operation(
+            _sync,
+            timeout=IMAP_OPERATION_TIMEOUT,
+            operation_name="IMAP resolve_folder",
+        )
+        return folder_name
+
     async def get_message(
         self,
         message_id: str,

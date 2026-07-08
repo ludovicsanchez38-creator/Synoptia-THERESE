@@ -748,7 +748,7 @@ async def list_messages(
 
     # Route based on provider
     if account.provider == "imap":
-        return await _list_messages_imap(account, max_results, query)
+        return await _list_messages_imap(account, max_results, query, label_ids)
     else:
         return await _list_messages_gmail(account_id, session, max_results, page_token, query, label_ids)
 
@@ -824,6 +824,7 @@ async def _list_messages_imap(
     account: EmailAccount,
     max_results: int,
     query: str | None,
+    label_ids: str | None = None,
 ) -> dict:
     """List messages via IMAP provider with proper error handling."""
     provider = get_email_provider(
@@ -837,9 +838,25 @@ async def _list_messages_imap(
         smtp_use_tls=account.smtp_use_tls,
     )
 
+    # BUG-122 : label_ids (SENT, DRAFTS...) était ignoré côté IMAP -> l'onglet
+    # Envoyé affichait l'INBOX. On résout le dossier réel correspondant.
+    folder: str | None = None
+    if label_ids:
+        first_label = label_ids.split(",")[0].strip().upper()
+        if first_label and first_label != "INBOX":
+            try:
+                folder = await provider.resolve_folder_for_label(first_label)
+            except Exception as e:
+                logger.warning(
+                    "Résolution du dossier IMAP pour %s échouée (%s), repli INBOX",
+                    first_label,
+                    e,
+                )
+
     try:
         # BUG-095: list_messages returns a tuple (messages, next_token)
         messages, next_token = await provider.list_messages(
+            folder=folder,
             max_results=max_results,
             query=query,
         )
