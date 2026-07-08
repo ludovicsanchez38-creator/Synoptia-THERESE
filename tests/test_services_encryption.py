@@ -176,11 +176,8 @@ class TestKeyFilePermissions:
 
         assert key_file.exists()
 
-        # Recupere les permissions du fichier (octal)
-        file_stat = key_file.stat()
-        permissions = stat.filemode(file_stat.st_mode)
-
         # Verifie que c'est -rw------- (600)
+        file_stat = key_file.stat()
         assert oct(stat.S_IMODE(file_stat.st_mode)) == "0o600"
 
     def test_salt_file_permissions(self, mock_encryption_paths):
@@ -298,10 +295,10 @@ class TestKeyGeneration:
         key_file = mock_encryption_paths / ".encryption_key"
         original_key = key_file.read_bytes()
 
-        # Reinitialiser et creer nouveau service
+        # Reinitialiser et creer nouveau service (effet de bord : recharge la cle)
         EncryptionService._instance = None
         EncryptionService._fernet = None
-        service2 = EncryptionService()
+        EncryptionService()
 
         # Verifie que la meme cle est utilisee
         loaded_key = key_file.read_bytes()

@@ -84,9 +84,6 @@ def test_board_view_synthesis(page: Page, skip_onboarding):
     # Attendre la synthèse
     expect(page.locator("text=/Synthèse|Recommandation/i")).to_be_visible(timeout=70000)
 
-    # Vérifier que la synthèse contient les éléments clés
-    synthesis_section = page.locator("div:has-text('Synthèse')").or_(page.locator("div:has-text('Recommandation')")).first
-
     # Vérifier présence de sections : consensus, divergences, recommandation
     expect(page.locator("text=/Consensus|Points communs/i")).to_be_visible()
     expect(page.locator("text=/Divergences|Désaccords/i")).to_be_visible()

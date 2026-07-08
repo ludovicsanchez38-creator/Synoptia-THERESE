@@ -360,8 +360,8 @@ class TestMCPService:
 
     def test_list_servers_multiple(self, mcp_service, mock_save_config):
         """list_servers() retourne les serveurs configurés."""
-        server1 = mcp_service.add_server("Server 1", "npx")
-        server2 = mcp_service.add_server("Server 2", "node")
+        mcp_service.add_server("Server 1", "npx")
+        mcp_service.add_server("Server 2", "node")
 
         servers = mcp_service.list_servers()
 
@@ -503,7 +503,7 @@ class TestMCPServiceConfiguration:
         config_path = tmp_path / "mcp_servers.json"
         service = MCPService(config_path=config_path)
 
-        server = service.add_server("Test Server", "npx", args=["@test/mcp"])
+        service.add_server("Test Server", "npx", args=["@test/mcp"])
 
         await service._save_config()
 

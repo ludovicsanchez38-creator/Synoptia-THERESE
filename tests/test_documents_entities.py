@@ -6,7 +6,7 @@ relire et vérifier les ids UUID distincts et statuts par défaut.
 """
 
 import pytest
-from app.models.entities import Document, DocumentSection, DocumentPiste
+from app.models.entities import Document, DocumentPiste, DocumentSection
 from sqlmodel import select
 
 

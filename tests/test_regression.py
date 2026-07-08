@@ -28,10 +28,10 @@ API_CORE_TS = FRONTEND / "services" / "api" / "core.ts"
 
 class TestBUG110_UpdateBloquee:
     """BUG-110 : Mise à jour auto bloquée depuis v0.24.3
-    
+
     Problème : L'application reste en v0.24.3 après tentative de mise à jour,
     même si le téléchargement semble réussir et le redémarrage s'effectue.
-    
+
     Cause probable d'après la recherche :
     1. Bug Tauri connu sur installations dans répertoires personnalisés (Windows)
     2. Configuration installMode incorrecte (quiet échoue silencieusement)
@@ -41,30 +41,29 @@ class TestBUG110_UpdateBloquee:
 
     def test_updater_config_has_windows_installmode_passive(self):
         """Test de régression : la configuration updater doit spécifier installMode passive
-        
+
         Le mode 'quiet' peut échouer silencieusement sans permissions admin sur Windows.
         Le mode 'passive' (par défaut) ou 'basicUi' est plus robuste.
         """
-        import os
         import json
-        
+
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
-        
+
         # Lire la configuration Tauri
         with open(tauri_conf_path, 'r') as f:
             tauri_conf = json.load(f)
-        
+
         # Vérifier que le plugin updater existe
         assert "updater" in tauri_conf["plugins"], "Plugin updater manquant"
-        
+
         updater_config = tauri_conf["plugins"]["updater"]
-        
+
         # Vérifier l'endpoint correct
         assert "endpoints" in updater_config, "Endpoints updater manquants"
         assert len(updater_config["endpoints"]) > 0, "Aucun endpoint configuré"
         assert "synoptia.fr/therese/alpha/latest.json" in updater_config["endpoints"][0], \
             "Endpoint incorrect, devrait pointer sur synoptia.fr"
-        
+
         # Si windows est configuré, vérifier installMode
         if "windows" in updater_config:
             windows_config = updater_config["windows"]
@@ -75,57 +74,58 @@ class TestBUG110_UpdateBloquee:
     def test_updater_endpoint_availability(self):
         """Test que l'endpoint de mise à jour est accessible et retourne du JSON valide"""
         pytest.skip("Test réseau désactivé - nécessite connectivité internet")
+        import json
+
         import requests
-        
+
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
-        
+
         with open(tauri_conf_path, 'r') as f:
             tauri_conf = json.load(f)
-        
+
         endpoint = tauri_conf["plugins"]["updater"]["endpoints"][0]
-        
+
         try:
             # Test de connectivité (timeout court pour ne pas bloquer les tests)
             response = requests.get(endpoint, timeout=10)
-            
+
             # Si accessible, vérifier la structure JSON
             if response.status_code == 200:
                 update_data = response.json()
-                
+
                 # Structure attendue d'un fichier latest.json Tauri
                 expected_fields = ["version", "pub_date", "platforms"]
                 for field in expected_fields:
                     assert field in update_data, f"Champ manquant dans latest.json: {field}"
-                
+
                 # Vérifier que les plateformes incluent Windows
                 platforms = update_data.get("platforms", {})
                 assert "windows-x86_64" in platforms, "Plateforme Windows manquante"
-                
+
                 # Vérifier que l'URL de téléchargement Windows existe
                 windows_platform = platforms["windows-x86_64"]
                 assert "url" in windows_platform, "URL de téléchargement Windows manquante"
                 assert "signature" in windows_platform, "Signature Windows manquante"
-                
+
         except requests.RequestException:
             # Si l'endpoint n'est pas accessible, c'est un warning, pas une erreur
             pytest.skip("Endpoint de mise à jour non accessible (normal en développement)")
     def test_tauri_pubkey_configured(self):
         """Test que la clé publique de signature est configurée"""
-        import os
         import json
-        
+
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
-        
+
         with open(tauri_conf_path, 'r') as f:
             tauri_conf = json.load(f)
-        
+
         updater_config = tauri_conf["plugins"]["updater"]
-        
+
         # Vérifier que pubkey est configurée et non vide
         assert "pubkey" in updater_config, "Clé publique de signature manquante"
         pubkey = updater_config["pubkey"]
         assert pubkey and len(pubkey) > 50, "Clé publique invalide ou vide"
-        
+
         # Vérifier le format minisign (base64)
         import base64
         try:
@@ -4592,19 +4592,19 @@ class TestBUG070_ConversationGhost404:
 
     def test_chat_input_imports_delete_conversation(self):
         """ChatInput doit importer deleteConversation depuis le store."""
-        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        content = Path('src/frontend/src/components/chat/ChatInput.tsx').read_text(encoding='utf-8')
         assert 'deleteConversation,' in content, "deleteConversation doit être importé dans ChatInput"
 
     def test_ghost_conversation_reset_on_404(self):
         """Le catch block doit appeler deleteConversation en cas de 404 Conversation not found."""
-        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        content = Path('src/frontend/src/components/chat/ChatInput.tsx').read_text(encoding='utf-8')
         assert 'isConversationGhost' in content
         assert 'deleteConversation(currentConversationId' in content
         assert "Conversation not found" in content
 
     def test_ghost_message_is_user_friendly(self):
         """Le message d'erreur 404 doit être compréhensible pour l'utilisateur."""
-        content = open('src/frontend/src/components/chat/ChatInput.tsx').read()
+        content = Path('src/frontend/src/components/chat/ChatInput.tsx').read_text(encoding='utf-8')
         assert "nouveau chat a été créé automatiquement" in content
 
 
@@ -4613,29 +4613,29 @@ class TestBUG053_DateActuelleSubstituee:
 
     def test_llm_imports_datetime(self):
         """llm.py doit importer datetime pour injecter la date."""
-        content = open('src/backend/app/services/llm.py').read()
+        content = Path('src/backend/app/services/llm.py').read_text(encoding='utf-8')
         assert 'from datetime import' in content
         assert 'UTC' in content
 
     def test_system_prompt_template_has_current_date(self):
         """DEFAULT_SYSTEM_PROMPT_TEMPLATE doit contenir {current_date}."""
-        content = open('src/backend/app/services/llm.py').read()
+        content = Path('src/backend/app/services/llm.py').read_text(encoding='utf-8')
         assert '{current_date}' in content
 
     def test_system_prompt_no_profile_has_current_date(self):
         """DEFAULT_SYSTEM_PROMPT_NO_PROFILE doit contenir {current_date}."""
-        content = open('src/backend/app/services/llm.py').read()
+        content = Path('src/backend/app/services/llm.py').read_text(encoding='utf-8')
         # Deux occurrences : une dans chaque template
         assert content.count('{current_date}') >= 2
 
     def test_get_system_prompt_injects_date(self):
         """_get_system_prompt_with_identity doit substituer current_date dans le template."""
-        content = open('src/backend/app/services/llm.py').read()
+        content = Path('src/backend/app/services/llm.py').read_text(encoding='utf-8')
         assert '"{current_date}", current_date' in content
 
     def test_recap_rule_restricted_to_chat(self):
         """La règle de récapitulatif doit préciser 'chat uniquement', pas pour les documents."""
-        content = open('src/backend/app/services/llm.py').read()
+        content = Path('src/backend/app/services/llm.py').read_text(encoding='utf-8')
         assert 'chat uniquement' in content
         assert 'JAMAIS pour la génération de documents' in content
 
@@ -4645,41 +4645,41 @@ class TestBUG_DocxPptxXlsxGuardrails:
 
     def test_docx_no_recap_guardrail(self):
         """docx_generator doit interdire le bloc récapitulatif dans les documents."""
-        content = open('src/backend/app/services/skills/docx_generator.py').read()
+        content = Path('src/backend/app/services/skills/docx_generator.py').read_text(encoding='utf-8')
         assert 'récapitulatif' in content.lower() or 'récap' in content.lower()
         assert 'JAMAIS' in content or 'INTERDIT' in content or 'bloc récapitulatif' in content
 
     def test_docx_watermark_accent(self):
         """Footer DOCX doit contenir THÉRÈSE et Synoptïa avec accents."""
-        content = open('src/backend/app/services/skills/docx_generator.py').read()
+        content = Path('src/backend/app/services/skills/docx_generator.py').read_text(encoding='utf-8')
         assert 'THÉRÈSE - Synoptïa' in content
 
     def test_pptx_no_markdown_guardrail(self):
         """pptx_generator doit interdire les balises Markdown dans les slides."""
-        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        content = Path('src/backend/app/services/skills/pptx_generator.py').read_text(encoding='utf-8')
         assert 'Markdown' in content
         assert '**' in content  # La règle mentionne le symbole interdit
 
     def test_pptx_nb_slides_variable(self):
         """pptx_generator doit documenter la variable nb_slides dans le system prompt."""
-        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        content = Path('src/backend/app/services/skills/pptx_generator.py').read_text(encoding='utf-8')
         assert 'nb_slides' in content
         assert 'RESPECTE exactement ce nombre' in content
 
     def test_pptx_no_recap_guardrail(self):
         """pptx_generator doit interdire le bloc récapitulatif."""
-        content = open('src/backend/app/services/skills/pptx_generator.py').read()
+        content = Path('src/backend/app/services/skills/pptx_generator.py').read_text(encoding='utf-8')
         assert 'récapitulatif' in content.lower() or 'INTERDIT' in content
 
     def test_xlsx_no_hallucination_guardrail(self):
         """xlsx_generator doit avoir un guardrail anti-hallucination de données."""
-        content = open('src/backend/app/services/skills/xlsx_generator.py').read()
+        content = Path('src/backend/app/services/skills/xlsx_generator.py').read_text(encoding='utf-8')
         assert 'NE PAS inventer' in content or 'RÈGLE ABSOLUE' in content
         assert 'modèle' in content.lower()
 
     def test_xlsx_no_recap_guardrail(self):
         """xlsx_generator doit interdire le bloc récapitulatif."""
-        content = open('src/backend/app/services/skills/xlsx_generator.py').read()
+        content = Path('src/backend/app/services/skills/xlsx_generator.py').read_text(encoding='utf-8')
         assert 'récapitulatif' in content.lower() or 'INTERDIT' in content
 
 
@@ -4732,7 +4732,7 @@ class TestBUG_CommandPaletteProduire:
 
     def test_cmd_n_works_in_input_context(self):
         """Cmd+N doit être intercepté avant le garde isInput dans useKeyboardShortcuts."""
-        content = open('src/frontend/src/hooks/useKeyboardShortcuts.ts').read()
+        content = Path('src/frontend/src/hooks/useKeyboardShortcuts.ts').read_text(encoding='utf-8')
         # La section Cmd+N doit apparaître AVANT "if (isInput) return"
         idx_n = content.find("// Cmd+N - Nouvelle conversation")
         idx_guard = content.find("// Skip other shortcuts when in inputs\n      if (isInput) return;")
@@ -4746,22 +4746,22 @@ class TestBUG_PptxNbSlides:
 
     def test_build_namespace_accepts_nb_slides(self):
         """_build_namespace doit accepter nb_slides comme paramètre."""
-        content = open('src/backend/app/services/skills/code_executor.py').read()
+        content = Path('src/backend/app/services/skills/code_executor.py').read_text(encoding='utf-8')
         assert 'nb_slides: int = 10' in content
 
     def test_namespace_contains_nb_slides(self):
         """Le namespace d'exécution doit contenir nb_slides."""
-        content = open('src/backend/app/services/skills/code_executor.py').read()
+        content = Path('src/backend/app/services/skills/code_executor.py').read_text(encoding='utf-8')
         assert '"nb_slides": nb_slides' in content
 
     def test_execute_sandboxed_passes_nb_slides(self):
         """execute_sandboxed doit passer nb_slides à _build_namespace."""
-        content = open('src/backend/app/services/skills/code_executor.py').read()
+        content = Path('src/backend/app/services/skills/code_executor.py').read_text(encoding='utf-8')
         assert '_build_namespace(output_path, title, format_type, nb_slides)' in content
 
     def test_skills_router_extracts_nb_slides_from_prompt(self):
         """Le router skills doit extraire nb_slides du prompt par regex."""
-        content = open('src/backend/app/routers/skills.py').read()
+        content = Path('src/backend/app/routers/skills.py').read_text(encoding='utf-8')
         assert 'nb_slides_from_prompt' in content
         assert 'slides?' in content  # regex pour détecter "slides"
 
@@ -4788,7 +4788,7 @@ class TestBUG_MistralTools:
 
     def test_mistral_parses_tool_calls_in_stream(self):
         """mistral.py détecte les tool_calls et signale finish_reason tool_calls."""
-        content = open('src/backend/app/services/providers/mistral.py').read()
+        content = Path('src/backend/app/services/providers/mistral.py').read_text(encoding='utf-8')
         assert 'tool_calls' in content
         assert 'finish_reason == "tool_calls"' in content
         assert 'stop_reason="tool_calls"' in content
@@ -4799,12 +4799,12 @@ class TestBUG_MCPPollingStarting:
 
     def test_tools_panel_imports_use_ref(self):
         """ToolsPanel doit importer useRef pour le polling interval."""
-        content = open('src/frontend/src/components/settings/ToolsPanel.tsx').read()
+        content = Path('src/frontend/src/components/settings/ToolsPanel.tsx').read_text(encoding='utf-8')
         assert 'useRef' in content
 
     def test_tools_panel_has_polling_effect(self):
         """ToolsPanel doit avoir un useEffect qui lance le polling quand status=starting."""
-        content = open('src/frontend/src/components/settings/ToolsPanel.tsx').read()
+        content = Path('src/frontend/src/components/settings/ToolsPanel.tsx').read_text(encoding='utf-8')
         assert 'pollingIntervalRef' in content
         assert "status === 'starting'" in content
         assert 'setInterval' in content
@@ -6013,13 +6013,7 @@ class TestBUG73GoogleCalendarTZ:
 
     def test_to_rfc3339_z_handles_tz_aware(self):
         """Un datetime avec tzinfo doit etre converti en UTC naif avant Z."""
-        from datetime import datetime, timedelta, timezone
-
         from app.services.calendar_service import CalendarService
-
-        paris = timezone(timedelta(hours=2))
-        # 10h00 Paris = 08h00 UTC
-        dt = datetime(2026, 4, 22, 10, 0, 0, tzinfo=paris)
 
         # Appel du helper interne via la methode publique
         src = inspect.getsource(CalendarService.list_events)
@@ -7316,9 +7310,8 @@ class TestEscalationZeroDivision:
 
     def test_limits_request_rejects_zero(self):
         import pytest
-        from pydantic import ValidationError
-
         from app.models.schemas_escalation import TokenLimitsRequest
+        from pydantic import ValidationError
         with pytest.raises(ValidationError):
             TokenLimitsRequest(daily_input_limit=0)
         with pytest.raises(ValidationError):
@@ -7358,7 +7351,7 @@ class TestOAuthRedirectPort:
         from app.config import settings
         from app.services.oauth import RUNTIME_PORT
 
-        assert RUNTIME_PORT == str(settings.port)
+        assert str(settings.port) == RUNTIME_PORT
         assert RUNTIME_PORT != "8000"
 
     def test_allowed_redirect_uris_use_runtime_port(self):
@@ -7412,7 +7405,6 @@ class TestStreamResponseRaiseOnError:
         import asyncio
 
         import pytest
-
         from app.services.providers.base import StreamEvent
 
         call = self._fake_self_yielding(
@@ -7474,10 +7466,9 @@ class TestMCPToolCallServerId:
 
     async def test_endpoint_unknown_server_raises_404(self, monkeypatch):
         import pytest
-        from fastapi import HTTPException
-
         from app.models.schemas_mcp import MCPToolCall
         from app.routers import mcp as mcp_router
+        from fastapi import HTTPException
 
         class _FakeService:
             servers: dict = {}
@@ -7607,7 +7598,7 @@ class TestDocumentsDraftSurfacesProviderErrors:
 
 class TestBUGA_ToggleOuvrirChatDirectement:
     """BUG-A : Toggle 'Ouvrir sur le chat directement' sans effet (Réglages)
-    
+
     Le toggle ne bascule pas visuellement et la préférence n'est pas persistée.
     Causes : état local React au lieu de store Zustand global, pas de persistance centralisée.
     """
@@ -7619,17 +7610,17 @@ class TestBUGA_ToggleOuvrirChatDirectement:
     def test_personalisation_store_has_skip_dashboard_preference(self):
         """Le store de personnalisation doit avoir une préférence skipDashboard"""
         content = self.PERSONALISATION_STORE.read_text(encoding="utf-8")
-        
+
         # Vérifier que la préférence est définie dans l'interface
         assert "skipDashboard: boolean" in content, (
             "l'interface PersonalisationState doit déclarer skipDashboard: boolean"
         )
-        
+
         # Vérifier qu'il y a un setter
         assert "setSkipDashboard:" in content, (
             "le store doit avoir une action setSkipDashboard"
         )
-        
+
         # Vérifier que la valeur par défaut est false (afficher dashboard par défaut)
         assert "?? false" in content, (
             "la valeur par défaut de skipDashboard doit être false"
@@ -7638,40 +7629,40 @@ class TestBUGA_ToggleOuvrirChatDirectement:
     def test_startup_behavior_uses_zustand_store(self):
         """Le composant StartupBehavior doit utiliser le store Zustand au lieu d'état local"""
         content = self.ADVANCED_TAB.read_text(encoding="utf-8")
-        
+
         # Vérifier l'import du store
         assert "usePersonalisationStore" in content, (
             "AdvancedTab doit importer usePersonalisationStore"
         )
-        
+
         # Le composant StartupBehavior ne doit plus utiliser useState local
         startup_behavior_start = content.find("function StartupBehavior()")
         startup_behavior_end = content.find("}", startup_behavior_start) + 1
         startup_behavior_code = content[startup_behavior_start:startup_behavior_end]
-        
+
         assert "useState" not in startup_behavior_code, (
             "StartupBehavior ne doit plus utiliser useState local"
         )
-        
+
         # Doit utiliser le store Zustand
         assert "usePersonalisationStore" in startup_behavior_code, (
             "StartupBehavior doit utiliser usePersonalisationStore"
         )
-        
+
         # Ne doit plus utiliser localStorage directement
         assert "localStorage.getItem('therese-skip-dashboard')" not in startup_behavior_code, (
             "StartupBehavior ne doit plus accéder directement à localStorage"
         )
-        
+
     def test_navigation_store_respects_skip_dashboard(self):
         """Le navigationStore doit initialiser activeView selon la préférence skipDashboard"""
         content = self.NAVIGATION_STORE.read_text(encoding="utf-8")
-        
+
         # Vérifier l'import du store de personnalisation
         assert "usePersonalisationStore" in content, (
             "navigationStore doit importer usePersonalisationStore"
         )
-        
+
         # Vérifier que l'initialisation de activeView prend en compte skipDashboard
         # Soit via une fonction d'initialisation, soit via un effet
         assert "skipDashboard" in content, (
@@ -7681,17 +7672,17 @@ class TestBUGA_ToggleOuvrirChatDirectement:
     def test_migration_from_localstorage(self):
         """La migration depuis localStorage doit être implémentée"""
         content = self.PERSONALISATION_STORE.read_text(encoding="utf-8")
-        
+
         # Vérifier qu'il y a une fonction de migration
         assert "migrateFromLocalStorage" in content, (
             "le store doit avoir une fonction migrateFromLocalStorage"
         )
-        
+
         # Vérifier que la migration cherche l'ancienne clé
         assert "therese-skip-dashboard" in content, (
             "la migration doit chercher l'ancienne clé therese-skip-dashboard"
         )
-        
+
         # Vérifier que la migration nettoie l'ancienne clé
         assert "removeItem" in content, (
             "la migration doit nettoyer l'ancienne clé localStorage"
@@ -7701,12 +7692,12 @@ class TestBUGA_ToggleOuvrirChatDirectement:
         """Les composants doivent avoir des fallbacks pour les valeurs non définies"""
         advanced_content = self.ADVANCED_TAB.read_text(encoding="utf-8")
         nav_content = self.NAVIGATION_STORE.read_text(encoding="utf-8")
-        
+
         # Vérifier les fallbacks dans StartupBehavior
         assert "?? false" in advanced_content, (
             "StartupBehavior doit avoir un fallback ?? false pour skipDashboard"
         )
-        
+
         # Vérifier les fallbacks dans navigationStore
         assert "?? false" in nav_content, (
             "navigationStore doit avoir un fallback ?? false pour skipDashboard"
@@ -7715,43 +7706,43 @@ class TestBUGA_ToggleOuvrirChatDirectement:
 
 class TestBUGB_CrmSyncChoixFeuille:
     """BUG-B : synchro CRM doit proposer le choix d'une feuille existante avant création automatique.
-    
-    À la première connexion Google sans ID de feuille renseigné, le système créait automatiquement 
-    une feuille vide et synchronisait dessus, résultant en un CRM vide sans explication. 
+
+    À la première connexion Google sans ID de feuille renseigné, le système créait automatiquement
+    une feuille vide et synchronisait dessus, résultant en un CRM vide sans explication.
     La solution : proposer de choisir une feuille existante AVANT toute création.
     """
-    
+
     def test_backend_api_lister_feuilles_google_disponible(self):
         """Le backend doit exposer un endpoint pour lister les feuilles Google de l'utilisateur."""
-        from fastapi.testclient import TestClient
         from app.main import app
-        
+        from fastapi.testclient import TestClient
+
         client = TestClient(app)
-        
+
         # L'endpoint doit exister (même si non authentifié, il doit renvoyer 401 ou 403, pas 404)
         response = client.get("/api/crm/google-sheets/list")
         assert response.status_code != 404, (
             "L'endpoint /api/crm/google-sheets/list doit exister pour lister les feuilles existantes"
         )
-        
+
     def test_frontend_interface_choix_feuille_existante(self):
         """L'interface CRMSyncPanel doit permettre de choisir parmi les feuilles existantes."""
         import os
         crm_panel_path = os.path.join(
-            os.path.dirname(__file__), 
+            os.path.dirname(__file__),
             "..", "src", "frontend", "src", "components", "settings", "CRMSyncPanel.tsx"
         )
-        
+
         with open(crm_panel_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            
+
         # Doit avoir une fonctionnalité pour lister les feuilles existantes
         has_list_functionality = (
-            "list" in content.lower() and 
+            "list" in content.lower() and
             ("spreadsheet" in content.lower() or "feuille" in content.lower()) and
             ("existing" in content.lower() or "existant" in content.lower() or "choisir" in content.lower())
         )
-        
+
         assert has_list_functionality, (
             "CRMSyncPanel doit proposer de choisir parmi les feuilles existantes, "
             "pas seulement permettre la saisie manuelle d'un ID"
@@ -7874,7 +7865,6 @@ class TestVoiceLocalOption:
 
     def test_transcribe_local_leve_erreur_claire_si_indisponible(self):
         import pytest
-
         from app.services import voice_local
 
         if voice_local.stt_available():

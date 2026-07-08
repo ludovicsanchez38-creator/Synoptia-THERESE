@@ -29,11 +29,8 @@ def test_calendar_empty_state(panel_page):
     expect(page.locator("h2:has-text('Calendrier')")).to_be_visible(timeout=10000)
     take_screenshot(page, "calendar_01_empty_state")
 
-    # Les boutons de navigation (Mois, Semaine, Jour, Liste) doivent etre presents
-    # Meme sans compte, le header est rendu
-    view_buttons = page.locator("button:has-text('Mois'), button:has-text('Liste')")
-    # Au moins un bouton de vue doit etre visible (si le panel se charge correctement)
-    # Sinon on aura un message d'erreur
+    # Meme sans compte, le header est rendu : au moins un bouton de vue visible
+    # ou un message d'erreur.
     header_or_error = page.locator(
         "h2:has-text('Calendrier'), text=/Impossible|erreur|Aucun compte/i"
     )
@@ -183,10 +180,8 @@ def test_calendar_navigate_months(panel_page, seeded_calendar):
         current_text = month_header.first.text_content()
         take_screenshot(page, "calendar_05_month_current")
 
-        # Cliquer sur le bouton precedent (ChevronLeft)
-        # Les boutons de navigation sont dans l'ordre: prev, next, "Aujourd'hui"
-        prev_buttons = page.locator("button").filter(has=page.locator("svg"))
-        # Le premier bouton avec SVG dans la zone de navigation est ChevronLeft
+        # Cliquer sur le bouton precedent (ChevronLeft) : les boutons de navigation
+        # sont dans l'ordre prev, next, "Aujourd'hui".
         nav_area = page.locator(
             ".flex.items-center.gap-2"
         ).filter(has=page.locator("button:has-text('Aujourd')"))

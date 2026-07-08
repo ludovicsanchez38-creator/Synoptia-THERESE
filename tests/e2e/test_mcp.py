@@ -46,10 +46,7 @@ def test_mcp_add_server(page: Page, skip_onboarding):
     tools_tab = page.locator("button:has-text('Tools')").or_(page.locator("button:has-text('MCP')"))
     tools_tab.click()
 
-    # Installer le preset "Filesystem"
-    filesystem_preset = page.locator("text=Filesystem").or_(page.locator("div:has-text('Filesystem')")).first
-
-    # Chercher le bouton "Installer" ou "Ajouter" à côté
+    # Installer le preset "Filesystem" : chercher le bouton "Installer"/"Ajouter"
     install_button = page.locator("button:has-text('Installer')").or_(page.locator("button:has-text('Ajouter')")).first
     install_button.click()
 

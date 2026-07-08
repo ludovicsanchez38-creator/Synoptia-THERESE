@@ -227,9 +227,8 @@ def test_email_sync_button(panel_page):
     expect(page.locator("h2:has-text('Email')")).to_be_visible(timeout=5000)
     take_screenshot(page, "email_05_sync_area")
 
-    # Le bouton "Reessayer" peut etre visible en cas d'erreur de chargement
-    retry_button = page.locator("button:has-text('Reessayer')")
-    # Pas d'assertion stricte - le bouton est visible seulement en cas d'erreur
+    # Le bouton "Reessayer" n'est visible qu'en cas d'erreur de chargement :
+    # pas d'assertion stricte ici (parcours nominal sans erreur).
 
 
 # ============================================================

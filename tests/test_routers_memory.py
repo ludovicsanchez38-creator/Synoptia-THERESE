@@ -210,6 +210,11 @@ class TestMemoryDeleteCascade:
         result = response.json()
         assert result.get("deleted") is True
 
+        # Le projet lié doit avoir été supprimé en cascade (sinon le cascade ne
+        # fait rien) : GET du projet renvoie 404.
+        project_check = await client.get(f"/api/memory/projects/{project_id}")
+        assert project_check.status_code == 404
+
     @pytest.mark.asyncio
     async def test_delete_nonexistent_contact(self, client: AsyncClient):
         """Test deleting a non-existent contact."""

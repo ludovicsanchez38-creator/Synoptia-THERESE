@@ -35,7 +35,7 @@ os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-test-
 # Le chemin chiffré reste ENTIÈREMENT exercé (engines + migration + backup).
 os.environ.setdefault("THERESE_DB_KEY", "ad" * 32)
 
-from app.main import app
+from app.main import app  # noqa: E402  (doit être importé APRÈS le setup os.environ ci-dessus)
 
 
 # Remplacer le lifespan par un lifespan minimal pour les tests
@@ -52,7 +52,7 @@ app.router.lifespan_context = _test_lifespan
 
 # Mock Qdrant : injecter un mock directement dans le singleton du module
 # pour que tous les imports (chat.py, memory.py, files.py etc.) le voient
-import app.services.qdrant as _qdrant_module
+import app.services.qdrant as _qdrant_module  # noqa: E402  (après setup env, cf ci-dessus)
 
 _mock_qdrant = MagicMock()
 _mock_qdrant.search.return_value = []

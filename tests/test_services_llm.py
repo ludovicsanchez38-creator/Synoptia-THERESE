@@ -156,9 +156,9 @@ class TestLLMHelperFunctions:
         # Temporarily clear env vars
         old_key = os.environ.pop("ANTHROPIC_API_KEY", None)
         try:
-            service = get_llm_service_for_provider("anthropic")
-            # May be None if no API key in env or DB
-            # This is expected behavior
+            # Smoke : ne doit pas lever sans clé API (retour None ou service, les
+            # deux sont un comportement attendu).
+            get_llm_service_for_provider("anthropic")
         finally:
             if old_key:
                 os.environ["ANTHROPIC_API_KEY"] = old_key

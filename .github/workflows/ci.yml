@@ -27,7 +27,9 @@ jobs:
         run: pip install ruff
 
       - name: Lint (Ruff)
-        run: ruff check src/backend/
+        # Inclut tests/ depuis le 08/07 : la suite de tests est linte-clean,
+        # on garde ce contrat (sinon le lint des tests dérive en silence).
+        run: ruff check src/backend/ tests/
 
   backend-tests:
     name: Tests Backend (Python)

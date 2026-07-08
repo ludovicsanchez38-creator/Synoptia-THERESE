@@ -142,7 +142,7 @@ class TestExecuteWebSearch:
             result = await execute_web_search({"query": "Python AI"})
 
             assert result is not None
-            assert isinstance(result, str) or isinstance(result, dict)
+            assert isinstance(result, (str, dict))
         except Exception:
             pytest.skip("Web search execution failed - network issue")
 

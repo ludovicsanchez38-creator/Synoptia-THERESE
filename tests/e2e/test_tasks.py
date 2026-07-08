@@ -244,9 +244,8 @@ def test_tasks_filter_by_priority(panel_page, seeded_tasks):
     expect(page.get_by_text("Envoyer devis Dupont")).to_be_visible(timeout=5000)
     expect(page.get_by_text("Relancer prospect Martin")).to_be_visible()
 
-    # Ouvrir les filtres en cliquant sur le bouton Filter
-    filter_button = page.locator("button").filter(has_text="").nth(0)
-    # Le bouton Filter est identifie par son icone - cherchons-le via le parent
+    # Ouvrir les filtres : le bouton Filter est identifie par son icone
+    # (lucide-filter), cherchons-le via le parent.
     filter_toggle = page.locator("button:has(svg.lucide-filter)").first
     if filter_toggle.is_visible():
         filter_toggle.click()

@@ -105,9 +105,11 @@ class TestRuntime:
             "therese.db doit être chiffrée au repos (US-014)"
         )
         # mode=ro : ne pas polluer la base VIVANTE avec un journal parasite
-        with pytest.raises(sqlite3.DatabaseError):
-            with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as raw:
-                raw.execute("SELECT * FROM sqlite_master").fetchall()
+        with (
+            pytest.raises(sqlite3.DatabaseError),
+            sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as raw,
+        ):
+            raw.execute("SELECT * FROM sqlite_master").fetchall()
 
     @pytest.mark.asyncio
     async def test_backup_contient_la_db_chiffree(self, client):
