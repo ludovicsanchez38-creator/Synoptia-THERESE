@@ -190,11 +190,20 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     # --- Tâches urgentes (en retard ou dues aujourd'hui) ---
     urgent_tasks = []
     try:
-        stmt_tasks = select(Task).where(
-            and_(
-                Task.due_date <= tomorrow_dt,
-                Task.status.notin_(["done", "cancelled"]),
+        # BUG-125 : trier par échéance croissante (la plus en retard d'abord).
+        # Sans ORDER BY, l'ordre était arbitraire (insertion) : avec plusieurs
+        # tâches urgentes, une tâche en retard pouvait passer après les tâches
+        # dues aujourd'hui et sortir du top-3 affiché par le tableau de bord -
+        # elle semblait alors « invisible ».
+        stmt_tasks = (
+            select(Task)
+            .where(
+                and_(
+                    Task.due_date <= tomorrow_dt,
+                    Task.status.notin_(["done", "cancelled"]),
+                )
             )
+            .order_by(Task.due_date.asc(), Task.id.asc())
         )
         result_tasks = await session.execute(stmt_tasks)
         tasks = result_tasks.scalars().all()

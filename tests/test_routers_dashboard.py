@@ -1,10 +1,40 @@
 """Tests du router dashboard (setup-status pour la vue Accueil)."""
+from datetime import datetime, timedelta
+
 import pytest
-from app.models.entities import Calendar, Contact, EmailAccount
+from app.models.entities import Calendar, Contact, EmailAccount, Task
 from httpx import AsyncClient
 
 
 class TestToday:
+    @pytest.mark.asyncio
+    async def test_today_tache_en_retard_priorisee_en_tete(
+        self, client: AsyncClient, db_session
+    ):
+        """BUG-125 : une tâche en retard doit apparaître dans le dashboard, même
+        avec d'autres tâches urgentes. Sans ORDER BY, l'ordre était arbitraire :
+        la tâche en retard pouvait passer après les tâches dues aujourd'hui et
+        sortir du top-3 affiché. On trie par échéance croissante (retard d'abord)."""
+        now = datetime.now()
+        # Tâches dues aujourd'hui créées EN PREMIER, tâche en retard EN DERNIER.
+        for i in range(4):
+            db_session.add(
+                Task(id=f"tk-today-{i}", title=f"Aujourd'hui {i}", status="todo",
+                     due_date=now + timedelta(hours=2))
+            )
+        db_session.add(
+            Task(id="tk-overdue", title="Tâche en retard", status="todo",
+                 due_date=now - timedelta(days=5))
+        )
+        await db_session.commit()
+
+        resp = await client.get("/api/dashboard/today")
+        assert resp.status_code == 200
+        titles = [t["title"] for t in resp.json()["urgent_tasks"]]
+        # La plus en retard est en tête, donc dans le top-3 affiché par le front.
+        assert titles[0] == "Tâche en retard"
+        assert "Tâche en retard" in titles[:3]
+
     @pytest.mark.asyncio
     async def test_today_stale_prospect_remonte_avec_son_nom(
         self, client: AsyncClient, db_session
