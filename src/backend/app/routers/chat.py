@@ -1075,6 +1075,10 @@ async def _do_stream_response(
     # qu'un tour n'a pas fourni l'usage réel (provider pas encore migré) - on
     # bascule alors sur l'estimation globale plutôt que de mélanger réel+estimé.
     usage_totals = {"input_tokens": 0, "output_tokens": 0, "estimated": False}
+    # BUG-124 : résultats réels des outils exécutés (tous tours confondus). Filet
+    # quand un modèle faible enchaîne des outils sans jamais produire de texte :
+    # on remonte alors le résultat plutôt qu'une réponse vide et muette.
+    tool_outcomes: list[tuple[str, str, bool]] = []
 
     try:
         # Stream from LLM with tool support
@@ -1118,6 +1122,7 @@ async def _do_stream_response(
                         max_tool_iterations,
                         session=session,
                         usage_totals=usage_totals,
+                        tool_outcomes=tool_outcomes,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -1174,6 +1179,23 @@ async def _do_stream_response(
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
+
+    # BUG-124 : un modèle faible peut enchaîner des outils (ex. read_emails) sans
+    # jamais produire de texte -> réponse vide et muette côté utilisateur
+    # (« aucune réaction »). Filet : si aucun texte n'a été généré mais que des
+    # outils ont tourné, on remonte leur résultat réel plutôt qu'une bulle vide.
+    if not full_content.strip():
+        fallback = _fallback_from_tool_outcomes(tool_outcomes)
+        if fallback:
+            logger.info(
+                "Réponse vide après %d outil(s) : repli sur le résultat réel (BUG-124)",
+                len(tool_outcomes),
+            )
+            full_content = fallback
+            fallback_chunk = StreamChunk(
+                type="text", content=fallback, conversation_id=conversation_id
+            )
+            yield f"data: {json.dumps(fallback_chunk.model_dump())}\n\n"
 
     # Save complete assistant message
     assistant_message = Message(
@@ -1278,6 +1300,36 @@ async def _do_stream_response(
     )
 
 
+def _fallback_from_tool_outcomes(
+    tool_outcomes: list[tuple[str, str, bool]],
+) -> str | None:
+    """Message de repli quand le modèle n'a produit aucun texte (BUG-124).
+
+    Remonte le dernier résultat d'outil exploitable (succès, non vide, pas une
+    simple mise en attente de confirmation) pour ne pas laisser l'utilisateur
+    devant une réponse vide et muette. Si des outils ont tourné mais qu'aucun
+    résultat n'est exploitable, on renvoie au moins un message honnête plutôt
+    qu'une bulle vide. None s'il n'y a eu aucun outil (l'appelant garde alors
+    son comportement d'origine)."""
+    for _name, result, is_error in reversed(tool_outcomes):
+        if is_error:
+            continue
+        text = (result or "").strip()
+        if not text or "en attente de confirmation" in text:
+            continue
+        return (
+            "Je n'ai pas réussi à rédiger une réponse, mais voici ce que j'ai "
+            f"trouvé en consultant tes données :\n\n{text}"
+        )
+
+    if tool_outcomes:
+        return (
+            "Je n'ai pas réussi à formuler de réponse à partir des outils "
+            "consultés. Reformule ta demande ou réessaie."
+        )
+    return None
+
+
 async def _execute_tools_and_continue(
     llm_service: LLMService,
     mcp_service,
@@ -1290,6 +1342,7 @@ async def _execute_tools_and_continue(
     session: AsyncSession | None = None,
     prior_turns: list[ToolTurn] | None = None,
     usage_totals: dict | None = None,
+    tool_outcomes: list[tuple[str, str, bool]] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -1303,6 +1356,12 @@ async def _execute_tools_and_continue(
     usage_totals : accumulateur mutable partagé avec l'appelant (dette
     14/06/2026, usage réel plutôt qu'estimé) - un tour d'outils = un appel API
     = son propre usage, à sommer sur toute la récursion.
+
+    tool_outcomes : accumulateur mutable (tool_name, résultat, is_error) de tous
+    les outils exécutés sur la récursion (BUG-124). Sert de filet quand un modèle
+    faible enchaîne des outils sans jamais produire de texte : l'appelant peut
+    alors remonter le résultat réel (ex. les emails lus) plutôt qu'une réponse
+    vide.
     """
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
@@ -1533,6 +1592,11 @@ async def _execute_tools_and_continue(
         )
         yield f"data: {json.dumps(blocked_status.model_dump())}\n\n"
 
+    # BUG-124 : mémoriser les résultats d'outils pour l'appelant, comme filet si
+    # le modèle enchaîne des outils sans jamais produire de texte final.
+    if tool_outcomes is not None:
+        tool_outcomes.extend(exec_records)
+
     # Résumé DÉTERMINISTE de ce qui a réellement été créé (indépendant de la prose du LLM)
     recap = summarize_executions(exec_records)
     if recap:
@@ -1597,6 +1661,7 @@ async def _execute_tools_and_continue(
                     remaining_iterations - 1,
                     session=session,
                     usage_totals=usage_totals,
+                    tool_outcomes=tool_outcomes,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

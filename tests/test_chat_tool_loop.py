@@ -59,4 +59,71 @@ async def test_recursion_accumule_les_tours_dans_prior_turns(client):
     turn = captured_prior_turns[1][0]
     assert turn.tool_calls[0].id == "call_1"
     assert turn.tool_results[0].tool_call_id == "call_1"
-    assert any("finale." in c for c in chunks)  # json.dumps échappe le é en \u00e9
+    assert any("finale." in c for c in chunks)  # marqueur fin de tours
+
+
+# ============================================================
+# BUG-124 : filet réponse vide (modèle enchaîne des outils sans texte)
+# ============================================================
+
+
+def test_fallback_remonte_le_dernier_resultat_exploitable():
+    from app.routers.chat import _fallback_from_tool_outcomes
+
+    outcomes = [
+        ("read_emails", "1 email trouve de jd@tictec.fr", False),
+    ]
+    msg = _fallback_from_tool_outcomes(outcomes)
+    assert msg is not None
+    assert "jd@tictec.fr" in msg
+
+
+def test_fallback_ignore_erreurs_et_attentes_de_confirmation():
+    from app.routers.chat import _fallback_from_tool_outcomes
+
+    outcomes = [
+        ("send_email", "en attente de confirmation utilisateur", False),
+        ("read_emails", "Error: boom", True),
+    ]
+    msg = _fallback_from_tool_outcomes(outcomes)
+    # Rien d'exploitable, mais un message honnete plutot qu'une bulle vide.
+    assert msg is not None
+    assert "reformule" in msg.lower()
+
+
+def test_fallback_none_si_aucun_outil():
+    from app.routers.chat import _fallback_from_tool_outcomes
+
+    assert _fallback_from_tool_outcomes([]) is None
+
+
+@pytest.mark.asyncio
+async def test_tool_outcomes_accumule_les_resultats_reels(client):
+    """BUG-124 : l'accumulateur tool_outcomes doit contenir le resultat reel des
+    outils executes, pour servir de filet quand le modele ne produit pas de texte."""
+    from app.routers.chat import _execute_tools_and_continue, _fallback_from_tool_outcomes
+
+    class FakeLLMService:
+        async def continue_with_tool_results(
+            self, context, assistant_content, tool_calls, tool_results, tools, prior_turns=None
+        ):
+            # Le modele ne produit AUCUN texte (cas Nemotron gratuit).
+            yield StreamEvent(type="done", stop_reason="end_turn")
+
+    outcomes: list = []
+    with patch("app.routers.chat.execute_web_search", AsyncMock(return_value="emails de jd@tictec.fr")):
+        async for _ in _execute_tools_and_continue(
+            FakeLLMService(),
+            None,
+            context=None,
+            assistant_content="",
+            tool_calls=[ToolCall(id="c1", name="web_search", arguments={"query": "q"})],
+            tools=[],
+            conversation_id="conv-1",
+            remaining_iterations=3,
+            tool_outcomes=outcomes,
+        ):
+            pass
+
+    assert any((not is_err) and "jd@tictec.fr" in res for _, res, is_err in outcomes)
+    assert "jd@tictec.fr" in (_fallback_from_tool_outcomes(outcomes) or "")  # json.dumps échappe le é en \u00e9
