@@ -22,6 +22,7 @@ import { resolveModelForProvider } from './modelResolution';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useBillingProfileStore } from '../../stores/billingProfileStore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -413,6 +414,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setProfile(savedProfile);
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
+      // Le formulaire de facture peut être resté ouvert derrière les Réglages
+      // (deux modales indépendantes) : rafraîchir le garde-fou P0-PROD-2 pour
+      // qu'il reflète immédiatement le profil qu'on vient de compléter.
+      void useBillingProfileStore.getState().refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
@@ -448,6 +453,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         });
         setProfileSaved(true);
         setTimeout(() => setProfileSaved(false), 3000);
+        void useBillingProfileStore.getState().refresh();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'import');

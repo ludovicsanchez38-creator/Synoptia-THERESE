@@ -6665,10 +6665,19 @@ class TestP0PROD2_BillingProfile:
         assert "siret" in content and "SIRET" in content
 
     def test_invoice_form_has_emitter_guardrail(self):
-        """Le formulaire de facture doit afficher un garde-fou profil émetteur."""
-        content = (FRONTEND / "components" / "invoices" / "InvoiceForm.tsx").read_text(encoding="utf-8")
-        assert "getBillingProfileStatus" in content
-        assert "émetteur" in content.lower()
+        """Le formulaire de facture doit afficher un garde-fou profil émetteur.
+
+        Depuis le 08/07/2026 (fix stale-state Ludo), l'appel à
+        getBillingProfileStatus vit dans le store partagé billingProfileStore.ts
+        (pas directement dans InvoiceForm.tsx, qui lit désormais le store) - le
+        garde-fou reste câblé de bout en bout, juste déplacé.
+        """
+        invoice_form = (FRONTEND / "components" / "invoices" / "InvoiceForm.tsx").read_text(encoding="utf-8")
+        assert "useBillingProfileStore" in invoice_form
+        assert "émetteur" in invoice_form.lower()
+
+        store = (FRONTEND / "stores" / "billingProfileStore.ts").read_text(encoding="utf-8")
+        assert "getBillingProfileStatus" in store
 
 
 # ============================================================
