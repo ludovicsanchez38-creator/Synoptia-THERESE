@@ -2036,6 +2036,27 @@ class TestBUG025_DropdownContraste:
         )
 
 
+# ─── BUG-127 Bulle agent Atelier : texte lisible en thème clair ───────────
+
+class TestBUG127_AgentBubbleContrast:
+    """La réponse de l'agent (Atelier) ne doit pas être blanc sur blanc."""
+
+    BUBBLE_TSX = Path("src/frontend/src/components/atelier/AgentMessageBubble.tsx")
+
+    def test_message_utilise_le_token_de_theme_pas_un_blanc_fige(self):
+        """Le texte de la bulle doit utiliser le token de thème (text-text) et
+        non une couleur claire figée (#E6EDF7) qui devient invisible sur le fond
+        de bulle à faible opacité en thème clair (BUG-127)."""
+        content = self.BUBBLE_TSX.read_text(encoding="utf-8")
+        assert "text-text" in content, (
+            "La bulle de message doit utiliser le token de thème text-text pour le contraste"
+        )
+        assert "#E6EDF7" not in content, (
+            "La bulle ne doit plus figer la couleur de texte claire #E6EDF7 "
+            "(blanc sur blanc en thème clair, BUG-127)"
+        )
+
+
 # ─── BUG-038 Bouton Stop streaming ────────────────────────────────────────
 
 class TestBUG038_StopStreaming:

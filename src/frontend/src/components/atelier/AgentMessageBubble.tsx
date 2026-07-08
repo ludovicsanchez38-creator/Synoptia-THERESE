@@ -99,12 +99,15 @@ export function AgentMessageBubble({ message }: Props) {
         )}
 
         {/* Message */}
+        {/* BUG-127 : couleur de texte via le token de thème (text-text) et non
+            une couleur claire figée. Sur fond de bulle à faible opacité en thème
+            clair, un texte clair figé donnait « blanc sur blanc » (réponse de
+            l'agent codeur invisible). Le token s'adapte clair/sombre. */}
         <div
-          className="rounded-lg px-3 py-2 text-sm leading-relaxed"
+          className="rounded-lg px-3 py-2 text-sm leading-relaxed text-text"
           style={{
             backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)' : style.bg,
             borderLeft: isUser ? 'none' : `2px solid ${style.color}`,
-            color: '#E6EDF7',
           }}
         >
           <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
