@@ -5,6 +5,7 @@ Tests for multi-provider LLM functionality.
 Sprint 2 - PERF-2.1: Updated for modular provider architecture.
 """
 
+import pytest
 
 
 class TestLLMServiceImport:
@@ -206,6 +207,63 @@ class TestStreamEvent:
         event = StreamEvent(type="error", content="API error: 500")
         assert event.type == "error"
         assert event.content == "API error: 500"
+
+    def test_stream_event_usage(self):
+        """Dette 14/06/2026 : StreamEvent doit pouvoir porter l'usage réel."""
+        from app.services.llm import StreamEvent
+
+        event = StreamEvent(type="done", stop_reason="end_turn", input_tokens=42, output_tokens=7)
+        assert event.input_tokens == 42
+        assert event.output_tokens == 7
+
+    def test_stream_event_usage_defaults_to_none(self):
+        from app.services.llm import StreamEvent
+
+        event = StreamEvent(type="done", stop_reason="end_turn")
+        assert event.input_tokens is None
+        assert event.output_tokens is None
+
+
+class TestStreamResponseUsageSink:
+    """stream_response() (texte only) n'a pas d'autre moyen de faire remonter
+    l'usage réel à l'appelant après la boucle - dette 14/06/2026."""
+
+    @staticmethod
+    def _service_with_fake_stream():
+        from app.services.llm import LLMConfig, LLMProvider, LLMService, StreamEvent
+
+        service = LLMService(LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-sonnet-5"))
+
+        async def fake_stream_response_with_tools(*args, **kwargs):
+            yield StreamEvent(type="text", content="Bonjour")
+            yield StreamEvent(type="done", stop_reason="end_turn", input_tokens=42, output_tokens=7)
+
+        service.stream_response_with_tools = fake_stream_response_with_tools
+        return service
+
+    @pytest.mark.asyncio
+    async def test_usage_sink_rempli_par_le_done_event(self):
+        from app.services.context import ContextWindow
+
+        service = self._service_with_fake_stream()
+        context = ContextWindow(system_prompt="", messages=[])
+        usage_sink: dict = {}
+
+        chunks = [chunk async for chunk in service.stream_response(context, usage_sink=usage_sink)]
+
+        assert chunks == ["Bonjour"]
+        assert usage_sink == {"input_tokens": 42, "output_tokens": 7}
+
+    @pytest.mark.asyncio
+    async def test_usage_sink_none_par_defaut_ne_plante_pas(self):
+        from app.services.context import ContextWindow
+
+        service = self._service_with_fake_stream()
+        context = ContextWindow(system_prompt="", messages=[])
+
+        chunks = [chunk async for chunk in service.stream_response(context)]
+
+        assert chunks == ["Bonjour"]
 
 
 class TestToolCall:

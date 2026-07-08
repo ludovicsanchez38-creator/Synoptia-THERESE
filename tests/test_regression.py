@@ -7266,6 +7266,17 @@ class TestChatNonStreamP1:
             "Message et ChatResponse non-stream doivent porter tokens_in/tokens_out"
         )
 
+    def test_nonstream_prefere_usage_reel_a_l_estimation(self):
+        """Dette 14/06/2026 : le chemin non-stream doit utiliser l'usage réel du
+        provider (usage_sink) quand disponible, pas seulement l'estimation."""
+        branch = self._nonstream_branch()
+        assert "usage_sink=usage_sink" in branch, (
+            "stream_response doit recevoir usage_sink pour capter l'usage réel"
+        )
+        assert 'usage_sink.get("input_tokens")' in branch and 'usage_sink.get("output_tokens")' in branch, (
+            "input_tokens/output_tokens doivent primer sur l'estimation quand usage_sink est rempli"
+        )
+
 
 class TestEscalationZeroDivision:
     """Régression : des limites a 0 (POST /escalation/limits) provoquaient une
@@ -7494,6 +7505,28 @@ class TestBoardTokenTracking:
         # 4 mots d'entrée * 2 = 8 tokens in, 2 mots * 2 = 4 tokens out.
         assert after["input_tokens"] == before["input_tokens"] + 8
         assert after["output_tokens"] == before["output_tokens"] + 4
+
+    def test_track_usage_prefere_usage_sink_a_l_estimation(self):
+        """Dette 14/06/2026 : quand le provider a fourni l'usage réel
+        (usage_sink, cf llm.py stream_response), il doit primer sur
+        l'estimation ~2 tokens/mot, même si le texte est court."""
+        from types import SimpleNamespace
+
+        from app.services.board import BoardService
+        from app.services.token_tracker import get_token_tracker
+
+        tracker = get_token_tracker()
+        before = tracker.get_daily_usage()
+
+        fake_llm = SimpleNamespace(
+            config=SimpleNamespace(model="claude-sonnet-4-6", provider=SimpleNamespace(value="anthropic"))
+        )
+        board = BoardService(session=None)
+        board._track_usage(fake_llm, "un", "deux", usage_sink={"input_tokens": 123, "output_tokens": 45})
+
+        after = tracker.get_daily_usage()
+        assert after["input_tokens"] == before["input_tokens"] + 123
+        assert after["output_tokens"] == before["output_tokens"] + 45
 
 
 class TestDeepResearchSurfacesSynthesisError:

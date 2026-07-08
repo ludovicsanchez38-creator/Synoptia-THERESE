@@ -43,6 +43,9 @@ class MistralProvider(BaseProvider):
             "temperature": self.config.temperature,
             "messages": messages,
             "stream": True,
+            # Usage réel (dette 14/06/2026) : sans ce flag, le chunk usage final
+            # n'est pas envoyé du tout par l'API en streaming.
+            "stream_options": {"include_usage": True},
         }
         if tools:
             request_body["tools"] = tools
@@ -67,6 +70,12 @@ class MistralProvider(BaseProvider):
         """
         request_body = self._build_request_body(messages, tools)
         done_emitted = False
+        # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
+        # include_usage) arrive APRÈS le chunk finish_reason, choices vide - on
+        # mémorise stop_reason SANS break pour laisser la boucle l'atteindre.
+        pending_stop_reason: str | None = None
+        input_tokens: int | None = None
+        output_tokens: int | None = None
 
         try:
             async with self.client.stream(
@@ -89,13 +98,22 @@ class MistralProvider(BaseProvider):
                     data = line[6:]
                     if data.strip() == "[DONE]":
                         if not done_emitted:
-                            yield StreamEvent(type="done", stop_reason="end_turn")
+                            yield StreamEvent(
+                                type="done",
+                                stop_reason=pending_stop_reason or "end_turn",
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                            )
                             done_emitted = True
                         break
                     try:
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
+
+                    if usage := event.get("usage"):
+                        input_tokens = usage.get("prompt_tokens", input_tokens)
+                        output_tokens = usage.get("completion_tokens", output_tokens)
 
                     choices = event.get("choices", [])
                     if not choices:
@@ -121,32 +139,37 @@ class MistralProvider(BaseProvider):
                                 if args := func.get("arguments"):
                                     tool_calls[idx]["arguments"] += args
 
-                    # Fin de tour
+                    # Fin de tour : mémoriser seulement, ne PAS émettre "done" ni
+                    # break ici - il faut laisser la boucle atteindre le chunk
+                    # usage (ou [DONE]) pour ne pas perdre l'usage réel.
                     if finish_reason == "tool_calls" or (finish_reason and tool_calls):
-                        for tc in tool_calls.values():
-                            try:
-                                arguments = json.loads(tc["arguments"]) if tc["arguments"] else {}
-                            except json.JSONDecodeError:
-                                arguments = {}
-                            yield StreamEvent(
-                                type="tool_call",
-                                tool_call=ToolCall(
-                                    id=tc["id"],
-                                    name=tc["name"],
-                                    arguments=arguments,
-                                ),
-                            )
-                        yield StreamEvent(type="done", stop_reason="tool_calls")
-                        done_emitted = True
-                        break
+                        if not pending_stop_reason:
+                            for tc in tool_calls.values():
+                                try:
+                                    arguments = json.loads(tc["arguments"]) if tc["arguments"] else {}
+                                except json.JSONDecodeError:
+                                    arguments = {}
+                                yield StreamEvent(
+                                    type="tool_call",
+                                    tool_call=ToolCall(
+                                        id=tc["id"],
+                                        name=tc["name"],
+                                        arguments=arguments,
+                                    ),
+                                )
+                        pending_stop_reason = "tool_calls"
                     elif finish_reason:
-                        yield StreamEvent(type="done", stop_reason="end_turn")
-                        done_emitted = True
-                        break
+                        pending_stop_reason = pending_stop_reason or "end_turn"
 
-            # Filet : si le flux se termine sans finish_reason explicite
+            # Filet : si le flux se termine sans jamais voir [DONE] (coupure
+            # après finish_reason, ou pas de finish_reason explicite du tout).
             if not done_emitted:
-                yield StreamEvent(type="done", stop_reason="end_turn")
+                yield StreamEvent(
+                    type="done",
+                    stop_reason=pending_stop_reason or "end_turn",
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Mistral API error: {e.response.status_code}")

@@ -39,6 +39,9 @@ class InfomaniakProvider(BaseProvider):
             "temperature": self.config.temperature,
             "messages": messages,
             "stream": True,
+            # Usage réel (dette 14/06/2026) : sans ce flag, le chunk usage final
+            # n'est pas envoyé du tout par l'API en streaming.
+            "stream_options": {"include_usage": True},
         }
 
         if tools:
@@ -69,15 +72,36 @@ class InfomaniakProvider(BaseProvider):
                 response.raise_for_status()
 
                 tool_calls: dict[int, dict] = {}
+                # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
+                # include_usage) arrive APRÈS le chunk finish_reason, choices vide.
+                # On mémorise stop_reason et on n'émet "done" qu'à la toute fin
+                # (chunk usage ou [DONE]) pour ne pas le manquer.
+                pending_stop_reason: str | None = None
+                input_tokens: int | None = None
+                output_tokens: int | None = None
+                # Garde de robustesse : si la connexion se coupe après
+                # finish_reason mais avant [DONE]/le chunk usage, il faut
+                # quand même émettre "done" (sinon chat.py reste bloqué en
+                # attente indéfiniment de ce signal).
+                done_emitted = False
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data = line[6:]
                         if data.strip() == "[DONE]":
-                            yield StreamEvent(type="done", stop_reason="stop")
+                            yield StreamEvent(
+                                type="done",
+                                stop_reason=pending_stop_reason or "stop",
+                                input_tokens=input_tokens,
+                                output_tokens=output_tokens,
+                            )
+                            done_emitted = True
                             break
                         try:
                             event = json.loads(data)
+                            if usage := event.get("usage"):
+                                input_tokens = usage.get("prompt_tokens", input_tokens)
+                                output_tokens = usage.get("completion_tokens", output_tokens)
                             choices = event.get("choices", [])
                             if choices:
                                 delta = choices[0].get("delta", {})
@@ -118,13 +142,23 @@ class InfomaniakProvider(BaseProvider):
                                                 arguments=arguments,
                                             ),
                                         )
-                                    yield StreamEvent(type="done", stop_reason="tool_calls")
+                                    pending_stop_reason = "tool_calls"
 
                                 elif finish_reason == "stop":
-                                    yield StreamEvent(type="done", stop_reason="stop")
+                                    pending_stop_reason = "stop"
 
                         except json.JSONDecodeError:
                             continue
+
+            # Filet : le flux s'est terminé sans jamais voir [DONE] (coupure
+            # après finish_reason, ou pas de finish_reason explicite du tout).
+            if not done_emitted:
+                yield StreamEvent(
+                    type="done",
+                    stop_reason=pending_stop_reason or "stop",
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Infomaniak API error: {e.response.status_code}")

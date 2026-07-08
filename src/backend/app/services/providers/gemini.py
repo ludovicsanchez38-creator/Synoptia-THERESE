@@ -220,6 +220,11 @@ class GeminiProvider(BaseProvider):
                     return
                 has_tool_calls = False
                 tool_call_index = 0
+                # Usage réel (dette 14/06/2026) : usageMetadata est présent sur
+                # chaque chunk avec des compteurs cumulatifs - on garde la
+                # dernière valeur vue, utilisée au yield "done" final.
+                input_tokens: int | None = None
+                output_tokens: int | None = None
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
                         data = line[6:]
@@ -227,6 +232,9 @@ class GeminiProvider(BaseProvider):
                             continue
                         try:
                             event = json.loads(data)
+                            if usage := event.get("usageMetadata"):
+                                input_tokens = usage.get("promptTokenCount", input_tokens)
+                                output_tokens = usage.get("candidatesTokenCount", output_tokens)
                             candidates = event.get("candidates", [])
                             if candidates:
                                 content = candidates[0].get("content", {})
@@ -265,6 +273,8 @@ class GeminiProvider(BaseProvider):
             yield StreamEvent(
                 type="done",
                 stop_reason="tool_calls" if has_tool_calls else "end_turn",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
             )
 
         except httpx.HTTPStatusError as e:

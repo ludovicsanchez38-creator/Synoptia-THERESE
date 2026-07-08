@@ -800,8 +800,9 @@ async def send_message(
     # était avalé -> assistant_content restait vide et le except ne se déclenchait
     # jamais (message assistant VIDE renvoyé au lieu d'une erreur). Rapport Syn 14/06.
     assistant_content = ""
+    usage_sink: dict = {}
     try:
-        async for chunk in llm_service.stream_response(context, raise_on_error=True):
+        async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_sink):
             assistant_content += chunk
     except Exception as e:
         logger.error(f"LLM error: {e}")
@@ -817,11 +818,10 @@ async def send_message(
 
     # BUG-027 : suivi des tokens sur le chemin non-stream (etait absent -> le
     # token tracker restait aveugle et tokens_in/out remontaient null).
-    # Estimation (~1 mot = 2 tokens), alignee sur le chemin stream existant.
-    # DETTE : propager l'usage reel des providers (usage.input_tokens cote Anthropic,
-    # usageMetadata.promptTokenCount cote Gemini, etc.) plutot qu'estimer (veille 14/06).
-    input_tokens = len(request.message.split()) * 2
-    output_tokens = len(assistant_content.split()) * 2
+    # Usage réel du provider (usage_sink) quand disponible, sinon estimation
+    # ~1 mot = 2 tokens en filet (providers pas encore migrés, cf CLAUDE.md).
+    input_tokens = usage_sink.get("input_tokens") or len(request.message.split()) * 2
+    output_tokens = usage_sink.get("output_tokens") or len(assistant_content.split()) * 2
     get_token_tracker().record_usage(
         conversation_id=conversation.id,
         model=llm_service.config.model,
@@ -1070,6 +1070,11 @@ async def _do_stream_response(
         yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
     tool_calls_collected: list[ToolCall] = []
     max_tool_iterations = 5  # Prevent infinite tool loops
+    # Usage réel (dette 14/06/2026) : accumulé sur TOUS les tours d'outils (un
+    # tour = un appel API = son propre usage). "estimated" passe à True dès
+    # qu'un tour n'a pas fourni l'usage réel (provider pas encore migré) - on
+    # bascule alors sur l'estimation globale plutôt que de mélanger réel+estimé.
+    usage_totals = {"input_tokens": 0, "output_tokens": 0, "estimated": False}
 
     try:
         # Stream from LLM with tool support
@@ -1093,6 +1098,12 @@ async def _do_stream_response(
                 tool_calls_collected.append(event.tool_call)
 
             elif event.type == "done":
+                if event.input_tokens is not None and event.output_tokens is not None:
+                    usage_totals["input_tokens"] += event.input_tokens
+                    usage_totals["output_tokens"] += event.output_tokens
+                else:
+                    usage_totals["estimated"] = True
+
                 # Check if we have tool calls to execute
                 if tool_calls_collected and event.stop_reason in ("tool_calls", "tool_use"):
                     # Execute tools and continue
@@ -1106,6 +1117,7 @@ async def _do_stream_response(
                         conversation_id,
                         max_tool_iterations,
                         session=session,
+                        usage_totals=usage_totals,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -1180,9 +1192,14 @@ async def _do_stream_response(
     # Track token usage and costs (US-ESC-02, US-ESC-04)
     token_tracker = get_token_tracker()
 
-    # Estimation tokens : ~1 mot = 2 tokens (approximation raisonnable FR/EN)
-    input_tokens = len(user_message.split()) * 2
-    output_tokens = len(full_content.split()) * 2
+    # Usage réel accumulé sur tous les tours d'outils (dette 14/06/2026), sinon
+    # estimation ~1 mot = 2 tokens en filet (providers pas encore migrés).
+    if usage_totals["estimated"] or usage_totals["input_tokens"] == 0:
+        input_tokens = len(user_message.split()) * 2
+        output_tokens = len(full_content.split()) * 2
+    else:
+        input_tokens = usage_totals["input_tokens"]
+        output_tokens = usage_totals["output_tokens"]
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,
@@ -1272,6 +1289,7 @@ async def _execute_tools_and_continue(
     remaining_iterations: int,
     session: AsyncSession | None = None,
     prior_turns: list[ToolTurn] | None = None,
+    usage_totals: dict | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -1281,6 +1299,10 @@ async def _execute_tools_and_continue(
     le contexte de continuation, sinon le modèle ne voit jamais les résultats
     précédents, re-demande le même outil en boucle puis invente une
     explication d'échec (bug lcjp 11/06/2026).
+
+    usage_totals : accumulateur mutable partagé avec l'appelant (dette
+    14/06/2026, usage réel plutôt qu'estimé) - un tour d'outils = un appel API
+    = son propre usage, à sommer sur toute la récursion.
     """
     if remaining_iterations <= 0:
         logger.warning("Max tool iterations reached, stopping")
@@ -1533,6 +1555,13 @@ async def _execute_tools_and_continue(
             new_tool_calls.append(event.tool_call)
 
         elif event.type == "done":
+            if usage_totals is not None:
+                if event.input_tokens is not None and event.output_tokens is not None:
+                    usage_totals["input_tokens"] += event.input_tokens
+                    usage_totals["output_tokens"] += event.output_tokens
+                else:
+                    usage_totals["estimated"] = True
+
             # Check if more tools need to be called
             if new_tool_calls and event.stop_reason in ("tool_calls", "tool_use"):
                 # Recursive call for chained tools
@@ -1546,6 +1575,7 @@ async def _execute_tools_and_continue(
                     conversation_id,
                     remaining_iterations - 1,
                     session=session,
+                    usage_totals=usage_totals,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

@@ -89,6 +89,11 @@ class StreamEvent:
     content: str | None = None
     tool_call: ToolCall | None = None
     stop_reason: str | None = None
+    # Usage réel du provider (event type="done"), quand disponible. None si le
+    # provider ne l'a pas encore fourni : l'appelant retombe alors sur
+    # l'estimation ~2 tokens/mot (cf chat.py/board.py).
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class BaseProvider(ABC):

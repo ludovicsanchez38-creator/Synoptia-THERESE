@@ -188,10 +188,20 @@ class OllamaProvider(BaseProvider):
                 has_content = False
                 has_tool_calls = False
                 tool_call_index = 0
+                # Usage réel (dette 14/06/2026) : prompt_eval_count/eval_count
+                # n'apparaissent que sur le dernier message (done=true), mais on
+                # les capture à chaque ligne par simplicité (écrase avec la
+                # dernière valeur trouvée).
+                input_tokens: int | None = None
+                output_tokens: int | None = None
                 async for line in response.aiter_lines():
                     if line:
                         try:
                             event = json.loads(line)
+                            if (pe := event.get("prompt_eval_count")) is not None:
+                                input_tokens = pe
+                            if (ec := event.get("eval_count")) is not None:
+                                output_tokens = ec
                             # Vérifier si Ollama renvoie une erreur dans le flux
                             if error_msg := event.get("error"):
                                 yield StreamEvent(
@@ -248,6 +258,8 @@ class OllamaProvider(BaseProvider):
             yield StreamEvent(
                 type="done",
                 stop_reason="tool_calls" if has_tool_calls else "end_turn",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
             )
 
         except httpx.ConnectError:

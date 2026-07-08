@@ -135,21 +135,30 @@ class BoardService:
             logger.warning(f"Échec recherche web pour Board: {e}")
             return ""
 
-    def _track_usage(self, llm_service, input_text: str, output_text: str) -> None:
+    def _track_usage(
+        self,
+        llm_service,
+        input_text: str,
+        output_text: str,
+        usage_sink: dict | None = None,
+    ) -> None:
         """BUG-027 : alimente le token tracker global pour les appels LLM du board.
 
         Sans ça, l'usage quotidien/mensuel sous-comptait les délibérations (le board
         faisait de vrais appels providers sans jamais nourrir le tracker) - rapport
-        Syn 14/06. Estimation ~2 tokens/mot, alignée sur le chemin chat non-stream.
+        Syn 14/06. Usage réel (usage_sink, cf llm.py stream_response) quand
+        disponible, sinon estimation ~2 tokens/mot en filet (providers pas
+        encore migrés, cf CLAUDE.md).
         conversation_id="board" : simple étiquette (le tracker ne pose pas de FK)."""
+        usage_sink = usage_sink or {}
         try:
             from app.services.token_tracker import get_token_tracker
             get_token_tracker().record_usage(
                 conversation_id="board",
                 model=llm_service.config.model,
                 provider=llm_service.config.provider.value,
-                input_tokens=len(input_text.split()) * 2,
-                output_tokens=len(output_text.split()) * 2,
+                input_tokens=usage_sink.get("input_tokens") or len(input_text.split()) * 2,
+                output_tokens=usage_sink.get("output_tokens") or len(output_text.split()) * 2,
             )
         except Exception as e:
             logger.debug(f"Board token tracking ignoré: {e}")
@@ -239,8 +248,9 @@ class BoardService:
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
 
                 full_content = ""
+                usage_sink: dict = {}
                 try:
-                    async for chunk in llm_service.stream_response(context):
+                    async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
                         full_content += chunk
                         yield BoardDeliberationChunk(
                             type="advisor_chunk",
@@ -266,7 +276,7 @@ class BoardService:
                     emoji=config["emoji"],
                     content=full_content,
                 ))
-                self._track_usage(llm_service, advisor_system + context_msg, full_content)
+                self._track_usage(llm_service, advisor_system + context_msg, full_content, usage_sink)
 
                 yield BoardDeliberationChunk(
                     type="advisor_done",
@@ -330,13 +340,14 @@ class BoardService:
                 context = llm_service.prepare_context(messages, system_prompt=advisor_system)
 
                 full_content = ""
+                usage_sink: dict = {}
                 try:
                     # Sémaphore par fournisseur : au plus 2 appels simultanés sur
                     # une même clé (anti-429). advisor_start a déjà été émis, donc
                     # l'UI montre tous les conseillers « en réflexion » pendant
                     # que les appels s'étalent.
                     async with provider_semaphores[actual_provider]:
-                        async for chunk in llm_service.stream_response(context):
+                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
                             full_content += chunk
                             await chunk_queue.put(BoardDeliberationChunk(
                                 type="advisor_chunk",
@@ -362,7 +373,7 @@ class BoardService:
                     emoji=config["emoji"],
                     content=full_content,
                 )
-                self._track_usage(llm_service, advisor_system + context_msg, full_content)
+                self._track_usage(llm_service, advisor_system + context_msg, full_content, usage_sink)
 
                 await chunk_queue.put(BoardDeliberationChunk(
                     type="advisor_done",
@@ -491,9 +502,10 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
 
         # Generate synthesis
         full_response = ""
-        async for chunk in llm_service.stream_response(context):
+        usage_sink: dict = {}
+        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
             full_response += chunk
-        self._track_usage(llm_service, synthesis_prompt, full_response)
+        self._track_usage(llm_service, synthesis_prompt, full_response, usage_sink)
 
         # Parse JSON response
         try:

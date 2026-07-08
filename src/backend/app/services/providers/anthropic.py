@@ -82,6 +82,10 @@ class AnthropicProvider(BaseProvider):
                 current_tool_name = None
                 current_tool_input = ""
                 stop_reason = None
+                # Usage réel (dette 14/06/2026) : input_tokens arrive dans
+                # message_start, output_tokens (cumulatif) dans chaque message_delta.
+                input_tokens: int | None = None
+                output_tokens: int | None = None
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
@@ -92,7 +96,12 @@ class AnthropicProvider(BaseProvider):
                             event = json.loads(data)
                             event_type = event.get("type")
 
-                            if event_type == "content_block_start":
+                            if event_type == "message_start":
+                                input_tokens = (
+                                    event.get("message", {}).get("usage", {}).get("input_tokens")
+                                )
+
+                            elif event_type == "content_block_start":
                                 content_block = event.get("content_block", {})
                                 if content_block.get("type") == "tool_use":
                                     current_tool_call_id = content_block.get("id")
@@ -134,9 +143,16 @@ class AnthropicProvider(BaseProvider):
                             elif event_type == "message_delta":
                                 delta = event.get("delta", {})
                                 stop_reason = delta.get("stop_reason")
+                                if usage_out := event.get("usage", {}).get("output_tokens"):
+                                    output_tokens = usage_out
 
                             elif event_type == "message_stop":
-                                yield StreamEvent(type="done", stop_reason=stop_reason or "end_turn")
+                                yield StreamEvent(
+                                    type="done",
+                                    stop_reason=stop_reason or "end_turn",
+                                    input_tokens=input_tokens,
+                                    output_tokens=output_tokens,
+                                )
 
                         except json.JSONDecodeError:
                             continue

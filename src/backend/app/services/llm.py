@@ -660,6 +660,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tools: list[dict] | None = None,
         enable_grounding: bool = True,
         raise_on_error: bool = False,
+        usage_sink: dict | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream response (text only, backward compat).
 
@@ -670,12 +671,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         (le chat le rattrape et affiche un message clair). Défaut False pour ne pas
         changer le comportement des appelants existants (board, deep_research,
         entity_extractor, action_agents, runtime) qui tolèrent une réponse vide.
+
+        usage_sink : dict optionnel rempli en effet de bord avec l'usage réel du
+        provider ("input_tokens"/"output_tokens", event type="done") quand
+        disponible - ce générateur ne yield que du texte, donc pas d'autre moyen
+        pour l'appelant de récupérer cette info après la boucle (dette 14/06,
+        usage estimé ~2 tokens/mot au lieu du réel).
         """
         async for event in self.stream_response_with_tools(context, tools, enable_grounding=enable_grounding):
             if event.type == "text" and event.content:
                 yield event.content
             elif raise_on_error and event.type == "error":
                 raise RuntimeError(event.content or "Erreur du fournisseur LLM")
+            elif event.type == "done" and usage_sink is not None:
+                if event.input_tokens is not None:
+                    usage_sink["input_tokens"] = event.input_tokens
+                if event.output_tokens is not None:
+                    usage_sink["output_tokens"] = event.output_tokens
 
     async def stream_response_with_tools(
         self,
