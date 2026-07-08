@@ -11,6 +11,7 @@ Local First - Multi-Provider
 import json
 import logging
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.models.database import get_session
 from app.models.entities import Calendar, CalendarEvent, EmailAccount, generate_uuid
@@ -40,6 +41,19 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _validate_timezone(tz: str | None) -> str:
+    """Fuseau IANA valide ou repli Europe/Paris (parité avec local_provider.py,
+    qui valide déjà via pytz - un fuseau invalide envoyé tel quel à Google
+    remonte en 400 reformulé en 500 générique)."""
+    if not tz:
+        return "Europe/Paris"
+    try:
+        ZoneInfo(tz)
+    except (ZoneInfoNotFoundError, ValueError):
+        return "Europe/Paris"
+    return tz
 
 
 # ============================================================
@@ -825,7 +839,7 @@ async def _create_event_google(
             # Ne PAS ajouter de suffixe Z (UTC) car les heures sont locales.
             # Fuseau réel du poste de l'utilisateur (capov à Toronto voyait un
             # décalage de 6 h tant que "Europe/Paris" était codé en dur).
-            event_tz = request.timezone or "Europe/Paris"
+            event_tz = _validate_timezone(request.timezone)
             start = {"dateTime": request.start_datetime, "timeZone": event_tz}
             end = {"dateTime": request.end_datetime, "timeZone": event_tz}
         elif request.start_date and request.end_date:
@@ -986,7 +1000,7 @@ async def update_event(
         calendar_service = CalendarService(access_token)
 
         # Même fuseau réel du poste que pour la création (cohérence create/update).
-        event_tz = request.timezone or "Europe/Paris"
+        event_tz = _validate_timezone(request.timezone)
         start = (
             {"dateTime": request.start_datetime, "timeZone": event_tz}
             if request.start_datetime
