@@ -118,7 +118,12 @@ async def list_calendars(
     - Avec account_id : sync Google Calendar et retourne les calendriers du compte
     - Avec provider : filtre par type de provider
     """
-    # If account_id provided and it's a Google account, sync from Google
+    # If account_id provided and it's a Google account, sync from Google.
+    # BUG-120 : un compte non-Google (IMAP) ne possède aucun calendrier Google.
+    # Filtrer la liste sur son account_id renvoie donc une liste vide et bloque
+    # la création d'événement. On le traite comme « pas de compte Google
+    # exploitable » : repli sur les calendriers locaux (account_id NULL).
+    non_google_account = False
     if account_id:
         account = await session.get(EmailAccount, account_id)
         if account:
@@ -129,6 +134,7 @@ async def list_calendars(
             if is_google:
                 return await _list_google_calendars(account_id, account, session)
             else:
+                non_google_account = True
                 logger.warning(
                     "list_calendars fallthrough: account %s has provider=%r, "
                     "no Google sync performed",
@@ -140,17 +146,20 @@ async def list_calendars(
     statement = select(Calendar)
     if provider:
         statement = statement.where(Calendar.provider == provider)
-    if account_id:
+    # On ne filtre par account_id que pour un vrai compte Google : sinon on
+    # exclurait les calendriers locaux (account_id NULL) du repli IMAP (BUG-120).
+    if account_id and not non_google_account:
         statement = statement.where(Calendar.account_id == account_id)
 
     result = await session.execute(statement)
     calendars = result.scalars().all()
 
-    # Sans compte connecté, la liste était VIDE : le formulaire d'événement
-    # exigeait « un calendrier dans le menu déroulant » qui ne proposait rien -
-    # impasse totale hors Google (retour Dr_logic-3D, 05/07/2026). On crée
-    # donc un calendrier local par défaut au premier passage (idempotent).
-    if not calendars and not account_id and provider in (None, "local"):
+    # Sans compte Google exploitable, la liste était VIDE : le formulaire
+    # d'événement exigeait « un calendrier dans le menu déroulant » qui ne
+    # proposait rien - impasse totale hors Google (retour Dr_logic-3D, 05/07 puis
+    # revalidé en bloquant le 08/07, BUG-120). On crée donc un calendrier local
+    # par défaut au premier passage (idempotent), y compris pour un compte IMAP.
+    if not calendars and (not account_id or non_google_account) and provider in (None, "local"):
         from app.services.calendar.local_provider import LocalCalendarProvider
 
         local = LocalCalendarProvider(session)

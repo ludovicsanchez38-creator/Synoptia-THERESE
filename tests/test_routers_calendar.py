@@ -119,6 +119,26 @@ class TestCalendarList:
         assert len(response2.json()) == 1
 
     @pytest.mark.asyncio
+    async def test_list_calendars_compte_imap_repli_local(self, client: AsyncClient, db_session):
+        """BUG-120 : avec un compte IMAP (non-Google), la liste ne doit pas être
+        vide. Sans repli, filtrer par l'account_id IMAP (qui ne possède aucun
+        calendrier Google) renvoyait une liste vide et bloquait la création
+        d'événement (bouton Enregistrer inopérant, Dr_logic-3D 08/07/2026)."""
+        from app.models.entities import EmailAccount
+
+        db_session.add(EmailAccount(id="imap-1", email="me@imap.fr", provider="imap"))
+        await db_session.commit()
+
+        response = await client.get("/api/calendar/calendars?account_id=imap-1")
+        assert_response_ok(response)
+        data = response.json()
+
+        # Non vide : un calendrier local exploitable est proposé pour l'IMAP.
+        assert len(data) >= 1
+        # Sélectionnable (primary) pour débloquer le formulaire d'événement.
+        assert any(c["primary"] for c in data)
+
+    @pytest.mark.asyncio
     async def test_list_calendars_with_local(self, client: AsyncClient):
         """GET /api/calendar/calendars - should include local calendars."""
         await _create_local_calendar(client, "Calendrier Local")

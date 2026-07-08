@@ -114,8 +114,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const cals = await api.listCalendars(currentAccountId);
       setCalendars(cals);
 
-      // Auto-select primary calendar (ou re-sélectionner si l'ID persisté est stale)
-      const primary = cals.find((c) => c.primary);
+      // Auto-select : calendrier primaire, sinon le PREMIER disponible.
+      // BUG-120 : un calendrier local (repli hors Google) n'est pas marqué
+      // "primary" ; sans ce fallback, rien n'était sélectionné et la création
+      // d'événement restait bloquée sur « Aucun calendrier sélectionné ».
+      const primary = cals.find((c) => c.primary) ?? cals[0];
       const currentStillExists = cals.some((c) => c.id === currentCalendarId);
       if (primary && (!currentCalendarId || !currentStillExists)) {
         setCurrentCalendar(primary.id);
