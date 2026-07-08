@@ -968,6 +968,47 @@ async def get_message(
             'body_html': cached.body_html,
         }
 
+    # BUG-123 : router sur le bon provider. Forcer Gmail pour un compte IMAP
+    # envoyait un token OAuth vide (`Authorization: Bearer `), l'API Gmail
+    # répondait « Illegal header value b'Bearer ' » (500) et l'UI retombait sur
+    # l'aperçu tronqué. On branche comme le font déjà /messages et /messages
+    # (envoi).
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+
+    if account.provider == "imap":
+        provider = get_email_provider(
+            provider_type="imap",
+            email_address=account.email,
+            password=decrypt_value(account.imap_password),
+            imap_host=account.imap_host,
+            imap_port=account.imap_port,
+            smtp_host=account.smtp_host,
+            smtp_port=account.smtp_port,
+            smtp_use_tls=account.smtp_use_tls,
+        )
+        try:
+            dto = await provider.get_message(message_id)
+        except Exception as e:
+            logger.error(f"IMAP get_message failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+        # body_html est déjà assaini au niveau du provider IMAP (_imap_to_dto).
+        return {
+            'id': dto.id,
+            'thread_id': dto.thread_id or dto.id,
+            'subject': dto.subject,
+            'from_email': dto.from_email,
+            'from_name': dto.from_name,
+            'to_emails': dto.to_emails,
+            'date': dto.date.isoformat() if dto.date else '',
+            'labels': dto.labels,
+            'is_read': dto.is_read,
+            'is_starred': dto.is_starred,
+            'body_plain': dto.body_plain,
+            'body_html': dto.body_html,
+        }
+
     # Fetch from Gmail
     gmail = await get_gmail_service_for_account(account_id, session)
     message = await gmail.get_message(message_id)

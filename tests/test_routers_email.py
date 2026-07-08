@@ -257,50 +257,47 @@ class TestEmailMessages:
             assert data["messages"][0]["subject"] == "Test subject"
 
     @pytest.mark.asyncio
-    async def test_get_message_not_found(self, client: AsyncClient, sample_imap_setup):
-        """GET /api/email/messages/{id} - should fetch from Gmail if not cached."""
+    async def test_get_message_imap_route_provider_pas_gmail(self, client: AsyncClient, sample_imap_setup):
+        """BUG-123 : GET /messages/{id} d'un compte IMAP doit passer par le
+        provider IMAP, JAMAIS par Gmail. Forcer Gmail envoyait un token OAuth
+        vide (`Authorization: Bearer `) -> 500 « Illegal header value b'Bearer ' »
+        et l'UI retombait sur l'aperçu tronqué."""
         create_resp = await client.post("/api/email/auth/imap-setup", json=sample_imap_setup)
         account_id = create_resp.json()["id"]
 
-        # Mock Gmail service - returns a message
-        with patch("app.routers.email.get_gmail_service_for_account") as mock_gmail_factory:
-            mock_gmail = AsyncMock()
-            mock_gmail.get_message = AsyncMock(return_value={
-                "id": "msg-not-cached",
-                "threadId": "thread-001",
-                "payload": {
-                    "headers": [
-                        {"name": "Subject", "value": "Uncached message"},
-                        {"name": "From", "value": "test@example.com"},
-                    ]
-                },
-                "internalDate": "1706000000000",
-                "labelIds": ["INBOX"],
-            })
-            mock_gmail_factory.return_value = mock_gmail
+        dto = MagicMock()
+        dto.id = "3"
+        dto.thread_id = "thread-3"
+        dto.subject = "Re: test"
+        dto.from_email = "jd@tictec.fr"
+        dto.from_name = "Jérôme DELAUNAY"
+        dto.to_emails = ["me@imap.fr"]
+        dto.date = datetime(2026, 7, 8, 16, 26)
+        dto.labels = ["INBOX"]
+        dto.is_read = True
+        dto.is_starred = False
+        dto.body_plain = "Contenu COMPLET du message, pas juste l'aperçu."
+        dto.body_html = "<p>Contenu COMPLET du message</p>"
 
-            with patch("app.routers.email.format_message_for_storage") as mock_format:
-                mock_format.return_value = {
-                    "id": "msg-not-cached",
-                    "thread_id": "thread-001",
-                    "subject": "Uncached message",
-                    "from_email": "test@example.com",
-                    "from_name": None,
-                    "to_emails": "[]",
-                    "date": datetime.now(),
-                    "internal_date": datetime.now(),
-                    "labels": "[]",
-                    "is_read": False,
-                    "is_starred": False,
-                    "snippet": "",
-                }
+        def _boom_gmail(*args, **kwargs):
+            raise AssertionError("Gmail ne doit pas être appelé pour un compte IMAP (BUG-123)")
 
-                response = await client.get(
-                    f"/api/email/messages/msg-not-cached?account_id={account_id}"
-                )
-                # This will either succeed or fail depending on the mock chain
-                # The important thing is the endpoint is reachable
-                assert response.status_code in [200, 404]
+        with patch("app.routers.email.get_email_provider") as mock_provider, patch(
+            "app.routers.email.get_gmail_service_for_account", _boom_gmail
+        ):
+            mock_instance = MagicMock()
+            mock_instance.get_message = AsyncMock(return_value=dto)
+            mock_provider.return_value = mock_instance
+
+            response = await client.get(f"/api/email/messages/3?account_id={account_id}")
+
+        assert_response_ok(response)
+        data = response.json()
+        assert data["id"] == "3"
+        # Le contenu COMPLET est renvoyé, pas seulement un aperçu tronqué.
+        assert "COMPLET" in data["body_plain"]
+        assert data["body_html"] == "<p>Contenu COMPLET du message</p>"
+        mock_instance.get_message.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_delete_message_not_found_account(self, client: AsyncClient):
