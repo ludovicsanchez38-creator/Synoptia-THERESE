@@ -199,8 +199,19 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       return;
     }
 
-    if (lines.length === 0 || lines.every((line) => !line.description)) {
+    if (lines.length === 0) {
       addNotification({ type: 'warning', title: 'Champ requis', message: 'Ajoute au moins une ligne de facturation' });
+      return;
+    }
+
+    // BUG-132 : une ligne par défaut existe mais sans description -> ne pas
+    // afficher « ajoute une ligne » (trompeur), viser le vrai champ manquant.
+    if (lines.every((line) => !line.description.trim())) {
+      addNotification({
+        type: 'warning',
+        title: 'Champ requis',
+        message: 'Renseigne la description d’au moins une ligne',
+      });
       return;
     }
 

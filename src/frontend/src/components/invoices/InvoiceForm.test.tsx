@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
+import { useStatusStore } from '../../stores/statusStore';
 
 const { createInvoiceMock, getBillingProfileStatusMock } = vi.hoisted(() => ({
   createInvoiceMock: vi.fn(),
@@ -73,6 +74,44 @@ describe('InvoiceForm décimaux', () => {
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalled();
+  });
+});
+
+describe('InvoiceForm - BUG-132 validation description de ligne', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createInvoiceMock.mockResolvedValue({ id: 'inv-1' });
+    getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
+    useBillingProfileStore.setState({ missing: null });
+  });
+
+  it('une ligne par défaut sans description est bloquée avec un message ciblé, pas « ajoute une ligne »', async () => {
+    const notifSpy = vi.fn();
+    useStatusStore.setState({ addNotification: notifSpy });
+
+    render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+
+    // Contact requis (sinon on bloque avant la ligne).
+    fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
+    // La ligne par défaut existe (quantité 1) mais sa description est vide.
+    fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
+    expect(createInvoiceMock).not.toHaveBeenCalled();
+    const messages = notifSpy.mock.calls.map((c) => (c[0]?.message as string) ?? '');
+    expect(messages.some((m) => /description/i.test(m))).toBe(true);
+    expect(messages.some((m) => /ajoute au moins une ligne/i.test(m))).toBe(false);
+  });
+
+  it('accepte la soumission une fois la description renseignée', async () => {
+    render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+
+    fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
+    fireEvent.change(screen.getByPlaceholderText('Description'), { target: { value: 'Prestation conseil' } });
+    fireEvent.change(screen.getByLabelText('Prix HT ligne 1'), { target: { value: '100' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
+    await waitFor(() => expect(createInvoiceMock).toHaveBeenCalled());
   });
 });
 
