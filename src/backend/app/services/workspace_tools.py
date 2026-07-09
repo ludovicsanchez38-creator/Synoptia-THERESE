@@ -379,8 +379,10 @@ async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool 
         return GoogleCalendarProvider(access_token=access_token), "primary", None
 
     # BUG-133 : repli sur le calendrier local, sans dependance Google.
+    # order_by(id) : choix déterministe si plusieurs calendriers locaux existent
+    # (sinon le chat pourrait écrire dans un autre que celui affiché au panneau).
     local_result = await session.execute(
-        select(Calendar).where(Calendar.provider == "local").limit(1)
+        select(Calendar).where(Calendar.provider == "local").order_by(Calendar.id).limit(1)
     )
     cal = local_result.scalar_one_or_none()
     if cal is None:

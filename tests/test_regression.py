@@ -7002,10 +7002,9 @@ class TestBUG133_ChatCalendarLocalFallback:
     @pytest.mark.asyncio
     async def test_create_event_sans_google_utilise_le_calendrier_local(self, db_session):
         """Créer un événement depuis le chat amorce et utilise le calendrier local."""
-        from sqlalchemy import select
-
         from app.models.entities import Calendar
         from app.services.workspace_tools import execute_workspace_tool
+        from sqlalchemy import select
 
         result = await execute_workspace_tool(
             "create_calendar_event",

@@ -38,6 +38,7 @@ import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile } from '
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
+import { useStatusStore } from '../../stores/statusStore';
 
 interface MessageBubbleProps {
   message: Message;
@@ -169,7 +170,15 @@ export const MessageBubble = memo(function MessageBubble({
     try {
       await downloadSkillFile(message.skillFile.file_id, message.skillFile.file_name);
     } catch (err) {
+      // Cas typique : conversation rechargée dont le fichier n'est plus sur
+      // disque (introuvable/expiré) -> 404. On le dit à l'utilisateur au lieu
+      // d'un clic sans effet.
       console.error('Skill file download failed:', err);
+      useStatusStore.getState().addNotification({
+        type: 'error',
+        title: 'Téléchargement impossible',
+        message: `Le fichier « ${message.skillFile.file_name} » est introuvable. Régénère-le depuis le chat.`,
+      });
     } finally {
       setSkillDownloading(false);
     }

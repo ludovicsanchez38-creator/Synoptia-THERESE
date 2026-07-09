@@ -6,10 +6,11 @@
  * MessageBubble était cassé par la prop onSaveAsCommand recréée à chaque
  * rendu (closure inline dans MessageList).
  */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MessageBubble, arePropsEqual } from './MessageBubble';
 import type { Message } from '../../stores/chatStore';
+import { useStatusStore } from '../../stores/statusStore';
 
 const { downloadSkillFileMock } = vi.hoisted(() => ({ downloadSkillFileMock: vi.fn() }));
 
@@ -82,6 +83,22 @@ describe('MessageBubble - BUG-131 fichier de skill (bouton de téléchargement r
     expect(downloadSkillFileMock).toHaveBeenCalledWith(
       '8d9226e6-690f-43bd-9623-a18e88a8e297',
       'Presentation-Therese.pptx'
+    );
+  });
+
+  it('échec de téléchargement (fichier introuvable) -> notification erreur', async () => {
+    // Revue adversariale : au reload d'une conversation dont le fichier a été
+    // purgé, le clic ne doit pas rester silencieux.
+    const notifSpy = vi.fn();
+    useStatusStore.setState({ addNotification: notifSpy });
+    downloadSkillFileMock.mockRejectedValueOnce(new Error('404'));
+
+    render(<MessageBubble message={skillMsg} />);
+    fireEvent.click(screen.getByTitle(/Télécharger Presentation-Therese\.pptx/i));
+
+    await waitFor(() => expect(notifSpy).toHaveBeenCalled());
+    expect(notifSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'error' })
     );
   });
 });
