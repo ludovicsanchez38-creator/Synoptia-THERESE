@@ -23,6 +23,16 @@ from sqlmodel import func, select
 logger = logging.getLogger(__name__)
 
 
+def _as_aware_utc(dt: datetime) -> datetime:
+    """Rend un datetime comparable à ``datetime.now(UTC)``.
+
+    Les valeurs relues depuis SQLite sont souvent naïves (sans tzinfo) ; on les
+    suppose en UTC. Évite ``can't subtract offset-naive and offset-aware
+    datetimes`` lors des calculs de retard/inactivité (BUG-126).
+    """
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+
+
 async def create_notification(
     session: AsyncSession,
     *,
@@ -120,7 +130,7 @@ async def _check_overdue_invoices(session: AsyncSession) -> int:
     invoices = result.scalars().all()
 
     for inv in invoices:
-        days_overdue = (datetime.now(UTC) - inv.due_date).days
+        days_overdue = (datetime.now(UTC) - _as_aware_utc(inv.due_date)).days
         # Verifier quon na pas deja une notif recente pour cette facture
         existing = await session.execute(
             select(Notification).where(
@@ -161,7 +171,7 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
     contacts = result.scalars().all()
 
     for contact in contacts:
-        days_inactive = (datetime.now(UTC) - contact.last_interaction).days
+        days_inactive = (datetime.now(UTC) - _as_aware_utc(contact.last_interaction)).days
         # Verifier quon na pas deja une notif recente pour ce contact
         existing = await session.execute(
             select(Notification).where(
@@ -202,7 +212,7 @@ async def _check_overdue_tasks(session: AsyncSession) -> int:
     tasks = result.scalars().all()
 
     for task in tasks:
-        days_overdue = (now - task.due_date).days
+        days_overdue = (now - _as_aware_utc(task.due_date)).days
         # Verifier quon na pas deja une notif recente pour cette tache
         existing = await session.execute(
             select(Notification).where(

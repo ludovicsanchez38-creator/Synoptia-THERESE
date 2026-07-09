@@ -8085,3 +8085,96 @@ class TestVoiceLocalOption:
             content = f.read().lower()
         assert "ram" in content
         assert "faster-whisper" in content and "piper" in content
+
+
+class TestBUG126_NotificationsNaiveDatetime:
+    """BUG-126 : génération de notifications automatiques cassée par des dates naïves.
+
+    Les dates relues depuis SQLite (DateTime sans timezone) sont naïves. Les
+    fonctions ``_check_*`` de ``notification_service`` soustrayaient ces valeurs
+    à ``datetime.now(UTC)`` (aware) -> ``TypeError: can't subtract offset-naive
+    and offset-aware datetimes``. Résultat : aucune notif de retard/inactivité,
+    l'erreur étant avalée par le ``try/except`` de ``generate_automatic_notifications``.
+    Fix : helper ``_as_aware_utc`` appliqué avant chaque soustraction.
+    """
+
+    def test_as_aware_utc_rend_naif_comparable(self):
+        from datetime import UTC, datetime
+
+        from app.services.notification_service import _as_aware_utc
+
+        naive = datetime(2020, 1, 1, 12, 0, 0)  # sans tzinfo (comme relu de SQLite)
+        aware = _as_aware_utc(naive)
+        assert aware.tzinfo is not None
+        # Ne doit plus lever en soustrayant à un datetime aware
+        assert (datetime.now(UTC) - aware).days > 0
+
+    def test_as_aware_utc_preserve_un_datetime_deja_aware(self):
+        from datetime import UTC, datetime
+
+        from app.services.notification_service import _as_aware_utc
+
+        already = datetime(2020, 1, 1, 12, 0, 0, tzinfo=UTC)
+        assert _as_aware_utc(already) is already  # inchangé, pas de double conversion
+
+    async def test_check_overdue_invoices_avec_due_date_naive(self, db_session):
+        from datetime import datetime
+
+        from app.models.entities import Contact, Invoice
+        from app.services.notification_service import _check_overdue_invoices
+
+        contact = Contact(first_name="Client", stage="active")
+        db_session.add(contact)
+        await db_session.flush()
+
+        # due_date NAÏVE et largement > 30 jours dans le passé (reproduit BUG-126)
+        db_session.add(
+            Invoice(
+                invoice_number="FACT-BUG126-001",
+                contact_id=contact.id,
+                due_date=datetime(2020, 1, 1, 12, 0, 0),
+                status="sent",
+                total_ttc=1200.0,
+            )
+        )
+        await db_session.flush()
+
+        # Ne doit pas lever (avant le fix : TypeError sur la soustraction) et créer 1 notif
+        count = await _check_overdue_invoices(db_session)
+        assert count == 1
+
+    async def test_check_inactive_prospects_avec_last_interaction_naive(self, db_session):
+        from datetime import datetime
+
+        from app.models.entities import Contact
+        from app.services.notification_service import _check_inactive_prospects
+
+        db_session.add(
+            Contact(
+                first_name="Prospect",
+                stage="discovery",
+                last_interaction=datetime(2020, 1, 1, 12, 0, 0),  # naïf, > 15 jours
+            )
+        )
+        await db_session.flush()
+
+        count = await _check_inactive_prospects(db_session)
+        assert count == 1
+
+    async def test_check_overdue_tasks_avec_due_date_naive(self, db_session):
+        from datetime import datetime
+
+        from app.models.entities import Task
+        from app.services.notification_service import _check_overdue_tasks
+
+        db_session.add(
+            Task(
+                title="Relancer le prospect",
+                status="todo",
+                due_date=datetime(2020, 1, 1, 12, 0, 0),  # naïf, dans le passé
+            )
+        )
+        await db_session.flush()
+
+        count = await _check_overdue_tasks(db_session)
+        assert count == 1
