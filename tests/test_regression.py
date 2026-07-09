@@ -5001,6 +5001,20 @@ class TestGroqWhisperLabel:
             "Ancien libelle trompeur encore present : 'transcription audio (Whisper)'"
         )
 
+    def test_services_tab_groq_copy_no_longer_claims_free(self):
+        """La copie Groq ne doit plus promettre à tort que le service est gratuit."""
+        import pathlib
+
+        src = pathlib.Path(
+            "src/frontend/src/components/settings/ServicesTab.tsx"
+        ).read_text(encoding="utf-8")
+        assert "- Gratuit, rapide" not in src, (
+            "La copie Groq promet encore 'Gratuit, rapide'"
+        )
+        assert "offre d'essai gratuite" in src, (
+            "La copie Groq doit préciser que seule l'offre d'essai est gratuite"
+        )
+
 
 class TestBUGOpenRouter403MessageErreur:
     """BUG openrouter-403 : message d'erreur vide/opaque sur 403 Forbidden."""
