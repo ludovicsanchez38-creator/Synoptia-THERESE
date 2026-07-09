@@ -46,6 +46,11 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const [loading, setLoading] = useState(!hasCachedTasks);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // BUG-118 : filtres par projet (déjà supporté côté store/backend, UI manquante)
+  // et par tag (filtré côté client, absent de l'API tâches).
+  const [projects, setProjects] = useState<api.Project[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
 
   const effectiveOpen = standalone || isOpen;
 
@@ -54,7 +59,13 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     if (effectiveOpen) {
       loadTasks();
     }
-  }, [effectiveOpen, filterStatus, filterPriority, filterProjectId]);
+  }, [effectiveOpen, filterStatus, filterPriority, filterProjectId, filterTag]);
+
+  // BUG-118 : liste des projets pour le filtre par projet
+  useEffect(() => {
+    if (!effectiveOpen) return;
+    api.listProjects().then(setProjects).catch(() => setProjects([]));
+  }, [effectiveOpen]);
 
   // Populate demo replacement map when demo mode is enabled
   useEffect(() => {
@@ -80,7 +91,13 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       if (filterProjectId) params.project_id = filterProjectId;
 
       const result = await api.listTasks(params);
-      setTasks(result);
+      // BUG-118 : tags disponibles calculés sur le résultat serveur (avant filtre
+      // tag), puis filtrage tag côté client (l'API tâches ne connaît pas les tags).
+      setAvailableTags([...new Set(result.flatMap((t) => t.tags ?? []))].sort());
+      const visible = filterTag
+        ? result.filter((t) => (t.tags ?? []).includes(filterTag))
+        : result;
+      setTasks(visible);
     } catch (err: any) {
       console.error('Failed to load tasks:', err);
       if (!hasCachedTasks) {
@@ -193,12 +210,39 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <option value="low">Basse</option>
       </select>
 
-      {(filterStatus || filterPriority || filterProjectId) && (
+      {projects.length > 0 && (
+        <select
+          value={filterProjectId || ''}
+          onChange={(e) => setFilterProjectId(e.target.value || null)}
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        >
+          <option value="">Tous les projets</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      )}
+
+      {availableTags.length > 0 && (
+        <select
+          value={filterTag || ''}
+          onChange={(e) => setFilterTag(e.target.value || null)}
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        >
+          <option value="">Tous les tags</option>
+          {availableTags.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      )}
+
+      {(filterStatus || filterPriority || filterProjectId || filterTag) && (
         <button
           onClick={() => {
             setFilterStatus(null);
             setFilterPriority(null);
             setFilterProjectId(null);
+            setFilterTag(null);
           }}
           className="text-sm text-accent-cyan hover:underline"
         >
