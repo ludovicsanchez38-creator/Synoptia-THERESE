@@ -6888,6 +6888,66 @@ class TestQW_GenerateDocumentTool:
         assert '"read_contact" in tool_names' in content
 
 
+class TestBUG133_ChatCalendarLocalFallback:
+    """Le calendrier du chat retombe sur le local sans compte Google (BUG-133).
+
+    Avant : `_get_calendar_provider` ne cherchait qu'un compte gmail et renvoyait
+    « Aucun compte Google connecte. Le calendrier necessite un compte Gmail »,
+    masquant le calendrier local souverain.
+    """
+
+    @pytest.mark.asyncio
+    async def test_get_calendar_provider_repli_local(self, db_session):
+        """Sans compte Google, on obtient le provider LOCAL et un vrai id (pas 'primary')."""
+        from app.services.calendar.local_provider import LocalCalendarProvider
+        from app.services.workspace_tools import _get_calendar_provider
+
+        provider, cal_id, error = await _get_calendar_provider(
+            db_session, auto_create_local=True
+        )
+        assert error is None
+        assert isinstance(provider, LocalCalendarProvider)
+        assert cal_id and cal_id != "primary"
+
+    @pytest.mark.asyncio
+    async def test_lecture_sans_calendrier_message_honnete(self, db_session):
+        """Lecture sans aucun calendrier : message honnête proposant le local,
+        sans prétendre que Gmail est obligatoire."""
+        from app.services.workspace_tools import _get_calendar_provider
+
+        provider, cal_id, error = await _get_calendar_provider(db_session)
+        assert provider is None and cal_id is None
+        assert error is not None
+        assert "local" in error.lower()
+        assert "necessite un compte gmail" not in error.lower()
+
+    @pytest.mark.asyncio
+    async def test_create_event_sans_google_utilise_le_calendrier_local(self, db_session):
+        """Créer un événement depuis le chat amorce et utilise le calendrier local."""
+        from sqlalchemy import select
+
+        from app.models.entities import Calendar
+        from app.services.workspace_tools import execute_workspace_tool
+
+        result = await execute_workspace_tool(
+            "create_calendar_event",
+            {
+                "summary": "Point hebdo",
+                "start": "2026-07-13T09:00:00",
+                "end": "2026-07-13T10:00:00",
+            },
+            db_session,
+        )
+
+        assert "compte Google" not in result
+        assert "cree" in result.lower() or "créé" in result.lower()
+
+        cals = (
+            await db_session.execute(select(Calendar).where(Calendar.provider == "local"))
+        ).scalars().all()
+        assert len(cals) >= 1
+
+
 # ============================================================
 # RAG JURIDIQUE : corpus de références légales vérifiées (Légifrance)
 # Ancre les réponses juridiques sur des références à jour au lieu de la mémoire
