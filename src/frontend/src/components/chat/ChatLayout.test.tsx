@@ -125,4 +125,15 @@ describe('ChatLayout', () => {
     // La vue Documents (lazy, mockée) est bien rendue dans la zone principale.
     expect(await screen.findByTestId('documents-list-view')).toBeInTheDocument();
   });
+
+  it('BUG-116 : la back-bar affiche Retour quand elle revient à la vue précédente', async () => {
+    render(<ChatLayout />);
+
+    act(() => {
+      useNavigationStore.setState({ activeView: 'email' });
+    });
+
+    expect(await screen.findByRole('button', { name: 'Retour' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retour au chat' })).not.toBeInTheDocument();
+  });
 });

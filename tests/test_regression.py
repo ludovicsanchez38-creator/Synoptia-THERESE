@@ -26,6 +26,17 @@ FRONTEND = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src"
 API_CORE_TS = FRONTEND / "services" / "api" / "core.ts"
 
 
+class TestBUG116_LibelleRetourChat:
+    """BUG-116 : la back-bar doit décrire un retour, pas promettre le chat."""
+
+    def test_back_bar_ne_parle_plus_de_chat(self):
+        src = Path("src/frontend/src/components/chat/ChatLayout.tsx").read_text(
+            encoding="utf-8"
+        )
+        assert 'aria-label="Retour au chat"' not in src
+        assert '<ArrowLeft className="w-4 h-4" /> Retour' in src
+
+
 class TestBUG110_UpdateBloquee:
     """BUG-110 : Mise à jour auto bloquée depuis v0.24.3
 
