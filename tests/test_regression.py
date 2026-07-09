@@ -7026,6 +7026,63 @@ class TestBUG133_ChatCalendarLocalFallback:
         assert len(cals) >= 1
 
 
+class TestGmailChatProviderRegression:
+    """Branche gmail de _get_calendar_provider / _get_email_provider.
+
+    ensure_valid_access_token renvoie le token DÉCHIFFRÉ (str). Le code
+    réassignait `account` à ce token puis lisait `account.access_token`
+    (AttributeError sur str) : outils chat email + calendrier cassés pour tout
+    compte Google. Révélé par la revue adversariale de BUG-133 (branche gmail
+    sans couverture de test). Verrou de non-régression.
+    """
+
+    @pytest.mark.asyncio
+    async def test_calendar_provider_gmail_construit_sans_attribute_error(
+        self, db_session, monkeypatch
+    ):
+        from app.models.entities import EmailAccount
+        from app.services import workspace_tools
+        from app.services.calendar.google_provider import GoogleCalendarProvider
+
+        db_session.add(
+            EmailAccount(email="g@gmail.com", provider="gmail", access_token="enc")
+        )
+        await db_session.commit()
+
+        async def fake_ensure(account, session):
+            # renvoie un token déjà déchiffré, comme la vraie fonction
+            return "ya29.token-en-clair"
+
+        monkeypatch.setattr("app.routers.email.ensure_valid_access_token", fake_ensure)
+
+        provider, cal_id, error = await workspace_tools._get_calendar_provider(db_session)
+        assert error is None
+        assert cal_id == "primary"
+        assert isinstance(provider, GoogleCalendarProvider)
+
+    @pytest.mark.asyncio
+    async def test_email_provider_gmail_construit_sans_attribute_error(
+        self, db_session, monkeypatch
+    ):
+        from app.models.entities import EmailAccount
+        from app.services import workspace_tools
+        from app.services.email.gmail_provider import GmailProvider
+
+        db_session.add(
+            EmailAccount(email="g2@gmail.com", provider="gmail", access_token="enc")
+        )
+        await db_session.commit()
+
+        async def fake_ensure(account, session):
+            return "ya29.token-en-clair"
+
+        monkeypatch.setattr("app.routers.email.ensure_valid_access_token", fake_ensure)
+
+        provider, error = await workspace_tools._get_email_provider(db_session)
+        assert error is None
+        assert isinstance(provider, GmailProvider)
+
+
 # ============================================================
 # RAG JURIDIQUE : corpus de références légales vérifiées (Légifrance)
 # Ancre les réponses juridiques sur des références à jour au lieu de la mémoire

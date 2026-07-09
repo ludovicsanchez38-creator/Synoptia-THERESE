@@ -333,8 +333,9 @@ async def _get_email_provider(session: AsyncSession):
         return None, "Aucun compte email connecte. Configure ton email dans les parametres."
 
     if account.provider == "gmail":
-        account = await ensure_valid_access_token(account, session)
-        access_token = decrypt_value(account.access_token)
+        # ensure_valid_access_token renvoie déjà le token DÉCHIFFRÉ (str).
+        # Ne pas réassigner `account` ni redéchiffrer (AttributeError sinon).
+        access_token = await ensure_valid_access_token(account, session)
         provider = get_email_provider("gmail", access_token=access_token)
     elif account.provider == "imap":
         provider = get_email_provider(
@@ -366,15 +367,15 @@ async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool 
     from app.routers.email import ensure_valid_access_token
     from app.services.calendar.google_provider import GoogleCalendarProvider
     from app.services.calendar.local_provider import LocalCalendarProvider
-    from app.services.encryption import decrypt_value
 
     result = await session.execute(
         select(EmailAccount).where(EmailAccount.provider == "gmail").limit(1)
     )
     account = result.scalar_one_or_none()
     if account:
-        account = await ensure_valid_access_token(account, session)
-        access_token = decrypt_value(account.access_token)
+        # ensure_valid_access_token renvoie déjà le token DÉCHIFFRÉ (str).
+        # Ne pas réassigner `account` ni redéchiffrer (AttributeError sinon).
+        access_token = await ensure_valid_access_token(account, session)
         return GoogleCalendarProvider(access_token=access_token), "primary", None
 
     # BUG-133 : repli sur le calendrier local, sans dependance Google.
