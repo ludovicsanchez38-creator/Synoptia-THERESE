@@ -16,7 +16,7 @@ import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, Image as ImageIcon, Cpu, Cloud } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, FileDown, Image as ImageIcon, Cpu, Cloud } from 'lucide-react';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -34,7 +34,7 @@ SyntaxHighlighter.registerLanguage('markup', xml);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 SyntaxHighlighter.registerLanguage('yml', yaml);
 SyntaxHighlighter.registerLanguage('sql', sql);
-import { downloadGeneratedImage, getImageDownloadUrl } from '../../services/api';
+import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
@@ -126,6 +126,7 @@ export const MessageBubble = memo(function MessageBubble({
   const isImage = !!message.imageId;
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [skillDownloading, setSkillDownloading] = useState(false);
 
   const copyToClipboard = useCallback(async () => {
     if (isImage && message.imageId) {
@@ -159,6 +160,20 @@ export const MessageBubble = memo(function MessageBubble({
       setDownloading(false);
     }
   }, [message.imageId]);
+
+  // BUG-131 : téléchargement réel du fichier généré par un skill (URL absolue
+  // + save natif via downloadSkillFile), au lieu d'un lien markdown relatif.
+  const handleSkillFileDownload = useCallback(async () => {
+    if (!message.skillFile) return;
+    setSkillDownloading(true);
+    try {
+      await downloadSkillFile(message.skillFile.file_id, message.skillFile.file_name);
+    } catch (err) {
+      console.error('Skill file download failed:', err);
+    } finally {
+      setSkillDownloading(false);
+    }
+  }, [message.skillFile]);
 
 
   return (
@@ -390,6 +405,29 @@ export const MessageBubble = memo(function MessageBubble({
           </ReactMarkdown>
           )}
         </div>
+
+        {/* BUG-131 : fichier généré par un skill -> vrai bouton de téléchargement */}
+        {message.skillFile && !message.isStreaming && (
+          <button
+            type="button"
+            onClick={handleSkillFileDownload}
+            disabled={skillDownloading}
+            className={cn(
+              'mt-3 flex items-center gap-2.5 px-3 py-2 rounded-lg w-full max-w-sm text-left',
+              'bg-surface/60 border border-border hover:border-accent-cyan/50 transition-all',
+              skillDownloading && 'opacity-60 cursor-wait'
+            )}
+            title={`Télécharger ${message.skillFile.file_name}`}
+          >
+            <FileDown
+              className={cn('w-4 h-4 text-accent-cyan shrink-0', skillDownloading && 'animate-pulse')}
+            />
+            <span className="text-sm text-text truncate">{message.skillFile.file_name}</span>
+            <span className="text-xs text-text-muted ml-auto shrink-0">
+              {skillDownloading ? 'Téléchargement…' : 'Télécharger'}
+            </span>
+          </button>
+        )}
 
         {/* Streaming cursor indicator */}
         {message.isStreaming && (

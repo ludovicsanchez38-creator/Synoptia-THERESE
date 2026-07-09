@@ -76,6 +76,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     updateMessage,
     setMessageEntities,
     setMessageMetadata,
+    setMessageSkillFile,
     setStreaming,
     isStreaming,
     currentConversationId,
@@ -442,7 +443,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           // Entities detected - attach to the assistant message
           setMessageEntities(assistantMessageId, chunk.entities);
         } else if (chunk.type === 'skill_file' && chunk.skill_file) {
-          // BUG-093 : Fichier généré automatiquement par un skill détecté
+          // BUG-093 : Fichier généré automatiquement par un skill détecté.
+          // BUG-131 : on attache le fichier au message (bouton de téléchargement
+          // réel via downloadSkillFile) au lieu d'un lien markdown avec une URL
+          // relative `/api/skills/download/...`, morte dans l'app desktop Tauri.
           const sf = chunk.skill_file as {
             skill_id: string;
             file_id: string;
@@ -451,11 +455,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             download_url: string;
             format: string;
           };
-          // Ajouter un message avec le lien de téléchargement
-          const downloadMsg = `\n\n📎 **${sf.file_name}** généré — [Télécharger](${sf.download_url})`;
-          accumulatedContent += downloadMsg;
-          pendingChunk += downloadMsg;
-          flushToDisplay();
+          setMessageSkillFile(assistantMessageId, {
+            skill_id: sf.skill_id,
+            file_id: sf.file_id,
+            file_name: sf.file_name,
+            file_size: sf.file_size,
+            format: sf.format,
+          });
         } else if (chunk.type === 'confirmation_required' && chunk.confirmation) {
           // US-002 : action sensible (envoi d'email) en attente de validation.
           // On affiche une carte de confirmation ; rien n'est exécuté sans clic.
@@ -513,7 +519,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
+  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {

@@ -6,10 +6,17 @@
  * MessageBubble était cassé par la prop onSaveAsCommand recréée à chaque
  * rendu (closure inline dans MessageList).
  */
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { MessageBubble, arePropsEqual } from './MessageBubble';
 import type { Message } from '../../stores/chatStore';
+
+const { downloadSkillFileMock } = vi.hoisted(() => ({ downloadSkillFileMock: vi.fn() }));
+
+vi.mock('../../services/api', async () => {
+  const actual = await vi.importActual<typeof import('../../services/api')>('../../services/api');
+  return { ...actual, downloadSkillFile: downloadSkillFileMock };
+});
 
 function makeMessage(over: Partial<Message> = {}): Message {
   return {
@@ -41,6 +48,41 @@ describe('MessageBubble - tableaux GFM (US-010)', () => {
     render(<MessageBubble message={makeMessage({ content: 'prix ~~2990~~ 2490' })} />);
     const del = document.querySelector('del');
     expect(del?.textContent).toBe('2990');
+  });
+});
+
+describe('MessageBubble - BUG-131 fichier de skill (bouton de téléchargement réel)', () => {
+  beforeEach(() => {
+    downloadSkillFileMock.mockClear();
+    downloadSkillFileMock.mockResolvedValue(undefined);
+  });
+
+  const skillMsg = makeMessage({
+    content: 'Voici votre présentation.',
+    skillFile: {
+      skill_id: 'pptx-pro',
+      file_id: '8d9226e6-690f-43bd-9623-a18e88a8e297',
+      file_name: 'Presentation-Therese.pptx',
+      file_size: 12345,
+      format: 'pptx',
+    },
+  });
+
+  it('affiche un bouton de téléchargement avec le nom du fichier, sans lien relatif mort', () => {
+    render(<MessageBubble message={skillMsg} />);
+    expect(screen.getByText('Presentation-Therese.pptx')).toBeTruthy();
+    expect(screen.getByText('Télécharger')).toBeTruthy();
+    // L'ancien lien markdown vers l'URL relative /api/skills/download/... ne doit plus exister.
+    expect(document.querySelector('a[href*="/api/skills/download/"]')).toBeNull();
+  });
+
+  it('clic -> downloadSkillFile(file_id, file_name)', () => {
+    render(<MessageBubble message={skillMsg} />);
+    fireEvent.click(screen.getByTitle(/Télécharger Presentation-Therese\.pptx/i));
+    expect(downloadSkillFileMock).toHaveBeenCalledWith(
+      '8d9226e6-690f-43bd-9623-a18e88a8e297',
+      'Presentation-Therese.pptx'
+    );
   });
 });
 
