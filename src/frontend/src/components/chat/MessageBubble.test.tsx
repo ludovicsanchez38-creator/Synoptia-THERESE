@@ -86,6 +86,72 @@ describe('MessageBubble - BUG-131 fichier de skill (bouton de téléchargement r
   });
 });
 
+describe('MessageBubble - BUG-130 code du générateur masqué quand un fichier est produit', () => {
+  const codeMsg = makeMessage({
+    content: [
+      'Voici le tableau demandé.',
+      '',
+      '```python',
+      'from openpyxl import Workbook',
+      'wb = Workbook()',
+      'ws = wb.active',
+      'ws.append(["Offre", "Prix"])',
+      'wb.save("offres.xlsx")',
+      '```',
+      '',
+      'Bonne journée.',
+    ].join('\n'),
+    skillFile: {
+      skill_id: 'xlsx-pro',
+      file_id: 'abc-123',
+      file_name: 'Offres.xlsx',
+      file_size: 4917,
+      format: 'xlsx',
+    },
+  });
+
+  it('masque le mur de code openpyxl mais garde la prose et le bouton', () => {
+    render(<MessageBubble message={codeMsg} />);
+    // Le mur de code du générateur ne doit plus s'afficher.
+    expect(document.body.textContent).not.toContain('openpyxl');
+    expect(document.body.textContent).not.toContain('wb.save');
+    // La prose du modèle, elle, reste visible.
+    expect(screen.getByText(/Voici le tableau demandé/)).toBeTruthy();
+    expect(screen.getByText(/Bonne journée/)).toBeTruthy();
+    // Le bouton de téléchargement porte le fichier généré.
+    expect(screen.getByText('Offres.xlsx')).toBeTruthy();
+    expect(screen.getByText('Télécharger')).toBeTruthy();
+  });
+
+  it('code seul (sans prose) -> message de repli au lieu du code brut', () => {
+    const codeOnly = makeMessage({
+      content: '```python\nfrom openpyxl import Workbook\nwb = Workbook()\nwb.save("x.xlsx")\n```',
+      skillFile: {
+        skill_id: 'xlsx-pro',
+        file_id: 'def-456',
+        file_name: 'Donnees.xlsx',
+        file_size: 1234,
+        format: 'xlsx',
+      },
+    });
+    render(<MessageBubble message={codeOnly} />);
+    expect(document.body.textContent).not.toContain('openpyxl');
+    expect(screen.getByText('Voici ton fichier.')).toBeTruthy();
+    expect(screen.getByText('Donnees.xlsx')).toBeTruthy();
+  });
+
+  it('pendant le streaming, le code reste visible (retour de progression)', () => {
+    const streaming = makeMessage({
+      content: '```python\nfrom openpyxl import Workbook',
+      isStreaming: true,
+    });
+    render(<MessageBubble message={streaming} />);
+    // Le fichier n'est pas encore produit : on ne masque rien, l'utilisateur
+    // voit la génération avancer.
+    expect(document.body.textContent).toContain('openpyxl');
+  });
+});
+
 describe('MessageBubble - comparateur memo (US-010)', () => {
   const msg = makeMessage();
 

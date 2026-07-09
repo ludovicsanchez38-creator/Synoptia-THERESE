@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 // US-010 : sans remark-gfm, react-markdown ne parse pas les tableaux GFM
@@ -174,6 +174,22 @@ export const MessageBubble = memo(function MessageBubble({
       setSkillDownloading(false);
     }
   }, [message.skillFile]);
+
+  // BUG-130 : quand un fichier a été généré, le contenu du message est le code
+  // brut du générateur (```python ... ``` openpyxl/python-docx/pptx) streamé par
+  // le modèle. Le fichier est déjà produit côté backend (auto-exécution du skill)
+  // et porté par le bouton de téléchargement -> on masque ce mur de code, on ne
+  // garde que la prose éventuelle du modèle (« Voici le tableau demandé »).
+  const displayContent = useMemo(() => {
+    if (!message.skillFile || message.isStreaming) return message.content;
+    const stripped = message.content
+      // blocs de code fermés (```lang ... ```)
+      .replace(/```[\w-]*\n?[\s\S]*?```/g, '')
+      // bloc de code ouvert non fermé (réponse tronquée par max_tokens)
+      .replace(/```[\w-]*\n?[\s\S]*$/g, '')
+      .trim();
+    return stripped || 'Voici ton fichier.';
+  }, [message.content, message.skillFile, message.isStreaming]);
 
 
   return (
@@ -401,7 +417,7 @@ export const MessageBubble = memo(function MessageBubble({
               },
             }}
           >
-            {message.content}
+            {displayContent}
           </ReactMarkdown>
           )}
         </div>
