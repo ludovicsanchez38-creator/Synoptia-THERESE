@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, Mail, TrendingUp, GripVertical } from 'lucide-react';
+import { User, Building2, Mail, TrendingUp, GripVertical, HelpCircle } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -269,10 +269,17 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
 
         {/* Score */}
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-surface">
-          <div className="flex items-center gap-1 text-xs">
+          <div
+            className="flex items-center gap-1 text-xs"
+            title="Score de potentiel commercial de 0 à 100, calculé depuis le profil et l'activité du contact. Plus il est haut, plus le prospect est chaud."
+          >
             <TrendingUp className="w-3 h-3 text-accent-cyan" />
             <span className="text-text-muted">Score:</span>
             <span className="font-semibold text-accent-cyan">{contact.score}</span>
+            <HelpCircle
+              className="w-3 h-3 text-text-muted"
+              aria-label="Score de potentiel commercial de 0 à 100, calculé depuis le profil et l'activité du contact. Plus il est haut, plus le prospect est chaud."
+            />
           </div>
 
           {contact.source && (
