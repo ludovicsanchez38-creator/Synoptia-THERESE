@@ -21,6 +21,17 @@ export interface MessageUncertainty {
   uncertainty_phrases: string[];
 }
 
+// BUG-131 : fichier généré par un skill (ex. « Produire un document »),
+// attaché au message pour un vrai bouton de téléchargement (le lien markdown
+// relatif `/api/skills/download/...` était mort dans l'app desktop Tauri).
+export interface MessageSkillFile {
+  skill_id: string;
+  file_id: string;
+  file_name: string;
+  file_size: number;
+  format: string;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -31,6 +42,7 @@ export interface Message {
   usage?: MessageUsage;
   uncertainty?: MessageUncertainty;
   imageId?: string;
+  skillFile?: MessageSkillFile;
   provider?: string; // P0-IA-3 : provider LLM (messages d'historique)
 }
 
@@ -65,6 +77,7 @@ interface ChatStore {
   setMessageEntities: (id: string, entities: DetectedEntities) => void;
   clearMessageEntities: (id: string) => void;
   setMessageMetadata: (id: string, usage?: MessageUsage, uncertainty?: MessageUncertainty) => void;
+  setMessageSkillFile: (id: string, skillFile: MessageSkillFile) => void;
   setStreaming: (isStreaming: boolean) => void;
   setQueuedPrompt: (prompt: string | null) => void;
   clearCurrentConversation: () => void;
@@ -263,6 +276,21 @@ export const useChatStore = create<ChatStore>()(
                           ...(uncertainty && { uncertainty }),
                         }
                       : m
+                  ),
+                }
+              : c
+          ),
+        }));
+      },
+
+      setMessageSkillFile: (id, skillFile) => {
+        set((state) => ({
+          conversations: state.conversations.map((c) =>
+            c.messages.some((m) => m.id === id)
+              ? {
+                  ...c,
+                  messages: c.messages.map((m) =>
+                    m.id === id ? { ...m, skillFile } : m
                   ),
                 }
               : c
