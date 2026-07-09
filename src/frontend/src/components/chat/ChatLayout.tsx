@@ -235,9 +235,9 @@ export function ChatLayout() {
               <button
                 onClick={goBack}
                 className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
-                aria-label="Retour au chat"
+                aria-label="Retour"
               >
-                <ArrowLeft className="w-4 h-4" /> Chat
+                <ArrowLeft className="w-4 h-4" /> Retour
               </button>
             </div>
             <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-text-muted text-sm">Chargement...</div></div>}>

@@ -266,7 +266,7 @@ export function ServicesTab({
             <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline">
               console.groq.com
             </a>
-            {' '}- Gratuit, rapide
+            {' '}- gratuit jusqu'à un certain volume, puis payant
           </p>
         </div>
       </div>
