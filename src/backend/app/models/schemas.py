@@ -342,6 +342,7 @@ class MessageResponse(BaseModel):
     tokens_out: int | None
     model: str | None
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
+    extra_data: str | None = None  # BUG-130 : JSON {skill_file: {...}} pour restaurer le fichier généré
     created_at: datetime
 
 

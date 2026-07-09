@@ -6586,6 +6586,84 @@ class TestP0IA3_ProviderBadge:
 
 
 # ============================================================
+# BUG-130 : persistance du fichier de skill sur le message
+# Le fichier généré en chat libre (auto-exec skill) survit sur disque, mais son
+# lien (skillFile) était éphémère (événement SSE non persisté) -> au rechargement
+# d'une conversation, l'ancien message réaffichait le code brut sans bouton.
+# On persiste le skill_file dans extra_data (JSON) et on l'expose dans l'historique.
+# ============================================================
+
+
+class TestBUG130_SkillFilePersistence:
+    """Le fichier de skill doit être persisté sur le message et restauré."""
+
+    @pytest.mark.asyncio
+    async def test_skill_file_roundtrips_in_history(self, client, db_session):
+        """extra_data {skill_file} persiste et revient dans l'historique."""
+        import json as _json
+
+        from app.models.entities import Conversation, Message
+
+        conv = Conversation(title="Test skill file")
+        db_session.add(conv)
+        await db_session.commit()
+
+        skill_file = {
+            "skill_id": "xlsx-pro",
+            "file_id": "abc-12345678",
+            "file_name": "Offres.xlsx",
+            "file_size": 4917,
+            "download_url": "/api/skills/download/abc-12345678",
+            "format": "xlsx",
+        }
+        db_session.add(
+            Message(
+                conversation_id=conv.id,
+                role="assistant",
+                content="```python\nwb.save(output_path)\n```",
+                model="claude",
+                provider="anthropic",
+                extra_data=_json.dumps({"skill_file": skill_file}),
+            )
+        )
+        await db_session.commit()
+
+        resp = await client.get(f"/api/chat/conversations/{conv.id}/messages")
+        assert resp.status_code == 200, resp.text
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["extra_data"], "extra_data doit être exposé dans l'historique"
+        restored = _json.loads(data[0]["extra_data"])
+        assert restored["skill_file"]["file_id"] == "abc-12345678"
+        assert restored["skill_file"]["file_name"] == "Offres.xlsx"
+        assert restored["skill_file"]["format"] == "xlsx"
+
+    def test_main_auto_migration_adds_extra_data_column(self):
+        """La migration auto desktop doit ajouter extra_data à la table messages
+        (sinon le commit du fichier de skill casserait sur une base existante)."""
+        content = (SRC / "app" / "models" / "database.py").read_text(encoding="utf-8")
+        assert "ALTER TABLE messages ADD COLUMN extra_data" in content
+
+    def test_chat_persists_skill_file_on_message(self):
+        """Le routeur chat doit écrire extra_data sur le message après auto-exec."""
+        content = (SRC / "app" / "routers" / "chat.py").read_text(encoding="utf-8")
+        assert "assistant_message.extra_data" in content, (
+            "chat.py doit persister le skill_file sur le message (BUG-130)"
+        )
+
+    def test_message_response_exposes_extra_data(self):
+        """get_conversation_messages doit renvoyer extra_data."""
+        content = (SRC / "app" / "routers" / "chat.py").read_text(encoding="utf-8")
+        assert "extra_data=msg.extra_data" in content
+
+    def test_frontend_restores_skill_file_from_extra_data(self):
+        """useConversationSync doit reconstruire skillFile depuis extra_data."""
+        content = (FRONTEND / "hooks" / "useConversationSync.ts").read_text(encoding="utf-8")
+        assert "formatMessageFromResponse" in content
+        assert "skill_file" in content, "le mapper doit lire extra_data.skill_file"
+
+
+# ============================================================
 # LOT M - P0-PROD-2 : profil émetteur + garde-fou avant facture
 # Constat C7 : factures/devis sans SIRET ni identité émetteur (P8, P10),
 # NDA d'OF inventé faute de profil (P7).

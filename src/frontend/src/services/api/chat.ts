@@ -110,6 +110,7 @@ export interface MessageResponse {
   tokens_out: number | null;
   model: string | null;
   provider?: string | null; // P0-IA-3 : badge local/cloud par message
+  extra_data?: string | null; // BUG-130 : JSON {skill_file: {...}} pour restaurer le fichier généré
   created_at: string;
 }
 

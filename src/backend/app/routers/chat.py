@@ -1267,20 +1267,30 @@ async def _do_stream_response(
                     full_content,
                 )
                 if result.success:
+                    skill_file_payload = {
+                        "skill_id": skill_id,
+                        "file_id": result.file_id,
+                        "file_name": result.file_name,
+                        "file_size": result.file_size,
+                        "download_url": result.download_url,
+                        "format": skill.output_format.value,
+                    }
                     skill_file_data = {
                         "type": "skill_file",
                         "content": f"Fichier {result.file_name} généré",
                         "conversation_id": conversation_id,
-                        "skill_file": {
-                            "skill_id": skill_id,
-                            "file_id": result.file_id,
-                            "file_name": result.file_name,
-                            "file_size": result.file_size,
-                            "download_url": result.download_url,
-                            "format": skill.output_format.value,
-                        },
+                        "skill_file": skill_file_payload,
                     }
                     yield f"data: {json.dumps(skill_file_data)}\n\n"
+                    # BUG-130 : persister le fichier sur le message pour le
+                    # restaurer au rechargement de la conversation (le fichier
+                    # lui-même survit sur disque, cf outputs/ + download par id).
+                    # Le contenu du message reste le code brut ; c'est le
+                    # frontend qui masque le code quand skillFile est présent.
+                    assistant_message.extra_data = json.dumps(
+                        {"skill_file": skill_file_payload}
+                    )
+                    await session.commit()
                     logger.info(f"Skill {skill_id} exécuté : {result.file_name}")
                 else:
                     logger.warning(f"Échec auto-exécution skill {skill_id}: {result.error}")
@@ -1875,6 +1885,7 @@ async def get_conversation_messages(
             tokens_out=msg.tokens_out,
             model=msg.model,
             provider=msg.provider,
+            extra_data=msg.extra_data,
             created_at=msg.created_at,
         )
         for msg in messages

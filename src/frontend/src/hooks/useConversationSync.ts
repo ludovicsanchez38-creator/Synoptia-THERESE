@@ -9,13 +9,43 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useChatStore } from '../stores/chatStore';
+import { useChatStore, type Message } from '../stores/chatStore';
 import {
   listConversations,
   getConversationMessages,
   type ConversationResponse,
   type MessageResponse,
 } from '../services/api';
+
+/**
+ * BUG-130 : reconstruit un message local depuis la réponse backend en
+ * restaurant le fichier de skill généré (extra_data JSON `{skill_file: {...}}`)
+ * et le provider (badge local/cloud). Sans cette restauration, au rechargement
+ * d'une conversation un ancien message de génération de fichier réafficherait
+ * le code brut du générateur, sans bouton de téléchargement. Le fichier lui-même
+ * survit sur disque (outputs/ + download par id), seul le lien était perdu.
+ */
+export function formatMessageFromResponse(msg: MessageResponse): Message {
+  let skillFile: Message['skillFile'] | undefined;
+  if (msg.extra_data) {
+    try {
+      const parsed = JSON.parse(msg.extra_data);
+      if (parsed && typeof parsed === 'object' && parsed.skill_file) {
+        skillFile = parsed.skill_file as Message['skillFile'];
+      }
+    } catch {
+      // extra_data non-JSON ou corrompu : on ignore, le message reste affichable.
+    }
+  }
+  return {
+    id: msg.id,
+    role: msg.role as 'user' | 'assistant' | 'system',
+    content: msg.content,
+    timestamp: new Date(msg.created_at),
+    ...(msg.provider ? { provider: msg.provider } : {}),
+    ...(skillFile ? { skillFile } : {}),
+  };
+}
 
 /**
  * Hook to sync conversations from backend on app startup.
@@ -78,13 +108,8 @@ export function useConversationSync() {
     try {
       const messages = await getConversationMessages(conversationId);
 
-      // Convert backend format to local format
-      const formattedMessages = messages.map((msg: MessageResponse) => ({
-        id: msg.id,
-        role: msg.role as 'user' | 'assistant' | 'system',
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-      }));
+      // Convert backend format to local format (restaure fichier de skill + provider)
+      const formattedMessages = messages.map(formatMessageFromResponse);
 
       // Update store with loaded messages
       setConversationMessages(conversationId, formattedMessages);

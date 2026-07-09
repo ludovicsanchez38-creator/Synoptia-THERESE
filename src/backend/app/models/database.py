@@ -108,6 +108,11 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("ALTER TABLE messages ADD COLUMN provider TEXT")
             conn.commit()
             logger.info("Migration auto : colonne 'provider' ajoutée à la table messages")
+        # BUG-130 : extra_data JSON par message (fichier de skill généré, à restaurer)
+        if msg_columns and "extra_data" not in msg_columns:
+            conn.execute("ALTER TABLE messages ADD COLUMN extra_data TEXT")
+            conn.commit()
+            logger.info("Migration auto : colonne 'extra_data' ajoutée à la table messages")
         # US-017 : purge_excluded sur contacts
         cursor = conn.execute("PRAGMA table_info(contacts)")
         contact_columns = [row[1] for row in cursor.fetchall()]
