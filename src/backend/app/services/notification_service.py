@@ -23,6 +23,15 @@ from sqlmodel import func, select
 logger = logging.getLogger(__name__)
 
 
+def _ensure_utc_aware(value: datetime | None) -> datetime | None:
+    """Normalise un datetime potentiellement naïf vers UTC aware."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 async def create_notification(
     session: AsyncSession,
     *,
@@ -120,7 +129,10 @@ async def _check_overdue_invoices(session: AsyncSession) -> int:
     invoices = result.scalars().all()
 
     for inv in invoices:
-        days_overdue = (datetime.now(UTC) - inv.due_date).days
+        due_date = _ensure_utc_aware(inv.due_date)
+        if due_date is None:
+            continue
+        days_overdue = (datetime.now(UTC) - due_date).days
         # Verifier quon na pas deja une notif recente pour cette facture
         existing = await session.execute(
             select(Notification).where(
@@ -161,7 +173,10 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
     contacts = result.scalars().all()
 
     for contact in contacts:
-        days_inactive = (datetime.now(UTC) - contact.last_interaction).days
+        last_interaction = _ensure_utc_aware(contact.last_interaction)
+        if last_interaction is None:
+            continue
+        days_inactive = (datetime.now(UTC) - last_interaction).days
         # Verifier quon na pas deja une notif recente pour ce contact
         existing = await session.execute(
             select(Notification).where(
@@ -202,7 +217,10 @@ async def _check_overdue_tasks(session: AsyncSession) -> int:
     tasks = result.scalars().all()
 
     for task in tasks:
-        days_overdue = (now - task.due_date).days
+        due_date = _ensure_utc_aware(task.due_date)
+        if due_date is None:
+            continue
+        days_overdue = (now - due_date).days
         # Verifier quon na pas deja une notif recente pour cette tache
         existing = await session.execute(
             select(Notification).where(

@@ -7891,3 +7891,33 @@ class TestVoiceLocalOption:
             content = f.read().lower()
         assert "ram" in content
         assert "faster-whisper" in content and "piper" in content
+
+
+class TestBUG126_NotificationsDatetimeNaiveAware:
+    """BUG-126 : la génération de notifications doit tolérer les datetimes naïfs."""
+
+    @pytest.mark.asyncio
+    async def test_tache_en_retard_accepte_une_due_date_naive(self, db_session):
+        from datetime import datetime, timedelta
+
+        from app.models.entities import Notification, Task
+        from app.services.notification_service import _check_overdue_tasks
+        from sqlmodel import select
+
+        task = Task(
+            title="Agent codeur",
+            status="todo",
+            due_date=datetime.now() - timedelta(days=2),
+        )
+        db_session.add(task)
+        await db_session.commit()
+
+        count = await _check_overdue_tasks(db_session)
+
+        assert count == 1
+        result = await db_session.execute(
+            select(Notification).where(Notification.action_url == f"/tasks/{task.id}")
+        )
+        notif = result.scalar_one_or_none()
+        assert notif is not None
+        assert notif.title == "Tache en retard"
