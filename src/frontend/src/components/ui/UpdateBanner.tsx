@@ -14,6 +14,7 @@ type UpdateState =
   | { phase: 'available'; version: string; body: string }
   | { phase: 'downloading'; version: string; progress: number }
   | { phase: 'ready'; version: string }
+  | { phase: 'restart-required'; version: string }
   | { phase: 'error'; message: string };
 
 /**
@@ -146,27 +147,25 @@ export function UpdateBanner() {
     }
   }, []);
 
-  const handleRestart = useCallback(async () => {
+  const handleRestart = useCallback(async (version: string) => {
     try {
       // Attendre un peu avant le redémarrage pour laisser le temps aux processus de finir
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const { relaunch } = await import('@tauri-apps/plugin-process');
       await relaunch();
-      
+
     } catch (relaunchError) {
       console.error('[UpdateBanner] Erreur relaunch:', relaunchError);
-      
-      // Fallback : demander un redémarrage manuel avec instructions
-      const isWindows = navigator.platform.toLowerCase().includes('win');
-      const restartInstructions = isWindows
-        ? 'Fermez THÉRÈSE et relancez-la depuis le menu Démarrer ou le raccourci bureau.'
-        : 'Fermez THÉRÈSE et relancez-la depuis le Dock ou Applications.';
-        
-      setState({
-        phase: 'error',
-        message: `Impossible de redémarrer automatiquement. ${restartInstructions}`,
-      });
+
+      // BUG-128 : à ce stade la mise à jour EST déjà téléchargée/installée
+      // (on venait de la phase « ready ») ; seul le redémarrage automatique n'a
+      // pas pu se déclencher. Sous Windows l'installeur NSIS passif (« /P /R »)
+      // gère lui-même le restart et le process est en cours d'arrêt quand
+      // relaunch() est appelé, ce qui fait légitimement échouer l'appel. Ce
+      // n'est donc pas une erreur de mise à jour : on informe calmement et on
+      // propose un redémarrage manuel plutôt qu'une alerte magenta trompeuse.
+      setState({ phase: 'restart-required', version });
     }
   }, []);
   
@@ -238,7 +237,7 @@ export function UpdateBanner() {
             Mise à jour <strong className="text-accent-cyan">v{state.version}</strong> prête
           </span>
           <button
-            onClick={handleRestart}
+            onClick={() => handleRestart(state.version)}
             data-testid="update-restart-btn"
             className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
             style={{
@@ -254,6 +253,34 @@ export function UpdateBanner() {
             }}
           >
             Redémarrer pour installer
+          </button>
+        </>
+      )}
+
+      {state.phase === 'restart-required' && (
+        <>
+          <RefreshCw size={16} className="text-accent-cyan shrink-0" />
+          <span className="text-text">
+            Mise à jour <strong className="text-accent-cyan">v{state.version}</strong> installée.
+            {' '}Ferme et rouvre THÉRÈSE pour l'appliquer.
+          </span>
+          <button
+            onClick={() => handleRestart(state.version)}
+            data-testid="update-restart-retry-btn"
+            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            style={{
+              background: 'rgba(34, 211, 238, 0.2)',
+              color: '#22D3EE',
+              border: '1px solid rgba(34, 211, 238, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(34, 211, 238, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(34, 211, 238, 0.2)';
+            }}
+          >
+            Réessayer
           </button>
         </>
       )}
