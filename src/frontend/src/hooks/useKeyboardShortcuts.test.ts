@@ -71,6 +71,34 @@ describe('useKeyboardShortcuts', () => {
     });
   });
 
+  // Verrou anti-régression du bug testeur « Ctrl+K inopérant sous Windows » :
+  // en environnement non-Mac (jsdom), le modificateur est ctrlKey seul, sans
+  // metaKey. La palette doit s'ouvrir.
+  describe('Ctrl+K sous Windows/Linux (ctrlKey seul, sans metaKey)', () => {
+    it('should call onCommandPalette when Ctrl+K pressed without meta', () => {
+      const onCommandPalette = vi.fn();
+
+      renderHook(() =>
+        useKeyboardShortcuts({
+          onCommandPalette,
+        })
+      );
+
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'k',
+            ctrlKey: true,
+            metaKey: false,
+            bubbles: true,
+          })
+        );
+      });
+
+      expect(onCommandPalette).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Cmd+N - New conversation', () => {
     it('should call onNewConversation when Cmd+N pressed', () => {
       const onNewConversation = vi.fn();
