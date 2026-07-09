@@ -58,6 +58,12 @@ export function VoiceLocalSection() {
     try {
       await setupVoiceLocal(model);
       await refresh();
+      // BUG-129 : activer la voix locale la met effectivement en usage pour le
+      // micro du chat. Sans ça, la préférence restait sur faux et Groq
+      // continuait d'être appelé malgré l'activation. Le toggle ci-dessous
+      // permet de repasser en transcription cloud si besoin.
+      setUseLocal(true);
+      setVoiceLocalPreferred(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Activation impossible');
     }
