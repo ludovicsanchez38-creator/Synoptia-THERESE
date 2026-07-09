@@ -353,23 +353,53 @@ async def _get_email_provider(session: AsyncSession):
     return provider, None
 
 
-async def _get_calendar_provider(session: AsyncSession):
-    """Retrieve Google Calendar provider using the email account token."""
-    from app.models.entities import EmailAccount
+async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool = False):
+    """Provider calendrier + id du calendrier a utiliser.
+
+    Priorite au compte Google (calendrier 'primary'). BUG-133 : sans compte
+    Google, on retombe sur le calendrier LOCAL (souverain) au lieu d'exiger Gmail
+    - le chat laissait croire a une absence de calendrier alors qu'un calendrier
+    local existait (ou pouvait etre cree). Retourne (provider, calendar_id, error).
+    `auto_create_local` cree le calendrier local s'il manque (a activer pour une
+    creation d'evenement, pas pour une simple lecture)."""
+    from app.models.entities import Calendar, EmailAccount, generate_uuid
     from app.routers.email import ensure_valid_access_token
     from app.services.calendar.google_provider import GoogleCalendarProvider
+    from app.services.calendar.local_provider import LocalCalendarProvider
     from app.services.encryption import decrypt_value
 
     result = await session.execute(
         select(EmailAccount).where(EmailAccount.provider == "gmail").limit(1)
     )
     account = result.scalar_one_or_none()
-    if not account:
-        return None, "Aucun compte Google connecte. Le calendrier necessite un compte Gmail."
+    if account:
+        account = await ensure_valid_access_token(account, session)
+        access_token = decrypt_value(account.access_token)
+        return GoogleCalendarProvider(access_token=access_token), "primary", None
 
-    account = await ensure_valid_access_token(account, session)
-    access_token = decrypt_value(account.access_token)
-    return GoogleCalendarProvider(access_token=access_token), None
+    # BUG-133 : repli sur le calendrier local, sans dependance Google.
+    local_result = await session.execute(
+        select(Calendar).where(Calendar.provider == "local").limit(1)
+    )
+    cal = local_result.scalar_one_or_none()
+    if cal is None:
+        if not auto_create_local:
+            return (
+                None,
+                None,
+                "Aucun calendrier configure. Connecte un compte Google, ou cree un "
+                "calendrier local depuis le panneau Calendrier.",
+            )
+        cal = Calendar(
+            id=generate_uuid(),
+            summary="Mon calendrier",
+            provider="local",
+            timezone="Europe/Paris",
+        )
+        session.add(cal)
+        await session.flush()
+
+    return LocalCalendarProvider(session), cal.id, None
 
 
 async def _read_emails(args: dict, session: AsyncSession) -> str:
@@ -591,7 +621,7 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
     """List upcoming calendar events."""
     from datetime import datetime, timedelta, timezone
 
-    provider, error = await _get_calendar_provider(session)
+    provider, cal_id, error = await _get_calendar_provider(session)
     if error:
         # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
         # consigne directive pour qu'elle relaie l'absence au lieu de broder.
@@ -607,7 +637,7 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
 
     try:
         events, _ = await provider.list_events(
-            calendar_id="primary",
+            calendar_id=cal_id,
             time_min=now,
             time_max=time_max,
             max_results=50,
@@ -646,7 +676,8 @@ async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
 
     from app.services.calendar.base_provider import CreateEventRequest
 
-    provider, error = await _get_calendar_provider(session)
+    # BUG-133 : creer un evenement doit pouvoir amorcer un calendrier local.
+    provider, cal_id, error = await _get_calendar_provider(session, auto_create_local=True)
     if error:
         return error
 
@@ -669,7 +700,7 @@ async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
 
     try:
         request = CreateEventRequest(
-            calendar_id="primary",
+            calendar_id=cal_id,
             summary=summary,
             start=start,
             end=end,
