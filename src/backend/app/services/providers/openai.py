@@ -70,6 +70,18 @@ class OpenAIProvider(BaseProvider):
             request_body["tools"] = tools
             request_body["tool_choice"] = "auto"
 
+        # Effort de raisonnement - envoye SEULEMENT aux modeles verifies le
+        # 10/07/2026 : GPT-5.6 (none->max) et Grok 4.5 (low/medium/high,
+        # OpenAI-compatible via GrokProvider). Les 5.5/5.4 non sources = rien.
+        if self.config.effort:
+            model_lower = self.config.model.lower()
+            if model_lower.startswith("gpt-5.6"):
+                request_body["reasoning_effort"] = self.config.effort
+            elif model_lower.startswith("grok-4.5"):
+                request_body["reasoning_effort"] = (
+                    "high" if self.config.effort == "max" else self.config.effort
+                )
+
         return request_body
 
     async def stream(

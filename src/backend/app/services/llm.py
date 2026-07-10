@@ -398,12 +398,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # Read user-selected provider/model from preferences
         selected_provider = None
         selected_model = None
+        selected_effort = None
         try:
             from app.models.database import get_sync_connection
             from sqlalchemy import text
 
             with get_sync_connection() as conn:
-                for key in ("llm_provider", "llm_model"):
+                for key in ("llm_provider", "llm_model", "llm_effort"):
                     result = conn.execute(
                         text("SELECT value FROM preferences WHERE key = :key"),
                         {"key": key},
@@ -412,8 +413,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     if row and row[0]:
                         if key == "llm_provider":
                             selected_provider = row[0]
-                        else:
+                        elif key == "llm_model":
                             selected_model = row[0]
+                        elif row[0] in ("low", "medium", "high", "max"):
+                            selected_effort = row[0]
         except Exception as e:
             logger.warning(f"Could not read LLM preferences from DB: {e}")
 
@@ -443,7 +446,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 # modèle réellement installé plutôt que "mistral-nemo" codé en dur.
                 model = selected_model or detect_default_ollama_model()
                 logger.info(f"Ollama config: model={model} (selected={selected_model})")
-                return LLMConfig(provider_enum, model, base_url="http://localhost:11434", context_window=ctx_window)
+                return LLMConfig(provider_enum, model, base_url="http://localhost:11434", context_window=ctx_window, effort=selected_effort)
 
             api_key = _get_api_key_from_db(selected_provider)
             if not api_key:
@@ -461,7 +464,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 api_key = os.getenv(env_map.get(selected_provider, ""))
 
             if api_key:
-                return LLMConfig(provider_enum, model, api_key=api_key, context_window=ctx_window)
+                return LLMConfig(provider_enum, model, api_key=api_key, context_window=ctx_window, effort=selected_effort)
 
             logger.warning(f"Selected provider {selected_provider} has no API key, falling back")
 

@@ -1023,6 +1023,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         provider=config.provider.value,
         model=config.model,
         available_models=available_models,
+        effort=config.effort,
     )
 
 
@@ -1087,12 +1088,25 @@ async def set_llm_config(
         if pref and not api_key:
             api_key = _decrypt_pref_value(pref.value)
 
+    # Effort de raisonnement (10/07/2026) : None = conserver le reglage
+    # existant ; "auto" = defaut serveur (rien d'envoye, preference posee).
+    if request.effort is None:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "llm_effort")
+        )
+        pref_effort = result.scalar_one_or_none()
+        stored_effort = pref_effort.value if pref_effort else "auto"
+    else:
+        stored_effort = request.effort
+    effective_effort = None if stored_effort == "auto" else stored_effort
+
     # Create new config
     config = LLMConfig(
         provider=provider,
         model=request.model,
         api_key=api_key,
         base_url=base_url,
+        effort=effective_effort,
     )
 
     # Create new service with this config
@@ -1121,6 +1135,17 @@ async def set_llm_config(
         pref = Preference(key="llm_model", value=request.model, category="llm")
         session.add(pref)
 
+    result = await session.execute(
+        select(Preference).where(Preference.key == "llm_effort")
+    )
+    pref = result.scalar_one_or_none()
+    if pref:
+        pref.value = stored_effort
+        pref.updated_at = datetime.now(UTC)
+    else:
+        pref = Preference(key="llm_effort", value=stored_effort, category="llm")
+        session.add(pref)
+
     await session.commit()
 
     # Liste des modèles disponibles : même source que le GET (symétrie GET/POST,
@@ -1135,6 +1160,7 @@ async def set_llm_config(
         provider=request.provider,
         model=request.model,
         available_models=post_available_models,
+        effort=effective_effort,
     )
 
 

@@ -502,6 +502,9 @@ class LLMConfigUpdate(BaseModel):
 
     provider: Literal["anthropic", "openai", "gemini", "mistral", "grok", "openrouter", "ollama"]
     model: str
+    # Effort de raisonnement (10/07/2026) : auto = defaut serveur (rien
+    # d'envoye). None = ne pas toucher au reglage existant.
+    effort: Literal["auto", "low", "medium", "high", "max"] | None = None
 
 
 class LLMConfigResponse(BaseModel):
@@ -510,6 +513,7 @@ class LLMConfigResponse(BaseModel):
     provider: str
     model: str
     available_models: list[str] = []
+    effort: str | None = None  # Effort de raisonnement courant (None = Auto)
 
 
 class OllamaModelInfo(BaseModel):

@@ -35,6 +35,15 @@ _NO_SAMPLING_PREFIXES = (
     "claude-opus-4-8",
 )
 
+# Modeles qui acceptent output_config.effort (low/medium/high/max) - verifie
+# le 10/07/2026 : Fable 5, Sonnet 5/4.6, Opus 4.5+ ; Haiku 4.5 le REFUSE.
+_EFFORT_PREFIXES = (
+    "claude-fable-5",
+    "claude-sonnet-5",
+    "claude-sonnet-4-6",
+    "claude-opus-4-",
+)
+
 
 class AnthropicProvider(BaseProvider):
     """Anthropic Claude API provider."""
@@ -56,6 +65,8 @@ class AnthropicProvider(BaseProvider):
         }
         if not self.config.model.startswith(_NO_SAMPLING_PREFIXES):
             request_body["temperature"] = self.config.temperature
+        if self.config.effort and self.config.model.startswith(_EFFORT_PREFIXES):
+            request_body["output_config"] = {"effort": self.config.effort}
         if anthropic_tools:
             request_body["tools"] = anthropic_tools
         return request_body

@@ -166,6 +166,7 @@ export interface LLMConfig {
   provider: LLMProvider;
   model: string;
   available_models: string[];
+  effort?: string | null;
 }
 
 export interface OllamaModel {
@@ -186,13 +187,17 @@ export async function getLLMConfig(): Promise<LLMConfig> {
   return request<LLMConfig>('/api/config/llm');
 }
 
+export type LLMEffort = 'auto' | 'low' | 'medium' | 'high' | 'max';
+
 export async function setLLMConfig(
   provider: LLMProvider,
-  model: string
+  model: string,
+  effort?: LLMEffort
 ): Promise<LLMConfig> {
   return request<LLMConfig>('/api/config/llm', {
     method: 'POST',
-    body: JSON.stringify({ provider, model }),
+    // effort omis = conserver le reglage existant cote backend.
+    body: JSON.stringify(effort ? { provider, model, effort } : { provider, model }),
   });
 }
 

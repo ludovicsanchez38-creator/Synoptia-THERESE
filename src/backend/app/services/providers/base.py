@@ -43,6 +43,11 @@ class LLMConfig:
     context_window: int = 128000
     api_key: str | None = None
     base_url: str | None = None
+    # Effort de raisonnement (chantier 10/07/2026) : None = Auto (rien
+    # d'envoye, defaut serveur). Valeurs normalisees low/medium/high/max,
+    # traduites par provider et envoyees SEULEMENT aux modeles au support
+    # verifie (voir tests/test_provider_effort.py).
+    effort: str | None = None
 
 
 @dataclass

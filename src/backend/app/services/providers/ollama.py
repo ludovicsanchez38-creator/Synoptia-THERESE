@@ -31,31 +31,26 @@ _MODELS_WITHOUT_TOOLS: set[str] = set()
 # Sentinelle interne : « ce modèle ne supporte pas les tools, rejouer sans »
 _TOOLS_UNSUPPORTED = StreamEvent(type="error", content="__ollama_tools_unsupported__")
 
+# Chantier effort 10/07/2026 : modeles qui refusent le parametre think
+# (non-thinking). Meme pattern de degradation gracieuse que les tools,
+# mais silencieux (l'effort est une optimisation, pas une capacite).
+_MODELS_WITHOUT_THINK: set[str] = set()
+_THINK_UNSUPPORTED = StreamEvent(type="error", content="__ollama_think_unsupported__")
+
 
 class OllamaProvider(BaseProvider):
     """Local Ollama API provider."""
 
-    async def stream(
+    def _build_request_body(
         self,
         system_prompt: str | None,
-        messages: list[dict],
-        tools: list[dict] | None = None,
-    ) -> AsyncGenerator[StreamEvent, None]:
-        """Stream from local Ollama.
-
-        US-009 + revue adversariale : le chat fournit TOUJOURS des tools, mais
-        beaucoup de modèles Ollama (gemma3, deepseek-r1...) ne les supportent
-        pas et renvoient un 400 avant de streamer. Sans dégradation gracieuse,
-        le chat TEXTE devenait inutilisable sur ces modèles. Ici : 400
-        « does not support tools » -> on prévient une fois, on mémorise, et on
-        rejoue la requête SANS tools (le chat texte fonctionne).
-        """
-        base_url = (self.config.base_url or "http://localhost:11434").rstrip("/")
+        messages: list[dict[str, object]],
+        tools: list[dict[str, object]] | None = None,
+    ) -> dict[str, object]:
+        """Payload /api/chat. Le system prompt part en message role=system
+        (contrairement a /api/generate). Effort -> parametre think (plafonne
+        a high : « max » n'est pas standardise, gpt-oss le refuse)."""
         model = self.config.model
-
-        # Construire la liste de messages avec le system prompt en premier
-        # /api/chat attend le system prompt comme message role="system",
-        # pas comme champ top-level (contrairement à /api/generate)
         chat_messages: list[dict] = []
         if system_prompt:
             chat_messages.append({"role": "system", "content": system_prompt})
@@ -79,13 +74,53 @@ class OllamaProvider(BaseProvider):
         # US-009 : /api/chat accepte les tools au format OpenAI (type=function)
         if tools and model not in _MODELS_WITHOUT_TOOLS:
             request_body["tools"] = tools
+        if self.config.effort and model not in _MODELS_WITHOUT_THINK:
+            request_body["think"] = (
+                "high" if self.config.effort == "max" else self.config.effort
+            )
+        return request_body
+
+    async def stream(
+        self,
+        system_prompt: str | None,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """Stream from local Ollama.
+
+        US-009 + revue adversariale : le chat fournit TOUJOURS des tools, mais
+        beaucoup de modèles Ollama (gemma3, deepseek-r1...) ne les supportent
+        pas et renvoient un 400 avant de streamer. Sans dégradation gracieuse,
+        le chat TEXTE devenait inutilisable sur ces modèles. Ici : 400
+        « does not support tools » -> on prévient une fois, on mémorise, et on
+        rejoue la requête SANS tools (le chat texte fonctionne).
+        """
+        base_url = (self.config.base_url or "http://localhost:11434").rstrip("/")
+        model = self.config.model
+        request_body = self._build_request_body(system_prompt, messages, tools)
 
         tools_rejected = False
+        think_rejected = False
         async for event in self._stream_request(base_url, model, request_body):
             if event is _TOOLS_UNSUPPORTED:
                 tools_rejected = True
                 break
+            if event is _THINK_UNSUPPORTED:
+                think_rejected = True
+                break
             yield event
+
+        if think_rejected:
+            # Degradation SILENCIEUSE : le modele ne pense pas, on rejoue sans
+            # think et on memorise (l'effort est une optimisation, pas une
+            # capacite fonctionnelle - aucun message utilisateur).
+            _MODELS_WITHOUT_THINK.add(model)
+            request_body.pop("think", None)
+            async for event in self._stream_request(base_url, model, request_body):
+                if event is _TOOLS_UNSUPPORTED:
+                    tools_rejected = True
+                    break
+                yield event
 
         if not tools_rejected:
             return
@@ -149,6 +184,9 @@ class OllamaProvider(BaseProvider):
 
                     if "does not support tools" in detail.lower() and "tools" in request_body:
                         yield _TOOLS_UNSUPPORTED
+                        return
+                    if "does not support thinking" in detail.lower() and "think" in request_body:
+                        yield _THINK_UNSUPPORTED
                         return
                     if status == 404:
                         yield StreamEvent(

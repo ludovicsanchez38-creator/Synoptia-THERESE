@@ -1,10 +1,11 @@
 // Onglet configuration LLM - Paramètres THERESE
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import type { LLMEffort } from '../../services/api/config';
 
 // Configuration des providers LLM
 export interface ProviderConfig {
@@ -557,6 +558,11 @@ function ModelSelector({
         )}
       </select>
 
+      {/* Effort de raisonnement (10/07/2026) - applique uniquement aux
+          modeles au support verifie (Fable/Sonnet 5/4.6/Opus 4.5+, GPT-5.6,
+          Grok 4.5, Ollama thinking) ; Auto = defaut du serveur. */}
+      <EffortSelector selectedProvider={selectedProvider} selectedModel={selectedModel} />
+
       {/* Champ de saisie modèle personnalisé */}
       {showCustomInput && (
         <div className="space-y-2">
@@ -599,6 +605,83 @@ function ModelSelector({
           Modèle personnalisé actif : {selectedModel}
         </p>
       )}
+    </div>
+  );
+}
+
+
+const EFFORT_OPTIONS = [
+  { value: 'auto', label: 'Auto (défaut du modèle)' },
+  { value: 'low', label: 'Faible - rapide et économique' },
+  { value: 'medium', label: 'Moyen' },
+  { value: 'high', label: 'Élevé - raisonnement approfondi' },
+  { value: 'max', label: 'Maximal - le plus lent, le plus fiable' },
+] as const;
+
+function EffortSelector({
+  selectedProvider,
+  selectedModel,
+}: {
+  selectedProvider: string;
+  selectedModel: string;
+}) {
+  const [effort, setEffort] = useState<string>('auto');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getLLMConfig()
+      .then((cfg) => {
+        if (!cancelled) setEffort(cfg.effort || 'auto');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleChange(value: string) {
+    setEffort(value);
+    setSaving(true);
+    try {
+      await api.setLLMConfig(
+        selectedProvider as api.LLMProvider,
+        selectedModel,
+        value as LLMEffort
+      );
+    } catch (err) {
+      console.error('Effort non enregistré:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <label htmlFor="llm-effort" className="text-sm text-text-muted">
+          Effort de raisonnement
+        </label>
+        <p className="text-[11px] text-text-muted/70">
+          Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
+          modèles Ollama « thinking »). Auto laisse le modèle décider.
+        </p>
+      </div>
+      <select
+        id="llm-effort"
+        value={effort}
+        disabled={saving}
+        onChange={(e) => handleChange(e.target.value)}
+        className="px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-bg [&>option]:text-text"
+        style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
+      >
+        {EFFORT_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
