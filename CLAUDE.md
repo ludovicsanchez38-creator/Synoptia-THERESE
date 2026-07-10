@@ -92,6 +92,8 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.30.0-alpha RELEASÉE le 10/07/2026 soir (3e du jour)** : chantier 5 ExportProfile DOCX (profil configurable langue/polices/couleurs/marges, Réglages > Services - NB DataTab est un composant ORPHELIN découvert à cette occasion, candidat au nettoyage) + lot modèles (claude-fable-5, claude-sonnet-5, gpt-5.6-sol/terra/luna, grok-4.5 - ID AVEC POINT, mistral-medium-latest) + fix bug latent sampling Anthropic (temperature refusée par Fable 5/Sonnet 5/Opus 4.7-4.8 -> garde _NO_SAMPLING_PREFIXES). RESTE : mini-chantier effort (11/07, validé), chantiers 4 Variables et 3 Ollama (designs V2 prêts docs/plans/2026-07-10-chantiers-3-4-5-designs.md). Rapport docs/releases/v0.30.0-alpha.md.
+
 > **v0.29.0-alpha RELEASÉE le 10/07/2026** (programme suggestions : actions déterministes du chat `{action: ouvrir <vue>}` / `{action: produire docx|xlsx|pptx "sujet"}` / `{action: aide}` zéro-LLM pour le routage, fichiers générés visibles en direct (fix protocole SSE done/skill_file), puces ActionChips, menu / enrichi. Design chantier 2 : `docs/plans/2026-07-10-actions-deterministes-design.md`. Designs chantiers 3-4-5 EN ATTENTE DE GO : `docs/plans/2026-07-10-chantiers-3-4-5-designs.md`. Rapport `docs/releases/v0.29.0-alpha.md`).
 
 > **v0.28.3-alpha RELEASÉE le 10/07/2026** (bugs Discord du matin : BUG-135 export DOCX déterministe fr-FR, BUG-129 dictée tri-état, BUG-125 bloc Urgences date civile, BUG-134 toasts, + 3 durcissements revue Codex NO-GO->GO. BUG-113 explicitement OUVERT : infos demandées à Dr_logic, pas de purge NSIS spéculative. Rapport `docs/releases/v0.28.3-alpha.md` - gotchas pytest silencieux/os._exit + dupliqués macOS + invocation mypy CI dedans).
