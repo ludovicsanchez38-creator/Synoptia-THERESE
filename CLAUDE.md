@@ -92,6 +92,8 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.29.0-alpha RELEASÉE le 10/07/2026** (programme suggestions : actions déterministes du chat `{action: ouvrir <vue>}` / `{action: produire docx|xlsx|pptx "sujet"}` / `{action: aide}` zéro-LLM pour le routage, fichiers générés visibles en direct (fix protocole SSE done/skill_file), puces ActionChips, menu / enrichi. Design chantier 2 : `docs/plans/2026-07-10-actions-deterministes-design.md`. Designs chantiers 3-4-5 EN ATTENTE DE GO : `docs/plans/2026-07-10-chantiers-3-4-5-designs.md`. Rapport `docs/releases/v0.29.0-alpha.md`).
+
 > **v0.28.3-alpha RELEASÉE le 10/07/2026** (bugs Discord du matin : BUG-135 export DOCX déterministe fr-FR, BUG-129 dictée tri-état, BUG-125 bloc Urgences date civile, BUG-134 toasts, + 3 durcissements revue Codex NO-GO->GO. BUG-113 explicitement OUVERT : infos demandées à Dr_logic, pas de purge NSIS spéculative. Rapport `docs/releases/v0.28.3-alpha.md` - gotchas pytest silencieux/os._exit + dupliqués macOS + invocation mypy CI dedans).
 
 > **v0.28.2-alpha RELEASÉE le 09/07/2026** (7 bugs testeurs 116/117/118/119/126/128/129 restés pending après la 0.28.1, vérifiés dans le code + corrigés. Build 3 OS OK, landing + latest.json live (7 plateformes signées), Discord posté, app installée localement, Katia+Zézette à jour, rapport `docs/releases/v0.28.2-alpha.md`). Que des `fix`, PATCH. Seul point ouvert : **validation Windows réelle de l'auto-restart BUG-128** (le repli d'affichage est livré ; l'auto-restart lui-même non testable hors Windows).
