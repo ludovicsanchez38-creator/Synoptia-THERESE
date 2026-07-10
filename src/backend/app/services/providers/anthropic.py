@@ -25,8 +25,40 @@ ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
 
 
+# Familles de modèles qui REFUSENT les paramètres de sampling (temperature,
+# top_p, top_k -> 400 API). Vérifié le 10/07/2026 : Fable 5, Sonnet 5 et
+# Opus 4.7/4.8 les ont retirés ; Opus 4.6 / Sonnet 4.6 / Haiku les acceptent.
+_NO_SAMPLING_PREFIXES = (
+    "claude-fable-5",
+    "claude-sonnet-5",
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+)
+
+
 class AnthropicProvider(BaseProvider):
     """Anthropic Claude API provider."""
+
+    def _build_request_body(
+        self,
+        system_prompt: str | None,
+        messages: list[dict[str, Any]],
+        anthropic_tools: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        """Payload /v1/messages - `temperature` seulement sur les modèles qui
+        l'acceptent (les récents la refusent avec un 400, cf. _NO_SAMPLING)."""
+        request_body: dict[str, Any] = {
+            "model": self.config.model,
+            "max_tokens": self.config.max_tokens,
+            "system": system_prompt,
+            "messages": messages,
+            "stream": True,
+        }
+        if not self.config.model.startswith(_NO_SAMPLING_PREFIXES):
+            request_body["temperature"] = self.config.temperature
+        if anthropic_tools:
+            request_body["tools"] = anthropic_tools
+        return request_body
 
     def _convert_tools(self, tools: list[dict] | None) -> list[dict] | None:
         """Convert OpenAI-format tools to Anthropic format."""
@@ -51,18 +83,7 @@ class AnthropicProvider(BaseProvider):
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream from Anthropic Claude API with tool support."""
         anthropic_tools = self._convert_tools(tools)
-
-        request_body: dict[str, Any] = {
-            "model": self.config.model,
-            "max_tokens": self.config.max_tokens,
-            "temperature": self.config.temperature,
-            "system": system_prompt,
-            "messages": messages,
-            "stream": True,
-        }
-
-        if anthropic_tools:
-            request_body["tools"] = anthropic_tools
+        request_body = self._build_request_body(system_prompt, messages, anthropic_tools)
 
         try:
             async with self.client.stream(

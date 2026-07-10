@@ -26,22 +26,30 @@ export const PROVIDERS: ProviderConfig[] = [
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     models: [
+      // Fable 5 : modèle frontier Anthropic (1M contexte). Thinking toujours
+      // actif, paramètres de sampling refusés - géré côté provider backend.
+      { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Frontier' },
       { id: 'claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Flagship' },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
+      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Recommandé' },
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Équilibré' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
     ],
   },
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-5.5 series - Polyvalent et puissant',
+    description: 'GPT-5.6 (Sol, Terra, Luna) et 5.5 - Polyvalent et puissant',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
     models: [
+      // GPT-5.6 : GA du 09/07/2026 - trois variantes, six niveaux d'effort.
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', badge: 'Frontier' },
+      { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', badge: 'Équilibré' },
+      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', badge: 'Rapide' },
       { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Flagship' },
-      { id: 'gpt-5.4', name: 'GPT-5.4', badge: 'Équilibré' },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', badge: 'Rapide' },
+      { id: 'gpt-5.4', name: 'GPT-5.4' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini' },
       { id: 'gpt-5.3-codex', name: 'GPT-5.3 Codex', badge: 'Coding' },
       { id: 'gpt-5.5-pro', name: 'GPT-5.5 pro', badge: 'Raisonnement' },
     ],
@@ -66,21 +74,25 @@ export const PROVIDERS: ProviderConfig[] = [
     consoleUrl: 'https://console.mistral.ai/api-keys',
     models: [
       { id: 'mistral-large-latest', name: 'Mistral Large 3', badge: 'Flagship' },
+      // Medium 3.5 (avril 2026) : meilleur équilibre coût-performance Mistral.
+      { id: 'mistral-medium-latest', name: 'Mistral Medium 3.5', badge: 'Équilibré' },
+      { id: 'mistral-small-latest', name: 'Mistral Small 4', badge: 'Économique' },
       { id: 'mistral-large-2512', name: 'Mistral Large 3 (fixé)', badge: 'Stable' },
       { id: 'codestral-latest', name: 'Codestral', badge: 'Coding' },
       { id: 'devstral-small-latest', name: 'Devstral Small', badge: 'Dev' },
-      { id: 'mistral-small-latest', name: 'Mistral Small', badge: 'Économique' },
     ],
   },
   {
     id: 'grok',
     name: 'Grok (xAI)',
-    description: 'Grok 4.3 - le plus intelligent',
+    description: 'Grok 4.5 - co-développé avec Cursor, 500k contexte',
     keyPrefix: 'xai-',
     keyPlaceholder: 'xai-...',
     consoleUrl: 'https://console.x.ai',
     models: [
-      { id: 'grok-4.3', name: 'Grok 4.3', badge: 'Flagship' },
+      // ATTENTION : l'ID API est grok-4.5 avec un POINT (grok-4-5 -> 404).
+      { id: 'grok-4.5', name: 'Grok 4.5', badge: 'Flagship' },
+      { id: 'grok-4.3', name: 'Grok 4.3' },
       { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
       { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },
     ],
