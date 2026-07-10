@@ -29,6 +29,42 @@ function makeMessage(over: Partial<Message> = {}): Message {
   } as Message;
 }
 
+describe('Fichiers générés visibles (suggestion Dr_logic, 10/07)', () => {
+  const skillFile = {
+    skill_id: 'xlsx-pro',
+    file_id: 'f1',
+    file_name: 'scoring.xlsx',
+    file_size: 4917,
+    format: 'xlsx',
+    local_dir: '/Users/toto/.therese/outputs',
+  };
+
+  it('affiche un bloc « Fichier généré » avec nom et taille lisible', () => {
+    render(<MessageBubble message={makeMessage({ skillFile })} />);
+    expect(screen.getByText(/fichier généré/i)).toBeInTheDocument();
+    expect(screen.getByText('scoring.xlsx')).toBeInTheDocument();
+    expect(screen.getByText(/4,8 ?Ko/)).toBeInTheDocument();
+  });
+
+  it('propose « Afficher dans le dossier » quand le chemin local est connu', () => {
+    render(<MessageBubble message={makeMessage({ skillFile })} />);
+    expect(
+      screen.getByRole('button', { name: /afficher dans le dossier/i })
+    ).toBeInTheDocument();
+  });
+
+  it('sans chemin local (contexte web), pas de bouton dossier', () => {
+    render(
+      <MessageBubble
+        message={makeMessage({ skillFile: { ...skillFile, local_dir: undefined } })}
+      />
+    );
+    expect(
+      screen.queryByRole('button', { name: /afficher dans le dossier/i })
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('MessageBubble - tableaux GFM (US-010)', () => {
   it('rend un tableau markdown GFM en vrai <table>', () => {
     const md = [

@@ -1234,26 +1234,11 @@ async def _do_stream_response(
     # Detect uncertainty in response (US-ESC-01)
     uncertainty = detect_uncertainty(full_content)
 
-    # Send done event with usage info
-    done_data = StreamChunk(
-        type="done",
-        content="",
-        conversation_id=conversation_id,
-        message_id=assistant_message.id,
-    )
-    done_dict = done_data.model_dump()
-    done_dict["provider"] = llm_service.config.provider.value
-    done_dict["usage"] = {
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "cost_eur": usage_record.cost_eur,
-        "model": llm_service.config.model,
-        "provider": llm_service.config.provider.value,
-    }
-    done_dict["uncertainty"] = uncertainty
-    yield f"data: {json.dumps(done_dict)}\n\n"
-
-    # BUG-093 : Exécution automatique du skill si détecté
+    # BUG-093 : Exécution automatique du skill si détecté.
+    # IMPORTANT (fichiers générés visibles, 10/07/2026) : ce bloc tourne AVANT
+    # l'événement done - le client arrête la lecture du stream sur done
+    # (chat.ts), donc tout événement émis après n'atteint jamais l'UI en
+    # direct (le testeur découvrait ses fichiers par hasard au rechargement).
     if skill_id and full_content:
         try:
             from app.services.skills import get_skills_registry
@@ -1274,6 +1259,9 @@ async def _do_stream_response(
                         "file_size": result.file_size,
                         "download_url": result.download_url,
                         "format": skill.output_format.value,
+                        # Dossier local des sorties, pour « Afficher dans le
+                        # dossier » côté desktop.
+                        "local_dir": str(registry.output_dir),
                     }
                     skill_file_data = {
                         "type": "skill_file",
@@ -1293,9 +1281,31 @@ async def _do_stream_response(
                     await session.commit()
                     logger.info(f"Skill {skill_id} exécuté : {result.file_name}")
                 else:
+                    # L'échec doit être VISIBLE, pas seulement loggué.
                     logger.warning(f"Échec auto-exécution skill {skill_id}: {result.error}")
+                    yield _skill_file_error_event(conversation_id, skill_id, result.error)
         except Exception as e:
             logger.warning(f"Erreur auto-exécution skill {skill_id}: {e}")
+            yield _skill_file_error_event(conversation_id, skill_id, str(e))
+
+    # Send done event with usage info
+    done_data = StreamChunk(
+        type="done",
+        content="",
+        conversation_id=conversation_id,
+        message_id=assistant_message.id,
+    )
+    done_dict = done_data.model_dump()
+    done_dict["provider"] = llm_service.config.provider.value
+    done_dict["usage"] = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "cost_eur": usage_record.cost_eur,
+        "model": llm_service.config.model,
+        "provider": llm_service.config.provider.value,
+    }
+    done_dict["uncertainty"] = uncertainty
+    yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)
     # L'extraction continue en arrière-plan sans bloquer le stream SSE
@@ -1308,6 +1318,26 @@ async def _do_stream_response(
             message_id=assistant_message.id,
         )
     )
+
+
+def _skill_file_error_event(
+    conversation_id: str, skill_id: str, error: str | None
+) -> str:
+    """Événement SSE d'échec de génération de fichier (visible dans l'UI).
+
+    Avant le 10/07/2026 un échec d'auto-exécution finissait uniquement dans
+    les logs : l'utilisateur voyait la réponse texte mais aucun fichier, sans
+    explication. Émis AVANT done (le client coupe la lecture sur done)."""
+    payload = {
+        "type": "skill_file_error",
+        "content": (
+            f"La génération du fichier a échoué : {error or 'erreur inconnue'}. "
+            "Tu peux relancer la demande."
+        ),
+        "conversation_id": conversation_id,
+        "skill_id": skill_id,
+    }
+    return f"data: {json.dumps(payload)}\n\n"
 
 
 def _fallback_from_tool_outcomes(

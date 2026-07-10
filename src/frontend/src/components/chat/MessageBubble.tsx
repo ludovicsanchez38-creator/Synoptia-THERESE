@@ -46,6 +46,21 @@ interface MessageBubbleProps {
 }
 
 // Code block with copy button
+/** Taille lisible en français : 4917 -> « 4,8 Ko ». */
+function formatFileSize(bytes: number): string {
+  if (!bytes || bytes < 0) return '';
+  if (bytes < 1024) return `${bytes} o`;
+  const units = ['Ko', 'Mo', 'Go'];
+  let value = bytes;
+  let unit = '';
+  for (const u of units) {
+    value /= 1024;
+    unit = u;
+    if (value < 1024) break;
+  }
+  return `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${unit}`;
+}
+
 function CodeBlock({
   language,
   children,
@@ -181,6 +196,25 @@ export const MessageBubble = memo(function MessageBubble({
       });
     } finally {
       setSkillDownloading(false);
+    }
+  }, [message.skillFile]);
+
+  // Fichiers générés visibles (10/07) : ouvrir le dossier local des sorties
+  // dans le Finder/Explorateur. Rendu seulement quand local_dir est connu
+  // (desktop) ; en contexte web l'ouverture échouerait -> notification.
+  const handleRevealInFolder = useCallback(async () => {
+    if (!message.skillFile?.local_dir) return;
+    try {
+      const { open } = await import('@tauri-apps/plugin-shell');
+      await open(message.skillFile.local_dir);
+    } catch (err) {
+      console.error('Reveal in folder failed:', err);
+      useStatusStore.getState().addNotification({
+        type: 'info',
+        title: 'Dossier des fichiers générés',
+        message: message.skillFile.local_dir,
+        duration: 10000,
+      });
     }
   }, [message.skillFile]);
 
@@ -431,27 +465,46 @@ export const MessageBubble = memo(function MessageBubble({
           )}
         </div>
 
-        {/* BUG-131 : fichier généré par un skill -> vrai bouton de téléchargement */}
+        {/* Fichiers générés visibles (10/07, ex-BUG-131) : bloc « Fichier
+            généré » explicite - nom, taille, téléchargement, dossier local. */}
         {message.skillFile && !message.isStreaming && (
-          <button
-            type="button"
-            onClick={handleSkillFileDownload}
-            disabled={skillDownloading}
-            className={cn(
-              'mt-3 flex items-center gap-2.5 px-3 py-2 rounded-lg w-full max-w-sm text-left',
-              'bg-surface/60 border border-border hover:border-accent-cyan/50 transition-all',
-              skillDownloading && 'opacity-60 cursor-wait'
-            )}
-            title={`Télécharger ${message.skillFile.file_name}`}
-          >
-            <FileDown
-              className={cn('w-4 h-4 text-accent-cyan shrink-0', skillDownloading && 'animate-pulse')}
-            />
-            <span className="text-sm text-text truncate">{message.skillFile.file_name}</span>
-            <span className="text-xs text-text-muted ml-auto shrink-0">
-              {skillDownloading ? 'Téléchargement…' : 'Télécharger'}
-            </span>
-          </button>
+          <div className="mt-3 rounded-lg w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
+            <div className="flex items-center gap-2 px-3 pt-2.5">
+              <FileDown className="w-3.5 h-3.5 text-accent-cyan shrink-0" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan">
+                Fichier généré
+              </span>
+              <span className="text-xs text-text-muted ml-auto shrink-0">
+                {formatFileSize(message.skillFile.file_size)}
+              </span>
+            </div>
+            <p className="px-3 pt-1 text-sm text-text truncate">{message.skillFile.file_name}</p>
+            <div className="flex items-center gap-1.5 px-2 py-2">
+              <button
+                type="button"
+                onClick={handleSkillFileDownload}
+                disabled={skillDownloading}
+                className={cn(
+                  'flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text',
+                  'bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all',
+                  skillDownloading && 'opacity-60 cursor-wait'
+                )}
+                title={`Télécharger ${message.skillFile.file_name}`}
+              >
+                {skillDownloading ? 'Téléchargement…' : 'Télécharger'}
+              </button>
+              {message.skillFile.local_dir && (
+                <button
+                  type="button"
+                  onClick={handleRevealInFolder}
+                  className="flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all"
+                  title={message.skillFile.local_dir}
+                >
+                  Afficher dans le dossier
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Streaming cursor indicator */}

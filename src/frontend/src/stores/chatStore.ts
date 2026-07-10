@@ -30,6 +30,9 @@ export interface MessageSkillFile {
   file_name: string;
   file_size: number;
   format: string;
+  /** Dossier local des sorties (~/.therese/outputs) - permet « Afficher dans
+   * le dossier » côté desktop. Absent en contexte purement web. */
+  local_dir?: string;
 }
 
 export interface Message {

@@ -57,7 +57,7 @@ export interface DetectedEntities {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'confirmation_required';
+  type: 'text' | 'done' | 'error' | 'status' | 'tool_result' | 'entities_detected' | 'conversation_id' | 'sources' | 'decomposition' | 'searching' | 'search_done' | 'synthesizing' | 'skill_file' | 'skill_file_error' | 'confirmation_required';
   content: string;
   conversation_id?: string;
   message_id?: string;

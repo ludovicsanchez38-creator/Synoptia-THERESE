@@ -454,6 +454,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             file_size: number;
             download_url: string;
             format: string;
+            local_dir?: string;
           };
           setMessageSkillFile(assistantMessageId, {
             skill_id: sf.skill_id,
@@ -461,6 +462,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             file_name: sf.file_name,
             file_size: sf.file_size,
             format: sf.format,
+            local_dir: sf.local_dir,
+          });
+        } else if (chunk.type === 'skill_file_error') {
+          // Fichiers générés visibles (10/07) : un échec de génération ne
+          // reste plus silencieux (avant : logs backend seulement, réponse
+          // texte sans fichier ni explication).
+          useStatusStore.getState().addNotification({
+            type: 'error',
+            title: 'Fichier non généré',
+            message: chunk.content || 'La génération du fichier a échoué.',
           });
         } else if (chunk.type === 'confirmation_required' && chunk.confirmation) {
           // US-002 : action sensible (envoi d'email) en attente de validation.
