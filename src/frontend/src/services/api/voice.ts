@@ -15,8 +15,21 @@ export interface TranscriptionResponse {
 /** Préférence : le micro utilise la voix locale (aucun audio envoyé au cloud). */
 const VOICE_LOCAL_PREF_KEY = 'therese-voice-local';
 
+/**
+ * BUG-129 : préférence TRI-ÉTAT. `null` = jamais posée (utilisateur d'avant le
+ * fix, réinstallation, localStorage vidé) - dans ce cas le routage de la dictée
+ * se réconcilie avec l'état réel du serveur (/local/status) au lieu de retomber
+ * silencieusement sur Groq.
+ */
+export function getVoiceLocalPreference(): boolean | null {
+  const raw = localStorage.getItem(VOICE_LOCAL_PREF_KEY);
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return null;
+}
+
 export function isVoiceLocalPreferred(): boolean {
-  return localStorage.getItem(VOICE_LOCAL_PREF_KEY) === 'true';
+  return getVoiceLocalPreference() === true;
 }
 
 export function setVoiceLocalPreferred(value: boolean): void {
@@ -62,10 +75,52 @@ export async function setupVoiceLocal(model?: string): Promise<void> {
   }
 }
 
+/**
+ * Résout le moteur de transcription à utiliser pour CETTE dictée.
+ *
+ * - Préférence posée ('true'/'false') : respectée sans exception - jamais de
+ *   bascule silencieuse entre deux moteurs explicitement choisis.
+ * - Préférence absente (null) : on interroge UNE fois /local/status.
+ *   - prête -> migration : persiste 'true' et route local (corrige le cas des
+ *     modèles installés avant que la préférence existe, BUG-129 rouvert) ;
+ *   - installation en cours -> erreur claire, rien n'est envoyé (ni au cloud
+ *     alors que l'utilisateur vient de choisir le local, ni au local pas prêt),
+ *     rien n'est persisté ;
+ *   - pas prête -> persiste 'false' (comportement cloud historique) ;
+ *   - status injoignable -> cloud SANS persister, pour re-tenter la
+ *     réconciliation à la prochaine dictée.
+ */
+async function resolveUseLocalForTranscription(): Promise<boolean> {
+  const pref = getVoiceLocalPreference();
+  if (pref !== null) return pref;
+
+  let status: VoiceLocalStatus;
+  try {
+    status = await getVoiceLocalStatus();
+  } catch {
+    return false;
+  }
+
+  if (status.ready) {
+    setVoiceLocalPreferred(true);
+    return true;
+  }
+  if (status.setup?.state === 'running') {
+    throw new ApiError(
+      503,
+      'Service Unavailable',
+      "Installation de la voix locale en cours. Réessaie dans un instant, ou choisis la transcription cloud dans Paramètres > Confidentialité."
+    );
+  }
+  setVoiceLocalPreferred(false);
+  return false;
+}
+
 export async function transcribeAudio(audioBlob: Blob): Promise<string> {
   // Voix locale activée : l'audio ne quitte JAMAIS la machine. Pas de repli
   // cloud silencieux en cas d'échec - ce serait trahir le choix de l'utilisateur.
-  const endpoint = isVoiceLocalPreferred()
+  const useLocal = await resolveUseLocalForTranscription();
+  const endpoint = useLocal
     ? `${API_BASE}/api/voice/local/transcribe`
     : `${API_BASE}/api/voice/transcribe`;
 

@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Mic } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
+  getVoiceLocalPreference,
   getVoiceLocalStatus,
   isVoiceLocalPreferred,
   setupVoiceLocal,
@@ -24,16 +25,29 @@ export function VoiceLocalSection() {
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
+  // BUG-129 : préférence tri-état. Si elle n'a jamais été posée alors que la
+  // voix locale est PRÊTE (modèles installés avant l'existence de la
+  // préférence, réinstallation, localStorage vidé), on la matérialise à true
+  // dès que le statut le montre - même règle que le routage de la dictée.
+  const reconcilePreference = useCallback((s: VoiceLocalStatus) => {
+    if (s.ready && getVoiceLocalPreference() === null) {
+      setVoiceLocalPreferred(true);
+      setUseLocal(true);
+    }
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const s = await getVoiceLocalStatus();
       setStatus(s);
+      reconcilePreference(s);
       // Continuer le polling tant que le téléchargement tourne
       if (s.setup.state === 'running' && pollRef.current === null) {
         pollRef.current = window.setInterval(async () => {
           const next = await getVoiceLocalStatus().catch(() => null);
           if (next) {
             setStatus(next);
+            reconcilePreference(next);
             if (next.setup.state !== 'running' && pollRef.current !== null) {
               window.clearInterval(pollRef.current);
               pollRef.current = null;
@@ -44,7 +58,7 @@ export function VoiceLocalSection() {
     } catch (err) {
       console.error('Statut voix locale indisponible:', err);
     }
-  }, []);
+  }, [reconcilePreference]);
 
   useEffect(() => {
     refresh();
@@ -57,13 +71,12 @@ export function VoiceLocalSection() {
     setError(null);
     try {
       await setupVoiceLocal(model);
+      // BUG-129 : la préférence n'est PLUS posée ici. Le setup est asynchrone
+      // (téléchargement en arrière-plan) : la poser tout de suite routait la
+      // dictée vers un moteur pas encore prêt (503). C'est reconcilePreference
+      // qui la pose quand le statut passe réellement à ready (polling refresh),
+      // et le routage de la dictée applique la même règle côté chat.
       await refresh();
-      // BUG-129 : activer la voix locale la met effectivement en usage pour le
-      // micro du chat. Sans ça, la préférence restait sur faux et Groq
-      // continuait d'être appelé malgré l'activation. Le toggle ci-dessous
-      // permet de repasser en transcription cloud si besoin.
-      setUseLocal(true);
-      setVoiceLocalPreferred(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Activation impossible');
     }
