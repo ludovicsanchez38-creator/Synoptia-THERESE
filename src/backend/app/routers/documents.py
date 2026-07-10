@@ -758,8 +758,11 @@ async def export_document(
 
     Réutilise TEL QUEL le circuit d'export des conversations
     (`chat.py::export_conversation`, commit e6c25b1) : le markdown assemblé
-    est écrit directement dans `registry.output_dir` (format md) ou passé à
-    `registry.execute("docx-pro", ...)` (format docx), téléchargement via
+    est écrit directement dans `registry.output_dir` - brut (format md) ou
+    converti par `render_markdown_docx` (format docx, BUG-135 : conversion
+    déterministe locale, plus de passage par `registry.execute("docx-pro")`
+    dont le nettoyage de code pouvait tronquer le document et dont le chemin
+    LLM pouvait exécuter un bloc ```python``` du contenu). Téléchargement via
     `GET /api/skills/download/{file_id}` dans les deux cas.
 
     Invariant de complétude (même principe que `reorder_sections` plus
@@ -774,8 +777,10 @@ async def export_document(
     Document sans aucune section non-orpheline non vide -> 400 (« rien à
     exporter »). Format inconnu -> 400.
     """
+    from uuid import uuid4
+
     from app.services.skills import get_skills_registry
-    from app.services.skills.base import SkillExecuteRequest
+    from app.services.skills.markdown_docx import render_markdown_docx
 
     fmt = (format or "md").lower()
     if fmt not in ("md", "docx"):
@@ -803,40 +808,24 @@ async def export_document(
     markdown = assemble_markdown(document, sections)
     registry = get_skills_registry()
 
-    if fmt == "docx":
-        resp = await registry.execute(
-            "docx-pro",
-            SkillExecuteRequest(prompt=document.title, title=document.title),
-            markdown,
-        )
-        if not resp.success:
-            raise HTTPException(
-                status_code=500, detail=f"Échec de l'export Word : {resp.error}"
-            )
-        return {
-            "success": True,
-            "format": "docx",
-            "file_name": resp.file_name,
-            "download_url": resp.download_url,
-        }
-
-    # Markdown : fichier écrit directement dans le dossier des documents
-    # générés (même convention de nommage {titre}_{id8}.md que
-    # export_conversation, retrouvé par le download endpoint via glob même
-    # sans cache).
-    from uuid import uuid4
-
+    # Fichier écrit directement dans le dossier des documents générés (même
+    # convention de nommage {titre}_{id8}.{ext} que export_conversation,
+    # retrouvé par le download endpoint via glob même sans cache).
     file_id = str(uuid4())
     safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in document.title)[
         :50
     ].strip()
-    file_name = f"{safe_title}_{file_id[:8]}.md"
+    file_name = f"{safe_title}_{file_id[:8]}.{fmt}"
     output_path = registry.output_dir / file_name
-    output_path.write_text(markdown, encoding="utf-8")
+
+    if fmt == "docx":
+        render_markdown_docx(markdown, output_path)
+    else:
+        output_path.write_text(markdown, encoding="utf-8")
 
     return {
         "success": True,
-        "format": "md",
+        "format": fmt,
         "file_name": file_name,
         "download_url": f"/api/skills/download/{file_id}",
     }

@@ -254,9 +254,11 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
             doc: Document Word
             content: Contenu en format Markdown
         """
-        # Supprimer les blocs de code résiduels (```python...```)
+        # Supprimer les blocs de code résiduels (```python...```) - UNIQUEMENT
+        # les blocs clôturés. BUG-135 : l'ancienne alternative `(?:```|$)` avec
+        # DOTALL effaçait tout le document après une fence jamais refermée.
         content = re.sub(
-            r"```(?:python|py|javascript|js|bash|sh|json|xml|html|css|sql|yaml|yml)?\s*\n.*?(?:```|$)",
+            r"```(?:python|py|javascript|js|bash|sh|json|xml|html|css|sql|yaml|yml)?\s*\n.*?```",
             "",
             content,
             flags=re.DOTALL,
@@ -264,7 +266,6 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
 
         lines = content.split('\n')
         list_number = 0
-        in_code_block = False
 
         for line in lines:
             line = line.strip()
@@ -272,11 +273,10 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
                 list_number = 0
                 continue
 
-            # Ignorer les lignes résiduelles de clôture de code
+            # Fence restante = forcément orpheline (les blocs clôturés sont
+            # déjà retirés ci-dessus) : on ignore la ligne ``` elle-même mais
+            # JAMAIS le contenu qui suit (BUG-135).
             if line.startswith('```'):
-                in_code_block = not in_code_block
-                continue
-            if in_code_block:
                 continue
 
             # Headings

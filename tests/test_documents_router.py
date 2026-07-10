@@ -785,3 +785,55 @@ class TestExport:
             assert len(download.content) > 0
         finally:
             await close_skills()
+
+
+class TestBUG135ExportDocxComplet:
+    """BUG-135 - le DOCX exporté reprend TOUT le contenu (une fence de code
+    jamais refermée dans une section tronquait le document à partir de là) et
+    porte la langue fr-FR. Round-trip réel via l'endpoint + relecture du .docx."""
+
+    @pytest.mark.asyncio
+    async def test_export_docx_fence_orpheline_document_complet_et_fr(
+        self, client: AsyncClient
+    ):
+        import io
+
+        from app.services.skills import close_skills, init_skills
+        from docx import Document as DocxDocument
+        from docx.oxml.ns import qn
+
+        await init_skills()
+        try:
+            doc = await _create_document(client, title="Rapport complet")
+            s1 = await _create_section(client, doc["id"], "Contexte", order=10.0)
+            s2 = await _create_section(client, doc["id"], "Conclusion", order=20.0)
+            await client.patch(
+                f"/api/documents/sections/{s1['id']}",
+                json={
+                    "content": "Debut du contexte.\n\n```\ngabarit jamais referme\n\nSuite du contexte apres la fence."
+                },
+            )
+            await client.patch(
+                f"/api/documents/sections/{s2['id']}",
+                json={"content": "Phrase finale de la conclusion."},
+            )
+
+            response = await client.get(f"/api/documents/{doc['id']}/export?format=docx")
+            assert response.status_code == 200, response.text
+
+            download = await client.get(response.json()["download_url"])
+            assert download.status_code == 200
+
+            word = DocxDocument(io.BytesIO(download.content))
+            text = "\n".join(p.text for p in word.paragraphs)
+            # Zéro perte : tout ce qui suit la fence orpheline est présent.
+            assert "Suite du contexte apres la fence." in text
+            assert "Phrase finale de la conclusion." in text
+            # Titre unique (pas de doublon add_heading + `# titre` du markdown).
+            assert len([p for p in word.paragraphs if p.text == "Rapport complet"]) == 1
+            # Langue de correction fr-FR posée sur le style Normal.
+            normal_rpr = word.styles["Normal"].element.find(qn("w:rPr"))
+            lang = normal_rpr.find(qn("w:lang")) if normal_rpr is not None else None
+            assert lang is not None and lang.get(qn("w:val")) == "fr-FR"
+        finally:
+            await close_skills()

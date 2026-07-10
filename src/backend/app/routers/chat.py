@@ -1947,10 +1947,15 @@ async def export_conversation(
     Suggestion testeurs (Dr_logic-3D, avril 2026) : sortir une conversation
     de l'app sans copier-coller. Réutilise le circuit des documents générés :
     fichier déposé dans le dossier de sortie des skills, servi par
-    GET /api/skills/download/{file_id}.
+    GET /api/skills/download/{file_id}. Format docx : conversion déterministe
+    locale `render_markdown_docx` (BUG-135 - l'ancien passage par
+    `registry.execute("docx-pro")` pouvait tronquer le contenu après une
+    fence ``` non refermée, cas fréquent dans une conversation avec du code).
     """
+    from uuid import uuid4
+
     from app.services.skills import get_skills_registry
-    from app.services.skills.base import SkillExecuteRequest
+    from app.services.skills.markdown_docx import render_markdown_docx
 
     fmt = (format or "md").lower()
     if fmt not in ("md", "docx"):
@@ -1976,37 +1981,22 @@ async def export_conversation(
     markdown = _conversation_to_markdown(conversation, messages)
     registry = get_skills_registry()
 
-    if fmt == "docx":
-        resp = await registry.execute(
-            "docx-pro",
-            SkillExecuteRequest(prompt=title, title=title),
-            markdown,
-        )
-        if not resp.success:
-            raise HTTPException(
-                status_code=500, detail=f"Échec de l'export Word : {resp.error}"
-            )
-        return {
-            "success": True,
-            "format": "docx",
-            "file_name": resp.file_name,
-            "download_url": resp.download_url,
-        }
-
-    # Markdown : fichier écrit directement dans le dossier des documents générés
-    # (même convention de nommage {titre}_{id8}.md, retrouvé par le download
+    # Fichier écrit directement dans le dossier des documents générés (même
+    # convention de nommage {titre}_{id8}.{ext}, retrouvé par le download
     # endpoint via glob même sans cache).
-    from uuid import uuid4
-
     file_id = str(uuid4())
     safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)[:50].strip()
-    file_name = f"{safe_title}_{file_id[:8]}.md"
+    file_name = f"{safe_title}_{file_id[:8]}.{fmt}"
     output_path = registry.output_dir / file_name
-    output_path.write_text(markdown, encoding="utf-8")
+
+    if fmt == "docx":
+        render_markdown_docx(markdown, output_path)
+    else:
+        output_path.write_text(markdown, encoding="utf-8")
 
     return {
         "success": True,
-        "format": "md",
+        "format": fmt,
         "file_name": file_name,
         "download_url": f"/api/skills/download/{file_id}",
     }
