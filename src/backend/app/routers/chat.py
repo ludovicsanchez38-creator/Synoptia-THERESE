@@ -605,6 +605,22 @@ async def send_message(
     # LLM. Action inconnue -> réponse locale listant l'allowlist, jamais
     # transmise au modèle. Un message ordinaire poursuit le flux inchangé.
     parsed_action = parse_action_message(request.message)
+    if parsed_action is not None and parsed_action.kind == "produce":
+        # Tranche 1b : production de fichier déterministe. Le skill est FORCÉ
+        # (aucune détection d'intention), le LLM ne fait que rédiger le
+        # contenu ; création/statut/erreur suivent le chemin déterministe du
+        # 10/07 (skill_file avant done, échec visible). Le message-action
+        # original reste le message utilisateur persisté ; seul le prompt
+        # envoyé au modèle est dérivé du sujet. PAS de return : flux normal.
+        request.skill_id = parsed_action.skill_id
+        request.message = (
+            "Rédige le contenu complet et structuré du document demandé : "
+            f"{parsed_action.subject}"
+        )
+        # Rédaction pure : la boucle d'outils (MCP/workspace) n'apporte rien à
+        # la production d'un document et introduit de l'aléa - désactivée.
+        request.disable_tools = True
+        parsed_action = None
     if parsed_action is not None:
         client_action: dict[str, str] | None = None
         if parsed_action.kind == "navigate":
@@ -1316,12 +1332,25 @@ async def _do_stream_response(
     # l'événement done - le client arrête la lecture du stream sur done
     # (chat.ts), donc tout événement émis après n'atteint jamais l'UI en
     # direct (le testeur découvrait ses fichiers par hasard au rechargement).
+    if skill_id and not (full_content or "").strip():
+        # Trou couvert (revue design actions) : un skill était attendu mais le
+        # modèle n'a produit AUCUN contenu - avant, l'utilisateur ne recevait
+        # ni fichier ni explication.
+        yield _skill_file_error_event(
+            conversation_id, skill_id,
+            "le modèle n'a produit aucun contenu (réessaie, ou change de modèle)",
+        )
     if skill_id and full_content:
         try:
             from app.services.skills import get_skills_registry
             registry = get_skills_registry()
             skill = registry.get(skill_id)
-            if skill and skill.output_type.value == "file":
+            if skill is None:
+                # Trou couvert (revue design) : skill introuvable au registre.
+                yield _skill_file_error_event(
+                    conversation_id, skill_id, "compétence de génération introuvable"
+                )
+            elif skill.output_type.value == "file":
                 logger.info(f"Auto-exécution du skill {skill_id} après streaming")
                 result = await registry.execute(
                     skill_id,

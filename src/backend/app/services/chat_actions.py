@@ -21,6 +21,18 @@ from dataclasses import dataclass
 # syntaxe de forçage de skill existante (intent_detector).
 _ACTION_MESSAGE = re.compile(r"^\{(?!\{)action:\s*(?P<body>[^{}]*?)\s*\}$", re.IGNORECASE)
 _OUVRIR = re.compile(r"^ouvrir\s+(?P<cible>.+)$", re.IGNORECASE)
+# Tranche 1b : produire <format> "<sujet>" (guillemets droits ou français).
+_PRODUIRE = re.compile(
+    r'^produire\s+(?P<fmt>[a-z]+)\s+(?:"\s*(?P<sujet_d>[^"]+?)\s*"|«\s*(?P<sujet_f>[^»]+?)\s*»)$',
+    re.IGNORECASE,
+)
+
+# format -> skill de génération (allowlist stricte, ids du registre skills)
+PRODUCE_SKILLS: dict[str, str] = {
+    "docx": "docx-pro",
+    "xlsx": "xlsx-pro",
+    "pptx": "pptx-pro",
+}
 
 # cible normalisée (minuscules, sans accents) -> (action_id frontend, libellé)
 NAVIGATION_TARGETS: dict[str, tuple[str, str]] = {
@@ -42,11 +54,13 @@ NAVIGATION_TARGETS: dict[str, tuple[str, str]] = {
 class ParsedChatAction:
     """Résultat du parsing d'un message-action."""
 
-    kind: str  # "navigate" | "unknown"
+    kind: str  # "navigate" | "produce" | "unknown"
     raw: str
     action_id: str | None = None
     target: str | None = None
     label: str | None = None
+    skill_id: str | None = None  # kind == "produce"
+    subject: str | None = None  # kind == "produce"
 
 
 def _normalize(text: str) -> str:
@@ -73,6 +87,15 @@ def parse_action_message(text: str) -> ParsedChatAction | None:
                 kind="navigate", raw=body, action_id=action_id,
                 target=cible, label=label,
             )
+    produire = _PRODUIRE.match(body)
+    if produire:
+        fmt = produire.group("fmt").lower()
+        sujet = produire.group("sujet_d") or produire.group("sujet_f")
+        if fmt in PRODUCE_SKILLS and sujet:
+            return ParsedChatAction(
+                kind="produce", raw=body,
+                skill_id=PRODUCE_SKILLS[fmt], subject=sujet.strip(),
+            )
     return ParsedChatAction(kind="unknown", raw=body)
 
 
@@ -82,4 +105,8 @@ def available_actions_text() -> str:
     for cible, (action_id, _label) in NAVIGATION_TARGETS.items():
         seen.setdefault(action_id, cible)
     lignes = [f"- {{action: ouvrir {cible}}}" for cible in sorted(seen.values())]
+    lignes += [
+        f'- {{action: produire {fmt} "sujet du document"}}'
+        for fmt in sorted(PRODUCE_SKILLS)
+    ]
     return "\n".join(lignes)

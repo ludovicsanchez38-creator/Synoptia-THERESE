@@ -87,6 +87,27 @@ const SLASH_COMMANDS: SlashCommand[] = [
     prefix: '{action: ouvrir facturation}',
   },
   {
+    id: 'produire-docx',
+    name: 'produire docx',
+    description: 'Générer un document Word (le fichier est créé localement)',
+    icon: <FileText className="w-4 h-4" />,
+    prefix: '{action: produire docx "sujet du document"}',
+  },
+  {
+    id: 'produire-xlsx',
+    name: 'produire xlsx',
+    description: 'Générer un tableur Excel (le fichier est créé localement)',
+    icon: <FileSpreadsheet className="w-4 h-4" />,
+    prefix: '{action: produire xlsx "sujet du tableur"}',
+  },
+  {
+    id: 'produire-pptx',
+    name: 'produire pptx',
+    description: 'Générer une présentation PowerPoint (le fichier est créé localement)',
+    icon: <Presentation className="w-4 h-4" />,
+    prefix: '{action: produire pptx "sujet de la présentation"}',
+  },
+  {
     id: 'contact',
     name: 'contact',
     description: 'Créer un contact : Prénom Nom (email=… tel=…)',

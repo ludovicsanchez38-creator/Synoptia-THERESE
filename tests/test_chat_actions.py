@@ -64,6 +64,39 @@ class TestParseActionMessage:
         assert parsed.kind == "unknown"
 
 
+class TestParseProduire:
+    """Tranche 1b : {action: produire <format> \"<sujet>\"} -> skill forcé."""
+
+    def _parse(self, text):
+        from app.services.chat_actions import parse_action_message
+
+        return parse_action_message(text)
+
+    def test_produire_docx(self):
+        parsed = self._parse('{action: produire docx "Rapport de test"}')
+        assert parsed is not None
+        assert parsed.kind == "produce"
+        assert parsed.skill_id == "docx-pro"
+        assert parsed.subject == "Rapport de test"
+
+    def test_produire_guillemets_francais(self):
+        parsed = self._parse("{action: produire xlsx « Scoring des LLM »}")
+        assert parsed is not None
+        assert parsed.kind == "produce"
+        assert parsed.skill_id == "xlsx-pro"
+        assert parsed.subject == "Scoring des LLM"
+
+    def test_format_inconnu(self):
+        parsed = self._parse('{action: produire exe "Virus"}')
+        assert parsed is not None
+        assert parsed.kind == "unknown"
+
+    def test_sujet_manquant(self):
+        parsed = self._parse("{action: produire docx}")
+        assert parsed is not None
+        assert parsed.kind == "unknown"
+
+
 def _no_llm():
     """get_llm_service patché : tout appel = échec du test (zéro LLM)."""
     raise AssertionError("Le LLM ne doit JAMAIS être appelé pour un message-action")
@@ -134,6 +167,108 @@ class TestActionEndpoint:
         contents = [m["content"] for m in messages.json()]
         assert "{action: ouvrir calendrier}" in contents  # message utilisateur
         assert any("calendrier" in c.lower() for c in contents[1:] or contents)
+
+    @pytest.mark.asyncio
+    async def test_produire_docx_stream_fichier_reel(self, client: AsyncClient):
+        """{action: produire docx "..."} force le skill SANS détection
+        d'intention : le LLM rédige le contenu, la création du fichier suit le
+        chemin déterministe du chantier 1 (skill_file avant done)."""
+        from app.services.providers.base import StreamEvent
+        from app.services.skills import close_skills, init_skills
+
+        class _FakeProvider:
+            value = "anthropic"
+
+        class _FakeConfig:
+            provider = _FakeProvider()
+            model = "fake"
+
+        class _FakeLLM:
+            config = _FakeConfig()
+
+            def prepare_context(self, messages, memory_context=None):
+                return []
+
+            async def stream_response_with_tools(self, context, tools=None):
+                yield StreamEvent(type="text", content="# Rapport\n\nContenu rédigé.")
+                yield StreamEvent(type="done", stop_reason="end_turn")
+
+        from unittest.mock import AsyncMock
+
+        await init_skills()
+        try:
+            with patch("app.routers.chat.get_llm_service", return_value=_FakeLLM()), \
+                 patch("app.routers.chat._get_memory_context", AsyncMock(return_value="")):
+                response = await client.post(
+                    "/api/chat/send",
+                    json={
+                        "message": '{action: produire docx "Rapport de test"}',
+                        "stream": True,
+                    },
+                )
+        finally:
+            await close_skills()
+
+        assert response.status_code == 200
+        events = []
+        for block in response.text.split("\n\n"):
+            block = block.strip()
+            if block.startswith("data: "):
+                events.append(json.loads(block[len("data: "):]))
+        types = [e["type"] for e in events]
+        assert "skill_file" in types, f"types reçus : {types}"
+        assert types.index("skill_file") < types.index("done")
+        sf = next(e for e in events if e["type"] == "skill_file")
+        assert sf["skill_file"]["file_name"].endswith(".docx")
+
+    @pytest.mark.asyncio
+    async def test_produire_contenu_llm_vide_erreur_visible(self, client: AsyncClient):
+        """Trou couvert (revue design) : si le modèle ne produit AUCUN contenu,
+        l'utilisateur reçoit skill_file_error - avant, rien du tout."""
+        from app.services.providers.base import StreamEvent
+        from app.services.skills import close_skills, init_skills
+
+        class _FakeProvider:
+            value = "anthropic"
+
+        class _FakeConfig:
+            provider = _FakeProvider()
+            model = "fake"
+
+        class _MuteLLM:
+            config = _FakeConfig()
+
+            def prepare_context(self, messages, memory_context=None):
+                return []
+
+            async def stream_response_with_tools(self, context, tools=None):
+                yield StreamEvent(type="done", stop_reason="end_turn")
+
+        from unittest.mock import AsyncMock
+
+        await init_skills()
+        try:
+            with patch("app.routers.chat.get_llm_service", return_value=_MuteLLM()), \
+                 patch("app.routers.chat._get_memory_context", AsyncMock(return_value="")):
+                response = await client.post(
+                    "/api/chat/send",
+                    json={
+                        "message": '{action: produire docx "Rapport vide"}',
+                        "stream": True,
+                    },
+                )
+        finally:
+            await close_skills()
+
+        assert response.status_code == 200
+        events = []
+        for block in response.text.split("\n\n"):
+            block = block.strip()
+            if block.startswith("data: "):
+                events.append(json.loads(block[len("data: "):]))
+        types = [e["type"] for e in events]
+        assert "skill_file_error" in types, f"types reçus : {types}"
+        assert types.index("skill_file_error") < types.index("done")
 
     @pytest.mark.asyncio
     async def test_non_regression_slash_contact(self, client: AsyncClient, db_session):
