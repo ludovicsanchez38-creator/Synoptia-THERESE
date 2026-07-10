@@ -78,6 +78,8 @@ def parse_action_message(text: str) -> ParsedChatAction | None:
         return None
 
     body = match.group("body").strip()
+    if _normalize(body) == "aide":
+        return ParsedChatAction(kind="help", raw=body)
     ouvrir = _OUVRIR.match(body)
     if ouvrir:
         cible = _normalize(ouvrir.group("cible"))

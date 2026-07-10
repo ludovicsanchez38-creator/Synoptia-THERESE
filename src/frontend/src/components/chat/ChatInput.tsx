@@ -13,6 +13,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './SlashCommandsMenu';
 import { handleClientActionChunk } from '../../lib/clientActions';
+import { ActionChips } from './ActionChips';
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -748,6 +749,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* Inline drop zone */}
       <InlineDropZone isDragging={isDragging} />
+
+      {/* Tranche 1c : puces d'actions déterministes sur conversation vide -
+          un clic insère la syntaxe {action: ...}, l'utilisateur complète et
+          envoie (exécution locale, allowlist backend). */}
+      {!input && !isStreaming && (currentConversation()?.messages?.length ?? 0) === 0 && (
+        <ActionChips onInsert={(text) => setInput(text)} />
+      )}
 
       {/* Attached files */}
       {attachedFiles.length > 0 && (

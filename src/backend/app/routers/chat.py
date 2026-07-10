@@ -630,6 +630,11 @@ async def send_message(
                 "action_id": parsed_action.action_id,
                 "target": parsed_action.target,
             }
+        elif parsed_action.kind == "help":
+            confirmation = (
+                "Actions disponibles (exécutées localement, sans IA pour la "
+                "navigation) :\n" + available_actions_text()
+            )
         else:
             confirmation = (
                 f"Action inconnue : « {parsed_action.raw} ». "

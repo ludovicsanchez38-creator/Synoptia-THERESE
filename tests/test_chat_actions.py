@@ -64,6 +64,32 @@ class TestParseActionMessage:
         assert parsed.kind == "unknown"
 
 
+class TestParseAide:
+    """Tranche 1c : {action: aide} -> liste locale des actions (doc intégrée)."""
+
+    def _parse(self, text):
+        from app.services.chat_actions import parse_action_message
+
+        return parse_action_message(text)
+
+    def test_aide(self):
+        parsed = self._parse("{action: aide}")
+        assert parsed is not None
+        assert parsed.kind == "help"
+
+    @pytest.mark.asyncio
+    async def test_endpoint_aide_liste_locale(self, client):
+        with patch("app.routers.chat.get_llm_service", side_effect=_no_llm):
+            response = await client.post(
+                "/api/chat/send",
+                json={"message": "{action: aide}", "stream": False},
+            )
+        assert response.status_code == 200
+        content = response.json()["content"]
+        assert "ouvrir email" in content
+        assert "produire docx" in content
+
+
 class TestParseProduire:
     """Tranche 1b : {action: produire <format> \"<sujet>\"} -> skill forcé."""
 
