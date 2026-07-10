@@ -1,5 +1,5 @@
 """Tests du router dashboard (setup-status pour la vue Accueil)."""
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from app.models.entities import Calendar, Contact, EmailAccount, Task
@@ -14,17 +14,21 @@ class TestToday:
         """BUG-125 : une tâche en retard doit apparaître dans le dashboard, même
         avec d'autres tâches urgentes. Sans ORDER BY, l'ordre était arbitraire :
         la tâche en retard pouvait passer après les tâches dues aujourd'hui et
-        sortir du top-3 affiché. On trie par échéance croissante (retard d'abord)."""
-        now = datetime.now()
+        sortir du top-3 affiché. On trie par échéance croissante (retard d'abord).
+
+        NB : échéances posées en dates CIVILES fixes (aujourd'hui 23:59 / J-5),
+        jamais `now + N heures` - un run après 22h faisait déborder les tâches
+        « du jour » sur demain et le test changeait de sens selon l'heure."""
+        today_evening = datetime.combine(date.today(), time(23, 59))
         # Tâches dues aujourd'hui créées EN PREMIER, tâche en retard EN DERNIER.
         for i in range(4):
             db_session.add(
                 Task(id=f"tk-today-{i}", title=f"Aujourd'hui {i}", status="todo",
-                     due_date=now + timedelta(hours=2))
+                     due_date=today_evening)
             )
         db_session.add(
             Task(id="tk-overdue", title="Tâche en retard", status="todo",
-                 due_date=now - timedelta(days=5))
+                 due_date=today_evening - timedelta(days=5))
         )
         await db_session.commit()
 
@@ -34,6 +38,25 @@ class TestToday:
         # La plus en retard est en tête, donc dans le top-3 affiché par le front.
         assert titles[0] == "Tâche en retard"
         assert "Tâche en retard" in titles[:3]
+
+    @pytest.mark.asyncio
+    async def test_today_tache_due_demain_minuit_pas_urgente(
+        self, client: AsyncClient, db_session
+    ):
+        """BUG-125 (revue) : off-by-one - une tâche due DEMAIN à 00:00 pile
+        n'est pas urgente aujourd'hui. Le filtre `due_date <= demain minuit`
+        l'incluait à tort ; il faut une borne stricte `< demain minuit`."""
+        tomorrow_midnight = datetime.combine(date.today() + timedelta(days=1), time(0, 0))
+        db_session.add(
+            Task(id="tk-tomorrow", title="Tâche de demain", status="todo",
+                 due_date=tomorrow_midnight)
+        )
+        await db_session.commit()
+
+        resp = await client.get("/api/dashboard/today")
+        assert resp.status_code == 200
+        titles = [t["title"] for t in resp.json()["urgent_tasks"]]
+        assert "Tâche de demain" not in titles
 
     @pytest.mark.asyncio
     async def test_today_stale_prospect_remonte_avec_son_nom(

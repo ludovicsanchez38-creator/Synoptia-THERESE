@@ -199,7 +199,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             select(Task)
             .where(
                 and_(
-                    Task.due_date <= tomorrow_dt,
+                    # Borne STRICTE : une tâche due demain à 00:00 pile n'est
+                    # pas urgente aujourd'hui (off-by-one relevé en revue).
+                    Task.due_date < tomorrow_dt,
                     Task.status.notin_(["done", "cancelled"]),
                 )
             )
