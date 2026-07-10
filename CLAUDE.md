@@ -92,6 +92,8 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **v0.28.3-alpha RELEASÉE le 10/07/2026** (bugs Discord du matin : BUG-135 export DOCX déterministe fr-FR, BUG-129 dictée tri-état, BUG-125 bloc Urgences date civile, BUG-134 toasts, + 3 durcissements revue Codex NO-GO->GO. BUG-113 explicitement OUVERT : infos demandées à Dr_logic, pas de purge NSIS spéculative. Rapport `docs/releases/v0.28.3-alpha.md` - gotchas pytest silencieux/os._exit + dupliqués macOS + invocation mypy CI dedans).
+
 > **v0.28.2-alpha RELEASÉE le 09/07/2026** (7 bugs testeurs 116/117/118/119/126/128/129 restés pending après la 0.28.1, vérifiés dans le code + corrigés. Build 3 OS OK, landing + latest.json live (7 plateformes signées), Discord posté, app installée localement, Katia+Zézette à jour, rapport `docs/releases/v0.28.2-alpha.md`). Que des `fix`, PATCH. Seul point ouvert : **validation Windows réelle de l'auto-restart BUG-128** (le repli d'affichage est livré ; l'auto-restart lui-même non testable hors Windows).
 
 ### 7 bugs pending vérifiés + corrigés post-0.28.1 (09/07/2026, RELEASÉ en v0.28.2-alpha)
