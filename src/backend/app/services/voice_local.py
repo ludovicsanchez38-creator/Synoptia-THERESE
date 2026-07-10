@@ -130,6 +130,17 @@ def get_setup_state() -> dict[str, object]:
     return dict(_setup_state)
 
 
+def mark_setup_starting() -> None:
+    """Pose l'état `running` de façon SYNCHRONE, avant le thread de setup.
+
+    Revue 10/07 : `running` n'était posé que dans run_voice_setup (thread
+    executor) - entre le POST /local/setup et le premier tour du thread, un
+    status lisait encore `idle` (l'UI ne démarrait pas son polling) et un 2e
+    POST passait le garde 409 (double téléchargement concurrent).
+    """
+    _setup_state.update(state="running", step="Préparation du téléchargement", error="")
+
+
 def run_voice_setup(model_size: str) -> None:
     """Télécharge le modèle Whisper + la voix Piper (SYNCHRONE, à lancer en executor).
 

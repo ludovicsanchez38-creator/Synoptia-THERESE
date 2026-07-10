@@ -178,6 +178,56 @@ class TestVoiceLocalSetup:
         assert response.status_code == 409
 
     @pytest.mark.asyncio
+    async def test_setup_pose_running_avant_de_rendre_la_main(self, client: AsyncClient):
+        """Revue 10/07 : l'état `running` n'était posé QUE dans le thread du
+        téléchargement -> le refresh immédiat de l'UI pouvait lire `idle` (donc
+        jamais de polling) et un 2e POST passait le garde 409 pendant la
+        fenêtre (double téléchargement concurrent)."""
+        import threading
+
+        from app.services import voice_local
+
+        release = threading.Event()
+
+        def slow_setup(model_size):
+            release.wait(timeout=5)
+
+        try:
+            with patch("app.services.voice_local.stt_available", return_value=True), \
+                 patch("app.services.voice_local.run_voice_setup", side_effect=slow_setup), \
+                 patch.dict(voice_local._setup_state):
+                response = await client.post("/api/voice/local/setup", json={})
+                assert response.status_code == 200
+                # SANS attendre le thread : l'état doit déjà être running.
+                assert voice_local.get_setup_state()["state"] == "running"
+                # Et le garde anti-double lancement doit tenir pendant la fenêtre.
+                second = await client.post("/api/voice/local/setup", json={})
+                assert second.status_code == 409
+        finally:
+            release.set()
+
+    @pytest.mark.asyncio
+    async def test_transcribe_local_message_clair_pendant_le_telechargement(
+        self, client: AsyncClient
+    ):
+        """Revue 10/07 : une dictée pendant le téléchargement des modèles
+        recevait « Aucun modèle vocal téléchargé. Active la voix locale... »
+        alors que l'installation TOURNAIT déjà - message dédié attendu."""
+        from app.services import voice_local
+
+        with patch("app.services.voice_local.stt_available", return_value=True), \
+             patch("app.services.voice_local.active_whisper_model", return_value=None), \
+             patch.dict(
+                 voice_local._setup_state,
+                 {"state": "running", "step": "Téléchargement du modèle"},
+             ):
+            files = {"audio": ("test.webm", b"fake-audio", "audio/webm")}
+            response = await client.post("/api/voice/local/transcribe", files=files)
+
+        assert response.status_code == 503
+        assert "en cours" in response.json()["message"].lower()
+
+    @pytest.mark.asyncio
     async def test_setup_lance_le_telechargement_en_fond(self, client: AsyncClient):
         calls = {}
 

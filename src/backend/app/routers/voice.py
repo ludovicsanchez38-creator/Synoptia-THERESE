@@ -182,6 +182,7 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
     from app.services.voice_local import (
         DEFAULT_WHISPER_MODEL,
         get_setup_state,
+        mark_setup_starting,
         run_voice_setup,
         stt_available,
     )
@@ -198,6 +199,10 @@ async def voice_local_setup_route(payload: dict[str, str] | None = None) -> dict
         raise HTTPException(status_code=409, detail="Un téléchargement est déjà en cours.")
 
     model_size = (payload or {}).get("model", DEFAULT_WHISPER_MODEL)
+    # Revue 10/07 : poser `running` AVANT de rendre la main - sinon le refresh
+    # immédiat de l'UI lit `idle` (pas de polling) et un 2e POST passe le 409
+    # pendant la fenêtre de démarrage du thread.
+    mark_setup_starting()
     loop = asyncio.get_running_loop()
     # Fire-and-forget dans l'executor : l'état est suivi via /local/status
     loop.run_in_executor(None, run_voice_setup, model_size)
@@ -213,7 +218,21 @@ async def transcribe_audio_local(
 
     Nécessite le groupe optionnel `voice-local` installé (sinon 503 + indication).
     """
-    from app.services.voice_local import active_whisper_model, stt_available, transcribe_local
+    from app.services.voice_local import (
+        active_whisper_model,
+        get_setup_state,
+        stt_available,
+        transcribe_local,
+    )
+
+    # Revue 10/07 : une dictée PENDANT le téléchargement des modèles recevait
+    # « Active la voix locale... » alors que l'installation tournait déjà.
+    if get_setup_state().get("state") == "running":
+        raise HTTPException(
+            status_code=503,
+            detail="Installation de la voix locale en cours (téléchargement du "
+            "modèle). Réessaie dans un instant.",
+        )
 
     if not stt_available():
         from app.services.voice_local import INSTALL_HINT

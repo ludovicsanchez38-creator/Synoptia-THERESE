@@ -71,11 +71,13 @@ export function VoiceLocalSection() {
     setError(null);
     try {
       await setupVoiceLocal(model);
-      // BUG-129 : la préférence n'est PLUS posée ici. Le setup est asynchrone
-      // (téléchargement en arrière-plan) : la poser tout de suite routait la
-      // dictée vers un moteur pas encore prêt (503). C'est reconcilePreference
-      // qui la pose quand le statut passe réellement à ready (polling refresh),
-      // et le routage de la dictée applique la même règle côté chat.
+      // BUG-129 (revue 10/07) : cliquer « Activer » est un choix EXPLICITE -
+      // la préférence passe à true tout de suite, même si une dictée cloud
+      // antérieure l'avait auto-persistée à false (sinon le micro restait sur
+      // Groq après le téléchargement). Une dictée pendant le téléchargement
+      // reçoit un 503 « installation en cours » clair côté backend.
+      setUseLocal(true);
+      setVoiceLocalPreferred(true);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Activation impossible');

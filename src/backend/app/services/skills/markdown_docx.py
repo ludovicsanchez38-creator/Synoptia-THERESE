@@ -16,9 +16,11 @@ from pathlib import Path
 
 from app.services.skills.docx_generator import SYNOPTIA_COLORS
 from docx import Document
+from docx.document import Document as DocumentObject
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.shared import Pt
+from docx.text.paragraph import Paragraph
 
 # Segments inline **gras**, *italique*, `code` - tout le reste (y compris les
 # * ou ` non appariés) est ajouté tel quel, jamais jeté.
@@ -37,7 +39,7 @@ def render_markdown_docx(markdown: str, output_path: Path) -> None:
     doc.save(str(output_path))
 
 
-def _set_language(doc: Document, lang: str) -> None:
+def _set_language(doc: DocumentObject, lang: str) -> None:
     """Pose w:lang sur les docDefaults ET le style Normal (correction Word)."""
     rpr_defaults = doc.styles.element.findall(
         f"{qn('w:docDefaults')}/{qn('w:rPrDefault')}/{qn('w:rPr')}"
@@ -53,7 +55,7 @@ def _set_language(doc: Document, lang: str) -> None:
         rpr.append(lang_el)
 
 
-def _render_blocks(doc: Document, markdown: str) -> None:
+def _render_blocks(doc: DocumentObject, markdown: str) -> None:
     """Machine à états ligne par ligne - aucune branche ne jette de contenu."""
     in_code = False
     first_h1_done = False
@@ -118,7 +120,7 @@ def _render_blocks(doc: Document, markdown: str) -> None:
     _flush_table(doc, table_buffer)
 
 
-def _flush_table(doc: Document, buffer: list[str]) -> None:
+def _flush_table(doc: DocumentObject, buffer: list[str]) -> None:
     """Rend un groupe de lignes `|...|`. Vrai tableau Word si la 2e ligne est
     un séparateur d'en-tête Markdown, sinon repli en paragraphes (les cellules
     jointes par tabulation - comportement historique, sans perte)."""
@@ -130,14 +132,18 @@ def _flush_table(doc: Document, buffer: list[str]) -> None:
     if len(rows) >= 2 and _TABLE_SEPARATOR.match(rows[1]):
         header = _split_row(rows[0])
         body = [_split_row(r) for r in rows[2:] if not _TABLE_SEPARATOR.match(r)]
-        table = doc.add_table(rows=1, cols=len(header))
+        # Largeur = ligne la plus large (revue 10/07 : borner au nombre de
+        # colonnes de l'en-tête perdait silencieusement les cellules
+        # excédentaires du corps - zéro perte, quitte à padder l'en-tête).
+        ncols = max(len(header), *(len(r) for r in body)) if body else len(header)
+        table = doc.add_table(rows=1, cols=ncols)
         table.style = "Table Grid"
         for j, cell_text in enumerate(header):
             run = table.rows[0].cells[j].paragraphs[0].add_run(cell_text)
             run.bold = True
         for row_cells in body:
             row = table.add_row()
-            for j in range(len(header)):
+            for j in range(ncols):
                 text = row_cells[j] if j < len(row_cells) else ""
                 _add_formatted_text(row.cells[j].paragraphs[0], text)
         return
@@ -151,16 +157,18 @@ def _flush_table(doc: Document, buffer: list[str]) -> None:
 
 def _split_row(line: str) -> list[str]:
     """Cellules d'une ligne de tableau - tolère l'absence de pipe fermant
-    (l'ancien split('|')[1:-1] perdait la dernière cellule)."""
+    (l'ancien split('|')[1:-1] perdait la dernière cellule) et respecte les
+    pipes échappés `\\|` dans une cellule (revue 10/07)."""
     line = line.strip()
     if line.startswith("|"):
         line = line[1:]
-    if line.endswith("|"):
+    if line.endswith("|") and not line.endswith("\\|"):
         line = line[:-1]
-    return [c.strip() for c in line.split("|")]
+    cells = re.split(r"(?<!\\)\|", line)
+    return [c.strip().replace("\\|", "|") for c in cells]
 
 
-def _add_preformatted(doc: Document, text: str) -> None:
+def _add_preformatted(doc: DocumentObject, text: str) -> None:
     para = doc.add_paragraph()
     para.paragraph_format.space_after = Pt(0)
     run = para.add_run(text)
@@ -168,7 +176,7 @@ def _add_preformatted(doc: Document, text: str) -> None:
     run.font.size = Pt(10)
 
 
-def _add_formatted_text(para, text: str) -> None:
+def _add_formatted_text(para: Paragraph, text: str) -> None:
     """Inline **gras**/*italique*/`code`. Les segments hors motifs (dont les
     * et ` non appariés) sont ajoutés tels quels : rien n'est jeté."""
     pos = 0
@@ -191,7 +199,7 @@ def _add_formatted_text(para, text: str) -> None:
         para.add_run(text[pos:])
 
 
-def _setup_styles(doc: Document) -> None:
+def _setup_styles(doc: DocumentObject) -> None:
     """Styles Synoptia (mêmes réglages que le chemin LLM DocxSkill)."""
     styles = doc.styles
 
@@ -219,7 +227,7 @@ def _setup_styles(doc: Document) -> None:
             style.paragraph_format.space_after = Pt(after)
 
 
-def _style_title(para) -> None:
+def _style_title(para: Paragraph) -> None:
     for run in para.runs:
         run.font.name = "Outfit"
         run.font.size = Pt(28)
@@ -227,7 +235,7 @@ def _style_title(para) -> None:
         run.font.color.rgb = SYNOPTIA_COLORS["heading"]
 
 
-def _add_footer(doc: Document) -> None:
+def _add_footer(doc: DocumentObject) -> None:
     section = doc.sections[-1]
     footer = section.footer
     footer.is_linked_to_previous = False

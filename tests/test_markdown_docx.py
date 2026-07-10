@@ -144,6 +144,24 @@ class TestBUG135Structure:
         assert table.rows[1].cells[0].text == "FORGER"
         assert table.rows[2].cells[1].text == "2490"
 
+    def test_tableau_ligne_plus_large_que_l_entete_sans_perte(self, tmp_path: Path):
+        """Revue 10/07 : les cellules excédentaires (corps plus large que
+        l'en-tête) étaient silencieusement perdues - zéro perte exigé."""
+        markdown = "# Doc\n\n| Seule |\n|---|\n| conserve | PERDU |\n"
+        doc = _render(tmp_path, markdown)
+        text = _all_text(doc)
+        assert "conserve" in text
+        assert "PERDU" in text
+
+    def test_pipe_echappe_dans_une_cellule_pas_de_decoupe(self, tmp_path: Path):
+        """Revue 10/07 : un pipe échappé `\\|` dans une cellule était traité
+        comme séparateur de colonnes."""
+        markdown = "# Doc\n\n| Option | Valeur |\n|---|---|\n| a\\|b | c |\n"
+        doc = _render(tmp_path, markdown)
+        table = doc.tables[0]
+        assert table.rows[1].cells[0].text == "a|b"
+        assert table.rows[1].cells[1].text == "c"
+
     def test_titre_niveau_4_et_blockquote_rendus(self, tmp_path: Path):
         markdown = (
             "# Doc\n\n"
