@@ -75,11 +75,19 @@ export const useStatusStore = create<StatusStore>((set, get) => ({
       notifications: [...state.notifications, newNotification],
     }));
 
-    // Auto-dismiss
+    // Auto-dismiss. BUG-134 : durées par type - 5 s uniformes coupaient la
+    // lecture des messages d'erreur/validation de 2 lignes. duration
+    // explicite respectée, 0 = persistant.
     if (notification.duration !== 0) {
+      const defaultDurations: Record<Notification['type'], number> = {
+        success: 4000,
+        info: 5000,
+        warning: 8000,
+        error: 10000,
+      };
       setTimeout(() => {
         get().dismissNotification(id);
-      }, notification.duration || 5000);
+      }, notification.duration ?? defaultDurations[notification.type]);
     }
   },
 
