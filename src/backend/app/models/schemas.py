@@ -50,7 +50,7 @@ class ChatResponse(BaseModel):
 class StreamChunk(BaseModel):
     """Streaming response chunk."""
 
-    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "confirmation_required"] = "text"
+    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required"] = "text"
     content: str = ""
     conversation_id: str | None = None
     message_id: str | None = None
