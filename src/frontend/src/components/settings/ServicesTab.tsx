@@ -5,6 +5,7 @@
 import { Check, AlertCircle, Loader2, Eye, EyeOff, Mic, Image as ImageIcon, Globe, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { IMAGE_PROVIDERS } from './LLMTab';
+import { ExportProfileSection } from './ExportProfileSection';
 
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
@@ -79,6 +80,9 @@ export function ServicesTab({
 
   return (
     <div className="space-y-6">
+      {/* Chantier 5 : profil des exports Word (Atelier + conversations) */}
+      <ExportProfileSection />
+
       {/* Génération d'images */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">

@@ -610,6 +610,7 @@ def _create_archive(archive_path) -> list[str]:
         (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
         (data_dir / "images", "images"),
         (data_dir / "mcp_servers.json", "mcp_servers.json"),
+        (data_dir / "export_profile.json", "export_profile.json"),
         (data_dir / ".encryption_key", ".encryption_key"),
         (data_dir / ".encryption_salt", ".encryption_salt"),
     ]

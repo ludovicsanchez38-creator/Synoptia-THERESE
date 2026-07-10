@@ -14,12 +14,12 @@ Contrairement au pipeline LLM (CodeGenSkill/DocxSkill), ce convertisseur :
 import re
 from pathlib import Path
 
-from app.services.skills.docx_generator import SYNOPTIA_COLORS
+from app.services.export_profile import ExportProfile
 from docx import Document
 from docx.document import Document as DocumentObject
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Cm, Pt, RGBColor
 from docx.text.paragraph import Paragraph
 
 # Segments inline **gras**, *italique*, `code` - tout le reste (y compris les
@@ -29,14 +29,33 @@ _TABLE_SEPARATOR = re.compile(r"^\|?[\s\-:|]+\|?\s*$")
 _HR_PATTERN = re.compile(r"^(-{3,}|\*{3,}|_{3,})\s*$")
 
 
-def render_markdown_docx(markdown: str, output_path: Path) -> None:
-    """Rend un document Markdown complet en .docx stylé Synoptia, fr-FR."""
+def render_markdown_docx(
+    markdown: str, output_path: Path, profile: ExportProfile | None = None
+) -> None:
+    """Rend un document Markdown complet en .docx. Le profil d'export
+    (chantier 5) pilote langue, polices, couleurs, footer et marges - ses
+    DÉFAUTS reproduisent la charte Synoptia historique (fr-FR, Calibri 11)."""
+    profile = profile or ExportProfile()
     doc = Document()
-    _setup_styles(doc)
-    _set_language(doc, "fr-FR")
-    _render_blocks(doc, markdown)
-    _add_footer(doc)
+    _setup_styles(doc, profile)
+    _set_language(doc, profile.language)
+    _apply_margins(doc, profile)
+    _render_blocks(doc, markdown, profile)
+    _add_footer(doc, profile)
     doc.save(str(output_path))
+
+
+def _color(hex_value: str) -> RGBColor:
+    return RGBColor.from_string(hex_value.lstrip("#"))
+
+
+def _apply_margins(doc: DocumentObject, profile: ExportProfile) -> None:
+    m = profile.margins_cm
+    for section in doc.sections:
+        section.top_margin = Cm(m.top)
+        section.bottom_margin = Cm(m.bottom)
+        section.left_margin = Cm(m.left)
+        section.right_margin = Cm(m.right)
 
 
 def _set_language(doc: DocumentObject, lang: str) -> None:
@@ -55,7 +74,7 @@ def _set_language(doc: DocumentObject, lang: str) -> None:
         rpr.append(lang_el)
 
 
-def _render_blocks(doc: DocumentObject, markdown: str) -> None:
+def _render_blocks(doc: DocumentObject, markdown: str, profile: ExportProfile) -> None:
     """Machine à états ligne par ligne - aucune branche ne jette de contenu."""
     in_code = False
     first_h1_done = False
@@ -98,7 +117,7 @@ def _render_blocks(doc: DocumentObject, markdown: str) -> None:
                 # Premier # = titre principal du document (style hero), les
                 # suivants redeviennent des Heading 1 ordinaires.
                 para = doc.add_heading(line[2:], level=0)
-                _style_title(para)
+                _style_title(para, profile)
                 first_h1_done = True
         elif _HR_PATTERN.match(line):
             continue  # séparateur horizontal : pas de texte littéral
@@ -199,47 +218,49 @@ def _add_formatted_text(para: Paragraph, text: str) -> None:
         para.add_run(text[pos:])
 
 
-def _setup_styles(doc: DocumentObject) -> None:
-    """Styles Synoptia (mêmes réglages que le chemin LLM DocxSkill)."""
+def _setup_styles(doc: DocumentObject, profile: ExportProfile) -> None:
+    """Styles pilotés par le profil d'export (défauts = charte Synoptia)."""
     styles = doc.styles
 
     normal = styles["Normal"]
-    normal.font.name = "Calibri"
-    normal.font.size = Pt(11)
-    normal.font.color.rgb = SYNOPTIA_COLORS["body"]
+    normal.font.name = profile.body_font
+    normal.font.size = Pt(profile.body_size_pt)
+    normal.font.color.rgb = _color(profile.body_color)
     normal.paragraph_format.space_after = Pt(10)
     normal.paragraph_format.line_spacing = 1.15
 
     heading_specs = {
-        "Heading 1": (24, SYNOPTIA_COLORS["heading"], 24, 12),
-        "Heading 2": (18, SYNOPTIA_COLORS["primary"], 18, 8),
-        "Heading 3": (14, SYNOPTIA_COLORS["heading"], 14, 6),
-        "Heading 4": (12, SYNOPTIA_COLORS["heading"], 12, 6),
+        "Heading 1": (24, profile.heading_color, 24, 12),
+        "Heading 2": (18, profile.h2_color, 18, 8),
+        "Heading 3": (14, profile.heading_color, 14, 6),
+        "Heading 4": (12, profile.heading_color, 12, 6),
     }
     for name, (size, color, before, after) in heading_specs.items():
         if name in styles:
             style = styles[name]
-            style.font.name = "Outfit"
+            style.font.name = profile.heading_font
             style.font.size = Pt(size)
             style.font.bold = True
-            style.font.color.rgb = color
+            style.font.color.rgb = _color(color)
             style.paragraph_format.space_before = Pt(before)
             style.paragraph_format.space_after = Pt(after)
 
 
-def _style_title(para: Paragraph) -> None:
+def _style_title(para: Paragraph, profile: ExportProfile) -> None:
     for run in para.runs:
-        run.font.name = "Outfit"
+        run.font.name = profile.heading_font
         run.font.size = Pt(28)
         run.font.bold = True
-        run.font.color.rgb = SYNOPTIA_COLORS["heading"]
+        run.font.color.rgb = _color(profile.title_color)
 
 
-def _add_footer(doc: DocumentObject) -> None:
+def _add_footer(doc: DocumentObject, profile: ExportProfile) -> None:
+    if not profile.footer_text:
+        return
     section = doc.sections[-1]
     footer = section.footer
     footer.is_linked_to_previous = False
     para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = para.add_run("Généré par THÉRÈSE - Synoptïa")
+    run = para.add_run(profile.footer_text)
     run.font.size = Pt(9)

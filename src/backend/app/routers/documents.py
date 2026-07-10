@@ -819,7 +819,12 @@ async def export_document(
     output_path = registry.output_dir / file_name
 
     if fmt == "docx":
-        render_markdown_docx(markdown, output_path)
+        from app.services.export_profile import load_export_profile
+
+        profile, profile_warning = load_export_profile()
+        if profile_warning:
+            logger.warning("Export DOCX : %s", profile_warning)
+        render_markdown_docx(markdown, output_path, profile=profile)
     else:
         output_path.write_text(markdown, encoding="utf-8")
 

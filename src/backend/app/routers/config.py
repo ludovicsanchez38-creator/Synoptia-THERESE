@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+from app.services.export_profile import ExportProfile as ExportProfileBody  # noqa: E402
+
 # Track startup time
 _startup_time = datetime.now(UTC)
 
@@ -341,6 +343,35 @@ async def delete_api_key(
     )
 
     return {"success": True, "provider": provider, "deleted": True}
+
+
+@router.get("/export-profile")
+async def get_export_profile() -> dict[str, object]:
+    """Profil d'export DOCX (chantier 5) + avertissement si fichier illisible."""
+    from app.services.export_profile import load_export_profile
+
+    profile, warning = load_export_profile()
+    return {"profile": profile.model_dump(), "warning": warning}
+
+
+@router.put("/export-profile")
+async def set_export_profile(profile: "ExportProfileBody") -> dict[str, object]:
+    """Remplace le profil d'export (validation stricte Pydantic, 422 sinon).
+    L'import de profil = ce même PUT avec le contenu JSON du fichier."""
+    from app.services.export_profile import ExportProfile, save_export_profile
+
+    validated = ExportProfile.model_validate(profile.model_dump(exclude_unset=True))
+    save_export_profile(validated)
+    return {"profile": validated.model_dump(), "warning": None}
+
+
+@router.delete("/export-profile")
+async def reset_export_profile_route() -> dict[str, bool]:
+    """Réinitialise le profil d'export aux défauts (charte Synoptia)."""
+    from app.services.export_profile import reset_export_profile
+
+    reset_export_profile()
+    return {"success": True}
 
 
 @router.get("/preferences")
