@@ -35,6 +35,57 @@ export interface SlashCommand {
 }
 
 const SLASH_COMMANDS: SlashCommand[] = [
+  // Actions déterministes (tranche 1a) : insèrent un message-action pur,
+  // exécuté localement par le backend sans passer par le LLM.
+  {
+    id: 'ouvrir-email',
+    name: 'ouvrir email',
+    description: 'Ouvrir la boîte email (action locale, sans IA)',
+    icon: <Mail className="w-4 h-4" />,
+    prefix: '{action: ouvrir email}',
+  },
+  {
+    id: 'ouvrir-crm',
+    name: 'ouvrir crm',
+    description: 'Ouvrir le pipeline CRM (action locale, sans IA)',
+    icon: <UserPlus className="w-4 h-4" />,
+    prefix: '{action: ouvrir crm}',
+  },
+  {
+    id: 'ouvrir-memoire',
+    name: 'ouvrir mémoire',
+    description: 'Ouvrir la Mémoire (action locale, sans IA)',
+    icon: <Search className="w-4 h-4" />,
+    prefix: '{action: ouvrir mémoire}',
+  },
+  {
+    id: 'ouvrir-calendrier',
+    name: 'ouvrir calendrier',
+    description: 'Ouvrir le Calendrier (action locale, sans IA)',
+    icon: <Calendar className="w-4 h-4" />,
+    prefix: '{action: ouvrir calendrier}',
+  },
+  {
+    id: 'ouvrir-taches',
+    name: 'ouvrir tâches',
+    description: 'Ouvrir les Tâches (action locale, sans IA)',
+    icon: <ListTodo className="w-4 h-4" />,
+    prefix: '{action: ouvrir tâches}',
+  },
+  {
+    id: 'ouvrir-documents',
+    name: 'ouvrir documents',
+    description: "Ouvrir l'Atelier documentaire (action locale, sans IA)",
+    icon: <FileText className="w-4 h-4" />,
+    prefix: '{action: ouvrir documents}',
+  },
+  {
+    id: 'ouvrir-facturation',
+    name: 'ouvrir facturation',
+    description: 'Ouvrir les Factures (action locale, sans IA)',
+    icon: <FileSpreadsheet className="w-4 h-4" />,
+    prefix: '{action: ouvrir facturation}',
+  },
   {
     id: 'contact',
     name: 'contact',

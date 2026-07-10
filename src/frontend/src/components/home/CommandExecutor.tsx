@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CommandDefinition } from '../../types/command';
+import { runAction } from '../../lib/actionRegistry';
 import type { FileFormat, ImageProvider } from '../guided/actionData';
 import { DynamicSkillForm, type SkillSchema } from '../guided/DynamicSkillForm';
 import { SkillExecutionPanel, type SkillExecutionStatus } from '../guided/SkillExecutionPanel';
@@ -101,7 +102,16 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
       }
 
       case 'navigate': {
-        // TODO : navigation vers panel
+        // Actions déterministes (tranche 1a) : navigation via le registre
+        // d'actions. navigate_target accepte un id complet (email.open) ou
+        // une vue nue (email -> email.open).
+        const target = cmd.navigate_target;
+        if (target) {
+          const actionId = target.includes('.') ? target : `${target}.open`;
+          if (!runAction(actionId)) {
+            console.warn(`navigate : cible inconnue « ${target} »`);
+          }
+        }
         onClose();
         break;
       }

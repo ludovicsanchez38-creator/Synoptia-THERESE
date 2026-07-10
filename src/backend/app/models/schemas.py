@@ -44,13 +44,14 @@ class ChatResponse(BaseModel):
     tokens_out: int | None = None
     model: str | None = None
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
+    client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
     created_at: datetime
 
 
 class StreamChunk(BaseModel):
     """Streaming response chunk."""
 
-    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required"] = "text"
+    type: Literal["text", "done", "error", "status", "tool_result", "entities_detected", "skill_file", "skill_file_error", "confirmation_required", "client_action"] = "text"
     content: str = ""
     conversation_id: str | None = None
     message_id: str | None = None
@@ -58,6 +59,7 @@ class StreamChunk(BaseModel):
     tool_name: str | None = None  # For tool_result type
     skill_file: dict | None = None  # For skill_file type (auto-detected skill execution)
     confirmation: dict | None = None  # US-002 : action sensible en attente de validation
+    client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
     provider: str | None = None  # P0-IA-3 : provider LLM utilisé (event done)
 
 

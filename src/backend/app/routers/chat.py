@@ -22,6 +22,7 @@ from app.models.schemas import (
     MessageResponse,
     StreamChunk,
 )
+from app.services.chat_actions import available_actions_text, parse_action_message
 from app.services.entity_extractor import (
     get_entity_extractor,
 )
@@ -598,6 +599,82 @@ async def send_message(
     )
     session.add(user_message)
     await session.commit()
+
+    # Actions déterministes (tranche 1a, design 2026-07-10) : un message
+    # composé UNIQUEMENT de `{action: ...}` s'exécute localement, ZÉRO appel
+    # LLM. Action inconnue -> réponse locale listant l'allowlist, jamais
+    # transmise au modèle. Un message ordinaire poursuit le flux inchangé.
+    parsed_action = parse_action_message(request.message)
+    if parsed_action is not None:
+        client_action: dict[str, str] | None = None
+        if parsed_action.kind == "navigate":
+            confirmation = f"J'ouvre {parsed_action.label}."
+            client_action = {
+                "action": "navigate",
+                "action_id": parsed_action.action_id,
+                "target": parsed_action.target,
+            }
+        else:
+            confirmation = (
+                f"Action inconnue : « {parsed_action.raw} ». "
+                "Actions disponibles :\n" + available_actions_text()
+            )
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=confirmation,
+            model="action-deterministe",
+            extra_data=json.dumps(
+                {
+                    "action_result": {
+                        "status": "success" if client_action else "unknown_action",
+                        "client_action": client_action,
+                    }
+                }
+            ),
+        )
+        session.add(assistant_message)
+        await session.commit()
+
+        if request.stream:
+            async def _action_stream() -> AsyncGenerator[str, None]:
+                if client_action is not None:
+                    ca_chunk = StreamChunk(
+                        type="client_action",
+                        content="",
+                        conversation_id=conversation.id,
+                        client_action=client_action,
+                    )
+                    yield f"data: {json.dumps(ca_chunk.model_dump())}\n\n"
+                text_chunk = StreamChunk(
+                    type="text", content=confirmation, conversation_id=conversation.id
+                )
+                yield f"data: {json.dumps(text_chunk.model_dump())}\n\n"
+                done_chunk = StreamChunk(
+                    type="done",
+                    content="",
+                    conversation_id=conversation.id,
+                    message_id=assistant_message.id,
+                )
+                yield f"data: {json.dumps(done_chunk.model_dump())}\n\n"
+
+            return StreamingResponse(
+                _action_stream(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no",
+                },
+            )
+
+        return ChatResponse(
+            id=assistant_message.id,
+            conversation_id=conversation.id,
+            content=confirmation,
+            created_at=assistant_message.created_at,
+            client_action=client_action,
+        )
 
     # Court-circuit deterministe : /contact, /projet, /rdv s'executent en CRUD
     # direct, sans LLM ni boucle d'outils (regression #bugs-21052026 : creation

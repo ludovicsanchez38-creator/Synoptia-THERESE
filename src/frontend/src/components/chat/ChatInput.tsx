@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './SlashCommandsMenu';
+import { handleClientActionChunk } from '../../lib/clientActions';
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -464,6 +465,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             format: sf.format,
             local_dir: sf.local_dir,
           });
+        } else if (chunk.type === 'client_action') {
+          // Actions déterministes (tranche 1a) : le backend a résolu un
+          // message-action pur ({action: ouvrir email}) - exécution locale
+          // via le registre d'actions, aucun LLM impliqué.
+          handleClientActionChunk(chunk);
         } else if (chunk.type === 'skill_file_error') {
           // Fichiers générés visibles (10/07) : un échec de génération ne
           // reste plus silencieux (avant : logs backend seulement, réponse
