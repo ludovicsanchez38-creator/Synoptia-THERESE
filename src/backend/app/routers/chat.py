@@ -639,6 +639,19 @@ async def send_message(
                 "action_id": parsed_action.action_id,
                 "target": parsed_action.target,
             }
+        elif parsed_action.kind == "variable":
+            # Tranche 2 Variables V4 : verbes variable exécutés localement,
+            # zéro LLM (le point de validation vit dans variables_service).
+            from app.services.variables_service import execute_chat_variable_action
+
+            confirmation = await execute_chat_variable_action(
+                session,
+                parsed_action.var_op or "erreur",
+                parsed_action.var_name,
+                parsed_action.var_value,
+                parsed_action.var_is_list,
+                parsed_action.var_message,
+            )
         elif parsed_action.kind == "help":
             confirmation = (
                 "Actions disponibles (exécutées localement, sans IA pour la "

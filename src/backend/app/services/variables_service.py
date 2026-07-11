@@ -173,3 +173,85 @@ async def delete_variable(session: AsyncSession, name: str) -> None:
         raise VariableError(f"La variable « {name} » n'existe pas.")
     await session.delete(variable)
     await session.commit()
+
+
+def _format_valeur(variable: Variable) -> str:
+    value = variable.parsed_value
+    if variable.kind == "text":
+        assert isinstance(value, str)
+        return value
+    assert isinstance(value, list)
+    if not value:
+        return "(liste vide)"
+    return "\n".join(f"- {item}" for item in value)
+
+
+def _resume(variable: Variable) -> str:
+    value = variable.parsed_value
+    if variable.kind == "text":
+        assert isinstance(value, str)
+        return f"texte, {len(value)} caractère{'s' if len(value) > 1 else ''}"
+    assert isinstance(value, list)
+    return f"liste, {len(value)} élément{'s' if len(value) > 1 else ''}"
+
+
+async def execute_chat_variable_action(
+    session: AsyncSession,
+    op: str,
+    name: str | None,
+    value: str | None,
+    is_list: bool,
+    error_message: str | None = None,
+) -> str:
+    """Exécute un verbe variable du chat (tranche 2 V4) - réponse locale,
+    zéro LLM. Toute VariableError devient le texte de la réponse."""
+    try:
+        if op == "erreur":
+            return error_message or "Commande variable invalide."
+        if op == "lister":
+            variables = await list_variables(session)
+            if not variables:
+                return (
+                    "Aucune variable. Crée-en une avec "
+                    '{action: variable creer nom "valeur"}.'
+                )
+            lignes = [f"- {v.name} ({_resume(v)})" for v in variables]
+            return "Variables :\n" + "\n".join(lignes)
+
+        assert name is not None
+        if op == "creer":
+            if is_list:
+                await create_variable(session, name, "list", [])
+                return f"Variable « {name} » créée (liste vide)."
+            assert value is not None
+            await create_variable(session, name, "text", value)
+            return f"Variable « {name} » créée (texte)."
+        if op == "remplacer":
+            existing = await get_variable(session, name)
+            if existing is not None and existing.kind == "list":
+                return (
+                    f"« {name} » est une liste : remplacer ne s'applique qu'aux "
+                    "variables texte. Supprime-la puis recrée-la si besoin."
+                )
+            assert value is not None
+            await replace_variable(session, name, value)
+            return f"Variable « {name} » remplacée."
+        if op == "ajouter":
+            assert value is not None
+            variable = await append_to_variable(session, name, value)
+            return f"Ajouté à « {name} » ({_resume(variable)})."
+        if op == "supprimer":
+            variable = await get_variable(session, name)
+            if variable is None:
+                raise VariableError(f"La variable « {name} » n'existe pas.")
+            apercu = _format_valeur(variable).replace("\n", ", ")[:120]
+            await delete_variable(session, name)
+            return f"Variable « {name} » supprimée (elle valait : {apercu})."
+        if op == "afficher":
+            variable = await get_variable(session, name)
+            if variable is None:
+                raise VariableError(f"La variable « {name} » n'existe pas.")
+            return f"{variable.name} ({_resume(variable)}) :\n{_format_valeur(variable)}"
+        return "Commande variable inconnue."
+    except VariableError as e:
+        return str(e)
