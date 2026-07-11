@@ -66,6 +66,7 @@ from app.routers import (
     skills_router,
     tasks_router,  # Phase 3 - ACTIVATED
     tools_router,  # V3 - Installed Tools
+    variables_router,  # Chantier 4 - Variables V1
     voice_router,
 )
 from app.services.mcp_service import get_mcp_service, initialize_mcp_service
@@ -641,6 +642,7 @@ app.include_router(board_router, prefix="/api/board", tags=["Board"])
 app.include_router(calc_router, prefix="/api/calc", tags=["Calculators"])
 app.include_router(mcp_router, prefix="/api/mcp", tags=["MCP"])
 app.include_router(data_router, prefix="/api/data", tags=["Data & RGPD"])
+app.include_router(variables_router, prefix="/api/variables", tags=["Variables"])
 app.include_router(perf_router, prefix="/api/perf", tags=["Performance"])
 app.include_router(personalisation_router, prefix="/api/personalisation", tags=["Personalisation"])
 app.include_router(escalation_router, prefix="/api/escalation", tags=["Escalation & Limites"])

@@ -63,6 +63,7 @@ from app.routers.tasks import router as tasks_router
 
 # V3 - Installed Tools
 from app.routers.tools import router as tools_router
+from app.routers.variables import router as variables_router
 from app.routers.voice import router as voice_router
 
 __all__ = [
@@ -77,6 +78,7 @@ __all__ = [
     "calc_router",
     "mcp_router",
     "data_router",
+    "variables_router",
     "perf_router",
     "personalisation_router",
     "escalation_router",

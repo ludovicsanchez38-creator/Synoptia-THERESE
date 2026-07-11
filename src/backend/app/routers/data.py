@@ -36,6 +36,7 @@ from app.models.entities import (
     Project,
     PromptTemplate,
     Task,
+    Variable,
 )
 from app.models.entities_agents import AgentMessage, AgentTask, CodeChange
 from app.services.audit import (
@@ -122,6 +123,11 @@ async def export_all_data(
     document_pistes_result = await session.execute(select(DocumentPiste))
     document_pistes = document_pistes_result.scalars().all()
 
+    # Variables utilisateur (chantier 4 - finding Codex 11 : énumération
+    # manuelle, ajout explicite obligatoire)
+    variables_result = await session.execute(select(Variable))
+    variables = variables_result.scalars().all()
+
     # Activity logs
     logs_result = await session.execute(
         select(ActivityLog).order_by(ActivityLog.timestamp.desc()).limit(1000)
@@ -131,7 +137,18 @@ async def export_all_data(
     export_data = {
         "exported_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
-        "data_format_version": "1.0",
+        "data_format_version": "1.1",  # 1.1 : bloc variables
+        "variables": [
+            {
+                "name": v.name,
+                "kind": v.kind,
+                "value": v.parsed_value,
+                "description": v.description,
+                "created_at": v.created_at.isoformat(),
+                "updated_at": v.updated_at.isoformat(),
+            }
+            for v in variables
+        ],
         "contacts": [
             {
                 "id": c.id,
@@ -420,6 +437,7 @@ async def delete_all_data(
     await session.execute(delete(Contact))
     await session.execute(delete(FileMetadata))
     await session.execute(delete(BoardDecisionDB))
+    await session.execute(delete(Variable))
     # On garde les preferences systeme mais on supprime les API keys
     await session.execute(
         delete(Preference).where(Preference.key.contains("api_key"))

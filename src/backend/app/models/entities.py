@@ -154,6 +154,41 @@ class FileMetadata(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
+class Variable(SQLModel, table=True):
+    """Variable utilisateur (chantier 4 Variables V1, design V4 11/07/2026).
+
+    Mémoire de travail scalaire (kind="text", value=JSON str) ou liste
+    (kind="list", value=JSON list[str]). L'invariant kind/value est validé
+    par variables_service (point unique API + chat). PAS un coffre à
+    secrets : les valeurs partent au LLM à l'usage.
+    """
+
+    __tablename__ = "variables"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    name: str = Field(unique=True, index=True)
+    kind: str = Field(default="text")  # "text" | "list"
+    value: str = Field(default='""')  # JSON (str ou list[str])
+    description: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @property
+    def parsed_value(self) -> str | list[str]:
+        """Valeur Python depuis le JSON stocké (repli tolérant si corrompu)."""
+        import json
+
+        try:
+            value = json.loads(self.value)
+        except (TypeError, json.JSONDecodeError):
+            return "" if self.kind == "text" else []
+        if self.kind == "text":
+            return value if isinstance(value, str) else ""
+        if isinstance(value, list):
+            return [item for item in value if isinstance(item, str)]
+        return []
+
+
 class Preference(SQLModel, table=True):
     """User preferences and settings."""
 

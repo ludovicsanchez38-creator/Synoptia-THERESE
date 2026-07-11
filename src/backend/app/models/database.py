@@ -156,6 +156,27 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("CREATE INDEX IF NOT EXISTS ix_email_follow_ups_status ON email_follow_ups(status)")
             conn.commit()
             logger.info("Migration auto : table 'email_follow_ups' créée")
+        # Chantier 4 Variables V1 (design V4 11/07/2026) : table variables
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='variables'"
+        )
+        if not cursor.fetchone():
+            conn.execute("""
+                CREATE TABLE variables (
+                    id VARCHAR NOT NULL PRIMARY KEY,
+                    name VARCHAR NOT NULL,
+                    kind VARCHAR NOT NULL DEFAULT 'text',
+                    value VARCHAR NOT NULL DEFAULT '""',
+                    description VARCHAR,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                )
+            """)
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_variables_name ON variables(name)"
+            )
+            conn.commit()
+            logger.info("Migration auto : table 'variables' créée")
 
 
 # US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
@@ -164,7 +185,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "a1b2c3d4e5f7"
+ALEMBIC_HEAD_REVISION = "b7c8d9e0f1a2"
 
 
 def ensure_alembic_stamp(db_path) -> None:
@@ -207,7 +228,17 @@ def ensure_alembic_stamp(db_path) -> None:
                         row[1]
                         for row in conn.execute("PRAGMA table_info(invoices)")
                     }
-                    if "validite_jours" in inv_cols:
+                    # Variables V4 finding Codex 8 (VÉRIFIÉ) : la preuve de
+                    # schéma doit couvrir CHAQUE élément apporté depuis, sinon
+                    # une base trackée serait ré-estampillée à la nouvelle
+                    # tête SANS la table variables et `upgrade head` sauterait
+                    # la migration. Toute future révision doit étendre cette
+                    # preuve (et les migrations ad-hoc ci-dessus).
+                    has_variables = conn.execute(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type='table' AND name='variables'"
+                    ).fetchone()
+                    if "validite_jours" in inv_cols and has_variables:
                         conn.execute(
                             "UPDATE alembic_version SET version_num = ?",
                             (ALEMBIC_HEAD_REVISION,),
