@@ -22,7 +22,11 @@ from app.models.schemas import (
     MessageResponse,
     StreamChunk,
 )
-from app.services.chat_actions import available_actions_text, parse_action_message
+from app.services.chat_actions import (
+    ParsedChatAction,
+    available_actions_text,
+    parse_action_message,
+)
 from app.services.entity_extractor import (
     get_entity_extractor,
 )
@@ -621,15 +625,37 @@ async def send_message(
         # reste IMMUABLE - le prompt dérivé vit dans produce_prompt et ne
         # repasse par AUCUN parseur déterministe (slash/inline) : une
         # directive [contact: ...] dans le sujet était réellement exécutée.
-        request.skill_id = parsed_action.skill_id
-        produce_prompt = (
-            "Rédige le contenu complet et structuré du document demandé : "
-            f"{parsed_action.subject}"
-        )
-        # Rédaction pure : la boucle d'outils (MCP/workspace) n'apporte rien à
-        # la production d'un document et introduit de l'aléa - désactivée.
-        request.disable_tools = True
-        parsed_action = None
+        # Tranche 3 Variables V4 : le sujet est résolu ({nom} -> valeur,
+        # listes en bloc) APRÈS classification - la valeur est une donnée,
+        # le skill et le format sont déjà fixés. Erreur de borne -> réponse
+        # locale (branche variable), aucun appel LLM.
+        produce_subject = parsed_action.subject or ""
+        if "{" in produce_subject:
+            from app.services.variables_service import (
+                VariableError as _VariableError,
+            )
+            from app.services.variables_service import resolve_message
+
+            try:
+                produce_subject, _ = await resolve_message(
+                    session, produce_subject, list_mode="block"
+                )
+            except _VariableError as e:
+                parsed_action = ParsedChatAction(
+                    kind="variable", raw=parsed_action.raw,
+                    var_op="erreur", var_message=str(e),
+                )
+                produce_subject = None
+        if produce_subject is not None:
+            request.skill_id = parsed_action.skill_id
+            produce_prompt = (
+                "Rédige le contenu complet et structuré du document demandé : "
+                f"{produce_subject}"
+            )
+            # Rédaction pure : la boucle d'outils (MCP/workspace) n'apporte
+            # rien à la production d'un document et introduit de l'aléa.
+            request.disable_tools = True
+            parsed_action = None
     if parsed_action is not None:
         client_action: dict[str, str] | None = None
         if parsed_action.kind == "navigate":
@@ -845,6 +871,63 @@ async def send_message(
             "ne PAS les refaire ni les remettre en question) :\n" + inline_block
         )
 
+    # Tranche 3 Variables V4 : substitution {nom} sur le SEUL texte destiné
+    # au LLM, APRÈS tous les parseurs déterministes (le brut reste la bulle
+    # et l'historique - pas de re-résolution rétroactive, finding 10) et
+    # AVANT check_prompt_safety (finding 4). La détection de skill reçoit le
+    # texte PRÉ-substitution (finding 3 : une valeur ne choisit pas un skill).
+    detection_message = llm_user_message
+    if produce_prompt is None and "{" in llm_user_message:
+        from app.services.variables_service import (
+            VariableError as _VariableError,
+        )
+        from app.services.variables_service import resolve_message
+
+        try:
+            llm_user_message, _unknown_vars = await resolve_message(
+                session, llm_user_message
+            )
+        except _VariableError as e:
+            borne_message = str(e)
+            assistant_message = Message(
+                conversation_id=conversation.id,
+                role="assistant",
+                content=borne_message,
+                model="action-deterministe",
+            )
+            user_message.extra_data = json.dumps({"deterministic": True})
+            session.add(assistant_message)
+            await session.commit()
+            if request.stream:
+                async def _borne_stream() -> AsyncGenerator[str, None]:
+                    text_chunk = StreamChunk(
+                        type="text", content=borne_message,
+                        conversation_id=conversation.id,
+                    )
+                    yield f"data: {json.dumps(text_chunk.model_dump())}\n\n"
+                    done_chunk = StreamChunk(
+                        type="done", content="",
+                        conversation_id=conversation.id,
+                        message_id=assistant_message.id,
+                    )
+                    yield f"data: {json.dumps(done_chunk.model_dump())}\n\n"
+
+                return StreamingResponse(
+                    _borne_stream(),
+                    media_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Accel-Buffering": "no",
+                    },
+                )
+            return ChatResponse(
+                id=assistant_message.id,
+                conversation_id=conversation.id,
+                content=borne_message,
+                created_at=assistant_message.created_at,
+            )
+
     # Handle streaming response
     if request.stream:
         return StreamingResponse(
@@ -854,6 +937,7 @@ async def send_message(
                 disable_tools=request.disable_tools,
                 preamble=inline_preamble, actions_context=actions_context,
                 allow_file_commands=produce_prompt is None,
+                detection_message=detection_message,
             ),
             media_type="text/event-stream",
             headers={
@@ -1001,6 +1085,7 @@ async def _stream_response(
     preamble: str = "",
     actions_context: str | None = None,
     allow_file_commands: bool = True,
+    detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -1013,6 +1098,7 @@ async def _stream_response(
             disable_tools=disable_tools,
             preamble=preamble, actions_context=actions_context,
             allow_file_commands=allow_file_commands,
+            detection_message=detection_message,
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -1034,13 +1120,28 @@ async def _do_stream_response(
     preamble: str = "",
     actions_context: str | None = None,
     allow_file_commands: bool = True,
+    detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
-    # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}
-    from app.services.skills.intent_detector import resolve_skill_from_message
-    resolved_skill_id, resolved_format, user_message = resolve_skill_from_message(
-        user_message, explicit_skill_id=skill_id
+    # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}.
+    # Tranche 3 Variables V4 (finding Codex 3 VÉRIFIÉ) : la détection porte
+    # sur le texte PRÉ-substitution (detection_message) - une valeur de
+    # variable ne peut ni forcer {{action:}} ni déclencher un mot-clé. Le
+    # tag éventuel est ensuite retiré du texte LLM résolu.
+    from app.services.skills.intent_detector import (
+        parse_action_syntax,
+        resolve_skill_from_message,
     )
+    detection_source = (
+        detection_message if detection_message is not None else user_message
+    )
+    resolved_skill_id, resolved_format, cleaned_detection = (
+        resolve_skill_from_message(detection_source, explicit_skill_id=skill_id)
+    )
+    if detection_message is None:
+        user_message = cleaned_detection
+    else:
+        _tag_llm, user_message = parse_action_syntax(user_message)
     if resolved_skill_id and resolved_skill_id != skill_id:
         logger.info(f"Skill auto-détecté : {resolved_skill_id} (format: {resolved_format})")
     skill_id = resolved_skill_id

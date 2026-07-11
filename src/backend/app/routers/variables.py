@@ -104,3 +104,39 @@ async def remove(
     except VariableError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     return {"status": "deleted", "name": name}
+
+
+class PreviewBody(BaseModel):
+    text: str = Field(max_length=100_000)
+
+
+class PreviewResponse(BaseModel):
+    resolved: str
+    unknown: list[str]
+    errors: list[str]
+    variables_revision: str
+
+
+@router.post("/preview", response_model=PreviewResponse)
+async def preview(
+    body: PreviewBody,
+    session: AsyncSession = Depends(get_session),
+) -> PreviewResponse:
+    """Aperçu exact de la résolution (MÊME fonction que l'envoi, zéro effet
+    de bord). Une erreur de borne est rapportée, pas levée : l'utilisateur
+    la voit avant d'envoyer."""
+    from app.services.variables_service import resolve_message, variables_revision
+
+    errors: list[str] = []
+    unknown: list[str] = []
+    resolved = body.text
+    try:
+        resolved, unknown = await resolve_message(session, body.text)
+    except VariableError as e:
+        errors.append(str(e))
+    return PreviewResponse(
+        resolved=resolved,
+        unknown=unknown,
+        errors=errors,
+        variables_revision=await variables_revision(session),
+    )

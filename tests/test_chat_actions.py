@@ -457,12 +457,17 @@ class TestActionEndpoint:
             provider = _FakeProvider()
             model = "fake"
 
+        class _Ctx:
+            def __init__(self, messages):
+                self.system_prompt = ""
+                self.messages = messages
+
         class _RecordingLLM:
             config = _FakeConfig()
 
             def prepare_context(self, messages, memory_context=None):
                 seen.append(list(messages))
-                return []
+                return _Ctx(messages)
 
             async def stream_response_with_tools(self, context, tools=None):
                 yield StreamEvent(type="text", content="Bonjour !")

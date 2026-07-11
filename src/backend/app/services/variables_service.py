@@ -255,3 +255,77 @@ async def execute_chat_variable_action(
         return "Commande variable inconnue."
     except VariableError as e:
         return str(e)
+
+
+# --- Tranche 3 : substitution {nom} (design V4, findings 9/10) ---
+
+MAX_TOKENS_PER_MESSAGE = 20
+MAX_RESOLVED_LENGTH = 60_000
+_TOKEN_RE = re.compile(r"\{([a-z0-9_]{1,32})\}")
+_ESCAPE_RE = re.compile(r"\{\{([a-z0-9_]{1,32})\}\}")
+_SENTINEL = "\x00VAR\x00"
+_SENTINEL_RE = re.compile("\x00VAR\x00([a-z0-9_]{1,32})\x00")
+
+
+def resolve_text(
+    text: str,
+    variables: dict[str, str | list[str]],
+    list_mode: str = "inline",
+) -> tuple[str, list[str]]:
+    """Substitution single-pass : les valeurs ne sont JAMAIS re-scannées
+    (ni tokens, ni actions, ni directives - l'ordre des parseurs de
+    send_message garantit le reste). `{{nom}}` = littéral `{nom}`.
+    Inconnue = token laissé tel quel + signalé. Bornes : 20 tokens par
+    message, 60 000 caractères résolus."""
+    escaped = _ESCAPE_RE.sub(lambda m: f"{_SENTINEL}{m.group(1)}\x00", text)
+    tokens = _TOKEN_RE.findall(escaped)
+    if len(tokens) > MAX_TOKENS_PER_MESSAGE:
+        raise VariableError(
+            f"Trop de variables dans le message ({len(tokens)}, maximum "
+            f"{MAX_TOKENS_PER_MESSAGE})."
+        )
+    unknown: list[str] = []
+
+    def _sub(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in variables:
+            unknown.append(name)
+            return match.group(0)
+        value = variables[name]
+        if isinstance(value, list):
+            if list_mode == "block":
+                return "\n".join(f"- {item}" for item in value)
+            return ", ".join(value)
+        return value
+
+    resolved = _TOKEN_RE.sub(_sub, escaped)
+    resolved = _SENTINEL_RE.sub(r"{\1}", resolved)
+    if len(resolved) > MAX_RESOLVED_LENGTH:
+        raise VariableError(
+            "Message résolu trop volumineux "
+            f"({MAX_RESOLVED_LENGTH} caractères maximum)."
+        )
+    deduped: list[str] = []
+    for name in unknown:
+        if name not in deduped:
+            deduped.append(name)
+    return resolved, deduped
+
+
+async def resolve_message(
+    session: AsyncSession, text: str, list_mode: str = "inline"
+) -> tuple[str, list[str]]:
+    """resolve_text avec l'état courant de la base - MÊME fonction pour le
+    preview et l'envoi réel (finding 10)."""
+    variables = {v.name: v.parsed_value for v in await list_variables(session)}
+    return resolve_text(text, variables, list_mode=list_mode)
+
+
+async def variables_revision(session: AsyncSession) -> str:
+    """Empreinte de l'état des variables (le frontend détecte un aperçu
+    périmé entre le preview et l'envoi)."""
+    import hashlib
+
+    variables = await list_variables(session)
+    payload = "|".join(f"{v.name}:{v.updated_at.isoformat()}" for v in variables)
+    return hashlib.sha256(payload.encode()).hexdigest()[:12]
