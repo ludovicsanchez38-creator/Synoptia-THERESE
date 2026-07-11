@@ -17,6 +17,11 @@ import { ActionChips } from './ActionChips';
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
+import {
+  hasVariableTokens,
+  previewVariables,
+  type VariablesPreview,
+} from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
@@ -67,6 +72,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [inputRect, setInputRect] = useState<DOMRect | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<DroppedFile[]>([]);
+  // Chantier 4 Variables V1 : aperçu de résolution {nom} (debounced) et
+  // confirmation par double-envoi quand des variables sont inconnues.
+  const [variablesPreview, setVariablesPreview] = useState<VariablesPreview | null>(null);
+  const unknownConfirmedRef = useRef(false);
   const [isIndexing, setIsIndexing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -293,6 +302,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     textarea.style.height = `${newHeight}px`;
   }, [saveDraft]);
 
+  useEffect(() => {
+    unknownConfirmedRef.current = false;
+    if (!hasVariableTokens(input)) {
+      setVariablesPreview(null);
+      return;
+    }
+    const handle = window.setTimeout(async () => {
+      try {
+        setVariablesPreview(await previewVariables(input));
+      } catch {
+        setVariablesPreview(null);
+      }
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [input]);
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline) return;
@@ -318,6 +343,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         return;
       }
     }
+
+    // Variables inconnues : premier envoi = avertissement local, second =
+    // envoi tel quel (les tokens inconnus restent littéraux côté backend).
+    if (
+      variablesPreview &&
+      variablesPreview.unknown.length > 0 &&
+      !unknownConfirmedRef.current
+    ) {
+      unknownConfirmedRef.current = true;
+      useStatusStore.getState().addNotification({
+        type: 'warning',
+        title: 'Variables inconnues',
+        message: `${variablesPreview.unknown.map((n) => `{${n}}`).join(', ')} : `
+          + 'inconnue(s), le texte partira tel quel. Renvoie pour confirmer.',
+      });
+      return;
+    }
+    unknownConfirmedRef.current = false;
 
     // Si streaming en cours, mettre en file d'attente (1 seul)
     if (isStreaming) {
@@ -755,6 +798,32 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           envoie (exécution locale, allowlist backend). */}
       {!input && !isStreaming && (currentConversation()?.messages?.length ?? 0) === 0 && (
         <ActionChips onInsert={(text) => setInput(text)} />
+      )}
+
+      {/* Chantier 4 : aperçu de résolution des variables {nom} */}
+      {variablesPreview && (
+        <div
+          data-testid="variables-preview-chip"
+          className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg text-xs
+                     bg-surface-elevated/60 border border-border/40"
+        >
+          <span className="text-text-muted">
+            {(() => {
+              const total = (input.match(/(?<!\{)\{[a-z0-9_]{1,32}\}/g) ?? []).length;
+              const resolues = total - variablesPreview.unknown.length;
+              return `${resolues} variable${resolues > 1 ? 's' : ''} résolue${resolues > 1 ? 's' : ''}`;
+            })()}
+          </span>
+          {variablesPreview.unknown.length > 0 && (
+            <span className="text-warning">
+              inconnue{variablesPreview.unknown.length > 1 ? 's' : ''} :{' '}
+              {variablesPreview.unknown.map((n) => `{${n}}`).join(', ')}
+            </span>
+          )}
+          {variablesPreview.errors.length > 0 && (
+            <span className="text-error">{variablesPreview.errors[0]}</span>
+          )}
+        </div>
       )}
 
       {/* Attached files */}

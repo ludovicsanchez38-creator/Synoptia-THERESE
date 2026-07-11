@@ -6,6 +6,7 @@ import { Check, AlertCircle, Loader2, Eye, EyeOff, Mic, Image as ImageIcon, Glob
 import { Button } from '../ui/Button';
 import { IMAGE_PROVIDERS } from './LLMTab';
 import { ExportProfileSection } from './ExportProfileSection';
+import { VariablesSection } from './VariablesSection';
 
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
@@ -82,6 +83,7 @@ export function ServicesTab({
     <div className="space-y-6">
       {/* Chantier 5 : profil des exports Word (Atelier + conversations) */}
       <ExportProfileSection />
+      <VariablesSection />
 
       {/* Génération d'images */}
       <div className="space-y-3">

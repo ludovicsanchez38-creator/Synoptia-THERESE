@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import {
+  Braces,
   UserPlus,
   FolderPlus,
   Search,
@@ -106,6 +107,27 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Générer une présentation PowerPoint (le fichier est créé localement)',
     icon: <Presentation className="w-4 h-4" />,
     prefix: '{action: produire pptx "sujet de la présentation"}',
+  },
+  {
+    id: 'variable-creer',
+    name: 'variable creer',
+    description: 'Créer une variable réutilisable via {nom} (texte ou liste)',
+    icon: <Braces className="w-4 h-4" />,
+    prefix: '{action: variable creer nom "valeur"}',
+  },
+  {
+    id: 'variable-ajouter',
+    name: 'variable ajouter',
+    description: 'Ajouter à une variable (concatène un texte, enrichit une liste)',
+    icon: <Braces className="w-4 h-4" />,
+    prefix: '{action: variable ajouter nom "valeur"}',
+  },
+  {
+    id: 'variables',
+    name: 'variables',
+    description: 'Lister les variables (afficher, remplacer, supprimer : via {action: aide})',
+    icon: <Braces className="w-4 h-4" />,
+    prefix: '{action: variables}',
   },
   {
     id: 'contact',
