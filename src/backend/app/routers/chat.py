@@ -586,9 +586,15 @@ async def send_message(
         .limit(50)  # Limit history to last 50 messages
     )
     history_messages = list(reversed(history_result.scalars().all()))
+    # Tranche 0f Variables V4 (finding Codex 4) : les échanges déterministes
+    # (message-action + confirmation locale, commandes /) sont EXCLUS du
+    # contexte LLM - bruit aujourd'hui, valeurs de variables demain. Les
+    # user legacy (avant le tag) restent : bruit sans risque, documenté.
     history = [
         LLMMessage(role=msg.role, content=msg.content)
         for msg in history_messages
+        if msg.model not in ("action-deterministe", "commande-deterministe")
+        and not (msg.extra_data and '"deterministic": true' in msg.extra_data)
     ]
 
     # Save user message
@@ -605,15 +611,18 @@ async def send_message(
     # LLM. Action inconnue -> réponse locale listant l'allowlist, jamais
     # transmise au modèle. Un message ordinaire poursuit le flux inchangé.
     parsed_action = parse_action_message(request.message)
+    produce_prompt: str | None = None
     if parsed_action is not None and parsed_action.kind == "produce":
         # Tranche 1b : production de fichier déterministe. Le skill est FORCÉ
         # (aucune détection d'intention), le LLM ne fait que rédiger le
         # contenu ; création/statut/erreur suivent le chemin déterministe du
-        # 10/07 (skill_file avant done, échec visible). Le message-action
-        # original reste le message utilisateur persisté ; seul le prompt
-        # envoyé au modèle est dérivé du sujet. PAS de return : flux normal.
+        # 10/07 (skill_file avant done, échec visible). PAS de return.
+        # Tranche 0b Variables V4 (finding Codex 1 VÉRIFIÉ) : request.message
+        # reste IMMUABLE - le prompt dérivé vit dans produce_prompt et ne
+        # repasse par AUCUN parseur déterministe (slash/inline) : une
+        # directive [contact: ...] dans le sujet était réellement exécutée.
         request.skill_id = parsed_action.skill_id
-        request.message = (
+        produce_prompt = (
             "Rédige le contenu complet et structuré du document demandé : "
             f"{parsed_action.subject}"
         )
@@ -640,6 +649,7 @@ async def send_message(
                 f"Action inconnue : « {parsed_action.raw} ». "
                 "Actions disponibles :\n" + available_actions_text()
             )
+        user_message.extra_data = json.dumps({"deterministic": True})
         assistant_message = Message(
             conversation_id=conversation.id,
             role="assistant",
@@ -700,10 +710,12 @@ async def send_message(
     # Court-circuit deterministe : /contact, /projet, /rdv s'executent en CRUD
     # direct, sans LLM ni boucle d'outils (regression #bugs-21052026 : creation
     # de projets EN MASSE via interpretation LLM des commandes /).
-    parsed_cmd = parse_slash_command(request.message)
+    # Branche produire : aucun parseur ne retouche le message (tranche 0b).
+    parsed_cmd = None if produce_prompt is not None else parse_slash_command(request.message)
     if parsed_cmd is not None:
         cmd_name, cmd_rest = parsed_cmd
         confirmation = await execute_slash_command(cmd_name, cmd_rest, session)
+        user_message.extra_data = json.dumps({"deterministic": True})
         assistant_message = Message(
             conversation_id=conversation.id,
             role="assistant",
@@ -751,7 +763,13 @@ async def send_message(
     inline_preamble = ""
     actions_context: str | None = None
     llm_user_message = request.message
-    cleaned_message, inline_cmds = parse_inline_commands(request.message)
+    if produce_prompt is not None:
+        # Tranche 0b : le prompt de rédaction dérivé du sujet est le texte
+        # LLM, et il n'est JAMAIS re-scanné par les directives inline.
+        llm_user_message = produce_prompt
+        cleaned_message, inline_cmds = request.message, []
+    else:
+        cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if inline_cmds:
         confirmations = [
             await execute_slash_command(name, rest, session)
@@ -765,6 +783,7 @@ async def send_message(
 
         if not cleaned_message:
             # Message composé uniquement de directives : réponse déterministe pure
+            user_message.extra_data = json.dumps({"deterministic": True})
             assistant_message = Message(
                 conversation_id=conversation.id,
                 role="assistant",
@@ -821,6 +840,7 @@ async def send_message(
                 skill_id=request.skill_id, file_paths=request.file_paths,
                 disable_tools=request.disable_tools,
                 preamble=inline_preamble, actions_context=actions_context,
+                allow_file_commands=produce_prompt is None,
             ),
             media_type="text/event-stream",
             headers={
@@ -831,16 +851,16 @@ async def send_message(
         )
 
     # Non-streaming response using LLM service
-    llm_service = get_llm_service()
-    messages = history + [LLMMessage(role="user", content=llm_user_message)]
-
     # SEC : appliquer le filtre anti-injection AUSSI sur le chemin non-stream.
     # Il n'etait applique que dans _stream_response -> en stream=false, le prompt
     # injection passait et le system prompt pouvait etre exfiltre (rapport Syn 14/06).
+    # Tranche 0d Variables V4 (finding Codex 4 VÉRIFIÉ) : le contrôle porte sur
+    # le texte RÉELLEMENT envoyé au LLM (llm_user_message, prompt produire
+    # compris), AVANT toute récupération du service.
     from datetime import UTC, datetime
 
     from app.services.prompt_security import check_prompt_safety
-    security_check = check_prompt_safety(request.message)
+    security_check = check_prompt_safety(llm_user_message)
     if not security_check.is_safe:
         logger.warning(
             f"Blocked message (non-stream) due to {security_check.threat_type}: "
@@ -850,16 +870,21 @@ async def send_message(
             id="",
             conversation_id=conversation.id,
             content="Message bloqué pour raison de sécurité.",
-            model=llm_service.config.model,
-            provider=llm_service.config.provider.value,
             created_at=datetime.now(UTC),
         )
 
-    # Get relevant memory context
-    memory_context = await _get_memory_context(request.message)
+    llm_service = get_llm_service()
+    messages = history + [LLMMessage(role="user", content=llm_user_message)]
 
-    # Check for file commands and add file context
-    file_commands = _parse_file_commands(request.message)
+    # Get relevant memory context (0d : même texte que le payload LLM,
+    # parité avec le chemin stream)
+    memory_context = await _get_memory_context(llm_user_message)
+
+    # Check for file commands and add file context (0e : parité stream,
+    # jamais sur un texte dérivé - le prompt produire n'est pas scanné)
+    file_commands = (
+        [] if produce_prompt is not None else _parse_file_commands(llm_user_message)
+    )
     file_contexts = []
     for cmd, path in file_commands:
         file_ctx, error = await _get_file_context(path, session, cmd)
@@ -962,6 +987,7 @@ async def _stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
+    allow_file_commands: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
     # Register generation for cancellation tracking (US-ERR-04)
@@ -973,6 +999,7 @@ async def _stream_response(
             skill_id=skill_id, file_paths=file_paths,
             disable_tools=disable_tools,
             preamble=preamble, actions_context=actions_context,
+            allow_file_commands=allow_file_commands,
         ):
             # Check for cancellation
             if _is_cancelled(conversation_id):
@@ -993,6 +1020,7 @@ async def _do_stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
+    allow_file_commands: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}
@@ -1034,8 +1062,11 @@ async def _do_stream_response(
     # Get relevant memory context for the user's message
     memory_context = await _get_memory_context(user_message)
 
-    # Check for file commands and add file context
-    file_commands = _parse_file_commands(user_message)
+    # Check for file commands and add file context.
+    # Tranche 0e Variables V4 (finding Codex 2 VÉRIFIÉ) : jamais de
+    # redétection sur un texte dérivé (prompt produire) - le flag vient du
+    # site d'appel qui connaît la provenance du texte.
+    file_commands = _parse_file_commands(user_message) if allow_file_commands else []
     file_contexts = []
     file_errors = []
 

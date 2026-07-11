@@ -17,13 +17,20 @@ from dataclasses import dataclass
 
 # Message-action PUR uniquement (décision revue : l'inline cumulable est
 # reporté - collisions avec [contact:], {{action: skill_id}} et les blocs de
-# code montrant la syntaxe). Le lookahead négatif écarte {{action: ...}},
-# syntaxe de forçage de skill existante (intent_detector).
-_ACTION_MESSAGE = re.compile(r"^\{(?!\{)action:\s*(?P<body>[^{}]*?)\s*\}$", re.IGNORECASE)
+# code montrant la syntaxe). Durcissement 0a (design Variables V4, finding
+# Codex 5 VÉRIFIÉ : 5,6 s de CPU sur 3000 espaces) : l'enveloppe est extraite
+# en temps linéaire SANS regex (_extract_action_body), et une enveloppe
+# reconnue mais malformée répond localement au lieu de retomber dans le LLM.
+_MAX_ACTION_LENGTH = 2000
+# Corps d'action : caractères hors accolades OU tokens {nom} simples
+# (préparation tranche 3 substitution). Alternance non ambiguë ([^{}] exclut
+# `{`, l'autre branche commence par `{`) = pas de backtracking.
+_BODY_TOKENS = re.compile(r"(?:[^{}]|\{[a-z0-9_]{1,32}\})*\Z")
 _OUVRIR = re.compile(r"^ouvrir\s+(?P<cible>.+)$", re.IGNORECASE)
 # Tranche 1b : produire <format> "<sujet>" (guillemets droits ou français).
+# Le sujet est validé non-blanc APRÈS strip (un `"   "` était accepté).
 _PRODUIRE = re.compile(
-    r'^produire\s+(?P<fmt>[a-z]+)\s+(?:"\s*(?P<sujet_d>[^"]+?)\s*"|«\s*(?P<sujet_f>[^»]+?)\s*»)$',
+    r'^produire\s+(?P<fmt>[a-z]+)\s+(?:"(?P<sujet_d>[^"]*)"|«(?P<sujet_f>[^»]*)»)$',
     re.IGNORECASE,
 )
 
@@ -70,14 +77,34 @@ def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def _extract_action_body(text: str) -> str | None:
+    """Extrait le corps d'une enveloppe `{action: ...}` en temps linéaire.
+
+    None = pas une enveloppe action (flux LLM). `{{action:` (forçage de skill
+    existant) et les objets JSON collés (clé entre guillemets) restent None.
+    """
+    if not text.startswith("{") or text.startswith("{{") or not text.endswith("}"):
+        return None
+    head, sep, body = text[1:-1].partition(":")
+    if not sep or head.strip().lower() != "action":
+        return None
+    return body.strip()
+
+
 def parse_action_message(text: str) -> ParsedChatAction | None:
     """Parse un message-action pur. None = pas un message-action (flux LLM
-    habituel, strictement inchangé)."""
-    match = _ACTION_MESSAGE.match(text.strip())
-    if match is None:
+    habituel, strictement inchangé). Une enveloppe action reconnue répond
+    TOUJOURS localement, même malformée (jamais le LLM)."""
+    text = text.strip()
+    body = _extract_action_body(text)
+    if body is None:
         return None
+    if len(text) > _MAX_ACTION_LENGTH:
+        return ParsedChatAction(kind="unknown", raw=body[:200])
+    if _BODY_TOKENS.fullmatch(body) is None:
+        # Accolades parasites (corps non conforme) : réponse locale bornée.
+        return ParsedChatAction(kind="unknown", raw=body[:200])
 
-    body = match.group("body").strip()
     if _normalize(body) == "aide":
         return ParsedChatAction(kind="help", raw=body)
     ouvrir = _OUVRIR.match(body)
@@ -92,11 +119,11 @@ def parse_action_message(text: str) -> ParsedChatAction | None:
     produire = _PRODUIRE.match(body)
     if produire:
         fmt = produire.group("fmt").lower()
-        sujet = produire.group("sujet_d") or produire.group("sujet_f")
+        sujet = (produire.group("sujet_d") or produire.group("sujet_f") or "").strip()
         if fmt in PRODUCE_SKILLS and sujet:
             return ParsedChatAction(
                 kind="produce", raw=body,
-                skill_id=PRODUCE_SKILLS[fmt], subject=sujet.strip(),
+                skill_id=PRODUCE_SKILLS[fmt], subject=sujet,
             )
     return ParsedChatAction(kind="unknown", raw=body)
 
