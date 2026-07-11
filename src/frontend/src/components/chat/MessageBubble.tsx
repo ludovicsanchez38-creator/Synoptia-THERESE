@@ -179,11 +179,17 @@ export const MessageBubble = memo(function MessageBubble({
 
   // BUG-131 : téléchargement réel du fichier généré par un skill (URL absolue
   // + save natif via downloadSkillFile), au lieu d'un lien markdown relatif.
-  const handleSkillFileDownload = useCallback(async () => {
-    if (!message.skillFile) return;
+  // BUG-136 : liste des fichiers du tour (skillFiles), repli sur le champ
+  // legacy skillFile (messages persistés avant le fix).
+  const skillFilesList = useMemo(
+    () => message.skillFiles ?? (message.skillFile ? [message.skillFile] : []),
+    [message.skillFiles, message.skillFile]
+  );
+
+  const handleSkillFileDownload = useCallback(async (file: NonNullable<typeof message.skillFile>) => {
     setSkillDownloading(true);
     try {
-      await downloadSkillFile(message.skillFile.file_id, message.skillFile.file_name);
+      await downloadSkillFile(file.file_id, file.file_name);
     } catch (err) {
       // Cas typique : conversation rechargée dont le fichier n'est plus sur
       // disque (introuvable/expiré) -> 404. On le dit à l'utilisateur au lieu
@@ -192,31 +198,30 @@ export const MessageBubble = memo(function MessageBubble({
       useStatusStore.getState().addNotification({
         type: 'error',
         title: 'Téléchargement impossible',
-        message: `Le fichier « ${message.skillFile.file_name} » est introuvable. Régénère-le depuis le chat.`,
+        message: `Le fichier « ${file.file_name} » est introuvable. Régénère-le depuis le chat.`,
       });
     } finally {
       setSkillDownloading(false);
     }
-  }, [message.skillFile]);
+  }, []);
 
   // Fichiers générés visibles (10/07) : ouvrir le dossier local des sorties
   // dans le Finder/Explorateur. Rendu seulement quand local_dir est connu
   // (desktop) ; en contexte web l'ouverture échouerait -> notification.
-  const handleRevealInFolder = useCallback(async () => {
-    if (!message.skillFile?.local_dir) return;
+  const handleRevealInFolder = useCallback(async (localDir: string) => {
     try {
       const { open } = await import('@tauri-apps/plugin-shell');
-      await open(message.skillFile.local_dir);
+      await open(localDir);
     } catch (err) {
       console.error('Reveal in folder failed:', err);
       useStatusStore.getState().addNotification({
         type: 'info',
         title: 'Dossier des fichiers générés',
-        message: message.skillFile.local_dir,
+        message: localDir,
         duration: 10000,
       });
     }
-  }, [message.skillFile]);
+  }, []);
 
   // BUG-130 : quand un fichier a été généré, le contenu du message est le code
   // brut du générateur (```python ... ``` openpyxl/python-docx/pptx) streamé par
@@ -224,7 +229,7 @@ export const MessageBubble = memo(function MessageBubble({
   // et porté par le bouton de téléchargement -> on masque ce mur de code, on ne
   // garde que la prose éventuelle du modèle (« Voici le tableau demandé »).
   const displayContent = useMemo(() => {
-    if (!message.skillFile || message.isStreaming) return message.content;
+    if (skillFilesList.length === 0 || message.isStreaming) return message.content;
     const stripped = message.content
       // blocs de code fermés (```lang ... ```)
       .replace(/```[\w-]*\n?[\s\S]*?```/g, '')
@@ -232,7 +237,7 @@ export const MessageBubble = memo(function MessageBubble({
       .replace(/```[\w-]*\n?[\s\S]*$/g, '')
       .trim();
     return stripped || 'Voici ton fichier.';
-  }, [message.content, message.skillFile, message.isStreaming]);
+  }, [message.content, skillFilesList, message.isStreaming]);
 
 
   return (
@@ -467,45 +472,45 @@ export const MessageBubble = memo(function MessageBubble({
 
         {/* Fichiers générés visibles (10/07, ex-BUG-131) : bloc « Fichier
             généré » explicite - nom, taille, téléchargement, dossier local. */}
-        {message.skillFile && !message.isStreaming && (
-          <div className="mt-3 rounded-lg w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
+        {skillFilesList.length > 0 && !message.isStreaming && skillFilesList.map((file) => (
+          <div key={file.file_id} className="mt-3 rounded-lg w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 pt-2.5">
               <FileDown className="w-3.5 h-3.5 text-accent-cyan shrink-0" />
               <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan">
                 Fichier généré
               </span>
               <span className="text-xs text-text-muted ml-auto shrink-0">
-                {formatFileSize(message.skillFile.file_size)}
+                {formatFileSize(file.file_size)}
               </span>
             </div>
-            <p className="px-3 pt-1 text-sm text-text truncate">{message.skillFile.file_name}</p>
+            <p className="px-3 pt-1 text-sm text-text truncate">{file.file_name}</p>
             <div className="flex items-center gap-1.5 px-2 py-2">
               <button
                 type="button"
-                onClick={handleSkillFileDownload}
+                onClick={() => handleSkillFileDownload(file)}
                 disabled={skillDownloading}
                 className={cn(
                   'flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text',
                   'bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all',
                   skillDownloading && 'opacity-60 cursor-wait'
                 )}
-                title={`Télécharger ${message.skillFile.file_name}`}
+                title={`Télécharger ${file.file_name}`}
               >
                 {skillDownloading ? 'Téléchargement…' : 'Télécharger'}
               </button>
-              {message.skillFile.local_dir && (
+              {file.local_dir && (
                 <button
                   type="button"
-                  onClick={handleRevealInFolder}
+                  onClick={() => handleRevealInFolder(file.local_dir!)}
                   className="flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all"
-                  title={message.skillFile.local_dir}
+                  title={file.local_dir}
                 >
                   Afficher dans le dossier
                 </button>
               )}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Streaming cursor indicator */}
         {message.isStreaming && (

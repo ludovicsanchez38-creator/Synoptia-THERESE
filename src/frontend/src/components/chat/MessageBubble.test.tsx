@@ -232,3 +232,44 @@ describe('MessageBubble - comparateur memo (US-010)', () => {
     );
   });
 });
+
+describe('BUG-136 - plusieurs fichiers par tour', () => {
+  it('rend une carte par fichier généré', () => {
+    const message = {
+      id: 'm-multi',
+      role: 'assistant' as const,
+      content: 'Deux fichiers créés.',
+      timestamp: new Date(),
+      skillFiles: [
+        {
+          skill_id: 'docx-pro', file_id: 'f1', file_name: 'un.docx',
+          file_size: 1000, format: 'docx', local_dir: '/tmp',
+        },
+        {
+          skill_id: 'docx-pro', file_id: 'f2', file_name: 'deux.docx',
+          file_size: 2000, format: 'docx', local_dir: '/tmp',
+        },
+      ],
+    };
+    render(<MessageBubble message={message as never} />);
+    expect(screen.getAllByText('Fichier généré')).toHaveLength(2);
+    expect(screen.getByText('un.docx')).toBeInTheDocument();
+    expect(screen.getByText('deux.docx')).toBeInTheDocument();
+  });
+
+  it('repli legacy : skillFile seul rend une carte', () => {
+    const message = {
+      id: 'm-legacy',
+      role: 'assistant' as const,
+      content: 'Un fichier.',
+      timestamp: new Date(),
+      skillFile: {
+        skill_id: 'docx-pro', file_id: 'f9', file_name: 'legacy.docx',
+        file_size: 500, format: 'docx',
+      },
+    };
+    render(<MessageBubble message={message as never} />);
+    expect(screen.getAllByText('Fichier généré')).toHaveLength(1);
+    expect(screen.getByText('legacy.docx')).toBeInTheDocument();
+  });
+});

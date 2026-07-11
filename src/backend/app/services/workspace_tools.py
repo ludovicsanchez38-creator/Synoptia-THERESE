@@ -6,6 +6,7 @@ during conversation to interact with user's connected accounts.
 """
 
 import logging
+from contextvars import ContextVar
 from typing import Any
 
 from sqlalchemy import select
@@ -213,10 +214,13 @@ GENERATE_DOCUMENT_TOOL = {
         "name": "generate_document",
         "description": (
             "Genere un VRAI fichier bureautique telechargeable (Word, PowerPoint ou Excel) "
-            "a partir du contenu que tu fournis. Utilise CET OUTIL des que l'utilisateur demande "
-            "de creer/generer un document (DOCX/Word, PPTX/presentation, XLSX/tableur). "
-            "Ne fabrique JAMAIS de faux lien : c'est cet outil qui produit le fichier et renvoie "
-            "l'URL de telechargement reelle. Mets tout le contenu voulu dans le parametre content."
+            "a partir du contenu que tu fournis. UNIQUEMENT si l'utilisateur demande "
+            "EXPLICITEMENT un fichier DANS CE MESSAGE (creer/generer un DOCX/Word, "
+            "PPTX/presentation, XLSX/tableur). Nommer, preparer, planifier ou discuter d'un "
+            "document n'est PAS une demande de fichier (BUG-137) : en cas de doute, demande "
+            "confirmation au lieu de generer. Ne fabrique JAMAIS de faux lien : c'est cet outil "
+            "qui produit le fichier et renvoie l'URL de telechargement reelle. Mets tout le "
+            "contenu voulu dans le parametre content."
         ),
         "parameters": {
             "type": "object",
@@ -284,6 +288,34 @@ async def execute_workspace_tool(
         return f"Outil inconnu : {tool_name}"
 
 
+# BUG-136 (11/07/2026) : les fichiers créés par l'outil generate_document
+# (appelable N fois par tour par le modèle) n'émettaient JAMAIS d'événement
+# skill_file - aucune carte dans le chat. Collecteur par tour (ContextVar,
+# posé par le flux de chat, drainé avant `done`).
+_TURN_GENERATED_FILES: ContextVar[list[dict[str, Any]] | None] = ContextVar(
+    "therese_turn_generated_files", default=None
+)
+
+
+def start_generated_files_collection() -> None:
+    """Ouvre la collecte des fichiers générés pour le tour courant."""
+    _TURN_GENERATED_FILES.set([])
+
+
+def record_generated_file(payload: dict[str, Any]) -> None:
+    """Enregistre un fichier généré pendant le tour (no-op hors collecte)."""
+    bucket = _TURN_GENERATED_FILES.get()
+    if bucket is not None:
+        bucket.append(payload)
+
+
+def drain_generated_files() -> list[dict[str, Any]]:
+    """Vide et retourne les fichiers du tour courant."""
+    bucket = _TURN_GENERATED_FILES.get() or []
+    _TURN_GENERATED_FILES.set(None)
+    return list(bucket)
+
+
 async def _generate_document(args: dict, session: AsyncSession) -> str:
     """Génère un vrai fichier Office via le registre de skills (P8).
 
@@ -311,6 +343,15 @@ async def _generate_document(args: dict, session: AsyncSession) -> str:
             content,
         )
         if resp.success:
+            record_generated_file({
+                "skill_id": skill_id,
+                "file_id": resp.file_id,
+                "file_name": resp.file_name,
+                "file_size": resp.file_size,
+                "download_url": resp.download_url,
+                "format": fmt,
+                "local_dir": str(registry.output_dir),
+            })
             return (
                 f"Document {fmt.upper()} généré : {resp.file_name}. "
                 f"Téléchargement : {resp.download_url}"

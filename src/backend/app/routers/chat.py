@@ -9,7 +9,7 @@ import json
 import logging
 import re
 import time
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from app.config import settings
 from app.models.database import get_session
@@ -1123,6 +1123,14 @@ async def _do_stream_response(
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    # BUG-136 : ouvre la collecte des fichiers générés par les OUTILS pendant
+    # ce tour (generate_document, appelable N fois par le modèle) - drainée
+    # avant `done` pour émettre une carte par fichier.
+    from app.services.workspace_tools import (
+        drain_generated_files,
+        start_generated_files_collection,
+    )
+    start_generated_files_collection()
     # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}.
     # Tranche 3 Variables V4 (finding Codex 3 VÉRIFIÉ) : la détection porte
     # sur le texte PRÉ-substitution (detection_message) - une valeur de
@@ -1490,6 +1498,19 @@ async def _do_stream_response(
             conversation_id, skill_id,
             "le modèle n'a produit aucun contenu (réessaie, ou change de modèle)",
         )
+    # BUG-136 : une carte par fichier créé via l'outil generate_document
+    # pendant ce tour (chronologiquement AVANT l'éventuel auto-exec).
+    skill_files_payloads: list[dict[str, Any]] = []
+    for tool_file in drain_generated_files():
+        skill_files_payloads.append(tool_file)
+        tool_file_event = {
+            "type": "skill_file",
+            "content": f"Fichier {tool_file.get('file_name')} généré",
+            "conversation_id": conversation_id,
+            "skill_file": tool_file,
+        }
+        yield f"data: {json.dumps(tool_file_event)}\n\n"
+
     if skill_id and full_content:
         try:
             from app.services.skills import get_skills_registry
@@ -1526,15 +1547,7 @@ async def _do_stream_response(
                         "skill_file": skill_file_payload,
                     }
                     yield f"data: {json.dumps(skill_file_data)}\n\n"
-                    # BUG-130 : persister le fichier sur le message pour le
-                    # restaurer au rechargement de la conversation (le fichier
-                    # lui-même survit sur disque, cf outputs/ + download par id).
-                    # Le contenu du message reste le code brut ; c'est le
-                    # frontend qui masque le code quand skillFile est présent.
-                    assistant_message.extra_data = json.dumps(
-                        {"skill_file": skill_file_payload}
-                    )
-                    await session.commit()
+                    skill_files_payloads.append(skill_file_payload)
                     logger.info(f"Skill {skill_id} exécuté : {result.file_name}")
                 else:
                     # L'échec doit être VISIBLE, pas seulement loggué.
@@ -1543,6 +1556,16 @@ async def _do_stream_response(
         except Exception as e:
             logger.warning(f"Erreur auto-exécution skill {skill_id}: {e}")
             yield _skill_file_error_event(conversation_id, skill_id, str(e))
+
+    # BUG-130/136 : persister LES fichiers du tour sur le message pour les
+    # restaurer au rechargement (les fichiers survivent sur disque, cf
+    # outputs/ + download par id). Le contenu du message reste le texte ;
+    # le frontend masque le code quand des fichiers sont présents.
+    if skill_files_payloads:
+        assistant_message.extra_data = json.dumps(
+            {"skill_files": skill_files_payloads}
+        )
+        await session.commit()
 
     # Send done event with usage info
     done_data = StreamChunk(

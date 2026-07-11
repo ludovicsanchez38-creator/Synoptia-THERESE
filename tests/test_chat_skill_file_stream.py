@@ -40,14 +40,14 @@ class _FakeLLM:
         yield StreamEvent(type="done", stop_reason="end_turn")
 
 
-async def _collect_events(db_session, skill_id="docx-pro"):
+async def _collect_events(db_session, skill_id="docx-pro", llm=None):
     from app.routers.chat import _do_stream_response
 
     conv = Conversation(id=f"conv-sf-{skill_id}", title="test skill file")
     db_session.add(conv)
     await db_session.commit()
 
-    with patch("app.routers.chat.get_llm_service", return_value=_FakeLLM()), \
+    with patch("app.routers.chat.get_llm_service", return_value=llm or _FakeLLM()), \
          patch("app.routers.chat._get_memory_context", AsyncMock(return_value="")):
         raw = ""
         async for chunk in _do_stream_response(
@@ -117,3 +117,73 @@ class TestSkillFileAvantDone:
         assert types.index("skill_file_error") < types.index("done")
         err_event = next(e for e in events if e["type"] == "skill_file_error")
         assert "disque plein" in err_event["content"]
+
+
+class TestBUG136MultiFichiers:
+    """BUG-136 (11/07, Dr_logic) : deux fichiers générés dans un tour = une
+    seule carte. Racine (a) : l'outil generate_document (appelable N fois par
+    le modèle) n'émettait JAMAIS skill_file ; racine (b) : extra_data ne
+    persistait qu'un slot. Fix : collecteur par tour + skill_files (liste)."""
+
+    @pytest.mark.asyncio
+    async def test_fichiers_outil_emis_et_persistes_en_liste(self, db_session):
+
+        from app.services.workspace_tools import (
+            drain_generated_files,
+            record_generated_file,
+            start_generated_files_collection,
+        )
+
+        # Le collecteur accumule puis se vide au drain
+        start_generated_files_collection()
+        record_generated_file({"file_id": "a", "file_name": "a.docx"})
+        record_generated_file({"file_id": "b", "file_name": "b.docx"})
+        files = drain_generated_files()
+        assert [f["file_id"] for f in files] == ["a", "b"]
+        assert drain_generated_files() == []
+
+    @pytest.mark.asyncio
+    async def test_stream_emet_une_carte_par_fichier_outil(self, db_session):
+        """Deux fichiers enregistrés pendant le tour (outil) -> deux événements
+        skill_file AVANT done + extra_data.skill_files à deux entrées."""
+        import json as _json
+
+        from app.models.entities import Message
+        from app.services.workspace_tools import (
+            record_generated_file,
+        )
+        from sqlmodel import select
+
+        class _ToolLLM(_FakeLLM):
+            async def stream_response_with_tools(self, context, tools=None):
+                # Simule un tour où le modèle a appelé generate_document 2x
+                # (le collecteur est posé par le flux, comme en réel).
+                record_generated_file(
+                    {"skill_id": "docx-pro", "file_id": "f1", "file_name": "un.docx",
+                     "file_size": 10, "download_url": "/api/skills/download/f1",
+                     "format": "docx", "local_dir": "/tmp"}
+                )
+                record_generated_file(
+                    {"skill_id": "docx-pro", "file_id": "f2", "file_name": "deux.docx",
+                     "file_size": 12, "download_url": "/api/skills/download/f2",
+                     "format": "docx", "local_dir": "/tmp"}
+                )
+                yield StreamEvent(type="text", content="Deux fichiers créés.")
+                yield StreamEvent(type="done", stop_reason="end_turn")
+
+        events = await _collect_events(db_session, skill_id=None, llm=_ToolLLM())
+        types = [e["type"] for e in events]
+        assert types.count("skill_file") == 2, f"types : {types}"
+        assert types.index("done") > max(
+            i for i, t in enumerate(types) if t == "skill_file"
+        )
+        names = [e["skill_file"]["file_name"] for e in events if e["type"] == "skill_file"]
+        assert names == ["un.docx", "deux.docx"]
+
+        done = next(e for e in events if e["type"] == "done")
+        result = await db_session.execute(
+            select(Message).where(Message.id == done["message_id"])
+        )
+        msg = result.scalars().first()
+        extra = _json.loads(msg.extra_data)
+        assert [f["file_id"] for f in extra["skill_files"]] == ["f1", "f2"]

@@ -271,8 +271,14 @@ class ImapSmtpProvider(EmailProvider):
         page_token: str | None = None,
         query: str | None = None,
         unread_only: bool = False,
+        flagged_only: bool = False,
     ) -> tuple[list[EmailMessageDTO], str | None]:
-        """List messages from IMAP folder with timeout and error handling."""
+        """List messages from IMAP folder with timeout and error handling.
+
+        BUG-122 rouvert : `flagged_only` filtre par le flag \\Flagged
+        (« Favoris » n'est pas un dossier IMAP - la résolution de dossier
+        échouait et retombait silencieusement sur l'INBOX non filtrée).
+        """
         folder_name = folder or "INBOX"
 
         # Calculate offset from page token
@@ -289,6 +295,12 @@ class ImapSmtpProvider(EmailProvider):
                 if query:
                     # Simple text search in subject/body
                     criteria = AND(OR(subject=query, body=query))
+                if flagged_only:
+                    criteria = (
+                        AND(OR(subject=query, body=query), flagged=True)
+                        if query
+                        else AND(flagged=True)
+                    )
 
                 # Fetch messages (reversed for newest first)
                 all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results))

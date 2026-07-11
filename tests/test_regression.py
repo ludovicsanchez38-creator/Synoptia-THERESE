@@ -5899,6 +5899,9 @@ class TestFrontendRegression:
         for ts_file in api_dir.glob("*.ts"):
             if ts_file.name in ("core.ts", "index.ts", "types.ts"):
                 continue
+            if ts_file.name.endswith(".test.ts"):
+                # Les tests unitaires colocalisés ne sont pas des modules API.
+                continue
             content = ts_file.read_text(encoding="utf-8")
             has_import = (
                 "from" in content and ("core" in content or "apiBase" in content)

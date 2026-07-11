@@ -145,11 +145,12 @@ def resolve_skill_from_message(
     if action_skill_id:
         return action_skill_id, None, clean_message
 
-    # 3. Détection automatique
-    detected_skill_id, file_format = detect_skill_intent(message)
-    if detected_skill_id:
-        return detected_skill_id, file_format, message
-
+    # 3. SUPPRIMÉ (BUG-137, 11/07/2026) : la détection automatique par
+    # mots-clés (detect_skill_intent) forçait une génération de fichier sur
+    # des phrases ordinaires (« crée un document nommé X » = l'utilisateur
+    # voulait NOMMER, pas produire). Règle produit posée avec Dr_logic :
+    # effet de bord = demande explicite ({action: produire}, {{action:}},
+    # sélecteur UI, ou outil generate_document au jugement du modèle).
     return None, None, message
 
 

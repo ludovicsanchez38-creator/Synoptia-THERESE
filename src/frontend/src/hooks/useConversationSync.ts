@@ -26,12 +26,18 @@ import {
  * survit sur disque (outputs/ + download par id), seul le lien était perdu.
  */
 export function formatMessageFromResponse(msg: MessageResponse): Message {
-  let skillFile: Message['skillFile'] | undefined;
+  // BUG-136 : nouveau format {skill_files: [...]} (liste), lecture du legacy
+  // {skill_file: {...}} conservée pour les messages persistés avant le fix.
+  let skillFiles: NonNullable<Message['skillFiles']> = [];
   if (msg.extra_data) {
     try {
       const parsed = JSON.parse(msg.extra_data);
-      if (parsed && typeof parsed === 'object' && parsed.skill_file) {
-        skillFile = parsed.skill_file as Message['skillFile'];
+      if (parsed && typeof parsed === 'object') {
+        if (Array.isArray(parsed.skill_files)) {
+          skillFiles = parsed.skill_files as NonNullable<Message['skillFiles']>;
+        } else if (parsed.skill_file) {
+          skillFiles = [parsed.skill_file as NonNullable<Message['skillFile']>];
+        }
       }
     } catch {
       // extra_data non-JSON ou corrompu : on ignore, le message reste affichable.
@@ -43,7 +49,9 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
     content: msg.content,
     timestamp: new Date(msg.created_at),
     ...(msg.provider ? { provider: msg.provider } : {}),
-    ...(skillFile ? { skillFile } : {}),
+    ...(skillFiles.length > 0
+      ? { skillFile: skillFiles[0], skillFiles }
+      : {}),
   };
 }
 

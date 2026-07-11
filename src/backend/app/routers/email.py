@@ -840,10 +840,15 @@ async def _list_messages_imap(
 
     # BUG-122 : label_ids (SENT, DRAFTS...) était ignoré côté IMAP -> l'onglet
     # Envoyé affichait l'INBOX. On résout le dossier réel correspondant.
+    # ROUVERT 11/07 (capture Dr_logic) : STARRED n'est PAS un dossier mais le
+    # flag \Flagged -> filtre par critère, plus de repli INBOX non filtrée.
     folder: str | None = None
+    flagged_only = False
     if label_ids:
         first_label = label_ids.split(",")[0].strip().upper()
-        if first_label and first_label != "INBOX":
+        if first_label == "STARRED":
+            flagged_only = True
+        elif first_label and first_label != "INBOX":
             try:
                 folder = await provider.resolve_folder_for_label(first_label)
             except Exception as e:
@@ -859,6 +864,7 @@ async def _list_messages_imap(
             folder=folder,
             max_results=max_results,
             query=query,
+            flagged_only=flagged_only,
         )
     except TimeoutError as e:
         logger.error(f"IMAP timeout for account {account.email}: {e}")

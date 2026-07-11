@@ -192,3 +192,36 @@ class TestImapToDtoSanitizesHtml:
         dto = provider._imap_to_dto(msg)
 
         assert dto.body_html is None
+
+
+class TestStarredFlaggedCriteria:
+    """BUG-122 ROUVERT (11/07, capture Dr_logic) : « Favoris » affichait
+    l'INBOX entière. STARRED n'est PAS un dossier IMAP mais le flag
+    \\Flagged : list_messages doit filtrer par critère, pas résoudre un
+    dossier (la résolution échouait -> repli silencieux INBOX non filtrée)."""
+
+    def _provider(self):
+        from app.services.email.imap_smtp_provider import ImapSmtpProvider
+
+        return ImapSmtpProvider(
+            email_address="t@example.org", password="x",
+            imap_host="imap.example.org", imap_port=993,
+            smtp_host="smtp.example.org", smtp_port=465, smtp_use_tls=True,
+        )
+
+    @pytest.mark.asyncio
+    async def test_flagged_only_filtre_par_flag(self):
+        from unittest.mock import MagicMock, patch
+
+        provider = self._provider()
+        mailbox = MagicMock()
+        mailbox.fetch.return_value = []
+        cm = MagicMock()
+        cm.__enter__ = MagicMock(return_value=mailbox)
+        cm.__exit__ = MagicMock(return_value=False)
+        with patch.object(provider, "_connect_mailbox", return_value=cm):
+            await provider.list_messages(flagged_only=True)
+        criteria = mailbox.fetch.call_args[0][0]
+        assert "flagged" in str(criteria).lower(), (
+            f"le critère IMAP doit porter le flag \\Flagged, reçu : {criteria}"
+        )

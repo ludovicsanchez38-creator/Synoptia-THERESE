@@ -46,6 +46,9 @@ export interface Message {
   uncertainty?: MessageUncertainty;
   imageId?: string;
   skillFile?: MessageSkillFile;
+  // BUG-136 : plusieurs fichiers peuvent naître dans un même tour (outil
+  // generate_document appelé N fois) - skillFile reste le premier (compat).
+  skillFiles?: MessageSkillFile[];
   provider?: string; // P0-IA-3 : provider LLM (messages d'historique)
 }
 
@@ -287,14 +290,23 @@ export const useChatStore = create<ChatStore>()(
       },
 
       setMessageSkillFile: (id, skillFile) => {
+        // BUG-136 : APPEND (dédupliqué par file_id) - un événement skill_file
+        // par fichier du tour, skillFile garde le premier pour compat.
         set((state) => ({
           conversations: state.conversations.map((c) =>
             c.messages.some((m) => m.id === id)
               ? {
                   ...c,
-                  messages: c.messages.map((m) =>
-                    m.id === id ? { ...m, skillFile } : m
-                  ),
+                  messages: c.messages.map((m) => {
+                    if (m.id !== id) return m;
+                    const existing = m.skillFiles ?? (m.skillFile ? [m.skillFile] : []);
+                    const skillFiles = existing.some(
+                      (f) => f.file_id === skillFile.file_id
+                    )
+                      ? existing
+                      : [...existing, skillFile];
+                    return { ...m, skillFile: m.skillFile ?? skillFile, skillFiles };
+                  }),
                 }
               : c
           ),
