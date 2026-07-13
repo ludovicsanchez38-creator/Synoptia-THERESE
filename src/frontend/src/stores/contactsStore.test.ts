@@ -31,6 +31,8 @@ describe('contactsStore', () => {
       contacts: [],
       searchResults: null,
       loading: false,
+      loaded: false,
+      error: null,
       selectedContactId: null,
     });
   });
@@ -41,7 +43,19 @@ describe('contactsStore', () => {
     expect(useContactsStore.getState().loading).toBe(true);
     await p;
     expect(useContactsStore.getState().loading).toBe(false);
+    expect(useContactsStore.getState().loaded).toBe(true);
+    expect(useContactsStore.getState().error).toBeNull();
     expect(useContactsStore.getState().contacts).toHaveLength(1);
+  });
+
+  it('conserve un état d’erreur explicite si le chargement échoue', async () => {
+    vi.mocked(listContacts).mockRejectedValueOnce(new Error('backend down'));
+    await expect(useContactsStore.getState().fetchContacts()).rejects.toThrow('backend down');
+    expect(useContactsStore.getState()).toMatchObject({
+      loading: false,
+      loaded: false,
+      error: 'Impossible de charger les contacts.',
+    });
   });
 
   it("createContact n'ajoute qu'APRÈS confirmation de l'API (anti-faux-succès)", async () => {

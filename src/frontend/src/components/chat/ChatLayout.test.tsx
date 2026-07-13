@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatLayout } from './ChatLayout';
-import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 
@@ -83,32 +82,10 @@ vi.mock('../../services/api/commands', () => ({
 
 describe('ChatLayout', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/');
     localStorage.setItem('therese-skip-dashboard', 'true');
     usePersonalisationStore.setState({ skipDashboard: true });
     useNavigationStore.setState({ activeView: 'chat', history: [], initializeView: () => {} });
-    useToolConfirmationStore.setState({
-      pending: [
-        {
-          confirmation_id: 'bug114',
-          tool_name: 'send_email',
-          arguments: {
-            to: 'merci@example.fr',
-            subject: 'Merci',
-            body: 'Merci pour votre retour.',
-          },
-        },
-      ],
-    });
-  });
-
-  it('affiche la confirmation d\'envoi même si le panneau guidé est actif', async () => {
-    render(<ChatLayout />);
-    act(() => {
-      useNavigationStore.setState({ activeView: 'chat' });
-    });
-
-    expect(await screen.findByText("Confirmer l'envoi de l'email")).toBeInTheDocument();
-    expect(screen.getByText('merci@example.fr')).toBeInTheDocument();
   });
 
   it('D2 : le bouton Documents du header navigue vers la vue documents', async () => {
@@ -123,6 +100,14 @@ describe('ChatLayout', () => {
 
     expect(useNavigationStore.getState().activeView).toBe('documents');
     // La vue Documents (lazy, mockée) est bien rendue dans la zone principale.
+    expect(await screen.findByTestId('documents-list-view')).toBeInTheDocument();
+  });
+
+  it('ouvre la vue classique demandée par le repli de la 0.40', async () => {
+    window.history.replaceState({}, '', '/?interface=classic&view=documents');
+    render(<ChatLayout />);
+
+    await waitFor(() => expect(useNavigationStore.getState().activeView).toBe('documents'));
     expect(await screen.findByTestId('documents-list-view')).toBeInTheDocument();
   });
 });

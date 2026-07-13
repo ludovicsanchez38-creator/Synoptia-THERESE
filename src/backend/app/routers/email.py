@@ -67,6 +67,43 @@ router = APIRouter()
 # ============================================================
 
 
+def _email_message_response(message: EmailMessage) -> dict:
+    """Normalise un message SQL dans le contrat consommé par les deux interfaces."""
+
+    def _json_list(value: str | None) -> list[str]:
+        if not value:
+            return []
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (TypeError, json.JSONDecodeError):
+            return []
+
+    return {
+        "id": message.id,
+        "thread_id": message.thread_id,
+        "subject": message.subject,
+        "from_email": message.from_email,
+        "from_name": message.from_name,
+        "to_emails": _json_list(message.to_emails),
+        "cc_emails": _json_list(message.cc_emails),
+        "bcc_emails": _json_list(message.bcc_emails),
+        "date": message.date.isoformat() if message.date else "",
+        "labels": _json_list(message.labels),
+        "is_read": message.is_read,
+        "is_starred": message.is_starred,
+        "is_draft": message.is_draft,
+        "has_attachments": message.has_attachments,
+        "snippet": message.snippet,
+        "body_plain": message.body_plain,
+        "body_html": message.body_html,
+        "priority": message.priority,
+        "priority_score": message.priority_score,
+        "priority_reason": message.priority_reason,
+        "category": message.category,
+    }
+
+
 def get_gmail_oauth_config(
     client_id: str,
     client_secret: str,
@@ -976,20 +1013,7 @@ async def get_message(
     # Check local cache first (BUG-081 : seulement si le body est présent)
     cached = await session.get(EmailMessage, message_id)
     if cached and cached.account_id == account_id and (cached.body_plain or cached.body_html):
-        return {
-            'id': cached.id,
-            'thread_id': cached.thread_id,
-            'subject': cached.subject,
-            'from_email': cached.from_email,
-            'from_name': cached.from_name,
-            'to_emails': json.loads(cached.to_emails),
-            'date': cached.date.isoformat(),
-            'labels': json.loads(cached.labels),
-            'is_read': cached.is_read,
-            'is_starred': cached.is_starred,
-            'body_plain': cached.body_plain,
-            'body_html': cached.body_html,
-        }
+        return _email_message_response(cached)
 
     # BUG-123 : router sur le bon provider. Forcer Gmail pour un compte IMAP
     # envoyait un token OAuth vide (`Authorization: Bearer `), l'API Gmail
@@ -1043,8 +1067,9 @@ async def get_message(
     db_message = EmailMessage(**formatted)
     session.add(db_message)
     await session.commit()
+    await session.refresh(db_message)
 
-    return message
+    return _email_message_response(db_message)
 
 
 @router.post("/messages")
@@ -1122,9 +1147,37 @@ async def create_draft(
 
     US-EMAIL-04: Brouillons
     """
-    gmail = await get_gmail_service_for_account(account_id, session)
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
 
-    result = await gmail.create_draft(
+    if account.provider == "imap":
+        provider = get_email_provider(
+            provider_type="imap",
+            email_address=account.email,
+            password=decrypt_value(account.imap_password),
+            imap_host=account.imap_host,
+            imap_port=account.imap_port,
+            smtp_host=account.smtp_host,
+            smtp_port=account.smtp_port,
+            smtp_use_tls=account.smtp_use_tls,
+        )
+        from app.services.email.base_provider import SendEmailRequest as ProviderSendRequest
+
+        draft_id = await provider.create_draft(
+            ProviderSendRequest(
+                to=request.to,
+                subject=request.subject,
+                body=request.body,
+                cc=request.cc or [],
+                bcc=request.bcc or [],
+                is_html=request.html,
+            )
+        )
+        return {"id": draft_id, "labelIds": ["DRAFT"]}
+
+    gmail = await get_gmail_service_for_account(account_id, session)
+    return await gmail.create_draft(
         to=request.to,
         subject=request.subject,
         body=request.body,
@@ -1132,8 +1185,6 @@ async def create_draft(
         bcc=request.bcc,
         html=request.html,
     )
-
-    return result
 
 
 @router.put("/messages/{message_id}")

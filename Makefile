@@ -1,4 +1,4 @@
-.PHONY: dev install test lint clean build build-sidecar build-release db-migrate tauri
+.PHONY: dev install test lint clean build build-sidecar build-release db-migrate tauri version-check
 
 # Variables
 BACKEND_DIR = src/backend
@@ -93,6 +93,10 @@ typecheck:
 	@echo "🔍 Vérification TypeScript..."
 	@cd $(FRONTEND_DIR) && npx tsc --noEmit
 
+version-check:
+	@echo "🔍 Vérification de la version de l'application..."
+	@uv run --no-sync python scripts/check-app-version-sync.py
+
 # Build
 build:
 	@echo "🏗️  Build de production..."
@@ -154,6 +158,7 @@ help:
 	@echo "  make lint             - Vérifier le code"
 	@echo "  make lint-fix         - Corriger le code"
 	@echo "  make typecheck        - Vérifier les types TypeScript"
+	@echo "  make version-check    - Vérifier la cohérence des versions"
 	@echo "  make build            - Build de production (Tauri)"
 	@echo "  make build-sidecar    - Build du sidecar backend (PyInstaller)"
 	@echo "  make build-release    - Build complète (sidecar + Tauri)"

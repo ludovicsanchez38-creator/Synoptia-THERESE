@@ -14,7 +14,6 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { CommandPalette } from './CommandPalette';
 import { ConversationMemoryChip } from './ConversationMemoryChip';
-import { ToolConfirmationCard } from './ToolConfirmationCard';
 import { ShortcutsModal } from './ShortcutsModal';
 import { ConversationSidebar } from '../sidebar/ConversationSidebar';
 import { DropZone } from '../files/DropZone';
@@ -30,6 +29,7 @@ import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useActionsStore } from '../../stores/actionsStore';
 import { useContactsStore } from '../../stores/contactsStore';
+import { resolveClassicView } from '../../lib/classicNavigation';
 import { resolveEscape } from '../../lib/resolveEscape';
 import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
@@ -127,10 +127,14 @@ export function ChatLayout() {
 
   // Au lancement : atterrir sur l'Accueil (sauf préférence contraire).
   useEffect(() => {
-    if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
-      useNavigationStore.getState().setView('home');
+    const requestedView = resolveClassicView(window.location.search);
+    if (requestedView) {
+      useNavigationStore.setState({ activeView: requestedView, history: [] });
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
+      useNavigationStore.setState({ activeView: 'home', history: [] });
+    }
   }, []);
 
   useEffect(() => {
@@ -263,9 +267,6 @@ export function ChatLayout() {
             <div className="flex-1 overflow-hidden">
               <MessageList onPromptSelect={handleGuidedPromptSelect} onSaveAsCommand={(u, a) => ps.openSaveCommand(u, a)} onGuidedPanelChange={setGuidedPanelActive} />
             </div>
-            {/* BUG-114 : la confirmation d'envoi doit rester visible même si un
-                panneau guidé est encore ouvert, sinon l'action semble bloquée. */}
-            <ToolConfirmationCard />
             {!guidedPanelActive && (
               <>
                 {/* L6 : pastille de glance « N contacts liés à cette conversation » */}

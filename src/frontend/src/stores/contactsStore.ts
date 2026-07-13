@@ -21,6 +21,8 @@ interface ContactsStore {
   /** Résultats de recherche sémantique ; null = pas de recherche active (on affiche `contacts`). */
   searchResults: Contact[] | null;
   loading: boolean;
+  loaded: boolean;
+  error: string | null;
   selectedContactId: string | null;
 
   fetchContacts: () => Promise<void>;
@@ -54,15 +56,17 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
   contacts: [],
   searchResults: null,
   loading: false,
+  loaded: false,
+  error: null,
   selectedContactId: null,
 
   fetchContacts: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const contacts = await apiListContacts(0, 200);
-      set({ contacts, loading: false });
+      set({ contacts, loading: false, loaded: true, error: null });
     } catch (e) {
-      set({ loading: false });
+      set({ loading: false, loaded: false, error: 'Impossible de charger les contacts.' });
       throw e;
     }
   },

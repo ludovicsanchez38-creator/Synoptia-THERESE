@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { ChatLayout } from './components/chat/ChatLayout';
+import { CommonToolConfirmationLayer } from './components/app/CommonToolConfirmationLayer';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
@@ -10,10 +11,14 @@ import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore'
 import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
 import { Z_LAYER } from './styles/z-layers';
+import { getInterfaceMode } from './lib/interfaceMode';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
 const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
 const SplashScreen = lazy(() => import('./components/SplashScreen').then(m => ({ default: m.SplashScreen })));
+const ConversationCanvasPrototype = lazy(() =>
+  import('./components/prototype/ConversationCanvasPrototype').then(m => ({ default: m.ConversationCanvasPrototype }))
+);
 
 // Mode production Tauri (sidecar actif) : on attend que le backend soit prêt
 const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
@@ -21,7 +26,8 @@ const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 // Phase 1 (revue produit) : plus de fenêtres-panels détachées. Email/Agenda/Tâches/
 // Factures/CRM/Mémoire sont des vues/panneaux de la fenêtre principale (content-swap).
 
-function App() {
+function ApplicationBootstrap() {
+  const interfaceMode = getInterfaceMode();
   const [backendReady, setBackendReady] = useState(!IS_TAURI_PRODUCTION);
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -157,9 +163,10 @@ function App() {
           prefers-reduced-motion système. Complété par le @media CSS. */}
       <MotionConfig reducedMotion={reduceMotion ? 'always' : 'user'}>
       <div
-        className="h-screen w-screen bg-bg text-text overflow-hidden"
+        className="relative h-screen w-screen bg-bg text-text overflow-hidden"
         style={{ fontSize }}
         data-testid="app-main"
+        data-interface-mode={interfaceMode}
         data-theme={theme}
         data-high-contrast={highContrast ? 'true' : undefined}
       >
@@ -171,8 +178,20 @@ function App() {
         >
           Aller au contenu principal
         </a>
-        <ChatLayout />
-        <ActionPanel />
+        {interfaceMode === 'conversation-canvas' ? (
+          <Suspense fallback={<div className="h-screen w-screen bg-[#F3F6FC]" />}>
+            <ConversationCanvasPrototype />
+          </Suspense>
+        ) : (
+          <>
+            <ChatLayout />
+            <ActionPanel />
+          </>
+        )}
+
+        {/* Les confirmations sensibles appartiennent à la coquille commune :
+            elles restent visibles quelle que soit l'interface active. */}
+        <CommonToolConfirmationLayer />
         <Notifications />
         <Suspense fallback={null}>
           <OnboardingWizard
@@ -184,6 +203,10 @@ function App() {
       </MotionConfig>
     </GlobalErrorBoundary>
   );
+}
+
+function App() {
+  return <ApplicationBootstrap />;
 }
 
 export default App;

@@ -1,5 +1,7 @@
 # THÉRÈSE V2
 
+> Chantier local, non diffusé : [migration vers l’interface 0.40](migration-v0.40/README.md).
+
 > **L'assistante souveraine des entrepreneurs français**
 
 **"Ta mémoire, tes données, ton business."**

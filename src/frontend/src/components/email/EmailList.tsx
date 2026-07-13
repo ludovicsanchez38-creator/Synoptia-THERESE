@@ -10,6 +10,7 @@ import { Star, Paperclip, Loader2, Search, Trash2 } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import * as api from '../../services/api';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
+import { mapEmailList } from '../prototype/emailReadModels';
 
 interface EmailListProps {
   accountId: string;
@@ -96,43 +97,10 @@ export function EmailList({ accountId }: EmailListProps) {
       if (errorMessages.length > 0) {
         console.warn(`BUG-061b: ${errorMessages.length}/${result.messages.length} emails en erreur:`, errorMessages[0]?.error);
       }
-      const mappedMessages: api.EmailMessage[] = result.messages
-        .filter((msg: any) => !msg.error)
-        .map((msg: any) => {
-          // Parser "Nom <email>" depuis le champ from
-          const fromStr = msg.from || '';
-          const fromMatch = fromStr.match(/^(.*?)\s*<(.+?)>$/);
-          const from_name = fromMatch ? fromMatch[1].trim().replace(/^"|"$/g, '') : '';
-          const from_email = fromMatch ? fromMatch[2] : fromStr;
-
-          const msgLabelIds: string[] = msg.labelIds || [];
-
-          // Récupérer la classification existante du cache local
-          const cached = useEmailStore.getState().messages.find((m) => m.id === msg.id);
-
-          return {
-            id: msg.id,
-            thread_id: msg.threadId || msg.id,
-            subject: msg.subject || '(Sans objet)',
-            from_email,
-            from_name: from_name || null,
-            to_emails: cached?.to_emails || [],
-            date: msg.date || new Date().toISOString(),
-            labels: msgLabelIds,
-            is_read: msg.is_read ?? !msgLabelIds.includes('UNREAD'),
-            is_starred: msg.is_starred ?? msgLabelIds.includes('STARRED'),
-            is_draft: msgLabelIds.includes('DRAFT'),
-            has_attachments: cached?.has_attachments || false,
-            snippet: msg.snippet || null,
-            body_plain: cached?.body_plain || null,
-            body_html: cached?.body_html || null,
-            // Conserver la classification existante du cache
-            priority: cached?.priority || null,
-            priority_score: cached?.priority_score || null,
-            priority_reason: cached?.priority_reason || null,
-            category: cached?.category || null,
-          } as api.EmailMessage;
-        });
+      const mappedMessages = mapEmailList(
+        result.messages,
+        useEmailStore.getState().messages,
+      );
 
       if (controller.signal.aborted) return;
 

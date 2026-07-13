@@ -11,7 +11,7 @@ vi.mock('./core', async () => {
   };
 });
 
-import { getEmailSignature, updateEmailSignature } from './email';
+import { createDraft, getEmailSignature, updateEmailSignature } from './email';
 
 describe('Signature email API (quick win testeur)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -51,5 +51,27 @@ describe('Signature email API (quick win testeur)', () => {
   it('getEmailSignature lève si la réponse n est pas ok', async () => {
     mockApiFetch.mockResolvedValueOnce({ ok: false });
     await expect(getEmailSignature('acc-1')).rejects.toThrow();
+  });
+
+  it('createDraft crée un brouillon sans appeler la route d’envoi', async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'draft-1', labelIds: ['DRAFT'] }),
+    });
+
+    const result = await createDraft('acc-1', {
+      to: ['client@example.test'], subject: 'Proposition', body: 'Bonjour', html: false,
+    });
+
+    expect(result.id).toBe('draft-1');
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:17293/api/email/messages/draft?account_id=acc-1',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          to: ['client@example.test'], subject: 'Proposition', body: 'Bonjour', html: false,
+        }),
+      }),
+    );
   });
 });

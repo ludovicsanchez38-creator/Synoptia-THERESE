@@ -7106,6 +7106,15 @@ class TestRAG_LegalCorpus:
             url = e.get("source_url", "")
             assert "legifrance" in url or "service-public" in url
 
+    def test_corpus_summaries_do_not_contain_tool_markup(self):
+        """Une trace de tool calling ne doit jamais atteindre le contexte juridique."""
+        from app.services.legal_corpus import _load_corpus
+
+        for entry in _load_corpus():
+            summary = entry.get("summary", "")
+            assert "</summary>" not in summary
+            assert "</invoke>" not in summary
+
     def test_lookup_late_payment_points_to_current_article(self):
         """'pénalités de retard' doit pointer L441-10 (et pas l'ancien L441-6)."""
         from app.services.legal_corpus import lookup_legal

@@ -40,6 +40,26 @@ export interface EmailMessage {
   category?: 'transactional' | 'administrative' | 'business' | 'promotional' | 'newsletter' | null;
 }
 
+/** Forme enrichie réellement renvoyée par GET /api/email/messages. */
+export interface EmailMessageListItem {
+  id: string;
+  threadId?: string;
+  snippet?: string | null;
+  subject?: string | null;
+  from?: string;
+  date?: string;
+  labelIds?: string[];
+  is_read?: boolean;
+  is_starred?: boolean;
+  error?: string;
+}
+
+export interface EmailMessageListResponse {
+  messages: EmailMessageListItem[];
+  nextPageToken?: string;
+  resultSizeEstimate?: number;
+}
+
 export interface EmailLabel {
   id: string;
   name: string;
@@ -254,7 +274,7 @@ export async function listEmailMessages(
     query?: string;
     labelIds?: string[];
   }
-): Promise<{ messages: { id: string; threadId: string }[]; nextPageToken?: string }> {
+): Promise<EmailMessageListResponse> {
   const searchParams = new URLSearchParams({ account_id: accountId });
   if (params?.maxResults) searchParams.set('max_results', params.maxResults.toString());
   if (params?.pageToken) searchParams.set('page_token', params.pageToken);
@@ -285,7 +305,10 @@ export async function sendEmail(accountId: string, req: SendEmailRequest): Promi
   return response.json();
 }
 
-export async function createDraft(accountId: string, req: SendEmailRequest): Promise<any> {
+export async function createDraft(
+  accountId: string,
+  req: SendEmailRequest,
+): Promise<{ id: string; labelIds?: string[] }> {
   const response = await apiFetch(`${API_BASE}/api/email/messages/draft?account_id=${accountId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
