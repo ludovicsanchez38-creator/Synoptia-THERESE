@@ -36,10 +36,13 @@ notifications, l’updater et les confirmations sensibles.
 
 Cette fondation a été validée dans le navigateur local après un rechargement à
 froid. Elle ne constitue pas encore une validation du cycle complet Tauri. Les
-données du brief du jour et du nouveau parcours Contacts et mémoire sont
-maintenant reliées au backend et au store existants, en lecture seule. Les
-scénarios rendez-vous, devis, Board et Atelier restent simulés et doivent être
-remplacés progressivement par les stores et API existants.
+données du brief du jour, de Contacts et mémoire, d’Email, de Devis et factures,
+du Board et de l’Atelier sont maintenant reliées au backend et aux stores existants. Le
+Board vérifie le consentement cloud, interdit le repli cloud en mode souverain,
+annule les tâches actives à la fermeture et relit toute décision annoncée comme
+sauvegardée. L’Atelier relit l’historique `AgentTask`, affiche le dépôt et les
+modèles configurés, exécute dans un worktree isolé et relit le diff avant toute
+application. Le scénario rendez-vous reste à remplacer par son contrat réel.
 
 ## Intention produit
 
@@ -53,9 +56,10 @@ principale unique :
 - Board et Atelier intégrés comme deux canevas spécialisés, et non comme deux
   applications séparées.
 
-Le prototype actuel couvre cinq scénarios de démonstration : journée, rendez-vous,
-facture, Board et Atelier. Les données y sont encore simulées. La migration doit
-brancher progressivement ces surfaces sur les stores, services et API existants.
+La coque couvre les parcours journée, contacts, email, rendez-vous, facturation,
+Board et Atelier. Journée, contacts, email, facturation, Board et Atelier utilisent
+déjà leurs données réelles. Rendez-vous conserve encore une présentation simulée
+et doit être branché progressivement sur ses services existants.
 
 ## Principes non négociables
 

@@ -112,6 +112,7 @@ export interface AgentStatusResponse {
   repo_path?: string;
   repo_error?: string;
   current_branch?: string;
+  working_tree_clean?: boolean;
   active_tasks: number;
   katia_ready: boolean;
   zezette_ready: boolean;
@@ -225,6 +226,12 @@ export async function rejectTask(taskId: string): Promise<{ status: string }> {
   });
 }
 
+export async function cancelTask(taskId: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/api/agents/tasks/${taskId}/cancel`, {
+    method: 'POST',
+  });
+}
+
 export async function rollbackTask(taskId: string): Promise<{ status: string }> {
   return request<{ status: string }>(`/api/agents/tasks/${taskId}/rollback`, {
     method: 'POST',
@@ -306,7 +313,7 @@ export async function listOpenClawSessions(
   status?: string,
 ): Promise<AgentSessionListResponse> {
   const params = new URLSearchParams({ limit: String(limit) });
-  if (status) params.set(status, status);
+  if (status) params.set('status', status);
   return request<AgentSessionListResponse>(`/api/agents/sessions?${params}`);
 }
 

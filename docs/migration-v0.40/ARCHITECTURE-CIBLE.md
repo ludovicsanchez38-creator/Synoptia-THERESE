@@ -34,8 +34,9 @@ bannière de mise à jour, les notifications et les confirmations sensibles.
 
 Ce traitement reste local. Il doit encore être vérifié dans l’application Tauri,
 sur un premier démarrage et avec un backend momentanément indisponible avant de
-pouvoir être considéré comme prêt pour une bêta. Les scénarios du prototype
-restent par ailleurs alimentés par des données simulées.
+pouvoir être considéré comme prêt pour une bêta. Les parcours migrent un par un :
+Rendez-vous conserve encore des données simulées, tandis que les autres scénarios
+principaux et l’Atelier lisent désormais leurs sources réelles.
 
 ## Couches proposées
 
@@ -108,6 +109,12 @@ L’Atelier devient un canevas de mission : cadrage, plan, agents mobilisés,
 progression, artefacts produits, revue puis application. Une mission n’obtient
 jamais implicitement plus de permissions que l’action demandée.
 
+Le premier adaptateur Atelier couvre uniquement le swarm de changement de code.
+Il impose `main`, un dépôt propre et un seul travail actif, puis crée un worktree
+temporaire sur `agent/*`. La revue lit cette branche sans changer le checkout
+utilisateur. Les profils autonomes, Action Agents et OpenClaw ne rejoignent le
+canevas qu’après adoption du même protocole de permission et de confirmation.
+
 ## État et navigation
 
 - L’URL ou l’état de navigation identifie le canevas et l’objet sélectionné.
@@ -119,9 +126,11 @@ jamais implicitement plus de permissions que l’action demandée.
 
 ## Données et migrations
 
-La première phase ne nécessite aucune modification de schéma. Si une capacité
-requiert ensuite un nouvel état persistant, la modification passe par Alembic,
-avec sauvegarde, procédure de retour et test sur une copie de base réelle.
+La première phase ne nécessite aucune modification de schéma. Le contrat Atelier
+identifie toutefois des champs futurs : branche de base, phase, plan, tests
+structurés, permissions accordées et hash du merge appliqué. Leur persistance
+passera par une migration Alembic dédiée, avec sauvegarde, procédure de retour et
+test sur une copie de base réelle.
 
 ## Frontières de la 0.40
 

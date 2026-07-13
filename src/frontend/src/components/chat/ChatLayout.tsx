@@ -29,7 +29,7 @@ import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useActionsStore } from '../../stores/actionsStore';
 import { useContactsStore } from '../../stores/contactsStore';
-import { resolveClassicView } from '../../lib/classicNavigation';
+import { resolveClassicPanel, resolveClassicView } from '../../lib/classicNavigation';
 import { resolveEscape } from '../../lib/resolveEscape';
 import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
@@ -128,14 +128,18 @@ export function ChatLayout() {
   // Au lancement : atterrir sur l'Accueil (sauf préférence contraire).
   useEffect(() => {
     const requestedView = resolveClassicView(window.location.search);
+    const requestedPanel = resolveClassicPanel(window.location.search);
     if (requestedView) {
       useNavigationStore.setState({ activeView: requestedView, history: [] });
-      return;
-    }
-    if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
+    } else if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
       useNavigationStore.setState({ activeView: 'home', history: [] });
     }
-  }, []);
+    if (requestedPanel === 'board') {
+      usePanelStore.setState({ showBoardPanel: true });
+    } else if (requestedPanel === 'atelier') {
+      openAtelierPanel();
+    }
+  }, [openAtelierPanel]);
 
   useEffect(() => {
     listUserCommands()

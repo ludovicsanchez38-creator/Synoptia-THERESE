@@ -4,9 +4,11 @@ THÉRÈSE v2 - Agents Router
 Endpoints pour le système d'agents IA embarqués (Atelier).
 """
 
+import asyncio
 import json
 import logging
 from datetime import UTC, datetime
+from pathlib import Path
 
 from app.models.database import get_session
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
@@ -31,7 +33,7 @@ from app.models.schemas_agents import (
 )
 from app.services.agents.git_service import GitService
 from app.services.agents.swarm import SwarmOrchestrator
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
@@ -39,6 +41,9 @@ from sqlmodel import func, select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+_running_agent_tasks: dict[str, asyncio.Task] = {}
+_PROFILE_DISABLED_MUTATION_TOOLS = {"write_file", "run_command"}
+_MAX_OPENCLAW_AGENTS = 3
 
 
 def _get_source_path() -> str | None:
@@ -142,12 +147,47 @@ async def agent_request(
     session: AsyncSession = Depends(get_session),
 ):
     """Soumet une demande au swarm d'agents. Retourne un stream SSE."""
-    source_path = request.source_path or _get_source_path()
+    configured_source = _get_source_path()
+    source_path = request.source_path or configured_source
     if not source_path:
         raise HTTPException(
             status_code=400,
             detail="Chemin du code source non configuré. Configure THERESE_SOURCE_PATH ou passe source_path.",
         )
+
+    resolved_source = Path(source_path).expanduser().resolve()
+    if configured_source:
+        configured_resolved = Path(configured_source).expanduser().resolve()
+        if resolved_source != configured_resolved:
+            raise HTTPException(
+                status_code=403,
+                detail="Le chemin demandé ne correspond pas au dépôt autorisé dans les réglages.",
+            )
+    git = GitService(resolved_source)
+    if not resolved_source.exists() or not await git.is_repo():
+        raise HTTPException(status_code=400, detail="Le dossier autorisé n'est pas un dépôt Git valide.")
+    current_branch = await git.current_branch()
+    if current_branch != "main":
+        raise HTTPException(
+            status_code=409,
+            detail=f"L'Atelier exige la branche main, branche actuelle : {current_branch}.",
+        )
+    if not await git.ensure_clean():
+        raise HTTPException(
+            status_code=409,
+            detail="Le dépôt contient des changements non enregistrés. Termine-les avant de lancer une mission.",
+        )
+    active_result = await session.execute(
+        select(func.count(AgentTask.id)).where(
+            AgentTask.status.in_(["pending", "in_progress"])
+        )
+    )
+    if (active_result.scalar() or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Une mission Atelier est déjà en cours. Attends sa fin ou annule-la.",
+        )
+    source_path = str(resolved_source)
 
     # Créer la tâche en DB
     task = AgentTask(
@@ -168,8 +208,12 @@ async def agent_request(
     await _save_message(session, user_msg)
 
     async def event_stream():
+        current_async_task = asyncio.current_task()
+        if current_async_task is not None:
+            _running_agent_tasks[task.id] = current_async_task
         orchestrator = SwarmOrchestrator(source_path)
         final_status = "review"
+        final_error = None
         branch_name = None
         files_changed = []
         diff_summary = ""
@@ -182,19 +226,22 @@ async def agent_request(
                     files_changed = chunk.files_changed or []
                     diff_summary = chunk.diff_summary or ""
                 elif chunk.type == "error":
-                    final_status = "pending"
+                    final_status = "error"
+                    final_error = chunk.content
                 elif chunk.type == "done":
-                    if chunk.phase == "done":
-                        final_status = "done"
-                    elif chunk.phase == "review":
+                    if chunk.phase == "review":
                         final_status = "review"
                     else:
-                        final_status = "pending"
+                        final_status = "done"
 
                 # Émettre le chunk SSE
                 data = chunk.model_dump(exclude_none=True)
                 yield f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
+        except asyncio.CancelledError:
+            final_status = "cancelled"
+            final_error = "Mission annulée par l'utilisateur."
+            raise
         except Exception as e:
             logger.error(f"Erreur swarm: {e}", exc_info=True)
             error_chunk = AgentStreamChunk(
@@ -203,28 +250,33 @@ async def agent_request(
                 task_id=task.id,
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
-            final_status = "pending"
+            final_status = "error"
+            final_error = str(e)
+        finally:
+            if _running_agent_tasks.get(task.id) is current_async_task:
+                _running_agent_tasks.pop(task.id, None)
+            # Même si le client ferme le flux, l'état local doit refléter
+            # l'annulation et ne jamais rester artificiellement « en cours ».
+            try:
+                from app.models.database import get_session_context
 
-        # Mettre à jour la tâche finale
-        try:
-            from app.models.database import get_session_context
-
-            async with get_session_context() as update_session:
-                result = await update_session.execute(
-                    select(AgentTask).where(AgentTask.id == task.id)
-                )
-                db_task = result.scalar_one_or_none()
-                if db_task:
-                    db_task.status = final_status
-                    db_task.branch_name = branch_name
-                    db_task.files_changed = (
-                        json.dumps(files_changed, ensure_ascii=False) if files_changed else None
+                async with get_session_context() as update_session:
+                    result = await update_session.execute(
+                        select(AgentTask).where(AgentTask.id == task.id)
                     )
-                    db_task.diff_summary = diff_summary
-                    db_task.updated_at = datetime.now(UTC)
-                    await update_session.commit()
-        except Exception as e:
-            logger.error(f"Erreur mise à jour tâche: {e}")
+                    db_task = result.scalar_one_or_none()
+                    if db_task:
+                        db_task.status = final_status
+                        db_task.branch_name = branch_name
+                        db_task.files_changed = (
+                            json.dumps(files_changed, ensure_ascii=False) if files_changed else None
+                        )
+                        db_task.diff_summary = diff_summary
+                        db_task.error = final_error
+                        db_task.updated_at = datetime.now(UTC)
+                        await update_session.commit()
+            except Exception as e:
+                logger.error(f"Erreur mise à jour tâche: {e}")
 
     return StreamingResponse(
         event_stream(),
@@ -268,7 +320,11 @@ async def list_profiles() -> list[AgentProfileResponse]:
             icon=p["icon"],
             description=p["description"],
             color=p["color"],
-            tools=p["tools"],
+            tools=[
+                tool
+                for tool in p["tools"]
+                if tool not in _PROFILE_DISABLED_MUTATION_TOOLS
+            ],
             default_model=default_model,
         )
         for p in profiles
@@ -322,7 +378,9 @@ async def spawn_agent(request: SpawnAgentRequest):
     )
 
     # Filtrer les outils selon le profil (exclure les outils swarm internes)
-    allowed_tools = set(profile["tools"])
+    # Les profils autonomes n'ont ni worktree isolé ni revue persistée.
+    # Ils restent donc en lecture/recherche jusqu'à adoption du contrat 0.40.
+    allowed_tools = set(profile["tools"]) - _PROFILE_DISABLED_MUTATION_TOOLS
     swarm_only_tools = {"clarify", "create_spec", "explain_change"}
     all_tools = {
         t["function"]["name"]: t
@@ -412,6 +470,32 @@ async def spawn_agent(request: SpawnAgentRequest):
 # ============================================================
 
 
+@router.post("/tasks/{task_id}/cancel")
+async def cancel_task(
+    task_id: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Interrompt réellement une mission locale encore en cours."""
+    result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
+    if task.status not in {"pending", "in_progress"}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"La tâche en statut '{task.status}' n'est plus annulable.",
+        )
+
+    running_task = _running_agent_tasks.get(task_id)
+    if running_task is None or running_task.done():
+        raise HTTPException(
+            status_code=409,
+            detail="Le processus de cette mission n'est plus actif. Recharge son statut.",
+        )
+    running_task.cancel()
+    return {"status": "cancelling", "task_id": task_id}
+
+
 @router.get("/tasks")
 async def list_tasks(
     limit: int = 50,
@@ -464,13 +548,15 @@ async def get_task_diff(
     git = GitService(task.source_path)
 
     # Obtenir le diff par fichier
-    files = await git.diff_files(base="main")
+    files = await git.diff_files(base="main", head=task.branch_name)
     diff_files = []
     total_add = 0
     total_del = 0
 
     for f in files:
-        file_diff = await git.diff_file(f["file_path"], base="main")
+        file_diff = await git.diff_file(
+            f["file_path"], base="main", head=task.branch_name
+        )
         # Compter les lignes ajoutées/supprimées
         adds = sum(
             1
@@ -526,8 +612,20 @@ async def approve_task(
         )
     if not task.branch_name or not task.source_path:
         raise HTTPException(status_code=400, detail="Pas de branche à merger")
+    if not task.branch_name.startswith("agent/"):
+        raise HTTPException(status_code=400, detail="Branche Atelier invalide")
 
     git = GitService(task.source_path)
+    if await git.current_branch() != "main":
+        raise HTTPException(
+            status_code=409,
+            detail="Reviens sur la branche main avant d'appliquer les changements.",
+        )
+    if not await git.ensure_clean():
+        raise HTTPException(
+            status_code=409,
+            detail="Le dépôt contient des changements non enregistrés.",
+        )
 
     # Merge la branche
     success = await git.merge(task.branch_name, into="main")
@@ -556,15 +654,15 @@ async def reject_task(
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
-    if task.status not in ("review", "in_progress"):
+    if task.status != "review":
         raise HTTPException(status_code=400, detail=f"Tâche en statut '{task.status}'")
 
     if task.branch_name and task.source_path:
+        if not task.branch_name.startswith("agent/"):
+            raise HTTPException(status_code=400, detail="Branche Atelier invalide")
         git = GitService(task.source_path)
-        current = await git.current_branch()
-        if current == task.branch_name:
-            await git.checkout("main")
-        await git.delete_branch(task.branch_name)
+        if not await git.delete_branch(task.branch_name):
+            raise HTTPException(status_code=500, detail="Impossible de supprimer la branche Atelier")
 
     task.status = "rejected"
     task.updated_at = datetime.now(UTC)
@@ -591,14 +689,22 @@ async def rollback_task(
         raise HTTPException(status_code=400, detail="Chemin source manquant")
 
     git = GitService(task.source_path)
+    if await git.current_branch() != "main":
+        raise HTTPException(
+            status_code=409,
+            detail="Reviens sur la branche main avant d'annuler les changements.",
+        )
+    if not await git.ensure_clean():
+        raise HTTPException(
+            status_code=409,
+            detail="Le dépôt contient des changements non enregistrés.",
+        )
 
-    # Trouver le dernier commit de merge
-    commits = await git.log(limit=5)
-    merge_commit = None
-    for c in commits:
-        if task.branch_name and task.branch_name in c.get("message", ""):
-            merge_commit = c["hash"]
-            break
+    # Le nom de branche contient l'identifiant unique de la tâche et reste
+    # enregistré en base, même après suppression de la branche locale.
+    merge_commit = (
+        await git.find_merge_commit(task.branch_name) if task.branch_name else None
+    )
 
     if not merge_commit:
         raise HTTPException(status_code=400, detail="Commit de merge introuvable")
@@ -728,12 +834,14 @@ async def get_status(
     repo_detected = False
     current_branch = None
     repo_error = None
+    working_tree_clean = None
 
     if source_path and git_available:
         git = GitService(source_path)
         repo_detected = await git.is_repo()
         if repo_detected:
             current_branch = await git.current_branch()
+            working_tree_clean = await git.ensure_clean()
         else:
             repo_error = f"Le dossier '{source_path}' existe mais n'est pas un depot Git (.git absent)"
     elif source_path and not git_available:
@@ -745,7 +853,7 @@ async def get_status(
     # Compter les tâches actives
     result = await session.execute(
         select(func.count(AgentTask.id)).where(
-            AgentTask.status.in_(["pending", "in_progress", "review"])
+            AgentTask.status.in_(["pending", "in_progress"])
         )
     )
     active_tasks = result.scalar() or 0
@@ -774,6 +882,7 @@ async def get_status(
         repo_path=source_path,
         repo_error=repo_error,
         current_branch=current_branch,
+        working_tree_clean=working_tree_clean,
         active_tasks=active_tasks,
         katia_ready=katia_ready,
         zezette_ready=zezette_ready,
@@ -820,7 +929,7 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
 @router.post("/dispatch")
 async def dispatch_to_openclaw(
     request: DispatchRequest,
-    max_agents: int = 3,
+    http_request: Request,
     session: AsyncSession = Depends(get_session),
 ):
     """Lance un agent OpenClaw depuis l Atelier.
@@ -836,7 +945,7 @@ async def dispatch_to_openclaw(
     )
     running_count = running_count_result.scalar() or 0
 
-    if running_count >= max_agents:
+    if running_count >= _MAX_OPENCLAW_AGENTS:
         raise HTTPException(
             status_code=429,
             detail=f"Tu as déjà {running_count} agents en cours. Attends qu un se termine ou annule-en un.",
@@ -868,6 +977,9 @@ async def dispatch_to_openclaw(
             "args": ["-m", "app.services.mcp_therese_server"],
             "env": {
                 "THERESE_API_URL": "http://127.0.0.1:17293",
+                "THERESE_MCP_TOKEN": getattr(
+                    http_request.app.state, "session_token", ""
+                ),
             },
         }
     }
@@ -1066,7 +1178,12 @@ async def cancel_openclaw_session(
     if agent_session.openclaw_session_id:
         from app.services.openclaw_bridge import cancel_session
 
-        await cancel_session(agent_session.openclaw_session_id)
+        cancelled = await cancel_session(agent_session.openclaw_session_id)
+        if not cancelled:
+            raise HTTPException(
+                status_code=502,
+                detail="OpenClaw n'a pas confirmé l'annulation de la session.",
+            )
 
     from datetime import UTC, datetime
 

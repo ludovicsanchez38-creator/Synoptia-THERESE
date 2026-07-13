@@ -142,6 +142,7 @@ async def list_decisions(
             context=d.context,
             recommendation=d.synthesis.recommendation,
             confidence=d.synthesis.confidence,
+            mode=d.mode,
             created_at=d.created_at,
         )
         for d in decisions

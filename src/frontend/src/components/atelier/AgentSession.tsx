@@ -199,6 +199,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const [inputValue, setInputValue] = useState("");
   const [activeModel, setActiveModel] = useState<string>(model || profile?.default_model || "");
   const [needsInitialPrompt, setNeedsInitialPrompt] = useState(true);
+  const [pendingInstruction, setPendingInstruction] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -274,7 +275,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         setIsStreaming(false);
       }
     },
-    [profileId],
+    [activeModel, profileId],
   );
 
   const handleChunk = (chunk: SpawnAgentStreamChunk, assistantId: string) => {
@@ -355,10 +356,17 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const handleSend = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed || isStreaming) return;
+    setPendingInstruction(trimmed);
+  }, [inputValue, isStreaming]);
+
+  const confirmSend = useCallback(() => {
+    if (!pendingInstruction) return;
+    const instruction = pendingInstruction;
+    setPendingInstruction(null);
     setInputValue("");
     setNeedsInitialPrompt(false);
-    handleStream(trimmed);
-  }, [inputValue, isStreaming, handleStream]);
+    void handleStream(instruction);
+  }, [handleStream, pendingInstruction]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -370,6 +378,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       ),
     );
   }, []);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -522,6 +532,22 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       </div>
 
       {/* Input */}
+      {pendingInstruction && (
+        <div className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
+          <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
+            <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
+            <p className="mt-1 leading-relaxed text-text-muted">
+              Modèle : {activeModel || "non identifié"}. Outils déclarés : {profile?.tools.join(", ") || "aucun"}.
+              Les extraits utiles et ta demande peuvent être transmis au fournisseur du modèle.
+              Cet échange n&apos;est pas conservé après fermeture.
+            </p>
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={() => setPendingInstruction(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
+              <button type="button" onClick={confirmSend} className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white">Confirmer l&apos;appel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
         <textarea
           ref={inputRef}

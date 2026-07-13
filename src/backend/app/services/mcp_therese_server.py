@@ -4,12 +4,12 @@ THÉRÈSE v2 - MCP Bridge Server
 Serveur MCP (Model Context Protocol) qui expose les endpoints THÉRÈSE
 comme des tools pour les agents OpenClaw.
 
-14 tools exposés :
-  CRM      : list_contacts, get_contact, create_activity
-  Email    : list_emails, draft_email, send_email
-  Factures : list_invoices, create_invoice
-  Tâches   : list_tasks, create_task
-  Calendrier : list_events, create_event
+8 tools de lecture exposés en 0.40 :
+  CRM      : list_contacts, get_contact
+  Email    : list_emails
+  Factures : list_invoices
+  Tâches   : list_tasks
+  Calendrier : list_events
   Mémoire  : search_memory, get_project
 
 Protocole : MCP stdio (stdin/stdout JSON-RPC).
@@ -225,6 +225,18 @@ TOOLS: list[dict[str, Any]] = [
     },
 ]
 
+# OpenClaw ne possède pas encore le protocole de brouillon + confirmation
+# humaine de la 0.40. Son bridge reste donc strictement en lecture.
+MUTATING_TOOLS = {
+    "create_activity",
+    "draft_email",
+    "send_email",
+    "create_invoice",
+    "create_task",
+    "create_event",
+}
+TOOLS = [tool for tool in TOOLS if tool["name"] not in MUTATING_TOOLS]
+
 # ============================================================
 # Tool → API mapping
 # ============================================================
@@ -247,6 +259,9 @@ TOOL_ROUTES: dict[str, tuple[str, str]] = {
     "create_event": ("POST", "/api/calendar/events"),
     "search_memory": ("GET", "/api/memory/search"),
     "get_project": ("GET", "/api/memory/projects/{project_id}"),
+}
+TOOL_ROUTES = {
+    name: route for name, route in TOOL_ROUTES.items() if name not in MUTATING_TOOLS
 }
 
 
@@ -291,6 +306,10 @@ async def execute_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str, A
     Returns:
         Résultat de l appel API.
     """
+    if tool_name in MUTATING_TOOLS:
+        return {
+            "error": "Action désactivée : OpenClaw est limité à la lecture tant qu'une confirmation humaine 0.40 n'est pas disponible."
+        }
     route = TOOL_ROUTES.get(tool_name)
     if not route:
         return {"error": f"Tool inconnu: {tool_name}"}
@@ -325,7 +344,7 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
 
     Supporte :
       - initialize : handshake MCP
-      - tools/list : retourne les 14 tools avec schemas
+      - tools/list : retourne les tools de lecture avec leurs schémas
       - tools/call : exécute un tool
 
     Args:

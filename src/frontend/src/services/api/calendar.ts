@@ -8,12 +8,13 @@ import { API_BASE, apiFetch } from './core';
 
 export interface Calendar {
   id: string;
-  account_id: string;
+  account_id: string | null;
   summary: string;
   description: string | null;
   timezone: string;
   primary: boolean;
-  synced_at: string;
+  provider: 'local' | 'google' | 'caldav' | string;
+  synced_at: string | null;
 }
 
 export interface CalendarEvent {
@@ -68,8 +69,15 @@ export interface CalendarSyncResponse {
 }
 
 // Calendars
-export async function listCalendars(accountId: string): Promise<Calendar[]> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/calendars?account_id=${accountId}`);
+export async function listCalendars(
+  accountId?: string,
+  options?: { createDefault?: boolean },
+): Promise<Calendar[]> {
+  const params = new URLSearchParams();
+  if (accountId) params.set('account_id', accountId);
+  if (options?.createDefault === false) params.set('create_default', 'false');
+  const query = params.size > 0 ? `?${params}` : '';
+  const response = await apiFetch(`${API_BASE}/api/calendar/calendars${query}`);
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.detail || data.message || `Erreur ${response.status}`);
@@ -108,7 +116,7 @@ export async function deleteCalendar(calendarId: string, accountId: string): Pro
 
 // Events
 export async function listEvents(
-  accountId: string,
+  accountId: string | undefined,
   calendarId: string = 'primary',
   params?: {
     time_min?: string;
@@ -116,13 +124,11 @@ export async function listEvents(
     max_results?: number;
   }
 ): Promise<CalendarEvent[]> {
-  const queryParams = new URLSearchParams({
-    account_id: accountId,
-    calendar_id: calendarId,
-    ...(params?.time_min && { time_min: params.time_min }),
-    ...(params?.time_max && { time_max: params.time_max }),
-    ...(params?.max_results && { max_results: params.max_results.toString() }),
-  });
+  const queryParams = new URLSearchParams({ calendar_id: calendarId });
+  if (accountId) queryParams.set('account_id', accountId);
+  if (params?.time_min) queryParams.set('time_min', params.time_min);
+  if (params?.time_max) queryParams.set('time_max', params.time_max);
+  if (params?.max_results) queryParams.set('max_results', params.max_results.toString());
 
   const response = await apiFetch(`${API_BASE}/api/calendar/events?${queryParams}`);
   if (!response.ok) {
@@ -138,8 +144,11 @@ export async function getEvent(eventId: string, calendarId: string, accountId: s
   return response.json();
 }
 
-export async function createEvent(req: CreateEventRequest, accountId: string): Promise<CalendarEvent> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events?account_id=${accountId}`, {
+export async function createEvent(req: CreateEventRequest, accountId?: string): Promise<CalendarEvent> {
+  const params = new URLSearchParams();
+  if (accountId) params.set('account_id', accountId);
+  const query = params.size > 0 ? `?${params}` : '';
+  const response = await apiFetch(`${API_BASE}/api/calendar/events${query}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),

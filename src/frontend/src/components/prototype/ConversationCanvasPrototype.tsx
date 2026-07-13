@@ -6,34 +6,24 @@ import {
   Bot,
   Briefcase,
   Calendar,
-  Check,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Copy,
-  Download,
-  ExternalLink,
   FileText,
   Folder,
   Globe,
   HardDrive,
   History,
-  Lock,
   Mail,
   Menu,
   MessageSquare,
   Mic,
-  MoreHorizontal,
   Paperclip,
   PanelRightClose,
   Plus,
   Receipt,
-  RotateCcw,
   Search,
-  Send,
   Settings,
   ShieldCheck,
-  User,
   Users,
   X,
 } from 'lucide-react';
@@ -44,21 +34,37 @@ import {
   featuredCapabilities,
   type CapabilityItem,
 } from './CapabilityCenter';
+import { CharacterPortrait } from './DecisionMissionPrototype';
 import {
-  AtelierCanvas,
-  AtelierCard,
-  BoardCanvas,
-  BoardCard,
-  CharacterPortrait,
-} from './DecisionMissionPrototype';
+  AtelierHistoryCard,
+  AtelierWorkspaceCanvas,
+  type AtelierReviewAction,
+  type AtelierTarget,
+} from './AtelierConversationCard';
+import { BoardHistoryCard, BoardWorkspaceCanvas, type BoardTarget } from './BoardConversationCard';
 import { ContactsMemoryCanvas, ContactsMemoryCard } from './ContactsMemoryCard';
 import { EmailInboxCard, EmailMessageCanvas } from './EmailConversationCard';
+import { InvoiceWorkspaceCanvas, InvoiceWorkspaceCard } from './InvoiceConversationCard';
+import {
+  MeetingAgendaCard,
+  MeetingWorkspaceCanvas,
+  type MeetingTarget,
+} from './MeetingConversationCard';
 import { TodayDashboardCard } from './TodayDashboardCard';
 import { usePrototypeEmailData, type EmailLength, type EmailTone } from './usePrototypeEmailData';
+import { usePrototypeInvoiceData, type InvoiceWorkspaceData } from './usePrototypeInvoiceData';
+import { usePrototypeMeetingData, type MeetingWorkspaceData } from './usePrototypeMeetingData';
+import { usePrototypeBoardData, type BoardWorkspaceData } from './usePrototypeBoardData';
+import { usePrototypeAtelierData, type AtelierWorkspaceData } from './usePrototypeAtelierData';
 import { useContactsResource, useTodayDashboardResource, type ReadResource } from './usePrototypeReadData';
-import { openClassicView } from '../../lib/classicNavigation';
+import { openClassicPanel, openClassicView } from '../../lib/classicNavigation';
+import type { CreateInvoiceRequest, Invoice } from '../../services/api/invoices';
 import type { EmailMessage, SendEmailRequest } from '../../services/api/email';
 import type { Contact } from '../../services/api/memory';
+import type { BoardDecisionDetail, BoardRequest } from '../../services/api/board';
+import type { AgentTaskResponse, DiffResponse } from '../../services/api/agents';
+import type { CalendarEvent, CreateEventRequest } from '../../services/api/calendar';
+import type { ActivityResponse } from '../../services/api/crm-extended';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 
@@ -77,8 +83,8 @@ const scenarioPrompts: Record<Scenario, string> = {
   memory: 'Retrouve mes contacts récents et leur contexte mémorisé.',
   email: 'Montre-moi les messages à traiter et aide-moi à préparer une réponse.',
   meeting: 'Prépare mon rendez-vous avec Claire Fontaine.',
-  invoice: 'Crée un devis PROPULSER pour Claire Fontaine.',
-  board: 'Fais délibérer le Board sur le lancement d’ÉCLORE à l’automne.',
+  invoice: 'Retrouve mes derniers devis et factures, ou aide-moi à préparer un devis brouillon.',
+  board: 'Retrouve mes dernières décisions ou aide-moi à cadrer une nouvelle question stratégique.',
   atelier: 'Demande à l’Atelier de simplifier l’onboarding sans toucher aux données existantes.',
 };
 
@@ -198,297 +204,99 @@ function ConversationDrawer({ onClose }: { onClose: () => void }) {
   );
 }
 
-function MeetingCard({ onOpen }: { onOpen: () => void }) {
-  return (
-    <div className="rounded-[16px] border border-[#DCE4F1] bg-white p-4 shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]">
-      <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-[12px] border border-[#101C36] bg-[#FBE3F0] text-[#BE1A72]">
-          <User className="h-5 w-5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-[15px] font-semibold text-[#101C36]">Claire Fontaine</h3>
-            <span className="rounded-full bg-[#DEF4F9] px-2 py-0.5 text-[10px] font-semibold text-[#0B7896]">Prospect chaud</span>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-[#5B6A82]">Consultante-formatrice à Manosque · Intérêt exprimé pour PROPULSER · Dernier échange vendredi.</p>
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="rounded-[10px] bg-[#F7F9FD] px-3 py-2.5">
-          <div className="text-[10px] uppercase tracking-wide text-[#7B8AA3]">Rendez-vous</div>
-          <div className="mt-1 text-xs font-semibold text-[#101C36]">Aujourd’hui, 09:30</div>
-        </div>
-        <div className="rounded-[10px] bg-[#F7F9FD] px-3 py-2.5">
-          <div className="text-[10px] uppercase tracking-wide text-[#7B8AA3]">Besoin</div>
-          <div className="mt-1 text-xs font-semibold text-[#101C36]">Structurer l’usage IA</div>
-        </div>
-        <div className="rounded-[10px] bg-[#F7F9FD] px-3 py-2.5">
-          <div className="text-[10px] uppercase tracking-wide text-[#7B8AA3]">Étape CRM</div>
-          <div className="mt-1 text-xs font-semibold text-[#101C36]">Découverte</div>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-[#EDF1F7] pt-3">
-        <div className="flex gap-1.5">
-          <SourceChip icon={<Mail className="h-3 w-3" />} label="4 emails" />
-          <SourceChip icon={<FileText className="h-3 w-3" />} label="2 notes" />
-        </div>
-        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1.5 rounded-[9px] bg-[#101C36] px-3 py-2 text-xs font-semibold text-white">
-          Ouvrir la préparation
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function InvoiceCard({ onOpen }: { onOpen: () => void }) {
-  return (
-    <div className="rounded-[16px] border border-[#DCE4F1] bg-white p-4 shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-[12px] border border-[#101C36] bg-[#FAEFDC] text-[#B45309]">
-            <Receipt className="h-5 w-5" />
-          </span>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-[15px] font-semibold text-[#101C36]">Devis PROPULSER</h3>
-              <span className="rounded-full bg-[#FFF3D6] px-2 py-0.5 text-[10px] font-semibold text-[#946000]">Brouillon</span>
-            </div>
-            <p className="mt-1 text-xs text-[#5B6A82]">Claire Fontaine · Parcours 3 séances avec vidéos asynchrones</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-[#101C36]">2 490 € HT</div>
-          <div className="text-[11px] text-[#7B8AA3]">TVA à préciser</div>
-        </div>
-      </div>
-      <div className="mt-4 flex items-center gap-2 rounded-[10px] border border-[#D6F0F5] bg-[#F1FBFC] px-3 py-2.5 text-xs text-[#315D69]">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-[#0F8FB3]" />
-        Profil émetteur et coordonnées client retrouvés. Aucun envoi ne sera effectué sans validation.
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-[#EDF1F7] pt-3">
-        <div className="flex gap-1.5">
-          <SourceChip icon={<Users className="h-3 w-3" />} label="CRM" />
-          <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Données locales" />
-        </div>
-        <button type="button" onClick={onOpen} className="inline-flex items-center gap-1.5 rounded-[9px] bg-[#101C36] px-3 py-2 text-xs font-semibold text-white">
-          Vérifier le devis
-          <ChevronRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function MeetingCanvas() {
-  return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-[#E4EAF3] px-5 py-4">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7B8AA3]">
-          <Calendar className="h-3.5 w-3.5" />
-          Rendez-vous · 09:30
-        </div>
-        <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-[#101C36]">Préparation Claire Fontaine</h2>
-        <p className="mt-1 text-sm text-[#5B6A82]">Un brief construit à partir de ton CRM, de tes notes et de tes emails.</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="mb-5 flex items-center gap-3 rounded-[14px] border border-[#DCE4F1] bg-white p-4">
-          <span className="grid h-11 w-11 place-items-center rounded-full bg-[#FBE3F0] text-sm font-bold text-[#A51662]">CF</span>
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-[#101C36]">Claire Fontaine</div>
-            <div className="text-xs text-[#5B6A82]">Consultante-formatrice · Manosque</div>
-          </div>
-          <button type="button" className="rounded-[8px] border border-[#DCE4F1] p-2 text-[#5B6A82] hover:bg-[#F3F6FC]">
-            <ExternalLink className="h-4 w-4" />
-          </button>
-        </div>
-
-        <SectionLabel>Ce qu’il faut retenir</SectionLabel>
-        <div className="mb-5 space-y-2">
-          {[
-            'Elle cherche un cadre concret pour intégrer l’IA sans perdre sa méthode personnelle.',
-            'Elle a téléchargé le programme PROPULSER et demandé si les vidéos restent accessibles.',
-            'Le budget n’a pas encore été abordé. Aucun devis n’a été envoyé.',
-          ].map((item) => (
-            <div key={item} className="flex gap-2.5 rounded-[11px] border border-[#E4EAF3] bg-white px-3 py-3 text-sm leading-5 text-[#33415C]">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0F8FB3]" />
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <SectionLabel>Questions suggérées</SectionLabel>
-        <div className="mb-5 space-y-2">
-          {[
-            'Quelle tâche te fait perdre le plus de temps chaque semaine ?',
-            'Qu’aimerais-tu continuer à faire toi-même, même si l’IA peut le faire ?',
-            'Quel résultat rendrait l’accompagnement rentable dès le premier mois ?',
-          ].map((question, index) => (
-            <div key={question} className="flex gap-3 rounded-[11px] bg-[#F3F6FC] px-3 py-3 text-sm text-[#33415C]">
-              <span className="font-semibold text-[#0F8FB3]">{index + 1}</span>
-              {question}
-            </div>
-          ))}
-        </div>
-
-        <SectionLabel>Sources utilisées</SectionLabel>
-        <div className="flex flex-wrap gap-2">
-          <SourceChip icon={<Mail className="h-3 w-3" />} label="4 emails" />
-          <SourceChip icon={<FileText className="h-3 w-3" />} label="2 notes CRM" />
-          <SourceChip icon={<Calendar className="h-3 w-3" />} label="Événement agenda" />
-        </div>
-      </div>
-
-      <div className="border-t border-[#E4EAF3] bg-white p-4">
-        <button type="button" className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#101C36] bg-[#101C36] px-4 py-3 text-sm font-semibold text-white shadow-[3px_3px_0_#22D3EE]">
-          <FileText className="h-4 w-4" />
-          Créer une note de rendez-vous
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function InvoiceCanvas() {
-  const [confirmed, setConfirmed] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-[#E4EAF3] px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7B8AA3]">
-              <Receipt className="h-3.5 w-3.5" />
-              Devis · Brouillon
-            </div>
-            <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-[#101C36]">PROPULSER · Claire Fontaine</h2>
-          </div>
-          <button type="button" className="rounded-[9px] border border-[#DCE4F1] bg-white p-2 text-[#5B6A82] hover:bg-[#F3F6FC]">
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="mb-4 rounded-[14px] border border-[#DCE4F1] bg-white p-4">
-          <SectionLabel>Client</SectionLabel>
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FBE3F0] text-xs font-bold text-[#A51662]">CF</span>
-            <div>
-              <div className="text-sm font-semibold text-[#101C36]">Claire Fontaine</div>
-              <div className="text-xs text-[#5B6A82]">claire.fontaine@example.fr · Manosque</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-4 rounded-[14px] border border-[#DCE4F1] bg-white p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <SectionLabel>Prestation</SectionLabel>
-            <button
-              type="button"
-              onClick={() => {
-                setCopied(true);
-                window.setTimeout(() => setCopied(false), 1400);
-              }}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#5B6A82] hover:text-[#101C36]"
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? 'Copié' : 'Dupliquer'}
-            </button>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-sm font-semibold text-[#101C36]">Parcours PROPULSER</div>
-              <div className="mt-1 text-xs leading-5 text-[#5B6A82]">3 séances individuelles, vidéos asynchrones et supports pratiques.</div>
-            </div>
-            <div className="shrink-0 text-sm font-bold text-[#101C36]">2 490,00 €</div>
-          </div>
-        </div>
-
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <label className="rounded-[12px] border border-[#DCE4F1] bg-white p-3">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#7B8AA3]">Date du devis</span>
-            <input defaultValue="13/07/2026" className="mt-1.5 w-full bg-transparent text-sm font-medium text-[#101C36] outline-none" />
-          </label>
-          <label className="rounded-[12px] border border-[#DCE4F1] bg-white p-3">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[#7B8AA3]">Valable jusqu’au</span>
-            <input defaultValue="12/08/2026" className="mt-1.5 w-full bg-transparent text-sm font-medium text-[#101C36] outline-none" />
-          </label>
-        </div>
-
-        <div className="mb-4 rounded-[14px] bg-[#101C36] p-4 text-white">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-[#B9C5D8]">Total HT</span>
-            <span className="font-semibold">2 490,00 €</span>
-          </div>
-          <div className="mt-2 flex items-center justify-between text-sm">
-            <span className="text-[#B9C5D8]">TVA</span>
-            <span className="font-semibold">498,00 €</span>
-          </div>
-          <div className="my-3 h-px bg-white/15" />
-          <div className="flex items-center justify-between">
-            <span className="font-semibold">Total TTC</span>
-            <span className="text-xl font-bold text-[#22D3EE]">2 988,00 €</span>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2.5 rounded-[12px] border border-[#D6F0F5] bg-[#F1FBFC] p-3 text-xs leading-5 text-[#315D69]">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-[#0F8FB3]" />
-          Les données restent locales. Seul le texte nécessaire à la rédaction est transmis au modèle sélectionné.
-        </div>
-      </div>
-
-      <div className="border-t border-[#E4EAF3] bg-white p-4">
-        <div className="mb-3 flex gap-2">
-          <button type="button" className="flex flex-1 items-center justify-center gap-2 rounded-[10px] border border-[#DCE4F1] bg-white px-3 py-2.5 text-xs font-semibold text-[#33415C] hover:bg-[#F7F9FD]">
-            <Download className="h-4 w-4" />
-            Aperçu PDF
-          </button>
-          <button type="button" className="grid h-10 w-10 place-items-center rounded-[10px] border border-[#DCE4F1] bg-white text-[#5B6A82] hover:bg-[#F7F9FD]">
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={() => setConfirmed(true)}
-          className={`flex w-full items-center justify-center gap-2 rounded-[10px] border px-4 py-3 text-sm font-semibold ${
-            confirmed
-              ? 'border-[#047857] bg-[#047857] text-white'
-              : 'border-[#101C36] bg-[#101C36] text-white shadow-[3px_3px_0_#22D3EE]'
-          }`}
-        >
-          {confirmed ? <CheckCircle2 className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-          {confirmed ? 'Devis validé, prêt à envoyer' : 'Valider le devis'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function ContextCanvas({
   scenario,
   onClose,
   contactsResource,
   emailMessageResource,
+  meetingResource,
+  meetingEventResource,
+  meetingTarget,
+  invoiceResource,
+  invoiceDetailResource,
+  boardResource,
+  boardDecisionResource,
+  boardRun,
+  boardTarget,
+  atelierResource,
+  atelierTaskResource,
+  atelierDiffResource,
+  atelierRun,
+  atelierTarget,
+  atelierActionPending,
+  selectedInvoiceId,
   selectedContactId,
   onSelectContact,
   onRetryContacts,
   onRetryEmailMessage,
   onGenerateEmailDraft,
   onSaveEmailDraft,
+  onRetryMeeting,
+  onRetryMeetingEvent,
+  onCreateMeetingEvent,
+  onCreateMeetingNote,
+  onRetryInvoices,
+  onRetryInvoice,
+  onCreateDevisDraft,
+  onRetryBoard,
+  onRetryBoardDecision,
+  onStartBoard,
+  onCancelBoard,
+  onResetBoard,
+  onRetryAtelier,
+  onRetryAtelierTask,
+  onStartAtelier,
+  onCancelAtelier,
+  onResetAtelier,
+  onMutateAtelierTask,
 }: {
   scenario: Exclude<Scenario, 'today'>;
   onClose: () => void;
   contactsResource: ReadResource<Contact[]>;
   emailMessageResource: ReadResource<EmailMessage> | null;
+  meetingResource: ReadResource<MeetingWorkspaceData>;
+  meetingEventResource: ReturnType<typeof usePrototypeMeetingData>['eventResource'];
+  meetingTarget: MeetingTarget;
+  invoiceResource: ReadResource<InvoiceWorkspaceData>;
+  invoiceDetailResource: ReadResource<Invoice> | null;
+  boardResource: ReadResource<BoardWorkspaceData>;
+  boardDecisionResource: ReadResource<BoardDecisionDetail> | null;
+  boardRun: ReturnType<typeof usePrototypeBoardData>['run'];
+  boardTarget: BoardTarget;
+  atelierResource: ReadResource<AtelierWorkspaceData>;
+  atelierTaskResource: ReadResource<AgentTaskResponse> | null;
+  atelierDiffResource: ReadResource<DiffResponse> | null;
+  atelierRun: ReturnType<typeof usePrototypeAtelierData>['run'];
+  atelierTarget: AtelierTarget;
+  atelierActionPending: AtelierReviewAction | null;
+  selectedInvoiceId: string | 'new-devis' | null;
   selectedContactId: string | null;
   onSelectContact: (contactId: string) => void;
   onRetryContacts: () => void;
   onRetryEmailMessage: () => void;
   onGenerateEmailDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
   onSaveEmailDraft: (request: SendEmailRequest) => Promise<{ id: string }>;
+  onRetryMeeting: () => void;
+  onRetryMeetingEvent: () => void;
+  onCreateMeetingEvent: (request: CreateEventRequest) => Promise<CalendarEvent>;
+  onCreateMeetingNote: (eventId: string, contactId: string, description: string) => Promise<ActivityResponse>;
+  onRetryInvoices: () => void;
+  onRetryInvoice: () => void;
+  onCreateDevisDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  onRetryBoard: () => void;
+  onRetryBoardDecision: () => void;
+  onStartBoard: (request: BoardRequest) => Promise<void>;
+  onCancelBoard: () => void;
+  onResetBoard: () => void;
+  onRetryAtelier: () => void;
+  onRetryAtelierTask: () => void;
+  onStartAtelier: (instruction: string) => Promise<void>;
+  onCancelAtelier: () => Promise<void>;
+  onResetAtelier: () => void;
+  onMutateAtelierTask: (
+    taskId: string,
+    action: AtelierReviewAction,
+  ) => Promise<AgentTaskResponse | undefined>;
 }) {
   return (
     <motion.aside
@@ -524,13 +332,55 @@ function ContextCanvas({
           onOpenClassic={() => openClassicView('memory')}
         />
       ) : scenario === 'meeting' ? (
-        <MeetingCanvas />
+        <MeetingWorkspaceCanvas
+          resource={meetingResource}
+          eventResource={meetingEventResource}
+          target={meetingTarget}
+          onRetry={onRetryMeeting}
+          onRetryEvent={onRetryMeetingEvent}
+          onCreateEvent={onCreateMeetingEvent}
+          onCreateNote={onCreateMeetingNote}
+          onOpenClassic={() => openClassicView('calendar')}
+        />
       ) : scenario === 'invoice' ? (
-        <InvoiceCanvas />
+        <InvoiceWorkspaceCanvas
+          resource={invoiceResource}
+          invoiceResource={invoiceDetailResource}
+          selection={selectedInvoiceId}
+          onRetry={onRetryInvoices}
+          onRetryInvoice={onRetryInvoice}
+          onCreateDraft={onCreateDevisDraft}
+          onOpenClassic={() => openClassicView('invoices')}
+        />
       ) : scenario === 'board' ? (
-        <BoardCanvas />
+        <BoardWorkspaceCanvas
+          resource={boardResource}
+          decisionResource={boardDecisionResource}
+          run={boardRun}
+          target={boardTarget}
+          onRetry={onRetryBoard}
+          onRetryDecision={onRetryBoardDecision}
+          onStart={onStartBoard}
+          onCancel={onCancelBoard}
+          onReset={onResetBoard}
+          onOpenClassic={() => openClassicPanel('board')}
+        />
       ) : (
-        <AtelierCanvas />
+        <AtelierWorkspaceCanvas
+          resource={atelierResource}
+          taskResource={atelierTaskResource}
+          diffResource={atelierDiffResource}
+          run={atelierRun}
+          target={atelierTarget}
+          actionPending={atelierActionPending}
+          onRetry={onRetryAtelier}
+          onRetryTask={onRetryAtelierTask}
+          onStart={onStartAtelier}
+          onCancel={onCancelAtelier}
+          onReset={onResetAtelier}
+          onMutate={onMutateAtelierTask}
+          onOpenClassic={() => openClassicPanel('atelier')}
+        />
       )}
     </motion.aside>
   );
@@ -679,7 +529,9 @@ export function ConversationCanvasPrototype() {
   const { resource: todayResource, refresh: refreshToday } = useTodayDashboardResource();
   const { resource: contactsResource, refresh: refreshContacts } = useContactsResource();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
-  const [canvasOpen, setCanvasOpen] = useState(initialScenario !== 'today' && initialScenario !== 'email');
+  const [canvasOpen, setCanvasOpen] = useState(
+    initialScenario !== 'today' && initialScenario !== 'email' && initialScenario !== 'invoice' && initialScenario !== 'board',
+  );
   const {
     inboxResource: emailInboxResource,
     messageResource: emailMessageResource,
@@ -689,12 +541,60 @@ export function ConversationCanvasPrototype() {
     generateDraft: generateEmailDraft,
     saveDraft: saveEmailDraft,
   } = usePrototypeEmailData(scenario === 'email');
+  const {
+    resource: meetingResource,
+    eventResource: meetingEventResource,
+    refresh: refreshMeeting,
+    openEvent: openMeetingEvent,
+    retryEvent: retryMeetingEvent,
+    createCalendarEvent: createMeetingEvent,
+    createMeetingNote,
+  } = usePrototypeMeetingData(scenario === 'meeting');
+  const {
+    resource: invoiceResource,
+    invoiceResource: invoiceDetailResource,
+    refresh: refreshInvoices,
+    openInvoice,
+    retryInvoice,
+    createDevisDraft,
+  } = usePrototypeInvoiceData(scenario === 'invoice');
+  const {
+    resource: boardResource,
+    decisionResource: boardDecisionResource,
+    run: boardRun,
+    refresh: refreshBoard,
+    openDecision: openBoardDecision,
+    retryDecision: retryBoardDecision,
+    startDeliberation: startBoardDeliberation,
+    cancelDeliberation: cancelBoardDeliberation,
+    resetRun: resetBoardRun,
+  } = usePrototypeBoardData(scenario === 'board');
+  const {
+    resource: atelierResource,
+    taskResource: atelierTaskResource,
+    diffResource: atelierDiffResource,
+    run: atelierRun,
+    actionPending: atelierActionPending,
+    refresh: refreshAtelier,
+    openTask: openAtelierTask,
+    retryTask: retryAtelierTask,
+    startMission: startAtelierMission,
+    cancelMission: cancelAtelierMission,
+    mutateTask: mutateAtelierTask,
+    resetRun: resetAtelierRun,
+  } = usePrototypeAtelierData(scenario === 'atelier');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
   const [trustCenterOpen, setTrustCenterOpen] = useState(false);
   const [selectedCapability, setSelectedCapability] = useState<CapabilityItem | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [selectedMeetingTarget, setSelectedMeetingTarget] = useState<MeetingTarget>(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | 'new-devis' | null>(null);
+  const [selectedBoardTarget, setSelectedBoardTarget] = useState<BoardTarget>(null);
+  const [selectedAtelierTarget, setSelectedAtelierTarget] = useState<AtelierTarget>(
+    initialScenario === 'atelier' ? 'new-mission' : null,
+  );
   const [composerValue, setComposerValue] = useState('');
   const conversationScrollRef = useRef<HTMLDivElement>(null);
 
@@ -711,16 +611,26 @@ export function ConversationCanvasPrototype() {
         else if (capabilityCenterOpen) setCapabilityCenterOpen(false);
         else if (trustCenterOpen) setTrustCenterOpen(false);
         else if (drawerOpen) setDrawerOpen(false);
-        else if (canvasOpen) setCanvasOpen(false);
+        else if (canvasOpen) {
+          if (scenario === 'board') cancelBoardDeliberation();
+          if (scenario === 'atelier') void cancelAtelierMission();
+          setCanvasOpen(false);
+        }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canvasOpen, capabilityCenterOpen, commandOpen, drawerOpen, trustCenterOpen]);
+  }, [canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, commandOpen, drawerOpen, scenario, trustCenterOpen]);
 
   function chooseScenario(next: Scenario) {
+    if (scenario === 'board') cancelBoardDeliberation();
+    if (scenario === 'atelier') void cancelAtelierMission();
     setScenario(next);
-    setCanvasOpen(next !== 'today' && next !== 'email');
+    if (next === 'atelier') {
+      setSelectedAtelierTarget(atelierRun.status === 'idle' ? 'new-mission' : 'current');
+    }
+    if (next === 'meeting') setSelectedMeetingTarget(null);
+    setCanvasOpen(next !== 'today' && next !== 'email' && next !== 'invoice' && next !== 'board');
     setComposerValue('');
     setSelectedCapability(null);
     conversationScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -845,10 +755,10 @@ export function ConversationCanvasPrototype() {
                           : scenario === 'meeting'
                             ? 'J’ai rassemblé le contexte utile pour ton rendez-vous, sans modifier tes données.'
                             : scenario === 'invoice'
-                              ? 'J’ai préparé le devis à partir de ton offre et de la fiche client. Vérifie-le avant toute action.'
+                              ? 'Je consulte les documents réellement enregistrés. Tu peux aussi préparer un devis brouillon avant toute génération ou envoi.'
                               : scenario === 'board'
-                                ? 'Le Board a confronté cinq regards. Je te montre d’abord la recommandation, puis les nuances si tu veux les examiner.'
-                                : 'La mission est terminée et testée. Je traduis les changements en effets concrets avant de te demander une validation.'}
+                                ? 'Je consulte les décisions enregistrées. Tu peux relire un historique ou préparer une nouvelle question avant de lancer quoi que ce soit.'
+                                : 'Je consulte les missions réellement enregistrées. Tu peux cadrer un changement, suivre son exécution isolée et relire le diff avant toute application.'}
                       </p>
                     </div>
                   </div>
@@ -894,11 +804,62 @@ export function ConversationCanvasPrototype() {
                   ) : scenario === 'meeting' ? (
                     <MeetingCard onOpen={() => setCanvasOpen(true)} />
                   ) : scenario === 'invoice' ? (
-                    <InvoiceCard onOpen={() => setCanvasOpen(true)} />
+                    <InvoiceWorkspaceCard
+                      resource={invoiceResource}
+                      onRetry={() => void refreshInvoices()}
+                      onOpenInvoice={(invoiceId) => {
+                        setSelectedInvoiceId(invoiceId);
+                        setCanvasOpen(true);
+                        void openInvoice(invoiceId);
+                      }}
+                      onCreateDevis={() => {
+                        setSelectedInvoiceId('new-devis');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenClassic={() => openClassicView('invoices')}
+                    />
                   ) : scenario === 'board' ? (
-                    <BoardCard onOpen={() => setCanvasOpen(true)} />
+                    <BoardHistoryCard
+                      resource={boardResource}
+                      run={boardRun}
+                      onRetry={() => void refreshBoard()}
+                      onOpenDecision={(decisionId) => {
+                        setSelectedBoardTarget(decisionId);
+                        setCanvasOpen(true);
+                        void openBoardDecision(decisionId);
+                      }}
+                      onNewBoard={() => {
+                        resetBoardRun();
+                        setSelectedBoardTarget('new-board');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenCurrent={() => {
+                        setSelectedBoardTarget('current');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenClassic={() => openClassicPanel('board')}
+                    />
                   ) : (
-                    <AtelierCard onOpen={() => setCanvasOpen(true)} />
+                    <AtelierHistoryCard
+                      resource={atelierResource}
+                      run={atelierRun}
+                      onRetry={() => void refreshAtelier()}
+                      onOpenTask={(taskId) => {
+                        setSelectedAtelierTarget(taskId);
+                        setCanvasOpen(true);
+                        void openAtelierTask(taskId);
+                      }}
+                      onNewMission={() => {
+                        resetAtelierRun();
+                        setSelectedAtelierTarget('new-mission');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenCurrent={() => {
+                        setSelectedAtelierTarget('current');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenClassic={() => openClassicPanel('atelier')}
+                    />
                   )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -932,21 +893,21 @@ export function ConversationCanvasPrototype() {
                       </>
                     ) : scenario === 'invoice' ? (
                       <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Profil local" />
-                        <SourceChip icon={<Users className="h-3 w-3" />} label="CRM" />
-                        <SourceChip icon={<Briefcase className="h-3 w-3" />} label="Offre PROPULSER" />
+                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Facturation locale" />
+                        <SourceChip icon={<Users className="h-3 w-3" />} label="Référentiel contacts" />
+                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Brouillon confirmé, aucun envoi" />
                       </>
                     ) : scenario === 'board' ? (
                       <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Contexte Synoptïa" />
-                        <SourceChip icon={<Globe className="h-3 w-3" />} label="Recherche web" />
-                        <SourceChip icon={<Users className="h-3 w-3" />} label="5 perspectives" />
+                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Historique local" />
+                        <SourceChip icon={<Users className="h-3 w-3" />} label="5 conseillers" />
+                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Cloud ou Ollama confirmé" />
                       </>
                     ) : (
                       <>
-                        <SourceChip icon={<Folder className="h-3 w-3" />} label="Dossier autorisé" />
-                        <SourceChip icon={<Bot className="h-3 w-3" />} label="Katia + Zézette" />
-                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="12 tests" />
+                        <SourceChip icon={<Folder className="h-3 w-3" />} label="Dépôt Git autorisé" />
+                        <SourceChip icon={<Bot className="h-3 w-3" />} label="Katia + Zézette réelles" />
+                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Worktree isolé · validation séparée" />
                       </>
                     )}
                   </div>
@@ -1042,15 +1003,52 @@ export function ConversationCanvasPrototype() {
               {canvasOpen && scenario !== 'today' && (
                 <ContextCanvas
                   scenario={scenario}
-                  onClose={() => setCanvasOpen(false)}
+                  onClose={() => {
+                    if (scenario === 'board') cancelBoardDeliberation();
+                    if (scenario === 'atelier') void cancelAtelierMission();
+                    setCanvasOpen(false);
+                  }}
                   contactsResource={contactsResource}
                   emailMessageResource={emailMessageResource}
+                  invoiceResource={invoiceResource}
+                  invoiceDetailResource={invoiceDetailResource}
+                  boardResource={boardResource}
+                  boardDecisionResource={boardDecisionResource}
+                  boardRun={boardRun}
+                  boardTarget={selectedBoardTarget}
+                  atelierResource={atelierResource}
+                  atelierTaskResource={atelierTaskResource}
+                  atelierDiffResource={atelierDiffResource}
+                  atelierRun={atelierRun}
+                  atelierTarget={selectedAtelierTarget}
+                  atelierActionPending={atelierActionPending}
+                  selectedInvoiceId={selectedInvoiceId}
                   selectedContactId={selectedContactId}
                   onSelectContact={setSelectedContactId}
                   onRetryContacts={() => void refreshContacts()}
                   onRetryEmailMessage={() => void retryEmailMessage()}
                   onGenerateEmailDraft={generateEmailDraft}
                   onSaveEmailDraft={saveEmailDraft}
+                  onRetryInvoices={() => void refreshInvoices()}
+                  onRetryInvoice={() => void retryInvoice()}
+                  onCreateDevisDraft={createDevisDraft}
+                  onRetryBoard={() => void refreshBoard()}
+                  onRetryBoardDecision={() => void retryBoardDecision()}
+                  onStartBoard={startBoardDeliberation}
+                  onCancelBoard={cancelBoardDeliberation}
+                  onResetBoard={() => {
+                    resetBoardRun();
+                    setSelectedBoardTarget('new-board');
+                  }}
+                  onRetryAtelier={() => void refreshAtelier()}
+                  onRetryAtelierTask={() => void retryAtelierTask()}
+                  onStartAtelier={startAtelierMission}
+                  onCancelAtelier={cancelAtelierMission}
+                  onResetAtelier={() => {
+                    resetAtelierRun();
+                    setSelectedAtelierTarget('new-mission');
+                  }}
+                  onMutateAtelierTask={mutateAtelierTask}
                 />
               )}
             </AnimatePresence>

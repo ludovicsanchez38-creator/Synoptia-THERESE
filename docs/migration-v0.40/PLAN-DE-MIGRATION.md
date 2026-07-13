@@ -36,16 +36,18 @@ nouvelle coque reste accessible sur demande en développement local uniquement.
 Objectif : remplacer les données simulées par des données réelles sans effet
 externe.
 
-État local au 13 juillet 2026 : trois raccordements sont réalisés et testés. Ils
+État local au 13 juillet 2026 : cinq raccordements sont réalisés et testés. Ils
 restent non diffusés.
 
 - [x] brief du jour ;
 - [x] contacts et mémoire en lecture locale ;
 - [x] emails en consultation, Gmail et IMAP ;
+- [x] devis et factures en consultation ;
+- [x] historique et détail du Board ;
 - projets et pipeline ;
 - agenda en consultation ;
 - fichiers et connaissances ;
-- historiques du Board et des missions.
+- historique des missions.
 
 Sortie du lot : chaque carte affiche sa source, gère vide/erreur/chargement et
 ouvre la vue classique équivalente si le canevas n’est pas encore disponible.
@@ -56,6 +58,8 @@ Objectif : produire et modifier sans exécuter implicitement.
 
 - [x] brouillon d’email généré ou manuel, modifiable, avec confirmation avant
   création chez le fournisseur et aucun envoi exposé ;
+- [x] devis brouillon structuré, calculé, modifiable et créé une seule fois après
+  confirmation explicite ;
 - proposition d’événement et de tâche ;
 - formulaire de devis ou facture ;
 - document structuré et livrable Office ;
@@ -69,10 +73,20 @@ brouillon. Fermer un canevas ne déclenche aucun effet externe.
 
 Objectif : relier les deux expériences distinctives aux services existants.
 
-- Board : lancement, progression, conseillers, divergences, synthèse, historique ;
-- Atelier : cadrage, plan, agents, progression, artefacts, revue, application ;
-- états interrompu, partiel, en erreur et relançable ;
-- permissions et coût visibles avant lancement quand l’information existe.
+- [x] Board : lancement confirmé, progression, conseillers, divergences,
+  synthèse, historique et sauvegarde relue ;
+- [x] Board souverain sans repli cloud et annulation des tâches au départ ;
+- [x] Atelier : historique, préflight, cadrage, plan SSE, agents, progression,
+  artefacts Git, revue, application et refus confirmés ;
+- [x] Board : états interrompu, annulé, erreur et sauvegarde non vérifiable ;
+- [x] Board : transmission et nombre maximal d’appels visibles avant lancement ;
+- [x] Atelier : états interrompu, annulé, erreur, dépôt non sûr et revue
+  indisponible ; annulation propagée au processus backend.
+
+Le canevas initial branche uniquement le swarm de changement de code. OpenClaw,
+les six profils autonomes et Action Agents restent en repli expérimental jusqu’à
+l’adoption du même contrat de permission, persistance et confirmation. OpenClaw
+est limité à la lecture dans l’intervalle.
 
 Sortie du lot : aucune réponse ou progression simulée n’est présentée comme
 réelle.

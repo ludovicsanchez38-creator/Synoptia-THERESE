@@ -8,6 +8,8 @@ Communication via asyncio.Queue (pattern board.py).
 import json
 import logging
 import re
+import tempfile
+from pathlib import Path
 from typing import AsyncGenerator
 
 from app.models.schemas_agents import AgentStreamChunk
@@ -173,8 +175,18 @@ class SwarmOrchestrator:
             )
             return
 
-        # Sauvegarder la branche courante pour y revenir après
+        # Le dépôt utilisateur reste sur sa branche courante. Les écritures et
+        # commandes de l'agent s'exécutent dans un worktree temporaire dédié.
         original_branch = await self.git.current_branch()
+        if not await self.git.ensure_clean():
+            yield AgentStreamChunk(
+                type="error",
+                agent="zezette",
+                content="Le dépôt contient des changements non enregistrés. L’Atelier refuse de les mélanger à une mission.",
+                task_id=task_id,
+            )
+            return
+        worktree_path = Path(tempfile.gettempdir()) / f"therese-agent-{task_id}"
 
         # Créer la branche de travail
         yield AgentStreamChunk(
@@ -185,23 +197,34 @@ class SwarmOrchestrator:
             phase="implementation",
         )
 
-        if not await self.git.create_branch(branch_name):
+        if not await self.git.create_worktree(worktree_path, branch_name, original_branch):
             yield AgentStreamChunk(
                 type="error",
                 agent="zezette",
-                content=f"Impossible de créer la branche {branch_name}",
+                content=f"Impossible de créer l’espace de travail isolé {branch_name}",
                 task_id=task_id,
             )
-            await self.git.checkout(original_branch)
             return
 
-        # Lancer Zézette avec la spec
-        zezette_config = get_agent_config("zezette")
-        zezette_tools = AgentToolExecutor(self.source_path, git_service=self.git)
-        zezette_model = _get_agent_model("zezette")
-        zezette_runtime = AgentRuntime(zezette_config, zezette_tools, ZEZETTE_TOOLS, model_override=zezette_model)
+        worktree_git = GitService(worktree_path)
+        keep_branch = False
+        files_changed: list[dict[str, str]] = []
+        diff_stat = ""
+        zezette_response = ""
 
-        zezette_prompt = f"""Tu as reçu cette spécification de Thérèse :
+        try:
+            # Lancer Zézette avec la spec dans le worktree isolé
+            zezette_config = get_agent_config("zezette")
+            zezette_tools = AgentToolExecutor(str(worktree_path), git_service=worktree_git)
+            zezette_model = _get_agent_model("zezette")
+            zezette_runtime = AgentRuntime(
+                zezette_config,
+                zezette_tools,
+                ZEZETTE_TOOLS,
+                model_override=zezette_model,
+            )
+
+            zezette_prompt = f"""Tu as reçu cette spécification de Thérèse :
 
 {spec_content}
 
@@ -213,66 +236,67 @@ Tu es sur la branche `{branch_name}`. Implémente les changements demandés.
 3. Lance les tests pour vérifier
 4. Résume ce que tu as fait
 """
-        zezette_response = ""
 
-        async for event in zezette_runtime.run(zezette_prompt):
-            if event.type == "chunk":
-                zezette_response += event.content
-                yield AgentStreamChunk(
-                    type="agent_chunk",
-                    agent="zezette",
-                    content=event.content,
-                    task_id=task_id,
-                )
-            elif event.type == "tool_call":
-                yield AgentStreamChunk(
-                    type="tool_use",
-                    agent="zezette",
-                    tool_name=event.tool_name,
-                    task_id=task_id,
-                    phase="implementation",
-                )
-            elif event.type == "tool_result":
-                # Signaler les résultats de tests
-                if event.tool_name == "run_command":
+            async for event in zezette_runtime.run(zezette_prompt):
+                if event.type == "chunk":
+                    zezette_response += event.content
+                    yield AgentStreamChunk(
+                        type="agent_chunk",
+                        agent="zezette",
+                        content=event.content,
+                        task_id=task_id,
+                    )
+                elif event.type == "tool_call":
+                    yield AgentStreamChunk(
+                        type="tool_use",
+                        agent="zezette",
+                        tool_name=event.tool_name,
+                        task_id=task_id,
+                        phase="implementation",
+                    )
+                elif event.type == "tool_result" and event.tool_name == "run_command":
                     yield AgentStreamChunk(
                         type="test_result",
                         agent="zezette",
                         content=event.tool_result or "",
                         task_id=task_id,
                     )
-            elif event.type == "error":
+                elif event.type == "error":
+                    yield AgentStreamChunk(
+                        type="error",
+                        agent="zezette",
+                        content=event.content,
+                        task_id=task_id,
+                    )
+                    return
+
+            yield AgentStreamChunk(
+                type="agent_done",
+                agent="zezette",
+                content=zezette_response,
+                task_id=task_id,
+            )
+
+            commit_hash = await worktree_git.commit(
+                f"[agent] {spec_content.split(chr(10))[0][:80]}"
+            )
+            if not commit_hash:
                 yield AgentStreamChunk(
                     type="error",
                     agent="zezette",
-                    content=event.content,
+                    content="La mission n’a produit aucun changement vérifiable.",
                     task_id=task_id,
                 )
-                # Nettoyer : revenir sur la branche originale
-                await self.git.checkout(original_branch)
-                await self.git.delete_branch(branch_name)
                 return
 
-        yield AgentStreamChunk(
-            type="agent_done",
-            agent="zezette",
-            content=zezette_response,
-            task_id=task_id,
-        )
-
-        # Commit les changements
-        await self.git.commit(
-            f"[agent] {spec_content.split(chr(10))[0][:80]}"
-        )
-
-        # --- Phase 4 : Générer le diff et préparer la review ---
-        await self.git.diff(base=original_branch)  # Génère le diff pour review
-        files_changed = await self.git.diff_files(base=original_branch)
-        additions, deletions = await self.git.count_changes(base=original_branch)
-        diff_stat = await self.git.diff_stat(base=original_branch)
-
-        # Revenir sur la branche originale (le diff reste sur la branche agent)
-        await self.git.checkout(original_branch)
+            # --- Phase 4 : Générer le diff et préparer la review ---
+            files_changed = await worktree_git.diff_files(base=original_branch)
+            diff_stat = await worktree_git.diff_stat(base=original_branch)
+            keep_branch = True
+        finally:
+            await self.git.remove_worktree(worktree_path)
+            if not keep_branch:
+                await self.git.delete_branch(branch_name)
 
         yield AgentStreamChunk(
             type="review_ready",

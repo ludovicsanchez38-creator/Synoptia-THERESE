@@ -577,6 +577,7 @@ class CalendarResponse(BaseModel):
     description: str | None = None
     timezone: str
     primary: bool
+    provider: str
     synced_at: str | None = None  # ISO datetime
 
 

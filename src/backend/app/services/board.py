@@ -176,7 +176,10 @@ class BoardService:
         Yields chunks pour chaque conseiller puis la synthèse.
         """
         is_sovereign = request.mode == BoardMode.SOVEREIGN
-        default_llm = get_llm_service()
+        # En mode souverain, aucun service cloud ne doit devenir un filet de
+        # secours implicite. Le service par défaut n'est donc chargé qu'en mode
+        # cloud. Ollama doit être réellement disponible, sinon on échoue.
+        default_llm = None if is_sovereign else get_llm_service()
         advisors = request.advisors or list(AdvisorRole)
 
         # --- Recherche web (cloud uniquement) ---
@@ -229,8 +232,12 @@ class BoardService:
                 ollama_llm = get_llm_service_for_provider("ollama", model_override=ollama_model)
                 if not ollama_llm:
                     ollama_llm = get_llm_service_for_provider("ollama")
-                llm_service = ollama_llm or default_llm
-                actual_provider = f"ollama:{ollama_model}" if ollama_llm else default_llm.config.provider.value
+                if not ollama_llm:
+                    raise RuntimeError(
+                        "Mode souverain indisponible : aucun service Ollama local utilisable."
+                    )
+                llm_service = ollama_llm
+                actual_provider = f"ollama:{ollama_llm.config.model}"
 
                 yield BoardDeliberationChunk(
                     type="advisor_start",
@@ -262,13 +269,9 @@ class BoardService:
                         )
                 except Exception as e:
                     logger.error(f"Sovereign advisor {config['name']} error: {e}")
-                    full_content = f"Erreur : {str(e)}"
-                    yield BoardDeliberationChunk(
-                        type="advisor_chunk",
-                        role=role,
-                        provider=actual_provider,
-                        content=full_content,
-                    )
+                    raise RuntimeError(
+                        f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
+                    ) from e
 
                 opinions.append(AdvisorOpinion(
                     role=role,
@@ -359,13 +362,9 @@ class BoardService:
                             ))
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
-                    full_content = f"Désolé, une erreur s'est produite: {str(e)}"
-                    await chunk_queue.put(BoardDeliberationChunk(
-                        type="advisor_chunk",
-                        role=role,
-                        provider=actual_provider,
-                        content=full_content,
-                    ))
+                    raise RuntimeError(
+                        f"Le conseiller {config['name']} n'a pas pu terminer son avis."
+                    ) from e
 
                 opinions_dict[role] = AdvisorOpinion(
                     role=role,
@@ -386,22 +385,44 @@ class BoardService:
 
             tasks = [asyncio.create_task(process_advisor(role)) for role in advisors]
 
+            task_results: list[object] = []
+
             async def monitor_tasks():
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                for i, result in enumerate(results):
-                    if isinstance(result, Exception):
-                        logger.error(f"Advisor task {i} failed: {result}")
-                await chunk_queue.put(None)
+                try:
+                    task_results.extend(await asyncio.gather(*tasks, return_exceptions=True))
+                finally:
+                    await chunk_queue.put(None)
 
             monitor = asyncio.create_task(monitor_tasks())
 
-            while True:
-                chunk = await chunk_queue.get()
-                if chunk is None:
-                    break
-                yield chunk
+            try:
+                while True:
+                    chunk = await chunk_queue.get()
+                    if chunk is None:
+                        break
+                    yield chunk
 
-            await monitor
+                await monitor
+            finally:
+                # La fermeture du flux HTTP doit réellement interrompre les
+                # appels encore en cours. On attend leur annulation avant de
+                # quitter afin d'interdire synthèse et persistance tardives.
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                if not monitor.done():
+                    monitor.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                await asyncio.gather(monitor, return_exceptions=True)
+
+            advisor_errors = [
+                result for result in task_results
+                if isinstance(result, BaseException)
+            ]
+            if advisor_errors:
+                raise RuntimeError(
+                    "La délibération est incomplète : au moins un conseiller a échoué."
+                ) from advisor_errors[0]
             opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
 
         # --- Synthèse ---
@@ -412,37 +433,43 @@ class BoardService:
         if is_sovereign:
             synth_model = (request.ollama_models or {}).get("synthesis", default_ollama_model)
             ollama_synth = get_llm_service_for_provider("ollama", model_override=synth_model)
-            if ollama_synth:
-                synthesis_llm = ollama_synth
+            if not ollama_synth:
+                raise RuntimeError(
+                    "Mode souverain indisponible : la synthèse Ollama locale ne peut pas démarrer."
+                )
+            synthesis_llm = ollama_synth
 
         synthesis = await self._generate_synthesis(request.question, opinions, synthesis_llm)
 
         # --- Persistance SQLite ---
         decision_id = str(uuid4())
         logger.info(f"Saving board decision {decision_id} (mode={request.mode.value}) to SQLite...")
-        if self._session:
+        if not self._session:
+            raise RuntimeError("La décision ne peut pas être sauvegardée sans session locale.")
+
+        try:
+            db_decision = BoardDecisionDB(
+                id=decision_id,
+                question=request.question,
+                context=request.context,
+                opinions=json.dumps([op.model_dump(mode="json") for op in opinions], ensure_ascii=False),
+                synthesis=json.dumps(synthesis.model_dump(mode="json"), ensure_ascii=False),
+                confidence=synthesis.confidence,
+                recommendation=synthesis.recommendation,
+                mode=request.mode.value,
+            )
+            self._session.add(db_decision)
+            await self._session.commit()
+            if await self.get_decision(decision_id) is None:
+                raise RuntimeError("La décision sauvegardée est introuvable.")
+            logger.info(f"Board decision saved: {decision_id}")
+        except Exception as e:
+            logger.error(f"Failed to save board decision: {e}", exc_info=True)
             try:
-                db_decision = BoardDecisionDB(
-                    id=decision_id,
-                    question=request.question,
-                    context=request.context,
-                    opinions=json.dumps([op.model_dump(mode="json") for op in opinions], ensure_ascii=False),
-                    synthesis=json.dumps(synthesis.model_dump(mode="json"), ensure_ascii=False),
-                    confidence=synthesis.confidence,
-                    recommendation=synthesis.recommendation,
-                    mode=request.mode.value,
-                )
-                self._session.add(db_decision)
-                await self._session.commit()
-                logger.info(f"Board decision saved: {decision_id}")
-            except Exception as e:
-                logger.error(f"Failed to save board decision: {e}", exc_info=True)
-                try:
-                    await self._session.rollback()
-                except Exception as e:
-                    logger.debug("Rollback apres erreur save: %s", e)
-        else:
-            logger.warning("No session provided, decision not persisted")
+                await self._session.rollback()
+            except Exception as rollback_error:
+                logger.debug("Rollback apres erreur save: %s", rollback_error)
+            raise RuntimeError("La décision n'a pas pu être sauvegardée localement.") from e
 
         yield BoardDeliberationChunk(
             type="synthesis_chunk",
@@ -521,17 +548,10 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
 
             data = json.loads(cleaned)
             return BoardSynthesis(**data)
-        except (json.JSONDecodeError, Exception) as e:
+        except Exception as e:
             logger.error(f"Failed to parse synthesis JSON: {e}")
             logger.error(f"Raw response: {full_response}")
-            # Return fallback synthesis
-            return BoardSynthesis(
-                consensus_points=["Analyse en cours..."],
-                divergence_points=[],
-                recommendation="Reformule ta question pour obtenir une meilleure synthèse.",
-                confidence="low",
-                next_steps=["Reformuler la question", "Consulter le board à nouveau"],
-            )
+            raise RuntimeError("La synthèse du Board est invalide et ne sera pas sauvegardée.") from e
 
     async def get_decision(self, decision_id: str) -> BoardDecision | None:
         """Récupère une décision par son ID depuis SQLite."""

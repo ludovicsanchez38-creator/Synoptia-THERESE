@@ -382,6 +382,8 @@ if settings.therese_env != "production":
     _cors_origins += [
         "http://localhost:1420",  # Tauri dev
         "http://localhost:5173",  # Vite dev
+        "http://127.0.0.1:1420",  # Prototype web local
+        "http://127.0.0.1:5173",  # Vite local explicite
     ]
 
 # NOTE: CORSMiddleware est ajouté APRÈS les autres middleware (voir plus bas)

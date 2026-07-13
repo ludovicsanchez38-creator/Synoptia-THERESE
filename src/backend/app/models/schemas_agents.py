@@ -116,6 +116,7 @@ class AgentStatusResponse(BaseModel):
     repo_path: str | None = None
     repo_error: str | None = None
     current_branch: str | None = None
+    working_tree_clean: bool | None = None
     active_tasks: int = 0
     katia_ready: bool = False
     zezette_ready: bool = False

@@ -14,6 +14,9 @@ S = stabilisation.
 | Brief du jour | `/api/dashboard/today`, tri des urgences, états chargement/vide/erreur et repli vers Agenda, Tâches, Factures, CRM ou Accueil | notifications et relances détaillées encore accessibles par les vues classiques |
 | Contacts et mémoire | `contactsStore`, fiches réelles en lecture seule, recherche locale, notes, tags et repli vers la Mémoire complète | recherche sémantique et édition encore portées par la vue classique |
 | Email | comptes Gmail/IMAP réels, liste et détail normalisés, génération de réponse, texte modifiable et création de brouillon confirmée | aucun envoi depuis la 0.40 ; résumé, signatures, labels et gestion des comptes restent dans la vue classique |
+| Devis et factures | liste et détail réels, contacts et devise réels, profil émetteur explicite, création confirmée d’un devis brouillon avec protection contre le double clic | PDF, conversion, paiement, suppression et envoi restent absents du canevas ; l’envoi backend retourne 501 |
+| Board de décision | historique et détail réels, formulaire confirmé, progression SSE, conseillers, synthèse et sauvegarde relue ; Ollama strict en souverain et annulation des tâches au départ | pas de reprise en arrière-plan, d’export PDF ni de transformation en plan d’action ; providers, modèles, sources web et coût ne sont pas conservés dans l’historique |
+| Atelier d’agents | historique `AgentTask`, préflight dépôt/modèles/permissions, SSE Katia-Zézette, plan transmis, résultats de vérification reçus, branche et diff réels, annulation backend, approbation/refus/rollback confirmés puis relus | plan, explication, phases détaillées, tests structurés, modèle réellement résolu, coût et hash de merge ne sont pas encore persistés ; OpenClaw et Action Agents restent hors du canevas initial |
 
 Ces raccordements ne disposent d’aucune donnée de démonstration de secours. Une
 source indisponible produit un état d’erreur explicite et une possibilité de
@@ -53,7 +56,7 @@ l’interface tant qu’elles ne sont pas résolues :
 | Contacts et mémoire | composants Memory, API `memory`, contexte et recherche | fiche liée à la conversation | L/B | conserver scopes et suppression confirmée |
 | Pipeline commercial | composants CRM, API `crm` | pipeline synthétique et fiche opportunité | L/B/E | source Sheets ou locale clairement indiquée |
 | Projets | ProjectsPanel/Kanban, mémoire | canevas projet avec contacts, tâches et budget | L/B | mêmes identifiants que la vue classique |
-| Devis et factures | composants, store, API `invoices` | formulaire, aperçu PDF, statut et actions | L/B/E | envoi indisponible et ouverture PDF à terminer |
+| Devis et factures | composants, store, API `invoices` | liste et détail raccordés ; devis brouillon structuré, calculé et confirmé | L/B | PDF non ouvert, envoi HTTP 501 ; conversion, paiement et suppression gardés hors du canevas initial |
 | Livrables et suivi client | `DeliverablesList`, CRM étendu | promesse, livraison, facture et reste à faire | L/B/E | statut réel, pas d’inférence présentée comme fait |
 
 ## Créer et produire
@@ -72,7 +75,7 @@ l’interface tant qu’elles ne sont pas résolues :
 |---|---|---|---|---|
 | Recherche web | `web_search`, `deep_research`, navigateur | résultats et sources dans le canevas | L | citations vérifiables et date visible |
 | Fichiers et connaissances | FileBrowser, API `files`, Qdrant | sources locales, extraits et contexte RAG | L/B | distinguer indexé, lu et simplement repéré |
-| Board de décision | composants et API `board` | question, regards, divergences, synthèse, historique | L/B/E | progression et réponses réellement reçues |
+| Board de décision | composants et API `board` | historique, question confirmée, progression, regards, divergences et synthèse raccordés | L/B/E | succès après relecture locale ; aucun repli cloud en souverain ; pas de reprise en arrière-plan |
 | Calculateurs | API et service `calculators`, sans UI dédiée | hypothèses, formule, résultat modifiable | L/B | créer un parcours avant de déclarer la capacité accessible |
 | Références juridiques | corpus déterministe injecté dans le chat | sources et incertitudes dans le canevas | L/S | pas de RAG ni de parcours autonome à ce stade |
 
@@ -81,7 +84,7 @@ l’interface tant qu’elles ne sont pas résolues :
 | Capacité | Socle identifié | Cible 0.40 | Phase | Point de contrôle |
 |---|---|---|---|---|
 | Actions et relances | ActionPanel et API `actions`, état expérimental | cadrage, validation, progression, résultat | L/B/E | auditer contexte, persistance et résultat avant migration |
-| Atelier d’agents | API `agents`, `action_agents` | mission, plan, agents, artefacts et revue | L/B/E | aucune application implicite des changements |
+| Atelier d’agents | API `agents`, `action_agents` | swarm de code raccordé : mission, plan SSE, agents, artefacts Git et revue ; autres moteurs différés | L/B/E | worktree isolé, dépôt propre, seconde confirmation et relecture backend avant succès |
 | Connecteurs MCP | ToolsPanel, API et service `mcp` | catalogue, permissions et outils disponibles | L/B/E | permissions et secrets avant connexion |
 | Skills et commandes | API `skills`, `commands`, `commands_v3` | découverte, paramétrage et lancement | L/B/E | origine et portée de la commande visibles |
 
@@ -109,7 +112,8 @@ Ce quatuor teste les principaux contrats sans attendre la migration des 30
 capacités. Les autres gardent un repli vers la vue classique tant que leur
 adaptateur n’est pas validé.
 
-État local : la lecture « Contacts et mémoire », le brief du jour et le parcours
-Email sont raccordés. Email couvre la liste, le détail, la génération, l’édition
-et la création confirmée d’un brouillon sans exposer l’envoi. Le prochain contrat
-représentatif à traiter est « Devis et factures ».
+État local : la lecture « Contacts et mémoire », le brief du jour, Email,
+« Devis et factures », le Board et le swarm de code de l’Atelier sont raccordés.
+Les parcours sensibles exigent une confirmation explicite. Le prochain lot de
+parité porte sur Rendez-vous et les capacités encore accessibles seulement par
+leur vue classique.

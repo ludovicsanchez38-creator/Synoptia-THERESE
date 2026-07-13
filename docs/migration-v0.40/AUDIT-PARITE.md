@@ -20,6 +20,8 @@ l’audit a été corrigé localement, sans rendre le prototype distribuable.
 | P0 traité localement | Les confirmations d’outils vivaient dans le chat classique | couche de confirmation commune ajoutée et couverte par test |
 | P0 | La conversation combine état local, backend, éphémère, brouillons et streaming | réutiliser les contrats et identifiants existants |
 | P0 | L’envoi de facture retourne HTTP 501 | masquer ou désactiver l’action tant qu’elle n’est pas implémentée |
+| P0 traité localement | L’Atelier changeait le checkout utilisateur, relisait le mauvais diff et pouvait laisser des processus actifs | worktree isolé, diff de la branche de tâche, annulation backend et nettoyage en `finally` |
+| P0 traité localement | OpenClaw pouvait exécuter des actions métier sans confirmation | hors du canevas 0.40 et bridge limité aux outils de lecture |
 | P1 | Plusieurs capacités n’ont pas de parcours UI complet | afficher leur statut réel et prévoir un repli classique |
 
 ## États fonctionnels à ne pas surévaluer
@@ -59,6 +61,11 @@ l’audit a été corrigé localement, sans rendre le prototype distribuable.
 - RAG juridique autonome reformulé en corpus juridique ;
 - balises parasites retirées d’une entrée du corpus et protégées par un test ;
 - limites factures, relances, images et entités rendues visibles dans la matrice.
+- validation de chemin Atelier corrigée, commandes directes resserrées et fichiers
+  sensibles refusés ;
+- historique, préflight, progression, artefacts et revue Atelier raccordés sans
+  chiffres simulés ;
+- repli classique Atelier confirmé avant lancement et application.
 
 ## Points techniques à traiter dans des lots dédiés
 

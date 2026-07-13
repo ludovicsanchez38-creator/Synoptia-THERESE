@@ -24,6 +24,33 @@ génération puis modification de la réponse, annulation de la confirmation et
 création du brouillon. La création doit être visible chez le fournisseur sans
 qu’aucun message soit envoyé.
 
+Pour Devis et factures, vérifier la liste, le détail rechargé par identifiant, le
+contact, la devise, les lignes et les totaux. L’ouverture du scénario ne doit
+créer aucun document. La confirmation du brouillon doit produire exactement un
+devis même en cas de double clic. Aucun bouton d’envoi, de suppression, de
+conversion ou de paiement ne doit apparaître dans ce premier canevas.
+
+Pour le Board, vérifier qu’une ouverture ne lance aucun appel, qu’une question
+de moins de dix caractères est refusée et que le préflight cloud décrit les
+données transmises ainsi que les appels possibles. Tester une séquence SSE
+complète, le double lancement, l’annulation, la fermeture du canevas, une erreur
+conseiller, une synthèse invalide et un identifiant introuvable après `done`.
+Le mode souverain doit échouer si Ollama est absent, sans appeler de provider
+cloud. Une décision ne doit être annoncée comme enregistrée qu’après relecture
+de son identifiant dans l’historique local.
+
+Pour l’Atelier, vérifier un dépôt propre puis sale, une branche différente de
+`main`, deux lancements simultanés, l’annulation pendant une commande et la
+fermeture du canevas. Le clone utilisateur doit rester sur `main` et aucune
+modification non enregistrée ne doit être commitée. La revue doit comparer
+`main` à la branche `agent/*` enregistrée, même si cette branche n’est pas
+checkoutée. Tester un résultat sans changement, un test absent ou en échec, un
+diff illisible, la suppression de branche en échec et le double clic sur les
+actions de revue. Approbation, refus et rollback ne sont réussis qu’après
+relecture du statut backend. Vérifier enfin que les profils autonomes et
+OpenClaw ne peuvent produire aucun effet métier ou écrire dans le dépôt depuis
+le parcours 0.40 initial.
+
 La bascule entre interfaces doit aussi être testée pendant cinq états sensibles :
 
 - une réponse en streaming ;
@@ -82,6 +109,10 @@ pas injecté dans les sept sources de version.
 - vérifier qu’un retour à l’ancienne interface relit les mêmes enregistrements.
 
 Pour la coque 0.40 seule, la révision Alembic doit rester inchangée.
+La persistance future du plan, de la phase, des tests, des permissions, de la
+branche de base et du hash de merge de l’Atelier nécessitera une révision dédiée,
+avec test aller-retour sur une copie de base. Aucun détournement des champs texte
+existants n’est autorisé.
 
 ## Test explicite du retour arrière
 

@@ -53,6 +53,21 @@ export interface BoardDecisionResponse {
   created_at: string;
 }
 
+export interface BoardDecisionDetail {
+  id: string;
+  question: string;
+  context?: string;
+  opinions: Array<{
+    role: AdvisorRole;
+    name: string;
+    emoji: string;
+    content: string;
+  }>;
+  synthesis: BoardSynthesis;
+  mode?: string;
+  created_at: string;
+}
+
 export async function listAdvisors(): Promise<AdvisorInfo[]> {
   return request<AdvisorInfo[]>('/api/board/advisors');
 }
@@ -118,19 +133,7 @@ export async function listBoardDecisions(limit = 50): Promise<BoardDecisionRespo
   return request<BoardDecisionResponse[]>(`/api/board/decisions?limit=${limit}`);
 }
 
-export async function getBoardDecision(id: string): Promise<{
-  id: string;
-  question: string;
-  context?: string;
-  opinions: Array<{
-    role: AdvisorRole;
-    name: string;
-    emoji: string;
-    content: string;
-  }>;
-  synthesis: BoardSynthesis;
-  created_at: string;
-}> {
+export async function getBoardDecision(id: string): Promise<BoardDecisionDetail> {
   return request(`/api/board/decisions/${id}`);
 }
 

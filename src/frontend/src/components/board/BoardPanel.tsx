@@ -16,6 +16,7 @@ import { AdvisorArcLayout } from './AdvisorArcLayout';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
+import { getCloudConsent } from '../../lib/consent';
 import {
   streamDeliberation,
   listBoardDecisions,
@@ -61,6 +62,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string; size: number; paramSize?: string }>>([]);
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -102,9 +105,18 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     setIsSynthesizing(false);
     setIsComplete(false);
     setViewingDecision(null);
+    setConfirmationOpen(false);
+    setRunError(null);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) abortRef.current?.abort();
+    return () => abortRef.current?.abort();
+  }, [isOpen]);
+
   const handleCloseAndReset = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
     resetDeliberation();
     setViewState('input');
     setQuestion('');
@@ -121,8 +133,35 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     setViewState('input');
   }, [resetDeliberation]);
 
+  const validateStart = useCallback((): string | null => {
+    if (question.trim().length < 10) {
+      return 'La question doit contenir au moins 10 caractères.';
+    }
+    if (mode === 'cloud') {
+      const consent = getCloudConsent();
+      if (!consent?.accepted) {
+        return 'Le consentement au transfert cloud est absent. Active-le dans l’étape de sécurité avant de lancer le Board cloud.';
+      }
+    }
+    if (mode === 'sovereign' && !ollamaAvailable) {
+      return 'Ollama local est indisponible. Le mode souverain ne basculera pas vers le cloud.';
+    }
+    return null;
+  }, [mode, ollamaAvailable, question]);
+
+  const handlePrepareDeliberation = useCallback(() => {
+    const error = validateStart();
+    setRunError(error);
+    if (!error) setConfirmationOpen(true);
+  }, [validateStart]);
+
   const handleStartDeliberation = useCallback(async () => {
-    if (!question.trim()) return;
+    const validationError = validateStart();
+    if (validationError) {
+      setRunError(validationError);
+      setConfirmationOpen(false);
+      return;
+    }
 
     // Annuler une éventuelle délibération précédente
     if (abortRef.current) abortRef.current.abort();
@@ -131,6 +170,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
     resetDeliberation();
     setViewState('deliberating');
+    let receivedDone = false;
 
     try {
       const stream = streamDeliberation({
@@ -216,23 +256,30 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             break;
 
           case 'done':
+            receivedDone = true;
             setIsComplete(true);
             abortRef.current = null;
             break;
 
           case 'error':
-            console.error('Deliberation error:', chunk.content);
-            break;
+            setRunError(chunk.content || 'Le Board a rencontré une erreur.');
+            abortRef.current = null;
+            return;
         }
+      }
+      if (!controller.signal.aborted && !receivedDone) {
+        setRunError('La délibération s’est interrompue avant sa sauvegarde.');
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         // Annulation volontaire - pas d'erreur
         return;
       }
-      console.error('Stream error:', error);
+      setRunError('Impossible de terminer la délibération.');
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
-  }, [question, context, mode, selectedModels, resetDeliberation]);
+  }, [question, context, mode, selectedModels, resetDeliberation, validateStart]);
 
   const handleShowHistory = useCallback(async () => {
     setLoadingHistory(true);
@@ -305,7 +352,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             animate="animate"
             exit="exit"
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={onClose}
+            onClick={handleCloseAndReset}
           />
 
           {/* Panel */}
@@ -373,7 +420,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="icon" onClick={onClose}>
+                <Button variant="ghost" size="icon" onClick={handleCloseAndReset}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
@@ -441,7 +488,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         <textarea
                           ref={textareaRef}
                           value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
+                          onChange={(e) => { setQuestion(e.target.value); setConfirmationOpen(false); setRunError(null); }}
                           placeholder="Ex: Dois-je passer ma société en SASU ?"
                           rows={3}
                           className={cn(
@@ -460,7 +507,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         </label>
                         <textarea
                           value={context}
-                          onChange={(e) => setContext(e.target.value)}
+                          onChange={(e) => { setContext(e.target.value); setConfirmationOpen(false); }}
                           placeholder="Informations supplémentaires sur ta situation..."
                           rows={2}
                           className={cn(
@@ -473,9 +520,23 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         />
                       </div>
 
-                      <button
-                        onClick={handleStartDeliberation}
-                        disabled={!question.trim()}
+                      {runError && <p className="text-sm text-red-400" role="alert">{runError}</p>}
+
+                      {confirmationOpen && (
+                        <div className="rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4 text-sm text-text-muted" data-testid="board-confirmation">
+                          <p className="font-semibold text-text">Confirmer le lancement</p>
+                          <p className="mt-1">Mode : {mode === 'cloud' ? 'cloud avec recherche web' : 'souverain via Ollama local'}.</p>
+                          <p className="mt-1">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>
+                          <div className="mt-3 flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setConfirmationOpen(false)}>Annuler</Button>
+                            <Button variant="primary" size="sm" onClick={() => void handleStartDeliberation()}>Confirmer et lancer</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {!confirmationOpen && <button
+                        onClick={handlePrepareDeliberation}
+                        disabled={question.trim().length < 10}
                         data-testid="board-submit-btn"
                         className={cn(
                           'w-full py-3 px-6 rounded-xl font-semibold text-white',
@@ -488,8 +549,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         )}
                       >
                         <Send className="w-4 h-4" />
-                        {mode === 'sovereign' ? 'Délibération souveraine' : 'Convoquer le Board'}
-                      </button>
+                        {mode === 'sovereign' ? 'Préparer la délibération souveraine' : 'Préparer le Board'}
+                      </button>}
                     </div>
                   </motion.div>
                 )}
@@ -503,6 +564,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                   >
+                    {runError && <div className="mb-4 rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-300" role="alert">{runError}</div>}
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}

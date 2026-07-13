@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { Check, X, ChevronDown, ChevronRight, FileText, Plus, Minus } from 'lucide-react';
 import { useAtelierStore } from '../../stores/atelierStore';
-import { approveTask, rejectTask, getTaskDiff } from '../../services/api/agents';
+import { approveTask, rejectTask, getAgentTask, getTaskDiff } from '../../services/api/agents';
 import type { DiffFile } from '../../services/api/agents';
 
 export function CodeReviewPanel() {
@@ -18,6 +18,7 @@ export function CodeReviewPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [actionPending, setActionPending] = useState<'approve' | 'reject' | null>(null);
   const [actionDone, setActionDone] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<'approve' | 'reject' | null>(null);
   const [totalAdd, setTotalAdd] = useState(0);
   const [totalDel, setTotalDel] = useState(0);
 
@@ -42,6 +43,8 @@ export function CodeReviewPanel() {
     setActionPending('approve');
     try {
       await approveTask(currentMission.taskId);
+      const task = await getAgentTask(currentMission.taskId);
+      if (task.status !== 'merged') throw new Error(`Statut backend inattendu : ${task.status}`);
       setActionDone('Changements appliqués avec succès !');
     } catch (e: any) {
       setActionDone(`Erreur : ${e.message}`);
@@ -55,6 +58,8 @@ export function CodeReviewPanel() {
     setActionPending('reject');
     try {
       await rejectTask(currentMission.taskId);
+      const task = await getAgentTask(currentMission.taskId);
+      if (task.status !== 'rejected') throw new Error(`Statut backend inattendu : ${task.status}`);
       setActionDone('Changements refusés.');
     } catch (e: any) {
       setActionDone(`Erreur : ${e.message}`);
@@ -170,10 +175,39 @@ export function CodeReviewPanel() {
         <div className="border-t border-border px-4 py-3 text-center text-sm text-text-muted">
           {actionDone}
         </div>
+      ) : confirmation ? (
+        <div className="border-t border-border px-4 py-3">
+          <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
+            <div className="font-semibold">
+              {confirmation === 'approve'
+                ? 'Appliquer ces changements sur main ?'
+                : 'Refuser et supprimer la branche Atelier ?'}
+            </div>
+            <p className="mt-1 text-text-muted">
+              Le succès ne sera affiché qu&apos;après confirmation du backend.
+            </p>
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmation(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
+              <button
+                type="button"
+                disabled={actionPending !== null}
+                onClick={() => {
+                  const action = confirmation;
+                  setConfirmation(null);
+                  if (action === 'approve') void handleApprove();
+                  else void handleReject();
+                }}
+                className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50"
+              >
+                Confirmer l&apos;action
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="flex gap-3 border-t border-border px-4 py-3">
           <button
-            onClick={handleApprove}
+            onClick={() => setConfirmation('approve')}
             disabled={actionPending !== null}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500/20 px-4 py-2.5 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
           >
@@ -181,7 +215,7 @@ export function CodeReviewPanel() {
             {actionPending === 'approve' ? 'Application...' : 'Appliquer les changements'}
           </button>
           <button
-            onClick={handleReject}
+            onClick={() => setConfirmation('reject')}
             disabled={actionPending !== null}
             className="flex items-center justify-center gap-2 rounded-lg bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
           >

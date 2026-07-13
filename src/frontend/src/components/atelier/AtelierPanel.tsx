@@ -13,7 +13,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { X, Headphones, Wrench, MessageSquare, Zap, Eye, Bot } from "lucide-react";
 import { useAtelierStore } from "../../stores/atelierStore";
-import { streamAgentRequest, getAgentConfig } from "../../services/api/agents";
+import { cancelTask, streamAgentRequest, getAgentConfig } from "../../services/api/agents";
 import type { AgentConfigResponse } from "../../services/api/agents";
 import { AgentMessageBubble } from "./AgentMessageBubble";
 import { AgentInput } from "./AgentInput";
@@ -41,9 +41,11 @@ export function AtelierPanel() {
   const [agentConfig, setAgentConfig] = useState<AgentConfigResponse | null>(null);
   const [activeAgentProfile, setActiveAgentProfile] = useState<string | null>(null);
   const [activeAgentModel, setActiveAgentModel] = useState<string | undefined>(undefined);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const taskIdRef = useRef<string | null>(null);
 
   // BUG-110 : Charger la config agents (source_path, modèles) au montage
   useEffect(() => {
@@ -68,7 +70,7 @@ export function AtelierPanel() {
     }
   }, [messages]);
 
-  const handleSend = useCallback(
+  const runMission = useCallback(
     async (message: string) => {
       addUserMessage(message);
 
@@ -80,6 +82,7 @@ export function AtelierPanel() {
           sourcePath || undefined,
           abortRef.current.signal
         )) {
+          if (chunk.task_id) taskIdRef.current = chunk.task_id;
           processChunk(chunk);
         }
       } catch (e: any) {
@@ -89,12 +92,37 @@ export function AtelierPanel() {
             content: e.message || "Erreur de connexion",
           });
         }
+      } finally {
+        abortRef.current = null;
+        taskIdRef.current = null;
       }
     },
     [sourcePath, processChunk, addUserMessage]
   );
 
-  const handleCancel = useCallback(() => {
+  const handleCancel = useCallback(async () => {
+    if (taskIdRef.current) {
+      try {
+        await cancelTask(taskIdRef.current);
+      } catch {
+        // La fermeture du flux déclenche aussi l'annulation côté backend.
+      }
+    }
+    abortRef.current?.abort();
+    setPendingMessage(null);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    void handleCancel();
+    closePanel();
+  }, [closePanel, handleCancel]);
+
+  useEffect(() => {
+    if (!isOpen && abortRef.current) void handleCancel();
+  }, [handleCancel, isOpen]);
+
+  useEffect(() => () => {
+    if (taskIdRef.current) void cancelTask(taskIdRef.current).catch(() => undefined);
     abortRef.current?.abort();
   }, []);
 
@@ -157,7 +185,7 @@ export function AtelierPanel() {
           </div>
 
           <button
-            onClick={closePanel}
+            onClick={handleClose}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
@@ -203,9 +231,23 @@ export function AtelierPanel() {
             </div>
 
             {/* Input */}
+            {pendingMessage && (
+              <div className="mx-3 mb-2 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
+                <div className="font-semibold">Confirmer la mission de code</div>
+                <p className="mt-1 leading-relaxed text-text-muted">
+                  Katia et Zézette pourront lire le dépôt, transmettre les extraits utiles au modèle configuré,
+                  écrire dans un worktree isolé et lancer les commandes de vérification autorisées.
+                  L&apos;application sur main demandera une autre confirmation.
+                </p>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button type="button" onClick={() => setPendingMessage(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
+                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white">Confirmer et lancer</button>
+                </div>
+              </div>
+            )}
             <AgentInput
-              onSend={handleSend}
-              onCancel={handleCancel}
+              onSend={(message) => setPendingMessage(message)}
+              onCancel={() => void handleCancel()}
               isStreaming={isStreaming}
               placeholder="Posez une question ou demandez une amélioration..."
             />

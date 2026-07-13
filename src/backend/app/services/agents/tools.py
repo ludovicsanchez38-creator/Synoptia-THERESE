@@ -8,6 +8,7 @@ Chaque outil est une fonction async qui retourne un résultat string.
 import asyncio
 import logging
 import os
+import signal
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -15,9 +16,7 @@ logger = logging.getLogger(__name__)
 # Commandes autorisées pour run_command
 ALLOWED_COMMANDS = {
     "pytest",
-    "python",
     "npm",
-    "npx",
     "vitest",
     "ruff",
     "make",
@@ -27,8 +26,48 @@ ALLOWED_COMMANDS = {
 ALLOWED_SUBCOMMANDS = {
     "make": {"test", "test-backend", "test-frontend", "lint", "lint-fix", "typecheck"},
     "npm": {"test", "run"},
-    "npx": {"vitest"},
 }
+
+ALLOWED_NPM_SCRIPTS = {"test", "lint", "typecheck", "build"}
+ALLOWED_SEARCH_GLOBS = {
+    "*.css",
+    "*.html",
+    "*.js",
+    "*.jsx",
+    "*.json",
+    "*.md",
+    "*.py",
+    "*.rs",
+    "*.toml",
+    "*.ts",
+    "*.tsx",
+    "*.yaml",
+    "*.yml",
+}
+
+
+async def _stop_process(proc: asyncio.subprocess.Process) -> None:
+    """Arrête un processus de commande et ses descendants sur POSIX."""
+    if proc.returncode is not None:
+        return
+    if os.name == "posix" and proc.pid:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+    else:
+        proc.terminate()
+    try:
+        await asyncio.wait_for(proc.wait(), timeout=2.0)
+    except asyncio.TimeoutError:
+        if os.name == "posix" and proc.pid:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                return
+        else:
+            proc.kill()
+        await proc.wait()
 
 
 class BranchGuard:
@@ -64,9 +103,17 @@ class AgentToolExecutor:
         """Valide et résout un chemin de fichier dans le source tree."""
         if not self.source_path:
             raise FileNotFoundError(self._NO_SOURCE_MSG)
-        resolved = (self.source_path / file_path).resolve()
-        if not str(resolved).startswith(str(self.source_path.resolve())):
+        requested = Path(file_path)
+        if requested.is_absolute():
+            raise PermissionError(f"Chemin absolu interdit : {file_path}")
+        resolved = (self.source_path / requested).resolve()
+        if not resolved.is_relative_to(self.source_path.resolve()):
             raise PermissionError(f"Chemin hors du source tree : {file_path}")
+        lowered_parts = {part.lower() for part in requested.parts}
+        if ".git" in lowered_parts or requested.name.lower().startswith(".env"):
+            raise PermissionError(f"Fichier sensible interdit : {file_path}")
+        if requested.suffix.lower() in {".key", ".pem", ".p12", ".pfx"}:
+            raise PermissionError(f"Fichier sensible interdit : {file_path}")
         return resolved
 
     # --- Outils de lecture (Thérèse + Zézette) ---
@@ -123,6 +170,9 @@ class AgentToolExecutor:
         """Recherche un pattern dans le code source via grep."""
         if not self.source_path:
             return self._NO_SOURCE_MSG
+        if glob_filter not in ALLOWED_SEARCH_GLOBS:
+            return f"Erreur : filtre de recherche non autorisé : {glob_filter}"
+        proc: asyncio.subprocess.Process | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 "grep",
@@ -131,10 +181,14 @@ class AgentToolExecutor:
                 glob_filter,
                 "-m",
                 str(max_results),
+                "--exclude-dir=.git",
+                "--exclude-dir=.venv",
+                "--exclude-dir=node_modules",
                 pattern,
                 str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                start_new_session=os.name == "posix",
             )
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15.0)
             output = stdout.decode("utf-8", errors="replace").strip()
@@ -147,7 +201,13 @@ class AgentToolExecutor:
                 lines.append(line)
             return "\n".join(lines)
         except asyncio.TimeoutError:
+            if proc is not None and proc.returncode is None:
+                await _stop_process(proc)
             return "Erreur : timeout de recherche"
+        except asyncio.CancelledError:
+            if proc is not None and proc.returncode is None:
+                await _stop_process(proc)
+            raise
         except Exception as e:
             return f"Erreur de recherche : {e}"
 
@@ -189,11 +249,23 @@ class AgentToolExecutor:
             return f"Erreur : commande '{base_cmd}' non autorisée. Autorisées : {', '.join(sorted(ALLOWED_COMMANDS))}"
 
         # Vérifier les sous-commandes si nécessaire
-        if base_cmd in ALLOWED_SUBCOMMANDS and len(parts) > 1:
+        if base_cmd in ALLOWED_SUBCOMMANDS and len(parts) == 1:
+            return f"Erreur : une sous-commande '{base_cmd}' autorisée doit être précisée"
+        if base_cmd in ALLOWED_SUBCOMMANDS:
             sub = parts[1]
             if sub not in ALLOWED_SUBCOMMANDS[base_cmd]:
                 return f"Erreur : sous-commande '{base_cmd} {sub}' non autorisée"
+        if base_cmd == "npm":
+            if parts[1] == "run":
+                if len(parts) != 3 or parts[2] not in ALLOWED_NPM_SCRIPTS:
+                    script = parts[2] if len(parts) > 2 else ""
+                    return f"Erreur : script npm '{script}' non autorisé"
+            elif len(parts) != 2:
+                return "Erreur : les arguments supplémentaires de npm sont interdits"
+        if base_cmd == "make" and len(parts) != 2:
+            return "Erreur : une seule cible make autorisée peut être exécutée"
 
+        proc: asyncio.subprocess.Process | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *parts,
@@ -201,6 +273,7 @@ class AgentToolExecutor:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                start_new_session=os.name == "posix",
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120.0)
             out = stdout.decode("utf-8", errors="replace")
@@ -219,7 +292,13 @@ class AgentToolExecutor:
             if err:
                 result += f"\nStderr:\n{err}"
             return result
+        except asyncio.CancelledError:
+            if proc is not None and proc.returncode is None:
+                await _stop_process(proc)
+            raise
         except asyncio.TimeoutError:
+            if proc is not None and proc.returncode is None:
+                await _stop_process(proc)
             return f"Erreur : timeout (120s) pour '{command}'"
         except Exception as e:
             return f"Erreur d'exécution : {e}"

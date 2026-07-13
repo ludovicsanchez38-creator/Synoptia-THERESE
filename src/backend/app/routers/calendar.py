@@ -109,6 +109,7 @@ async def _get_provider_for_calendar(
 async def list_calendars(
     account_id: str | None = Query(None, description="Email account ID (optional for local calendars)"),
     provider: str | None = Query(None, description="Filter by provider: local, google, caldav"),
+    create_default: bool = Query(True, description="Create the default local calendar when none exists"),
     session: AsyncSession = Depends(get_session),
 ) -> list[CalendarResponse]:
     """
@@ -159,7 +160,7 @@ async def list_calendars(
     # proposait rien - impasse totale hors Google (retour Dr_logic-3D, 05/07 puis
     # revalidé en bloquant le 08/07, BUG-120). On crée donc un calendrier local
     # par défaut au premier passage (idempotent), y compris pour un compte IMAP.
-    if not calendars and (not account_id or non_google_account) and provider in (None, "local"):
+    if create_default and not calendars and (not account_id or non_google_account) and provider in (None, "local"):
         from app.services.calendar.local_provider import LocalCalendarProvider
 
         local = LocalCalendarProvider(session)
@@ -178,6 +179,7 @@ async def list_calendars(
             description=cal.description,
             timezone=cal.timezone,
             primary=cal.primary,
+            provider=cal.provider,
             synced_at=cal.synced_at.isoformat() if cal.synced_at else None,
         )
         for cal in calendars
@@ -256,6 +258,7 @@ async def _list_google_calendars(
                 description=cal.description,
                 timezone=cal.timezone,
                 primary=cal.primary,
+                provider=cal.provider,
                 synced_at=cal.synced_at.isoformat() if cal.synced_at else None,
             )
             for cal in calendars
@@ -287,6 +290,7 @@ async def get_calendar(
         description=calendar.description,
         timezone=calendar.timezone,
         primary=calendar.primary,
+        provider=calendar.provider,
         synced_at=calendar.synced_at.isoformat(),
     )
 
@@ -324,6 +328,7 @@ async def create_calendar(
             description=cal_dto.description,
             timezone=cal_dto.timezone,
             primary=cal_dto.is_primary,
+            provider="local",
             synced_at=datetime.now(UTC).isoformat(),
         )
 
@@ -367,6 +372,7 @@ async def create_calendar(
                 description=new_cal.description,
                 timezone=new_cal.timezone,
                 primary=new_cal.primary,
+                provider=new_cal.provider,
                 synced_at=new_cal.synced_at.isoformat() if new_cal.synced_at else None,
             )
 
@@ -486,6 +492,7 @@ async def setup_caldav_calendar(
             description=cal.description,
             timezone=cal.timezone,
             primary=cal.primary,
+            provider=cal.provider,
             synced_at=cal.synced_at.isoformat() if cal.synced_at else None,
         )
         for cal in calendars
