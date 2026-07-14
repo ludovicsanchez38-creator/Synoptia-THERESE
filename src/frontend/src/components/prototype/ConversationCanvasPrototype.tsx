@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUp,
@@ -8,22 +8,19 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
-  FileText,
   Folder,
-  Globe,
   HardDrive,
   History,
   Mail,
   Menu,
   MessageSquare,
-  Mic,
-  Paperclip,
   PanelRightClose,
   Plus,
   Receipt,
   Search,
   Settings,
   ShieldCheck,
+  Sparkles,
   Users,
   X,
 } from 'lucide-react';
@@ -51,13 +48,25 @@ import {
   type MeetingTarget,
 } from './MeetingConversationCard';
 import { TodayDashboardCard } from './TodayDashboardCard';
+import { CalculatorWorkspaceCanvas } from './CalculatorWorkspaceCanvas';
+import { DeliverablesWorkspaceCanvas } from './DeliverablesWorkspaceCanvas';
+import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
+import { FollowUpsWorkspaceCanvas } from './FollowUpsWorkspaceCanvas';
+import { VoiceWorkspaceCanvas } from './VoiceWorkspaceCanvas';
+import { PrototypeConversationDrawer } from './PrototypeConversationDrawer';
+import { PrototypeChatSurface } from './PrototypeChatSurface';
+import { PrototypeUnifiedViewCanvas } from './PrototypeUnifiedViewCanvas';
 import { usePrototypeEmailData, type EmailLength, type EmailTone } from './usePrototypeEmailData';
 import { usePrototypeInvoiceData, type InvoiceWorkspaceData } from './usePrototypeInvoiceData';
-import { usePrototypeMeetingData, type MeetingWorkspaceData } from './usePrototypeMeetingData';
+import {
+  meetingEventKey,
+  usePrototypeMeetingData,
+  type MeetingWorkspaceData,
+} from './usePrototypeMeetingData';
 import { usePrototypeBoardData, type BoardWorkspaceData } from './usePrototypeBoardData';
 import { usePrototypeAtelierData, type AtelierWorkspaceData } from './usePrototypeAtelierData';
 import { useContactsResource, useTodayDashboardResource, type ReadResource } from './usePrototypeReadData';
-import { openClassicPanel, openClassicView } from '../../lib/classicNavigation';
+import { getActions, runAction } from '../../lib/actionRegistry';
 import type { CreateInvoiceRequest, Invoice } from '../../services/api/invoices';
 import type { EmailMessage, SendEmailRequest } from '../../services/api/email';
 import type { Contact } from '../../services/api/memory';
@@ -65,6 +74,20 @@ import type { BoardDecisionDetail, BoardRequest } from '../../services/api/board
 import type { AgentTaskResponse, DiffResponse } from '../../services/api/agents';
 import type { CalendarEvent, CreateEventRequest } from '../../services/api/calendar';
 import type { ActivityResponse } from '../../services/api/crm-extended';
+import { getProfile, type UserProfile } from '../../services/api/config';
+import { useChatStore } from '../../stores/chatStore';
+import { useStatusStore } from '../../stores/statusStore';
+import { useConversationSync } from '../../hooks/useConversationSync';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { usePanelStore } from '../../stores/panelStore';
+import { useAtelierStore } from '../../stores/atelierStore';
+import { useDemoStore } from '../../stores/demoStore';
+import type { AppView } from '../../stores/navigationStore';
+import { PanelContainer } from '../chat/PanelContainer';
+import { listUserCommands, type UserCommand } from '../../services/api/commands';
+import type { SlashCommand } from '../chat/SlashCommandsMenu';
+import { ShortcutsModal } from '../chat/ShortcutsModal';
+import { usePrototypeDialogFocusTrap } from './usePrototypeDialogFocusTrap';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 
@@ -82,7 +105,7 @@ const scenarioPrompts: Record<Scenario, string> = {
   today: "Qu'est-ce qui demande mon attention aujourd'hui ?",
   memory: 'Retrouve mes contacts récents et leur contexte mémorisé.',
   email: 'Montre-moi les messages à traiter et aide-moi à préparer une réponse.',
-  meeting: 'Prépare mon rendez-vous avec Claire Fontaine.',
+  meeting: 'Prépare mon prochain rendez-vous et montre-moi uniquement le contexte vérifiable.',
   invoice: 'Retrouve mes derniers devis et factures, ou aide-moi à préparer un devis brouillon.',
   board: 'Retrouve mes dernières décisions ou aide-moi à cadrer une nouvelle question stratégique.',
   atelier: 'Demande à l’Atelier de simplifier l’onboarding sans toucher aux données existantes.',
@@ -109,8 +132,8 @@ function IconButton({
       onClick={onClick}
       className={`grid h-9 w-9 place-items-center rounded-[10px] border transition-colors ${
         active
-          ? 'border-[#101C36] bg-[#101C36] text-white'
-          : 'border-transparent text-[#5B6A82] hover:border-[#DCE4F1] hover:bg-white hover:text-[#101C36]'
+          ? 'border-text bg-text text-white'
+          : 'border-transparent text-text-muted hover:border-border hover:bg-surface hover:text-text'
       } ${className}`}
     >
       {children}
@@ -120,7 +143,7 @@ function IconButton({
 
 function SourceChip({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE4F1] bg-white px-2.5 py-1 text-[11px] font-medium text-[#5B6A82]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-text-muted">
       {icon}
       {label}
     </span>
@@ -129,78 +152,9 @@ function SourceChip({ icon, label }: { icon: ReactNode; label: string }) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7B8AA3]">
+    <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
       {children}
     </div>
-  );
-}
-
-function ConversationDrawer({ onClose }: { onClose: () => void }) {
-  return (
-    <motion.aside
-      initial={{ x: -24, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: -24, opacity: 0 }}
-      transition={{ duration: 0.18 }}
-      className="absolute inset-y-0 left-16 z-30 w-[286px] border-r border-[#DCE4F1] bg-white shadow-[12px_0_40px_rgba(16,28,54,0.10)]"
-    >
-      <div className="flex h-14 items-center justify-between border-b border-[#E7ECF4] px-4">
-        <span className="text-sm font-semibold text-[#101C36]">Conversations</span>
-        <IconButton label="Fermer les conversations" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </IconButton>
-      </div>
-
-      <div className="p-3">
-        <button
-          type="button"
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#101C36] bg-[#101C36] px-3 py-2.5 text-sm font-semibold text-white shadow-[2px_2px_0_#22D3EE]"
-        >
-          <Plus className="h-4 w-4" />
-          Nouvelle conversation
-        </button>
-        <div className="relative mb-5">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#7B8AA3]" />
-          <input
-            aria-label="Rechercher une conversation"
-            placeholder="Rechercher…"
-            className="w-full rounded-[10px] border border-[#DCE4F1] bg-[#F7F9FD] py-2 pl-9 pr-3 text-sm text-[#101C36] outline-none focus:border-[#22D3EE]"
-          />
-        </div>
-
-        <SectionLabel>Aujourd’hui</SectionLabel>
-        <button type="button" className="mb-1 w-full rounded-[9px] bg-[#E8F8FB] px-3 py-2.5 text-left">
-          <div className="truncate text-sm font-semibold text-[#101C36]">Priorités et rendez-vous</div>
-          <div className="mt-0.5 text-[11px] text-[#5B6A82]">Il y a 8 min</div>
-        </button>
-        <button type="button" className="mb-1 w-full rounded-[9px] px-3 py-2.5 text-left hover:bg-[#F3F6FC]">
-          <div className="truncate text-sm font-medium text-[#101C36]">Refonte de l’offre PROPULSER</div>
-          <div className="mt-0.5 text-[11px] text-[#5B6A82]">Il y a 2 h</div>
-        </button>
-
-        <SectionLabel>Hier</SectionLabel>
-        <button type="button" className="mb-5 w-full rounded-[9px] px-3 py-2.5 text-left hover:bg-[#F3F6FC]">
-          <div className="truncate text-sm font-medium text-[#101C36]">Programme parrainage</div>
-          <div className="mt-0.5 text-[11px] text-[#5B6A82]">Hier, 18:42</div>
-        </button>
-
-        <SectionLabel>Espaces de travail</SectionLabel>
-        {[
-          ['Synoptïa', '12 conversations', '#22D3EE'],
-          ['THÉRÈSE', '8 conversations', '#E11D8D'],
-          ['Formations', '5 conversations', '#A855F7'],
-        ].map(([name, count, color]) => (
-          <button key={name} type="button" className="flex w-full items-center gap-3 rounded-[9px] px-3 py-2.5 text-left hover:bg-[#F3F6FC]">
-            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: color }} />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-[#101C36]">{name}</span>
-              <span className="block text-[11px] text-[#7B8AA3]">{count}</span>
-            </span>
-            <ChevronRight className="h-4 w-4 text-[#9AA7BB]" />
-          </button>
-        ))}
-      </div>
-    </motion.aside>
   );
 }
 
@@ -249,6 +203,9 @@ function ContextCanvas({
   onCancelAtelier,
   onResetAtelier,
   onMutateAtelierTask,
+  onOpenView,
+  onOpenBoardPanel,
+  onOpenAtelierPanel,
 }: {
   scenario: Exclude<Scenario, 'today'>;
   onClose: () => void;
@@ -297,6 +254,9 @@ function ContextCanvas({
     taskId: string,
     action: AtelierReviewAction,
   ) => Promise<AgentTaskResponse | undefined>;
+  onOpenView: (view: Exclude<AppView, 'chat'>) => void;
+  onOpenBoardPanel: () => void;
+  onOpenAtelierPanel: () => void;
 }) {
   return (
     <motion.aside
@@ -304,14 +264,14 @@ function ContextCanvas({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 32, opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
-      className="absolute inset-y-0 right-0 z-20 h-full w-full max-w-[620px] border-l border-[#DCE4F1] bg-[#F7F9FD] shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none"
+      className="absolute inset-y-0 right-0 z-20 h-full w-full max-w-[620px] border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none"
     >
       <button
         type="button"
         onClick={onClose}
         aria-label="Fermer le canevas"
         title="Fermer le canevas"
-        className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-[9px] border border-[#DCE4F1] bg-white text-[#5B6A82] shadow-sm hover:text-[#101C36]"
+        className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted shadow-sm hover:text-text"
       >
         <PanelRightClose className="h-4 w-4" />
       </button>
@@ -321,7 +281,7 @@ function ContextCanvas({
           onRetry={onRetryEmailMessage}
           onGenerateDraft={onGenerateEmailDraft}
           onSaveDraft={onSaveEmailDraft}
-          onOpenClassic={() => openClassicView('email')}
+          onOpenClassic={() => onOpenView('email')}
         />
       ) : scenario === 'memory' ? (
         <ContactsMemoryCanvas
@@ -329,7 +289,7 @@ function ContextCanvas({
           selectedContactId={selectedContactId}
           onSelectContact={onSelectContact}
           onRetry={onRetryContacts}
-          onOpenClassic={() => openClassicView('memory')}
+          onOpenClassic={() => onOpenView('memory')}
         />
       ) : scenario === 'meeting' ? (
         <MeetingWorkspaceCanvas
@@ -340,7 +300,7 @@ function ContextCanvas({
           onRetryEvent={onRetryMeetingEvent}
           onCreateEvent={onCreateMeetingEvent}
           onCreateNote={onCreateMeetingNote}
-          onOpenClassic={() => openClassicView('calendar')}
+          onOpenClassic={() => onOpenView('calendar')}
         />
       ) : scenario === 'invoice' ? (
         <InvoiceWorkspaceCanvas
@@ -350,7 +310,7 @@ function ContextCanvas({
           onRetry={onRetryInvoices}
           onRetryInvoice={onRetryInvoice}
           onCreateDraft={onCreateDevisDraft}
-          onOpenClassic={() => openClassicView('invoices')}
+          onOpenClassic={() => onOpenView('invoices')}
         />
       ) : scenario === 'board' ? (
         <BoardWorkspaceCanvas
@@ -363,7 +323,7 @@ function ContextCanvas({
           onStart={onStartBoard}
           onCancel={onCancelBoard}
           onReset={onResetBoard}
-          onOpenClassic={() => openClassicPanel('board')}
+          onOpenClassic={onOpenBoardPanel}
         />
       ) : (
         <AtelierWorkspaceCanvas
@@ -379,7 +339,7 @@ function ContextCanvas({
           onCancel={onCancelAtelier}
           onReset={onResetAtelier}
           onMutate={onMutateAtelierTask}
-          onOpenClassic={() => openClassicPanel('atelier')}
+          onOpenClassic={onOpenAtelierPanel}
         />
       )}
     </motion.aside>
@@ -390,12 +350,16 @@ function CommandPalette({
   onClose,
   onSelect,
   onCapability,
+  onAction,
 }: {
   onClose: () => void;
   onSelect: (scenario: Scenario) => void;
   onCapability: (capability: CapabilityItem) => void;
+  onAction: (actionId: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  usePrototypeDialogFocusTrap(dialogRef);
   const visibleCapabilities = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
@@ -409,32 +373,48 @@ function CommandPalette({
       )
       .slice(0, 8);
   }, [query]);
+  const visibleActions = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return [];
+    return getActions().filter((action) =>
+      [action.label, action.description || '', ...(action.keywords || [])]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalized),
+    ).slice(0, 6);
+  }, [query]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-start justify-center bg-[#101C36]/35 px-4 pt-[13vh] backdrop-blur-[3px]"
+      className="absolute inset-0 z-50 flex items-start justify-center bg-text/35 px-4 pt-[13vh] backdrop-blur-[3px]"
       onClick={onClose}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Rechercher dans Thérèse"
+        tabIndex={-1}
         initial={{ y: -12, scale: 0.98 }}
         animate={{ y: 0, scale: 1 }}
         exit={{ y: -12, scale: 0.98 }}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-[570px] overflow-hidden rounded-[16px] border border-[#DCE4F1] bg-white shadow-[0_26px_70px_rgba(16,28,54,0.25)]"
+        className="w-full max-w-[570px] overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_26px_70px_rgba(16,28,54,0.25)]"
       >
-        <div className="flex items-center gap-3 border-b border-[#E7ECF4] px-4 py-3.5">
-          <Search className="h-5 w-5 text-[#7B8AA3]" />
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
+          <Search className="h-5 w-5 text-text-muted" />
           <input
             autoFocus
+            data-dialog-autofocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Chercher ou demander à Thérèse…"
-            className="flex-1 bg-transparent text-sm text-[#101C36] outline-none placeholder:text-[#9AA7BB]"
+            className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
           />
-          <kbd className="rounded-[6px] border border-[#DCE4F1] bg-[#F7F9FD] px-1.5 py-0.5 text-[10px] text-[#7B8AA3]">esc</kbd>
+          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">esc</kbd>
         </div>
         <div className="max-h-[440px] overflow-y-auto p-2">
           {!query && (
@@ -448,9 +428,9 @@ function CommandPalette({
                     onSelect(item);
                     onClose();
                   }}
-                  className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-[#F3F6FC]"
+                  className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
                 >
-                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-[8px] bg-[#DEF4F9] text-[#0F8FB3]">
+                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-[8px] bg-accent-tint text-accent">
                     {item === 'today' ? (
                       <CharacterPortrait index={0} className="h-8 w-8 rounded-[8px]" />
                     ) : item === 'memory' ? (
@@ -468,13 +448,13 @@ function CommandPalette({
                     )}
                   </span>
                   <span className="flex-1">
-                    <span className="block text-sm font-semibold text-[#101C36]">{scenarioLabels[item]}</span>
-                    <span className="block text-xs text-[#7B8AA3]">{scenarioPrompts[item]}</span>
+                    <span className="block text-sm font-semibold text-text">{scenarioLabels[item]}</span>
+                    <span className="block text-xs text-text-muted">{scenarioPrompts[item]}</span>
                   </span>
-                  <ChevronRight className="h-4 w-4 text-[#9AA7BB]" />
+                  <ChevronRight className="h-4 w-4 text-text-muted" />
                 </button>
               ))}
-              <div className="my-2 h-px bg-[#E7ECF4]" />
+              <div className="my-2 h-px bg-border" />
             </>
           )}
 
@@ -489,30 +469,43 @@ function CommandPalette({
                   onCapability(capability);
                   onClose();
                 }}
-                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-[#F3F6FC]"
+                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
               >
                 {capability.id === 'decision-board' ? (
                   <CharacterPortrait index={1} className="h-8 w-8 rounded-[8px]" />
                 ) : capability.id === 'agents' ? (
                   <CharacterPortrait index={6} className="h-8 w-8 rounded-[8px]" />
                 ) : (
-                  <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-[#F0E9FC] text-[#7C3AED]">
+                  <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-[var(--k4bg)] text-[var(--k4)]">
                     <Icon className="h-4 w-4" />
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-[#101C36]">{capability.title}</span>
-                  <span className="block truncate text-xs text-[#7B8AA3]">{capability.description}</span>
+                  <span className="block text-sm font-semibold text-text">{capability.title}</span>
+                  <span className="block truncate text-xs text-text-muted">{capability.description}</span>
                 </span>
-                <ChevronRight className="h-4 w-4 text-[#9AA7BB]" />
+                <ChevronRight className="h-4 w-4 text-text-muted" />
               </button>
             );
           })}
-          {visibleCapabilities.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-[#7B8AA3]">Aucune capacité trouvée.</div>
+          {visibleCapabilities.length === 0 && visibleActions.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-text-muted">Aucune capacité trouvée.</div>
+          )}
+          {visibleActions.length > 0 && (
+            <>
+              <div className="my-2 h-px bg-border" />
+              <SectionLabel>Commandes de l’application</SectionLabel>
+              {visibleActions.map((action) => (
+                <button key={action.id} type="button" onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg">
+                  <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
+                  {action.shortcut && <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">{action.shortcut}</kbd>}
+                </button>
+              ))}
+            </>
           )}
         </div>
-        <div className="flex items-center justify-between border-t border-[#E7ECF4] bg-[#F8FAFD] px-4 py-2 text-[10px] text-[#8190A5]">
+        <div className="flex items-center justify-between border-t border-border bg-surface-2 px-4 py-2 text-[10px] text-text-muted">
           <span>{capabilities.length} capacités indexées</span>
           <span>Recherche par résultat, fonction ou outil</span>
         </div>
@@ -532,6 +525,11 @@ export function ConversationCanvasPrototype() {
   const [canvasOpen, setCanvasOpen] = useState(
     initialScenario !== 'today' && initialScenario !== 'email' && initialScenario !== 'invoice' && initialScenario !== 'board',
   );
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [deliverablesOpen, setDeliverablesOpen] = useState(false);
+  const [imagesOpen, setImagesOpen] = useState(false);
+  const [followUpsOpen, setFollowUpsOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const {
     inboxResource: emailInboxResource,
     messageResource: emailMessageResource,
@@ -596,22 +594,164 @@ export function ConversationCanvasPrototype() {
     initialScenario === 'atelier' ? 'new-mission' : null,
   );
   const [composerValue, setComposerValue] = useState('');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
+  const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
+  const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
+  const createConversation = useChatStore((state) => state.createConversation);
+  const isStreaming = useChatStore((state) => state.isStreaming);
+  const openSettings = usePanelStore((state) => state.openSettings);
+  const showShortcuts = usePanelStore((state) => state.showShortcuts);
+  const openShortcuts = usePanelStore((state) => state.openShortcuts);
+  const closeShortcuts = usePanelStore((state) => state.closeShortcuts);
+  const toggleBoardPanel = usePanelStore((state) => state.toggleBoardPanel);
+  const openAtelierPanel = useAtelierStore((state) => state.openPanel);
+  const toggleAtelierPanel = useAtelierStore((state) => state.togglePanel);
+  const toggleDemoMode = useDemoStore((state) => state.toggle);
+  useConversationSync();
+
+  const blockStreamingNavigation = useCallback(() => {
+    if (!isStreaming) return false;
+    useStatusStore.getState().addNotification({
+      type: 'warning',
+      title: 'Réponse en cours',
+      message: 'Arrête la réponse avant de changer de vue ou de conversation.',
+    });
+    return true;
+  }, [isStreaming]);
+
+  useEffect(() => {
+    let active = true;
+    getProfile()
+      .then((value) => { if (active) setProfile(value); })
+      .catch(() => { if (active) setProfile(null); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    listUserCommands()
+      .then((commands: UserCommand[]) => {
+        setUserSlashCommands(commands.map((command) => ({
+          id: `user-${command.name}`,
+          name: command.name,
+          description: command.description || command.name,
+          icon: <Sparkles className="h-4 w-4" />,
+          prefix: command.content,
+        })));
+      })
+      .catch(() => setUserSlashCommands([]));
+  }, []);
+
+  useEffect(() => {
+    const onInsertPrompt = (event: Event) => {
+      const prompt = (event as CustomEvent<string>).detail;
+      if (typeof prompt !== 'string' || !prompt.trim()) return;
+      if (blockStreamingNavigation()) return;
+      setChatInitialPrompt(prompt.trim());
+      setEmbeddedView(null);
+      setCanvasOpen(false);
+      setCalculatorOpen(false);
+      setDeliverablesOpen(false);
+      setImagesOpen(false);
+      setFollowUpsOpen(false);
+      setVoiceOpen(false);
+      setChatOpen(true);
+    };
+    window.addEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
+    return () => window.removeEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
+  }, [blockStreamingNavigation]);
+
+  const openChat = (prompt?: string) => {
+    if (blockStreamingNavigation()) return;
+    setChatInitialPrompt(prompt?.trim() || null);
+    setEmbeddedView(null);
+    setCanvasOpen(false);
+    setCalculatorOpen(false);
+    setDeliverablesOpen(false);
+    setImagesOpen(false);
+    setFollowUpsOpen(false);
+    setVoiceOpen(false);
+    setSelectedCapability(null);
+    setComposerValue('');
+    setChatOpen(true);
+  };
+  const startConversation = () => {
+    if (blockStreamingNavigation()) return;
+    createConversation();
+    openChat();
+  };
+  const openEmbeddedView = (view: Exclude<AppView, 'chat'>) => {
+    if (blockStreamingNavigation()) return;
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    setCanvasOpen(false);
+    setCalculatorOpen(false);
+    setDeliverablesOpen(false);
+    setImagesOpen(false);
+    setFollowUpsOpen(false);
+    setVoiceOpen(false);
+    setSelectedCapability(null);
+    setComposerValue('');
+    setEmbeddedView(view);
+  };
+  const displayName = profile?.nickname?.trim() || profile?.display_name?.trim().split(/\s+/)[0] || null;
+  const workspaceName = profile?.company?.trim() || 'Espace de travail';
+
+  useKeyboardShortcuts({
+    onCommandPalette: () => {
+      setCapabilityCenterOpen(false);
+      setTrustCenterOpen(false);
+      setCommandOpen(true);
+    },
+    onNewConversation: startConversation,
+    onShowShortcuts: openShortcuts,
+    onToggleMemoryPanel: () => embeddedView === 'memory' ? setEmbeddedView(null) : openEmbeddedView('memory'),
+    onToggleConversationSidebar: () => setDrawerOpen((open) => !open),
+    onToggleBoardPanel: toggleBoardPanel,
+    onToggleEmailPanel: () => openEmbeddedView('email'),
+    onToggleCalendarPanel: () => openEmbeddedView('calendar'),
+    onToggleTasksPanel: () => openEmbeddedView('tasks'),
+    onToggleInvoicesPanel: () => openEmbeddedView('invoices'),
+    onToggleCRMPanel: () => openEmbeddedView('crm'),
+    onNewContact: () => usePanelStore.getState().openNewContact(),
+    onNewProject: () => usePanelStore.getState().openNewProject(),
+    onOpenSettings: () => openSettings('profile'),
+    onSearch: () => openEmbeddedView('memory'),
+    onToggleDemoMode: toggleDemoMode,
+    onToggleAtelierPanel: toggleAtelierPanel,
+    onOpenKatiaNewTask: openAtelierPanel,
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setCapabilityCenterOpen(false);
-        setTrustCenterOpen(false);
-        setCommandOpen(true);
-      }
       if (event.key === 'Escape') {
         if (commandOpen) setCommandOpen(false);
         else if (capabilityCenterOpen) setCapabilityCenterOpen(false);
         else if (trustCenterOpen) setTrustCenterOpen(false);
         else if (drawerOpen) setDrawerOpen(false);
-        else if (canvasOpen) {
+        else if (chatOpen) {
+          if (blockStreamingNavigation()) return;
+          setChatOpen(false);
+          setChatInitialPrompt(null);
+        } else if (embeddedView) setEmbeddedView(null);
+        else if (calculatorOpen) {
+          setCalculatorOpen(false);
+          setCanvasOpen(false);
+        } else if (deliverablesOpen) {
+          setDeliverablesOpen(false);
+          setCanvasOpen(false);
+        } else if (imagesOpen) {
+          setImagesOpen(false);
+          setCanvasOpen(false);
+        } else if (followUpsOpen) {
+          setFollowUpsOpen(false);
+          setCanvasOpen(false);
+        } else if (voiceOpen) {
+          setVoiceOpen(false);
+          setCanvasOpen(false);
+        } else if (canvasOpen) {
           if (scenario === 'board') cancelBoardDeliberation();
           if (scenario === 'atelier') void cancelAtelierMission();
           setCanvasOpen(false);
@@ -620,12 +760,21 @@ export function ConversationCanvasPrototype() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, commandOpen, drawerOpen, scenario, trustCenterOpen]);
+  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, chatOpen, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, scenario, trustCenterOpen, voiceOpen]);
 
   function chooseScenario(next: Scenario) {
+    if (blockStreamingNavigation()) return;
     if (scenario === 'board') cancelBoardDeliberation();
     if (scenario === 'atelier') void cancelAtelierMission();
     setScenario(next);
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    setEmbeddedView(null);
+    setCalculatorOpen(false);
+    setDeliverablesOpen(false);
+    setImagesOpen(false);
+    setFollowUpsOpen(false);
+    setVoiceOpen(false);
     if (next === 'atelier') {
       setSelectedAtelierTarget(atelierRun.status === 'idle' ? 'new-mission' : 'current');
     }
@@ -637,9 +786,18 @@ export function ConversationCanvasPrototype() {
   }
 
   function chooseCapability(capability: CapabilityItem) {
+    if (blockStreamingNavigation()) return;
     setCapabilityCenterOpen(false);
     setCommandOpen(false);
     setSelectedCapability(capability);
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    setEmbeddedView(null);
+    setCalculatorOpen(false);
+    setDeliverablesOpen(false);
+    setImagesOpen(false);
+    setFollowUpsOpen(false);
+    setVoiceOpen(false);
     if (capability.scenario) {
       chooseScenario(capability.scenario);
       return;
@@ -649,43 +807,152 @@ export function ConversationCanvasPrototype() {
   }
 
   function submitComposer() {
-    const normalized = composerValue.toLowerCase();
-    if (normalized.includes('board') || normalized.includes('décision') || normalized.includes('arbitr')) chooseScenario('board');
-    else if (normalized.includes('atelier') || normalized.includes('mission') || normalized.includes('implément')) chooseScenario('atelier');
-    else if (normalized.includes('devis') || normalized.includes('facture')) chooseScenario('invoice');
-    else if (normalized.includes('email') || normalized.includes('mail') || normalized.includes('message')) chooseScenario('email');
-    else if (normalized.includes('contact') || normalized.includes('mémoire') || normalized.includes('personne')) chooseScenario('memory');
-    else if (normalized.includes('rendez') || normalized.includes('claire')) chooseScenario('meeting');
-    else chooseScenario('today');
-    setSelectedCapability(null);
+    const destination = selectedCapability?.destination;
+    if (destination?.kind === 'pending') return;
+    if (destination?.kind === 'calculator') {
+      setCalculatorOpen(true);
+      setCanvasOpen(true);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
+    if (destination?.kind === 'deliverables') {
+      setDeliverablesOpen(true);
+      setCanvasOpen(true);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
+    if (destination?.kind === 'images') {
+      setImagesOpen(true);
+      setCanvasOpen(true);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
+    if (destination?.kind === 'follow-ups') {
+      setFollowUpsOpen(true);
+      setCanvasOpen(true);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
+    if (destination?.kind === 'voice') {
+      setVoiceOpen(true);
+      setCanvasOpen(true);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
+    if (destination?.kind === 'view') {
+      if (destination.view === 'chat') openChat();
+      else openEmbeddedView(destination.view);
+      return;
+    }
+    if (destination?.kind === 'action') {
+      if (destination.action === 'settings.open') {
+        openSettings(destination.settingsTab);
+      } else {
+        runAction(destination.action);
+      }
+      return;
+    }
+    if (destination?.kind === 'prompt') {
+      openChat(composerValue || selectedCapability?.prompt || '');
+      return;
+    }
+
+    // Sans capacité choisie, le champ est une vraie entrée de conversation.
+    // Les parcours déterministes restent accessibles par leurs cartes et leurs
+    // raccourcis ; une demande libre ne doit jamais être remplacée par un
+    // scénario approché ou perdre son texte.
+    if (composerValue.trim()) openChat(composerValue);
+  }
+
+  function runUnifiedAction(actionId: string) {
+    const viewByAction: Partial<Record<string, Exclude<AppView, 'chat'>>> = {
+      'home.open': 'home',
+      'memory.open': 'memory',
+      'memory.search': 'memory',
+      'crm.open': 'crm',
+      'email.open': 'email',
+      'calendar.open': 'calendar',
+      'tasks.open': 'tasks',
+      'invoices.open': 'invoices',
+      'projects.open': 'projects',
+      'files.open': 'files',
+      'documents.open': 'documents',
+      'documents.new': 'documents',
+    };
+    const view = viewByAction[actionId];
+    if (view) {
+      runAction(actionId);
+      openEmbeddedView(view);
+      return;
+    }
+    if (actionId === 'chat.new') { startConversation(); return; }
+    if (actionId === 'chat.clear') {
+      if (blockStreamingNavigation()) return;
+      useChatStore.getState().clearCurrentConversation();
+      openChat();
+      return;
+    }
+    if (actionId === 'conversations.toggle') { setDrawerOpen((open) => !open); return; }
+    if (actionId === 'contact.new') { usePanelStore.getState().openNewContact(); return; }
+    if (actionId === 'project.new') { usePanelStore.getState().openNewProject(); return; }
+    if (actionId === 'board.open') { toggleBoardPanel(); return; }
+    if (actionId === 'data.export') { openSettings('privacy'); return; }
+    if (actionId === 'settings.open') { openSettings('profile'); return; }
+    if (actionId === 'shortcuts.open') { openShortcuts(); return; }
+    runAction(actionId);
   }
 
   const SelectedCapabilityIcon = selectedCapability?.icon;
+  const selectedDestination = selectedCapability?.destination;
+  const destinationIsPending = selectedDestination?.kind === 'pending';
+  const destinationUsesChat = !selectedDestination || selectedDestination.kind === 'prompt';
+  const composerActionLabel = destinationIsPending
+    ? 'Parcours en cours de raccordement'
+    : selectedDestination?.kind === 'calculator'
+      ? 'Ouvrir les calculateurs'
+      : selectedDestination?.kind === 'deliverables'
+        ? 'Ouvrir le suivi client'
+      : selectedDestination?.kind === 'images'
+        ? 'Ouvrir le studio Images'
+      : selectedDestination?.kind === 'follow-ups'
+        ? 'Ouvrir les relances'
+      : selectedDestination?.kind === 'voice'
+        ? 'Ouvrir l’espace Voix'
+      : selectedDestination?.kind === 'view' || selectedDestination?.kind === 'action'
+      ? 'Ouvrir le parcours réel'
+      : selectedDestination?.kind === 'prompt'
+        ? 'Poursuivre dans le chat'
+        : 'Poursuivre dans le chat';
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#F3F6FC] text-[#101C36]" data-testid="conversation-canvas-prototype">
+    <div className="h-screen w-screen overflow-hidden bg-bg text-text" data-testid="conversation-canvas-prototype">
       <div className="flex h-full flex-col">
-        <header className="flex h-14 shrink-0 items-center border-b border-[#DCE4F1] bg-white px-4">
+        <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
           <div className="flex flex-1 items-center gap-4">
             <div className="flex items-center gap-2" aria-hidden="true">
               <span className="h-3 w-3 rounded-full bg-[#FF605C]" />
               <span className="h-3 w-3 rounded-full bg-[#FFBD44]" />
               <span className="h-3 w-3 rounded-full bg-[#00CA4E]" />
             </div>
-            <div className="h-5 w-px bg-[#DCE4F1]" />
+            <div className="h-5 w-px bg-border" />
             <div className="flex items-center gap-2.5">
               <span className="relative h-2.5 w-2.5 rounded-full bg-[#22D3EE]">
                 <span className="absolute inset-0 rounded-full bg-[#22D3EE] opacity-40 blur-[4px]" />
               </span>
-              <span className="text-sm font-bold tracking-[0.02em] text-[#101C36]">THÉRÈSE</span>
-              <span className="rounded-full border border-[#DCE4F1] bg-[#F7F9FD] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#7B8AA3]">Prototype</span>
+              <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
+              <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-text-muted">Interface unifiée</span>
             </div>
           </div>
 
-          <button type="button" className="flex items-center gap-2 rounded-[10px] border border-[#DCE4F1] bg-[#F7F9FD] px-3 py-2 text-xs font-semibold text-[#33415C] hover:bg-white">
-            <Briefcase className="h-3.5 w-3.5 text-[#0F8FB3]" />
-            Synoptïa
-            <ChevronDown className="h-3.5 w-3.5 text-[#7B8AA3]" />
+          <button type="button" onClick={() => openSettings('profile')} className="flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text hover:bg-surface">
+            <Briefcase className="h-3.5 w-3.5 text-accent" />
+            {workspaceName}
+            <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
           </button>
 
           <div className="flex flex-1 items-center justify-end gap-1.5">
@@ -696,9 +963,9 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-[#CDEAF0] bg-[#F1FBFC] px-2.5 py-1.5 text-[11px] font-semibold text-[#315D69] hover:border-[#9ED7E1] sm:flex"
+              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-[11px] font-semibold text-accent hover:border-[#9ED7E1] sm:flex"
             >
-              <ShieldCheck className="h-3.5 w-3.5 text-[#0F8FB3]" />
+              <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données
             </button>
             <button
@@ -708,44 +975,63 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setTrustCenterOpen(false);
               }}
-              className="hidden items-center gap-2 rounded-[9px] border border-[#DCE4F1] bg-white px-2.5 py-1.5 text-xs text-[#5B6A82] hover:bg-[#F7F9FD] md:flex"
+              className="hidden items-center gap-2 rounded-[9px] border border-border bg-surface px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
-              <kbd className="rounded-[5px] bg-[#F3F6FC] px-1.5 py-0.5 text-[9px] text-[#7B8AA3]">⌘K</kbd>
+              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">⌘K</kbd>
             </button>
-            <IconButton label="Notifications"><Bell className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Paramètres"><Settings className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Notifications" onClick={() => openEmbeddedView('home')}><Bell className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
           </div>
         </header>
 
         <div className="relative flex min-h-0 flex-1">
-          <nav aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-[#DCE4F1] bg-[#F8FAFD] py-3">
+          <nav aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
             <IconButton label="Conversations" onClick={() => setDrawerOpen((open) => !open)} active={drawerOpen}>
               <Menu className="h-[18px] w-[18px]" />
             </IconButton>
-            <div className="my-2 h-px w-7 bg-[#DCE4F1]" />
-            <IconButton label="Nouvelle conversation"><Plus className="h-[18px] w-[18px]" /></IconButton>
+            <div className="my-2 h-px w-7 bg-border" />
+            <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Rechercher" onClick={() => { setCommandOpen(true); setCapabilityCenterOpen(false); setTrustCenterOpen(false); }}><Search className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Historique"><History className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Espaces de travail"><Folder className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Historique" onClick={() => setDrawerOpen(true)}><History className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             <div className="mt-auto flex flex-col items-center gap-1.5">
-              <IconButton label="Aide"><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
-              <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-[#101C36] bg-[#101C36] text-[11px] font-bold text-white shadow-[2px_2px_0_#22D3EE]" title="Profil Ludo">LS</button>
+              <IconButton label="Aide" onClick={() => openChat('/aide')}><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
+              <button type="button" onClick={() => openSettings('profile')} className="grid h-9 w-9 place-items-center rounded-full border border-text bg-text text-[11px] font-bold text-white shadow-[2px_2px_0_#22D3EE]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
             </div>
           </nav>
 
-          <AnimatePresence>{drawerOpen && <ConversationDrawer onClose={() => setDrawerOpen(false)} />}</AnimatePresence>
+          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer navigationLocked={isStreaming} onClose={() => setDrawerOpen(false)} onOpenChat={() => openChat()} />}</AnimatePresence>
 
           <main id="main-content" className="relative flex min-w-0 flex-1 overflow-hidden">
-            <section className="relative flex min-w-0 flex-1 flex-col bg-[#F3F6FC]">
+            {chatOpen ? (
+              <PrototypeChatSurface
+                initialPrompt={chatInitialPrompt}
+                userCommands={userSlashCommands}
+                onInitialPromptConsumed={() => setChatInitialPrompt(null)}
+                onOpenCommandPalette={() => {
+                  setCommandOpen(true);
+                  setCapabilityCenterOpen(false);
+                  setTrustCenterOpen(false);
+                }}
+                onClose={() => {
+                  if (blockStreamingNavigation()) return;
+                  setChatOpen(false);
+                  setChatInitialPrompt(null);
+                }}
+              />
+            ) : embeddedView ? (
+              <PrototypeUnifiedViewCanvas view={embeddedView} onClose={() => setEmbeddedView(null)} />
+            ) : (
+            <section className="relative flex min-w-0 flex-1 flex-col bg-bg">
               <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   <div className="mb-7 flex items-start gap-3">
-                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-[#101C36] shadow-[2px_2px_0_#101C36]" />
+                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[2px_2px_0_#101C36]" />
                     <div>
-                      <h1 className="text-[24px] font-bold tracking-[-0.035em] text-[#101C36]">Bonjour Ludo.</h1>
-                      <p className="mt-1 text-sm leading-6 text-[#5B6A82]">
+                      <h1 className="text-[24px] font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
+                      <p className="mt-1 text-sm leading-6 text-text-muted">
                         {scenario === 'today'
                           ? "J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module."
                           : scenario === 'memory'
@@ -753,7 +1039,7 @@ export function ConversationCanvasPrototype() {
                           : scenario === 'email'
                             ? 'Je consulte la boîte connectée. Tu peux lire un message et préparer un brouillon sans l’envoyer.'
                           : scenario === 'meeting'
-                            ? 'J’ai rassemblé le contexte utile pour ton rendez-vous, sans modifier tes données.'
+                            ? 'Je consulte les événements, les participants et le contexte CRM réellement relié, sans rien inventer.'
                             : scenario === 'invoice'
                               ? 'Je consulte les documents réellement enregistrés. Tu peux aussi préparer un devis brouillon avant toute génération ou envoi.'
                               : scenario === 'board'
@@ -763,14 +1049,8 @@ export function ConversationCanvasPrototype() {
                     </div>
                   </div>
 
-                  <div className="mb-5 flex justify-end">
-                    <div className="max-w-[78%] rounded-[15px_15px_4px_15px] border border-[#CFE9EE] bg-[#E8F8FB] px-4 py-2.5 text-sm text-[#284C56]">
-                      {scenarioPrompts[scenario]}
-                    </div>
-                  </div>
-
-                  <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-[#7B8AA3]">
-                    <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-[#101C36]" />
+                  <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-text-muted">
+                    <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-text" />
                     THÉRÈSE
                     <span className="font-normal">· maintenant</span>
                   </div>
@@ -779,7 +1059,10 @@ export function ConversationCanvasPrototype() {
                     <TodayDashboardCard
                       resource={todayResource}
                       onRetry={() => void refreshToday()}
-                      onOpenView={openClassicView}
+                      onOpenView={(view) => {
+                        if (view === 'chat') openChat();
+                        else openEmbeddedView(view);
+                      }}
                     />
                   ) : scenario === 'memory' ? (
                     <ContactsMemoryCard
@@ -789,7 +1072,7 @@ export function ConversationCanvasPrototype() {
                         setSelectedContactId(contactId);
                         setCanvasOpen(true);
                       }}
-                      onOpenClassic={() => openClassicView('memory')}
+                      onOpenClassic={() => openEmbeddedView('memory')}
                     />
                   ) : scenario === 'email' ? (
                     <EmailInboxCard
@@ -799,10 +1082,23 @@ export function ConversationCanvasPrototype() {
                         setCanvasOpen(true);
                         void openEmailMessage(messageId);
                       }}
-                      onOpenClassic={() => openClassicView('email')}
+                      onOpenClassic={() => openEmbeddedView('email')}
                     />
                   ) : scenario === 'meeting' ? (
-                    <MeetingCard onOpen={() => setCanvasOpen(true)} />
+                    <MeetingAgendaCard
+                      resource={meetingResource}
+                      onRetry={() => void refreshMeeting()}
+                      onOpenEvent={(eventId) => {
+                        setSelectedMeetingTarget(eventId);
+                        setCanvasOpen(true);
+                        void openMeetingEvent(eventId);
+                      }}
+                      onNewEvent={() => {
+                        setSelectedMeetingTarget('new-event');
+                        setCanvasOpen(true);
+                      }}
+                      onOpenClassic={() => openEmbeddedView('calendar')}
+                    />
                   ) : scenario === 'invoice' ? (
                     <InvoiceWorkspaceCard
                       resource={invoiceResource}
@@ -816,7 +1112,7 @@ export function ConversationCanvasPrototype() {
                         setSelectedInvoiceId('new-devis');
                         setCanvasOpen(true);
                       }}
-                      onOpenClassic={() => openClassicView('invoices')}
+                      onOpenClassic={() => openEmbeddedView('invoices')}
                     />
                   ) : scenario === 'board' ? (
                     <BoardHistoryCard
@@ -837,7 +1133,7 @@ export function ConversationCanvasPrototype() {
                         setSelectedBoardTarget('current');
                         setCanvasOpen(true);
                       }}
-                      onOpenClassic={() => openClassicPanel('board')}
+                      onOpenClassic={toggleBoardPanel}
                     />
                   ) : (
                     <AtelierHistoryCard
@@ -858,12 +1154,12 @@ export function ConversationCanvasPrototype() {
                         setSelectedAtelierTarget('current');
                         setCanvasOpen(true);
                       }}
-                      onOpenClassic={() => openClassicPanel('atelier')}
+                      onOpenClassic={openAtelierPanel}
                     />
                   )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="mr-1 text-[11px] font-medium text-[#7B8AA3]">Sources</span>
+                    <span className="mr-1 text-[11px] font-medium text-text-muted">Sources</span>
                     {scenario === 'today' ? (
                       <>
                         <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Dashboard local" />
@@ -887,9 +1183,19 @@ export function ConversationCanvasPrototype() {
                       </>
                     ) : scenario === 'meeting' ? (
                       <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Mémoire locale" />
-                        <SourceChip icon={<Mail className="h-3 w-3" />} label="Email" />
-                        <SourceChip icon={<Calendar className="h-3 w-3" />} label="Agenda" />
+                        <SourceChip
+                          icon={<Calendar className="h-3 w-3" />}
+                          label={meetingResource.status === 'ready'
+                            ? `${meetingResource.data.calendars.length} calendrier${meetingResource.data.calendars.length > 1 ? 's' : ''}`
+                            : 'Agenda'}
+                        />
+                        <SourceChip
+                          icon={<Users className="h-3 w-3" />}
+                          label={meetingResource.status === 'ready'
+                            ? `${meetingResource.data.contacts.length} contacts consultables`
+                            : 'CRM local'}
+                        />
+                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Écriture confirmée" />
                       </>
                     ) : scenario === 'invoice' ? (
                       <>
@@ -912,8 +1218,8 @@ export function ConversationCanvasPrototype() {
                     )}
                   </div>
 
-                  <div className="mt-9 border-t border-[#DCE4F1] pt-5">
-                    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7B8AA3]">Essayer un autre parcours</div>
+                  <div className="mt-9 border-t border-border pt-5">
+                    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
                     <div className="flex flex-wrap gap-2">
                       {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item) => (
                         <button
@@ -922,8 +1228,8 @@ export function ConversationCanvasPrototype() {
                           onClick={() => chooseScenario(item)}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold ${
                             scenario === item
-                              ? 'border-[#101C36] bg-[#101C36] text-white'
-                              : 'border-[#DCE4F1] bg-white text-[#5B6A82] hover:border-[#AEBACD] hover:text-[#101C36]'
+                              ? 'border-text bg-text text-white'
+                              : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'
                           }`}
                         >
                           {scenarioLabels[item]}
@@ -936,35 +1242,48 @@ export function ConversationCanvasPrototype() {
 
               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,#F3F6FC_70%,transparent)] px-5 pb-5 pt-12 sm:px-8">
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
-                  <div className="rounded-[18px] border border-[#CBD6E6] bg-white p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
+                  <div className="rounded-[18px] border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (
-                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-[10px] border border-[#E1D9F5] bg-[#F7F3FE] px-2.5 py-2 text-xs text-[#5B477E]">
-                        <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[#EAE1FB] text-[#7C3AED]">
+                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-2.5 py-2 text-xs text-[var(--k4)]">
+                        <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[#EAE1FB] text-[var(--k4)]">
                           <SelectedCapabilityIcon className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0 flex-1 truncate"><span className="font-semibold">Capacité :</span> {selectedCapability.title}</span>
-                        <button type="button" onClick={() => setSelectedCapability(null)} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-[7px] hover:bg-white">
+                        <button type="button" onClick={() => setSelectedCapability(null)} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-[7px] hover:bg-surface">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     )}
-                    <textarea
-                      value={composerValue}
-                      onChange={(event) => setComposerValue(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault();
-                          submitComposer();
-                        }
-                      }}
-                      rows={2}
-                      placeholder="Demande à Thérèse d’organiser, créer ou agir…"
-                      className="max-h-28 min-h-12 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-[#101C36] outline-none placeholder:text-[#9AA7BB]"
-                    />
+                    {destinationUsesChat ? (
+                      <textarea
+                        value={composerValue}
+                        onChange={(event) => setComposerValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            submitComposer();
+                          }
+                        }}
+                        rows={2}
+                        placeholder="Demande à Thérèse d’organiser, créer ou agir…"
+                        className="max-h-28 min-h-12 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-text outline-none placeholder:text-text-muted"
+                      />
+                    ) : (
+                      <div
+                        className={`mx-1 my-2 rounded-[10px] border px-3 py-2.5 text-xs leading-5 ${
+                          destinationIsPending
+                            ? 'border-warning/40 bg-[var(--color-warning-tint)] text-warning'
+                            : 'border-accent-cyan/30 bg-accent-tint text-accent'
+                        }`}
+                        data-testid="capability-destination-message"
+                      >
+                        {selectedDestination?.kind === 'pending'
+                          ? selectedDestination.reason
+                          : 'Cette capacité ouvre sa surface fonctionnelle réelle. Aucun message ne sera envoyé et aucune donnée ne sera modifiée par ce passage.'}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
                       <div className="flex items-center gap-1">
-                        <IconButton label="Joindre un fichier"><Paperclip className="h-[17px] w-[17px]" /></IconButton>
-                        <IconButton label="Dicter"><Mic className="h-[17px] w-[17px]" /></IconButton>
                         <button
                           type="button"
                           onClick={() => {
@@ -972,35 +1291,78 @@ export function ConversationCanvasPrototype() {
                             setCommandOpen(false);
                             setTrustCenterOpen(false);
                           }}
-                          className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-medium text-[#5B6A82] hover:bg-[#F3F6FC] hover:text-[#101C36]"
+                          className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-medium text-text-muted hover:bg-bg hover:text-text"
                         >
                           <Plus className="h-4 w-4" />
                           Capacités
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="hidden items-center gap-1 text-[10px] font-medium text-[#7B8AA3] sm:flex">
-                          <Globe className="h-3 w-3" />
-                          Auto · Local prioritaire
-                        </span>
+                        <span className="hidden text-[10px] font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
                         <button
                           type="button"
                           onClick={submitComposer}
-                          aria-label="Envoyer"
-                          className="grid h-9 w-9 place-items-center rounded-[10px] border border-[#101C36] bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_#101C36] hover:-translate-y-0.5"
+                          disabled={destinationIsPending}
+                          aria-label={composerActionLabel}
+                          title={composerActionLabel}
+                          className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_#101C36] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-[#E6EBF2] disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
                         >
-                          <ArrowUp className="h-[18px] w-[18px]" />
+                          {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-center text-[10px] text-[#8A97AB]">Thérèse montre ses sources et demande confirmation avant toute action externe.</div>
+                  <div className="mt-2 text-center text-[10px] text-text-muted">Thérèse affiche les sources reçues et confirme les effets externes effectivement raccordés.</div>
                 </div>
               </div>
             </section>
+            )}
 
             <AnimatePresence>
-              {canvasOpen && scenario !== 'today' && (
+              {calculatorOpen ? (
+                <CalculatorWorkspaceCanvas
+                  onClose={() => {
+                    setCalculatorOpen(false);
+                    setCanvasOpen(false);
+                  }}
+                />
+              ) : deliverablesOpen ? (
+                <DeliverablesWorkspaceCanvas
+                  onClose={() => {
+                    setDeliverablesOpen(false);
+                    setCanvasOpen(false);
+                  }}
+                  onOpenProjects={() => openEmbeddedView('projects')}
+                  onOpenInvoices={() => openEmbeddedView('invoices')}
+                />
+              ) : imagesOpen ? (
+                <ImagesWorkspaceCanvas
+                  onClose={() => {
+                    setImagesOpen(false);
+                    setCanvasOpen(false);
+                  }}
+                />
+              ) : followUpsOpen ? (
+                <FollowUpsWorkspaceCanvas
+                  onClose={() => {
+                    setFollowUpsOpen(false);
+                    setCanvasOpen(false);
+                  }}
+                  onOpenEmail={() => openEmbeddedView('email')}
+                />
+              ) : voiceOpen ? (
+                <VoiceWorkspaceCanvas
+                  onClose={() => {
+                    setVoiceOpen(false);
+                    setCanvasOpen(false);
+                  }}
+                  onContinueInChat={(prompt) => {
+                    setVoiceOpen(false);
+                    setCanvasOpen(false);
+                    openChat(prompt);
+                  }}
+                />
+              ) : canvasOpen && scenario !== 'today' && (
                 <ContextCanvas
                   scenario={scenario}
                   onClose={() => {
@@ -1010,6 +1372,9 @@ export function ConversationCanvasPrototype() {
                   }}
                   contactsResource={contactsResource}
                   emailMessageResource={emailMessageResource}
+                  meetingResource={meetingResource}
+                  meetingEventResource={meetingEventResource}
+                  meetingTarget={selectedMeetingTarget}
                   invoiceResource={invoiceResource}
                   invoiceDetailResource={invoiceDetailResource}
                   boardResource={boardResource}
@@ -1029,6 +1394,14 @@ export function ConversationCanvasPrototype() {
                   onRetryEmailMessage={() => void retryEmailMessage()}
                   onGenerateEmailDraft={generateEmailDraft}
                   onSaveEmailDraft={saveEmailDraft}
+                  onRetryMeeting={() => void refreshMeeting()}
+                  onRetryMeetingEvent={() => void retryMeetingEvent()}
+                  onCreateMeetingEvent={async (request) => {
+                    const created = await createMeetingEvent(request);
+                    setSelectedMeetingTarget(meetingEventKey(created));
+                    return created;
+                  }}
+                  onCreateMeetingNote={createMeetingNote}
                   onRetryInvoices={() => void refreshInvoices()}
                   onRetryInvoice={() => void retryInvoice()}
                   onCreateDevisDraft={createDevisDraft}
@@ -1049,6 +1422,9 @@ export function ConversationCanvasPrototype() {
                     setSelectedAtelierTarget('new-mission');
                   }}
                   onMutateAtelierTask={mutateAtelierTask}
+                  onOpenView={openEmbeddedView}
+                  onOpenBoardPanel={toggleBoardPanel}
+                  onOpenAtelierPanel={openAtelierPanel}
                 />
               )}
             </AnimatePresence>
@@ -1056,18 +1432,28 @@ export function ConversationCanvasPrototype() {
         </div>
       </div>
 
+      <PanelContainer onUserCommandsRefresh={setUserSlashCommands} />
+      <ShortcutsModal isOpen={showShortcuts} onClose={closeShortcuts} />
+
       <AnimatePresence>
         {commandOpen && (
           <CommandPalette
             onClose={() => setCommandOpen(false)}
             onSelect={chooseScenario}
             onCapability={chooseCapability}
+            onAction={runUnifiedAction}
           />
         )}
         {capabilityCenterOpen && (
           <CapabilityCenter onClose={() => setCapabilityCenterOpen(false)} onChoose={chooseCapability} />
         )}
-        {trustCenterOpen && <TrustCenter onClose={() => setTrustCenterOpen(false)} />}
+        {trustCenterOpen && (
+          <TrustCenter
+            onClose={() => setTrustCenterOpen(false)}
+            onOpenPrivacy={() => openSettings('privacy')}
+            onOpenAdvanced={() => openSettings('advanced')}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

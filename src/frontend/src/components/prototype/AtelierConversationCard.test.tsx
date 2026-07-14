@@ -101,4 +101,31 @@ describe('Atelier 0.40 conversationnel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’action' }));
     expect(onMutate).toHaveBeenCalledWith(task.id, 'approve');
   });
+
+  it('reconstruit le plan, les tests et l’explication d’une mission enregistrée', () => {
+    const persistedTask: AgentTaskResponse = {
+      ...task,
+      plan: 'Plan durable',
+      test_results: ['3 tests passed'],
+      explanation: 'Explication durable',
+      agent_outputs: { katia: 'Cadrage final', zezette: 'Réalisation finale' },
+      base_branch: 'main',
+      commit_hash: 'abc123def456789',
+      agent_model: '{"katia":"claude-test","zezette":"gpt-test"}',
+    };
+    render(<AtelierWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      taskResource={{ status: 'ready', data: persistedTask, error: null }}
+      diffResource={{ status: 'ready', data: diff, error: null }}
+      run={idleRun} target={task.id} actionPending={null} onRetry={vi.fn()}
+      onRetryTask={vi.fn()} onStart={vi.fn()} onCancel={vi.fn()} onReset={vi.fn()}
+      onMutate={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+
+    expect(screen.getByText('Plan durable')).toBeInTheDocument();
+    expect(screen.getByText('3 tests passed')).toBeInTheDocument();
+    expect(screen.getByText('Explication durable')).toBeInTheDocument();
+    expect(screen.getByText('Cadrage final')).toBeInTheDocument();
+    expect(screen.getByText(/Commit : abc123def456/)).toBeInTheDocument();
+  });
 });

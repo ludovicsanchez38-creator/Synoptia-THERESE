@@ -3,9 +3,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvoicesPanel } from './InvoicesPanel';
 import { useInvoiceStore } from '../../stores/invoiceStore';
+import { open as openLocalFile } from '@tauri-apps/plugin-shell';
 
 const mockListInvoices = vi.fn();
 const mockDeleteInvoice = vi.fn();
+const mockGenerateInvoicePDF = vi.fn();
 
 vi.mock('../../services/api', async () => {
   const actual = await vi.importActual<typeof import('../../services/api')>('../../services/api');
@@ -14,7 +16,7 @@ vi.mock('../../services/api', async () => {
     ...actual,
     listInvoices: (...args: unknown[]) => mockListInvoices(...args),
     deleteInvoice: (...args: unknown[]) => mockDeleteInvoice(...args),
-    generateInvoicePDF: vi.fn(),
+    generateInvoicePDF: (...args: unknown[]) => mockGenerateInvoicePDF(...args),
     sendInvoiceByEmail: vi.fn(),
   };
 });
@@ -49,6 +51,11 @@ describe('InvoicesPanel suppression', () => {
     onSubmit.mockClear();
     mockListInvoices.mockResolvedValue([invoice]);
     mockDeleteInvoice.mockResolvedValue({ success: true });
+    mockGenerateInvoicePDF.mockResolvedValue({
+      pdf_path: '/tmp/FAC-001.pdf',
+      invoice_number: 'FAC-001',
+    });
+    vi.mocked(openLocalFile).mockResolvedValue(undefined);
 
     useInvoiceStore.setState({
       invoices: [],
@@ -112,5 +119,24 @@ describe('InvoicesPanel suppression', () => {
     });
     expect(onSubmit).not.toHaveBeenCalled();
     expect(mockDeleteInvoice).not.toHaveBeenCalled();
+  });
+
+  it('génère puis ouvre réellement le PDF local', async () => {
+    render(<InvoicesPanel standalone />);
+
+    await screen.findByText('FAC-001');
+    fireEvent.click(screen.getByTitle('Générer et ouvrir le PDF'));
+
+    await waitFor(() => {
+      expect(mockGenerateInvoicePDF).toHaveBeenCalledWith('inv-1');
+      expect(openLocalFile).toHaveBeenCalledWith('/tmp/FAC-001.pdf');
+    });
+  });
+
+  it('ne présente pas un envoi email que le backend ne sait pas encore exécuter', async () => {
+    render(<InvoicesPanel standalone />);
+
+    await screen.findByText('FAC-001');
+    expect(screen.queryByTitle('Envoyer par email')).not.toBeInTheDocument();
   });
 });

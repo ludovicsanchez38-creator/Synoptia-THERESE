@@ -446,6 +446,44 @@ async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool 
     return LocalCalendarProvider(session), cal.id, None
 
 
+async def get_calendar_confirmation_destination(session: AsyncSession) -> dict:
+    """Décrit sans mutation la destination qu'utilisera create_calendar_event."""
+    from app.models.entities import Calendar, EmailAccount
+
+    account_result = await session.execute(
+        select(EmailAccount).where(EmailAccount.provider == "gmail").limit(1)
+    )
+    account = account_result.scalar_one_or_none()
+    if account:
+        return {
+            "calendar_id": "primary",
+            "calendar_name": "Calendrier principal",
+            "provider": "google",
+            "account": account.email,
+            "will_create_calendar": False,
+        }
+
+    local_result = await session.execute(
+        select(Calendar).where(Calendar.provider == "local").order_by(Calendar.id).limit(1)
+    )
+    calendar = local_result.scalar_one_or_none()
+    if calendar:
+        return {
+            "calendar_id": calendar.id,
+            "calendar_name": calendar.summary,
+            "provider": "local",
+            "account": None,
+            "will_create_calendar": False,
+        }
+    return {
+        "calendar_id": None,
+        "calendar_name": "Mon calendrier",
+        "provider": "local",
+        "account": None,
+        "will_create_calendar": True,
+    }
+
+
 async def _read_emails(args: dict, session: AsyncSession) -> str:
     """Read recent emails."""
     provider, error = await _get_email_provider(session)
@@ -738,6 +776,9 @@ async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
     except ValueError as e:
         return f"Erreur de format de date : {e}. Utilise le format ISO 8601 (ex: 2026-03-26T14:00:00)."
 
+    if end <= start:
+        return "Erreur : la fin du rendez-vous doit être postérieure au début."
+
     attendees = [
         addr.strip() for addr in args.get("attendees", "").split(",") if addr.strip()
     ] if args.get("attendees") else None
@@ -751,7 +792,7 @@ async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
             description=args.get("description"),
             location=args.get("location"),
             attendees=attendees,
-            timezone="Europe/Paris",
+            timezone=args.get("timezone") or "Europe/Paris",
         )
         event = await provider.create_event(request)
         return (

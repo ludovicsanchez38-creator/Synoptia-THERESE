@@ -7,11 +7,12 @@ s'executer en CRUD direct, sans LLM, sans creation en masse.
 
 
 import pytest
-from app.models.entities import Contact, Project
+from app.models.entities import Calendar, CalendarEvent, Contact, Project
 from app.services.slash_commands import (
     MAX_INLINE_COMMANDS,
     _split_positional_and_kwargs,
     execute_slash_command,
+    execute_slash_command_outcome,
     parse_inline_commands,
     parse_slash_command,
 )
@@ -146,3 +147,26 @@ async def test_rdv_without_date_asks_for_date(db_session):
 async def test_rdv_invalid_date(db_session):
     msg = await execute_slash_command("rdv", "Point date=pas-une-date", db_session)
     assert "invalide" in msg.lower() or "iso" in msg.lower()
+
+
+@pytest.mark.asyncio
+async def test_rdv_prepares_confirmation_without_mutation(db_session):
+    from app.services.tool_confirmations import pop_pending
+    from app.services.workspace_tools import execute_workspace_tool
+
+    outcome = await execute_slash_command_outcome(
+        "rdv", "Point date=2026-07-14T10:00", db_session
+    )
+    assert outcome.confirmation is not None
+    assert "Rien n'est créé" in outcome.content
+    assert (await db_session.execute(select(Calendar))).scalars().all() == []
+    assert (await db_session.execute(select(CalendarEvent))).scalars().all() == []
+
+    confirmation_id = outcome.confirmation["confirmation_id"]
+    pending = pop_pending(confirmation_id)
+    assert pending is not None
+    tool_name, arguments = pending
+    await execute_workspace_tool(tool_name, arguments, db_session)
+    await db_session.commit()
+    assert len((await db_session.execute(select(CalendarEvent))).scalars().all()) == 1
+    assert pop_pending(confirmation_id) is None

@@ -36,13 +36,27 @@ notifications, l’updater et les confirmations sensibles.
 
 Cette fondation a été validée dans le navigateur local après un rechargement à
 froid. Elle ne constitue pas encore une validation du cycle complet Tauri. Les
-données du brief du jour, de Contacts et mémoire, d’Email, de Devis et factures,
-du Board et de l’Atelier sont maintenant reliées au backend et aux stores existants. Le
-Board vérifie le consentement cloud, interdit le repli cloud en mode souverain,
-annule les tâches actives à la fermeture et relit toute décision annoncée comme
-sauvegardée. L’Atelier relit l’historique `AgentTask`, affiche le dépôt et les
-modèles configurés, exécute dans un worktree isolé et relit le diff avant toute
-application. Le scénario rendez-vous reste à remplacer par son contrat réel.
+données du brief du jour, de Contacts et mémoire, d’Email, de Rendez-vous, de
+Devis et factures, du Board et de l’Atelier sont maintenant reliées au backend
+et aux stores existants. Le fil utilise aussi les vraies conversations, leur
+historique, leur renommage, leur export et leur suppression. Le centre des
+capacités possède désormais un débouché explicite pour chacune de ses 30
+entrées : canevas 0.40, vue existante intégrée dans la coque, action, réglage ou
+reprise dans le chat. Les cinq calculateurs
+ROI, ICE, RICE, VAN et seuil de rentabilité utilisent leurs moteurs locaux
+déterministes, sans modèle IA ni persistance. Images, Relances et Voix disposent
+de leurs surfaces réelles : galerie et génération confirmée, échéances email
+éditables, import audio, transcription confirmée et synthèse locale Piper. Le
+suivi des livrables agrège en lecture seule les projets, livrables CRM, tâches et
+documents de facturation. Confidentialité expose l’export global, la purge
+globale et les sauvegardes avec confirmation. Le Board vérifie le consentement
+cloud, interdit le repli cloud en mode souverain, annule les tâches actives à la
+fermeture et conserve sources, modèles et usage avec la décision. L’Atelier
+relit l’historique `AgentTask`, affiche le dépôt et les modèles configurés,
+exécute dans un worktree isolé et persiste plan, phases, tests, explication,
+sorties agents, branche et commit. Rendez-vous agrège les calendriers sur 90
+jours, relie les contacts par email exact et ne charge que les activités CRM
+réellement disponibles.
 
 ## Intention produit
 
@@ -57,14 +71,26 @@ principale unique :
   applications séparées.
 
 La coque couvre les parcours journée, contacts, email, rendez-vous, facturation,
-Board et Atelier. Journée, contacts, email, facturation, Board et Atelier utilisent
-déjà leurs données réelles. Rendez-vous conserve encore une présentation simulée
-et doit être branché progressivement sur ses services existants.
+Board et Atelier. Ces sept parcours utilisent désormais leurs données réelles.
+Agenda reste modifiable dans la vue classique ; le canevas 0.40 permet aussi une
+création confirmée et une note CRM confirmée, sans synthèse IA non sourcée.
+Les 30 capacités ont maintenant une destination explicite. Personnalisation
+ouvre les réglages réels de mode, démarrage et accessibilité ; les anciennes
+préférences backend non consommées par l’application ne sont pas annoncées.
+
+La dernière consolidation locale du 14 juillet 2026 est verte : 1 568 tests
+backend principaux, 159 tests backend complémentaires, 541 tests frontend et
+15 parcours navigateur 0.40, plus typage, lint, build web et compilation native.
+La reconnexion continue après une panne longue est
+désormais couverte. Ces résultats sont consignés dans la recette ; ils ne
+remplacent ni le test du sidecar empaqueté ni la signature du futur build
+candidat.
 
 ## Principes non négociables
 
 1. L’interface 0.32.1 reste disponible jusqu’à la parité fonctionnelle vérifiée.
-2. Aucune migration de données n’est requise pour introduire la nouvelle coque.
+2. La coque réutilise la base existante ; deux migrations Alembic additives
+   conservent les métadonnées historiques du Board et de l’Atelier.
 3. Les opérations externes restent soumises à confirmation explicite.
 4. `actionRegistry.ts` devient le contrat d’adaptation commun entre les deux UI.
 5. Un lot peut être désactivé sans restaurer une base de données ni réinstaller
@@ -95,6 +121,7 @@ ces mécanismes n’active la nouvelle interface par défaut dans la version act
 - [Couverture des 30 capacités](COUVERTURE-FONCTIONNELLE.md)
 - [Socle transversal à préserver](SOCLE-TRANSVERSAL.md)
 - [Audit indépendant de parité](AUDIT-PARITE.md)
+- [Audit final local](AUDIT-FINAL-LOCAL.md)
 - [Plan de migration](PLAN-DE-MIGRATION.md)
 - [Recette et préparation de release](RECETTE-ET-RELEASE.md)
 - [Décisions et arbitrages](DECISIONS.md)

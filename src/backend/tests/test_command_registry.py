@@ -151,6 +151,7 @@ class TestCommandRegistry:
         deleted = await registry.delete_user_command("user-a-supprimer")
         assert deleted is True
         assert registry.get("user-a-supprimer") is None
+        assert not (tmp_path / "a-supprimer.md").exists()
 
     @pytest.mark.asyncio
     async def test_delete_builtin_command_fails(self, registry):

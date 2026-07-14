@@ -231,7 +231,14 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
                               e.stopPropagation();
                               setContextMenuId(conversation.id);
                             }}
-                            onRename={(title) => renameConversation(conversation.id, title)}
+                            onRename={(title) => {
+                              const previousTitle = conversation.title;
+                              renameConversation(conversation.id, title);
+                              void api.renameConversation(conversation.id, title).catch((error) => {
+                                console.error('Renommage de conversation impossible:', error);
+                                renameConversation(conversation.id, previousTitle);
+                              });
+                            }}
                             onDelete={() => handleDelete(conversation.id)}
                             onCloseContextMenu={() => setContextMenuId(null)}
                             maskTextFn={maskText}

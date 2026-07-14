@@ -102,6 +102,32 @@ describe('useHealthCheck', () => {
       // Should set to disconnected or error state
       expect(mockSetConnectionState).toHaveBeenCalled();
     });
+
+    it('continue à contrôler le backend après les cinq tentatives rapides', async () => {
+      let backendAvailable = false;
+      mockCheckHealth.mockImplementation(() =>
+        backendAvailable
+          ? Promise.resolve({ status: 'healthy', version: '0.32.1' })
+          : Promise.reject(new Error('Backend arrêté'))
+      );
+
+      const { useHealthCheck } = await import('./useHealthCheck');
+
+      renderHook(() => useHealthCheck());
+
+      // Contrôle initial puis quatre reprises à 2 secondes.
+      await vi.advanceTimersByTimeAsync(8_100);
+      expect(mockCheckHealth).toHaveBeenCalledTimes(5);
+      expect(mockAddNotification).toHaveBeenCalledTimes(1);
+
+      // Après l'alerte, la boucle reste active à cadence normale.
+      backendAvailable = true;
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      expect(mockCheckHealth).toHaveBeenCalledTimes(6);
+      expect(mockSetConnectionState).toHaveBeenLastCalledWith('connected');
+      expect(mockAddNotification).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('polling', () => {

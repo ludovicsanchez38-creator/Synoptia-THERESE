@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from app.models.entities_agents import AgentSession, AgentTask
+from app.models.schemas_agents import AgentStreamChunk
 from app.routers import agents as agents_router
 from app.services.agents.git_service import GitService
 from app.services.agents.tools import AgentToolExecutor
@@ -257,3 +258,88 @@ async def test_openclaw_cancel_failure_keeps_session_running(db_session) -> None
     assert exc_info.value.status_code == 502
     await db_session.refresh(agent_session)
     assert agent_session.status == "running"
+
+
+@pytest.mark.asyncio
+async def test_agent_request_persists_reconstructible_history(
+    client,
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo-history"
+    repo.mkdir()
+    git = MagicMock()
+    git.is_repo = AsyncMock(return_value=True)
+    git.current_branch = AsyncMock(return_value="main")
+    git.ensure_clean = AsyncMock(return_value=True)
+
+    class FakeSwarm:
+        def __init__(self, _source_path: str):
+            pass
+
+        async def process_request(self, _message: str, task_id: str):
+            yield AgentStreamChunk(
+                type="agent_start", agent="katia", content="Cadrage",
+                task_id=task_id, phase="spec", model="claude-test",
+            )
+            yield AgentStreamChunk(
+                type="handoff", agent="katia", content="Plan vérifiable",
+                task_id=task_id, phase="analysis",
+            )
+            yield AgentStreamChunk(
+                type="agent_start", agent="zezette", content="Réalisation",
+                task_id=task_id, phase="implementation", model="gpt-test",
+            )
+            yield AgentStreamChunk(
+                type="test_result", agent="zezette", content="3 tests passed",
+                task_id=task_id, phase="testing",
+            )
+            yield AgentStreamChunk(
+                type="review_ready", task_id=task_id, phase="review",
+                branch="agent/history", base_branch="main", commit_hash="abc123def456",
+                files_changed=["src/app.ts"], diff_summary="1 file changed",
+            )
+            yield AgentStreamChunk(
+                type="explanation", agent="katia", content="Explication durable",
+                task_id=task_id, phase="review",
+            )
+            yield AgentStreamChunk(
+                type="agent_done", agent="katia", content="Sortie finale Katia",
+                task_id=task_id, phase="review",
+            )
+            yield AgentStreamChunk(
+                type="done", content="Terminé", task_id=task_id, phase="review",
+            )
+
+    with (
+        patch("app.routers.agents._get_source_path", return_value=str(repo)),
+        patch("app.routers.agents.GitService", return_value=git),
+        patch("app.routers.agents.SwarmOrchestrator", FakeSwarm),
+    ):
+        response = await client.post(
+            "/api/agents/request",
+            json={"message": "Conserver tout l’historique de cette mission"},
+        )
+
+    assert response.status_code == 200, response.text
+    done_line = next(
+        line for line in response.text.splitlines()
+        if '"type": "done"' in line
+    )
+    import json
+
+    task_id = json.loads(done_line.removeprefix("data: "))["task_id"]
+    task_response = await client.get(f"/api/agents/tasks/{task_id}")
+    assert task_response.status_code == 200, task_response.text
+    task = task_response.json()
+    assert task["plan"] == "Plan vérifiable"
+    assert task["test_results"] == ["3 tests passed"]
+    assert task["explanation"] == "Explication durable"
+    assert task["agent_outputs"]["katia"] == "Sortie finale Katia"
+    assert json.loads(task["agent_model"]) == {
+        "katia": "claude-test",
+        "zezette": "gpt-test",
+    }
+    assert task["base_branch"] == "main"
+    assert task["commit_hash"] == "abc123def456"
+    assert task["run_phase"] == "review"
+    assert task["events"]

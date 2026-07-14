@@ -6,7 +6,7 @@ Pydantic models for the agent API endpoints.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AgentRequest(BaseModel):
@@ -29,6 +29,14 @@ class AgentTaskResponse(BaseModel):
     agent_model: str | None = None
     tokens_used: int = 0
     cost_eur: float = 0.0
+    run_phase: str | None = None
+    plan: str | None = None
+    test_results: list[str] = Field(default_factory=list)
+    explanation: str | None = None
+    events: list[dict] = Field(default_factory=list)
+    agent_outputs: dict[str, str] = Field(default_factory=dict)
+    base_branch: str | None = None
+    commit_hash: str | None = None
     error: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -54,6 +62,9 @@ class AgentStreamChunk(BaseModel):
     files_changed: list[str] | None = None
     tool_name: str | None = None
     diff_summary: str | None = None
+    model: str | None = None
+    base_branch: str | None = None
+    commit_hash: str | None = None
 
 
 class DiffFileResponse(BaseModel):

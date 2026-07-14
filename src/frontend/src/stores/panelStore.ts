@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import * as api from '../services/api';
+import type { ClassicSettingsTab } from '../lib/classicNavigation';
 
 // ============================================================
 // Types
@@ -35,6 +36,7 @@ interface PanelState {
   showCommandPalette: boolean;
   showShortcuts: boolean;
   showSettings: boolean;
+  requestedSettingsTab: ClassicSettingsTab | null;
   showPromptLibrary: boolean;
   showBoardPanel: boolean;
   showContactModal: boolean;
@@ -57,7 +59,7 @@ interface PanelState {
   closeCommandPalette: () => void;
   openShortcuts: () => void;
   closeShortcuts: () => void;
-  openSettings: () => void;
+  openSettings: (tab?: ClassicSettingsTab) => void;
   closeSettings: () => void;
   openPromptLibrary: () => void;
   closePromptLibrary: () => void;
@@ -92,6 +94,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   showCommandPalette: false,
   showShortcuts: false,
   showSettings: false,
+  requestedSettingsTab: null,
   showPromptLibrary: false,
   showBoardPanel: false,
   showContactModal: false,
@@ -142,6 +145,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       showCommandPalette: false,
       showShortcuts: false,
       showSettings: false,
+      requestedSettingsTab: null,
       showBoardPanel: false,
       showContactModal: false,
       showProjectModal: false,
@@ -156,8 +160,8 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   closeCommandPalette: () => set({ showCommandPalette: false }),
   openShortcuts: () => set({ showShortcuts: true }),
   closeShortcuts: () => set({ showShortcuts: false }),
-  openSettings: () => set({ showSettings: true }),
-  closeSettings: () => set({ showSettings: false }),
+  openSettings: (tab) => set({ showSettings: true, requestedSettingsTab: tab ?? null }),
+  closeSettings: () => set({ showSettings: false, requestedSettingsTab: null }),
   openPromptLibrary: () => set({ showPromptLibrary: true }),
   closePromptLibrary: () => set({ showPromptLibrary: false }),
   toggleBoardPanel: () => set((s) => ({ showBoardPanel: !s.showBoardPanel })),

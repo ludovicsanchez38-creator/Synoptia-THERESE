@@ -34,9 +34,9 @@ bannière de mise à jour, les notifications et les confirmations sensibles.
 
 Ce traitement reste local. Il doit encore être vérifié dans l’application Tauri,
 sur un premier démarrage et avec un backend momentanément indisponible avant de
-pouvoir être considéré comme prêt pour une bêta. Les parcours migrent un par un :
-Rendez-vous conserve encore des données simulées, tandis que les autres scénarios
-principaux et l’Atelier lisent désormais leurs sources réelles.
+pouvoir être considéré comme prêt pour une bêta. Les parcours migrent un par un.
+Rendez-vous utilise maintenant un read-model isolé : aucun calendrier n’est créé
+à l’ouverture et le store persistant de la vue classique n’est pas écrasé.
 
 ## Couches proposées
 
@@ -53,10 +53,12 @@ lecture/brouillon/exécution, ses permissions et son adaptateur. Le catalogue du
 prototype devient progressivement un registre exécutable. `actionRegistry.ts`
 reste la porte d’entrée des actions déjà disponibles pendant cette transition.
 
-Le registre actuel couvre surtout la navigation et environ deux douzaines
-d’actions. Il ne représente pas encore les 30 capacités ni leurs variantes
-lecture/brouillon/effet externe. Il doit être étendu par adaptateurs, sans être
-considéré prématurément comme une parité complète.
+Le catalogue comporte maintenant exactement 30 capacités et chacune déclare un
+canevas 0.40 ou une destination explicite. Les destinations autorisées sont une
+vue classique, une action enregistrée, un onglet de réglages, une reprise dans
+le chat, un canevas spécialisé ou un état indisponible. Les 30 entrées ont un
+débouché déterministe, mais cette exhaustivité de navigation ne vaut pas encore
+parité métier : plusieurs capacités reposent toujours sur la vue classique.
 
 Contrat cible minimal :
 
@@ -85,6 +87,35 @@ contenu, absence de résultat et erreur récupérable.
 Les adaptateurs traduisent une intention de la nouvelle interface en appels aux
 stores et services existants. Ils évitent de dupliquer les règles métier dans les
 composants visuels. Ils sont testables indépendamment du canevas.
+
+Les vues historiques peuvent maintenant être montées dans la coque unifiée sans
+rechargement ni bascule normale vers l’ancienne interface. Le pont exceptionnel
+vers l’interface classique conserve une liste fermée d’actions et d’onglets. Une
+demande qui doit réellement traverser ce pont est stockée une seule fois dans
+`sessionStorage`, consommée au démarrage puis supprimée immédiatement. Son texte
+n’est jamais placé dans l’URL. Les paramètres techniques de transition sont
+également nettoyés après consommation.
+
+Les calculateurs constituent un adaptateur spécialisé : le canevas appelle les
+cinq endpoints locaux existants, affiche la formule avant exécution et n’envoie
+rien au LLM. Le frontend et le backend refusent les résultats numériques non
+finis afin qu’un dépassement ne puisse pas devenir un `null` JSON présenté comme
+un calcul réussi.
+
+Le suivi des livrables compose cinq lectures existantes sans créer de nouveau
+modèle. Il charge d’abord les 200 projets récents, puis interroge le contact, les
+livrables, les tâches et les factures uniquement pour le projet sélectionné.
+Chaque section conserve son propre état de chargement, vide ou erreur et un
+identifiant de requête empêche une réponse ancienne d’écraser une nouvelle
+sélection. Comme les factures n’ont pas de clé projet ou livrable, leur seule
+association est le `contact_id` du projet et cette limite reste écrite dans le
+canevas.
+
+Personnalisation ne crée pas un second système de préférences. La carte ouvre
+les réglages déjà consommés par l’application : mode standard/contributeur,
+comportement au lancement et accessibilité. Le passage vers un onglet précis est
+porté par le store des panneaux jusqu’au montage différé de la modale, puis les
+paramètres de transition sont nettoyés de l’URL.
 
 ### 5. Couche de confiance
 
@@ -122,15 +153,26 @@ canevas qu’après adoption du même protocole de permission et de confirmation
 - Le fil de conversation référence les objets par identifiant, sans recopier leur
   contenu complet dans le message.
 - Les vues classique et 0.40 doivent pouvoir ouvrir le même objet.
-- Les données simulées du prototype disparaissent capacité par capacité.
+- Les parcours raccordés n’utilisent aucune donnée simulée de secours.
+- Une association événement-contact n’est acceptée que sur égalité exacte des
+  adresses email normalisées ; le titre d’un événement ne suffit pas.
+- Toute création Agenda issue du canevas, du LLM, de `/rdv` ou de `[rdv: ...]`
+  produit d’abord un brouillon et une confirmation consommable une seule fois.
+- Une capacité sans surface fidèle est désactivée avec une raison visible ; elle
+  ne devient pas automatiquement un prompt générique.
 
 ## Données et migrations
 
-La première phase ne nécessite aucune modification de schéma. Le contrat Atelier
-identifie toutefois des champs futurs : branche de base, phase, plan, tests
-structurés, permissions accordées et hash du merge appliqué. Leur persistance
-passera par une migration Alembic dédiée, avec sauvegarde, procédure de retour et
-test sur une copie de base réelle.
+La coque elle-même ne crée pas de deuxième stockage. Deux migrations Alembic
+additives accompagnent toutefois la préparation locale :
+
+- `c8d9e0f1a2b3` conserve sources web, provider, modèle et usage des décisions
+  Board ;
+- `d9e0f1a2b3c4` conserve phase, plan, tests, explication, événements, sorties
+  agents, branche de base et commit des missions Atelier.
+
+Elles sont couvertes par la vérification de tête Alembic et devront être testées
+en aller-retour sur une copie représentative avant tout build candidat.
 
 ## Frontières de la 0.40
 

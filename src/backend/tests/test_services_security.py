@@ -148,6 +148,143 @@ class TestDataExportAPI:
         assert "activity_logs" in data
 
     @pytest.mark.asyncio
+    async def test_export_and_delete_cover_every_user_table(
+        self,
+        async_client: AsyncClient,
+        db_session,
+    ):
+        """Verrouille la parité entre les tables métier, l'export et l'effacement."""
+        from datetime import UTC, datetime, timedelta
+
+        from app.models.entities import (
+            Activity,
+            Calendar,
+            CalendarEvent,
+            Contact,
+            Deliverable,
+            EmailAccount,
+            EmailFollowUp,
+            EmailLabel,
+            EmailMessage,
+            Invoice,
+            InvoiceLine,
+            Notification,
+            Preference,
+            Project,
+            PromptTemplate,
+            Task,
+        )
+        from app.models.entities_agents import (
+            AgentMessage,
+            AgentSession,
+            AgentTask,
+            CodeChange,
+        )
+        from sqlmodel import select
+
+        now = datetime.now(UTC)
+        contact = Contact(first_name="Export", email="export@example.test")
+        project = Project(name="Projet export", contact_id=contact.id)
+        account = EmailAccount(
+            email="mail@example.test",
+            access_token="secret-token",
+            imap_password="secret-password",
+        )
+        email = EmailMessage(
+            id="mail-rgpd",
+            thread_id="thread-rgpd",
+            account_id=account.id,
+            subject="Message exporté",
+            from_email="sender@example.test",
+            to_emails='["mail@example.test"]',
+            date=now,
+            internal_date=now,
+            labels='["INBOX"]',
+        )
+        calendar = Calendar(
+            summary="Calendrier export",
+            account_id=account.id,
+            caldav_password="calendar-secret",
+        )
+        agent_task = AgentTask(title="Mission export", files_changed='["README.md"]')
+        invoice = Invoice(
+            invoice_number="DEV-RGPD-001",
+            contact_id=contact.id,
+            due_date=now + timedelta(days=30),
+        )
+
+        rows = [
+            contact,
+            project,
+            account,
+            email,
+            EmailLabel(id="label-rgpd", account_id=account.id, name="RGPD", type="user"),
+            EmailFollowUp(email_message_id=email.id, contact_id=contact.id, due_date=now.isoformat()),
+            calendar,
+            CalendarEvent(id="event-rgpd", calendar_id=calendar.id, summary="Événement export"),
+            Task(title="Tâche export", project_id=project.id, tags='["rgpd"]'),
+            invoice,
+            InvoiceLine(
+                invoice_id=invoice.id,
+                description="Ligne export",
+                unit_price_ht=100,
+                tva_rate=20,
+                total_ht=100,
+                total_ttc=120,
+            ),
+            Activity(contact_id=contact.id, type="note", title="Activité export"),
+            Deliverable(project_id=project.id, title="Livrable export"),
+            Notification(title="Notification export", message="À traiter"),
+            PromptTemplate(name="Modèle export", prompt="Contenu"),
+            Preference(key="profile.display_name", value='"Ludo"'),
+            agent_task,
+            AgentMessage(task_id=agent_task.id, agent="katia", role="assistant", content="Résultat"),
+            CodeChange(task_id=agent_task.id, file_path="README.md", change_type="modified"),
+            AgentSession(instruction="Mission OpenClaw export"),
+        ]
+        db_session.add_all(rows)
+        await db_session.commit()
+
+        response = await async_client.get("/api/data/export")
+        assert response.status_code == 200, response.text
+        exported = response.json()
+        expected_sections = {
+            "prompt_templates",
+            "email_accounts",
+            "email_messages",
+            "email_labels",
+            "email_follow_ups",
+            "calendars",
+            "calendar_events",
+            "tasks",
+            "invoices",
+            "invoice_lines",
+            "activities",
+            "deliverables",
+            "notifications",
+            "agent_tasks",
+            "agent_messages",
+            "code_changes",
+            "agent_sessions",
+        }
+        assert expected_sections <= exported.keys()
+        assert all(exported[section] for section in expected_sections)
+        assert exported["tasks"][0]["tags"] == ["rgpd"]
+        assert "access_token" not in exported["email_accounts"][0]
+        assert "imap_password" not in exported["email_accounts"][0]
+        assert "caldav_password" not in exported["calendars"][0]
+
+        delete_response = await async_client.delete("/api/data/all?confirm=true")
+        assert delete_response.status_code == 200, delete_response.text
+
+        models_to_purge = {
+            type(row) for row in rows
+        }
+        for model in models_to_purge:
+            result = await db_session.execute(select(model))
+            assert result.scalars().first() is None, f"{model.__name__} n'a pas été purgé"
+
+    @pytest.mark.asyncio
     async def test_export_conversations_json(self, async_client: AsyncClient):
         """Test conversations export in JSON format."""
         response = await async_client.get("/api/data/export/conversations?format=json")

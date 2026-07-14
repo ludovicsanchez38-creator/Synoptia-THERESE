@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
-import { listInvoices, deleteInvoice, generateInvoicePDF, sendInvoiceByEmail, type Invoice } from '../../services/api';
+import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '../../services/api';
 import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -89,34 +89,24 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   async function handleGeneratePDF(invoice: Invoice) {
     try {
       const result = await generateInvoicePDF(invoice.id);
-      console.log('PDF generated:', result.pdf_path);
-      // TODO: Ouvrir le PDF ou proposer le téléchargement
-      addNotification({ type: 'success', title: 'PDF généré', message: result.invoice_number });
+      try {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        await open(result.pdf_path);
+        addNotification({ type: 'success', title: 'PDF généré et ouvert', message: result.invoice_number });
+      } catch (openError) {
+        // En prévisualisation web, le système ne peut pas ouvrir un chemin local.
+        // Le PDF est tout de même généré et son emplacement reste accessible.
+        console.info('PDF generated but local opening is unavailable:', openError);
+        addNotification({
+          type: 'info',
+          title: 'PDF généré',
+          message: `Fichier disponible : ${result.pdf_path}`,
+          duration: 10000,
+        });
+      }
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de générer le PDF' });
-    }
-  }
-
-  async function handleSendEmail(invoice: Invoice) {
-    if (!confirm(`Envoyer la facture ${invoice.invoice_number} par email ?`)) {
-      return;
-    }
-
-    try {
-      const result = await sendInvoiceByEmail(invoice.id);
-      console.log('Email sent:', result);
-
-      // Mettre à jour le statut
-      if (invoice.status === 'draft') {
-        const updatedInvoice = { ...invoice, status: 'sent' as const };
-        updateInvoiceInStore(updatedInvoice);
-      }
-
-      addNotification({ type: 'success', title: 'Email envoyé', message: result.message || 'Email envoyé avec succès' });
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      addNotification({ type: 'error', title: 'Erreur', message: "Impossible d'envoyer l'email" });
     }
   }
 
@@ -340,25 +330,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                           handleGeneratePDF(invoice);
                         }}
                         className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-elevated/70"
-                        title="Télécharger PDF"
+                        title="Générer et ouvrir le PDF"
                       >
                         <Download className="w-4 h-4 text-text-muted" />
                       </button>
-
-                      {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleSendEmail(invoice);
-                          }}
-                          className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-elevated/70"
-                          title="Envoyer par email"
-                        >
-                          <Mail className="w-4 h-4 text-text-muted" />
-                        </button>
-                      )}
 
                       <button
                         type="button"

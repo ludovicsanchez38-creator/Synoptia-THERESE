@@ -29,7 +29,13 @@ import { usePanelStore } from '../../stores/panelStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { useActionsStore } from '../../stores/actionsStore';
 import { useContactsStore } from '../../stores/contactsStore';
-import { resolveClassicPanel, resolveClassicView } from '../../lib/classicNavigation';
+import {
+  consumeClassicPrompt,
+  resolveClassicAction,
+  resolveClassicPanel,
+  resolveClassicSettingsTab,
+  resolveClassicView,
+} from '../../lib/classicNavigation';
 import { resolveEscape } from '../../lib/resolveEscape';
 import { runAction, getActions } from '../../lib/actionRegistry';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
@@ -129,6 +135,9 @@ export function ChatLayout() {
   useEffect(() => {
     const requestedView = resolveClassicView(window.location.search);
     const requestedPanel = resolveClassicPanel(window.location.search);
+    const requestedAction = resolveClassicAction(window.location.search);
+    const requestedPrompt = consumeClassicPrompt(window.location.search);
+    const requestedSettingsTab = resolveClassicSettingsTab(window.location.search);
     if (requestedView) {
       useNavigationStore.setState({ activeView: requestedView, history: [] });
     } else if (localStorage.getItem('therese-skip-dashboard') !== 'true') {
@@ -138,6 +147,25 @@ export function ChatLayout() {
       usePanelStore.setState({ showBoardPanel: true });
     } else if (requestedPanel === 'atelier') {
       openAtelierPanel();
+    }
+    if (requestedPrompt) {
+      useNavigationStore.setState({ activeView: 'chat', history: [] });
+      setGuidedSkillId(undefined);
+      setGuidedPrompt(requestedPrompt);
+      setGuidedPanelActive(false);
+    }
+    if (requestedAction === 'settings.open' && requestedSettingsTab) {
+      usePanelStore.getState().openSettings(requestedSettingsTab);
+    } else if (requestedAction) {
+      runAction(requestedAction);
+    }
+    if (requestedAction || requestedPrompt) {
+      const cleanedUrl = new URL(window.location.href);
+      cleanedUrl.searchParams.delete('action');
+      cleanedUrl.searchParams.delete('handoff');
+      cleanedUrl.searchParams.delete('prompt');
+      cleanedUrl.searchParams.delete('settings_tab');
+      window.history.replaceState(window.history.state, '', cleanedUrl);
     }
   }, [openAtelierPanel]);
 

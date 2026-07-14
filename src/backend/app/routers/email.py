@@ -149,12 +149,20 @@ async def ensure_valid_access_token(
     Returns:
         Valid (decrypted) access token.
     """
-    access_token = decrypt_value(account.access_token)
+    access_token = (
+        decrypt_value(account.access_token)
+        if account.access_token and is_value_encrypted(account.access_token)
+        else account.access_token
+    )
 
     # Check if token expired
     if account.token_expiry and _utcnow() >= account.token_expiry:
         logger.info(f"Access token expired for {account.email}, refreshing...")
-        refresh_token = decrypt_value(account.refresh_token)
+        refresh_token = (
+            decrypt_value(account.refresh_token)
+            if account.refresh_token and is_value_encrypted(account.refresh_token)
+            else account.refresh_token
+        )
 
         try:
             client_id = None
@@ -162,8 +170,16 @@ async def ensure_valid_access_token(
 
             # 1. Try stored credentials on the account
             if account.client_id and account.client_secret:
-                client_id = decrypt_value(account.client_id)
-                client_secret = decrypt_value(account.client_secret)
+                client_id = (
+                    decrypt_value(account.client_id)
+                    if is_value_encrypted(account.client_id)
+                    else account.client_id
+                )
+                client_secret = (
+                    decrypt_value(account.client_secret)
+                    if is_value_encrypted(account.client_secret)
+                    else account.client_secret
+                )
                 logger.debug("Using stored OAuth credentials from account")
 
             # 2. Fallback: Try MCP Google Workspace server

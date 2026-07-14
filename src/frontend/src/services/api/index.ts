@@ -36,6 +36,7 @@ export {
   listConversations,
   getConversation,
   createConversation,
+  renameConversation,
   getConversationMessages,
   deleteConversation,
   exportConversation,
@@ -155,6 +156,7 @@ export {
 // Voice - Transcription audio
 export {
   transcribeAudio,
+  synthesizeSpeech,
   type TranscriptionResponse,
 } from './voice';
 
@@ -337,6 +339,18 @@ export {
   type GenerateGuideResponse,
 } from './email';
 
+// Relances liées aux emails
+export {
+  listFollowUps,
+  createFollowUp,
+  updateFollowUp,
+  deleteFollowUp,
+  type EmailFollowUp,
+  type FollowUpStatus,
+  type CreateFollowUpRequest,
+  type UpdateFollowUpRequest,
+} from './follow-ups';
+
 // Calendar - Google Calendar
 export {
   listCalendars,
@@ -492,6 +506,22 @@ export {
   type RGPDStatsResponse,
   type RGPDInferResponse,
 } from './rgpd';
+
+// Données globales - portabilité, sauvegardes et droit à l'effacement
+export {
+  downloadAllData,
+  listBackups,
+  getBackupStatus,
+  createBackup,
+  restoreBackup,
+  deleteBackup,
+  deleteAllData,
+  type BackupMetadata,
+  type BackupStatus,
+  type BackupCreateResponse,
+  type RestoreBackupResponse,
+  type DataExportResult,
+} from './data';
 
 // Notifications - Push in-app (US-004)
 export {

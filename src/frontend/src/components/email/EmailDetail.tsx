@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   Loader2,
   Sparkles,
+  Bell,
+  CalendarClock,
 } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
@@ -36,6 +38,15 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const [bodyError, setBodyError] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
+  const [showFollowUpForm, setShowFollowUpForm] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 2);
+    return date.toISOString().slice(0, 10);
+  });
+  const [followUpNote, setFollowUpNote] = useState('');
+  const [followUpSaving, setFollowUpSaving] = useState(false);
+  const [followUpFeedback, setFollowUpFeedback] = useState<string | null>(null);
 
   const message = messages.find((m) => m.id === messageId);
 
@@ -173,6 +184,26 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     startComposing([], `Fwd: ${message.subject || ''}`, forwardBody);
   }
 
+  async function handleCreateFollowUp() {
+    if (!followUpDate || followUpSaving) return;
+    setFollowUpSaving(true);
+    setFollowUpFeedback(null);
+    try {
+      await api.createFollowUp({
+        email_message_id: messageId,
+        due_date: `${followUpDate}T09:00:00`,
+        note: followUpNote.trim() || undefined,
+      });
+      setFollowUpFeedback('Relance créée. Elle apparaît dans Relances et alertes.');
+      setFollowUpNote('');
+      setShowFollowUpForm(false);
+    } catch (err) {
+      setFollowUpFeedback(err instanceof Error ? err.message : 'Impossible de créer la relance.');
+    } finally {
+      setFollowUpSaving(false);
+    }
+  }
+
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     return date.toLocaleString('fr-FR', {
@@ -292,6 +323,28 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         </div>
       )}
 
+      {followUpFeedback && (
+        <div role="status" className="mx-6 mb-2 shrink-0 rounded-lg border border-accent-cyan/20 bg-accent-cyan/5 px-3 py-2">
+          <p className="text-xs text-text-muted">{followUpFeedback}</p>
+        </div>
+      )}
+
+      {showFollowUpForm && (
+        <div className="mx-6 mb-3 shrink-0 rounded-lg border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
+          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
+            <label className="text-xs font-medium text-text-muted">
+              Échéance
+              <input aria-label="Échéance de la relance" type="date" value={followUpDate} onChange={(event) => setFollowUpDate(event.target.value)} className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
+            </label>
+            <label className="text-xs font-medium text-text-muted">
+              Note
+              <input aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
+        </div>
+      )}
+
       {/* Actions — shrink-0 : la barre ne doit jamais être compressée ni poussée
           hors du cadre par le corps du mail (sinon « Générer une réponse » se
           retrouve coupé en bas). flex-wrap : sur un volet étroit, les boutons
@@ -312,6 +365,10 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         <Button variant="ghost" size="sm" onClick={handleForward}>
           <Forward className="w-4 h-4 mr-2" />
           Transférer
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => { setShowFollowUpForm((open) => !open); setFollowUpFeedback(null); }}>
+          <Bell className="w-4 h-4 mr-2" />
+          Créer une relance
         </Button>
       </div>
 

@@ -36,7 +36,16 @@ function uniqueCalendars(calendars: Calendar[]): Calendar[] {
 }
 
 function uniqueEvents(events: CalendarEvent[]): CalendarEvent[] {
-  return [...new Map(events.map((event) => [`${event.calendar_id}:${event.id}`, event])).values()];
+  return [...new Map(events.map((event) => [meetingEventKey(event), event])).values()];
+}
+
+export function meetingEventKey(event: Pick<CalendarEvent, 'calendar_id' | 'id'>): string {
+  return `${encodeURIComponent(event.calendar_id)}::${encodeURIComponent(event.id)}`;
+}
+
+function findEvent(events: CalendarEvent[], key: string): CalendarEvent | undefined {
+  return events.find((event) => meetingEventKey(event) === key)
+    || events.find((event) => event.id === key);
 }
 
 function eventStart(event: CalendarEvent): number {
@@ -49,6 +58,17 @@ function eventStart(event: CalendarEvent): number {
 function attendeeAddress(value: string): string {
   const bracketed = value.match(/<([^>]+)>/);
   return (bracketed?.[1] || value).trim().toLowerCase();
+}
+
+async function listAllContacts(): Promise<Contact[]> {
+  const contacts: Contact[] = [];
+  const pageSize = 200;
+  for (let offset = 0; offset < 1000; offset += pageSize) {
+    const page = await listContacts(offset, pageSize);
+    contacts.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return contacts;
 }
 
 export function contactsForEvent(event: CalendarEvent, contacts: Contact[]): Contact[] {
@@ -65,16 +85,18 @@ export function usePrototypeMeetingData(enabled = true) {
   const detailRequestId = useRef(0);
   const selectedEventId = useRef<string | null>(null);
   const workspace = useRef<MeetingWorkspaceData | null>(null);
+  const createEventPending = useRef(false);
+  const createNotePending = useRef(false);
 
-  const loadEventContext = useCallback(async (eventId: string, data = workspace.current) => {
+  const loadEventContext = useCallback(async (eventKey: string, data = workspace.current) => {
     if (!data) return;
-    const event = data.events.find((item) => item.id === eventId);
+    const event = findEvent(data.events, eventKey);
     if (!event) {
       setEventResource({ status: 'error', data: null, error: 'Ce rendez-vous n’est plus disponible.' });
       return;
     }
 
-    selectedEventId.current = eventId;
+    selectedEventId.current = meetingEventKey(event);
     const activeRequest = ++detailRequestId.current;
     setEventResource({ status: 'loading', data: null, error: null });
     const relatedContacts = contactsForEvent(event, data.contacts);
@@ -102,7 +124,7 @@ export function usePrototypeMeetingData(enabled = true) {
 
     const [authResult, contactsResult] = await Promise.allSettled([
       getEmailAuthStatus(),
-      listContacts(0, 200),
+      listAllContacts(),
     ]);
     if (activeRequest !== requestId.current) return;
 
@@ -157,44 +179,58 @@ export function usePrototypeMeetingData(enabled = true) {
     workspace.current = data;
     setResource({ status: 'ready', data, error: null });
 
-    const requestedEvent = events.find((event) => event.id === selectedEventId.current) || events[0];
-    if (requestedEvent) void loadEventContext(requestedEvent.id, data);
+    const requestedEvent = selectedEventId.current ? findEvent(events, selectedEventId.current) : events[0];
+    if (requestedEvent) void loadEventContext(meetingEventKey(requestedEvent), data);
     else setEventResource(null);
   }, [loadEventContext]);
 
   const createCalendarEvent = useCallback(async (request: CreateEventRequest) => {
-    const data = workspace.current;
-    if (!data) throw new Error('Les calendriers ne sont pas encore disponibles.');
-    const calendar = data.calendars.find((item) => item.id === request.calendar_id);
-    if (!calendar) throw new Error('Sélectionne un calendrier disponible.');
+    if (createEventPending.current) throw new Error('La création de cet événement est déjà en cours.');
+    createEventPending.current = true;
+    try {
+      const data = workspace.current;
+      if (!data) throw new Error('Les calendriers ne sont pas encore disponibles.');
+      const calendar = data.calendars.find((item) => item.id === request.calendar_id);
+      if (!calendar) throw new Error('Sélectionne un calendrier disponible.');
 
-    const created = await createEvent(request, calendar.account_id || undefined);
-    const events = uniqueEvents([...data.events, created]).sort((left, right) => eventStart(left) - eventStart(right));
-    const nextData = { ...data, events };
-    workspace.current = nextData;
-    setResource({ status: 'ready', data: nextData, error: null });
-    await loadEventContext(created.id, nextData);
-    return created;
+      const created = await createEvent(request, calendar.account_id || undefined);
+      const events = uniqueEvents([...data.events, created]).sort((left, right) => eventStart(left) - eventStart(right));
+      const nextData = { ...data, events };
+      workspace.current = nextData;
+      setResource({ status: 'ready', data: nextData, error: null });
+      await loadEventContext(meetingEventKey(created), nextData);
+      return created;
+    } finally {
+      createEventPending.current = false;
+    }
   }, [loadEventContext]);
 
   const createMeetingNote = useCallback(async (eventId: string, contactId: string, description: string) => {
-    const data = workspace.current;
-    const event = data?.events.find((item) => item.id === eventId);
-    const contact = data?.contacts.find((item) => item.id === contactId);
-    if (!data || !event || !contact || !contactsForEvent(event, data.contacts).some((item) => item.id === contactId)) {
-      throw new Error('Le contact n’est pas relié à ce rendez-vous par son adresse email.');
+    const cleanDescription = description.trim();
+    if (!cleanDescription) throw new Error('La note ne peut pas être vide.');
+    if (createNotePending.current) throw new Error('L’enregistrement de la note est déjà en cours.');
+    createNotePending.current = true;
+    try {
+      const data = workspace.current;
+      const event = data ? findEvent(data.events, eventId) : undefined;
+      const contact = data?.contacts.find((item) => item.id === contactId);
+      if (!data || !event || !contact || !contactsForEvent(event, data.contacts).some((item) => item.id === contactId)) {
+        throw new Error('Le contact n’est pas relié à ce rendez-vous par son adresse email.');
+      }
+      const created = await createActivity({
+        contact_id: contactId,
+        type: 'note',
+        title: `Note rendez-vous : ${event.summary}`,
+        description: cleanDescription,
+        extra_data: JSON.stringify({ calendar_event_id: event.id, calendar_id: event.calendar_id }),
+      });
+      setEventResource((current) => current?.status === 'ready'
+        ? { ...current, data: { ...current.data, activities: [created, ...current.data.activities] } }
+        : current);
+      return created;
+    } finally {
+      createNotePending.current = false;
     }
-    const created = await createActivity({
-      contact_id: contactId,
-      type: 'note',
-      title: `Note rendez-vous : ${event.summary}`,
-      description: description.trim(),
-      extra_data: JSON.stringify({ calendar_event_id: event.id, calendar_id: event.calendar_id }),
-    });
-    setEventResource((current) => current?.status === 'ready'
-      ? { ...current, data: { ...current.data, activities: [created, ...current.data.activities] } }
-      : current);
-    return created;
   }, []);
 
   useEffect(() => {

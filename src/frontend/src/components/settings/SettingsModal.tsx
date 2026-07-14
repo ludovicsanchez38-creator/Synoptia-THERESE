@@ -23,10 +23,12 @@ import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
+import { resolveClassicSettingsTab, type ClassicSettingsTab } from '../../lib/classicNavigation';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  requestedTab?: ClassicSettingsTab | null;
 }
 
 type Tab = 'profile' | 'ai' | 'services' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
@@ -42,8 +44,10 @@ const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: 
   { id: 'about', label: 'À propos', icon: Info },
 ];
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('profile');
+export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<Tab>(
+    () => requestedTab ?? resolveClassicSettingsTab(window.location.search) ?? 'profile',
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +124,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [stats, setStats] = useState<api.Stats | null>(null);
 
   // Chargement des paramètres à l'ouverture
+  useEffect(() => {
+    if (isOpen && requestedTab) setActiveTab(requestedTab);
+  }, [isOpen, requestedTab]);
+
   useEffect(() => {
     if (isOpen) {
       loadSettings();
@@ -602,6 +610,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             aria-modal="true"
             aria-label="Paramètres"
             data-testid="settings-modal"
+            data-active-tab={activeTab}
+            data-requested-tab={requestedTab ?? ''}
             variants={modalVariants}
             initial="initial"
             animate="animate"
@@ -641,7 +651,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </label>
                 </div>
                 {ALL_TABS
-                  .filter((tab) => !tab.contributeurOnly || isContributeur)
+                  .filter((tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab)
                   .map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;

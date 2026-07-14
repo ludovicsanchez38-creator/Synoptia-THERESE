@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _follow_up_to_response(fu: EmailFollowUp) -> FollowUpResponse:
+def _follow_up_to_response(
+    fu: EmailFollowUp,
+    message: EmailMessage | None = None,
+    contact: Contact | None = None,
+) -> FollowUpResponse:
     """Convertit un EmailFollowUp en FollowUpResponse."""
     return FollowUpResponse(
         id=fu.id,
@@ -34,6 +38,9 @@ def _follow_up_to_response(fu: EmailFollowUp) -> FollowUpResponse:
         note=fu.note,
         status=fu.status,
         created_at=fu.created_at,
+        email_subject=message.subject if message else None,
+        email_from=(message.from_name or message.from_email) if message else None,
+        contact_name=contact.display_name if contact else None,
     )
 
 
@@ -68,7 +75,7 @@ async def create_follow_up(
 
     logger.info("Follow-up créé : %s (échéance %s)", follow_up.id, follow_up.due_date)
 
-    return _follow_up_to_response(follow_up)
+    return _follow_up_to_response(follow_up, message, contact if request.contact_id else None)
 
 
 @router.get("", response_model=list[FollowUpResponse])
@@ -93,7 +100,25 @@ async def list_follow_ups(
     result = await session.execute(statement)
     follow_ups = result.scalars().all()
 
-    return [_follow_up_to_response(fu) for fu in follow_ups]
+    message_ids = {fu.email_message_id for fu in follow_ups}
+    contact_ids = {fu.contact_id for fu in follow_ups if fu.contact_id}
+    messages = (
+        await session.execute(select(EmailMessage).where(EmailMessage.id.in_(message_ids)))
+    ).scalars().all() if message_ids else []
+    contacts = (
+        await session.execute(select(Contact).where(Contact.id.in_(contact_ids)))
+    ).scalars().all() if contact_ids else []
+    messages_by_id = {message.id: message for message in messages}
+    contacts_by_id = {contact.id: contact for contact in contacts}
+
+    return [
+        _follow_up_to_response(
+            fu,
+            messages_by_id.get(fu.email_message_id),
+            contacts_by_id.get(fu.contact_id) if fu.contact_id else None,
+        )
+        for fu in follow_ups
+    ]
 
 
 @router.get("/due", response_model=list[FollowUpResponse])
@@ -115,7 +140,15 @@ async def list_due_follow_ups(
     result = await session.execute(statement)
     follow_ups = result.scalars().all()
 
-    return [_follow_up_to_response(fu) for fu in follow_ups]
+    message_ids = {fu.email_message_id for fu in follow_ups}
+    messages = (
+        await session.execute(select(EmailMessage).where(EmailMessage.id.in_(message_ids)))
+    ).scalars().all() if message_ids else []
+    messages_by_id = {message.id: message for message in messages}
+    return [
+        _follow_up_to_response(fu, messages_by_id.get(fu.email_message_id))
+        for fu in follow_ups
+    ]
 
 
 @router.put("/{follow_up_id}", response_model=FollowUpResponse)
@@ -153,7 +186,9 @@ async def update_follow_up(
     await session.commit()
     await session.refresh(follow_up)
 
-    return _follow_up_to_response(follow_up)
+    message = await session.get(EmailMessage, follow_up.email_message_id)
+    contact = await session.get(Contact, follow_up.contact_id) if follow_up.contact_id else None
+    return _follow_up_to_response(follow_up, message, contact)
 
 
 @router.delete("/{follow_up_id}")

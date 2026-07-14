@@ -161,9 +161,11 @@ export async function updateEvent(
   eventId: string,
   req: UpdateEventRequest,
   calendarId: string,
-  accountId: string
+  accountId?: string
 ): Promise<CalendarEvent> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?calendar_id=${calendarId}&account_id=${accountId}`, {
+  const params = new URLSearchParams({ calendar_id: calendarId });
+  if (accountId) params.set('account_id', accountId);
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?${params}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -172,8 +174,10 @@ export async function updateEvent(
   return response.json();
 }
 
-export async function deleteEvent(eventId: string, calendarId: string, accountId: string): Promise<any> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?calendar_id=${calendarId}&account_id=${accountId}`, {
+export async function deleteEvent(eventId: string, calendarId: string, accountId?: string): Promise<any> {
+  const params = new URLSearchParams({ calendar_id: calendarId });
+  if (accountId) params.set('account_id', accountId);
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?${params}`, {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -191,8 +195,11 @@ export async function quickAddEvent(text: string, calendarId: string, accountId:
 }
 
 // Sync
-export async function syncCalendar(accountId: string): Promise<CalendarSyncResponse> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/sync?account_id=${accountId}`, {
+export async function syncCalendar(accountId?: string): Promise<CalendarSyncResponse> {
+  const params = new URLSearchParams();
+  if (accountId) params.set('account_id', accountId);
+  const query = params.size > 0 ? `?${params}` : '';
+  const response = await apiFetch(`${API_BASE}/api/calendar/sync${query}`, {
     method: 'POST',
   });
   if (!response.ok) {

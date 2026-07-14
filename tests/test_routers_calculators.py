@@ -61,6 +61,16 @@ class TestROICalculator:
         data = response.json()
         assert data["roi_percent"] == 0.0
 
+    @pytest.mark.asyncio
+    async def test_roi_extreme_result_rejected_instead_of_null(self, client: AsyncClient):
+        response = await client.post("/api/calc/roi", json={
+            "investment": 1e-308,
+            "gain": 1e308,
+        })
+
+        assert response.status_code == 400
+        assert "dépasse les limites" in str(response.json())
+
 
 class TestICECalculator:
     """Tests for US-CALC-02: ICE scoring."""
@@ -159,6 +169,18 @@ class TestRICECalculator:
 
         assert response.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_rice_extreme_result_rejected_instead_of_null(self, client: AsyncClient):
+        response = await client.post("/api/calc/rice", json={
+            "reach": 1e308,
+            "impact": 3,
+            "confidence": 100,
+            "effort": 1e-308,
+        })
+
+        assert response.status_code == 400
+        assert "dépasse les limites" in str(response.json())
+
 
 class TestNPVCalculator:
     """Tests for US-CALC-04: NPV calculation."""
@@ -203,6 +225,17 @@ class TestNPVCalculator:
 
         assert response.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_npv_extreme_result_rejected_instead_of_null(self, client: AsyncClient):
+        response = await client.post("/api/calc/npv", json={
+            "initial_investment": 0,
+            "cash_flows": [1e308, 1e308],
+            "discount_rate": 0,
+        })
+
+        assert response.status_code == 400
+        assert "dépasse les limites" in str(response.json())
+
 
 class TestBreakEvenCalculator:
     """Tests for US-CALC-05: Break-even calculation."""
@@ -244,6 +277,17 @@ class TestBreakEvenCalculator:
 
         # Should fail - division by zero margin
         assert response.status_code in [400, 422]
+
+    @pytest.mark.asyncio
+    async def test_breakeven_extreme_result_rejected_instead_of_null(self, client: AsyncClient):
+        response = await client.post("/api/calc/break-even", json={
+            "fixed_costs": 1e308,
+            "variable_cost_per_unit": 0.9999999999999999,
+            "price_per_unit": 1,
+        })
+
+        assert response.status_code == 400
+        assert "dépasse les limites" in str(response.json())
 
 
 class TestCalculatorsHelp:

@@ -113,6 +113,46 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("ALTER TABLE messages ADD COLUMN extra_data TEXT")
             conn.commit()
             logger.info("Migration auto : colonne 'extra_data' ajoutée à la table messages")
+        # 0.40 : historique Board reconstructible (sources + usage de synthèse)
+        cursor = conn.execute("PRAGMA table_info(board_decisions)")
+        board_columns = {row[1] for row in cursor.fetchall()}
+        board_additions = {
+            "web_sources": "TEXT NOT NULL DEFAULT '[]'",
+            "synthesis_usage": "TEXT NOT NULL DEFAULT '{}'",
+        }
+        for column_name, definition in board_additions.items():
+            if board_columns and column_name not in board_columns:
+                conn.execute(
+                    f"ALTER TABLE board_decisions ADD COLUMN {column_name} {definition}"
+                )
+                conn.commit()
+                logger.info(
+                    "Migration auto : colonne '%s' ajoutée à board_decisions",
+                    column_name,
+                )
+        # 0.40 : journal Atelier reconstructible après redémarrage.
+        cursor = conn.execute("PRAGMA table_info(agent_tasks)")
+        agent_task_columns = {row[1] for row in cursor.fetchall()}
+        agent_task_additions = {
+            "run_phase": "TEXT",
+            "plan": "TEXT",
+            "test_results": "TEXT",
+            "explanation": "TEXT",
+            "events": "TEXT",
+            "agent_outputs": "TEXT",
+            "base_branch": "TEXT",
+            "commit_hash": "TEXT",
+        }
+        for column_name, definition in agent_task_additions.items():
+            if agent_task_columns and column_name not in agent_task_columns:
+                conn.execute(
+                    f"ALTER TABLE agent_tasks ADD COLUMN {column_name} {definition}"
+                )
+                conn.commit()
+                logger.info(
+                    "Migration auto : colonne '%s' ajoutée à agent_tasks",
+                    column_name,
+                )
         # US-017 : purge_excluded sur contacts
         cursor = conn.execute("PRAGMA table_info(contacts)")
         contact_columns = [row[1] for row in cursor.fetchall()]
@@ -185,7 +225,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "b7c8d9e0f1a2"
+ALEMBIC_HEAD_REVISION = "d9e0f1a2b3c4"
 
 
 def ensure_alembic_stamp(db_path) -> None:

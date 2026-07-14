@@ -202,16 +202,29 @@ class UserCommandsService:
         return cmd
 
     def delete_command(self, name: str) -> bool:
-        """Supprime une commande (deplace vers ~/.Trash)."""
+        """Archive une commande dans la Corbeille, avec un repli local réversible."""
         filepath = self._command_path(name)
         if not filepath.exists():
             return False
 
         trash_dir = Path.home() / ".Trash"
-        if trash_dir.exists():
-            shutil.move(str(filepath), str(trash_dir / filepath.name))
-        else:
-            filepath.unlink()
+        fallback_dir = self._commands_dir / ".trash"
+
+        def available_destination(directory: Path) -> Path:
+            destination = directory / filepath.name
+            if not destination.exists():
+                return destination
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            return directory / f"{filepath.stem}-{timestamp}{filepath.suffix}"
+
+        try:
+            if not trash_dir.exists():
+                raise OSError("La Corbeille système n'est pas disponible")
+            shutil.move(str(filepath), str(available_destination(trash_dir)))
+        except OSError as exc:
+            fallback_dir.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(filepath), str(available_destination(fallback_dir)))
+            logger.warning("System trash unavailable, command archived locally: %s", exc)
 
         logger.info(f"Deleted user command: {name}")
         return True

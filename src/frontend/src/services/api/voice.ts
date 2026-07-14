@@ -116,7 +116,10 @@ async function resolveUseLocalForTranscription(): Promise<boolean> {
   return false;
 }
 
-export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+export async function transcribeAudio(
+  audioBlob: Blob,
+  filename = 'recording.webm',
+): Promise<string> {
   // Voix locale activée : l'audio ne quitte JAMAIS la machine. Pas de repli
   // cloud silencieux en cas d'échec - ce serait trahir le choix de l'utilisateur.
   const useLocal = await resolveUseLocalForTranscription();
@@ -125,7 +128,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
     : `${API_BASE}/api/voice/transcribe`;
 
   const formData = new FormData();
-  formData.append('audio', audioBlob, 'recording.webm');
+  formData.append('audio', audioBlob, filename);
 
   const response = await apiFetch(endpoint, {
     method: 'POST',
@@ -139,4 +142,18 @@ export async function transcribeAudio(audioBlob: Blob): Promise<string> {
 
   const data = await response.json() as TranscriptionResponse;
   return data.text;
+}
+
+/** Génère un WAV avec Piper. Cette route est exclusivement locale. */
+export async function synthesizeSpeech(text: string, voice = 'fr'): Promise<Blob> {
+  const response = await apiFetch(`${API_BASE}/api/voice/tts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice }),
+  });
+  if (!response.ok) {
+    const message = await response.text().catch(() => null);
+    throw new ApiError(response.status, response.statusText, message || undefined);
+  }
+  return response.blob();
 }

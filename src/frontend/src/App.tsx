@@ -179,15 +179,16 @@ function ApplicationBootstrap() {
           Aller au contenu principal
         </a>
         {interfaceMode === 'conversation-canvas' ? (
-          <Suspense fallback={<div className="h-screen w-screen bg-[#F3F6FC]" />}>
+          <Suspense fallback={<div className="h-screen w-screen bg-bg" />}>
             <ConversationCanvasPrototype />
           </Suspense>
         ) : (
-          <>
-            <ChatLayout />
-            <ActionPanel />
-          </>
+          <ChatLayout />
         )}
+
+        {/* Le suivi des actions appartient à la coquille commune. Une action
+            lancée depuis l’interface unifiée reste donc visible sans bascule. */}
+        <ActionPanel />
 
         {/* Les confirmations sensibles appartiennent à la coquille commune :
             elles restent visibles quelle que soit l'interface active. */}

@@ -62,9 +62,22 @@ export interface BoardDecisionDetail {
     name: string;
     emoji: string;
     content: string;
+    provider?: string;
+    model?: string;
+    input_tokens?: number;
+    output_tokens?: number;
+    cost_eur?: number;
   }>;
   synthesis: BoardSynthesis;
   mode?: string;
+  web_sources?: Array<{ title: string; url: string; snippet: string }>;
+  synthesis_usage?: {
+    provider?: string;
+    model?: string;
+    input_tokens?: number;
+    output_tokens?: number;
+    cost_eur?: number;
+  };
   created_at: string;
 }
 

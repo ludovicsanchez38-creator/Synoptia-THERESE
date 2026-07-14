@@ -72,18 +72,18 @@ class SwarmOrchestrator:
         5. L'utilisateur review dans l'UI
         """
         # --- Phase 1 : Thérèse analyse ---
+        katia_config = get_agent_config("katia")
+        katia_tools = AgentToolExecutor(self.source_path)
+        katia_model = _get_agent_model("katia")
+        katia_runtime = AgentRuntime(katia_config, katia_tools, THERESE_TOOLS, model_override=katia_model)
         yield AgentStreamChunk(
             type="agent_start",
             agent="katia",
             content="Analyse de ta demande...",
             task_id=task_id,
             phase="spec",
+            model=katia_model or katia_config.default_model,
         )
-
-        katia_config = get_agent_config("katia")
-        katia_tools = AgentToolExecutor(self.source_path)
-        katia_model = _get_agent_model("katia")
-        katia_runtime = AgentRuntime(katia_config, katia_tools, THERESE_TOOLS, model_override=katia_model)
 
         # Thérèse traite le message
         spec_content = ""
@@ -189,12 +189,15 @@ class SwarmOrchestrator:
         worktree_path = Path(tempfile.gettempdir()) / f"therese-agent-{task_id}"
 
         # Créer la branche de travail
+        zezette_config = get_agent_config("zezette")
+        zezette_model = _get_agent_model("zezette")
         yield AgentStreamChunk(
             type="agent_start",
             agent="zezette",
             content=f"Création de la branche {branch_name}...",
             task_id=task_id,
             phase="implementation",
+            model=zezette_model or zezette_config.default_model,
         )
 
         if not await self.git.create_worktree(worktree_path, branch_name, original_branch):
@@ -214,9 +217,7 @@ class SwarmOrchestrator:
 
         try:
             # Lancer Zézette avec la spec dans le worktree isolé
-            zezette_config = get_agent_config("zezette")
             zezette_tools = AgentToolExecutor(str(worktree_path), git_service=worktree_git)
-            zezette_model = _get_agent_model("zezette")
             zezette_runtime = AgentRuntime(
                 zezette_config,
                 zezette_tools,
@@ -305,6 +306,8 @@ Tu es sur la branche `{branch_name}`. Implémente les changements demandés.
             files_changed=[f["file_path"] for f in files_changed],
             diff_summary=diff_stat,
             phase="review",
+            base_branch=original_branch,
+            commit_hash=commit_hash,
         )
 
         # --- Phase 5 : Thérèse explique les changements ---

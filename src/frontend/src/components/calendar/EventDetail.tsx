@@ -32,12 +32,12 @@ export function EventDetail() {
   const event = events.find((evt) => evt.id === currentEventId);
 
   async function handleDelete() {
-    if (!event || !currentAccountId || !confirm('Supprimer cet événement ?')) return;
+    if (!event || !confirm('Supprimer cet événement ?')) return;
 
     setDeleting(true);
 
     try {
-      await api.deleteEvent(event.id, event.calendar_id, currentAccountId);
+      await api.deleteEvent(event.id, event.calendar_id, currentAccountId || undefined);
       removeEvent(event.id);
       setCurrentEvent(null);
     } catch (err) {

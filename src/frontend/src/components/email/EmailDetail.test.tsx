@@ -7,10 +7,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const mockGetEmailMessage = vi.fn();
 const mockUpdateMessage = vi.fn();
+const mockCreateFollowUp = vi.fn();
 
 let storeMessages: Array<Record<string, unknown>> = [];
 
@@ -18,6 +19,7 @@ vi.mock('../../services/api', () => ({
   getEmailMessage: (...a: unknown[]) => mockGetEmailMessage(...a),
   modifyEmailMessage: vi.fn().mockResolvedValue({}),
   deleteEmailMessage: vi.fn().mockResolvedValue({}),
+  createFollowUp: (...a: unknown[]) => mockCreateFollowUp(...a),
 }));
 
 vi.mock('../../stores/emailStore', () => ({
@@ -59,6 +61,7 @@ function makeMessage(overrides: Record<string, unknown> = {}) {
 describe("BUG-102 - corps du mail chargé à l'ouverture", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCreateFollowUp.mockResolvedValue({});
   });
 
   it('récupère le corps complet quand il manque (liste = métadonnées seules)', async () => {
@@ -89,5 +92,22 @@ describe("BUG-102 - corps du mail chargé à l'ouverture", () => {
 
     await new Promise((r) => setTimeout(r, 20));
     expect(mockGetEmailMessage).not.toHaveBeenCalled();
+  });
+
+  it('crée une relance explicite depuis le message', async () => {
+    storeMessages = [makeMessage({ body_plain: 'déjà chargé' })];
+    const { EmailDetail } = await import('./EmailDetail');
+    render(<EmailDetail accountId="acc1" messageId="m1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Créer une relance' }));
+    fireEvent.change(screen.getByLabelText('Échéance de la relance'), { target: { value: '2026-07-20' } });
+    fireEvent.change(screen.getByLabelText('Note de la relance'), { target: { value: 'Rappeler Camille' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer la relance' }));
+
+    await waitFor(() => expect(mockCreateFollowUp).toHaveBeenCalledWith({
+      email_message_id: 'm1',
+      due_date: '2026-07-20T09:00:00',
+      note: 'Rappeler Camille',
+    }));
   });
 });

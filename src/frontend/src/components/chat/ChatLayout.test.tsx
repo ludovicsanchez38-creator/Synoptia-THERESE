@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatLayout } from './ChatLayout';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
+import { usePanelStore } from '../../stores/panelStore';
 
 vi.mock('./ChatHeader', () => ({
   // Mock minimal exposant le bouton Documents : teste le câblage ChatLayout
@@ -86,6 +87,7 @@ describe('ChatLayout', () => {
     localStorage.setItem('therese-skip-dashboard', 'true');
     usePersonalisationStore.setState({ skipDashboard: true });
     useNavigationStore.setState({ activeView: 'chat', history: [], initializeView: () => {} });
+    usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
   });
 
   it('D2 : le bouton Documents du header navigue vers la vue documents', async () => {
@@ -109,5 +111,14 @@ describe('ChatLayout', () => {
 
     await waitFor(() => expect(useNavigationStore.getState().activeView).toBe('documents'));
     expect(await screen.findByTestId('documents-list-view')).toBeInTheDocument();
+  });
+
+  it('conserve l’onglet de réglages demandé jusqu’au montage différé de la modale', async () => {
+    window.history.replaceState({}, '', '/?interface=classic&view=chat&action=settings.open&settings_tab=advanced');
+    render(<ChatLayout />);
+
+    await waitFor(() => expect(usePanelStore.getState().showSettings).toBe(true));
+    expect(usePanelStore.getState().requestedSettingsTab).toBe('advanced');
+    expect(new URL(window.location.href).searchParams.has('settings_tab')).toBe(false);
   });
 });

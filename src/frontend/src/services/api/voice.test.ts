@@ -21,6 +21,7 @@ import { apiFetch } from './core';
 import {
   getVoiceLocalPreference,
   setVoiceLocalPreferred,
+  synthesizeSpeech,
   transcribeAudio,
 } from './voice';
 
@@ -98,6 +99,19 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
     expect(calledUrls()[0]).toContain('/api/voice/local/transcribe');
   });
 
+  it('conserve le nom et le format du fichier audio importé', async () => {
+    setVoiceLocalPreferred(true);
+    mockedFetch.mockResolvedValueOnce(okJson({ text: 'réunion' }));
+    const imported = new Blob(['audio'], { type: 'audio/mp4' });
+
+    await transcribeAudio(imported, 'réunion.m4a');
+
+    const options = mockedFetch.mock.calls[0][1] as RequestInit;
+    const formData = options.body as FormData;
+    const audio = formData.get('audio') as File;
+    expect(audio.name).toBe('réunion.m4a');
+  });
+
   it("préférence 'false' explicite -> Groq, jamais le local ni le status", async () => {
     setVoiceLocalPreferred(false);
     mockedFetch.mockResolvedValueOnce(okJson({ text: 'cloud' }));
@@ -154,5 +168,15 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
 
     expect(calledUrls()[1]).toContain('/api/voice/transcribe');
     expect(getVoiceLocalPreference()).toBeNull();
+  });
+});
+
+describe('synthesizeSpeech', () => {
+  it('appelle uniquement la synthèse vocale locale', async () => {
+    const wav = new Blob(['wav'], { type: 'audio/wav' });
+    mockedFetch.mockResolvedValueOnce({ ok: true, blob: async () => wav } as Response);
+
+    await expect(synthesizeSpeech('Bonjour')).resolves.toBe(wav);
+    expect(calledUrls()[0]).toContain('/api/voice/tts');
   });
 });

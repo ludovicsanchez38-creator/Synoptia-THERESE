@@ -13,7 +13,7 @@ import uuid
 from typing import Any
 
 # Outils à effet de bord sortant/irréversible : exécution soumise à validation.
-SENSITIVE_TOOL_NAMES: set[str] = {"send_email"}
+SENSITIVE_TOOL_NAMES: set[str] = {"send_email", "create_calendar_event"}
 
 # confirmation_id -> (tool_name, arguments)
 _pending: dict[str, tuple[str, dict[str, Any]]] = {}

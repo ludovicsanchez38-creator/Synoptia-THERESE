@@ -4,10 +4,12 @@ THÉRÈSE v2 - Pydantic Schemas
 Request/Response models for API endpoints.
 """
 
-from datetime import datetime
+import re
+from datetime import date, datetime
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # ============================================================
 # Chat Schemas
@@ -45,6 +47,7 @@ class ChatResponse(BaseModel):
     model: str | None = None
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
+    confirmations: list[dict] | None = None  # Mutations préparées, encore non exécutées
     created_at: datetime
 
 
@@ -618,6 +621,48 @@ class CreateEventRequest(BaseModel):
     # Fuseau IANA du poste (ex: "America/Toronto"). Indispensable pour que Google
     # interprète l'heure saisie dans le bon fuseau (sinon décalage selon le serveur).
     timezone: str | None = None
+
+    @model_validator(mode="after")
+    def validate_event_window(self):
+        """Refuse les événements ambigus ou incohérents avant tout fournisseur."""
+        self.summary = self.summary.strip()
+        if not self.summary:
+            raise ValueError("Le titre de l'événement est obligatoire")
+
+        timed_values = (self.start_datetime, self.end_datetime)
+        dated_values = (self.start_date, self.end_date)
+        timed_any, timed_complete = any(timed_values), all(timed_values)
+        dated_any, dated_complete = any(dated_values), all(dated_values)
+        if timed_any and not timed_complete:
+            raise ValueError("Le début et la fin horodatés sont obligatoires ensemble")
+        if dated_any and not dated_complete:
+            raise ValueError("Les dates de début et de fin sont obligatoires ensemble")
+        if timed_complete == dated_complete:
+            raise ValueError("Renseigne soit des horaires, soit des dates de journée entière")
+
+        try:
+            if timed_complete:
+                start = datetime.fromisoformat(self.start_datetime.replace("Z", "+00:00"))
+                end = datetime.fromisoformat(self.end_datetime.replace("Z", "+00:00"))
+            else:
+                start = date.fromisoformat(self.start_date)
+                end = date.fromisoformat(self.end_date)
+        except ValueError as exc:
+            raise ValueError("Format de date ou d'heure invalide") from exc
+        if end <= start:
+            raise ValueError("La fin doit être postérieure au début")
+
+        if self.timezone:
+            try:
+                ZoneInfo(self.timezone)
+            except ZoneInfoNotFoundError as exc:
+                raise ValueError("Fuseau horaire IANA invalide") from exc
+
+        for attendee in self.attendees or []:
+            address = attendee.strip()
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", address):
+                raise ValueError(f"Adresse participant invalide : {attendee}")
+        return self
 
 
 class UpdateEventRequest(BaseModel):
