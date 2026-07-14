@@ -50,7 +50,7 @@ from app.services.performance import get_performance_monitor, get_search_index
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
 from app.services.slash_commands import (
-    execute_slash_command,
+    execute_slash_command_outcome,
     parse_inline_commands,
     parse_slash_command,
 )
@@ -746,14 +746,16 @@ async def send_message(
             client_action=client_action,
         )
 
-    # Court-circuit deterministe : /contact, /projet, /rdv s'executent en CRUD
-    # direct, sans LLM ni boucle d'outils (regression #bugs-21052026 : creation
-    # de projets EN MASSE via interpretation LLM des commandes /).
+    # Court-circuit déterministe : /contact et /projet s'exécutent sans LLM ;
+    # /rdv prépare une mutation qui reste bloquée derrière la confirmation.
     # Branche produire : aucun parseur ne retouche le message (tranche 0b).
     parsed_cmd = None if produce_prompt is not None else parse_slash_command(request.message)
     if parsed_cmd is not None:
         cmd_name, cmd_rest = parsed_cmd
-        confirmation = await execute_slash_command(cmd_name, cmd_rest, session)
+        command_outcome = await execute_slash_command_outcome(
+            cmd_name, cmd_rest, session
+        )
+        confirmation = command_outcome.content
         user_message.extra_data = json.dumps({"deterministic": True})
         assistant_message = Message(
             conversation_id=conversation.id,
@@ -766,6 +768,15 @@ async def send_message(
 
         if request.stream:
             async def _command_stream() -> AsyncGenerator[str, None]:
+                if command_outcome.confirmation is not None:
+                    confirm_chunk = StreamChunk(
+                        type="confirmation_required",
+                        content="",
+                        conversation_id=conversation.id,
+                        tool_name=command_outcome.confirmation["tool_name"],
+                        confirmation=command_outcome.confirmation,
+                    )
+                    yield f"data: {json.dumps(confirm_chunk.model_dump())}\n\n"
                 text_chunk = StreamChunk(
                     type="text", content=confirmation, conversation_id=conversation.id
                 )
@@ -793,13 +804,19 @@ async def send_message(
             conversation_id=conversation.id,
             content=confirmation,
             created_at=assistant_message.created_at,
+            confirmations=(
+                [command_outcome.confirmation]
+                if command_outcome.confirmation is not None
+                else None
+            ),
         )
 
     # Directives inline [action: arguments] (suggestion Dr_logic-3D) : les mêmes
     # commandes déterministes, insérables n'importe où dans le prompt et
-    # cumulables. Exécutées AVANT le LLM ; leurs confirmations s'affichent en
-    # tête de réponse et le LLM est informé de ce qui est déjà fait.
+    # cumulables. Les mutations Agenda sont seulement préparées ; leurs cartes
+    # de confirmation s'affichent avant toute exécution.
     inline_preamble = ""
+    inline_pending_confirmations: list[dict] = []
     actions_context: str | None = None
     llm_user_message = request.message
     if produce_prompt is not None:
@@ -810,9 +827,15 @@ async def send_message(
     else:
         cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if inline_cmds:
-        confirmations = [
-            await execute_slash_command(name, rest, session)
+        command_outcomes = [
+            await execute_slash_command_outcome(name, rest, session)
             for name, rest in inline_cmds
+        ]
+        confirmations = [outcome.content for outcome in command_outcomes]
+        inline_pending_confirmations = [
+            outcome.confirmation
+            for outcome in command_outcomes
+            if outcome.confirmation is not None
         ]
         inline_block = (
             "\n".join(f"- {c}" for c in confirmations)
@@ -834,6 +857,15 @@ async def send_message(
 
             if request.stream:
                 async def _inline_stream() -> AsyncGenerator[str, None]:
+                    for pending_confirmation in inline_pending_confirmations:
+                        confirm_chunk = StreamChunk(
+                            type="confirmation_required",
+                            content="",
+                            conversation_id=conversation.id,
+                            tool_name=pending_confirmation["tool_name"],
+                            confirmation=pending_confirmation,
+                        )
+                        yield f"data: {json.dumps(confirm_chunk.model_dump())}\n\n"
                     text_chunk = StreamChunk(
                         type="text", content=inline_block, conversation_id=conversation.id
                     )
@@ -861,14 +893,16 @@ async def send_message(
                 conversation_id=conversation.id,
                 content=inline_block,
                 created_at=assistant_message.created_at,
+                confirmations=inline_pending_confirmations or None,
             )
 
         # Message mixte : le LLM reçoit le message nettoyé + le récap des actions
         inline_preamble = inline_block + "\n\n"
         llm_user_message = cleaned_message
         actions_context = (
-            "ACTIONS DÉJÀ EXÉCUTÉES par des commandes déterministes (confirmées, "
-            "ne PAS les refaire ni les remettre en question) :\n" + inline_block
+            "RÉSULTATS DES COMMANDES DÉTERMINISTES. Certaines actions peuvent "
+            "être seulement préparées et attendre la confirmation humaine ; ne "
+            "jamais les présenter comme exécutées :\n" + inline_block
         )
 
     # Tranche 3 Variables V4 : substitution {nom} sur le SEUL texte destiné
@@ -936,6 +970,7 @@ async def send_message(
                 skill_id=request.skill_id, file_paths=request.file_paths,
                 disable_tools=request.disable_tools,
                 preamble=inline_preamble, actions_context=actions_context,
+                pending_confirmations=inline_pending_confirmations,
                 allow_file_commands=produce_prompt is None,
                 detection_message=detection_message,
             ),
@@ -1071,6 +1106,7 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
         created_at=assistant_message.created_at,
+        confirmations=inline_pending_confirmations or None,
     )
 
 
@@ -1084,6 +1120,7 @@ async def _stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
+    pending_confirmations: list[dict] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
@@ -1097,6 +1134,7 @@ async def _stream_response(
             skill_id=skill_id, file_paths=file_paths,
             disable_tools=disable_tools,
             preamble=preamble, actions_context=actions_context,
+            pending_confirmations=pending_confirmations,
             allow_file_commands=allow_file_commands,
             detection_message=detection_message,
         ):
@@ -1119,10 +1157,20 @@ async def _do_stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
+    pending_confirmations: list[dict] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    for pending_confirmation in pending_confirmations or []:
+        confirm_chunk = StreamChunk(
+            type="confirmation_required",
+            content="",
+            conversation_id=conversation_id,
+            tool_name=pending_confirmation["tool_name"],
+            confirmation=pending_confirmation,
+        )
+        yield f"data: {json.dumps(confirm_chunk.model_dump())}\n\n"
     # BUG-136 : ouvre la collecte des fichiers générés par les OUTILS pendant
     # ce tour (generate_document, appelable N fois par le modèle) - drainée
     # avant `done` pour émettre une carte par fichier.
@@ -1718,12 +1766,21 @@ async def _execute_tools_and_continue(
         # "Executing tool: send_email" laissait croire à un envoi réel alors que
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
+            pending_arguments = dict(tc.arguments)
+            if tc.name.split("__", 1)[-1] == "create_calendar_event" and session is not None:
+                from app.services.workspace_tools import (
+                    get_calendar_confirmation_destination,
+                )
+
+                pending_arguments["_confirmation_destination"] = (
+                    await get_calendar_confirmation_destination(session)
+                )
             logger.info(
                 f"Outil sensible {tc.name} mis en attente de confirmation utilisateur "
                 f"(NON exécuté) - args: {tc.arguments}"
             )
             sensitive_pending = True
-            confirmation_id = register_pending(tc.name, tc.arguments)
+            confirmation_id = register_pending(tc.name, pending_arguments)
             confirm_chunk = StreamChunk(
                 type="confirmation_required",
                 conversation_id=conversation_id,
@@ -1731,7 +1788,7 @@ async def _execute_tools_and_continue(
                 confirmation={
                     "confirmation_id": confirmation_id,
                     "tool_name": tc.name,
-                    "arguments": tc.arguments,
+                    "arguments": pending_arguments,
                 },
             )
             yield f"data: {json.dumps(confirm_chunk.model_dump())}\n\n"
@@ -2070,6 +2127,10 @@ async def confirm_tool(
 # ============================================================
 
 
+class ConversationRename(BaseModel):
+    title: str
+
+
 @router.get("/conversations", response_model=list[ConversationResponse])
 async def list_conversations(
     limit: int = 50,
@@ -2162,6 +2223,48 @@ async def get_conversation(
         title=conversation.title,
         summary=conversation.summary,
         message_count=message_count,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+    )
+
+
+@router.patch("/conversations/{conversation_id}", response_model=ConversationResponse)
+async def rename_conversation(
+    conversation_id: str,
+    request: ConversationRename,
+    session: AsyncSession = Depends(get_session),
+):
+    """Renomme durablement une conversation sans modifier ses messages."""
+    from datetime import UTC, datetime
+
+    title = request.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Le titre ne peut pas être vide")
+    if len(title) > 120:
+        raise HTTPException(status_code=400, detail="Le titre est limité à 120 caractères")
+
+    result = await session.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    conversation.title = title
+    conversation.updated_at = datetime.now(UTC)
+    session.add(conversation)
+    await session.commit()
+    await session.refresh(conversation)
+    get_search_index().index_conversation(conversation.id, title)
+
+    count_result = await session.execute(
+        select(func.count()).select_from(Message).where(Message.conversation_id == conversation.id)
+    )
+    return ConversationResponse(
+        id=conversation.id,
+        title=conversation.title,
+        summary=conversation.summary,
+        message_count=count_result.scalar() or 0,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
     )

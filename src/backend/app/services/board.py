@@ -98,6 +98,8 @@ class BoardService:
     def __init__(self, session: AsyncSession | None = None):
         self._session = session
         self._web_search = WebSearchService()
+        self._last_web_sources: list[dict[str, str]] = []
+        self._last_synthesis_usage: dict[str, str | int | float] = {}
         # Validation unique au premier usage
         if not BoardService._providers_validated:
             validate_advisor_providers()
@@ -114,6 +116,7 @@ class BoardService:
             Texte formaté avec les résultats de recherche
         """
         try:
+            self._last_web_sources = []
             logger.info(f"Recherche web pour le Board: {question[:50]}...")
             response = await self._web_search.search(question, max_results=5)
 
@@ -124,6 +127,11 @@ class BoardService:
             # Format results for injection
             results_text = "## Recherche Web (informations actualisées)\n\n"
             for i, result in enumerate(response.results, 1):
+                self._last_web_sources.append({
+                    "title": result.title,
+                    "url": result.url,
+                    "snippet": result.snippet,
+                })
                 results_text += f"**{i}. {result.title}**\n"
                 results_text += f"{result.snippet}\n"
                 results_text += f"Source: {result.url}\n\n"
@@ -141,7 +149,7 @@ class BoardService:
         input_text: str,
         output_text: str,
         usage_sink: dict | None = None,
-    ) -> None:
+    ) -> dict[str, str | int | float]:
         """BUG-027 : alimente le token tracker global pour les appels LLM du board.
 
         Sans ça, l'usage quotidien/mensuel sous-comptait les délibérations (le board
@@ -153,15 +161,31 @@ class BoardService:
         usage_sink = usage_sink or {}
         try:
             from app.services.token_tracker import get_token_tracker
-            get_token_tracker().record_usage(
+            input_tokens = usage_sink.get("input_tokens") or len(input_text.split()) * 2
+            output_tokens = usage_sink.get("output_tokens") or len(output_text.split()) * 2
+            record = get_token_tracker().record_usage(
                 conversation_id="board",
                 model=llm_service.config.model,
                 provider=llm_service.config.provider.value,
-                input_tokens=usage_sink.get("input_tokens") or len(input_text.split()) * 2,
-                output_tokens=usage_sink.get("output_tokens") or len(output_text.split()) * 2,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
             )
+            return {
+                "provider": llm_service.config.provider.value,
+                "model": llm_service.config.model,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost_eur": record.cost_eur,
+            }
         except Exception as e:
             logger.debug(f"Board token tracking ignoré: {e}")
+            return {
+                "provider": llm_service.config.provider.value,
+                "model": llm_service.config.model,
+                "input_tokens": usage_sink.get("input_tokens") or len(input_text.split()) * 2,
+                "output_tokens": usage_sink.get("output_tokens") or len(output_text.split()) * 2,
+                "cost_eur": 0.0,
+            }
 
     async def deliberate(
         self,
@@ -273,13 +297,23 @@ class BoardService:
                         f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
                     ) from e
 
+                usage = self._track_usage(
+                    llm_service,
+                    advisor_system + context_msg,
+                    full_content,
+                    usage_sink,
+                ) or {}
                 opinions.append(AdvisorOpinion(
                     role=role,
                     name=config["name"],
                     emoji=config["emoji"],
                     content=full_content,
+                    provider=str(usage.get("provider") or llm_service.config.provider.value),
+                    model=str(usage.get("model") or llm_service.config.model),
+                    input_tokens=int(usage.get("input_tokens") or 0),
+                    output_tokens=int(usage.get("output_tokens") or 0),
+                    cost_eur=float(usage.get("cost_eur") or 0.0),
                 ))
-                self._track_usage(llm_service, advisor_system + context_msg, full_content, usage_sink)
 
                 yield BoardDeliberationChunk(
                     type="advisor_done",
@@ -366,13 +400,23 @@ class BoardService:
                         f"Le conseiller {config['name']} n'a pas pu terminer son avis."
                     ) from e
 
+                usage = self._track_usage(
+                    llm_service,
+                    advisor_system + context_msg,
+                    full_content,
+                    usage_sink,
+                ) or {}
                 opinions_dict[role] = AdvisorOpinion(
                     role=role,
                     name=config["name"],
                     emoji=config["emoji"],
                     content=full_content,
+                    provider=str(usage.get("provider") or llm_service.config.provider.value),
+                    model=str(usage.get("model") or llm_service.config.model),
+                    input_tokens=int(usage.get("input_tokens") or 0),
+                    output_tokens=int(usage.get("output_tokens") or 0),
+                    cost_eur=float(usage.get("cost_eur") or 0.0),
                 )
-                self._track_usage(llm_service, advisor_system + context_msg, full_content, usage_sink)
 
                 await chunk_queue.put(BoardDeliberationChunk(
                     type="advisor_done",
@@ -457,6 +501,8 @@ class BoardService:
                 confidence=synthesis.confidence,
                 recommendation=synthesis.recommendation,
                 mode=request.mode.value,
+                web_sources=json.dumps(self._last_web_sources, ensure_ascii=False),
+                synthesis_usage=json.dumps(self._last_synthesis_usage, ensure_ascii=False),
             )
             self._session.add(db_decision)
             await self._session.commit()
@@ -532,7 +578,12 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         usage_sink: dict = {}
         async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
             full_response += chunk
-        self._track_usage(llm_service, synthesis_prompt, full_response, usage_sink)
+        self._last_synthesis_usage = self._track_usage(
+            llm_service,
+            synthesis_prompt,
+            full_response,
+            usage_sink,
+        ) or {}
 
         # Parse JSON response
         try:
@@ -608,5 +659,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
             opinions=[AdvisorOpinion(**op) for op in opinions_data],
             synthesis=BoardSynthesis(**synthesis_data),
             mode=getattr(db, "mode", "cloud"),
+            web_sources=json.loads(getattr(db, "web_sources", "[]") or "[]"),
+            synthesis_usage=json.loads(getattr(db, "synthesis_usage", "{}") or "{}"),
             created_at=db.created_at,
         )

@@ -215,6 +215,8 @@ class BoardDecisionDB(SQLModel, table=True):
     confidence: str  # high, medium, low (denormalized for quick queries)
     recommendation: str  # Denormalized for quick display
     mode: str = Field(default="cloud")  # cloud or sovereign
+    web_sources: str = Field(default="[]")  # JSON : sources consultées avant délibération
+    synthesis_usage: str = Field(default="{}")  # JSON : modèle, tokens et coût de la synthèse
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 
 

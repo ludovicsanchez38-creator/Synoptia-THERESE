@@ -75,6 +75,33 @@ class TestConversations:
 
         assert response.status_code == 404
 
+    @pytest.mark.asyncio
+    async def test_rename_conversation_is_persisted(self, client: AsyncClient):
+        created = await client.post("/api/chat/conversations", json={"title": "Titre initial"})
+        assert created.status_code == 200
+        conversation_id = created.json()["id"]
+
+        renamed = await client.patch(
+            f"/api/chat/conversations/{conversation_id}",
+            json={"title": "  Titre durable  "},
+        )
+        assert renamed.status_code == 200
+        assert renamed.json()["title"] == "Titre durable"
+
+        reloaded = await client.get(f"/api/chat/conversations/{conversation_id}")
+        assert reloaded.status_code == 200
+        assert reloaded.json()["title"] == "Titre durable"
+
+    @pytest.mark.asyncio
+    async def test_rename_conversation_rejects_empty_title(self, client: AsyncClient):
+        created = await client.post("/api/chat/conversations", json={})
+        conversation_id = created.json()["id"]
+        response = await client.patch(
+            f"/api/chat/conversations/{conversation_id}",
+            json={"title": "   "},
+        )
+        assert response.status_code == 400
+
 
 class TestEphemeralConversations:
     """Tests for US-CHAT-04: Ephemeral conversations."""

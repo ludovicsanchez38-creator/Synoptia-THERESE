@@ -7,7 +7,7 @@ Pytest fixtures and configuration for backend tests.
 import asyncio
 import os
 import sys
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 import pytest_asyncio
@@ -88,9 +88,10 @@ async def client(async_client: AsyncClient) -> AsyncGenerator[AsyncClient, None]
 
 
 @pytest.fixture
-def sync_client() -> TestClient:
+def sync_client() -> Generator[TestClient, None, None]:
     """Create synchronous test client for simple tests."""
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 def pytest_runtest_logreport(report):
@@ -105,3 +106,13 @@ def pytest_runtest_logreport(report):
         print(f"\n[TEST-FAILED] {report.nodeid}", file=sys.stderr, flush=True)
     elif report.outcome == "failed":  # erreur de setup/teardown
         print(f"\n[TEST-ERROR:{report.when}] {report.nodeid}", file=sys.stderr, flush=True)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    """Rend la main après le résumé malgré les threads de clients de test."""
+    if any(arg.startswith("--cov") for arg in sys.argv):
+        return
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(int(exitstatus))

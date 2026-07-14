@@ -150,6 +150,11 @@ class AdvisorOpinion(BaseModel):
     name: str
     emoji: str
     content: str
+    provider: str | None = None
+    model: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cost_eur: float | None = None
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -201,6 +206,8 @@ class BoardDecision(BaseModel):
     opinions: list[AdvisorOpinion]
     synthesis: BoardSynthesis
     mode: str = "cloud"
+    web_sources: list[dict[str, str]] = Field(default_factory=list)
+    synthesis_usage: dict[str, str | int | float] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 

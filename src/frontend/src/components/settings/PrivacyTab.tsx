@@ -6,9 +6,18 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Shield, Database, Clock, UserCheck, HardDrive, Loader2, Download, Trash2, EyeOff } from 'lucide-react';
+import { Archive, Shield, Database, Clock, UserCheck, HardDrive, Loader2, Download, Trash2, EyeOff, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { getPurgeSettings, updatePurgeSettings } from '../../services/api/rgpd';
+import {
+  createBackup,
+  deleteAllData,
+  deleteBackup,
+  downloadAllData,
+  listBackups,
+  restoreBackup,
+  type BackupMetadata,
+} from '../../services/api/data';
 import { VoiceLocalSection } from './VoiceLocalSection';
 
 // Types de données stockées
@@ -40,10 +49,87 @@ export function PrivacyTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [backups, setBackups] = useState<BackupMetadata[]>([]);
+  const [backupLoading, setBackupLoading] = useState(true);
+  const [dataOperation, setDataOperation] = useState<string | null>(null);
+  const [dataMessage, setDataMessage] = useState<string | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
+  const [restoreConfirmation, setRestoreConfirmation] = useState<string | null>(null);
+  const [backupDeleteConfirmation, setBackupDeleteConfirmation] = useState<string | null>(null);
+  const [deleteAllArmed, setDeleteAllArmed] = useState(false);
+  const [deletePhrase, setDeletePhrase] = useState('');
 
   useEffect(() => {
     loadSettings();
+    void refreshBackups();
   }, []);
+
+  async function refreshBackups() {
+    setBackupLoading(true);
+    try {
+      setBackups(await listBackups());
+    } catch (err) {
+      setDataError(err instanceof Error ? err.message : 'Impossible de charger les sauvegardes');
+    } finally {
+      setBackupLoading(false);
+    }
+  }
+
+  async function runDataOperation(name: string, operation: () => Promise<void>) {
+    setDataOperation(name);
+    setDataMessage(null);
+    setDataError(null);
+    try {
+      await operation();
+    } catch (err) {
+      setDataError(err instanceof Error ? err.message : 'L’opération a échoué');
+    } finally {
+      setDataOperation(null);
+    }
+  }
+
+  async function handleExportAll() {
+    await runDataOperation('export', async () => {
+      const result = await downloadAllData();
+      if (result !== 'cancelled') setDataMessage('Export global enregistré.');
+    });
+  }
+
+  async function handleCreateBackup() {
+    await runDataOperation('backup', async () => {
+      await createBackup();
+      await refreshBackups();
+      setDataMessage('Sauvegarde complète créée localement.');
+    });
+  }
+
+  async function handleRestoreBackup(backupName: string) {
+    await runDataOperation(`restore:${backupName}`, async () => {
+      const result = await restoreBackup(backupName);
+      setRestoreConfirmation(null);
+      setDataMessage(result.note || 'Sauvegarde restaurée. Redémarre Thérèse.');
+      await refreshBackups();
+    });
+  }
+
+  async function handleDeleteBackup(backupName: string) {
+    await runDataOperation(`delete-backup:${backupName}`, async () => {
+      await deleteBackup(backupName);
+      setBackupDeleteConfirmation(null);
+      setDataMessage('Sauvegarde supprimée.');
+      await refreshBackups();
+    });
+  }
+
+  async function handleDeleteAll() {
+    if (deletePhrase !== 'SUPPRIMER') return;
+    await runDataOperation('delete-all', async () => {
+      await deleteAllData();
+      setDeleteAllArmed(false);
+      setDeletePhrase('');
+      setDataMessage('Toutes les données utilisateur ont été supprimées. Les journaux légaux sont conservés.');
+    });
+  }
 
   async function loadSettings() {
     setLoading(true);
@@ -111,6 +197,104 @@ export function PrivacyTab() {
         </div>
       </section>
 
+      {/* Section : Portabilité et sauvegardes globales */}
+      <section className="rounded-lg border border-border/50 p-4">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-text">
+              <Archive className="h-4 w-4 text-accent-cyan" />
+              Export et sauvegardes
+            </h4>
+            <p className="mt-1 text-xs text-text-muted">
+              Exporte un JSON portable ou crée une archive locale complète avant une migration.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleExportAll()}
+              disabled={dataOperation !== null}
+            >
+              {dataOperation === 'export' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
+              Exporter toutes mes données
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void handleCreateBackup()}
+              disabled={dataOperation !== null}
+            >
+              {dataOperation === 'backup' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Archive className="mr-1.5 h-3.5 w-3.5" />}
+              Créer une sauvegarde
+            </Button>
+          </div>
+        </div>
+
+        {dataMessage && <div role="status" className="mb-3 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-300">{dataMessage}</div>}
+        {dataError && <div role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{dataError}</div>}
+
+        <div className="overflow-hidden rounded-lg border border-border/30">
+          <div className="flex items-center justify-between bg-surface-elevated/40 px-3 py-2">
+            <span className="text-xs font-semibold text-text">Sauvegardes disponibles</span>
+            <button type="button" onClick={() => void refreshBackups()} className="text-[10px] font-medium text-accent-cyan hover:underline">Actualiser</button>
+          </div>
+          {backupLoading ? (
+            <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement…</div>
+          ) : backups.length === 0 ? (
+            <p className="px-3 py-4 text-xs text-text-muted">Aucune sauvegarde locale.</p>
+          ) : (
+            <div className="divide-y divide-border/20">
+              {backups.slice(0, 5).map((backup) => {
+                const restoring = dataOperation === `restore:${backup.backup_name}`;
+                const deleting = dataOperation === `delete-backup:${backup.backup_name}`;
+                return (
+                  <div key={backup.backup_name} className="px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-xs font-medium text-text">{backup.backup_name}</div>
+                        <div className="mt-0.5 text-[10px] text-text-muted">
+                          {new Date(backup.created_at).toLocaleString('fr-FR')}
+                          {typeof backup.size_bytes === 'number' ? ` · ${(backup.size_bytes / 1_048_576).toFixed(1)} Mo` : ''}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => { setRestoreConfirmation(backup.backup_name); setBackupDeleteConfirmation(null); }} disabled={dataOperation !== null}>
+                          {restoring ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}
+                          Restaurer
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => { setBackupDeleteConfirmation(backup.backup_name); setRestoreConfirmation(null); }} disabled={dataOperation !== null}>
+                          {deleting ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+                          Supprimer
+                        </Button>
+                      </div>
+                    </div>
+                    {restoreConfirmation === backup.backup_name && (
+                      <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                        Cette restauration remplace l’état courant. Une sauvegarde de sécurité sera créée automatiquement.
+                        <div className="mt-2 flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setRestoreConfirmation(null)}>Annuler</Button>
+                          <Button variant="danger" size="sm" onClick={() => void handleRestoreBackup(backup.backup_name)} disabled={dataOperation !== null}>Confirmer la restauration</Button>
+                        </div>
+                      </div>
+                    )}
+                    {backupDeleteConfirmation === backup.backup_name && (
+                      <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
+                        Supprimer définitivement cette archive locale ?
+                        <div className="mt-2 flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setBackupDeleteConfirmation(null)}>Annuler</Button>
+                          <Button variant="danger" size="sm" onClick={() => void handleDeleteBackup(backup.backup_name)} disabled={dataOperation !== null}>Confirmer la suppression</Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Section : Voix locale souveraine (activation un clic) */}
       <VoiceLocalSection />
 
@@ -172,7 +356,7 @@ export function PrivacyTab() {
             <Download className="w-5 h-5 text-accent-cyan mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Exporter</span>
             <span className="block text-[10px] text-text-muted">
-              Tu peux exporter les données de chaque contact via le CRM (bouton RGPD &gt; Exporter).
+              L’export global est disponible ci-dessus ; l’export individuel reste accessible dans le CRM.
             </span>
           </div>
           <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
@@ -186,8 +370,51 @@ export function PrivacyTab() {
             <Trash2 className="w-5 h-5 text-red-400 mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Supprimer</span>
             <span className="block text-[10px] text-text-muted">
-              Tu peux supprimer toutes tes données via Paramètres &gt; Avancé &gt; Réinitialiser.
+              La suppression globale est protégée par une confirmation explicite ci-dessous.
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Section : Effacement global */}
+      <section className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+        <div className="flex items-start gap-3">
+          <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-semibold text-red-300">Supprimer toutes mes données</h4>
+            <p className="mt-1 text-xs leading-5 text-text-muted">
+              Efface les données métier, conversations, réglages personnels et index vectoriels. Les journaux d’audit légaux et les sauvegardes locales restent conservés.
+            </p>
+            {!deleteAllArmed ? (
+              <Button variant="danger" size="sm" className="mt-3" onClick={() => { setDeleteAllArmed(true); setDataMessage(null); setDataError(null); }}>
+                Préparer la suppression
+              </Button>
+            ) : (
+              <div className="mt-3 rounded-lg border border-red-500/30 bg-background/40 p-3">
+                <label htmlFor="delete-all-confirmation" className="block text-xs font-medium text-red-200">
+                  Saisis SUPPRIMER pour confirmer
+                </label>
+                <input
+                  id="delete-all-confirmation"
+                  value={deletePhrase}
+                  onChange={(event) => setDeletePhrase(event.target.value)}
+                  autoComplete="off"
+                  className="mt-2 w-full rounded-md border border-red-500/30 bg-background px-3 py-2 text-sm text-text outline-none focus:border-red-400"
+                />
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => { setDeleteAllArmed(false); setDeletePhrase(''); }}>Annuler</Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => void handleDeleteAll()}
+                    disabled={deletePhrase !== 'SUPPRIMER' || dataOperation !== null}
+                  >
+                    {dataOperation === 'delete-all' && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    Supprimer définitivement
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

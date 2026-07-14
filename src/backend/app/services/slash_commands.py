@@ -15,16 +15,20 @@ Directives inline (suggestion Dr_logic-3D, avril + 07/07/2026) : les memes
 commandes deterministes, insérables N'IMPORTE OU dans un prompt et cumulables :
   [contact: Jean Dupont email=jean@exemple.fr]
   [rdv: Point projet date=2026-07-10T14:00]
-Elles sont executees AVANT l'appel LLM ; le reste du message suit le flux normal.
+Les créations de rendez-vous sont préparées avant l'appel LLM, puis restent en
+attente d'une confirmation humaine. Le reste du message suit le flux normal.
 """
 
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from app.services.memory_tools import execute_create_contact, execute_create_project
-from app.services.workspace_tools import execute_workspace_tool
+from app.services.tool_confirmations import register_pending
+from app.services.workspace_tools import get_calendar_confirmation_destination
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -48,6 +52,14 @@ _INLINE_CMD = re.compile(r"\[([a-zà-ÿ-]+)\s*:\s*([^\]\n]*)\]", re.IGNORECASE)
 
 # Garde-fou anti-abus : au-dela, les directives suivantes sont ignorees
 MAX_INLINE_COMMANDS = 10
+
+
+@dataclass(frozen=True)
+class SlashCommandOutcome:
+    """Résultat texte et éventuelle action encore en attente de confirmation."""
+
+    content: str
+    confirmation: dict[str, Any] | None = None
 
 
 def parse_inline_commands(message: str) -> tuple[str, list[tuple[str, str]]]:
@@ -186,41 +198,61 @@ async def _do_projet(rest: str, session: AsyncSession) -> str:
     return f"Projet **{pname}** créé en mémoire."
 
 
-async def _do_rdv(rest: str, session: AsyncSession) -> str:
+async def _prepare_rdv(rest: str, session: AsyncSession) -> SlashCommandOutcome:
     positional, kw = _split_positional_and_kwargs(rest)
     title = positional.strip()
     if not title:
-        return "Indique un titre : `/rdv Titre date=2026-06-03T14:00`."
+        return SlashCommandOutcome("Indique un titre : `/rdv Titre date=2026-06-03T14:00`.")
     date_str = kw.get("date")
     if not date_str:
-        return (
+        return SlashCommandOutcome(
             "Pour créer un rendez-vous, précise une date au format ISO : "
             "`/rdv " + title + " date=2026-06-03T14:00`."
         )
     try:
         start = datetime.fromisoformat(date_str)
     except ValueError:
-        return f"Date invalide : '{date_str}'. Format attendu ISO 8601, ex : 2026-06-03T14:00."
+        return SlashCommandOutcome(
+            f"Date invalide : '{date_str}'. Format attendu ISO 8601, ex : 2026-06-03T14:00."
+        )
     end = start + timedelta(hours=1)
-    result = await execute_workspace_tool(
-        "create_calendar_event",
-        {
-            "summary": title,
-            "start": start.isoformat(),
-            "end": end.isoformat(),
-            "description": kw.get("description"),
+    arguments = {
+        "summary": title,
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "description": kw.get("description"),
+        "timezone": "Europe/Paris",
+        "_confirmation_destination": await get_calendar_confirmation_destination(session),
+    }
+    confirmation_id = register_pending("create_calendar_event", arguments)
+    return SlashCommandOutcome(
+        content=(
+            f"Rendez-vous préparé : **{title}**, le "
+            f"{start.strftime('%d/%m/%Y à %H:%M')}. Rien n'est créé avant ta confirmation."
+        ),
+        confirmation={
+            "confirmation_id": confirmation_id,
+            "tool_name": "create_calendar_event",
+            "arguments": arguments,
         },
-        session,
     )
-    return result
+
+
+async def execute_slash_command_outcome(
+    command: str,
+    rest: str,
+    session: AsyncSession,
+) -> SlashCommandOutcome:
+    """Exécute une commande sûre ou prépare une mutation à confirmer."""
+    if command == "contact":
+        return SlashCommandOutcome(await _do_contact(rest, session))
+    if command == "projet":
+        return SlashCommandOutcome(await _do_projet(rest, session))
+    if command == "rdv":
+        return await _prepare_rdv(rest, session)
+    return SlashCommandOutcome(f"Commande inconnue : /{command}")
 
 
 async def execute_slash_command(command: str, rest: str, session: AsyncSession) -> str:
-    """Execute une commande deterministe et retourne le message de confirmation."""
-    if command == "contact":
-        return await _do_contact(rest, session)
-    if command == "projet":
-        return await _do_projet(rest, session)
-    if command == "rdv":
-        return await _do_rdv(rest, session)
-    return f"Commande inconnue : /{command}"
+    """Compatibilité : retourne le texte, sans jamais exécuter un rendez-vous."""
+    return (await execute_slash_command_outcome(command, rest, session)).content

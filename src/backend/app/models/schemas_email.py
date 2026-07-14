@@ -235,3 +235,6 @@ class FollowUpResponse(BaseModel):
     note: str | None = None
     status: str
     created_at: str
+    email_subject: str | None = None
+    email_from: str | None = None
+    contact_name: str | None = None

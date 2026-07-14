@@ -81,10 +81,16 @@ export interface UpdateInvoiceRequest {
 export async function listInvoices(params?: {
   status?: string;
   contact_id?: string;
+  document_type?: 'devis' | 'facture' | 'avoir';
+  skip?: number;
+  limit?: number;
 }): Promise<Invoice[]> {
   const queryParams = new URLSearchParams();
   if (params?.status) queryParams.set('status', params.status);
   if (params?.contact_id) queryParams.set('contact_id', params.contact_id);
+  if (params?.document_type) queryParams.set('document_type', params.document_type);
+  if (params?.skip) queryParams.set('skip', String(params.skip));
+  if (params?.limit) queryParams.set('limit', String(params.limit));
 
   const response = await apiFetch(`${API_BASE}/api/invoices?${queryParams}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }

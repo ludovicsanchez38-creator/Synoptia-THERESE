@@ -48,6 +48,9 @@ export interface AgentStreamChunk {
   files_changed?: string[];
   tool_name?: string;
   diff_summary?: string;
+  model?: string;
+  base_branch?: string;
+  commit_hash?: string;
 }
 
 export interface AgentTaskResponse {
@@ -61,6 +64,14 @@ export interface AgentTaskResponse {
   agent_model?: string;
   tokens_used: number;
   cost_eur: number;
+  run_phase?: string;
+  plan?: string;
+  test_results?: string[];
+  explanation?: string;
+  events?: Array<Record<string, unknown>>;
+  agent_outputs?: Record<string, string>;
+  base_branch?: string;
+  commit_hash?: string;
   error?: string;
   created_at: string;
   updated_at: string;

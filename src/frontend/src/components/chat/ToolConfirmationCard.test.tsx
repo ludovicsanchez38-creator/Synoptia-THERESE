@@ -54,4 +54,30 @@ describe('ToolConfirmationCard (US-002)', () => {
       expect(useToolConfirmationStore.getState().pending).toHaveLength(0)
     );
   });
+
+  it('affiche la destination et confirme une création Agenda', async () => {
+    useToolConfirmationStore.getState().add({
+      confirmation_id: 'rdv-1',
+      tool_name: 'create_calendar_event',
+      arguments: {
+        summary: 'Point projet',
+        start: '2026-07-14T10:00:00',
+        end: '2026-07-14T11:00:00',
+        timezone: 'Europe/Paris',
+        attendees: 'client@example.com',
+        _confirmation_destination: {
+          calendar_name: 'Synoptïa', provider: 'google', account: 'ludo@example.com',
+        },
+      },
+    });
+    render(<ToolConfirmationCard />);
+
+    expect(screen.getByText('Confirmer la création du rendez-vous')).toBeTruthy();
+    expect(screen.getByText('Google Calendar')).toBeTruthy();
+    expect(screen.getByText('ludo@example.com')).toBeTruthy();
+    expect(screen.getByText('client@example.com')).toBeTruthy();
+    fireEvent.click(screen.getByText('Créer'));
+
+    await waitFor(() => expect(confirmTool).toHaveBeenCalledWith('rdv-1', true));
+  });
 });

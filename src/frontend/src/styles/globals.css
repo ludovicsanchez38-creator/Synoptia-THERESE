@@ -78,6 +78,9 @@
   --k2: #B45309; --k2bg: #FAEFDC;
   --k3: #BE1A72; --k3bg: #FBE3F0;
   --k4: #7C3AED; --k4bg: #F0E9FC;
+  --color-success-tint: #E7F7EF;
+  --color-warning-tint: #FFF8E8;
+  --color-error-tint: #FFF1F1;
 }
 
 /* ============================================================
@@ -125,12 +128,22 @@
   --k2: #F59E0B; --k2bg: rgba(245, 158, 11, 0.13);
   --k3: #E11D8D; --k3bg: rgba(225, 29, 141, 0.13);
   --k4: #A855F7; --k4bg: rgba(168, 85, 247, 0.13);
+  --color-success-tint: rgba(16, 185, 129, 0.13);
+  --color-warning-tint: rgba(245, 158, 11, 0.13);
+  --color-error-tint: rgba(239, 68, 68, 0.13);
 
   /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
   --btn-ink: #E6EDF7;
   --btn-shadow-color: rgba(34, 211, 238, 0.55);
   --btn-danger-ink: #EF4444;
   --btn-danger-shadow: rgba(239, 68, 68, 0.5);
+}
+
+/* La coque conversationnelle emploie `bg-text` pour ses actions principales.
+   En thème sombre, le fond devient clair : l'encre doit donc reprendre le fond
+   de l'application au lieu de rester blanche. */
+[data-theme="dark"] [data-testid="conversation-canvas-prototype"] .bg-text.text-white {
+  color: var(--color-bg);
 }
 
 /* Base styles - fenêtre avec coins arrondis */

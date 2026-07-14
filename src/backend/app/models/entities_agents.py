@@ -27,6 +27,14 @@ class AgentTask(SQLModel, table=True):
     agent_model: str | None = None
     tokens_used: int = Field(default=0)
     cost_eur: float = Field(default=0.0)
+    run_phase: str | None = None
+    plan: str | None = None
+    test_results: str | None = None  # JSON array
+    explanation: str | None = None
+    events: str | None = None  # JSON array des événements SSE utiles
+    agent_outputs: str | None = None  # JSON object katia/zezette
+    base_branch: str | None = None
+    commit_hash: str | None = None
     error: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

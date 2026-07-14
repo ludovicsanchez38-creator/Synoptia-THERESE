@@ -76,7 +76,6 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           setCurrentAccount(status.accounts[0].id);
         } else {
           setLoading(false);
-          setError('Aucun compte email configuré');
         }
       }).catch((err) => {
         console.error('Failed to load email accounts for calendar:', err);
@@ -92,26 +91,24 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
   // Load calendars on mount (séquentiel : events se chargent APRÈS)
   useEffect(() => {
-    if (effectiveOpen && currentAccountId) {
+    if (effectiveOpen) {
       loadCalendars();
     }
   }, [effectiveOpen, currentAccountId]);
 
   // Load events APRÈS les calendriers, ou quand le mois/calendrier change
   useEffect(() => {
-    if (calendarsReady && currentCalendarId && currentAccountId) {
+    if (calendarsReady && currentCalendarId) {
       loadEvents();
     }
   }, [calendarsReady, currentCalendarId, currentAccountId, selectedDate]);
 
   async function loadCalendars() {
-    if (!currentAccountId) return;
-
     if (!hasCachedCalendars) setLoading(true);
     setError(null);
 
     try {
-      const cals = await api.listCalendars(currentAccountId);
+      const cals = await api.listCalendars(currentAccountId || undefined);
       setCalendars(cals);
 
       // Auto-select : calendrier primaire, sinon le PREMIER disponible.
@@ -139,7 +136,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   }
 
   async function loadEvents() {
-    if (!currentAccountId || !currentCalendarId) return;
+    if (!currentCalendarId) return;
 
     setError(null);
 
@@ -148,7 +145,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
       const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
 
-      const evts = await api.listEvents(currentAccountId, currentCalendarId, {
+      const evts = await api.listEvents(currentAccountId || undefined, currentCalendarId, {
         time_min: startOfMonth.toISOString(),
         time_max: endOfMonth.toISOString(),
         max_results: 250,
@@ -168,16 +165,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   }
 
   async function handleSync() {
-    if (!currentAccountId) {
-      setError('Aucun compte configuré. Ajoute un compte dans les paramètres.');
-      return;
-    }
-
     setSyncing(true);
     setError(null);
 
     try {
-      const result = await api.syncCalendar(currentAccountId);
+      const result = await api.syncCalendar(currentAccountId || undefined);
       setLastSyncAt(result.synced_at);
 
       // Reload calendars and events

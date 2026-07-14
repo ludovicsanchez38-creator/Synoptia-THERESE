@@ -101,6 +101,19 @@ class TestCalendarList:
     """Tests for listing calendars."""
 
     @pytest.mark.asyncio
+    async def test_list_calendars_read_only_does_not_create_default(
+        self, client: AsyncClient, db_session
+    ):
+        from app.models.entities import Calendar
+        from sqlmodel import select
+
+        response = await client.get("/api/calendar/calendars?create_default=false")
+        assert_response_ok(response)
+        assert response.json() == []
+        stored = (await db_session.execute(select(Calendar))).scalars().all()
+        assert stored == []
+
+    @pytest.mark.asyncio
     async def test_list_calendars_cree_le_calendrier_local_par_defaut(self, client: AsyncClient):
         """GET /api/calendar/calendars - sans compte, un calendrier local par défaut
         est créé au premier passage (impasse hors Google, Dr_logic-3D 05/07/2026),
@@ -383,6 +396,31 @@ class TestEventsCreate:
         assert data["summary"] == "Reunion equipe"
         if data.get("attendees"):
             assert len(data["attendees"]) == 2
+
+    @pytest.mark.parametrize(
+        "payload, expected",
+        [
+            ({"summary": "Sans date"}, "soit des horaires"),
+            ({"summary": "Partiel", "start_datetime": "2026-07-14T10:00:00"}, "obligatoires ensemble"),
+            ({
+                "summary": "Inversé",
+                "start_datetime": "2026-07-14T11:00:00",
+                "end_datetime": "2026-07-14T10:00:00",
+            }, "postérieure"),
+            ({
+                "summary": "Participant invalide",
+                "start_datetime": "2026-07-14T10:00:00",
+                "end_datetime": "2026-07-14T11:00:00",
+                "attendees": ["pas-un-email"],
+            }, "Adresse participant invalide"),
+        ],
+    )
+    def test_create_event_schema_rejects_ambiguous_payloads(self, payload, expected):
+        from app.models.schemas import CreateEventRequest
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError, match=expected):
+            CreateEventRequest(**payload)
 
 
 # ============================================================
@@ -724,57 +762,19 @@ class TestEventTimezoneRegression:
         assert captured["start"]["timeZone"] == "America/Toronto"
         assert captured["end"]["timeZone"] == "America/Toronto"
 
-    @pytest.mark.asyncio
-    async def test_create_google_event_falls_back_to_paris_on_invalid_timezone(self):
-        """Un fuseau invalide envoyé à Google remontait en 400 reformulé en 500
-        générique par _create_event_google (pas de parité avec local_provider.py,
-        qui valide déjà via pytz)."""
-        from unittest.mock import AsyncMock, MagicMock
-
-        from app.models.entities import EmailAccount
+    def test_create_google_event_rejects_invalid_timezone(self):
+        """La création refuse un fuseau inconnu avant tout appel fournisseur."""
         from app.models.schemas import CreateEventRequest
-        from app.routers.calendar import _create_event_google
+        from pydantic import ValidationError
 
-        request = CreateEventRequest(
-            calendar_id="primary",
-            summary="Réunion",
-            start_datetime="2026-06-09T09:30:00",
-            end_datetime="2026-06-09T10:00:00",
-            timezone="Not/AFuseau",
-        )
-
-        captured: dict = {}
-
-        class FakeCalendarService:
-            def __init__(self, _token):
-                pass
-
-            async def create_event(self, **kwargs):
-                captured.update(kwargs)
-                return {
-                    "id": "evt-1",
-                    "summary": kwargs["summary"],
-                    "start": kwargs["start"],
-                    "end": kwargs["end"],
-                    "status": "confirmed",
-                }
-
-        account = EmailAccount(
-            id="acc-1", email="test@example.com", provider="gmail", access_token="tok"
-        )
-        session = MagicMock()
-        session.get = AsyncMock(return_value=account)
-        session.add = MagicMock()
-        session.commit = AsyncMock()
-        session.refresh = AsyncMock()
-
-        with patch("app.routers.calendar.CalendarService", FakeCalendarService), patch(
-            "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
-        ):
-            await _create_event_google("acc-1", request, session)
-
-        assert captured["start"]["timeZone"] == "Europe/Paris"
-        assert captured["end"]["timeZone"] == "Europe/Paris"
+        with pytest.raises(ValidationError, match="Fuseau horaire IANA invalide"):
+            CreateEventRequest(
+                calendar_id="primary",
+                summary="Réunion",
+                start_datetime="2026-06-09T09:30:00",
+                end_datetime="2026-06-09T10:00:00",
+                timezone="Not/AFuseau",
+            )
 
     @pytest.mark.asyncio
     async def test_update_google_event_falls_back_to_paris_on_invalid_timezone(self):

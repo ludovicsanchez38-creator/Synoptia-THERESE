@@ -217,14 +217,41 @@ async def agent_request(
         branch_name = None
         files_changed = []
         diff_summary = ""
+        run_phase = "spec"
+        plan = ""
+        test_results: list[str] = []
+        explanation = ""
+        events: list[dict] = []
+        agent_outputs: dict[str, str] = {"katia": "", "zezette": ""}
+        agent_models: dict[str, str] = {}
+        base_branch = None
+        commit_hash = None
 
         try:
             async for chunk in orchestrator.process_request(request.message, task.id):
+                events.append(chunk.model_dump(mode="json", exclude_none=True))
+                if chunk.phase:
+                    run_phase = chunk.phase
+                if chunk.model and chunk.agent:
+                    agent_models[chunk.agent] = chunk.model
+                if chunk.type == "handoff":
+                    plan = chunk.content
+                elif chunk.type == "test_result":
+                    test_results.append(chunk.content)
+                elif chunk.type == "explanation":
+                    explanation += chunk.content
+                elif chunk.type == "agent_chunk" and chunk.agent:
+                    agent_outputs[chunk.agent] = agent_outputs.get(chunk.agent, "") + chunk.content
+                elif chunk.type == "agent_done" and chunk.agent and chunk.content:
+                    agent_outputs[chunk.agent] = chunk.content
+
                 # Mettre à jour la tâche selon les événements
                 if chunk.type == "review_ready":
                     branch_name = chunk.branch
                     files_changed = chunk.files_changed or []
                     diff_summary = chunk.diff_summary or ""
+                    base_branch = chunk.base_branch
+                    commit_hash = chunk.commit_hash
                 elif chunk.type == "error":
                     final_status = "error"
                     final_error = chunk.content
@@ -272,6 +299,17 @@ async def agent_request(
                             json.dumps(files_changed, ensure_ascii=False) if files_changed else None
                         )
                         db_task.diff_summary = diff_summary
+                        db_task.run_phase = run_phase
+                        db_task.plan = plan or None
+                        db_task.test_results = json.dumps(test_results, ensure_ascii=False)
+                        db_task.explanation = explanation or None
+                        db_task.events = json.dumps(events, ensure_ascii=False)
+                        db_task.agent_outputs = json.dumps(agent_outputs, ensure_ascii=False)
+                        db_task.agent_model = (
+                            json.dumps(agent_models, ensure_ascii=False) if agent_models else None
+                        )
+                        db_task.base_branch = base_branch
+                        db_task.commit_hash = commit_hash
                         db_task.error = final_error
                         db_task.updated_at = datetime.now(UTC)
                         await update_session.commit()
@@ -903,6 +941,14 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
         except json.JSONDecodeError:
             files = None
 
+    def json_value(raw: str | None, fallback):
+        if not raw:
+            return fallback
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return fallback
+
     return AgentTaskResponse(
         id=task.id,
         title=task.title,
@@ -914,6 +960,14 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
         agent_model=task.agent_model,
         tokens_used=task.tokens_used,
         cost_eur=task.cost_eur,
+        run_phase=task.run_phase,
+        plan=task.plan,
+        test_results=json_value(task.test_results, []),
+        explanation=task.explanation,
+        events=json_value(task.events, []),
+        agent_outputs=json_value(task.agent_outputs, {}),
+        base_branch=task.base_branch,
+        commit_hash=task.commit_hash,
         error=task.error,
         created_at=task.created_at,
         updated_at=task.updated_at,

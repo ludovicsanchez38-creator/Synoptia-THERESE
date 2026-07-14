@@ -13,12 +13,13 @@ const RETRY_DELAY = 2000; // 2 seconds on error
 const MAX_RETRIES = 5;
 
 export function useHealthCheck(enabled: boolean = true) {
-  const { connectionState, setConnectionState, updatePing, addNotification } =
+  const { setConnectionState, updatePing, addNotification } =
     useStatusStore();
 
   const retriesRef = useRef(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const outageNotifiedRef = useRef(false);
+  const wasConnectedRef = useRef(false);
 
   const performCheck = useCallback(async (): Promise<boolean> => {
     const start = Date.now();
@@ -30,11 +31,13 @@ export function useHealthCheck(enabled: boolean = true) {
       setConnectionState('connected');
       updatePing(latency);
       retriesRef.current = 0;
+      outageNotifiedRef.current = false;
 
-      // Log version on first connect
-      if (connectionState !== 'connected') {
+      // Journaliser uniquement la première connexion ou une reconnexion.
+      if (!wasConnectedRef.current) {
         console.log(`[THÉRÈSE] Connected to backend v${health.version}`);
       }
+      wasConnectedRef.current = true;
 
       return true;
     } catch (error) {
@@ -48,70 +51,63 @@ export function useHealthCheck(enabled: boolean = true) {
       }
 
       retriesRef.current++;
+      wasConnectedRef.current = false;
       console.warn(
         `[THÉRÈSE] Health check failed (attempt ${retriesRef.current}):`,
         error
       );
 
+      // Une seule notification par coupure. Les contrôles continuent ensuite à
+      // cadence normale afin qu'un backend revenu tardivement soit détecté.
+      if (
+        retriesRef.current >= MAX_RETRIES &&
+        !outageNotifiedRef.current
+      ) {
+        outageNotifiedRef.current = true;
+        addNotification({
+          type: 'error',
+          title: 'Backend injoignable',
+          message: 'Nouvelle tentative automatique en arrière-plan',
+        });
+      }
+
       return false;
     }
-  }, [connectionState, setConnectionState, updatePing]);
+  }, [setConnectionState, updatePing, addNotification]);
 
-  const scheduleRetry = useCallback(() => {
-    if (retriesRef.current < MAX_RETRIES) {
-      timeoutRef.current = setTimeout(async () => {
-        const success = await performCheck();
-        if (!success) {
-          scheduleRetry();
-        }
-      }, RETRY_DELAY);
-    } else {
-      addNotification({
-        type: 'error',
-        title: 'Backend injoignable',
-        message: 'Impossible de se connecter après plusieurs tentatives',
-      });
-    }
-  }, [performCheck, addNotification]);
-
-  // Initial check and polling (seulement quand enabled = true)
+  // Boucle séquentielle : aucun contrôle ne se chevauche et une coupure ne peut
+  // jamais arrêter définitivement la reconnexion automatique.
   useEffect(() => {
     if (!enabled) return;
 
-    // Reset retries quand on (re)démarre
+    let cancelled = false;
     retriesRef.current = 0;
+    outageNotifiedRef.current = false;
 
-    // Initial check
-    performCheck().then((success) => {
-      if (!success) {
-        scheduleRetry();
-      }
-    });
-
-    // Start polling when connected
-    intervalRef.current = setInterval(async () => {
+    const checkAndSchedule = async () => {
       const success = await performCheck();
-      if (!success) {
-        // Stop polling and start retry logic
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        scheduleRetry();
-      }
-    }, HEALTH_CHECK_INTERVAL);
+      if (cancelled) return;
+
+      const nextDelay =
+        success || retriesRef.current >= MAX_RETRIES
+          ? HEALTH_CHECK_INTERVAL
+          : RETRY_DELAY;
+
+      timeoutRef.current = setTimeout(() => {
+        void checkAndSchedule();
+      }, nextDelay);
+    };
+
+    void checkAndSchedule();
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      cancelled = true;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
     };
-  }, [enabled, performCheck, scheduleRetry]);
+  }, [enabled, performCheck]);
 
   return {
     refresh: performCheck,

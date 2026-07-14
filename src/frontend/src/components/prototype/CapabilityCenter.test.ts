@@ -55,6 +55,34 @@ describe('catalogue des capacités 0.40', () => {
     }
   });
 
+  it('donne à chaque capacité un parcours dédié ou un repli classique explicite', () => {
+    for (const capability of capabilities) {
+      expect(
+        Boolean(capability.scenario) !== Boolean(capability.destination),
+        `${capability.id} doit avoir exactement une destination`,
+      ).toBe(true);
+    }
+  });
+
+  it('n’envoie pas au chat les capacités qui exigent encore un raccord déterministe', () => {
+    const pending = capabilities
+      .filter((capability) => capability.destination?.kind === 'pending')
+      .map((capability) => capability.id)
+      .sort();
+    const chatHandoffs = capabilities
+      .filter((capability) => capability.destination?.kind === 'prompt')
+      .map((capability) => capability.id)
+      .sort();
+
+    expect(pending).toEqual([]);
+    expect(chatHandoffs).toEqual(['legal', 'skills-commands', 'web-research']);
+    expect(capabilities.find((capability) => capability.id === 'voice')?.destination?.kind).toBe('voice');
+    expect(capabilities.find((capability) => capability.id === 'images')?.destination).toEqual({ kind: 'images' });
+    expect(capabilities.find((capability) => capability.id === 'calculators')?.destination).toEqual({ kind: 'calculator' });
+    expect(capabilities.find((capability) => capability.id === 'deliverables')?.destination).toEqual({ kind: 'deliverables' });
+    expect(capabilities.find((capability) => capability.id === 'personalization')?.destination).toEqual({ kind: 'action', action: 'settings.open', settingsTab: 'advanced' });
+  });
+
   it('préserve la répartition fonctionnelle du prototype', () => {
     const counts = Object.fromEntries(
       capabilityGroups.map((group) => [

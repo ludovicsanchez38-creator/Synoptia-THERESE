@@ -35,8 +35,7 @@ describe('CommonToolConfirmationLayer', () => {
       </>,
     );
 
-    expect(screen.getByText("Confirmer l'envoi de l'email")).toBeInTheDocument();
+    expect(screen.getByText(/Confirmer l[’']envoi de l[’']email/)).toBeInTheDocument();
     expect(screen.getByText('merci@example.fr')).toBeInTheDocument();
   });
 });
-

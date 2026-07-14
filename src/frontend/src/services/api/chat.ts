@@ -31,6 +31,11 @@ export interface ChatResponse {
   tokens_in?: number;
   tokens_out?: number;
   model?: string;
+  confirmations?: Array<{
+    confirmation_id: string;
+    tool_name: string;
+    arguments: Record<string, unknown>;
+  }>;
   created_at: string;
 }
 
@@ -259,6 +264,13 @@ export async function createConversation(title?: string): Promise<ConversationRe
   return request<ConversationResponse>('/api/chat/conversations', {
     method: 'POST',
     body: JSON.stringify({ title: title || 'Nouvelle conversation' }),
+  });
+}
+
+export async function renameConversation(id: string, title: string): Promise<ConversationResponse> {
+  return request<ConversationResponse>(`/api/chat/conversations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ title }),
   });
 }
 

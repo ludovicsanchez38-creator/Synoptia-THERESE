@@ -177,3 +177,44 @@ async def test_decision_list_preserves_sovereign_mode(monkeypatch):
     result = await board_router.list_decisions(limit=10, session=object())
 
     assert result[0].mode == "sovereign"
+
+
+@pytest.mark.asyncio
+async def test_history_preserves_sources_models_and_usage(monkeypatch, db_session):
+    synthesis = json.dumps({
+        "consensus_points": ["Tester"],
+        "divergence_points": [],
+        "recommendation": "Lancer un pilote.",
+        "confidence": "high",
+        "next_steps": ["Cadrer"],
+    })
+    llm = FakeLLM(["Avis documenté.", synthesis])
+    monkeypatch.setattr(board_module, "get_llm_service", lambda: llm)
+    monkeypatch.setattr(board_module, "get_llm_service_for_provider", lambda *args, **kwargs: llm)
+    monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+
+    async def web_context(service, _question):
+        service._last_web_sources = [{
+            "title": "Source vérifiable",
+            "url": "https://example.test/source",
+            "snippet": "Contexte factuel",
+        }]
+        return "Source: https://example.test/source"
+
+    monkeypatch.setattr(BoardService, "_search_web_for_context", web_context)
+
+    service = BoardService(db_session)
+    chunks = [chunk async for chunk in service.deliberate(BoardRequest(
+        question="Faut-il lancer un pilote documenté maintenant ?",
+        advisors=[AdvisorRole.ANALYST],
+        mode=BoardMode.CLOUD,
+    ))]
+    decision_id = next(chunk.content for chunk in chunks if chunk.type == "done")
+
+    decision = await service.get_decision(decision_id)
+    assert decision is not None
+    assert decision.web_sources[0]["url"] == "https://example.test/source"
+    assert decision.opinions[0].provider == "openai"
+    assert decision.opinions[0].model == "modele-test"
+    assert decision.opinions[0].input_tokens > 0
+    assert decision.synthesis_usage["model"] == "modele-test"

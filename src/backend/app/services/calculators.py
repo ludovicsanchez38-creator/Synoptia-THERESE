@@ -10,9 +10,18 @@ Outils de calcul pour les entrepreneurs :
 """
 
 import logging
+import math
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_finite_result(*values: float) -> None:
+    """Refuse les dépassements float au lieu de laisser l'API sérialiser `inf` en `null`."""
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError(
+            "Le résultat numérique dépasse les limites du calcul. Réduis les hypothèses."
+        )
 
 
 @dataclass
@@ -92,6 +101,7 @@ class CalculatorService:
 
         profit = gain - investment
         roi_percent = (profit / investment) * 100
+        _ensure_finite_result(profit, roi_percent)
 
         # Interprétation
         if roi_percent >= 100:
@@ -139,6 +149,7 @@ class CalculatorService:
                 raise ValueError(f"{name} doit être entre 1 et 10")
 
         score = impact * confidence * ease
+        _ensure_finite_result(score)
 
         # Interprétation (score max = 1000)
         if score >= 500:
@@ -189,6 +200,7 @@ class CalculatorService:
         # Convertir confidence en décimal
         conf_decimal = confidence / 100
         score = (reach * impact * conf_decimal) / effort
+        _ensure_finite_result(score)
 
         # Interprétation
         if score >= 100:
@@ -241,6 +253,7 @@ class CalculatorService:
         npv = -initial_investment
         for t, cf in enumerate(cash_flows, start=1):
             npv += cf / ((1 + discount_rate) ** t)
+        _ensure_finite_result(npv)
 
         # Interprétation
         if npv > 0:
@@ -285,6 +298,7 @@ class CalculatorService:
         margin_per_unit = price_per_unit - variable_cost_per_unit
         break_even_units = fixed_costs / margin_per_unit
         break_even_revenue = break_even_units * price_per_unit
+        _ensure_finite_result(break_even_units, break_even_revenue)
 
         interpretation = (
             f"📊 Seuil de rentabilité : {break_even_units:.0f} unités\n"

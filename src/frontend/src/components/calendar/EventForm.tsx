@@ -40,7 +40,6 @@ export function EventForm() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const { execute, error: guardError, loading: guardLoading, clearError } = useGuardedAction([
-    { check: currentAccountId, message: 'Aucun compte configuré. Ajoute un compte email dans les paramètres.' },
     { check: currentCalendarId, message: 'Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.' },
   ]);
 
@@ -108,10 +107,10 @@ export function EventForm() {
     // des timestamps locaux : juste même autour des changements d'heure (DST) — revue F3.
     const startKey = allDay ? startDate : `${startDate}T${startTime}`;
     const endKey = allDay ? endDate : `${endDate}T${endTime}`;
-    if (endKey < startKey) {
+    if (endKey <= startKey) {
       setFormError(
         allDay
-          ? 'La date de fin doit être identique ou postérieure à la date de début.'
+          ? 'La date de fin doit être postérieure à la date de début.'
           : "La date et l'heure de fin doivent être postérieures au début."
       );
       return;
@@ -150,7 +149,7 @@ export function EventForm() {
           event.id,
           request,
           currentCalendarId!,
-          currentAccountId!
+          currentAccountId || undefined
         );
         updateEventInStore(event.id, updated);
         setCurrentEvent(event.id);
@@ -175,7 +174,7 @@ export function EventForm() {
           request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         }
 
-        const created = await api.createEvent(request, currentAccountId!);
+        const created = await api.createEvent(request, currentAccountId || undefined);
         addEvent(created);
         setCurrentEvent(created.id);
       }

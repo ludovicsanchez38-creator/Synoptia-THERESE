@@ -26,19 +26,21 @@ from app.models.entities import (
     DocumentPiste,
     DocumentSection,
     EmailAccount,
+    EmailFollowUp,
     EmailLabel,
     EmailMessage,
     FileMetadata,
     Invoice,
     InvoiceLine,
     Message,
+    Notification,
     Preference,
     Project,
     PromptTemplate,
     Task,
     Variable,
 )
-from app.models.entities_agents import AgentMessage, AgentTask, CodeChange
+from app.models.entities_agents import AgentMessage, AgentSession, AgentTask, CodeChange
 from app.services.audit import (
     ActivityLog,
     AuditAction,
@@ -53,6 +55,33 @@ from sqlmodel import select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _export_row(
+    row,
+    *,
+    exclude: set[str] | None = None,
+    json_fields: tuple[str, ...] = (),
+) -> dict:
+    """Sérialise une ligne SQLModel sans perdre les champs ajoutés au modèle.
+
+    Les colonnes qui contiennent du JSON sous forme de texte sont décodées pour
+    produire un export portable. Les secrets de connexion sont exclus par
+    l'appelant : un export RGPD contient les données, jamais les identifiants
+    permettant d'accéder à un service tiers.
+    """
+    payload = row.model_dump(mode="json", exclude=exclude or set())
+    for field in json_fields:
+        value = payload.get(field)
+        if not isinstance(value, str):
+            continue
+        try:
+            payload[field] = json.loads(value)
+        except json.JSONDecodeError:
+            # Ne jamais perdre une valeur historique devenue invalide : elle
+            # reste exportée telle quelle et pourra être examinée/importée.
+            pass
+    return payload
 
 
 # ============================================================
@@ -128,18 +157,40 @@ async def export_all_data(
     variables_result = await session.execute(select(Variable))
     variables = variables_result.scalars().all()
 
+    # Données fonctionnelles et connexions. Les secrets des comptes externes
+    # sont volontairement exclus plus bas, mais leurs contenus synchronisés
+    # font partie du droit à la portabilité.
+    prompt_templates = (await session.execute(select(PromptTemplate))).scalars().all()
+    email_accounts = (await session.execute(select(EmailAccount))).scalars().all()
+    email_messages = (await session.execute(select(EmailMessage))).scalars().all()
+    email_labels = (await session.execute(select(EmailLabel))).scalars().all()
+    email_follow_ups = (await session.execute(select(EmailFollowUp))).scalars().all()
+    calendars = (await session.execute(select(Calendar))).scalars().all()
+    calendar_events = (await session.execute(select(CalendarEvent))).scalars().all()
+    tasks = (await session.execute(select(Task))).scalars().all()
+    invoices = (await session.execute(select(Invoice))).scalars().all()
+    invoice_lines = (await session.execute(select(InvoiceLine))).scalars().all()
+    activities = (await session.execute(select(Activity))).scalars().all()
+    deliverables = (await session.execute(select(Deliverable))).scalars().all()
+    notifications = (await session.execute(select(Notification))).scalars().all()
+    agent_tasks = (await session.execute(select(AgentTask))).scalars().all()
+    agent_messages = (await session.execute(select(AgentMessage))).scalars().all()
+    code_changes = (await session.execute(select(CodeChange))).scalars().all()
+    agent_sessions = (await session.execute(select(AgentSession))).scalars().all()
+
     # Activity logs
     logs_result = await session.execute(
-        select(ActivityLog).order_by(ActivityLog.timestamp.desc()).limit(1000)
+        select(ActivityLog).order_by(ActivityLog.timestamp.desc())
     )
     logs = logs_result.scalars().all()
 
     export_data = {
         "exported_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
-        "data_format_version": "1.1",  # 1.1 : bloc variables
+        "data_format_version": "1.2",  # 1.2 : couverture de toutes les tables utilisateur
         "variables": [
             {
+                "id": v.id,
                 "name": v.name,
                 "kind": v.kind,
                 "value": v.parsed_value,
@@ -150,38 +201,10 @@ async def export_all_data(
             for v in variables
         ],
         "contacts": [
-            {
-                "id": c.id,
-                "first_name": c.first_name,
-                "last_name": c.last_name,
-                "company": c.company,
-                "email": c.email,
-                "phone": c.phone,
-                "notes": c.notes,
-                "tags": json.loads(c.tags) if c.tags else None,
-                "scope": c.scope,
-                "scope_id": c.scope_id,
-                "created_at": c.created_at.isoformat(),
-                "updated_at": c.updated_at.isoformat(),
-            }
-            for c in contacts
+            _export_row(item, json_fields=("tags", "extra_data")) for item in contacts
         ],
         "projects": [
-            {
-                "id": p.id,
-                "name": p.name,
-                "description": p.description,
-                "contact_id": p.contact_id,
-                "status": p.status,
-                "budget": p.budget,
-                "notes": p.notes,
-                "tags": json.loads(p.tags) if p.tags else None,
-                "scope": p.scope,
-                "scope_id": p.scope_id,
-                "created_at": p.created_at.isoformat(),
-                "updated_at": p.updated_at.isoformat(),
-            }
-            for p in projects
+            _export_row(item, json_fields=("tags", "extra_data")) for item in projects
         ],
         "conversations": [
             {
@@ -191,59 +214,76 @@ async def export_all_data(
                 "created_at": conv.created_at.isoformat(),
                 "updated_at": conv.updated_at.isoformat(),
                 "messages": [
-                    {
-                        "id": m.id,
-                        "role": m.role,
-                        "content": m.content,
-                        "model": m.model,
-                        "tokens_in": m.tokens_in,
-                        "tokens_out": m.tokens_out,
-                        "created_at": m.created_at.isoformat(),
-                    }
+                    _export_row(m, json_fields=("extra_data",))
                     for m in messages
                     if m.conversation_id == conv.id
                 ],
             }
             for conv in conversations
         ],
-        "files": [
-            {
-                "id": f.id,
-                "path": f.path,
-                "name": f.name,
-                "extension": f.extension,
-                "size": f.size,
-                "mime_type": f.mime_type,
-                "chunk_count": f.chunk_count,
-                "scope": f.scope,
-                "scope_id": f.scope_id,
-                "indexed_at": f.indexed_at.isoformat() if f.indexed_at else None,
-                "created_at": f.created_at.isoformat(),
-            }
-            for f in files
-        ],
+        "files": [_export_row(item) for item in files],
         "preferences": [
             {
+                "id": p.id,
                 "key": p.key,
                 "value": p.value if "api_key" not in p.key.lower() else "[REDACTED]",
                 "category": p.category,
+                "created_at": p.created_at.isoformat(),
                 "updated_at": p.updated_at.isoformat(),
             }
             for p in preferences
         ],
         "board_decisions": [
-            {
-                "id": d.id,
-                "question": d.question,
-                "context": d.context,
-                "opinions": json.loads(d.opinions),
-                "synthesis": json.loads(d.synthesis),
-                "confidence": d.confidence,
-                "recommendation": d.recommendation,
-                "created_at": d.created_at.isoformat(),
-            }
-            for d in decisions
+            _export_row(item, json_fields=("opinions", "synthesis"))
+            for item in decisions
         ],
+        "prompt_templates": [_export_row(item) for item in prompt_templates],
+        "email_accounts": [
+            _export_row(
+                item,
+                exclude={
+                    "client_id",
+                    "client_secret",
+                    "access_token",
+                    "refresh_token",
+                    "imap_password",
+                },
+                json_fields=("scopes",),
+            )
+            for item in email_accounts
+        ],
+        "email_messages": [
+            _export_row(
+                item,
+                json_fields=("to_emails", "cc_emails", "bcc_emails", "labels"),
+            )
+            for item in email_messages
+        ],
+        "email_labels": [_export_row(item) for item in email_labels],
+        "email_follow_ups": [_export_row(item) for item in email_follow_ups],
+        "calendars": [
+            _export_row(item, exclude={"caldav_password"}) for item in calendars
+        ],
+        "calendar_events": [
+            _export_row(item, json_fields=("attendees", "recurrence"))
+            for item in calendar_events
+        ],
+        "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
+        "invoices": [_export_row(item) for item in invoices],
+        "invoice_lines": [_export_row(item) for item in invoice_lines],
+        "activities": [
+            _export_row(item, json_fields=("extra_data",)) for item in activities
+        ],
+        "deliverables": [_export_row(item) for item in deliverables],
+        "notifications": [_export_row(item) for item in notifications],
+        "agent_tasks": [
+            _export_row(item, json_fields=("files_changed",)) for item in agent_tasks
+        ],
+        "agent_messages": [
+            _export_row(item, json_fields=("tool_calls",)) for item in agent_messages
+        ],
+        "code_changes": [_export_row(item) for item in code_changes],
+        "agent_sessions": [_export_row(item) for item in agent_sessions],
         "documents": [
             {
                 "id": doc.id,
@@ -414,6 +454,7 @@ async def delete_all_data(
     await session.execute(delete(CodeChange))
     await session.execute(delete(AgentMessage))
     await session.execute(delete(AgentTask))
+    await session.execute(delete(AgentSession))
     # -- Atelier documentaire (RGPD Art. 17) : pistes -> sections -> documents
     await session.execute(delete(DocumentPiste))
     await session.execute(delete(DocumentSection))
@@ -423,6 +464,7 @@ async def delete_all_data(
     await session.execute(delete(Invoice))
     await session.execute(delete(CalendarEvent))
     await session.execute(delete(Calendar))
+    await session.execute(delete(EmailFollowUp))
     await session.execute(delete(EmailLabel))
     await session.execute(delete(EmailMessage))
     await session.execute(delete(EmailAccount))
@@ -430,6 +472,7 @@ async def delete_all_data(
     await session.execute(delete(Deliverable))
     await session.execute(delete(Activity))
     await session.execute(delete(PromptTemplate))
+    await session.execute(delete(Notification))
     # -- Tables principales (deja presentes)
     await session.execute(delete(Message))
     await session.execute(delete(Conversation))
@@ -438,10 +481,9 @@ async def delete_all_data(
     await session.execute(delete(FileMetadata))
     await session.execute(delete(BoardDecisionDB))
     await session.execute(delete(Variable))
-    # On garde les preferences systeme mais on supprime les API keys
-    await session.execute(
-        delete(Preference).where(Preference.key.contains("api_key"))
-    )
+    # Les préférences contiennent aussi le profil et les choix personnels :
+    # « toutes les données » doit donc réellement remettre cet espace à zéro.
+    await session.execute(delete(Preference))
     # On garde les logs d'audit (trace legale)
 
     await session.commit()

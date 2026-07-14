@@ -1,12 +1,6 @@
-/**
- * THÉRÈSE v2 - ToolConfirmationCard (US-002)
- *
- * Affiche les actions sensibles (ex. envoi d'email) en attente de validation.
- * Le backend ne les exécute jamais seul : l'utilisateur confirme ici, et
- * l'exécution réelle a lieu via POST /api/chat/confirm-tool.
- */
-import { useState } from 'react';
-import { Mail, Send, X, Loader2 } from 'lucide-react';
+/** Confirmation humaine des mutations préparées par le chat. */
+import { useState, type ReactNode } from 'react';
+import { Calendar, Check, Loader2, Mail, Send, X } from 'lucide-react';
 import {
   useToolConfirmationStore,
   type PendingConfirmation,
@@ -16,88 +10,102 @@ import { useChatStore } from '../../stores/chatStore';
 import { Button } from '../ui/Button';
 
 export function ToolConfirmationCard() {
-  const pending = useToolConfirmationStore((s) => s.pending);
+  const pending = useToolConfirmationStore((state) => state.pending);
   if (pending.length === 0) return null;
+  return <div className="space-y-2 px-4 py-2">{pending.map((confirmation) => <ConfirmationItem key={confirmation.confirmation_id} confirmation={confirmation} />)}</div>;
+}
+
+function baseToolName(toolName: string): string {
+  return toolName.includes('__') ? toolName.split('__', 2)[1] : toolName;
+}
+
+function value(argumentsValue: Record<string, unknown>, key: string): string {
+  return String(argumentsValue[key] ?? '');
+}
+
+function Detail({ label, children }: { label: string; children: ReactNode }) {
+  if (!children) return null;
+  return <div><dt className="inline text-text-muted/70">{label} : </dt><dd className="inline whitespace-pre-wrap text-text">{children}</dd></div>;
+}
+
+function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }) {
+  const args = confirmation.arguments;
+  const destination = (args._confirmation_destination || {}) as Record<string, unknown>;
+  const attendees = value(args, 'attendees');
+  const provider = value(destination, 'provider');
+  const account = value(destination, 'account');
+  const willCreateCalendar = Boolean(destination.will_create_calendar);
   return (
-    <div className="space-y-2 px-4 py-2">
-      {pending.map((c) => (
-        <ConfirmationItem key={c.confirmation_id} confirmation={c} />
-      ))}
-    </div>
+    <dl className="mb-3 space-y-1 text-xs text-text-muted">
+      <Detail label="Événement">{value(args, 'summary')}</Detail>
+      <Detail label="Début">{value(args, 'start')}</Detail>
+      <Detail label="Fin">{value(args, 'end')}</Detail>
+      <Detail label="Fuseau">{value(args, 'timezone') || 'Europe/Paris'}</Detail>
+      <Detail label="Calendrier">{value(destination, 'calendar_name') || 'Destination à vérifier'}</Detail>
+      <Detail label="Fournisseur">{provider === 'google' ? 'Google Calendar' : provider === 'caldav' ? 'CalDAV' : 'Local'}</Detail>
+      {account && <Detail label="Compte">{account}</Detail>}
+      {attendees && <Detail label="Participants">{attendees}</Detail>}
+      {value(args, 'location') && <Detail label="Lieu">{value(args, 'location')}</Detail>}
+      {value(args, 'description') && <Detail label="Description">{value(args, 'description')}</Detail>}
+      {willCreateCalendar && <div className="mt-2 rounded-md border border-amber-400/30 bg-amber-400/10 p-2 text-amber-200">Aucun calendrier local n’existe encore. La confirmation créera aussi « Mon calendrier ».</div>}
+    </dl>
+  );
+}
+
+function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
+  const args = confirmation.arguments;
+  return (
+    <dl className="mb-3 space-y-1 text-xs text-text-muted">
+      <Detail label="À">{value(args, 'to')}</Detail>
+      <Detail label="Objet">{value(args, 'subject')}</Detail>
+      <Detail label="Message">{value(args, 'body')}</Detail>
+    </dl>
   );
 }
 
 function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation }) {
-  const [busy, setBusy] = useState<'send' | 'cancel' | null>(null);
-  const remove = useToolConfirmationStore((s) => s.remove);
-  const addMessage = useChatStore((s) => s.addMessage);
+  const [busy, setBusy] = useState<'approve' | 'cancel' | null>(null);
+  const remove = useToolConfirmationStore((state) => state.remove);
+  const addMessage = useChatStore((state) => state.addMessage);
+  const toolName = baseToolName(confirmation.tool_name);
+  const isCalendar = toolName === 'create_calendar_event';
+  const title = isCalendar ? 'Confirmer la création du rendez-vous' : 'Confirmer l’envoi de l’email';
 
-  const to = String(confirmation.arguments.to ?? '');
-  const subject = String(confirmation.arguments.subject ?? '');
-  const body = String(confirmation.arguments.body ?? '');
-
-  const handle = async (approved: boolean) => {
-    setBusy(approved ? 'send' : 'cancel');
+  async function handle(approved: boolean) {
+    setBusy(approved ? 'approve' : 'cancel');
     try {
-      const res = await confirmTool(confirmation.confirmation_id, approved);
+      const response = await confirmTool(confirmation.confirmation_id, approved);
       if (approved) {
-        addMessage({ role: 'assistant', content: res.result || 'Email envoyé.' });
+        addMessage({
+          role: 'assistant',
+          content: response.result || (isCalendar ? 'Rendez-vous créé.' : 'Email envoyé.'),
+        });
       }
-    } catch (e) {
+    } catch (error) {
       addMessage({
         role: 'assistant',
-        content: `Erreur lors de l'envoi : ${e instanceof Error ? e.message : 'inconnue'}`,
+        content: `Erreur lors de l’action : ${error instanceof Error ? error.message : 'inconnue'}`,
       });
     } finally {
       remove(confirmation.confirmation_id);
       setBusy(null);
     }
-  };
+  }
 
   return (
-    <div
-      className="rounded-lg border border-accent-cyan/30 bg-surface p-3"
-      data-testid="tool-confirmation"
-    >
-      <div className="flex items-center gap-2 mb-2 text-accent-cyan">
-        <Mail className="w-4 h-4" />
-        <span className="text-sm font-medium text-text">Confirmer l'envoi de l'email</span>
+    <div className="rounded-lg border border-accent-cyan/30 bg-surface p-3" data-testid="tool-confirmation">
+      <div className="mb-2 flex items-center gap-2 text-accent-cyan">
+        {isCalendar ? <Calendar className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+        <span className="text-sm font-medium text-text">{title}</span>
       </div>
-      <dl className="text-xs text-text-muted space-y-1 mb-3">
-        <div>
-          <span className="text-text-muted/70">À : </span>
-          <span className="text-text">{to}</span>
-        </div>
-        <div>
-          <span className="text-text-muted/70">Objet : </span>
-          <span className="text-text">{subject}</span>
-        </div>
-        <div className="whitespace-pre-wrap">
-          <span className="text-text-muted/70">Message : </span>
-          <span className="text-text">{body}</span>
-        </div>
-      </dl>
+      {isCalendar ? <CalendarDetails confirmation={confirmation} /> : <EmailDetails confirmation={confirmation} />}
       <div className="flex gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => handle(true)}
-          disabled={busy !== null}
-        >
-          {busy === 'send' ? (
-            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4 mr-1" />
-          )}
-          Envoyer
+        <Button variant="primary" size="sm" onClick={() => void handle(true)} disabled={busy !== null}>
+          {busy === 'approve' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : <Send className="mr-1 h-4 w-4" />}
+          {isCalendar ? 'Créer' : 'Envoyer'}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handle(false)}
-          disabled={busy !== null}
-        >
-          <X className="w-4 h-4 mr-1" />
+        <Button variant="ghost" size="sm" onClick={() => void handle(false)} disabled={busy !== null}>
+          <X className="mr-1 h-4 w-4" />
           Annuler
         </Button>
       </div>
