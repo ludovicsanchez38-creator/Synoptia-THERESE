@@ -816,7 +816,7 @@ async def send_message(
     # cumulables. Les mutations Agenda sont seulement préparées ; leurs cartes
     # de confirmation s'affichent avant toute exécution.
     inline_preamble = ""
-    inline_pending_confirmations: list[dict] = []
+    inline_pending_confirmations: list[dict[str, Any]] = []
     actions_context: str | None = None
     llm_user_message = request.message
     if produce_prompt is not None:
@@ -1120,7 +1120,7 @@ async def _stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
-    pending_confirmations: list[dict] | None = None,
+    pending_confirmations: list[dict[str, Any]] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
@@ -1157,7 +1157,7 @@ async def _do_stream_response(
     disable_tools: bool = False,
     preamble: str = "",
     actions_context: str | None = None,
-    pending_confirmations: list[dict] | None = None,
+    pending_confirmations: list[dict[str, Any]] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
@@ -2233,7 +2233,7 @@ async def rename_conversation(
     conversation_id: str,
     request: ConversationRename,
     session: AsyncSession = Depends(get_session),
-):
+) -> ConversationResponse:
     """Renomme durablement une conversation sans modifier ses messages."""
     from datetime import UTC, datetime
 

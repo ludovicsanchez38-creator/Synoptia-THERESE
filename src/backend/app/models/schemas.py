@@ -6,7 +6,7 @@ Request/Response models for API endpoints.
 
 import re
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, model_validator
@@ -47,7 +47,7 @@ class ChatResponse(BaseModel):
     model: str | None = None
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
-    confirmations: list[dict] | None = None  # Mutations préparées, encore non exécutées
+    confirmations: list[dict[str, Any]] | None = None  # Mutations préparées, encore non exécutées
     created_at: datetime
 
 
@@ -623,7 +623,7 @@ class CreateEventRequest(BaseModel):
     timezone: str | None = None
 
     @model_validator(mode="after")
-    def validate_event_window(self):
+    def validate_event_window(self) -> Self:
         """Refuse les événements ambigus ou incohérents avant tout fournisseur."""
         self.summary = self.summary.strip()
         if not self.summary:
@@ -642,9 +642,13 @@ class CreateEventRequest(BaseModel):
 
         try:
             if timed_complete:
-                start = datetime.fromisoformat(self.start_datetime.replace("Z", "+00:00"))
-                end = datetime.fromisoformat(self.end_datetime.replace("Z", "+00:00"))
+                if self.start_datetime is None or self.end_datetime is None:
+                    raise ValueError("Le début et la fin horodatés sont obligatoires ensemble")
+                start: date = datetime.fromisoformat(self.start_datetime.replace("Z", "+00:00"))
+                end: date = datetime.fromisoformat(self.end_datetime.replace("Z", "+00:00"))
             else:
+                if self.start_date is None or self.end_date is None:
+                    raise ValueError("Les dates de début et de fin sont obligatoires ensemble")
                 start = date.fromisoformat(self.start_date)
                 end = date.fromisoformat(self.end_date)
         except ValueError as exc:

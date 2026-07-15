@@ -11,6 +11,7 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
+from typing import Any
 
 from app.config import settings
 from app.models.database import get_session
@@ -58,11 +59,11 @@ router = APIRouter()
 
 
 def _export_row(
-    row,
+    row: Any,
     *,
     exclude: set[str] | None = None,
     json_fields: tuple[str, ...] = (),
-) -> dict:
+) -> dict[str, Any]:
     """Sérialise une ligne SQLModel sans perdre les champs ajoutés au modèle.
 
     Les colonnes qui contiennent du JSON sous forme de texte sont décodées pour
@@ -70,7 +71,7 @@ def _export_row(
     l'appelant : un export RGPD contient les données, jamais les identifiants
     permettant d'accéder à un service tiers.
     """
-    payload = row.model_dump(mode="json", exclude=exclude or set())
+    payload: dict[str, Any] = row.model_dump(mode="json", exclude=exclude or set())
     for field in json_fields:
         value = payload.get(field)
         if not isinstance(value, str):

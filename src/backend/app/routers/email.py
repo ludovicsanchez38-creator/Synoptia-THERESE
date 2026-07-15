@@ -12,6 +12,7 @@ import html
 import json
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import Contact, EmailAccount, EmailMessage
@@ -67,7 +68,7 @@ router = APIRouter()
 # ============================================================
 
 
-def _email_message_response(message: EmailMessage) -> dict:
+def _email_message_response(message: EmailMessage) -> dict[str, Any]:
     """Normalise un message SQL dans le contrat consommé par les deux interfaces."""
 
     def _json_list(value: str | None) -> list[str]:

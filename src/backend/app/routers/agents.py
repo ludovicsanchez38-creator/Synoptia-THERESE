@@ -9,6 +9,7 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
@@ -41,7 +42,7 @@ from sqlmodel import func, select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-_running_agent_tasks: dict[str, asyncio.Task] = {}
+_running_agent_tasks: dict[str, asyncio.Task[Any]] = {}
 _PROFILE_DISABLED_MUTATION_TOOLS = {"write_file", "run_command"}
 _MAX_OPENCLAW_AGENTS = 3
 
@@ -221,7 +222,7 @@ async def agent_request(
         plan = ""
         test_results: list[str] = []
         explanation = ""
-        events: list[dict] = []
+        events: list[dict[str, Any]] = []
         agent_outputs: dict[str, str] = {"katia": "", "zezette": ""}
         agent_models: dict[str, str] = {}
         base_branch = None
@@ -512,7 +513,7 @@ async def spawn_agent(request: SpawnAgentRequest):
 async def cancel_task(
     task_id: str,
     session: AsyncSession = Depends(get_session),
-):
+) -> dict[str, str]:
     """Interrompt réellement une mission locale encore en cours."""
     result = await session.execute(select(AgentTask).where(AgentTask.id == task_id))
     task = result.scalar_one_or_none()
@@ -941,7 +942,7 @@ def _task_to_response(task: AgentTask) -> AgentTaskResponse:
         except json.JSONDecodeError:
             files = None
 
-    def json_value(raw: str | None, fallback):
+    def json_value(raw: str | None, fallback: Any) -> Any:
         if not raw:
             return fallback
         try:
