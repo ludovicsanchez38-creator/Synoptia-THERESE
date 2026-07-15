@@ -327,6 +327,8 @@ class BoardService:
         else:
             # --- MODE CLOUD : parallèle multi-providers ---
             # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
+            if default_llm is None:
+                raise RuntimeError("Aucun service LLM cloud disponible.")
             advisor_services: dict[AdvisorRole, tuple] = {}
             for role in advisors:
                 config = ADVISOR_CONFIG[role]

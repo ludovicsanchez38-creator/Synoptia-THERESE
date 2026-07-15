@@ -5,6 +5,7 @@ Pydantic models for the agent API endpoints.
 """
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +34,7 @@ class AgentTaskResponse(BaseModel):
     plan: str | None = None
     test_results: list[str] = Field(default_factory=list)
     explanation: str | None = None
-    events: list[dict] = Field(default_factory=list)
+    events: list[dict[str, Any]] = Field(default_factory=list)
     agent_outputs: dict[str, str] = Field(default_factory=dict)
     base_branch: str | None = None
     commit_hash: str | None = None

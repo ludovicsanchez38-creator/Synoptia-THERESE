@@ -446,7 +446,9 @@ async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool 
     return LocalCalendarProvider(session), cal.id, None
 
 
-async def get_calendar_confirmation_destination(session: AsyncSession) -> dict:
+async def get_calendar_confirmation_destination(
+    session: AsyncSession,
+) -> dict[str, Any]:
     """Décrit sans mutation la destination qu'utilisera create_calendar_event."""
     from app.models.entities import Calendar, EmailAccount
 
