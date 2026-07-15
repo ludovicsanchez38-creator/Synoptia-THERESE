@@ -1,0 +1,120 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - link "Aller au contenu principal" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - button "Ouvrir Conversations" [ref=e6] [cursor=pointer]
+    - button "Ouvrir Mémoire" [ref=e9] [cursor=pointer]
+    - banner "Barre d'outils Thérèse" [ref=e12]:
+      - banner [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - button "Fermer" [ref=e16]
+            - button "Réduire" [ref=e17]
+            - button "Agrandir" [ref=e18]
+          - button "THÉRÈSE" [ref=e20]:
+            - heading "THÉRÈSE" [level=1] [ref=e22]
+        - generic [ref=e23]:
+          - button "Accueil" [ref=e25]:
+            - img [ref=e26]
+          - generic [ref=e29]:
+            - button "Mail (⌘E)" [ref=e30]:
+              - img [ref=e31]
+            - button "Calendrier (⌘⇧C)" [ref=e34]:
+              - img [ref=e35]
+            - button "Tâches (⌘T)" [ref=e37]:
+              - img [ref=e38]
+            - button "Projets" [ref=e41]:
+              - img [ref=e42]
+            - button "Documents" [ref=e45]:
+              - img [ref=e46]
+            - button "CRM (⌘P)" [ref=e51]:
+              - img [ref=e52]
+            - button "Facture (⌘I)" [ref=e57]:
+              - img [ref=e58]
+        - generic [ref=e61]:
+          - button "Actions" [ref=e62]:
+            - img [ref=e63]
+          - button "78 notifications non lues" [ref=e66]:
+            - img [ref=e67]
+            - generic "78 notifications non lues" [ref=e70]: "78"
+          - button "Paramètres" [ref=e71]:
+            - img [ref=e72]
+    - main "Conversation" [ref=e75]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - heading "Bonjour !" [level=1] [ref=e80]
+            - paragraph [ref=e81]: mercredi 15 juillet
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - img [ref=e84]
+              - text: Données locales
+            - generic [ref=e87]:
+              - img [ref=e88]
+              - text: Ollama
+              - generic [ref=e91]: · qwen3:8b
+        - generic [ref=e92]:
+          - heading "Mise en route" [level=2] [ref=e93]
+          - button "Compléter le profil de facturation" [ref=e95]:
+            - img [ref=e96]
+            - generic [ref=e99]: Compléter le profil de facturation
+            - img [ref=e100]
+        - generic [ref=e102]:
+          - button "Nouvelle conversation" [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e107]: Nouvelle conversation
+          - button "Produire un document" [ref=e108]:
+            - img [ref=e110]
+            - generic [ref=e113]: Produire un document
+          - button "Ajouter un contact" [ref=e114]:
+            - img [ref=e116]
+            - generic [ref=e119]: Ajouter un contact
+          - button "Factures" [ref=e120]:
+            - img [ref=e122]
+            - generic [ref=e125]: Factures
+          - button "Rédiger un document" [ref=e126]:
+            - img [ref=e128]
+            - generic [ref=e133]: Rédiger un document
+        - generic [ref=e134]:
+          - heading "Reprendre une conversation" [level=2] [ref=e135]
+          - paragraph [ref=e136]: Aucune conversation pour l'instant.
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - heading "Agenda du jour" [level=2] [ref=e140]
+              - button "Tout voir" [ref=e141]
+            - list [ref=e142]:
+              - listitem [ref=e143]:
+                - img [ref=e144]
+                - generic [ref=e146]: Activité Linkedin
+                - generic [ref=e147]: 08:30
+              - listitem [ref=e148]:
+                - img [ref=e149]
+                - generic [ref=e151]: Bloqué
+                - generic [ref=e152]: 08:45
+              - listitem [ref=e153]:
+                - img [ref=e154]
+                - generic [ref=e156]: VELO VEILLE
+                - generic [ref=e157]: 12:00
+              - listitem [ref=e158]:
+                - img [ref=e159]
+                - generic [ref=e161]: Casse croute
+                - generic [ref=e162]: 13:00
+          - generic [ref=e163]:
+            - heading "À traiter" [level=2] [ref=e164]
+            - list [ref=e165]:
+              - listitem [ref=e166]:
+                - button "Relancer CRM E2E CRM Test Inc" [ref=e167]:
+                  - img [ref=e168]
+                  - generic [ref=e173]: Relancer CRM E2E
+                  - generic [ref=e174]: CRM Test Inc
+    - complementary "Conversations"
+    - generic [ref=e176]:
+      - img [ref=e177]
+      - generic [ref=e181]: Connecté
+      - generic [ref=e182]: 225ms
+  - status "Notifications"
+```

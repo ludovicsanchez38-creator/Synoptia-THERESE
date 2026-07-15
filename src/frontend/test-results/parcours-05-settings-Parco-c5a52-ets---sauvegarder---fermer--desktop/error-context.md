@@ -1,0 +1,339 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - link "Aller au contenu principal" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e5]:
+    - button "Ouvrir Conversations" [ref=e6] [cursor=pointer]
+    - button "Ouvrir Mémoire" [ref=e9] [cursor=pointer]
+    - banner "Barre d'outils Thérèse" [ref=e12]:
+      - banner [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - button "Fermer" [ref=e16]
+            - button "Réduire" [ref=e17]
+            - button "Agrandir" [ref=e18]
+          - button "THÉRÈSE" [ref=e20]:
+            - heading "THÉRÈSE" [level=1] [ref=e22]
+        - generic [ref=e23]:
+          - button "Accueil" [ref=e25]:
+            - img [ref=e26]
+          - generic [ref=e29]:
+            - button "Mail (⌘E)" [ref=e30]:
+              - img [ref=e31]
+            - button "Calendrier (⌘⇧C)" [ref=e34]:
+              - img [ref=e35]
+            - button "Tâches (⌘T)" [ref=e37]:
+              - img [ref=e38]
+            - button "Projets" [ref=e41]:
+              - img [ref=e42]
+            - button "Documents" [ref=e45]:
+              - img [ref=e46]
+            - button "CRM (⌘P)" [ref=e51]:
+              - img [ref=e52]
+            - button "Facture (⌘I)" [ref=e57]:
+              - img [ref=e58]
+        - generic [ref=e61]:
+          - button "Actions" [ref=e62]:
+            - img [ref=e63]
+          - button "78 notifications non lues" [ref=e66]:
+            - img [ref=e67]
+            - generic "78 notifications non lues" [ref=e70]: "78"
+          - button "Paramètres" [ref=e71]:
+            - img [ref=e72]
+    - main "Conversation" [ref=e75]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - heading "Bon après-midi !" [level=1] [ref=e80]
+            - paragraph [ref=e81]: mercredi 15 juillet
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - img [ref=e84]
+              - text: Données locales
+            - generic [ref=e87]:
+              - img [ref=e88]
+              - text: Ollama
+              - generic [ref=e91]: · qwen3:8b
+        - generic [ref=e92]:
+          - heading "Mise en route" [level=2] [ref=e93]
+          - button "Compléter le profil de facturation" [ref=e95]:
+            - img [ref=e96]
+            - generic [ref=e99]: Compléter le profil de facturation
+            - img [ref=e100]
+        - generic [ref=e102]:
+          - button "Nouvelle conversation" [ref=e103]:
+            - img [ref=e105]
+            - generic [ref=e107]: Nouvelle conversation
+          - button "Produire un document" [ref=e108]:
+            - img [ref=e110]
+            - generic [ref=e113]: Produire un document
+          - button "Ajouter un contact" [ref=e114]:
+            - img [ref=e116]
+            - generic [ref=e119]: Ajouter un contact
+          - button "Factures" [ref=e120]:
+            - img [ref=e122]
+            - generic [ref=e125]: Factures
+          - button "Rédiger un document" [ref=e126]:
+            - img [ref=e128]
+            - generic [ref=e133]: Rédiger un document
+        - generic [ref=e134]:
+          - heading "Reprendre une conversation" [level=2] [ref=e135]
+          - paragraph [ref=e136]: Aucune conversation pour l'instant.
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - heading "Agenda du jour" [level=2] [ref=e140]
+              - button "Tout voir" [ref=e141]
+            - list [ref=e142]:
+              - listitem [ref=e143]:
+                - img [ref=e144]
+                - generic [ref=e146]: Activité Linkedin
+                - generic [ref=e147]: 08:30
+              - listitem [ref=e148]:
+                - img [ref=e149]
+                - generic [ref=e151]: Bloqué
+                - generic [ref=e152]: 08:45
+              - listitem [ref=e153]:
+                - img [ref=e154]
+                - generic [ref=e156]: VELO VEILLE
+                - generic [ref=e157]: 12:00
+              - listitem [ref=e158]:
+                - img [ref=e159]
+                - generic [ref=e161]: Casse croute
+                - generic [ref=e162]: 13:00
+          - generic [ref=e163]:
+            - heading "À traiter" [level=2] [ref=e164]
+            - list [ref=e165]:
+              - listitem [ref=e166]:
+                - button "Relancer CRM E2E CRM Test Inc" [ref=e167]:
+                  - img [ref=e168]
+                  - generic [ref=e173]: Relancer CRM E2E
+                  - generic [ref=e174]: CRM Test Inc
+    - complementary "Conversations"
+    - dialog "Paramètres" [ref=e176]:
+      - generic [ref=e177]:
+        - heading "Paramètres" [level=2] [ref=e178]
+        - button [ref=e179]:
+          - img [ref=e180]
+      - generic [ref=e183]:
+        - navigation [ref=e184]:
+          - generic [ref=e186] [cursor=pointer]:
+            - checkbox "Mode Contributeur Fonctions avancées" [ref=e188]
+            - generic [ref=e191]:
+              - generic [ref=e192]: Mode Contributeur
+              - text: Fonctions avancées
+          - button "Profil" [ref=e193]:
+            - img [ref=e194]
+            - generic [ref=e197]: Profil
+          - button "IA" [ref=e198]:
+            - img [ref=e199]
+            - generic [ref=e202]: IA
+          - button "Services" [active] [ref=e203]:
+            - img [ref=e204]
+            - generic [ref=e208]: Services
+          - button "Confidentialité" [ref=e209]:
+            - img [ref=e210]
+            - generic [ref=e212]: Confidentialité
+          - button "À propos" [ref=e213]:
+            - img [ref=e214]
+            - generic [ref=e216]: À propos
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - heading "Exports Word (Atelier et conversations)" [level=4] [ref=e220]:
+              - img [ref=e221]
+              - text: Exports Word (Atelier et conversations)
+            - paragraph [ref=e225]: Langue, polices et habillage des fichiers Word générés. Les valeurs par défaut reproduisent la charte actuelle. Une police absente du poste du destinataire sera remplacée par Word.
+            - generic [ref=e226]:
+              - generic [ref=e227]:
+                - generic [ref=e228]: Langue du document
+                - textbox "Langue du document" [ref=e229]:
+                  - /placeholder: fr-FR
+                  - text: fr-FR
+              - generic [ref=e230]:
+                - generic [ref=e231]: Pied de page
+                - textbox "Pied de page" [ref=e232]: Généré par THÉRÈSE - Synoptïa
+              - generic [ref=e233]:
+                - generic [ref=e234]: Police du corps
+                - textbox "Police du corps" [ref=e235]: Calibri
+              - generic [ref=e236]:
+                - generic [ref=e237]: Taille du corps (pt)
+                - spinbutton "Taille du corps (pt)" [ref=e238]: "11"
+              - generic [ref=e239]:
+                - generic [ref=e240]: Police des titres
+                - textbox "Police des titres" [ref=e241]: Outfit
+              - generic [ref=e242]:
+                - generic [ref=e243]:
+                  - generic [ref=e244]: Couleur titres
+                  - textbox "Couleur titres" [ref=e245] [cursor=pointer]: "#0f1e6d"
+                - generic [ref=e246]:
+                  - generic [ref=e247]: Couleur H2
+                  - textbox "Couleur H2" [ref=e248] [cursor=pointer]: "#1733a6"
+                - generic [ref=e249]:
+                  - generic [ref=e250]: Couleur corps
+                  - textbox "Couleur corps" [ref=e251] [cursor=pointer]: "#1a1a2e"
+            - generic [ref=e252]:
+              - generic [ref=e253]: Marges (cm)
+              - generic [ref=e254]:
+                - generic [ref=e255]:
+                  - generic [ref=e256]: Haut
+                  - spinbutton "Haut" [ref=e257]: "2.5"
+                - generic [ref=e258]:
+                  - generic [ref=e259]: Bas
+                  - spinbutton "Bas" [ref=e260]: "2.5"
+                - generic [ref=e261]:
+                  - generic [ref=e262]: Gauche
+                  - spinbutton "Gauche" [ref=e263]: "2.5"
+                - generic [ref=e264]:
+                  - generic [ref=e265]: Droite
+                  - spinbutton "Droite" [ref=e266]: "2.5"
+            - generic [ref=e267]:
+              - button "Enregistrer" [ref=e268]
+              - button "Réinitialiser" [ref=e269]
+              - button "Exporter JSON" [ref=e270]
+              - button "Importer JSON" [ref=e271]
+          - generic [ref=e272]:
+            - heading "Variables" [level=4] [ref=e273]:
+              - img [ref=e274]
+              - text: Variables
+            - paragraph [ref=e277]: "Contenus réutilisables dans le chat : écris {nom} dans un message et la valeur est insérée à l'envoi. Gérables aussi depuis le chat : {action: variable creer nom \"valeur\"}."
+            - paragraph [ref=e278]: "Les valeurs sont envoyées au modèle à l'usage et conservées dans la base et l'historique : n'y mets jamais un secret (mot de passe, clé)."
+            - generic [ref=e279]:
+              - generic [ref=e280]:
+                - generic [ref=e281]: Nom
+                - textbox "Nom" [ref=e282]:
+                  - /placeholder: nom_client
+              - generic [ref=e283]:
+                - generic [ref=e284]: Type
+                - combobox "Type" [ref=e285]:
+                  - option "Texte" [selected]
+                  - option "Liste"
+              - generic [ref=e286]:
+                - generic [ref=e287]: Valeur
+                - textbox "Valeur" [ref=e288]:
+                  - /placeholder: Ets Toto
+              - button "Créer" [disabled] [ref=e289]
+            - paragraph [ref=e290]: Aucune variable pour l'instant.
+          - generic [ref=e291]:
+            - generic [ref=e292]:
+              - img [ref=e294]
+              - generic [ref=e298]:
+                - heading "Génération d'images" [level=3] [ref=e299]
+                - paragraph [ref=e300]: Clés API dédiées pour la génération d'images
+            - generic [ref=e301]:
+              - generic [ref=e302]:
+                - button "GPT Image 2 Clé OK Génération d'images OpenAI (gpt-image-2)" [ref=e303]:
+                  - generic [ref=e306]:
+                    - generic [ref=e307]:
+                      - generic [ref=e308]: GPT Image 2
+                      - generic [ref=e309]: Clé OK
+                    - paragraph [ref=e310]: Génération d'images OpenAI (gpt-image-2)
+                - generic [ref=e311]:
+                  - generic [ref=e312]:
+                    - generic [ref=e313]:
+                      - generic [ref=e314]: Clé API OpenAI (Image)
+                      - textbox "Clé API OpenAI (Image)" [ref=e315]:
+                        - /placeholder: sk-...
+                      - button [ref=e316]:
+                        - img [ref=e317]
+                    - button "Sauver" [disabled] [ref=e320]
+                  - paragraph [ref=e321]:
+                    - text: Obtiens ta clé sur
+                    - link "platform.openai.com" [ref=e322] [cursor=pointer]:
+                      - /url: https://platform.openai.com/api-keys
+              - generic [ref=e323]:
+                - button "Nano Banana 2 Clé OK Génération d'images Google Gemini" [ref=e324]:
+                  - generic [ref=e326]:
+                    - generic [ref=e327]:
+                      - generic [ref=e328]: Nano Banana 2
+                      - generic [ref=e329]: Clé OK
+                    - paragraph [ref=e330]: Génération d'images Google Gemini
+                - generic [ref=e331]:
+                  - generic [ref=e332]:
+                    - generic [ref=e333]:
+                      - generic [ref=e334]: Clé API Gemini (Image)
+                      - textbox "Clé API Gemini (Image)" [ref=e335]:
+                        - /placeholder: Clé API Gemini...
+                      - button [ref=e336]:
+                        - img [ref=e337]
+                    - button "Sauver" [disabled] [ref=e340]
+                  - paragraph [ref=e341]:
+                    - text: Obtiens ta clé sur
+                    - link "aistudio.google.com" [ref=e342] [cursor=pointer]:
+                      - /url: https://aistudio.google.com/app/apikey
+              - generic [ref=e343]:
+                - button "Fal Flux Pro Clé requise Génération d'images rapide (Flux Pro v1.1)" [ref=e344]:
+                  - generic [ref=e346]:
+                    - generic [ref=e347]:
+                      - generic [ref=e348]: Fal Flux Pro
+                      - generic [ref=e349]: Clé requise
+                    - paragraph [ref=e350]: Génération d'images rapide (Flux Pro v1.1)
+                - generic [ref=e351]:
+                  - generic [ref=e352]:
+                    - generic [ref=e353]:
+                      - generic [ref=e354]: Clé API Fal
+                      - textbox "Clé API Fal" [ref=e355]:
+                        - /placeholder: Clé API Fal...
+                      - button [ref=e356]:
+                        - img [ref=e357]
+                    - button "Sauver" [disabled] [ref=e360]
+                  - paragraph [ref=e361]:
+                    - text: Obtiens ta clé sur
+                    - link "fal.ai" [ref=e362] [cursor=pointer]:
+                      - /url: https://fal.ai/dashboard/keys
+          - generic [ref=e363]:
+            - generic [ref=e364]:
+              - img [ref=e366]
+              - generic [ref=e369]:
+                - heading "Transcription vocale" [level=3] [ref=e370]
+                - paragraph [ref=e371]: Transcription audio via Groq (whisper-large-v3-turbo, cloud)
+            - generic [ref=e372]:
+              - img [ref=e373]
+              - generic [ref=e375]: Dictée vocale active
+            - generic [ref=e376]:
+              - generic [ref=e377]:
+                - generic [ref=e378]:
+                  - generic [ref=e379]: Clé API Groq
+                  - textbox "Clé API Groq" [ref=e380]:
+                    - /placeholder: gsk_...
+                  - button [ref=e381]:
+                    - img [ref=e382]
+                - button "Sauver" [disabled] [ref=e385]
+              - paragraph [ref=e386]:
+                - text: Obtiens ta clé sur
+                - link "console.groq.com" [ref=e387] [cursor=pointer]:
+                  - /url: https://console.groq.com/keys
+                - text: "- gratuit jusqu'à un certain volume, puis payant"
+          - generic [ref=e388]:
+            - generic [ref=e389]:
+              - img [ref=e391]
+              - generic [ref=e394]:
+                - heading "Recherche Web" [level=3] [ref=e395]
+                - paragraph [ref=e396]: Permet aux LLMs de chercher sur le web
+              - button [ref=e397]
+            - generic [ref=e399]:
+              - generic [ref=e400]:
+                - paragraph [ref=e401]:
+                  - strong [ref=e402]: Brave Search
+                  - text: (optionnel) -
+                  - button "Obtenir une clé API" [ref=e403] [cursor=pointer]
+                - generic [ref=e404]:
+                  - img [ref=e405]
+                  - text: OK
+              - generic [ref=e407]:
+                - textbox "BSA..." [ref=e408]
+                - button "Sauver" [disabled] [ref=e409]
+          - generic [ref=e411]:
+            - img [ref=e413]
+            - generic [ref=e415]:
+              - heading "Extraction automatique" [level=3] [ref=e416]
+              - paragraph [ref=e417]: Extraire contacts et projets des conversations
+            - button [ref=e418]
+      - button "Fermer" [ref=e421]
+    - generic [ref=e423]:
+      - img [ref=e424]
+      - generic [ref=e428]: Connecté
+      - generic [ref=e429]: 72ms
+  - status "Notifications"
+```
