@@ -14,6 +14,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -67,6 +68,7 @@ function parseDecimalDraft(value: string) {
 }
 
 export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
+  const requestExternalAction = useExternalActionConfirmation();
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -242,53 +244,116 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       unit_price_ht: line.unit_price_ht as number,
     }));
 
-    setIsSaving(true);
+    const data = {
+      contact_id: contactId,
+      document_type: documentType,
+      currency,
+      issue_date: issueDate,
+      due_date: dueDate,
+      lines: validLines,
+      notes: notes || undefined,
+      status: status !== 'draft' ? status : undefined,
+      validite_jours: documentType === 'devis' ? validiteJours : undefined,
+    };
 
-    try {
-      const data = {
-        contact_id: contactId,
-        document_type: documentType,
-        currency,
-        issue_date: issueDate,
-        due_date: dueDate,
-        lines: validLines,
-        notes: notes || undefined,
-        status: status !== 'draft' ? status : undefined,
-        validite_jours: documentType === 'devis' ? validiteJours : undefined,
-      };
+    const persistInvoice = async () => {
+      setIsSaving(true);
 
-      let savedInvoice: Invoice;
+      try {
+        let savedInvoice: Invoice;
 
-      if (invoice) {
-        // Mise a jour
-        savedInvoice = await updateInvoice(invoice.id, data);
-        addNotification({ type: 'success', title: 'Facture mise à jour', message: savedInvoice.invoice_number });
-      } else {
-        // Creation
-        savedInvoice = await createInvoice(data);
-        addNotification({ type: 'success', title: 'Facture créée', message: savedInvoice.invoice_number });
+        if (invoice) {
+          // Mise a jour
+          savedInvoice = await updateInvoice(invoice.id, data);
+          addNotification({ type: 'success', title: 'Facture mise à jour', message: savedInvoice.invoice_number });
+        } else {
+          // Creation
+          savedInvoice = await createInvoice(data);
+          addNotification({ type: 'success', title: 'Facture créée', message: savedInvoice.invoice_number });
+        }
+
+        onSave(savedInvoice);
+      } catch (error) {
+        console.error('Failed to save invoice:', error);
+        const msg = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
+        addNotification({ type: 'error', title: 'Erreur', message: msg });
+      } finally {
+        setIsSaving(false);
       }
+    };
 
-      onSave(savedInvoice);
-    } catch (error) {
-      console.error('Failed to save invoice:', error);
-      const msg = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde';
-      addNotification({ type: 'error', title: 'Erreur', message: msg });
-    } finally {
-      setIsSaving(false);
+    const sensitiveStatusChange = invoice
+      && invoice.status !== status
+      && (status === 'paid' || status === 'accepted' || status === 'refused');
+    if (sensitiveStatusChange) {
+      const statusLabel = status === 'paid' ? 'Payée' : status === 'accepted' ? 'Accepté' : 'Refusé';
+      requestExternalAction({
+        title: `Confirmer le passage au statut « ${statusLabel} »`,
+        description: 'La mise à jour du document ne sera enregistrée qu’après ta confirmation.',
+        confirmLabel: 'Confirmer le changement de statut',
+        details: [
+          { label: 'Document', value: invoice.invoice_number },
+          { label: 'Statut actuel', value: invoice.status },
+          { label: 'Nouveau statut', value: statusLabel },
+          { label: 'Montant TTC', value: `${totalTTC.toFixed(2)} ${CURRENCY_SYMBOLS[currency] || currency}` },
+        ],
+      }, persistInvoice);
+      return;
     }
+
+    await persistInvoice();
   }
 
-  async function handleMarkPaid() {
+  function handleMarkPaid() {
     if (!invoice) return;
-    try {
-      const updatedInvoice = await markInvoicePaid(invoice.id);
-      addNotification({ type: 'success', title: 'Facture payée', message: `${invoice.invoice_number} marquée comme payée` });
-      onSave(updatedInvoice);
-    } catch (error) {
-      console.error('Failed to mark paid:', error);
-      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payée' });
-    }
+
+    requestExternalAction({
+      title: 'Confirmer le paiement de la facture',
+      description: 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
+      confirmLabel: 'Confirmer le paiement',
+      details: [
+        { label: 'Facture', value: invoice.invoice_number },
+        { label: 'Montant TTC', value: `${invoice.total_ttc.toFixed(2)} ${CURRENCY_SYMBOLS[invoice.currency] || invoice.currency}` },
+        { label: 'Nouveau statut', value: 'Payée' },
+      ],
+    }, async () => {
+      try {
+        const updatedInvoice = await markInvoicePaid(invoice.id);
+        addNotification({ type: 'success', title: 'Facture payée', message: `${invoice.invoice_number} marquée comme payée` });
+        onSave(updatedInvoice);
+      } catch (error) {
+        console.error('Failed to mark paid:', error);
+        addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de marquer comme payée' });
+      }
+    });
+  }
+
+  function handleDevisStatus(nextStatus: 'accepted' | 'refused') {
+    if (!invoice) return;
+
+    const accepted = nextStatus === 'accepted';
+    requestExternalAction({
+      title: accepted ? 'Confirmer l’acceptation du devis' : 'Confirmer le refus du devis',
+      description: `Cette action changera le statut du devis en « ${accepted ? 'Accepté' : 'Refusé'} ».`,
+      confirmLabel: accepted ? 'Confirmer l’acceptation' : 'Confirmer le refus',
+      details: [
+        { label: 'Devis', value: invoice.invoice_number },
+        { label: 'Montant TTC', value: `${invoice.total_ttc.toFixed(2)} ${CURRENCY_SYMBOLS[invoice.currency] || invoice.currency}` },
+        { label: 'Nouveau statut', value: accepted ? 'Accepté' : 'Refusé' },
+      ],
+    }, async () => {
+      try {
+        const updated = await updateDevisStatus(invoice.id, nextStatus);
+        addNotification({
+          type: 'success',
+          title: accepted ? 'Devis accepté' : 'Devis refusé',
+          message: invoice.invoice_number,
+        });
+        onSave(updated);
+      } catch (err) {
+        addNotification({ type: 'error', title: 'Erreur', message: String(err) });
+      }
+    });
   }
 
   async function handleConvertToInvoice() {
@@ -753,30 +818,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      const updated = await updateDevisStatus(invoice.id, 'accepted');
-                      addNotification({ type: 'success', title: 'Devis accepté', message: invoice.invoice_number });
-                      onSave(updated);
-                    } catch (err) {
-                      addNotification({ type: 'error', title: 'Erreur', message: String(err) });
-                    }
-                  }}
+                  onClick={() => handleDevisStatus('accepted')}
                   className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
                 >
                   Accepter
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      const updated = await updateDevisStatus(invoice.id, 'refused');
-                      addNotification({ type: 'success', title: 'Devis refusé', message: invoice.invoice_number });
-                      onSave(updated);
-                    } catch (err) {
-                      addNotification({ type: 'error', title: 'Erreur', message: String(err) });
-                    }
-                  }}
+                  onClick={() => handleDevisStatus('refused')}
                   className="px-3 py-2 rounded-lg bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors text-sm font-medium"
                 >
                   Refuser

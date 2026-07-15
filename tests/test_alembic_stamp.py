@@ -13,9 +13,23 @@ import sys
 from pathlib import Path
 
 import pytest
-from app.models.database import ALEMBIC_HEAD_REVISION, ensure_alembic_stamp
+from app.models.database import (
+    ALEMBIC_HEAD_REVISION,
+    ensure_alembic_stamp,
+)
 
 BACKEND = Path(__file__).parent.parent / "src" / "backend"
+BOARD_HISTORY_COLUMNS = ("web_sources", "synthesis_usage")
+ATELIER_HISTORY_COLUMNS = (
+    "run_phase",
+    "plan",
+    "test_results",
+    "explanation",
+    "events",
+    "agent_outputs",
+    "base_branch",
+    "commit_hash",
+)
 
 
 def _read_stamp(db_path: Path) -> str | None:
@@ -36,6 +50,40 @@ def _make_legacy_db(db_path: Path) -> None:
     """DB « legacy » minimale : tables métier présentes, pas d'alembic_version."""
     with sqlite3.connect(str(db_path)) as conn:
         conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY, first_name VARCHAR)")
+        conn.commit()
+
+
+def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -> None:
+    """Construit une DB ancienne dont les patches ad-hoc simulent le schéma head."""
+    board_columns = [
+        column
+        for column in BOARD_HISTORY_COLUMNS
+        if column != missing_column
+    ]
+    atelier_columns = [
+        column
+        for column in ATELIER_HISTORY_COLUMNS
+        if column != missing_column
+    ]
+    with sqlite3.connect(str(db_path)) as conn:
+        conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
+        conn.execute(
+            "CREATE TABLE invoices "
+            "(id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER)"
+        )
+        conn.execute("CREATE TABLE variables (id VARCHAR PRIMARY KEY)")
+        conn.execute(
+            "CREATE TABLE board_decisions (id VARCHAR PRIMARY KEY, "
+            + ", ".join(f"{column} TEXT" for column in board_columns)
+            + ")"
+        )
+        conn.execute(
+            "CREATE TABLE agent_tasks (id VARCHAR PRIMARY KEY, "
+            + ", ".join(f"{column} TEXT" for column in atelier_columns)
+            + ")"
+        )
+        conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
+        conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
 
 
@@ -140,20 +188,30 @@ def test_realignement_db_trackee_ancienne_schema_patche(tmp_path):
     ré-estampillée à la tête - sinon upgrade head replante en duplicate
     column. Variables V4 finding Codex 8 : la preuve de schéma exige DÉSORMAIS
     chaque élément apporté depuis (table variables comprise) - dans le flux
-    desktop réel, apply_adhoc_migrations tourne AVANT et la crée."""
+    desktop réel, apply_adhoc_migrations tourne AVANT et la crée. La preuve
+    couvre également toutes les colonnes Board et Atelier de la 0.40."""
     db = tmp_path / "therese.db"
-    with sqlite3.connect(str(db)) as conn:
-        conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
-        conn.execute(
-            "CREATE TABLE invoices (id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER)"
-        )
-        conn.execute("CREATE TABLE variables (id VARCHAR PRIMARY KEY)")
-        conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
-        conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
-        conn.commit()
+    _make_patched_tracked_db(db)
 
     ensure_alembic_stamp(db)
     assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
+@pytest.mark.parametrize(
+    "missing_column",
+    [
+        *BOARD_HISTORY_COLUMNS,
+        *ATELIER_HISTORY_COLUMNS,
+    ],
+)
+def test_realignement_refuse_si_une_colonne_v040_manque(tmp_path, missing_column):
+    """Aucune migration Board/Atelier ne doit être sautée par un stamp abusif."""
+    db = tmp_path / "therese.db"
+    _make_patched_tracked_db(db, missing_column=missing_column)
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "c3d4e5f6a7b8"
 
 
 @pytest.mark.slow
