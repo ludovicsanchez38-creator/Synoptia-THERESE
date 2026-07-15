@@ -1,11 +1,9 @@
 """Contrats du routeur Email partagés par l’interface classique et la 0.40."""
 
 import base64
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from app.models.entities import EmailAccount
 
 

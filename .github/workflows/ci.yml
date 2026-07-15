@@ -136,6 +136,12 @@ jobs:
       #   passe à httpx2 et désynchronise les requêtes longues de la suite locale
       #   (AttributeError ByteStream.write). Surface réduite : serveur strictement
       #   loopback 127.0.0.1 + token de session. Bump à faire à froid, hors release.
+      # - torch 2.9.1 : PYSEC-2026-2286 (nouvel avis 15/07/2026) - même dette que
+      #   ci-dessus, fix = 2.10, à traiter dans le bump groupé torch+transformers.
+      # - transformers 4.57.6 : PYSEC-2026-2290 (avis 15/07/2026, AUCUNE version
+      #   corrigée publiée à ce jour) - surveiller, même lot que le bump torch.
+      # État au 15/07/2026 (OPT) : pillow 12.3.0, setuptools 83.0.0 et
+      #   soupsieve 2.8.4 bumpés au lieu d'être ignorés (correctifs sans risque).
       - name: Audit Python (prod) - BLOQUANT avec exceptions justifiées
         shell: bash
         run: |
@@ -147,7 +153,9 @@ jobs:
             --ignore-vuln CVE-2026-1839 \
             --ignore-vuln CVE-2026-4372 \
             --ignore-vuln PYSEC-2026-248 \
-            --ignore-vuln PYSEC-2026-249
+            --ignore-vuln PYSEC-2026-249 \
+            --ignore-vuln PYSEC-2026-2286 \
+            --ignore-vuln PYSEC-2026-2290
 
   mypy:
     name: Typage (mypy, baseline)
