@@ -9,6 +9,7 @@ L'assistante souveraine des entrepreneurs français.
 import logging
 import os
 import secrets
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path as FilePath
 
@@ -19,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import Response
 
 # Rate limiting (SEC-015) - slowapi est requis (dans pyproject.toml)
 try:
@@ -69,6 +71,7 @@ from app.routers import (
     variables_router,  # Chantier 4 - Variables V1
     voice_router,
 )
+from app.services.maintenance import RequestAdmission, maintenance_mode
 from app.services.mcp_service import get_mcp_service, initialize_mcp_service
 from app.services.qdrant import close_qdrant, init_qdrant
 from app.services.skills import close_skills, init_skills
@@ -527,6 +530,32 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def get_auth_token(request: Request):
     """Retourne le token de session. Protege par CORS (seul Tauri peut lire la reponse)."""
     return {"token": getattr(request.app.state, "session_token", None)}
+
+
+# Mode maintenance des restaurations
+@app.middleware("http")
+async def maintenance_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Refuse explicitement les API pendant le remplacement des données."""
+    admission = maintenance_mode.admit(request.method, request.url.path)
+    if admission is RequestAdmission.REJECTED:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "MAINTENANCE_MODE",
+                "message": (
+                    "THÉRÈSE est en mode maintenance pendant la restauration. "
+                    "Aucune écriture API n'est acceptée."
+                ),
+            },
+        )
+
+    try:
+        return await call_next(request)
+    finally:
+        maintenance_mode.release(admission)
 
 
 # Auth middleware (SEC-010)

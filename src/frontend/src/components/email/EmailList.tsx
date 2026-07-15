@@ -11,12 +11,14 @@ import { useEmailStore } from '../../stores/emailStore';
 import * as api from '../../services/api';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { mapEmailList } from '../prototype/emailReadModels';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 
 interface EmailListProps {
   accountId: string;
 }
 
 export function EmailList({ accountId }: EmailListProps) {
+  const requestExternalAction = useExternalActionConfirmation();
   const {
     messages,
     setMessages,
@@ -192,31 +194,44 @@ export function EmailList({ accountId }: EmailListProps) {
     }
   }
 
-  async function handleTrash(e: React.MouseEvent, messageId: string) {
+  function handleTrash(e: React.MouseEvent, messageId: string) {
     e.stopPropagation();
-    try {
-      // BUG-030 : attendre la confirmation API AVANT de retirer de l'UI
-      await api.deleteEmailMessage(accountId, messageId, false);
-      removeMessage(messageId);
-      if (currentMessageId === messageId) {
-        setCurrentMessage(null);
-      }
-    } catch (err: any) {
-      console.error('Failed to trash message:', err);
-      const msg = err?.message || '';
-      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
-        setError('Connexion Gmail expirée - reconnecte-toi.');
-        setNeedsReauth(true);
-        setTimeout(() => setError(null), 5000);
-      } else {
-        // Retirer le message de l'UI même en cas d'erreur non-auth :
-        // Gmail a probablement déjà traité la suppression côté serveur
+    const message = messages.find((item) => item.id === messageId);
+    if (!message) return;
+
+    requestExternalAction({
+      title: 'Confirmer la mise à la corbeille',
+      description: 'Vérifie le message. Il ne sera déplacé qu’après ta confirmation.',
+      confirmLabel: 'Mettre à la corbeille',
+      details: [
+        { label: 'Expéditeur', value: message.from_name || message.from_email },
+        { label: 'Objet', value: message.subject || '(Sans objet)' },
+      ],
+    }, async () => {
+      try {
+        // BUG-030 : attendre la confirmation API AVANT de retirer de l'UI
+        await api.deleteEmailMessage(accountId, messageId, false);
         removeMessage(messageId);
         if (currentMessageId === messageId) {
           setCurrentMessage(null);
         }
+      } catch (err: any) {
+        console.error('Failed to trash message:', err);
+        const msg = err?.message || '';
+        if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
+          setError('Connexion Gmail expirée - reconnecte-toi.');
+          setNeedsReauth(true);
+          setTimeout(() => setError(null), 5000);
+        } else {
+          // Retirer le message de l'UI même en cas d'erreur non-auth :
+          // Gmail a probablement déjà traité la suppression côté serveur
+          removeMessage(messageId);
+          if (currentMessageId === messageId) {
+            setCurrentMessage(null);
+          }
+        }
       }
-    }
+    });
   }
 
   function formatDate(dateStr: string): string {
