@@ -235,6 +235,16 @@ class TestMigration:
             "CREATE TABLE invoices (id TEXT PRIMARY KEY, validite_jours INTEGER)"
         )
         conn.execute(
+            "CREATE TABLE board_decisions ("
+            "id TEXT PRIMARY KEY, web_sources TEXT, synthesis_usage TEXT)"
+        )
+        conn.execute(
+            "CREATE TABLE agent_tasks ("
+            "id TEXT PRIMARY KEY, run_phase TEXT, plan TEXT, test_results TEXT, "
+            "explanation TEXT, events TEXT, agent_outputs TEXT, base_branch TEXT, "
+            "commit_hash TEXT)"
+        )
+        conn.execute(
             "CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL)"
         )
         conn.execute("INSERT INTO alembic_version VALUES ('ancienne_tete')")

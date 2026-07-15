@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { CommonToolConfirmationLayer } from './components/app/CommonToolConfirmationLayer';
+import { PrototypeExternalActionConfirmationProvider } from './components/app/ExternalActionConfirmation';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
@@ -180,7 +181,9 @@ function ApplicationBootstrap() {
         </a>
         {interfaceMode === 'conversation-canvas' ? (
           <Suspense fallback={<div className="h-screen w-screen bg-bg" />}>
-            <ConversationCanvasPrototype />
+            <PrototypeExternalActionConfirmationProvider>
+              <ConversationCanvasPrototype />
+            </PrototypeExternalActionConfirmationProvider>
           </Suspense>
         ) : (
           <ChatLayout />

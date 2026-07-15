@@ -12,6 +12,10 @@ export type InterfaceMode = 'classic' | 'conversation-canvas';
 
 export const INTERFACE_MODE_STORAGE_KEY = 'therese-interface-mode';
 
+// Constante injectée par vite.config.ts à partir de la commande Vite, donc
+// indépendante de import.meta.env.DEV et du nom de mode passé à `vite build`.
+declare const __THERESE_DEV_BUILD__: boolean;
+
 interface ResolveInterfaceModeOptions {
   search?: string;
   buildMode?: string;
@@ -20,6 +24,7 @@ interface ResolveInterfaceModeOptions {
 
 interface ResolveRuntimeInterfaceModeOptions extends ResolveInterfaceModeOptions {
   isDevelopment: boolean;
+  isExplicitDevelopmentBuild: boolean;
 }
 
 function parseMode(value: string | null | undefined): InterfaceMode | null {
@@ -51,10 +56,12 @@ export function resolveInterfaceMode({
 
 export function resolveRuntimeInterfaceMode({
   isDevelopment,
+  isExplicitDevelopmentBuild,
   ...options
 }: ResolveRuntimeInterfaceModeOptions): InterfaceMode {
-  // Garde-fou pré-bêta : aucun build distribuable ne peut ouvrir le prototype.
-  if (!isDevelopment) {
+  // Garde-fou pré-bêta : deux preuves indépendantes sont nécessaires. Un
+  // `vite build --mode development` pose DEV mais pas le flag de dev explicite.
+  if (!isDevelopment || !isExplicitDevelopmentBuild) {
     return 'classic';
   }
 
@@ -72,6 +79,7 @@ export function getInterfaceMode(): InterfaceMode {
 
   return resolveRuntimeInterfaceMode({
     isDevelopment: import.meta.env.DEV,
+    isExplicitDevelopmentBuild: __THERESE_DEV_BUILD__,
     search: window.location.search,
     buildMode: import.meta.env.VITE_THERESE_INTERFACE_MODE,
     storedMode,

@@ -26,6 +26,7 @@ import {
 } from '../../services/api';
 import { fetchCommandSchema } from '../../services/api/commands-v3';
 import { useActionsStore } from '../../stores/actionsStore';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 
 interface SkillState {
   skillId: string;
@@ -51,6 +52,7 @@ interface CommandExecutorProps {
 }
 
 export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }: CommandExecutorProps) {
+  const requestExternalAction = useExternalActionConfirmation();
   const [dynamicSkill, setDynamicSkill] = useState<{
     command: CommandDefinition;
     schema: SkillSchema;
@@ -210,60 +212,72 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   }, [dynamicSkill, onPromptSelect, onClose]);
 
   // Handlers image
-  const handleImageGenerate = useCallback(async (customPrompt: string) => {
+  const handleImageGenerate = useCallback((customPrompt: string) => {
     if (!imagePromptCommand?.image_config) return;
 
     const config = imagePromptCommand.image_config;
     const provider = config.provider as ImageProvider;
-
-    const store = useChatStore.getState();
-    let conversationId = store.currentConversationId;
-    if (!conversationId) {
-      conversationId = store.createConversation();
-    }
-
-    addMessage({ role: 'user', content: `Génère une image : ${customPrompt}` });
-
-    // BUG-056 : Message loading visible pendant la génération
     const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
-    const loadingId = addMessage({
-      role: 'assistant',
-      content: `Génération de l'image en cours avec ${providerLabel}...`,
-      isStreaming: true,
-    });
 
-    setImageState({ provider, status: 'generating', prompt: customPrompt });
-    setImagePromptCommand(null);
-
-    try {
-      const req: Parameters<typeof generateImage>[0] = {
-        prompt: customPrompt,
-        provider,
-        quality: config.default_quality as 'low' | 'medium' | 'high' | undefined,
-      };
-
-      if (provider === 'gpt-image-2' && config.default_size) {
-        req.size = config.default_size as '1024x1024' | '1536x1024' | '1024x1536';
-      } else if (provider === 'nanobanan-pro' && config.default_size) {
-        req.image_size = config.default_size as '1K' | '2K' | '4K';
+    requestExternalAction({
+      title: 'Confirmer la génération de l’image',
+      description: 'Vérifie le prompt et le moteur. La génération peut consommer un crédit du provider.',
+      confirmLabel: 'Confirmer et générer',
+      details: [
+        { label: 'Description', value: customPrompt },
+        { label: 'Moteur', value: providerLabel },
+        { label: 'Format', value: config.default_size || 'Format par défaut' },
+        { label: 'Qualité', value: config.default_quality || 'Qualité par défaut' },
+      ],
+    }, async () => {
+      const store = useChatStore.getState();
+      let conversationId = store.currentConversationId;
+      if (!conversationId) {
+        conversationId = store.createConversation();
       }
 
-      const response = await generateImage(req);
-      const imageUrl = getImageDownloadUrl(response.id);
+      addMessage({ role: 'user', content: `Génère une image : ${customPrompt}` });
 
-      updateMessage(
-        loadingId,
-        `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${providerLabel}*`,
-        { imageId: response.id },
-      );
+      // BUG-056 : Message loading visible pendant la génération
+      const loadingId = addMessage({
+        role: 'assistant',
+        content: `Génération de l'image en cours avec ${providerLabel}...`,
+        isStreaming: true,
+      });
 
-      setImageState({ provider, status: 'success', prompt: customPrompt, response });
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Erreur de génération';
-      updateMessage(loadingId, `Erreur : ${errorMsg}`);
-      setImageState({ provider, status: 'error', prompt: customPrompt, error: errorMsg });
-    }
-  }, [imagePromptCommand, addMessage, updateMessage]);
+      setImageState({ provider, status: 'generating', prompt: customPrompt });
+      setImagePromptCommand(null);
+
+      try {
+        const req: Parameters<typeof generateImage>[0] = {
+          prompt: customPrompt,
+          provider,
+          quality: config.default_quality as 'low' | 'medium' | 'high' | undefined,
+        };
+
+        if (provider === 'gpt-image-2' && config.default_size) {
+          req.size = config.default_size as '1024x1024' | '1536x1024' | '1024x1536';
+        } else if (provider === 'nanobanan-pro' && config.default_size) {
+          req.image_size = config.default_size as '1K' | '2K' | '4K';
+        }
+
+        const response = await generateImage(req);
+        const imageUrl = getImageDownloadUrl(response.id);
+
+        updateMessage(
+          loadingId,
+          `![${customPrompt}](${imageUrl})\n\n*Image générée avec ${providerLabel}*`,
+          { imageId: response.id },
+        );
+
+        setImageState({ provider, status: 'success', prompt: customPrompt, response });
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Erreur de génération';
+        updateMessage(loadingId, `Erreur : ${errorMsg}`);
+        setImageState({ provider, status: 'error', prompt: customPrompt, error: errorMsg });
+      }
+    });
+  }, [imagePromptCommand, addMessage, requestExternalAction, updateMessage]);
 
   // Rendu conditionnel
   return (

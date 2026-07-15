@@ -186,6 +186,22 @@ pas injecté dans les sept sources de version.
 
 ## Pré-vol données
 
+### Isolation obligatoire en développement
+
+Tout démarrage du backend, lancement de migration ou test manuel en développement
+doit définir explicitement `THERESE_DATA_DIR` vers un dossier de travail distinct
+de `~/.therese`. Laisser la variable absente ferait utiliser les données réelles
+par défaut et est interdit sur ce chantier. Le dossier choisi doit être vérifié
+dans le log `Data directory` avant de poursuivre, par exemple :
+
+```bash
+THERESE_DATA_DIR="$HOME/.therese-dev-v040" uv run uvicorn app.main:app --app-dir src/backend
+```
+
+Les tests automatisés doivent continuer à utiliser un dossier temporaire dédié.
+Une copie de données représentative peut y être restaurée pour la recette, sans
+jamais pointer le développement vers l’unique base utilisateur.
+
 - sauvegarder la base et les fichiers de travail ;
 - tester sur une copie représentative, jamais sur l’unique base utilisateur ;
 - relever la révision Alembic avant et après installation ;
@@ -198,6 +214,16 @@ phase, plan, tests, explication, événements, sorties agents, branche de base e
 commit à l’Atelier. Leur test aller-retour sur une copie de base et leur downgrade
 restent obligatoires avant le build candidat. Aucun champ historique n’est
 détourné.
+
+Attention : un downgrade Alembic de `d9e0f1a2b3c4` supprime les colonnes
+d’historique Atelier (`run_phase`, `plan`, `test_results`, `explanation`,
+`events`, `agent_outputs`, `base_branch`, `commit_hash`). Descendre aussi
+`c8d9e0f1a2b3` supprime `web_sources` et `synthesis_usage` du Board. Toutes les
+valeurs enregistrées dans ces colonnes depuis l’upgrade sont alors perdues de
+façon irréversible dans la base rétrogradée. Une simple bascule vers l’interface
+classique ne provoque pas cette perte : elle concerne uniquement le downgrade
+du schéma. Avant tout downgrade, sauvegarder le dossier de données isolé et
+prévoir sa restauration si cet historique doit être conservé.
 
 ## Test explicite du retour arrière
 

@@ -39,6 +39,22 @@ INVOICE_LEGACY_COLUMN_DEFINITIONS: dict[str, str] = {
     "payment_date": "TIMESTAMP",
 }
 
+BOARD_HISTORY_COLUMN_DEFINITIONS: dict[str, str] = {
+    "web_sources": "TEXT NOT NULL DEFAULT '[]'",
+    "synthesis_usage": "TEXT NOT NULL DEFAULT '{}'",
+}
+
+ATELIER_HISTORY_COLUMN_DEFINITIONS: dict[str, str] = {
+    "run_phase": "TEXT",
+    "plan": "TEXT",
+    "test_results": "TEXT",
+    "explanation": "TEXT",
+    "events": "TEXT",
+    "agent_outputs": "TEXT",
+    "base_branch": "TEXT",
+    "commit_hash": "TEXT",
+}
+
 
 def ensure_invoice_currency_column(db_path: Path | None) -> bool:
     """Ajoute la colonne invoices.currency si elle manque sur une DB legacy."""
@@ -116,11 +132,7 @@ def apply_adhoc_migrations(db_path) -> None:
         # 0.40 : historique Board reconstructible (sources + usage de synthèse)
         cursor = conn.execute("PRAGMA table_info(board_decisions)")
         board_columns = {row[1] for row in cursor.fetchall()}
-        board_additions = {
-            "web_sources": "TEXT NOT NULL DEFAULT '[]'",
-            "synthesis_usage": "TEXT NOT NULL DEFAULT '{}'",
-        }
-        for column_name, definition in board_additions.items():
+        for column_name, definition in BOARD_HISTORY_COLUMN_DEFINITIONS.items():
             if board_columns and column_name not in board_columns:
                 conn.execute(
                     f"ALTER TABLE board_decisions ADD COLUMN {column_name} {definition}"
@@ -133,17 +145,7 @@ def apply_adhoc_migrations(db_path) -> None:
         # 0.40 : journal Atelier reconstructible après redémarrage.
         cursor = conn.execute("PRAGMA table_info(agent_tasks)")
         agent_task_columns = {row[1] for row in cursor.fetchall()}
-        agent_task_additions = {
-            "run_phase": "TEXT",
-            "plan": "TEXT",
-            "test_results": "TEXT",
-            "explanation": "TEXT",
-            "events": "TEXT",
-            "agent_outputs": "TEXT",
-            "base_branch": "TEXT",
-            "commit_hash": "TEXT",
-        }
-        for column_name, definition in agent_task_additions.items():
+        for column_name, definition in ATELIER_HISTORY_COLUMN_DEFINITIONS.items():
             if agent_task_columns and column_name not in agent_task_columns:
                 conn.execute(
                     f"ALTER TABLE agent_tasks ADD COLUMN {column_name} {definition}"
@@ -268,17 +270,35 @@ def ensure_alembic_stamp(db_path) -> None:
                         row[1]
                         for row in conn.execute("PRAGMA table_info(invoices)")
                     }
-                    # Variables V4 finding Codex 8 (VÉRIFIÉ) : la preuve de
-                    # schéma doit couvrir CHAQUE élément apporté depuis, sinon
-                    # une base trackée serait ré-estampillée à la nouvelle
-                    # tête SANS la table variables et `upgrade head` sauterait
-                    # la migration. Toute future révision doit étendre cette
-                    # preuve (et les migrations ad-hoc ci-dessus).
+                    # La preuve de schéma doit couvrir CHAQUE élément apporté
+                    # depuis, sinon une base trackée serait ré-estampillée à la
+                    # nouvelle tête et `upgrade head` sauterait les migrations.
+                    # Toute future révision doit étendre cette preuve et les
+                    # migrations ad-hoc ci-dessus.
                     has_variables = conn.execute(
                         "SELECT name FROM sqlite_master "
                         "WHERE type='table' AND name='variables'"
                     ).fetchone()
-                    if "validite_jours" in inv_cols and has_variables:
+                    board_cols = {
+                        row[1]
+                        for row in conn.execute("PRAGMA table_info(board_decisions)")
+                    }
+                    atelier_cols = {
+                        row[1]
+                        for row in conn.execute("PRAGMA table_info(agent_tasks)")
+                    }
+                    has_board_history = (
+                        BOARD_HISTORY_COLUMN_DEFINITIONS.keys() <= board_cols
+                    )
+                    has_atelier_history = (
+                        ATELIER_HISTORY_COLUMN_DEFINITIONS.keys() <= atelier_cols
+                    )
+                    if (
+                        "validite_jours" in inv_cols
+                        and has_variables
+                        and has_board_history
+                        and has_atelier_history
+                    ):
                         conn.execute(
                             "UPDATE alembic_version SET version_num = ?",
                             (ALEMBIC_HEAD_REVISION,),

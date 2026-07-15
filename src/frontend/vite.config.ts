@@ -4,8 +4,13 @@ import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
+  define: {
+    // Double verrou indépendant de import.meta.env.DEV : même un build lancé
+    // avec `--mode development` ne peut pas activer l'interface pré-bêta.
+    __THERESE_DEV_BUILD__: JSON.stringify(command === 'serve'),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -49,4 +54,4 @@ export default defineConfig({
     },
   },
   clearScreen: false,
-});
+}));

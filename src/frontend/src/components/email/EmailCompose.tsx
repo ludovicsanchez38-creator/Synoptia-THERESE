@@ -9,9 +9,11 @@ import { useState, useEffect } from 'react';
 import { Send, X, Loader2, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
 
 export function EmailCompose() {
+  const requestExternalAction = useExternalActionConfirmation();
   const {
     currentAccountId,
     draftRecipients,
@@ -45,7 +47,7 @@ export function EmailCompose() {
     return input.split(',').map((r) => r.trim()).filter((r) => r);
   }
 
-  async function handleSend() {
+  function handleSend() {
     if (!currentAccountId) {
       setError('Aucun compte email configuré. Ajoute un compte dans les paramètres.');
       return;
@@ -73,39 +75,55 @@ export function EmailCompose() {
       return;
     }
 
-    setSending(true);
-    setError(null);
+    const email = {
+      to: recipients,
+      cc: ccList.length > 0 ? ccList : undefined,
+      bcc: bccList.length > 0 ? bccList : undefined,
+      subject: draftSubject,
+      body: draftBody,
+      html: draftIsHtml,
+    };
 
-    try {
-      // BUG-085 : timeout client (35s) pour ne pas bloquer le spinner
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 35000)
-      );
+    requestExternalAction({
+      title: 'Confirmer l’envoi de l’email',
+      description: 'Vérifie les destinataires et le contenu. L’envoi ne partira qu’après ta confirmation.',
+      confirmLabel: 'Confirmer et envoyer',
+      details: [
+        { label: 'Compte d’envoi', value: currentAccountId },
+        { label: 'À', value: recipients.join(', ') },
+        { label: 'Cc', value: ccList.join(', ') },
+        { label: 'Cci', value: bccList.join(', ') },
+        { label: 'Objet', value: draftSubject },
+        { label: 'Message', value: draftBody },
+      ],
+    }, async () => {
+      setSending(true);
+      setError(null);
 
-      await Promise.race([
-        api.sendEmail(currentAccountId, {
-          to: recipients,
-          cc: ccList.length > 0 ? ccList : undefined,
-          bcc: bccList.length > 0 ? bccList : undefined,
-          subject: draftSubject,
-          body: draftBody,
-          html: draftIsHtml,
-        }),
-        timeoutPromise,
-      ]);
+      try {
+        // BUG-085 : timeout client (35s) pour ne pas bloquer le spinner
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 35000)
+        );
 
-      clearDraft();
-      setIsComposing(false);
-    } catch (err) {
-      console.error('Failed to send email:', err);
-      if (err instanceof Error && err.message === 'TIMEOUT') {
-        setError("L'envoi a expiré. Vérifie ta connexion et la configuration email.");
-      } else {
-        setError(err instanceof Error ? err.message : "Échec de l'envoi");
+        await Promise.race([
+          api.sendEmail(currentAccountId, email),
+          timeoutPromise,
+        ]);
+
+        clearDraft();
+        setIsComposing(false);
+      } catch (err) {
+        console.error('Failed to send email:', err);
+        if (err instanceof Error && err.message === 'TIMEOUT') {
+          setError("L'envoi a expiré. Vérifie ta connexion et la configuration email.");
+        } else {
+          setError(err instanceof Error ? err.message : "Échec de l'envoi");
+        }
+      } finally {
+        setSending(false);
       }
-    } finally {
-      setSending(false);
-    }
+    });
   }
 
   async function handleSaveDraft() {

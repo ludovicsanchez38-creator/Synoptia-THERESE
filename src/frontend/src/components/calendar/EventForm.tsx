@@ -12,10 +12,13 @@ import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
 import { useGuardedAction } from '../../hooks/useGuardedAction';
 import { Button } from '../ui/Button';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
 
 export function EventForm() {
+  const requestExternalAction = useExternalActionConfirmation();
   const {
+    calendars,
     events,
     currentCalendarId,
     currentEventId,
@@ -48,6 +51,7 @@ export function EventForm() {
 
   const isEditing = !!currentEventId;
   const event = events.find((evt) => evt.id === currentEventId);
+  const selectedCalendar = calendars.find((calendar) => calendar.id === currentCalendarId);
 
   // Load event data for editing
   useEffect(() => {
@@ -119,68 +123,92 @@ export function EventForm() {
     setFormError(null);
     clearError();
 
-    await execute(async () => {
-      const attendees = attendeesInput
-        .split(',')
-        .map((e) => e.trim())
-        .filter((e) => e);
+    if (!currentCalendarId) {
+      await execute(async () => undefined);
+      return;
+    }
 
-      if (isEditing && event) {
-        // Update existing event
-        const request: api.UpdateEventRequest = {
-          summary,
-          description: description || undefined,
-          location: location || undefined,
-          attendees: attendees.length > 0 ? attendees : undefined,
-        };
+    const attendees = attendeesInput
+      .split(',')
+      .map((e) => e.trim())
+      .filter((e) => e);
 
-        if (allDay) {
-          request.start_date = startDate;
-          request.end_date = endDate;
+    requestExternalAction({
+      title: isEditing ? 'Confirmer la modification de l’événement' : 'Confirmer la création de l’événement',
+      description: attendees.length > 0
+        ? 'Vérifie les horaires et les participants. Les invitations ne partiront qu’après ta confirmation.'
+        : 'Vérifie les horaires et la destination avant d’enregistrer cet événement.',
+      confirmLabel: isEditing ? 'Confirmer la modification' : 'Confirmer la création',
+      details: [
+        { label: 'Titre', value: summary },
+        { label: 'Début', value: allDay ? startDate : `${startDate} ${startTime}` },
+        { label: 'Fin', value: allDay ? endDate : `${endDate} ${endTime}` },
+        { label: 'Calendrier', value: selectedCalendar?.summary || currentCalendarId },
+        { label: 'Fournisseur', value: selectedCalendar?.provider || 'Destination locale' },
+        { label: 'Compte', value: currentAccountId || 'Compte local' },
+        { label: 'Participants', value: attendees.join(', ') },
+        { label: 'Lieu', value: location },
+        { label: 'Description', value: description },
+      ],
+    }, async () => {
+      await execute(async () => {
+        if (isEditing && event) {
+          // Update existing event
+          const request: api.UpdateEventRequest = {
+            summary,
+            description: description || undefined,
+            location: location || undefined,
+            attendees: attendees.length > 0 ? attendees : undefined,
+          };
+
+          if (allDay) {
+            request.start_date = startDate;
+            request.end_date = endDate;
+          } else {
+            request.start_datetime = `${startDate}T${startTime}:00`;
+            request.end_datetime = `${endDate}T${endTime}:00`;
+            // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
+            // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
+            request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          }
+
+          const updated = await api.updateEvent(
+            event.id,
+            request,
+            currentCalendarId,
+            currentAccountId || undefined
+          );
+          updateEventInStore(event.id, updated);
+          setCurrentEvent(event.id);
         } else {
-          request.start_datetime = `${startDate}T${startTime}:00`;
-          request.end_datetime = `${endDate}T${endTime}:00`;
-          // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
-          // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
-          request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          // Create new event
+          const request: api.CreateEventRequest = {
+            calendar_id: currentCalendarId,
+            summary,
+            description: description || undefined,
+            location: location || undefined,
+            attendees: attendees.length > 0 ? attendees : undefined,
+          };
+
+          if (allDay) {
+            request.start_date = startDate;
+            request.end_date = endDate;
+          } else {
+            request.start_datetime = `${startDate}T${startTime}:00`;
+            request.end_datetime = `${endDate}T${endTime}:00`;
+            // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
+            // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
+            request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          }
+
+          const created = await api.createEvent(request, currentAccountId || undefined);
+          addEvent(created);
+          setCurrentEvent(created.id);
         }
 
-        const updated = await api.updateEvent(
-          event.id,
-          request,
-          currentCalendarId!,
-          currentAccountId || undefined
-        );
-        updateEventInStore(event.id, updated);
-        setCurrentEvent(event.id);
-      } else {
-        // Create new event
-        const request: api.CreateEventRequest = {
-          calendar_id: currentCalendarId!,
-          summary,
-          description: description || undefined,
-          location: location || undefined,
-          attendees: attendees.length > 0 ? attendees : undefined,
-        };
-
-        if (allDay) {
-          request.start_date = startDate;
-          request.end_date = endDate;
-        } else {
-          request.start_datetime = `${startDate}T${startTime}:00`;
-          request.end_datetime = `${endDate}T${endTime}:00`;
-          // Fuseau réel du poste : sans lui, le backend retombe sur Europe/Paris
-          // et l'heure se décale (ex: 9h30 à Toronto affichée à 3h30).
-          request.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        }
-
-        const created = await api.createEvent(request, currentAccountId || undefined);
-        addEvent(created);
-        setCurrentEvent(created.id);
-      }
-
-      clearDraft();
-      setIsEventFormOpen(false);
+        clearDraft();
+        setIsEventFormOpen(false);
+      });
     });
   }
 

@@ -43,6 +43,7 @@ describe('resolveRuntimeInterfaceMode', () => {
   it('autorise le prototype pendant le développement local', () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: true,
+      isExplicitDevelopmentBuild: true,
       search: '?interface=conversation-canvas',
     })).toBe('conversation-canvas');
   });
@@ -50,6 +51,17 @@ describe('resolveRuntimeInterfaceMode', () => {
   it('force toujours l’interface classique dans un build distribuable', () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: false,
+      isExplicitDevelopmentBuild: false,
+      search: '?interface=conversation-canvas',
+      buildMode: 'conversation-canvas',
+      storedMode: 'conversation-canvas',
+    })).toBe('classic');
+  });
+
+  it('reste verrouillé si le mode Vite simule le développement dans un build', () => {
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: true,
+      isExplicitDevelopmentBuild: false,
       search: '?interface=conversation-canvas',
       buildMode: 'conversation-canvas',
       storedMode: 'conversation-canvas',
