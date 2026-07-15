@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.config import settings
-from app.models.database import get_session
+from app.models.database import close_db, get_session
 from app.models.entities import (
     Activity,
     BoardDecisionDB,
@@ -48,6 +48,7 @@ from app.services.audit import (
     AuditService,
     log_activity,
 )
+from app.services.maintenance import maintenance_mode
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -627,28 +628,63 @@ def _backups_dir():
     return d
 
 
-def _checkpoint_db() -> None:
+def _checkpoint_db() -> bool:
     """US-011 : flush le WAL SQLite dans therese.db avant backup/restore.
 
     En mode WAL, les transactions récentes restent dans `therese.db-wal` et ne
     sont PAS dans l'archive si on copie seulement `therese.db` → perte de
     données. Le checkpoint TRUNCATE les rapatrie dans le fichier principal.
+
+    Retourne ``False`` uniquement lorsque SQLite reste occupé après plusieurs
+    essais : l'appelant doit alors archiver les sidecars WAL/SHM. Toute réponse
+    absente ou incohérente échoue explicitement.
     """
     from contextlib import closing
     from pathlib import Path
+    from time import sleep
 
     from app.models.database import db_connect
 
     db_path = settings.db_path
-    if db_path and Path(str(db_path)).exists():
-        try:
-            # closing() ferme bien la connexion : le context manager natif de
-            # sqlite3 ne gère que la transaction, pas la fermeture du handle.
-            # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée.
-            with closing(db_connect(db_path)) as conn:
-                conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        except Exception as e:
-            logger.warning("Checkpoint WAL échoué (backup/restore) : %s", e)
+    if not db_path or not Path(str(db_path)).exists():
+        return True
+
+    attempts = 3
+    # closing() ferme bien la connexion : le context manager natif de sqlite3
+    # ne gère que la transaction, pas la fermeture du handle. US-014 :
+    # db_connect pose la clé SQLCipher si la base est chiffrée.
+    with closing(db_connect(db_path)) as conn:
+        for attempt in range(1, attempts + 1):
+            row = conn.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if row is None or len(row) < 3:
+                raise RuntimeError("SQLite n'a retourné aucun statut de checkpoint WAL")
+
+            try:
+                busy, log_frames, checkpointed_frames = (int(row[0]), int(row[1]), int(row[2]))
+            except (TypeError, ValueError) as exc:
+                raise RuntimeError(f"Statut de checkpoint WAL invalide : {row!r}") from exc
+
+            if busy < 0 or log_frames < 0 or checkpointed_frames < 0:
+                raise RuntimeError(
+                    "Statut de checkpoint WAL incohérent : "
+                    f"busy={busy}, log={log_frames}, checkpointed={checkpointed_frames}"
+                )
+
+            if busy == 0 and checkpointed_frames >= log_frames:
+                return True
+
+            logger.warning(
+                "Checkpoint WAL occupé (%s/%s) : busy=%s, log=%s, checkpointed=%s",
+                attempt,
+                attempts,
+                busy,
+                log_frames,
+                checkpointed_frames,
+            )
+            if attempt < attempts:
+                sleep(0.05)
+
+    return False
 
 
 def _create_archive(archive_path) -> list[str]:
@@ -664,10 +700,12 @@ def _create_archive(archive_path) -> list[str]:
     import tarfile
     from pathlib import Path
 
-    _checkpoint_db()
+    archive_path = Path(archive_path)
+    checkpoint_complete = _checkpoint_db()
     data_dir = Path(settings.data_dir)
+    db_path = Path(settings.db_path) if settings.db_path else None
     targets = [
-        (Path(settings.db_path) if settings.db_path else None, "therese.db"),
+        (db_path, "therese.db"),
         (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
         (data_dir / "images", "images"),
         (data_dir / "mcp_servers.json", "mcp_servers.json"),
@@ -675,12 +713,37 @@ def _create_archive(archive_path) -> list[str]:
         (data_dir / ".encryption_key", ".encryption_key"),
         (data_dir / ".encryption_salt", ".encryption_salt"),
     ]
+
+    if not checkpoint_complete:
+        if db_path is None:
+            raise RuntimeError("Checkpoint WAL incomplet sans chemin de base exploitable")
+        wal_path = Path(f"{db_path}-wal")
+        shm_path = Path(f"{db_path}-shm")
+        missing = [str(path) for path in (wal_path, shm_path) if not path.is_file()]
+        if missing:
+            raise RuntimeError(
+                "Checkpoint WAL toujours occupé et sauvegarde des sidecars impossible : "
+                f"fichier(s) absent(s) {', '.join(missing)}"
+            )
+        targets.extend(((wal_path, "therese.db-wal"), (shm_path, "therese.db-shm")))
+        logger.warning(
+            "Checkpoint WAL incomplet : therese.db-wal et therese.db-shm seront archivés"
+        )
+
     included: list[str] = []
-    with tarfile.open(archive_path, "w:gz") as tar:
-        for src, arcname in targets:
-            if src and src.exists():
-                tar.add(str(src), arcname=arcname)
-                included.append(arcname)
+    try:
+        with tarfile.open(archive_path, "w:gz") as tar:
+            for src, arcname in targets:
+                if src and src.exists():
+                    tar.add(str(src), arcname=arcname)
+                    included.append(arcname)
+    except Exception:
+        archive_path.unlink(missing_ok=True)
+        raise
+
+    if not checkpoint_complete and not {"therese.db-wal", "therese.db-shm"} <= set(included):
+        archive_path.unlink(missing_ok=True)
+        raise RuntimeError("Archive WAL incomplète : sauvegarde annulée")
     return included
 
 
@@ -775,7 +838,14 @@ async def create_backup(
     backup_name = f"therese_backup_{timestamp}"
     archive_path = backup_dir / f"{backup_name}.tar.gz"
 
-    included = _create_archive(archive_path)
+    try:
+        included = _create_archive(archive_path)
+    except Exception as exc:
+        logger.exception("Sauvegarde annulée : impossible de garantir la cohérence")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Sauvegarde impossible à garantir : {exc}",
+        ) from exc
 
     metadata = {
         "created_at": datetime.now(UTC).isoformat(),
@@ -843,7 +913,6 @@ async def list_backups():
 async def restore_backup(
     backup_name: str,
     confirm: bool = False,
-    session: AsyncSession = Depends(get_session),
 ):
     """
     Restore from a backup (US-BAK-04).
@@ -887,7 +956,6 @@ async def restore_backup(
     # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
     safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
-    _create_archive(safety_archive)
 
     def _wipe_volatile_dirs() -> None:
         # Restore PROPRE : on retire qdrant/ et images/ avant extraction pour ne
@@ -908,28 +976,52 @@ async def restore_backup(
         except Exception:
             logger.exception("Rollback du restore en échec")
 
-    # Restore (US-011 : archive complète ; .db legacy = DB seule)
     try:
-        if archive.exists():
-            _checkpoint_db()  # flush le WAL courant avant d'écraser la DB
-            _wipe_volatile_dirs()
-            with tarfile.open(archive, "r:gz") as tar:
-                _safe_extractall(tar, data_dir)
-            # US-014 : vérifier que la DB restaurée s'ouvre AVANT de déclarer
-            # le succès (sinon rollback via le except HTTPException ci-dessous)
-            _verify_restored_db()
-        else:
-            shutil.copy2(legacy_db, settings.db_path)
-    except HTTPException:
-        # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
-        _rollback()
-        raise
-    except Exception as e:
-        _rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.",
-        )
+        await maintenance_mode.begin()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    try:
+        # Aucune session n'est injectée à cette route : tous les appels API
+        # admis avant le verrou sont terminés. Les pools sont disposés AVANT
+        # l'archive de sécurité et, surtout, avant toute extraction.
+        await close_db()
+
+        try:
+            _create_archive(safety_archive)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Archive de sécurité impossible : {exc}. Restauration annulée.",
+            ) from exc
+
+        # Restore (US-011 : archive complète ; .db legacy = DB seule)
+        try:
+            if archive.exists():
+                if not _checkpoint_db():
+                    raise RuntimeError(
+                        "Checkpoint WAL toujours occupé après fermeture des connexions"
+                    )
+                _wipe_volatile_dirs()
+                with tarfile.open(archive, "r:gz") as tar:
+                    _safe_extractall(tar, data_dir)
+                # US-014 : vérifier que la DB restaurée s'ouvre AVANT de déclarer
+                # le succès (sinon rollback via le except HTTPException ci-dessous)
+                _verify_restored_db()
+            else:
+                shutil.copy2(legacy_db, settings.db_path)
+        except HTTPException:
+            # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
+            _rollback()
+            raise
+        except Exception as e:
+            _rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.",
+            ) from e
+    finally:
+        maintenance_mode.end()
 
     # Load metadata if exists
     metadata = {}

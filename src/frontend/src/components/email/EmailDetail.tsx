@@ -25,6 +25,7 @@ import * as api from '../../services/api';
 import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
+import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 
 interface EmailDetailProps {
   accountId: string;
@@ -32,6 +33,7 @@ interface EmailDetailProps {
 }
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
+  const requestExternalAction = useExternalActionConfirmation();
   const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
   const [bodyLoading, setBodyLoading] = useState(false);
@@ -120,27 +122,37 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
     }
   }
 
-  async function handleTrash() {
+  function handleTrash() {
     if (!message) return;
     setTrashError(null);
 
-    try {
-      await api.deleteEmailMessage(accountId, messageId, false);
-      removeMessage(messageId);
-      setCurrentMessage(null);
-    } catch (err: any) {
-      console.error('Failed to trash message:', err);
-      const msg = err?.message || '';
-      if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('Token')) {
-        setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
-        setNeedsReauth(true);
-      } else {
-        // Retirer le message de l'UI même en cas d'erreur non-auth :
-        // Gmail a probablement déjà traité la suppression côté serveur
+    requestExternalAction({
+      title: 'Confirmer la mise à la corbeille',
+      description: 'Vérifie le message. Il ne sera déplacé qu’après ta confirmation.',
+      confirmLabel: 'Mettre à la corbeille',
+      details: [
+        { label: 'Expéditeur', value: message.from_name || message.from_email },
+        { label: 'Objet', value: message.subject || '(Sans objet)' },
+      ],
+    }, async () => {
+      try {
+        await api.deleteEmailMessage(accountId, messageId, false);
         removeMessage(messageId);
         setCurrentMessage(null);
+      } catch (err: any) {
+        console.error('Failed to trash message:', err);
+        const msg = err?.message || '';
+        if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('Token')) {
+          setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
+          setNeedsReauth(true);
+        } else {
+          // Retirer le message de l'UI même en cas d'erreur non-auth :
+          // Gmail a probablement déjà traité la suppression côté serveur
+          removeMessage(messageId);
+          setCurrentMessage(null);
+        }
       }
-    }
+    });
   }
 
   function handleUseResponse(response: string) {
@@ -250,7 +262,12 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
                 className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-warning' : ''}`}
               />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleTrash}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleTrash}
+              aria-label="Mettre à la corbeille"
+            >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>

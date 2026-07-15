@@ -7,18 +7,21 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 
 const mockGetEmailMessage = vi.fn();
 const mockUpdateMessage = vi.fn();
 const mockCreateFollowUp = vi.fn();
+const mockDeleteEmailMessage = vi.fn();
+const mockRemoveMessage = vi.fn();
 
 let storeMessages: Array<Record<string, unknown>> = [];
 
 vi.mock('../../services/api', () => ({
   getEmailMessage: (...a: unknown[]) => mockGetEmailMessage(...a),
   modifyEmailMessage: vi.fn().mockResolvedValue({}),
-  deleteEmailMessage: vi.fn().mockResolvedValue({}),
+  deleteEmailMessage: (...a: unknown[]) => mockDeleteEmailMessage(...a),
   createFollowUp: (...a: unknown[]) => mockCreateFollowUp(...a),
 }));
 
@@ -27,7 +30,7 @@ vi.mock('../../stores/emailStore', () => ({
     messages: storeMessages,
     setCurrentMessage: vi.fn(),
     updateMessage: mockUpdateMessage,
-    removeMessage: vi.fn(),
+    removeMessage: mockRemoveMessage,
     startComposing: vi.fn(),
     setNeedsReauth: vi.fn(),
   }),
@@ -62,6 +65,7 @@ describe("BUG-102 - corps du mail chargé à l'ouverture", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCreateFollowUp.mockResolvedValue({});
+    mockDeleteEmailMessage.mockResolvedValue({});
   });
 
   it('récupère le corps complet quand il manque (liste = métadonnées seules)', async () => {
@@ -109,5 +113,42 @@ describe("BUG-102 - corps du mail chargé à l'ouverture", () => {
       due_date: '2026-07-20T09:00:00',
       note: 'Rappeler Camille',
     }));
+  });
+
+  it('attend la confirmation 0.40 avec aperçu avant la mise à la corbeille', async () => {
+    storeMessages = [makeMessage({ body_plain: 'déjà chargé' })];
+    const { EmailDetail } = await import('./EmailDetail');
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EmailDetail accountId="acc1" messageId="m1" />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à la corbeille' }));
+
+    const preview = screen.getByTestId('external-action-confirmation');
+    expect(preview).toHaveTextContent('A');
+    expect(preview).toHaveTextContent('Sujet');
+    expect(mockDeleteEmailMessage).not.toHaveBeenCalled();
+
+    fireEvent.click(within(preview).getByRole('button', { name: 'Mettre à la corbeille' }));
+
+    await waitFor(() => {
+      expect(mockDeleteEmailMessage).toHaveBeenCalledWith('acc1', 'm1', false);
+      expect(mockRemoveMessage).toHaveBeenCalledWith('m1');
+    });
+  });
+
+  it('conserve la mise à la corbeille directe en mode classique', async () => {
+    storeMessages = [makeMessage({ body_plain: 'déjà chargé' })];
+    const { EmailDetail } = await import('./EmailDetail');
+    render(<EmailDetail accountId="acc1" messageId="m1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à la corbeille' }));
+
+    await waitFor(() => {
+      expect(mockDeleteEmailMessage).toHaveBeenCalledWith('acc1', 'm1', false);
+    });
+    expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
   });
 });
