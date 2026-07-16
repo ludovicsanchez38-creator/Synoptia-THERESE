@@ -40,6 +40,17 @@
     },
     "fs:default",
     {
+      "identifier": "fs:scope",
+      "deny": [
+        { "path": "$HOME/.ssh/**" },
+        { "path": "$HOME/.aws/**" },
+        { "path": "$HOME/.gnupg/**" },
+        { "path": "$HOME/.config/**" },
+        { "path": "$HOME/.therese/.encryption_key" },
+        { "path": "$HOME/.therese/.session_token" }
+      ]
+    },
+    {
       "identifier": "fs:allow-read-text-file",
       "allow": [
         {
