@@ -8,6 +8,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { request } from '../services/api/core';
 
+// L'endpoint POST /api/chat/complete n'est pas implémenté côté backend : sans
+// ce garde, chaque frappe déclenchait un 404 (catché en silence mais polluant
+// la console et le réseau, finding Codex 16/07). On neutralise l'appel tant que
+// la suggestion prédictive n'est pas branchée ; repasser à true pour réactiver.
+const GHOST_TEXT_ENABLED = false;
+
 interface GhostTextResult {
   /** Suggestion de complétion (vide si aucune) */
   suggestion: string;
@@ -50,6 +56,12 @@ export function useGhostText(
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
+    }
+
+    // Feature non branchée côté backend : ne déclenche aucun appel réseau.
+    if (!GHOST_TEXT_ENABLED) {
+      setSuggestion('');
+      return;
     }
 
     // Conditions pour ne pas suggérer

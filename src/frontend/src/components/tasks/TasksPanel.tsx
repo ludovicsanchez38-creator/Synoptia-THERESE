@@ -122,7 +122,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           <ListTodo className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Taches</h2>
+          <h2 className="text-lg font-semibold text-text">Tâches</h2>
           <p className="text-sm text-text-muted">{tasks.length} tache{tasks.length > 1 ? 's' : ''}</p>
         </div>
       </div>
@@ -169,7 +169,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
         <Button variant="primary" size="sm" onClick={handleNewTask}>
           <Plus className="w-4 h-4 mr-2" />
-          Nouvelle tache
+          Nouvelle tâche
         </Button>
 
         {!standalone && (

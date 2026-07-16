@@ -144,7 +144,7 @@ export function TaskKanban() {
             >
               {tasksByStatus[column.id].length === 0 ? (
                 <div className="flex items-center justify-center h-32">
-                  <p className="text-sm text-text-muted">Aucune tache</p>
+                  <p className="text-sm text-text-muted">Aucune tâche</p>
                 </div>
               ) : (
                 tasksByStatus[column.id].map((task) => (
