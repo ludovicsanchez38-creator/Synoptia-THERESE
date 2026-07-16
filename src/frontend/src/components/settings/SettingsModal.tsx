@@ -70,6 +70,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   // Ollama
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [systemResources, setSystemResources] = useState<api.SystemResources | null>(null);
   const [retestingOllama, setRetestingOllama] = useState(false);
 
   // Groq (transcription vocale)
@@ -146,7 +147,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   async function loadSettings() {
     setLoading(true);
     try {
-      const [keysResult, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, groqKeyStatus, webSearchStatus] = await Promise.all([
+      const [keysResult, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, systemResourcesData, groqKeyStatus, webSearchStatus] = await Promise.all([
         api.getApiKeysWithCorrupted().catch((): api.ApiKeysResult => ({ keys: {} as Record<string, boolean>, corrupted: [] })),
         api.getLLMConfig().catch(() => ({ provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] })),
         api.getPreferences().catch(() => ({})),
@@ -154,6 +155,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
         api.getProfile().catch(() => null),
         api.getWorkingDirectory().catch(() => ({ path: null, exists: false })),
         api.getOllamaStatus().catch(() => null),
+        api.getSystemResources().catch(() => null),
         api.hasGroqKey().catch(() => false),
         api.getWebSearchStatus().catch(() => ({ enabled: true })),
       ]);
@@ -178,6 +180,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       setHasGroqKey(groqKeyStatus);
       setHasBraveKey(!!keys.brave);
       setWebSearchEnabled(webSearchStatus.enabled);
+      setSystemResources(systemResourcesData);
 
       if (ollamaStatusData) {
         setOllamaStatus(ollamaStatusData);
@@ -524,6 +527,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             setShowApiKey={setShowApiKey}
             ollamaStatus={ollamaStatus}
             ollamaModels={ollamaModels}
+            systemResources={systemResources}
             saving={saving}
             saved={saved}
             error={error}

@@ -185,6 +185,13 @@ export interface OllamaStatus {
   error: string | null;
 }
 
+export interface SystemResources {
+  total_ram_bytes: number | null;
+  safe_local_model_ram_bytes: number | null;
+  ollama_context_margin_bytes: number;
+  detection_method: string;
+}
+
 export async function getLLMConfig(): Promise<LLMConfig> {
   return request<LLMConfig>('/api/config/llm');
 }
@@ -205,6 +212,10 @@ export async function setLLMConfig(
 
 export async function getOllamaStatus(): Promise<OllamaStatus> {
   return request<OllamaStatus>('/api/config/ollama/status');
+}
+
+export async function getSystemResources(): Promise<SystemResources> {
+  return request<SystemResources>('/api/config/system-resources');
 }
 
 // Onboarding

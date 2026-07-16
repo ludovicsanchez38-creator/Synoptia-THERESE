@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
+import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 
 interface LLMStepProps {
   onNext: () => void;
@@ -177,6 +178,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [systemResources, setSystemResources] = useState<api.SystemResources | null>(null);
   const [saving, setSaving] = useState(false);
   const [configuring, setConfiguring] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,13 +193,15 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     setLoading(true);
     setLoadError(null);
     try {
-      const [keys, ollamaStatusData] = await withTimeout(Promise.all([
+      const [keys, ollamaStatusData, systemResourcesData] = await withTimeout(Promise.all([
         api.getApiKeys(),
         api.getOllamaStatus(),
+        api.getSystemResources().catch(() => null),
       ]), LLM_SETUP_TIMEOUT_MS);
       if (activeRequest !== loadRequestRef.current) return;
       setApiKeys(keys);
       setOllamaStatus(ollamaStatusData);
+      setSystemResources(systemResourcesData);
       setOllamaModels(
         ollamaStatusData.available
           ? ollamaStatusData.models.map((model) => model.name)
@@ -472,6 +476,14 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               </option>
             ))}
           </select>
+          {selectedProvider === 'ollama' && (
+            <div className="mt-3">
+              <LocalModelFeasibility
+                model={ollamaStatus?.models.find((model) => model.name === selectedModel)}
+                resources={systemResources}
+              />
+            </div>
+          )}
         </div>
       )}
 

@@ -21,6 +21,7 @@ from app.models.schemas import (
     OllamaModelInfo,
     OllamaModelRecommendation,
     OllamaStatusResponse,
+    SystemResourcesResponse,
     UserProfileResponse,
     UserProfileUpdate,
     WorkingDirectoryResponse,
@@ -29,6 +30,7 @@ from app.models.schemas import (
 from app.services.audit import AuditAction, log_activity
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.http_client import get_http_client
+from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -1210,6 +1212,19 @@ async def set_llm_config(
 # ============================================================
 # Ollama Endpoints
 # ============================================================
+
+
+@router.get("/system-resources", response_model=SystemResourcesResponse)
+async def get_system_resources() -> SystemResourcesResponse:
+    """Expose la RAM physique et le plafond prudent réservé aux modèles locaux."""
+    memory = detect_system_memory()
+    safe_limit = memory.total_bytes // 2 if memory.total_bytes is not None else None
+    return SystemResourcesResponse(
+        total_ram_bytes=memory.total_bytes,
+        safe_local_model_ram_bytes=safe_limit,
+        ollama_context_margin_bytes=OLLAMA_CONTEXT_MARGIN_BYTES,
+        detection_method=memory.detection_method,
+    )
 
 
 def _categorize_ollama_model(model_name: str) -> str:
