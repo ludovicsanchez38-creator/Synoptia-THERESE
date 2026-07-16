@@ -117,6 +117,29 @@ describe('InvoiceWorkspaceCanvas', () => {
 
     resolveCreation?.({ ...invoice, subtotal_ht: 490, total_tax: 98, total_ttc: 588 });
     expect(await screen.findByTestId('devis-draft-saved')).toHaveTextContent('Aucun PDF n’a été généré et aucun email n’a été envoyé');
+    fireEvent.change(screen.getByLabelText('Échéance du devis'), { target: { value: '2026-09-01' } });
+    expect(screen.queryByTestId('devis-draft-saved')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Modifications non enregistrées');
+  });
+
+  it('relie la validation au premier champ de devis fautif', async () => {
+    render(
+      <InvoiceWorkspaceCanvas
+        resource={{ status: 'ready', data: data({ invoices: [] }), error: null }}
+        invoiceResource={null}
+        selection="new-devis"
+        onRetry={vi.fn()}
+        onRetryInvoice={vi.fn()}
+        onCreateDraft={vi.fn()}
+        onCreateContact={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    const client = screen.getByLabelText('Client du devis');
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
+    await waitFor(() => expect(client).toHaveFocus());
+    expect(client).toHaveAttribute('aria-invalid', 'true');
+    expect(client).toHaveAttribute('aria-describedby', 'devis-form-error');
   });
 
   it('crée le premier contact dans le canevas puis le sélectionne pour poursuivre le devis', async () => {

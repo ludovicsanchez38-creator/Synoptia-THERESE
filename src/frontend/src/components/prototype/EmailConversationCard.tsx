@@ -66,7 +66,7 @@ export function EmailInboxCard({
           </span>
           <div>
             <h2 id="email-inbox-title" className="text-sm font-semibold text-text">Messages à consulter</h2>
-            <div className="text-[11px] text-text-muted">
+            <div className="text-xs text-text-muted">
               {resource.status === 'ready' && resource.data.currentAccount
                 ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''} · ${resource.data.currentAccount.email}`
                 : 'Lecture de la boîte connectée'}
@@ -76,7 +76,7 @@ export function EmailInboxCard({
         <button
           type="button"
           onClick={onOpenClassic}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text hover:bg-surface-2"
+          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
         >
           Email complet
         </button>
@@ -138,6 +138,7 @@ export function EmailInboxCard({
                 key={message.id}
                 type="button"
                 onClick={() => onOpenMessage(message.id)}
+                aria-label={`${message.is_read ? '' : 'Non lu. '}${emailSenderLabel(message)}. ${message.subject || 'Sans objet'}. ${formatEmailDate(message.date)}`}
                 className="flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
               >
                 <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${message.is_read ? 'bg-[#C8D2E0]' : 'bg-[#7C3AED]'}`} />
@@ -147,13 +148,13 @@ export function EmailInboxCard({
                       {emailSenderLabel(message)}
                     </span>
                     {priority && (
-                      <span className="rounded-full bg-[var(--k3bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--k3)]">{priority}</span>
+                      <span className="rounded-full bg-[var(--k3bg)] px-2 py-0.5 text-xs font-semibold text-[var(--k3)]">{priority}</span>
                     )}
                   </span>
                   <span className="mt-0.5 block truncate text-xs font-semibold text-text">{message.subject || '(Sans objet)'}</span>
                   <span className="mt-0.5 block truncate text-xs text-text-muted">{message.snippet || 'Aucun aperçu disponible.'}</span>
                 </span>
-                <span className="shrink-0 text-[10px] text-text-muted">{formatEmailDate(message.date)}</span>
+                <span className="shrink-0 text-xs text-text-muted">{formatEmailDate(message.date)}</span>
                 <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-text-muted" />
               </button>
             );
@@ -162,7 +163,7 @@ export function EmailInboxCard({
       )}
 
       {resource.status === 'ready' && resource.data.failedMessages > 0 && (
-        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-[10px] text-warning">
+        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-xs text-warning">
           {resource.data.failedMessages} message{resource.data.failedMessages > 1 ? 's' : ''} non chargé{resource.data.failedMessages > 1 ? 's' : ''} par le fournisseur.
         </div>
       )}
@@ -193,7 +194,10 @@ export function EmailMessageCanvas({
   const [saving, setSaving] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<'recipient' | 'subject' | 'draft' | null>(null);
   const [savedDraftId, setSavedDraftId] = useState<string | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
+  const [previousDraft, setPreviousDraft] = useState<string | null>(null);
 
   useEffect(() => {
     if (resource?.status !== 'ready') return;
@@ -202,16 +206,28 @@ export function EmailMessageCanvas({
     setDraft('');
     setError(null);
     setConfirmSave(false);
+    setConfirmReplace(false);
+    setPreviousDraft(null);
+    setErrorField(null);
     setSavedDraftId(null);
   }, [messageId, resource]);
 
-  async function handleGenerate() {
+  function markDraftDirty() {
+    setSavedDraftId(null);
+    setConfirmSave(false);
+  }
+
+  async function generateDraft(replacing: boolean) {
     if (resource?.status !== 'ready') return;
     setGenerating(true);
     setError(null);
-    setSavedDraftId(null);
+    setErrorField(null);
+    markDraftDirty();
     try {
-      setDraft(await onGenerateDraft(resource.data.id, tone, length));
+      const generated = await onGenerateDraft(resource.data.id, tone, length);
+      if (replacing) setPreviousDraft(draft);
+      setDraft(generated);
+      setConfirmReplace(false);
     } catch {
       setError('La génération du brouillon a échoué. Tu peux écrire la réponse manuellement.');
     } finally {
@@ -219,26 +235,38 @@ export function EmailMessageCanvas({
     }
   }
 
-  function validateDraft(): string | null {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim())) return 'Le destinataire doit être une adresse email valide.';
-    if (!subject.trim()) return 'L’objet est obligatoire.';
-    if (!draft.trim()) return 'Le brouillon est vide.';
+  async function handleGenerate() {
+    if (draft.trim()) {
+      setConfirmReplace(true);
+      return;
+    }
+    await generateDraft(false);
+  }
+
+  function validateDraft(): { message: string; field: 'recipient' | 'subject' | 'draft' } | null {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim())) return { message: 'Le destinataire doit être une adresse email valide.', field: 'recipient' };
+    if (!subject.trim()) return { message: 'L’objet est obligatoire.', field: 'subject' };
+    if (!draft.trim()) return { message: 'Le brouillon est vide.', field: 'draft' };
     return null;
   }
 
   function requestSave() {
     const validationError = validateDraft();
     if (validationError) {
-      setError(validationError);
+      setError(validationError.message);
+      setErrorField(validationError.field);
+      requestAnimationFrame(() => document.getElementById(`email-${validationError.field}`)?.focus());
       return;
     }
     setError(null);
+    setErrorField(null);
     setConfirmSave(true);
   }
 
   async function confirmDraftSave() {
     setSaving(true);
     setError(null);
+    setErrorField(null);
     try {
       const result = await onSaveDraft({
         to: [recipient.trim()],
@@ -258,7 +286,7 @@ export function EmailMessageCanvas({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           <Mail className="h-3.5 w-3.5" />
           Email connecté
         </div>
@@ -292,7 +320,7 @@ export function EmailMessageCanvas({
                 </p>
               </div>
               {!resource.data.is_read && (
-                <span className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-[10px] font-semibold text-[var(--k4)]">Non lu</span>
+                <span className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-xs font-semibold text-[var(--k4)]">Non lu</span>
               )}
             </div>
             <div className="mt-4 max-h-52 overflow-y-auto whitespace-pre-wrap border-t border-border pt-4 text-sm leading-6 text-text">
@@ -307,14 +335,14 @@ export function EmailMessageCanvas({
                   <Sparkles className="h-4 w-4 text-[var(--k4)]" />
                   Brouillon de réponse
                 </h3>
-                <p className="mt-1 text-[11px] text-text-muted">Modifiable avant toute sauvegarde.</p>
+                <p className="mt-1 text-xs text-text-muted">Modifiable avant toute sauvegarde.</p>
               </div>
               <div className="flex gap-2">
                 <select
                   aria-label="Ton du brouillon"
                   value={tone}
-                  onChange={(event) => setTone(event.target.value as EmailTone)}
-                  className="rounded-[8px] border border-border bg-surface-2 px-2 py-1.5 text-[11px] text-text"
+                  onChange={(event) => { setTone(event.target.value as EmailTone); markDraftDirty(); }}
+                  className="rounded-[8px] border border-border bg-surface-2 px-2 py-1.5 text-xs text-text"
                 >
                   <option value="formal">Formel</option>
                   <option value="friendly">Amical</option>
@@ -323,8 +351,8 @@ export function EmailMessageCanvas({
                 <select
                   aria-label="Longueur du brouillon"
                   value={length}
-                  onChange={(event) => setLength(event.target.value as EmailLength)}
-                  className="rounded-[8px] border border-border bg-surface-2 px-2 py-1.5 text-[11px] text-text"
+                  onChange={(event) => { setLength(event.target.value as EmailLength); markDraftDirty(); }}
+                  className="rounded-[8px] border border-border bg-surface-2 px-2 py-1.5 text-xs text-text"
                 >
                   <option value="short">Court</option>
                   <option value="medium">Moyen</option>
@@ -337,37 +365,57 @@ export function EmailMessageCanvas({
               <label className="grid grid-cols-[72px_1fr] items-center gap-2 text-xs text-text-muted">
                 À
                 <input
+                  id="email-recipient"
                   aria-label="Destinataire du brouillon"
+                  aria-invalid={errorField === 'recipient'}
+                  aria-describedby={errorField === 'recipient' ? 'email-draft-error' : undefined}
                   value={recipient}
-                  onChange={(event) => setRecipient(event.target.value)}
+                  onChange={(event) => { setRecipient(event.target.value); markDraftDirty(); if (errorField === 'recipient') { setError(null); setErrorField(null); } }}
                   className="rounded-[8px] border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-[var(--k4)]"
                 />
               </label>
               <label className="grid grid-cols-[72px_1fr] items-center gap-2 text-xs text-text-muted">
                 Objet
                 <input
+                  id="email-subject"
                   aria-label="Objet du brouillon"
+                  aria-invalid={errorField === 'subject'}
+                  aria-describedby={errorField === 'subject' ? 'email-draft-error' : undefined}
                   value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
+                  onChange={(event) => { setSubject(event.target.value); markDraftDirty(); if (errorField === 'subject') { setError(null); setErrorField(null); } }}
                   className="rounded-[8px] border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-[var(--k4)]"
                 />
               </label>
             </div>
 
             <textarea
+              id="email-draft"
               aria-label="Corps du brouillon"
+              aria-invalid={errorField === 'draft'}
+              aria-describedby={errorField === 'draft' ? 'email-draft-error' : undefined}
               value={draft}
               onChange={(event) => {
                 setDraft(event.target.value);
-                setSavedDraftId(null);
+                markDraftDirty();
+                setPreviousDraft(null);
+                if (errorField === 'draft') { setError(null); setErrorField(null); }
               }}
               placeholder="Écris ta réponse ou génère une proposition…"
               className="mt-3 h-40 w-full resize-y rounded-[10px] border border-border p-3 text-sm leading-6 text-text outline-none focus:border-[var(--k4)]"
             />
 
-            {error && <p className="mt-2 text-xs font-medium text-error" role="alert">{error}</p>}
+            {error && <p id="email-draft-error" className="mt-2 text-sm font-medium text-error" role="alert">{error}</p>}
+            {confirmReplace && (
+              <div role="alert" className="mt-3 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+                <p><strong>Remplacer le brouillon actuel par une proposition IA ?</strong> Ton texte restera disponible avec Annuler le remplacement.</p>
+                <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmReplace(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold text-text">Conserver mon texte</button><button type="button" onClick={() => void generateDraft(true)} className="rounded-[8px] bg-warning-fill px-3 py-2 font-semibold text-warning-ink">Remplacer</button></div>
+              </div>
+            )}
+            {previousDraft !== null && (
+              <button type="button" onClick={() => { setDraft(previousDraft); setPreviousDraft(null); markDraftDirty(); }} className="mt-2 rounded-[8px] border border-border px-3 py-2 text-sm font-semibold text-text">Annuler le remplacement IA</button>
+            )}
             {savedDraftId && (
-              <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-success/40 bg-[var(--color-success-tint)] p-3 text-xs text-success" data-testid="email-draft-saved">
+              <div role="status" className="mt-3 flex items-start gap-2 rounded-[10px] border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="email-draft-saved">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span><strong>Brouillon enregistré.</strong> Aucun message n’a été envoyé.</span>
               </div>
@@ -388,7 +436,7 @@ export function EmailMessageCanvas({
                   <button type="button" onClick={() => setConfirmSave(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">
                     Annuler
                   </button>
-                  <button type="button" onClick={() => void confirmDraftSave()} disabled={saving} className="rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">
+                  <button type="button" onClick={() => void confirmDraftSave()} disabled={saving} className="rounded-[8px] bg-success-fill px-3 py-2 text-xs font-semibold text-success-ink disabled:opacity-60">
                     {saving ? 'Enregistrement…' : 'Confirmer le brouillon'}
                   </button>
                 </div>

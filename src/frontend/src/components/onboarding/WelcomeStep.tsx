@@ -36,21 +36,21 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col items-center text-center px-8 py-6"
+      className="flex flex-col items-center px-4 py-5 text-center sm:px-8 sm:py-6"
     >
       {/* Logo and Title */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
-        className="mb-8"
+        className="mb-6 sm:mb-8"
       >
         <img
           src="/therese-avatar.png"
           alt="THÉRÈSE"
           className="w-24 h-24 rounded-2xl mb-6 mx-auto border border-border/30"
         />
-        <h1 className="text-4xl font-bold text-text mb-3">
+        <h1 className="mb-3 text-3xl font-bold text-text sm:text-4xl">
           Bienvenue sur THÉRÈSE
         </h1>
         <p className="text-text-muted text-lg max-w-md">
@@ -63,7 +63,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-3 gap-6 w-full max-w-2xl mb-8"
+        className="mb-8 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-6"
       >
         {features.map((feature, index) => (
           <motion.div

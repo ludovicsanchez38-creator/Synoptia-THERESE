@@ -209,7 +209,7 @@ export function AboutTab() {
 
           {/* Résultat : à jour */}
           {updateStatus === 'up-to-date' && (
-            <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 rounded-md px-3 py-2">
+            <div className="flex items-center gap-2 text-sm text-success bg-[var(--color-success-tint)] rounded-md px-3 py-2">
               <CheckCircle className="w-4 h-4" />
               THÉRÈSE est à jour (v{version})
             </div>
@@ -261,7 +261,7 @@ export function AboutTab() {
 
           {/* Résultat : erreur */}
           {updateStatus === 'error' && (
-            <div className="text-sm text-red-400 bg-red-500/10 rounded-md px-3 py-2">
+            <div className="text-sm text-error bg-[var(--color-error-tint)] rounded-md px-3 py-2">
               Impossible de vérifier : {errorMsg}
             </div>
           )}

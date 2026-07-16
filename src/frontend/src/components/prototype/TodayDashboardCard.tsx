@@ -38,7 +38,7 @@ function StateShell({ children }: { children: React.ReactNode }) {
 
 function SourcePill({ label }: { label: string }) {
   return (
-    <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-semibold text-text-muted">
+    <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs font-semibold text-text-muted">
       {label}
     </span>
   );
@@ -69,7 +69,7 @@ export function TodayDashboardCard({
           </span>
           <div>
             <h2 id="today-dashboard-title" className="text-sm font-semibold text-text">{todayBriefTitle(items.length)}</h2>
-            <div className="text-[11px] text-text-muted">
+            <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
                 : 'Lecture des sources locales'}
@@ -79,7 +79,7 @@ export function TodayDashboardCard({
         <button
           type="button"
           onClick={() => onOpenView('home')}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text hover:bg-surface-2"
+          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
         >
           Vue complète
         </button>
@@ -142,7 +142,7 @@ export function TodayDashboardCard({
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-text">{item.title}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       item.urgent ? 'bg-[var(--color-error-tint)] text-error' : 'bg-surface-2 text-text-muted'
                     }`}>
                       {item.badge}
@@ -168,7 +168,7 @@ export function TodayDashboardCard({
 
       {resource.status === 'ready' && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-2 px-4 py-2.5">
-          <span className="mr-1 text-[10px] font-medium text-text-muted">Sources réelles</span>
+          <span className="mr-1 text-xs font-medium text-text-muted">Sources réelles</span>
           {resource.data.events.length > 0 && <SourcePill label="Agenda" />}
           {resource.data.urgent_tasks.length > 0 && <SourcePill label="Tâches" />}
           {resource.data.due_follow_ups.length > 0 && <SourcePill label="Relances" />}

@@ -130,7 +130,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       </div>
 
       {/* Info stockage */}
-      <p className="text-xs text-text-muted/70 mb-4 px-1">
+      <p className="text-xs text-text-muted mb-4 px-1">
         Ces informations sont stockées localement dans ~/.therese/ et ne quittent jamais ta machine.
       </p>
 
@@ -149,7 +149,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                 setSaveState('idle');
               }}
               placeholder="Ton nom complet"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -160,7 +160,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ton surnom"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -174,7 +174,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Ton entreprise"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -185,7 +185,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Ton rôle"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -199,7 +199,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ton@email.com"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -210,7 +210,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Ta ville"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -219,7 +219,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           <label htmlFor="profile-context" className="text-xs text-text-muted mb-1 block">
             Contexte additionnel
           </label>
-          <p className="text-xs text-text-muted/60 mb-1.5">
+          <p className="text-xs text-text-muted mb-1.5">
             Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses.
           </p>
           <textarea
@@ -228,19 +228,19 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
-            className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
+            className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
           />
         </div>
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
-            <AlertCircle className="w-4 h-4 text-red-400" />
-            <span className="text-sm text-red-400">{error}</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg" role="alert">
+            <AlertCircle className="w-4 h-4 text-error" />
+            <span className="text-sm text-error">{error}</span>
           </div>
         )}
         {saveState === 'success' && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg" role="status">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg" role="status">
             <span className="text-sm text-success">Profil enregistré. L’onboarding ne se relancera pas au prochain démarrage.</span>
           </div>
         )}

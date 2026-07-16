@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import {
   ArrowUp,
-  Bell,
   Bot,
   Briefcase,
   Calendar,
@@ -155,7 +154,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`grid h-9 w-9 place-items-center rounded-[10px] border transition-colors ${
+      className={`grid h-11 w-11 place-items-center rounded-[10px] border transition-colors ${
         active
           ? 'border-text bg-text text-white'
           : 'border-transparent text-text-muted hover:border-border hover:bg-surface hover:text-text'
@@ -168,7 +167,7 @@ function IconButton({
 
 function SourceChip({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] font-medium text-text-muted">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-text-muted">
       {icon}
       {label}
     </span>
@@ -177,7 +176,7 @@ function SourceChip({ icon, label }: { icon: ReactNode; label: string }) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div role="presentation" className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
+    <div role="presentation" className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">
       {children}
     </div>
   );
@@ -488,8 +487,8 @@ function CommandPalette({
             placeholder="Chercher ou demander à Thérèse…"
             className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
           />
-          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">Échap</kbd>
-          <button type="button" onClick={onClose} className="rounded-[7px] border border-border px-2 py-1 text-[10px] font-semibold text-text-muted hover:text-text">Fermer</button>
+          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">Échap</kbd>
+          <button type="button" onClick={onClose} className="rounded-[7px] border border-border px-2 py-1 text-xs font-semibold text-text-muted hover:text-text">Fermer</button>
         </div>
         <div id="prototype-command-results" role="listbox" aria-label="Résultats" className="max-h-[440px] overflow-y-auto p-2">
           <div className="sr-only" role="status" aria-live="polite">{optionCount} résultat{optionCount > 1 ? 's' : ''}</div>
@@ -587,13 +586,13 @@ function CommandPalette({
                 return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg">
                   <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
-                  {action.shortcut && <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">{action.shortcut}</kbd>}
+                  {action.shortcut && <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{action.shortcut}</kbd>}
                 </button>;
               })}
             </>
           )}
         </div>
-        <div className="flex items-center justify-between border-t border-border bg-surface-2 px-4 py-2 text-[10px] text-text-muted">
+        <div className="flex items-center justify-between border-t border-border bg-surface-2 px-4 py-2 text-xs text-text-muted">
           <span>{capabilities.length} capacités indexées</span>
           <span>Recherche par résultat, fonction ou outil · {isMac ? '⌘K' : 'Ctrl+K'}</span>
         </div>
@@ -1088,24 +1087,18 @@ export function ConversationCanvasPrototype() {
       data-high-contrast={highContrast ? 'true' : undefined}
     >
       <div className="flex h-full flex-col">
-        <header data-dialog-allow className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
-          <div className="flex flex-1 items-center gap-4">
-            <div className="flex items-center gap-2" aria-hidden="true">
-              <span className="h-3 w-3 rounded-full bg-[#FF605C]" />
-              <span className="h-3 w-3 rounded-full bg-[#FFBD44]" />
-              <span className="h-3 w-3 rounded-full bg-[#00CA4E]" />
-            </div>
-            <div className="h-5 w-px bg-border" />
-            <div className="flex items-center gap-2.5">
-              <span className="relative h-2.5 w-2.5 rounded-full bg-[#22D3EE]">
-                <span className="absolute inset-0 rounded-full bg-[#22D3EE] opacity-40 blur-[4px]" />
+        <header data-dialog-allow className="flex min-h-14 shrink-0 items-center border-b border-border bg-surface px-3 sm:px-4">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="relative h-2.5 w-2.5 rounded-full bg-accent-fill" aria-hidden="true">
+                <span className="absolute inset-0 rounded-full bg-accent-fill opacity-40 blur-[4px]" />
               </span>
               <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
-              <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-text-muted">Interface unifiée</span>
+              <span className="hidden rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted lg:inline-flex">Interface unifiée</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
+          <div className="hidden items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
             <Briefcase className="h-3.5 w-3.5 text-accent" />
             {workspaceName}
           </div>
@@ -1118,7 +1111,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-[11px] font-semibold text-accent hover:border-[#9ED7E1] sm:flex"
+              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-xs font-semibold text-accent hover:border-[#9ED7E1] sm:flex"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données
@@ -1134,9 +1127,9 @@ export function ConversationCanvasPrototype() {
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
-              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
+              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
-            <IconButton label="Notifications" onClick={() => chooseScenario('today')}><Bell className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Vue du jour" onClick={() => chooseScenario('today')}><Calendar className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
           </div>
         </header>
@@ -1153,7 +1146,7 @@ export function ConversationCanvasPrototype() {
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             <div className="mt-auto flex flex-col items-center gap-1.5">
               <IconButton label="Aide" onClick={() => openChat('/aide')}><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
-              <button type="button" onClick={() => openSettings('profile')} aria-label="Ouvrir le profil" className="grid h-9 w-9 place-items-center rounded-full border border-text bg-text text-[11px] font-bold text-white shadow-[2px_2px_0_#22D3EE]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
+              <button type="button" onClick={() => openSettings('profile')} aria-label="Ouvrir le profil" className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
             </div>
           </nav>
 
@@ -1210,7 +1203,7 @@ export function ConversationCanvasPrototype() {
                     </div>
                   </div>
 
-                  <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold text-text-muted">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-text-muted">
                     <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-text" />
                     THÉRÈSE
                     <span className="font-normal">· maintenant</span>
@@ -1320,7 +1313,7 @@ export function ConversationCanvasPrototype() {
                   )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="mr-1 text-[11px] font-medium text-text-muted">Sources</span>
+                    <span className="mr-1 text-xs font-medium text-text-muted">Sources</span>
                     {scenario === 'today' ? (
                       <>
                         <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Dashboard local" />
@@ -1380,7 +1373,7 @@ export function ConversationCanvasPrototype() {
                   </div>
 
                   <div className="mt-9 border-t border-border pt-5">
-                    <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
                     <div className="flex flex-wrap gap-2">
                       {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item) => (
                         <button
@@ -1471,7 +1464,7 @@ export function ConversationCanvasPrototype() {
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-[10px] font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}
@@ -1486,14 +1479,14 @@ export function ConversationCanvasPrototype() {
                           disabled={destinationIsPending || (destinationUsesChat && !composerValue.trim())}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
-                          className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_var(--btn-shadow-color)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
+                          className="grid h-11 w-11 place-items-center rounded-[10px] border border-text bg-accent-fill text-accent-ink shadow-[2px_2px_0_var(--btn-shadow-color)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
                         >
                           {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-center text-[10px] text-text-muted">Thérèse affiche les sources reçues et confirme les effets externes effectivement raccordés.</div>
+                  <div className="mt-2 text-center text-xs text-text-muted">Thérèse affiche les sources reçues et confirme les effets externes effectivement raccordés.</div>
                 </div>
               </div>
             </section>

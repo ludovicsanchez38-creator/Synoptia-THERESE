@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
 import {
   generateImage,
+  downloadGeneratedImage,
   getImageStatus,
   listGeneratedImages,
   type ImageResponse,
@@ -82,5 +83,19 @@ describe('ImagesWorkspaceCanvas', () => {
       }));
     });
     expect((await screen.findAllByText('Portrait éditorial de Thérèse')).length).toBeGreaterThan(0);
+  });
+
+  it('conserve l’image et propose de réessayer si son enregistrement échoue', async () => {
+    vi.mocked(downloadGeneratedImage).mockRejectedValueOnce(new Error('Disque indisponible'));
+    render(<ImagesWorkspaceCanvas onClose={vi.fn()} />);
+    await screen.findAllByText('Un atelier lumineux');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Disque indisponible');
+    expect(screen.getByTestId('selected-generated-image')).toBeInTheDocument();
+
+    vi.mocked(downloadGeneratedImage).mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    await waitFor(() => expect(downloadGeneratedImage).toHaveBeenCalledTimes(2));
   });
 });

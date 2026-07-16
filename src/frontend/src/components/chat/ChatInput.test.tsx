@@ -141,4 +141,70 @@ describe('ChatInput sans modèle', () => {
     );
     await waitFor(() => expect(apiMocks.streamMessage).toHaveBeenCalledTimes(1));
   });
+
+  it('marque une pièce jointe en échec, bloque l’envoi et permet de relancer l’indexation', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'ollama', model: 'gemma4-tia:latest',
+      available_models: ['gemma4-tia:latest'], available: true,
+    });
+    apiMocks.indexFile.mockRejectedValueOnce(new Error('Index corrompu'));
+    const { container } = render(<ChatInput />);
+    const messageInput = await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['contenu'], 'audit.pdf', { type: 'application/pdf' })] } });
+
+    expect(await screen.findByText('Échec')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Échec');
+    fireEvent.change(messageInput, { target: { value: 'Analyse ce document' } });
+    expect(screen.getByTestId('chat-send-btn')).toBeDisabled();
+
+    apiMocks.indexFile.mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer l’indexation de audit.pdf' }));
+    expect(await screen.findByText('Prêt')).toBeInTheDocument();
+    expect(screen.getByTestId('chat-send-btn')).toBeEnabled();
+  });
+
+  it('explique un changement de modèle refusé et permet de le réessayer', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'ollama', model: 'modèle-a', available_models: ['modèle-a', 'modèle-b'], available: true,
+    });
+    apiMocks.setLLMConfig.mockRejectedValueOnce(new Error('Backend indisponible'));
+    render(<ChatInput />);
+
+    const selector = await screen.findByLabelText('Modèle de conversation');
+    fireEvent.change(selector, { target: { value: 'modèle-b' } });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Changement de modèle non enregistré');
+    expect(selector).toHaveValue('modèle-a');
+
+    apiMocks.setLLMConfig.mockResolvedValueOnce({ provider: 'ollama', model: 'modèle-b', available_models: ['modèle-a', 'modèle-b'], available: true });
+    apiMocks.getLLMConfig.mockResolvedValueOnce({ provider: 'ollama', model: 'modèle-b', available_models: ['modèle-a', 'modèle-b'], available: true });
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    await waitFor(() => expect(apiMocks.setLLMConfig).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(selector).toHaveValue('modèle-b'));
+    expect(screen.queryByText(/Changement de modèle non enregistré/)).not.toBeInTheDocument();
+  });
+
+  it('restaure la saisie et les pièces jointes quand l’envoi échoue', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'ollama', model: 'gemma4-tia:latest',
+      available_models: ['gemma4-tia:latest'], available: true,
+    });
+    apiMocks.indexFile.mockResolvedValue(undefined);
+    apiMocks.streamMessage.mockReturnValue((async function* () {
+      yield { type: 'status', content: 'Connexion…' };
+      throw new Error('Réseau interrompu');
+    })());
+
+    const { container } = render(<ChatInput />);
+    const input = await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [new File(['contenu'], 'preuve.pdf', { type: 'application/pdf' })] } });
+    expect(await screen.findByText('Prêt')).toBeInTheDocument();
+    fireEvent.change(input, { target: { value: 'Analyse cette preuve' } });
+
+    fireEvent.click(screen.getByTestId('chat-send-btn'));
+
+    await waitFor(() => expect(input).toHaveValue('Analyse cette preuve'));
+    expect(screen.getByLabelText('Pièces jointes')).toHaveTextContent('Prêt');
+  });
 });

@@ -35,4 +35,12 @@ describe('contrat de thème de la coque 0.40', () => {
     expect(combined).toContain("url('/prototype/therese-character-atlas-v1.png')");
     expect(combined.match(/<CharacterPortrait/g)?.length ?? 0).toBeGreaterThanOrEqual(12);
   });
+
+  it('interdit les anciens statuts Tailwind et les tailles inférieures à 12 px', () => {
+    for (const { name, source } of componentSources) {
+      expect(source, `${name} contient encore une taille inférieure à 12 px`).not.toMatch(/text-\[(?:9|10|11)px\]/);
+      expect(source, `${name} contient encore une couleur de statut non sémantique`).not.toMatch(/(?:text|bg|border)-(?:green|red|amber|yellow|orange|blue)-(?:200|300|400|500|600)/);
+      expect(source, `${name} contient encore un fond blanc translucide`).not.toMatch(/bg-white\/\d+/);
+    }
+  });
 });

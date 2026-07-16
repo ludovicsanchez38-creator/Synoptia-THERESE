@@ -45,7 +45,7 @@ export function PrototypeChatSurface({
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-text">{conversation?.title || 'Nouvelle conversation'}</h2>
-          <p className="text-[10px] text-text-muted">Conversation réelle, historique et fichiers conservés</p>
+          <p className="text-xs text-text-muted">Conversation réelle, historique et fichiers conservés</p>
         </div>
         <ConnectionStatus />
         <button type="button" onClick={onClose} aria-label="Fermer la conversation" className="grid h-8 w-8 place-items-center rounded-[9px] border border-border bg-surface text-text-muted hover:text-text">

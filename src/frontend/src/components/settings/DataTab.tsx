@@ -66,10 +66,10 @@ export function DataTab({
               <p className="text-xs text-text font-mono truncate">{stats.db_path}</p>
             </div>
 
-            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="p-3 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
               <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-green-400">
+                <Check className="w-4 h-4 text-success" />
+                <span className="text-sm text-success">
                   Données stockées localement - 100% privé
                 </span>
               </div>
@@ -146,7 +146,7 @@ function DemoModeSection() {
         </div>
       )}
 
-      <p className="text-xs text-text-muted/60">
+      <p className="text-xs text-text-muted">
         Idéal pour les vidéos de présentation et les démos en direct.
         Aucune donnée n'est modifiée en base.
       </p>

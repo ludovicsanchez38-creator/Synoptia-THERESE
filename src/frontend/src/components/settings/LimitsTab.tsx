@@ -109,7 +109,7 @@ export function LimitsTab() {
             <div className="h-2 bg-background rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${
-                  dailyInputPercent > 90 ? 'bg-red-500' : dailyInputPercent > 75 ? 'bg-yellow-500' : 'bg-accent-cyan'
+                  dailyInputPercent > 90 ? 'bg-error-fill' : dailyInputPercent > 75 ? 'bg-warning-fill' : 'bg-accent-cyan'
                 }`}
                 style={{ width: `${dailyInputPercent}%` }}
               />
@@ -145,7 +145,7 @@ export function LimitsTab() {
             <div className="h-2 bg-background rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${
-                  monthlyBudgetPercent > 90 ? 'bg-red-500' : monthlyBudgetPercent > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                  monthlyBudgetPercent > 90 ? 'bg-error-fill' : monthlyBudgetPercent > 75 ? 'bg-warning-fill' : 'bg-success-fill'
                 }`}
                 style={{ width: `${monthlyBudgetPercent}%` }}
               />

@@ -230,11 +230,11 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                     value={value}
                     onChange={(e) => handleValueChange(envVar, e.target.value)}
                     placeholder={config.prefix ? `${config.prefix}...` : 'Entre la clé API'}
-                    className={`w-full px-3 py-2 pr-20 bg-background/60 border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 ${
+                    className={`w-full px-3 py-2 pr-20 bg-background/60 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 ${
                       error
-                        ? 'border-red-500/50 focus:ring-red-500/50'
+                        ? 'border-error/40 focus:ring-red-500/50'
                         : isValidValue
-                        ? 'border-green-500/50 focus:ring-green-500/50'
+                        ? 'border-success/40 focus:ring-green-500/50'
                         : 'border-border/50 focus:ring-accent-cyan/50'
                     }`}
                   />
@@ -242,10 +242,10 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {/* Indicateur de validation */}
                     {isValidValue && (
-                      <Check className="w-4 h-4 text-green-400" />
+                      <Check className="w-4 h-4 text-success" />
                     )}
                     {error && (
-                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <AlertCircle className="w-4 h-4 text-error" />
                     )}
 
                     {/* Toggle show/hide */}
@@ -267,7 +267,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
 
                 {/* Error message */}
                 {error && (
-                  <p className="text-xs text-red-400 mt-1">{error}</p>
+                  <p className="text-xs text-error mt-1">{error}</p>
                 )}
 
                 {/* Hint */}
