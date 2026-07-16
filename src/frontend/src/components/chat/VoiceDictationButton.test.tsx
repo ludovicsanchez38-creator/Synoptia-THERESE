@@ -8,6 +8,7 @@ vi.mock('../../hooks/useVoiceRecorder', () => ({
 }));
 
 const toggleRecording = vi.fn();
+const cancelProcessing = vi.fn();
 
 function mockVoiceState(overrides: Partial<ReturnType<typeof useVoiceRecorder>> = {}) {
   vi.mocked(useVoiceRecorder).mockReturnValue({
@@ -18,6 +19,8 @@ function mockVoiceState(overrides: Partial<ReturnType<typeof useVoiceRecorder>> 
     startRecording: vi.fn(),
     stopRecording: vi.fn(),
     toggleRecording,
+    cancelProcessing,
+    elapsedSeconds: 0,
     error: null,
     ...overrides,
   });
@@ -44,17 +47,22 @@ describe('VoiceDictationButton', () => {
   });
 
   it('reproduit les états enregistrement et transcription du bouton classique', () => {
-    mockVoiceState({ state: 'recording', isRecording: true });
+    mockVoiceState({ state: 'recording', isRecording: true, elapsedSeconds: 12 });
     const { rerender } = render(
       <VoiceDictationButton onTranscript={vi.fn()} onError={vi.fn()} />,
     );
 
     expect(screen.getByRole('button', { name: "Arrêter l'enregistrement" })).toBeEnabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Écoute 00:12');
+    expect(screen.getByLabelText('Aperçu live de la dictée')).toBeInTheDocument();
 
     mockVoiceState({ state: 'processing', isProcessing: true });
     rerender(<VoiceDictationButton onTranscript={vi.fn()} onError={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Transcription en cours...' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Transcription en cours');
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(cancelProcessing).toHaveBeenCalledTimes(1);
   });
 
   it('attend que le plugin et les permissions micro soient prêts', () => {

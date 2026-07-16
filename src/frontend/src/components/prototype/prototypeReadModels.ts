@@ -1,5 +1,6 @@
 import type {
   DashboardEvent,
+  DashboardFollowUp,
   DashboardInvoice,
   DashboardProspect,
   DashboardTask,
@@ -8,7 +9,7 @@ import type {
 import type { Contact } from '../../services/api/memory';
 import type { AppView } from '../../stores/navigationStore';
 
-export type AttentionKind = 'event' | 'task' | 'invoice' | 'prospect';
+export type AttentionKind = 'event' | 'task' | 'follow_up' | 'invoice' | 'prospect';
 
 export interface TodayAttentionItem {
   id: string;
@@ -17,7 +18,7 @@ export interface TodayAttentionItem {
   detail: string;
   badge: string;
   urgent: boolean;
-  targetView: Extract<AppView, 'calendar' | 'tasks' | 'invoices' | 'crm'>;
+  targetView: Extract<AppView, 'calendar' | 'tasks' | 'email' | 'invoices' | 'crm'>;
 }
 
 function isOverdue(dueDate: string | null, today: string): boolean {
@@ -73,15 +74,49 @@ function invoiceToAttention(invoice: DashboardInvoice): TodayAttentionItem {
 }
 
 function eventToAttention(event: DashboardEvent): TodayAttentionItem {
+  const linkedToCrm = event.crm_contact_ids.length > 0;
+  const hasParticipants = event.attendees_count > 0;
   return {
     id: `event-${event.id}`,
     kind: 'event',
     title: event.summary,
-    detail: [formatEventTime(event), event.location].filter(Boolean).join(' · '),
-    badge: 'Agenda',
+    detail: [
+      formatEventTime(event),
+      event.location,
+      linkedToCrm
+        ? `${event.crm_contact_ids.length} contact${event.crm_contact_ids.length > 1 ? 's' : ''} CRM`
+        : hasParticipants
+          ? `${event.attendees_count} participant${event.attendees_count > 1 ? 's' : ''}`
+          : null,
+    ].filter(Boolean).join(' · '),
+    badge: linkedToCrm ? 'Contact CRM' : hasParticipants ? 'Avec participants' : 'Agenda',
     urgent: false,
     targetView: 'calendar',
   };
+}
+
+function followUpToAttention(followUp: DashboardFollowUp, today: string): TodayAttentionItem {
+  const overdue = isOverdue(followUp.due_date, today);
+  const subject = followUp.email_subject || followUp.note || 'Relance email';
+  return {
+    id: `follow-up-${followUp.id}`,
+    kind: 'follow_up',
+    title: followUp.contact_name ? `Relancer ${followUp.contact_name}` : subject,
+    detail: [subject, `échéance ${formatCivilDate(followUp.due_date)}`].filter(Boolean).join(' · '),
+    badge: overdue ? 'Relance en retard' : 'Relance proche',
+    urgent: overdue,
+    targetView: 'email',
+  };
+}
+
+function isLowStakeSoloEvent(event: DashboardEvent): boolean {
+  if (event.attendees_count > 0 || event.crm_contact_ids.length > 0) return false;
+  const normalized = event.summary.toLocaleLowerCase('fr-FR');
+  return /\b(d[eé]jeuner|courses?|sport|gym|pause|personnel|perso)\b/.test(normalized);
+}
+
+function eventTimestamp(event: DashboardEvent): string {
+  return event.start_datetime || event.start_date || '';
 }
 
 function prospectToAttention(prospect: DashboardProspect): TodayAttentionItem {
@@ -99,14 +134,34 @@ function prospectToAttention(prospect: DashboardProspect): TodayAttentionItem {
 export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionItem[] {
   const overdueTasks = data.urgent_tasks.filter((task) => isOverdue(task.due_date, data.date));
   const otherTasks = data.urgent_tasks.filter((task) => !isOverdue(task.due_date, data.date));
+  const overdueFollowUps = data.due_follow_ups.filter((followUp) => isOverdue(followUp.due_date, data.date));
+  const otherFollowUps = data.due_follow_ups.filter((followUp) => !isOverdue(followUp.due_date, data.date));
+  const curatedEvents = data.events
+    .filter((event) => !isLowStakeSoloEvent(event))
+    .sort((left, right) => eventTimestamp(left).localeCompare(eventTimestamp(right)));
+  const engagedEvents = curatedEvents.filter(
+    (event) => event.attendees_count > 0 || event.crm_contact_ids.length > 0,
+  );
+  const otherEvents = curatedEvents.filter(
+    (event) => event.attendees_count === 0 && event.crm_contact_ids.length === 0,
+  );
 
   return [
     ...overdueTasks.map((task) => taskToAttention(task, data.date)),
+    ...overdueFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
     ...data.overdue_invoices.map(invoiceToAttention),
-    ...data.events.map(eventToAttention),
+    ...engagedEvents.map(eventToAttention),
+    ...otherFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
     ...otherTasks.map((task) => taskToAttention(task, data.date)),
     ...data.stale_prospects.map(prospectToAttention),
+    ...otherEvents.map(eventToAttention),
   ];
+}
+
+export function todayBriefTitle(itemCount: number): string {
+  if (itemCount === 0) return 'Aucune priorité détectée';
+  if (itemCount === 1) return 'Un point mérite ton attention';
+  return 'Ton attention aujourd’hui';
 }
 
 export function contactDisplayName(contact: Contact): string {

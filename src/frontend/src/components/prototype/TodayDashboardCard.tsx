@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ListTodo,
   Loader2,
+  Mail,
   Receipt,
   RefreshCw,
   Sparkles,
@@ -12,12 +13,13 @@ import {
 } from 'lucide-react';
 import type { TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
-import { buildTodayAttentionItems, type AttentionKind } from './prototypeReadModels';
+import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 
 const attentionIcons = {
   event: Calendar,
   task: ListTodo,
+  follow_up: Mail,
   invoice: Receipt,
   prospect: Users,
 } satisfies Record<AttentionKind, typeof Calendar>;
@@ -25,6 +27,7 @@ const attentionIcons = {
 const attentionColors: Record<AttentionKind, string> = {
   event: 'bg-accent-tint text-accent',
   task: 'bg-[var(--color-warning-tint)] text-warning',
+  follow_up: 'bg-[var(--k4bg)] text-[var(--k4)]',
   invoice: 'bg-[var(--k3bg)] text-[var(--k3)]',
   prospect: 'bg-[var(--k4bg)] text-[var(--k4)]',
 };
@@ -65,7 +68,7 @@ export function TodayDashboardCard({
             <Sparkles className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="today-dashboard-title" className="text-sm font-semibold text-text">Ton attention aujourd’hui</h2>
+            <h2 id="today-dashboard-title" className="text-sm font-semibold text-text">{todayBriefTitle(items.length)}</h2>
             <div className="text-[11px] text-text-muted">
               {resource.status === 'ready'
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
@@ -119,7 +122,7 @@ export function TodayDashboardCard({
           <div className="text-center" data-testid="today-dashboard-empty">
             <CheckCircle2 className="mx-auto h-6 w-6 text-success" />
             <p className="mt-2 text-sm font-semibold text-text">Rien d’urgent pour le moment</p>
-            <p className="mt-1 text-xs text-text-muted">Ton agenda et tes suivis sont à jour.</p>
+            <p className="mt-1 text-xs text-text-muted">Aucune relance, échéance ou rencontre à enjeu n’est remontée.</p>
           </div>
         </StateShell>
       ) : (
@@ -168,6 +171,7 @@ export function TodayDashboardCard({
           <span className="mr-1 text-[10px] font-medium text-text-muted">Sources réelles</span>
           {resource.data.events.length > 0 && <SourcePill label="Agenda" />}
           {resource.data.urgent_tasks.length > 0 && <SourcePill label="Tâches" />}
+          {resource.data.due_follow_ups.length > 0 && <SourcePill label="Relances" />}
           {resource.data.overdue_invoices.length > 0 && <SourcePill label="Factures" />}
           {resource.data.stale_prospects.length > 0 && <SourcePill label="CRM" />}
         </div>

@@ -63,6 +63,11 @@ describe('ImagesWorkspaceCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la génération' }));
 
     expect(screen.getByTestId('image-generation-confirmation')).toBeInTheDocument();
+    expect(screen.getByTestId('image-generation-confirmation')).toHaveTextContent('Portrait éditorial de Thérèse');
+    expect(screen.getByTestId('image-generation-confirmation')).toHaveTextContent('GPT Image 2');
+    expect(screen.getByLabelText('Description du visuel')).toBeDisabled();
+    expect(screen.getByLabelText('Format de l’image')).toBeDisabled();
+    expect(screen.getByLabelText('Qualité de l’image')).toBeDisabled();
     expect(generateImage).not.toHaveBeenCalled();
 
     const confirmButton = screen.getByRole('button', { name: 'Confirmer et générer' });

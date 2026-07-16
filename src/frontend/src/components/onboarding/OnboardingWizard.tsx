@@ -14,6 +14,7 @@ import { LLMStep } from './LLMStep';
 import { SecurityStep } from './SecurityStep';
 import { WorkingDirStep } from './WorkingDirStep';
 import { CompleteStep } from './CompleteStep';
+import type { LLMProvider } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface OnboardingWizardProps {
@@ -33,6 +34,7 @@ const STEPS = [
 export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [configuredProvider, setConfiguredProvider] = useState<LLMProvider | null>(null);
 
   // Window controls
   const handleMinimize = () => getCurrentWindow().minimize();
@@ -51,6 +53,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
     if (isOpen) {
       setCurrentStep(0);
       setDirection(1);
+      setConfiguredProvider(null);
     }
   }, [isOpen]);
 
@@ -62,6 +65,11 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   function goBack() {
     setDirection(-1);
     setCurrentStep((prev) => Math.max(prev - 1, 0));
+  }
+
+  function completeLlmStep(provider: LLMProvider | null) {
+    setConfiguredProvider(provider);
+    goNext();
   }
 
   function handleComplete() {
@@ -236,8 +244,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                 >
                   {currentStep === 0 && <div data-testid="onboarding-step-0"><WelcomeStep onNext={goNext} /></div>}
                   {currentStep === 1 && <div data-testid="onboarding-step-1"><ProfileStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 2 && <div data-testid="onboarding-step-2"><LLMStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 3 && <div data-testid="onboarding-step-3"><SecurityStep onNext={goNext} onBack={goBack} /></div>}
+                  {currentStep === 2 && <div data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
+                  {currentStep === 3 && <div data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 4 && <div data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} /></div>}
                 </motion.div>

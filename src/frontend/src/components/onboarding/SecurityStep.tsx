@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { recordCloudConsent } from '../../lib/consent';
+import type { LLMProvider } from '../../services/api';
 
 interface SecurityStepProps {
+  provider: LLMProvider | null;
   onNext: () => void;
   onBack: () => void;
 }
@@ -71,9 +73,17 @@ const severityLabels = {
   low: 'Risque faible',
 };
 
-export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
+const providerLabels: Partial<Record<LLMProvider, string>> = {
+  anthropic: 'Anthropic', openai: 'OpenAI', gemini: 'Google Gemini', mistral: 'Mistral',
+  grok: 'xAI', openrouter: 'OpenRouter', perplexity: 'Perplexity', deepseek: 'DeepSeek',
+  infomaniak: 'Infomaniak', ollama: 'Ollama local',
+};
+
+export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
   const [acknowledged, setAcknowledged] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const cloudEnabled = provider !== null && provider !== 'ollama';
+  const providerLabel = provider ? providerLabels[provider] || provider : null;
 
   return (
     <motion.div
@@ -170,8 +180,8 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         <ExternalLink className="w-4 h-4" />
       </a>
 
-      {/* Acknowledgment checkbox - RGPD consent */}
-      <label className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
+      {/* Consentement RGPD uniquement lorsqu'un fournisseur cloud est activé. */}
+      {cloudEnabled ? <label className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
         <input
           type="checkbox"
           id="security-consent"
@@ -181,15 +191,20 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         />
         <div className="text-sm">
           <p className="text-text font-medium">
-            Je consens au transfert de mes données vers les providers LLM cloud
+            Je consens au transfert de mes données vers {providerLabel}
           </p>
           <p className="text-text-muted mt-1">
-            J'accepte que mes messages soient envoyés aux serveurs des providers (Anthropic, OpenAI, Google, etc.)
+            J'accepte que mes messages, pièces jointes sélectionnées et contexte utile soient envoyés à {providerLabel}
             pour traitement. Je comprends les risques et m'engage à ne pas partager de données sensibles
             (mots de passe, données clients, informations confidentielles).
           </p>
         </div>
-      </label>
+      </label> : (
+        <div className="flex items-start gap-3 rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4" data-testid="local-security-notice">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-cyan" />
+          <div className="text-sm"><p className="font-medium text-text">Parcours local sans consentement cloud</p><p className="mt-1 text-text-muted">{provider === 'ollama' ? 'Ollama traite les messages sur cette machine.' : 'Aucun fournisseur cloud n’est activé pour le moment.'} Un accord distinct sera demandé au premier usage cloud réel, avec le fournisseur et les données transmis.</p></div>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex gap-3 pt-2">
@@ -207,17 +222,21 @@ export function SecurityStep({ onNext, onBack }: SecurityStepProps) {
         </button>
         <button
           onClick={() => {
-            // RGPD-4 (US-003) : tracer le consentement (horodaté) avant de continuer.
-            recordCloudConsent();
+            if (cloudEnabled && providerLabel) {
+              recordCloudConsent(undefined, {
+                provider: providerLabel,
+                dataCategories: ['messages', 'pièces jointes sélectionnées', 'contexte utile'],
+              });
+            }
             onNext();
           }}
-          disabled={!acknowledged}
+          disabled={cloudEnabled && !acknowledged}
           data-testid="onboarding-next-btn"
           className={cn(
             'flex-1 flex items-center justify-center gap-2',
             'px-4 py-3 rounded-xl font-medium',
             'transition-all',
-            acknowledged
+            (!cloudEnabled || acknowledged)
               ? 'bg-accent-cyan text-bg hover:bg-accent-cyan/90'
               : 'bg-surface text-text-muted cursor-not-allowed opacity-50'
           )}

@@ -97,7 +97,11 @@ describe('InvoiceWorkspaceCanvas', () => {
     fireEvent.change(screen.getByLabelText('Prix HT ligne 1'), { target: { value: '490' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
 
-    expect(screen.getByTestId('devis-draft-confirmation')).toBeInTheDocument();
+    expect(screen.getByTestId('devis-draft-confirmation')).toHaveTextContent('Camille Martin');
+    expect(screen.getByTestId('devis-draft-confirmation')).toHaveTextContent('588');
+    expect(screen.getByLabelText('Client du devis')).toBeDisabled();
+    expect(screen.getByLabelText('Description ligne 1')).toBeDisabled();
+    expect(screen.getByLabelText('Prix HT ligne 1')).toBeDisabled();
     expect(onCreateDraft).not.toHaveBeenCalled();
 
     const confirm = screen.getByRole('button', { name: 'Confirmer le brouillon' });

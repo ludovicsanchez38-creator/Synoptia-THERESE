@@ -66,10 +66,34 @@ describe('Atelier 0.40 conversationnel', () => {
     expect(screen.getByTestId('atelier-new-form')).toHaveTextContent('Aucun email, devis, événement');
     fireEvent.change(screen.getByLabelText('Mission Atelier'), { target: { value: 'Simplifier l’onboarding sans modifier les données.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la mission' }));
-    expect(screen.getByTestId('atelier-confirmation')).toBeInTheDocument();
+    expect(screen.getByTestId('atelier-confirmation')).toHaveTextContent('Simplifier l’onboarding sans modifier les données.');
+    expect(screen.getByTestId('atelier-confirmation')).toHaveTextContent('/repo');
+    expect(screen.getByLabelText('Mission Atelier')).toBeDisabled();
     expect(onStart).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et lancer' }));
     expect(onStart).toHaveBeenCalledWith('Simplifier l’onboarding sans modifier les données.');
+  });
+
+  it('réserve l’annulation d’une mission engagée à une confirmation dédiée', () => {
+    const onCancel = vi.fn().mockResolvedValue(undefined);
+    const runningRun: AtelierRunState = {
+      ...idleRun,
+      status: 'running',
+      instruction: 'Simplifier le parcours sans toucher aux données.',
+      phase: 'testing',
+    };
+    render(<AtelierWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      taskResource={null} diffResource={null} run={runningRun} target="current"
+      actionPending={null} onRetry={vi.fn()} onRetryTask={vi.fn()} onStart={vi.fn()}
+      onCancel={onCancel} onReset={vi.fn()} onMutate={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la mission' }));
+    expect(screen.getByTestId('atelier-cancel-confirmation')).toBeInTheDocument();
+    expect(onCancel).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’annulation' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it('bloque le lancement lorsque le dépôt contient des changements', () => {

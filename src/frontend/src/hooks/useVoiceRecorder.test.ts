@@ -5,7 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import * as api from '../services/api';
 
 // Mock api module (le hook utilise api.transcribeAudio)
 vi.mock('../services/api', () => ({
@@ -45,6 +46,7 @@ const mockGetUserMedia = vi.fn();
 describe('useVoiceRecorder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.transcribeAudio).mockResolvedValue('transcribed text');
 
     // Mock MediaRecorder
     (globalThis as any).MediaRecorder = MockMediaRecorder;
@@ -152,6 +154,27 @@ describe('useVoiceRecorder', () => {
 
       // State should be processing or idle after stop
       expect(['processing', 'idle']).toContain(result.current.state);
+    });
+
+    it('annule la transcription réseau et revient au repos', async () => {
+      let activeSignal: AbortSignal | undefined;
+      vi.mocked(api.transcribeAudio).mockImplementation((_blob, _filename, signal) => {
+        activeSignal = signal;
+        return new Promise((_resolve, reject) => {
+          signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        });
+      });
+      const { useVoiceRecorder } = await import('./useVoiceRecorder');
+      const { result } = renderHook(() => useVoiceRecorder({ onTranscript: vi.fn() }));
+
+      await act(async () => result.current.startRecording());
+      await act(async () => result.current.stopRecording());
+      await waitFor(() => expect(result.current.isProcessing).toBe(true));
+
+      act(() => result.current.cancelProcessing());
+
+      expect(activeSignal?.aborted).toBe(true);
+      expect(result.current.state).toBe('idle');
     });
   });
 

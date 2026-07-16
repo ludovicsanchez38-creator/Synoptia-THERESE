@@ -29,6 +29,7 @@ import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, s
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
+import { getCloudConsent, recordCloudConsent } from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 
 const MIN_ROWS = 2;
@@ -41,6 +42,19 @@ interface ChatInputProps {
   onInitialPromptConsumed?: () => void;
   userCommands?: import('./SlashCommandsMenu').SlashCommand[];
 }
+
+interface PendingCloudConsent {
+  action: 'message' | 'deep-research';
+  provider: LLMProvider;
+  providerLabel: string;
+  dataCategories: string[];
+}
+
+const cloudProviderLabels: Partial<Record<LLMProvider, string>> = {
+  anthropic: 'Anthropic', openai: 'OpenAI', gemini: 'Google Gemini', mistral: 'Mistral',
+  grok: 'xAI', openrouter: 'OpenRouter', perplexity: 'Perplexity', deepseek: 'DeepSeek',
+  infomaniak: 'Infomaniak',
+};
 
 
 // US-007 : Indicateur de dernière sauvegarde
@@ -110,6 +124,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // F-12 : modèle LLM actif + sélecteur rapide
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<LLMProvider | null>(null);
+  const [pendingCloudConsent, setPendingCloudConsent] = useState<PendingCloudConsent | null>(null);
+  const cloudConsentGrantedRef = useRef(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
   const modelChecking = modelAvailable === null;
@@ -193,13 +209,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     });
     // Focus textarea
     textareaRef.current?.focus();
+    setVoiceError(null);
   }, []);
 
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const handleVoiceError = useCallback((error: string) => {
     setVoiceError(error);
-    // Auto-clear error after 5 seconds
-    setTimeout(() => setVoiceError(null), 5000);
   }, []);
 
   // Remove attached file
@@ -360,6 +375,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setQueuedPrompt(trimmed);
       setInput('');
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      return;
+    }
+
+    if (
+      currentProvider && currentProvider !== 'ollama'
+      && !cloudConsentGrantedRef.current && !getCloudConsent()?.accepted
+    ) {
+      setPendingCloudConsent({
+        action: 'message',
+        provider: currentProvider,
+        providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
+        dataCategories: [
+          'message saisi',
+          'contexte de conversation',
+          'mémoire locale utile',
+          ...(attachedFiles.length > 0 ? ['fichiers joints sélectionnés'] : []),
+        ],
+      });
       return;
     }
 
@@ -573,12 +606,25 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, modelAvailable, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
+  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline || isStreaming) return;
+
+    if (
+      currentProvider && currentProvider !== 'ollama'
+      && !cloudConsentGrantedRef.current && !getCloudConsent()?.accepted
+    ) {
+      setPendingCloudConsent({
+        action: 'deep-research',
+        provider: currentProvider,
+        providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
+        dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
+      });
+      return;
+    }
 
     setShowSlashMenu(false);
     addMessage({ role: 'user', content: `[Recherche approfondie] ${trimmed}` });
@@ -643,11 +689,31 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
+  }, [input, isOffline, isStreaming, currentProvider, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
+  const deepResearchRef = useRef(handleDeepResearch);
+  deepResearchRef.current = handleDeepResearch;
+
+  const confirmCloudConsent = useCallback(() => {
+    if (!pendingCloudConsent || currentProvider !== pendingCloudConsent.provider) {
+      setPendingCloudConsent(null);
+      return;
+    }
+    recordCloudConsent(undefined, {
+      provider: pendingCloudConsent.providerLabel,
+      dataCategories: pendingCloudConsent.dataCategories,
+    });
+    cloudConsentGrantedRef.current = true;
+    const action = pendingCloudConsent.action;
+    setPendingCloudConsent(null);
+    window.setTimeout(() => {
+      if (action === 'message') void sendMessageRef.current();
+      else void deepResearchRef.current();
+    }, 0);
+  }, [currentProvider, pendingCloudConsent]);
 
   // Auto-send du prompt en file d'attente quand le streaming finit
   useEffect(() => {
@@ -925,6 +991,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         </div>
       )}
 
+      {pendingCloudConsent && (
+        <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-xl border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
+          <p id="cloud-consent-title" className="font-semibold">Autoriser ce premier envoi à {pendingCloudConsent.providerLabel} ?</p>
+          <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.join(', ')}.</p>
+          <div className="mt-3 flex justify-end gap-2">
+            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
+            <button type="button" onClick={confirmCloudConsent} className="rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">Autoriser et envoyer</button>
+          </div>
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className={cn(
@@ -1038,8 +1115,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* Voice error message */}
       {voiceError && (
-        <div className="mt-2 p-2 rounded-lg bg-error/10 border border-error/20">
-          <p className="text-xs text-error">{voiceError}</p>
+        <div role="alert" className="mt-2 flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 p-2">
+          <p className="flex-1 text-xs text-error">{voiceError}</p>
+          <button type="button" onClick={() => setVoiceError(null)} aria-label="Fermer l’erreur de dictée" className="text-error"><X className="h-3.5 w-3.5" /></button>
         </div>
       )}
 

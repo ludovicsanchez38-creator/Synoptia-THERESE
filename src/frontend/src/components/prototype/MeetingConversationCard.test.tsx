@@ -48,7 +48,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     render(<MeetingWorkspaceCanvas
       resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
       target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={onCreateEvent}
-      onCreateNote={vi.fn()} onOpenClassic={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={vi.fn()} onOpenClassic={vi.fn()}
     />);
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Point confirmé' } });
     fireEvent.click(screen.getByText('Vérifier avant création'));
@@ -58,21 +58,27 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     await waitFor(() => expect(onCreateEvent).toHaveBeenCalledTimes(1));
   });
 
-  it('permet d’annuler explicitement la confirmation Agenda sans créer', () => {
+  it('distingue Modifier du véritable abandon de la confirmation Agenda', () => {
     const onCreateEvent = vi.fn();
+    const onAbandon = vi.fn();
     render(<MeetingWorkspaceCanvas
       resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
       target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={onCreateEvent}
-      onCreateNote={vi.fn()} onOpenClassic={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()}
     />);
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Point annulé' } });
     fireEvent.click(screen.getByText('Vérifier avant création'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier' }));
 
     expect(onCreateEvent).not.toHaveBeenCalled();
+    expect(onAbandon).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Confirmer la création' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Vérifier avant création' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vérifier avant création' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(onAbandon).toHaveBeenCalledTimes(1);
   });
 
   it('montre le contexte sourcé et confirme séparément la note CRM', async () => {
@@ -81,7 +87,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
       resource={{ status: 'ready', data: workspace, error: null }}
       eventResource={{ status: 'ready', data: context, error: null }} target={meetingEventKey(event)}
       onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
-      onCreateNote={onCreateNote} onOpenClassic={vi.fn()}
+      onCreateNote={onCreateNote} onAbandon={vi.fn()} onOpenClassic={vi.fn()}
     />);
     expect(screen.getByText('Contexte réel')).toBeInTheDocument();
     expect(screen.getByText('Historique réel')).toBeInTheDocument();
@@ -90,5 +96,21 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     expect(onCreateNote).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('Confirmer l’ajout'));
     await waitFor(() => expect(onCreateNote).toHaveBeenCalledWith(meetingEventKey(event), contact.id, 'Note réelle'));
+  });
+
+  it('propose un abandon distinct de la modification dans la confirmation de note', () => {
+    const onAbandon = vi.fn();
+    render(<MeetingWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      eventResource={{ status: 'ready', data: context, error: null }} target={meetingEventKey(event)}
+      onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()}
+    />);
+    fireEvent.change(screen.getByLabelText('Note de rendez-vous'), { target: { value: 'Note à abandonner' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Vérifier la note' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(onAbandon).toHaveBeenCalledTimes(1);
   });
 });

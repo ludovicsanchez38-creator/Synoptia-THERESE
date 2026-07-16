@@ -122,4 +122,31 @@ describe('usePrototypeAtelierData', () => {
     expect(cancelTask).toHaveBeenCalledWith(task.id);
     expect(result.current.run.status).toBe('cancelled');
   });
+
+  it('laisse la mission active quand le canevas Atelier est simplement masqué', async () => {
+    let signal: AbortSignal | undefined;
+    let release: (() => void) | undefined;
+    vi.mocked(streamAgentRequest).mockImplementation(async function* (_message, _path, activeSignal) {
+      signal = activeSignal;
+      yield { type: 'agent_start', agent: 'katia', task_id: task.id, phase: 'spec', content: 'Cadrage' };
+      await new Promise<void>((resolve) => { release = resolve; });
+      yield { type: 'error', task_id: task.id, content: 'Fin contrôlée du test' };
+    });
+    const { result, rerender } = renderHook(
+      ({ enabled }) => usePrototypeAtelierData(enabled),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+    let mission: Promise<void> | undefined;
+    act(() => { mission = result.current.startMission('Continuer cette mission même si le canevas est masqué.'); });
+    await waitFor(() => expect(result.current.run.status).toBe('running'));
+    rerender({ enabled: false });
+
+    expect(signal?.aborted).toBe(false);
+    expect(cancelTask).not.toHaveBeenCalled();
+    expect(result.current.run.status).toBe('running');
+    release?.();
+    await act(async () => mission);
+  });
 });

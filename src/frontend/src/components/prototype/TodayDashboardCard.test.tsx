@@ -8,9 +8,10 @@ function dashboard(overrides: Partial<TodayDashboard> = {}): TodayDashboard {
     date: '2026-07-13',
     events: [],
     urgent_tasks: [],
+    due_follow_ups: [],
     overdue_invoices: [],
     stale_prospects: [],
-    summary: { events_count: 0, tasks_count: 0, invoices_count: 0, prospects_count: 0 },
+    summary: { events_count: 0, tasks_count: 0, follow_ups_count: 0, invoices_count: 0, prospects_count: 0 },
     ...overrides,
   };
 }
@@ -27,6 +28,7 @@ describe('TodayDashboardCard', () => {
             events: [{
               id: 'e1', summary: 'Rendez-vous réel', start_datetime: null,
               start_date: '2026-07-13', end_datetime: null, location: null, all_day: true,
+              attendees_count: 1, crm_contact_ids: [],
             }],
           }),
         }}
@@ -36,6 +38,7 @@ describe('TodayDashboardCard', () => {
     );
 
     expect(screen.getByText('Rendez-vous réel')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Un point mérite ton attention' })).toBeInTheDocument();
     expect(screen.getByText('1 élément issu de tes données')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Rendez-vous réel'));
     expect(onOpenView).toHaveBeenCalledWith('calendar');

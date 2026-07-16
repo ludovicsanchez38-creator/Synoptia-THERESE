@@ -5,6 +5,7 @@ Endpoint agrégé "Ma journée" pour le tableau de bord à l'ouverture.
 Données 100% locales SQLite, pas d'appel LLM.
 """
 
+import json
 import logging
 import os
 from datetime import date, datetime, timedelta
@@ -15,18 +16,38 @@ from app.models.entities import (
     CalendarEvent,
     Contact,
     EmailAccount,
+    EmailFollowUp,
+    EmailMessage,
     Invoice,
     Preference,
     Task,
 )
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _attendee_emails(raw_attendees: str | None) -> list[str]:
+    """Extrait les emails participants sans supposer le format du provider."""
+    if not raw_attendees:
+        return []
+    try:
+        values = json.loads(raw_attendees)
+    except (TypeError, json.JSONDecodeError):
+        return []
+    if not isinstance(values, list):
+        return []
+    emails: list[str] = []
+    for value in values:
+        email = value.get("email") if isinstance(value, dict) else value
+        if isinstance(email, str) and email.strip():
+            emails.append(email.strip().lower())
+    return emails
 
 # US-012 : détection « au moins une clé LLM configurée » pour la checklist
 # de mise en route. Mêmes providers que le router config (env OU Preference DB).
@@ -144,8 +165,8 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
 async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     """Retourne les données du jour pour le tableau de bord.
 
-    Agrège : RDV du jour, tâches urgentes, factures impayées > 30j,
-    prospects à relancer (sans interaction > 15j).
+    Agrège : RDV du jour, tâches urgentes, relances email proches,
+    factures impayées > 30j et prospects sans interaction > 15j.
     Conçu pour se charger en <500ms (SQLite local, pas d'appel réseau).
     """
     today = date.today()
@@ -154,6 +175,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     thirty_days_ago = datetime.now() - timedelta(days=30)
     fifteen_days_ago = datetime.now() - timedelta(days=15)
     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
+    follow_up_horizon = (today + timedelta(days=2)).isoformat() + "T23:59:59"
 
     # --- RDV du jour (CalendarEvent) ---
     events_today = []
@@ -180,7 +202,27 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         result_allday = await session.execute(stmt_allday)
         allday_events = result_allday.scalars().all()
 
+        attendee_emails_by_event = {
+            ev.id: _attendee_emails(ev.attendees) for ev in [*timed_events, *allday_events]
+        }
+        attendee_emails = {
+            email for emails in attendee_emails_by_event.values() for email in emails
+        }
+        contacts_by_email: dict[str, Contact] = {}
+        if attendee_emails:
+            contacts = (
+                await session.execute(
+                    select(Contact).where(func.lower(Contact.email).in_(attendee_emails))
+                )
+            ).scalars().all()
+            contacts_by_email = {
+                contact.email.strip().lower(): contact
+                for contact in contacts
+                if contact.email and contact.email.strip()
+            }
+
         for ev in [*timed_events, *allday_events]:
+            event_attendees = attendee_emails_by_event[ev.id]
             events_today.append({
                 "id": ev.id,
                 "summary": ev.summary,
@@ -189,6 +231,12 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 "end_datetime": ev.end_datetime.isoformat() if ev.end_datetime else None,
                 "location": ev.location,
                 "all_day": ev.all_day,
+                "attendees_count": len(event_attendees),
+                "crm_contact_ids": [
+                    contacts_by_email[email].id
+                    for email in event_attendees
+                    if email in contacts_by_email
+                ],
             })
     except Exception as e:
         logger.warning(f"Erreur lecture événements calendrier: {e}")
@@ -227,6 +275,43 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             })
     except Exception as e:
         logger.warning(f"Erreur lecture tâches: {e}")
+
+    # --- Relances email échues ou proches (J+2 maximum) ---
+    due_follow_ups = []
+    try:
+        follow_ups = (
+            await session.execute(
+                select(EmailFollowUp)
+                .where(EmailFollowUp.status == "pending")
+                .where(EmailFollowUp.due_date <= follow_up_horizon)
+                .order_by(EmailFollowUp.due_date.asc(), EmailFollowUp.id.asc())
+            )
+        ).scalars().all()
+        message_ids = {follow_up.email_message_id for follow_up in follow_ups}
+        contact_ids = {follow_up.contact_id for follow_up in follow_ups if follow_up.contact_id}
+        messages = (
+            await session.execute(select(EmailMessage).where(EmailMessage.id.in_(message_ids)))
+        ).scalars().all() if message_ids else []
+        contacts = (
+            await session.execute(select(Contact).where(Contact.id.in_(contact_ids)))
+        ).scalars().all() if contact_ids else []
+        messages_by_id = {message.id: message for message in messages}
+        contacts_by_id = {contact.id: contact for contact in contacts}
+
+        for follow_up in follow_ups:
+            message = messages_by_id.get(follow_up.email_message_id)
+            contact = contacts_by_id.get(follow_up.contact_id) if follow_up.contact_id else None
+            due_follow_ups.append({
+                "id": follow_up.id,
+                "due_date": follow_up.due_date,
+                "note": follow_up.note,
+                "email_subject": message.subject if message else None,
+                "email_from": (message.from_name or message.from_email) if message else None,
+                "contact_id": follow_up.contact_id,
+                "contact_name": contact.display_name if contact else None,
+            })
+    except Exception as e:
+        logger.warning(f"Erreur lecture relances email: {e}")
 
     # --- Factures impayées > 30 jours ---
     overdue_invoices = []
@@ -284,11 +369,13 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         "date": today.isoformat(),
         "events": events_today,
         "urgent_tasks": urgent_tasks,
+        "due_follow_ups": due_follow_ups,
         "overdue_invoices": overdue_invoices,
         "stale_prospects": stale_prospects,
         "summary": {
             "events_count": len(events_today),
             "tasks_count": len(urgent_tasks),
+            "follow_ups_count": len(due_follow_ups),
             "invoices_count": len(overdue_invoices),
             "prospects_count": len(stale_prospects),
         },

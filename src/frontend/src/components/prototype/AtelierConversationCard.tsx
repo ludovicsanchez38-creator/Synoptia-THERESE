@@ -149,7 +149,12 @@ function NewMissionForm({
   onStart: (instruction: string) => Promise<void>;
 }) {
   const [instruction, setInstruction] = useState('');
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationSnapshot, setConfirmationSnapshot] = useState<{
+    instruction: string;
+    repository: string;
+    katiaModel: string;
+    zezetteModel: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const blockers = useMemo(() => {
     const items: string[] = [];
@@ -173,15 +178,32 @@ function NewMissionForm({
       return;
     }
     setError(null);
-    setConfirmationOpen(true);
+    setConfirmationSnapshot({
+      instruction: instruction.trim(),
+      repository: workspace.status.repo_path || workspace.config.source_path || 'Non configuré',
+      katiaModel: workspace.config.katia_model,
+      zezetteModel: workspace.config.zezette_model,
+    });
+  }
+
+  function confirmMission() {
+    if (!confirmationSnapshot) return;
+    if (confirmationSnapshot.instruction.trim().length < 15 || blockers.length > 0) {
+      setError(blockers[0] || 'L’instruction figée n’est plus valide.');
+      setConfirmationSnapshot(null);
+      return;
+    }
+    void onStart(confirmationSnapshot.instruction);
   }
 
   return (
     <div className="space-y-4" data-testid="atelier-new-form">
       <RepositoryPreflight workspace={workspace} />
+      <fieldset disabled={confirmationSnapshot !== null} onChangeCapture={() => setConfirmationSnapshot(null)} className="contents disabled:opacity-70" data-testid="atelier-form-fields">
       <section className="rounded-[13px] border border-border bg-surface p-4">
         <label className="block text-xs font-semibold text-text">Mission à confier<textarea aria-label="Mission Atelier" value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Décris précisément le résultat attendu et ce qui ne doit pas changer…" className="mt-2 h-32 w-full resize-y rounded-[9px] border border-border p-3 text-sm font-normal leading-6 text-text outline-none focus:border-[var(--k4)]" /></label>
       </section>
+      </fieldset>
       <section className="rounded-[13px] border border-accent-cyan/30 bg-accent-tint p-4 text-xs leading-5 text-accent">
         <strong>Ce qui sera autorisé après confirmation</strong>
         <ul className="mt-2 list-disc space-y-1 pl-4"><li>lire le dépôt et transmettre au modèle configuré les extraits utiles à la mission ;</li><li>écrire uniquement dans un worktree Git isolé sur une branche <code>agent/*</code> ;</li><li>lancer les commandes de test, lint et build autorisées, qui peuvent exécuter du code du dépôt ;</li><li>préparer un diff, sans l’appliquer à <code>main</code> avant une seconde confirmation.</li></ul>
@@ -189,10 +211,10 @@ function NewMissionForm({
       </section>
       {blockers.length > 0 && <div className="rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" role="alert"><strong>Mission bloquée pour protéger le dépôt.</strong><ul className="mt-1 list-disc pl-4">{blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul></div>}
       {error && <p className="text-xs font-semibold text-error" role="alert">{error}</p>}
-      {confirmationOpen ? (
+      {confirmationSnapshot ? (
         <div className="rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] p-3" data-testid="atelier-confirmation">
-          <div className="flex items-start gap-2 text-xs text-[var(--k4)]"><ShieldCheck className="h-4 w-4 shrink-0" /><div><strong>Confirmer l’exécution locale</strong><p className="mt-1">Katia cadrera la demande, puis Zézette pourra modifier le worktree et lancer les vérifications autorisées avec les modèles affichés ci-dessus.</p></div></div>
-          <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button><button type="button" disabled={run.status === 'running'} onClick={() => void onStart(instruction.trim())} className="inline-flex items-center gap-1.5 rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"><Play className="h-3.5 w-3.5 fill-current" />Confirmer et lancer</button></div>
+          <div className="flex items-start gap-2 text-xs text-[var(--k4)]"><ShieldCheck className="h-4 w-4 shrink-0" /><div><strong>Confirmer l’exécution locale</strong><p className="mt-1 font-semibold">Instruction : {confirmationSnapshot.instruction}</p><p>Dépôt : {confirmationSnapshot.repository}</p><p>Modèles : Katia {confirmationSnapshot.katiaModel} · Zézette {confirmationSnapshot.zezetteModel}</p><p className="mt-1">Katia cadrera la demande, puis Zézette pourra modifier le worktree et lancer les vérifications autorisées.</p></div></div>
+          <div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button><button type="button" disabled={run.status === 'running'} onClick={confirmMission} className="inline-flex items-center gap-1.5 rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"><Play className="h-3.5 w-3.5 fill-current" />Confirmer et lancer</button></div>
         </div>
       ) : <div className="flex justify-end"><button type="button" onClick={requestConfirmation} disabled={blockers.length > 0} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"><Code2 className="h-3.5 w-3.5" />Préparer la mission</button></div>}
     </div>
@@ -275,6 +297,7 @@ function AtelierRunView({
   onReset: () => void;
   onMutate: (taskId: string, action: AtelierReviewAction) => Promise<AgentTaskResponse | undefined>;
 }) {
+  const [cancelConfirmationOpen, setCancelConfirmationOpen] = useState(false);
   return (
     <div className="space-y-4" data-testid="atelier-run-view">
       <section className="rounded-[13px] border border-border bg-surface p-4"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Mission soumise</span><h3 className="mt-1 text-sm font-bold leading-6 text-text">{run.instruction}</h3>{run.taskId && <p className="mt-2 text-[10px] text-text-muted">Identifiant local : {run.taskId}</p>}</section>
@@ -288,7 +311,7 @@ function AtelierRunView({
       {run.status === 'cancelled' && <div className="rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Mission annulée. Le worktree temporaire est nettoyé par le backend.</div>}
       {taskResource?.status === 'ready' && (taskResource.data.status === 'review' || taskResource.data.status === 'merged') && <TaskDetail task={taskResource.data} diffResource={diffResource} actionPending={actionPending} onMutate={onMutate} />}
       {taskResource?.status === 'error' && <div className="rounded-[10px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">{taskResource.error}</div>}
-      <div className="flex justify-end">{run.status === 'running' ? <button type="button" onClick={() => void onCancel()} className="inline-flex items-center gap-1.5 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error"><Square className="h-3.5 w-3.5 fill-current" />Annuler la mission</button> : <button type="button" onClick={onReset} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Nouvelle mission</button>}</div>
+      {run.status === 'running' && cancelConfirmationOpen ? <div className="rounded-[10px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error" data-testid="atelier-cancel-confirmation"><strong>Annuler la mission engagée ?</strong><p className="mt-1">Le backend interrompra la mission et nettoiera le worktree. Tu peux aussi masquer ce canevas et laisser le travail continuer en arrière-plan.</p><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setCancelConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold text-text">Continuer en arrière-plan</button><button type="button" onClick={() => { setCancelConfirmationOpen(false); void onCancel(); }} className="rounded-[8px] bg-error px-3 py-2 font-semibold text-white">Confirmer l’annulation</button></div></div> : <div className="flex justify-end">{run.status === 'running' ? <button type="button" onClick={() => setCancelConfirmationOpen(true)} className="inline-flex items-center gap-1.5 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error"><Square className="h-3.5 w-3.5 fill-current" />Annuler la mission</button> : <button type="button" onClick={onReset} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Nouvelle mission</button>}</div>}
     </div>
   );
 }
