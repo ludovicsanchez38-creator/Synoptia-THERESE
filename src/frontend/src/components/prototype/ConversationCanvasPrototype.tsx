@@ -5,14 +5,12 @@ import {
   Bot,
   Briefcase,
   Calendar,
-  ChevronLeft,
   ChevronRight,
   Folder,
   HardDrive,
   History,
   Loader2,
   Mail,
-  Menu,
   HelpCircle,
   PanelRightClose,
   Plus,
@@ -98,11 +96,6 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
-type CollapsedRightPanel =
-  | { kind: 'embedded'; view: Exclude<AppView, 'chat'> }
-  | { kind: 'scenario'; scenario: Exclude<Scenario, 'today'> }
-  | { kind: 'tool'; tool: RightPanelTool };
-
 const scenarioLabels: Record<Scenario, string> = {
   today: 'Mes priorités du jour',
   memory: 'Retrouver un contact',
@@ -122,20 +115,6 @@ const scenarioPrompts: Record<Scenario, string> = {
   board: 'Retrouve mes dernières décisions ou aide-moi à cadrer une nouvelle question stratégique.',
   atelier: 'Demande à l’Atelier de simplifier l’onboarding sans toucher aux données existantes.',
 };
-
-const rightPanelToolLabels: Record<RightPanelTool, string> = {
-  calculator: 'Calculateurs',
-  deliverables: 'Suivi client',
-  images: 'Images',
-  'follow-ups': 'Relances',
-  voice: 'Voix',
-};
-
-function collapsedRightPanelLabel(panel: CollapsedRightPanel): string {
-  if (panel.kind === 'embedded') return panel.view;
-  if (panel.kind === 'scenario') return scenarioLabels[panel.scenario];
-  return rightPanelToolLabels[panel.tool];
-}
 
 function IconButton({
   label,
@@ -692,7 +671,6 @@ export function ConversationCanvasPrototype() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
   const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
-  const [lastCollapsedRightPanel, setLastCollapsedRightPanel] = useState<CollapsedRightPanel | null>(null);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -812,11 +790,9 @@ export function ConversationCanvasPrototype() {
   };
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;
-    setLastCollapsedRightPanel({ kind: 'embedded', view: embeddedView });
     setEmbeddedView(null);
   }, [embeddedView]);
   const collapseToolPanel = useCallback((tool: RightPanelTool) => {
-    setLastCollapsedRightPanel({ kind: 'tool', tool });
     if (tool === 'calculator') setCalculatorOpen(false);
     else if (tool === 'deliverables') setDeliverablesOpen(false);
     else if (tool === 'images') setImagesOpen(false);
@@ -826,29 +802,8 @@ export function ConversationCanvasPrototype() {
   }, []);
   const collapseScenarioPanel = useCallback(() => {
     if (scenario === 'today') return;
-    setLastCollapsedRightPanel({ kind: 'scenario', scenario });
     setCanvasOpen(false);
   }, [scenario]);
-  const reopenLastRightPanel = () => {
-    if (!lastCollapsedRightPanel || blockStreamingNavigation()) return;
-    const panel = lastCollapsedRightPanel;
-    setLastCollapsedRightPanel(null);
-    if (panel.kind === 'embedded') {
-      openEmbeddedView(panel.view);
-      return;
-    }
-
-    setChatOpen(false);
-    setChatInitialPrompt(null);
-    setEmbeddedView(null);
-    setCalculatorOpen(panel.kind === 'tool' && panel.tool === 'calculator');
-    setDeliverablesOpen(panel.kind === 'tool' && panel.tool === 'deliverables');
-    setImagesOpen(panel.kind === 'tool' && panel.tool === 'images');
-    setFollowUpsOpen(panel.kind === 'tool' && panel.tool === 'follow-ups');
-    setVoiceOpen(panel.kind === 'tool' && panel.tool === 'voice');
-    if (panel.kind === 'scenario') setScenario(panel.scenario);
-    setCanvasOpen(true);
-  };
   const displayName = profile?.nickname?.trim() || profile?.display_name?.trim().split(/\s+/)[0] || null;
   const workspaceName = profile?.company?.trim() || 'Espace de travail';
 
@@ -1138,10 +1093,6 @@ export function ConversationCanvasPrototype() {
 
         <div className="relative flex min-h-0 flex-1">
           <nav data-dialog-allow aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
-            <IconButton label="Conversations" onClick={toggleConversationDrawer} active={drawerOpen}>
-              <Menu className="h-[18px] w-[18px]" />
-            </IconButton>
-            <div className="my-2 h-px w-7 bg-border" />
             <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Rechercher" onClick={() => openConversationDrawer('search')}><Search className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
@@ -1598,18 +1549,6 @@ export function ConversationCanvasPrototype() {
                 />
               )}
             </AnimatePresence>
-            {lastCollapsedRightPanel && !embeddedView && !canvasOpen && (
-              <button
-                type="button"
-                onClick={reopenLastRightPanel}
-                aria-label={`Rouvrir le panneau ${collapsedRightPanelLabel(lastCollapsedRightPanel)}`}
-                title={`Rouvrir le panneau ${collapsedRightPanelLabel(lastCollapsedRightPanel)}`}
-                data-testid="reopen-right-panel-tab"
-                className="absolute right-0 top-1/2 z-30 grid h-12 w-7 -translate-y-1/2 place-items-center rounded-l-[10px] border border-r-0 border-border bg-surface text-text-muted shadow-[-4px_4px_14px_rgba(16,28,54,0.15)] hover:bg-surface-2 hover:text-text"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            )}
           </main>
         </div>
       </div>

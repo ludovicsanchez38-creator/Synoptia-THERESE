@@ -191,17 +191,15 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(shell).not.toHaveAttribute('data-high-contrast');
   });
 
-  it('affiche une languette qui rouvre le dernier canevas replié', () => {
+  it('ne laisse pas de languette de réouverction après fermeture d’un canevas (retirée, recette Ludo)', () => {
     window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
     render(<ConversationCanvasPrototype />);
 
+    // Décision Ludo 16/07 : la languette à chevron intriguait plus qu'elle
+    // n'aidait, elle est retirée. Fermer un canevas revient simplement au fil.
     fireEvent.click(screen.getByRole('button', { name: 'Fermer le canevas' }));
-    const tab = screen.getByRole('button', { name: 'Rouvrir le panneau Retrouver un contact' });
-    expect(tab).toBeInTheDocument();
-
-    fireEvent.click(tab);
-    expect(screen.getByRole('button', { name: 'Fermer le canevas' })).toBeInTheDocument();
     expect(screen.queryByTestId('reopen-right-panel-tab')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Rouvrir le panneau/ })).not.toBeInTheDocument();
   });
 
   it('le bouton Agenda de l’en-tête ouvre la vue agenda (recette Ludo : plus de bouton inerte)', () => {
