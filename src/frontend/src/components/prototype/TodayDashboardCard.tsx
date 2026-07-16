@@ -78,7 +78,7 @@ export function TodayDashboardCard({
         </div>
         <button
           type="button"
-          onClick={() => onOpenView('home')}
+          onClick={() => onOpenView('calendar')}
           className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
         >
           Vue complète
