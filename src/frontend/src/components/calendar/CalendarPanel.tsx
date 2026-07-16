@@ -145,7 +145,14 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
       const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
 
-      const evts = await api.listEvents(currentAccountId || undefined, currentCalendarId, {
+      // L'account_id doit venir du calendrier sélectionné, pas seulement du
+      // compte email « courant » qui peut être vide (ouverture de l'agenda à
+      // froid) : un calendrier Google sans account_id renvoyait 400 (recette
+      // Ludo 16/07). On dérive donc l'account du calendrier lui-même.
+      const currentCal = calendars.find((cal) => cal.id === currentCalendarId);
+      const effectiveAccountId = currentCal?.account_id || currentAccountId || undefined;
+
+      const evts = await api.listEvents(effectiveAccountId, currentCalendarId, {
         time_min: startOfMonth.toISOString(),
         time_max: endOfMonth.toISOString(),
         max_results: 250,
