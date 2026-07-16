@@ -7,8 +7,8 @@ import { resolve } from 'path';
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
   define: {
-    // Double verrou indépendant de import.meta.env.DEV : même un build lancé
-    // avec `--mode development` ne peut pas activer l'interface pré-bêta.
+    // Identifie le serveur de développement : les forçages par URL et variable
+    // Vite lui sont réservés, y compris face à `vite build --mode development`.
     __THERESE_DEV_BUILD__: JSON.stringify(command === 'serve'),
   },
   resolve: {

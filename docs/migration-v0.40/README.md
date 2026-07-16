@@ -22,10 +22,12 @@ Tant que ce statut n’est pas modifié explicitement :
 Le code et les documents restent sur la machine locale. La future bêta aura son
 propre GO après signature et vérification du build candidat.
 
-Garde-fou technique actuel : tout build non-développement force l’interface
-classique, quels que soient l’URL, la variable d’environnement ou le stockage
-local. Le bootstrap commun est déjà intégré localement, mais ce verrou ne sera
-retiré qu’après la recette Tauri, la signature du build candidat et le GO bêta.
+À la release, le garde-fou technique évolue : le verrou absolu des builds de
+production devient un opt-in utilisateur. L’interrupteur « Essayer la nouvelle
+interface (bêta) » des réglages mémorise le choix localement, puis propose de
+recharger l’application pour l’appliquer au bootstrap. Sans choix valide,
+l’interface classique reste utilisée. Les forçages par URL et variable de build
+restent réservés au développement.
 
 ## État local du socle
 
@@ -100,20 +102,21 @@ candidat.
 
 ## Activation contrôlée
 
-L’ordre de priorité est volontairement simple : URL, build, préférence locale,
-puis interface classique.
+En production, la préférence locale choisie dans les réglages est respectée,
+puis l’interface classique sert de défaut. En développement uniquement, l’URL
+et la variable de build peuvent prendre la priorité pour faciliter la revue.
 
 | Besoin | Activation |
 |---|---|
-| Revue ponctuelle | `?interface=conversation-canvas` |
-| Compatibilité du prototype | `?prototype=conversation-canvas` |
+| Bêta opt-in | Réglages → À propos → « Essayer la nouvelle interface (bêta) » |
+| Retour durable au classique | Désactiver le même interrupteur |
+| Revue ponctuelle en développement | `?interface=conversation-canvas` |
+| Compatibilité du prototype en développement | `?prototype=conversation-canvas` |
 | Démarrage local du prototype | `VITE_THERESE_INTERFACE_MODE=conversation-canvas` |
-| Bêta persistante locale | `localStorage.setItem('therese-interface-mode', 'conversation-canvas')` |
-| Retour arrière immédiat | `?interface=classic` |
-| Retour durable | `localStorage.setItem('therese-interface-mode', 'classic')` |
 
 La variable de build est documentée dans `src/frontend/.env.example`. Aucun de
-ces mécanismes n’active la nouvelle interface par défaut dans la version actuelle.
+ces mécanismes n’active la nouvelle interface par défaut : sans opt-in valide,
+THÉRÈSE démarre en mode classique.
 
 ## Dossier de préparation
 

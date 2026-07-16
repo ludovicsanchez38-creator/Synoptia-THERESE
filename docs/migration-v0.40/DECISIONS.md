@@ -5,7 +5,7 @@
 | Sujet | Décision | Motif |
 |---|---|---|
 | Migration | progressive et réversible | préserver les usages et isoler les régressions |
-| Interface par défaut aujourd’hui | classique | le verrou de diffusion reste fermé jusqu’au paquet signé et au GO bêta |
+| Interface 0.40 | bêta opt-in par interrupteur dans les réglages, classique par défaut | décision prise par Ludo le 15/07/2026 : laisser chaque utilisateur essayer la nouvelle interface sans l’imposer |
 | Source métier | backend et stores existants | éviter deux vérités concurrentes |
 | Navigation | une coque, des canevas contextuels | réduire le morcellement sans perdre la profondeur |
 | Actions sensibles | aperçu puis confirmation | garder la maîtrise des effets externes |
@@ -19,7 +19,6 @@
 
 | Question | Options | Moment limite |
 |---|---|---|
-| Mode par défaut de la 0.40 | nouvelle interface avec repli, ou bêta opt-in | avant la RC 0.39 |
 | Nom visible du centre | Capacités, Outils, ou « Ce que Thérèse sait faire » | avant tests utilisateurs |
 | Usage des portraits | tous les conseillers, Board seulement, ou Board et Atelier | avant stabilisation visuelle |
 | Historique des canevas | dans la conversation et dans les modules existants, avec mêmes identifiants | décidé localement le 14/07/2026 |

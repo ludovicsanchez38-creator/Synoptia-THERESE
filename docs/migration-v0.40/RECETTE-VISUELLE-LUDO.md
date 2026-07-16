@@ -4,9 +4,10 @@ Version condensée et actionnable de la matrice de `RECETTE-ET-RELEASE.md`,
 pensée pour une passe manuelle unique. Cocher au fil de l'eau, noter chaque
 défaut avec une capture, envoyer le tout à OPT sur Telegram.
 
-Préparation : `make dev`, puis ouvrir l'URL affichée en ajoutant
-`?interface=conversation-canvas`. L'interface classique reste accessible à tout
-moment via `?interface=classic`.
+Préparation : `make dev`, ouvrir les Paramètres, puis dans « À propos » activer
+« Essayer la nouvelle interface (bêta) » et choisir « Recharger maintenant ».
+Le paramètre `?interface=conversation-canvas` reste disponible comme solution de
+secours en développement.
 
 ## 1. Affichage et thème (5 min)
 
@@ -50,11 +51,12 @@ moment via `?interface=classic`.
 
 1. En mode `conversation-canvas`, ouvrir 2-3 objets réels (un contact, un
    email, une facture) et créer un brouillon non envoyé.
-2. Forcer `?interface=classic`.
+2. Dans Paramètres → À propos, désactiver « Essayer la nouvelle interface
+   (bêta) », puis recharger comme proposé.
 3. Retrouver exactement les mêmes objets dans les vues historiques.
-4. Revenir en `conversation-canvas` : aucun doublon créé.
-5. Fermer et relancer : le mode choisi persiste (en dev uniquement ; un build
-   normal force le classique, c'est voulu).
+4. Réactiver l’interrupteur, recharger et vérifier qu’aucun doublon n’a été créé.
+5. Fermer et relancer : le mode choisi persiste aussi dans un build de
+   production. Sans choix valide, le classique reste le mode par défaut.
 
 ## 6. Verdict
 
@@ -64,5 +66,5 @@ moment via `?interface=classic`.
   avant le build candidat.
 
 Rappel : cette recette valide l'interface en dev. Le GO bêta exige en plus le
-paquet Tauri signé, le pré-vol données (fait par OPT sur copie) et ta décision
-sur le mode par défaut (`DECISIONS.md`).
+paquet Tauri signé et le pré-vol données (fait par OPT sur copie). Le mode par
+défaut a été décidé par Ludo le 15/07/2026 et consigné dans `DECISIONS.md`.
