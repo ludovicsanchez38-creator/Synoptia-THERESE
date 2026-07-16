@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Application
     app_name: str = "THÉRÈSE"
-    app_version: str = "0.32.1"
+    app_version: str = "0.40.0"
     debug: bool = False
     therese_env: str = "development"  # "development" or "production" (SEC-018)
 
