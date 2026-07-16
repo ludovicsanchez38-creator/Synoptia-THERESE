@@ -62,7 +62,7 @@ export function InterfaceBetaToggle({
           data-testid="interface-beta-toggle"
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            className={`absolute top-1 left-0 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
               enabled ? 'translate-x-6' : 'translate-x-1'
             }`}
           />
