@@ -4,7 +4,12 @@
  * Transcription audio via Groq Whisper, ou 100 % locale (faster-whisper).
  */
 
+import { getCloudConsent } from '../../lib/consent';
 import { API_BASE, apiFetch, ApiError } from './core';
+
+/** Fournisseur cloud de transcription vocale (Groq Whisper). Le consentement
+ *  cloud doit être spécifique à ce fournisseur (US-004 / RGPD art. 7). */
+const VOICE_CLOUD_PROVIDER = 'Groq';
 
 export interface TranscriptionResponse {
   text: string;
@@ -124,6 +129,22 @@ export async function transcribeAudio(
   // Voix locale activée : l'audio ne quitte JAMAIS la machine. Pas de repli
   // cloud silencieux en cas d'échec - ce serait trahir le choix de l'utilisateur.
   const useLocal = await resolveUseLocalForTranscription();
+
+  // US-004 : aucune donnée vocale ne part vers le cloud (Groq) sans consentement
+  // explicite ET spécifique à ce fournisseur (RGPD art. 7). Un consentement donné
+  // pour un autre fournisseur (ex. images OpenAI) ne vaut pas pour la voix : on
+  // exige que le fournisseur consenti soit bien Groq, sinon on refuse l'envoi.
+  if (!useLocal) {
+    const consent = getCloudConsent();
+    if (!consent?.accepted || consent.provider !== VOICE_CLOUD_PROVIDER) {
+      throw new ApiError(
+        403,
+        'Consentement requis',
+        `La transcription cloud enverrait ton audio à ${VOICE_CLOUD_PROVIDER}. Autorise le transfert cloud dans Paramètres > Confidentialité, ou active la transcription 100 % locale.`,
+      );
+    }
+  }
+
   const endpoint = useLocal
     ? `${API_BASE}/api/voice/local/transcribe`
     : `${API_BASE}/api/voice/transcribe`;
