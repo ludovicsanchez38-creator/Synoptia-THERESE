@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileDown, History, MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useIsPresent } from 'framer-motion';
 import { useChatStore, type Conversation } from '../../stores/chatStore';
 import {
   deleteConversation as deleteConversationRemote,
   exportConversation,
   renameConversation as renameConversationRemote,
 } from '../../services/api/chat';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface PrototypeConversationDrawerProps {
   onClose: () => void;
@@ -64,6 +65,9 @@ export function PrototypeConversationDrawer({
   const [editingTitle, setEditingTitle] = useState('');
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const newConversationRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -73,6 +77,19 @@ export function PrototypeConversationDrawer({
   const loadConversation = useChatStore((state) => state.loadConversation);
   const renameConversation = useChatStore((state) => state.renameConversation);
   const deleteConversation = useChatStore((state) => state.deleteConversation);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(drawerRef, {
+    active: isPresent,
+    isolateBackground: true,
+    onEscape: () => {
+      if (editingId) setEditingId(null);
+      else if (deleteConfirmationId) setDeleteConfirmationId(null);
+      else if (menuId) {
+        menuTriggerRef.current?.focus();
+        setMenuId(null);
+      } else onClose();
+    },
+  });
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('fr-FR');
@@ -89,6 +106,27 @@ export function PrototypeConversationDrawer({
     else if (surface === 'search') searchRef.current?.focus();
     else historyRef.current?.focus();
   }, [surface]);
+
+  useEffect(() => {
+    if (!menuId) return;
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+  }, [menuId]);
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    if (items.length === 0) return;
+    event.preventDefault();
+    const current = Math.max(0, items.indexOf(document.activeElement as HTMLButtonElement));
+    const next = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? items.length - 1
+        : event.key === 'ArrowDown'
+          ? (current + 1) % items.length
+          : (current - 1 + items.length) % items.length;
+    items[next].focus();
+  };
 
   const rejectLockedNavigation = () => {
     if (!navigationLocked) return false;
@@ -137,6 +175,11 @@ export function PrototypeConversationDrawer({
 
   return (
     <motion.aside
+      ref={drawerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prototype-conversation-drawer-title"
+      tabIndex={-1}
       initial={{ x: -24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -24, opacity: 0 }}
@@ -145,7 +188,7 @@ export function PrototypeConversationDrawer({
       data-testid="prototype-conversation-drawer"
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-        <span className="text-sm font-semibold text-text">Conversations</span>
+        <span id="prototype-conversation-drawer-title" className="text-sm font-semibold text-text">Conversations</span>
         <button type="button" onClick={onClose} aria-label="Fermer les conversations" className="grid h-8 w-8 place-items-center rounded-[9px] text-text-muted hover:bg-bg hover:text-text">
           <X className="h-4 w-4" />
         </button>
@@ -208,6 +251,7 @@ export function PrototypeConversationDrawer({
                     <button
                       type="button"
                       onClick={() => openConversation(conversation.id)}
+                      aria-current={currentConversationId === conversation.id ? 'page' : undefined}
                       className={`w-full rounded-[9px] border px-3 py-2.5 pr-10 text-left transition-colors ${
                         currentConversationId === conversation.id
                           ? 'border-[#BDE8EF] bg-accent-tint'
@@ -220,8 +264,20 @@ export function PrototypeConversationDrawer({
                         <span>{conversation.messages.length || conversation.messageCount || 0} message{(conversation.messages.length || conversation.messageCount || 0) > 1 ? 's' : ''}</span>
                       </span>
                     </button>
-                    <button type="button" aria-label={`Actions pour ${conversation.title}`} onClick={() => setMenuId(menuId === conversation.id ? null : conversation.id)} className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-[7px] text-text-muted hover:bg-surface"><MoreHorizontal className="h-4 w-4" /></button>
-                    {menuId === conversation.id && <div className="absolute right-2 top-9 z-10 w-44 rounded-[9px] border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
+                    <button
+                      ref={menuId === conversation.id ? menuTriggerRef : undefined}
+                      type="button"
+                      aria-label={`Actions pour ${conversation.title}`}
+                      aria-haspopup="menu"
+                      aria-expanded={menuId === conversation.id}
+                      aria-controls={`conversation-menu-${conversation.id}`}
+                      onClick={(event) => {
+                        menuTriggerRef.current = event.currentTarget;
+                        setMenuId(menuId === conversation.id ? null : conversation.id);
+                      }}
+                      className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-[7px] text-text-muted hover:bg-surface"
+                    ><MoreHorizontal className="h-4 w-4" /></button>
+                    {menuId === conversation.id && <div ref={menuRef} id={`conversation-menu-${conversation.id}`} role="menu" aria-label={`Actions pour ${conversation.title}`} onKeyDown={handleMenuKeyDown} className="absolute right-2 top-9 z-10 w-44 rounded-[9px] border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
                   </>
                 )}
               </div>

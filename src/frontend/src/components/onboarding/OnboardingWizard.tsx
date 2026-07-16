@@ -4,7 +4,7 @@
  * Full-screen modal wizard for first-time setup.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -16,6 +16,7 @@ import { WorkingDirStep } from './WorkingDirStep';
 import { CompleteStep } from './CompleteStep';
 import type { LLMProvider } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -35,11 +36,13 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [configuredProvider, setConfiguredProvider] = useState<LLMProvider | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // Window controls
   const handleMinimize = () => getCurrentWindow().minimize();
   const handleMaximize = () => getCurrentWindow().toggleMaximize();
   const handleClose = () => getCurrentWindow().close();
+  useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: handleClose, isolateBackground: true });
 
   // BUG-traffic-lights : afficher les traffic lights uniquement sur macOS
   // navigator.platform est déprécié mais reste le seul moyen fiable sous WKWebView (Tauri macOS)
@@ -76,23 +79,6 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
     onComplete();
   }
 
-  // Keyboard navigation
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!isOpen) return;
-
-      if (e.key === 'Escape') {
-        // Only allow escape on welcome step to close
-        if (currentStep === 0) {
-          // Could close, but better to force completion
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentStep]);
-
   if (!isOpen) return null;
 
   return (
@@ -106,6 +92,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
         >
           {/* Backdrop with blur */}
           <motion.div
+            data-dialog-backdrop
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -115,6 +102,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
           {/* Window Title Bar with controls */}
           <div
             data-tauri-drag-region
+            data-dialog-allow
             className={`absolute top-0 left-0 right-0 h-10 ${Z_LAYER.ONBOARDING_TOP} flex items-center px-4`}
           >
             {/* Window controls (macOS style uniquement) */}
@@ -155,6 +143,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
 
           {/* Modal Container */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="onboarding-title"
@@ -165,12 +154,16 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             data-testid="onboarding-wizard"
             className="relative w-full max-w-2xl max-h-[90vh] bg-surface border border-border/50 rounded-2xl shadow-2xl flex flex-col mt-10"
           >
+            <h1 id="onboarding-title" tabIndex={-1} data-dialog-autofocus className="sr-only">
+              Configuration initiale de Thérèse
+            </h1>
             {/* Progress Header */}
             <div className="px-8 py-4 border-b border-border/30">
               {/* Step Indicators */}
-              <div className="flex items-center justify-between">
+              <ol className="flex items-center justify-between" aria-label="Étapes de configuration">
                 {STEPS.map((step, index) => (
-                  <div key={step.id} className="flex items-center">
+                  <li key={step.id} className="flex items-center" aria-current={index === currentStep ? 'step' : undefined}>
+                    <span className="sr-only">{step.title}</span>
                     {/* Step Circle */}
                     <motion.div
                       initial={false}
@@ -215,12 +208,27 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                         <div className="h-full bg-border/30 -mt-0.5" />
                       </div>
                     )}
-                  </div>
+                  </li>
                 ))}
+              </ol>
+
+              <div className="mt-1 grid grid-cols-6 gap-1 text-center text-[10px] font-medium text-text-muted" aria-hidden="true">
+                {STEPS.map((step) => <span key={step.id}>{step.title}</span>)}
               </div>
+              <p className="mt-2 text-center text-xs font-semibold text-text">
+                Étape {currentStep + 1} sur {STEPS.length}, {STEPS[currentStep].title}
+              </p>
 
               {/* Progress Bar */}
-              <div className="mt-3 h-1 bg-border/20 rounded-full overflow-hidden">
+              <div
+                className="mt-3 h-1 bg-border/20 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-label="Progression de la configuration"
+                aria-valuemin={1}
+                aria-valuemax={STEPS.length}
+                aria-valuenow={currentStep + 1}
+                aria-valuetext={`Étape ${currentStep + 1} sur ${STEPS.length}, ${STEPS[currentStep].title}`}
+              >
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}

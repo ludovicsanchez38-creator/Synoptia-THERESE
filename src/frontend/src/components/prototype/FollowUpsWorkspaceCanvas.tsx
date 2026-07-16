@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -18,6 +18,8 @@ import {
   type EmailFollowUp,
   type FollowUpStatus,
 } from '../../services/api/follow-ups';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 const FILTERS: Array<{ id: 'all' | FollowUpStatus; label: string }> = [
   { id: 'all', label: 'Toutes' },
@@ -52,6 +54,8 @@ export function FollowUpsWorkspaceCanvas({
   const [editingNote, setEditingNote] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
 
   async function refresh() {
     setLoading(true);
@@ -111,25 +115,25 @@ export function FollowUpsWorkspaceCanvas({
   }
 
   return (
-    <aside className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[58%] xl:min-w-[680px]" data-testid="follow-ups-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="follow-ups-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[58%] xl:min-w-[680px]" data-testid="follow-ups-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--color-warning-tint)] text-warning shadow-[2px_2px_0_var(--btn-shadow-color)]"><Bell className="h-4 w-4" /></span>
-          <div><h2 className="text-lg font-bold text-text">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances réelles liées aux emails, modifiables sans quitter le fil.</p></div>
+          <div><h2 id="follow-ups-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances réelles liées aux emails, modifiables sans quitter le fil.</p></div>
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer les relances" className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted"><PanelRightClose className="h-4 w-4" /></button>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">{FILTERS.map((entry) => <button key={entry.id} type="button" onClick={() => setFilter(entry.id)} className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold ${filter === entry.id ? 'border-text bg-text text-white' : 'border-border bg-surface text-text-muted'}`}>{entry.label}</button>)}</div>
+          <div role="toolbar" aria-label="Filtrer les relances" className="flex flex-wrap gap-1.5">{FILTERS.map((entry) => <button key={entry.id} data-follow-up-filter type="button" aria-pressed={filter === entry.id} tabIndex={filter === entry.id ? 0 : -1} onKeyDown={(event) => handleRovingFocus(event, '[data-follow-up-filter]', 'horizontal')} onClick={() => setFilter(entry.id)} className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold ${filter === entry.id ? 'border-text bg-text text-white' : 'border-border bg-surface text-text-muted'}`}>{entry.label}</button>)}</div>
           <div className="flex gap-2"><button type="button" onClick={() => void refresh()} aria-label="Actualiser les relances" className="grid h-8 w-8 place-items-center rounded-[8px] border border-border bg-surface text-text-muted"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /></button><button type="button" onClick={onOpenEmail} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white"><Mail className="h-3.5 w-3.5" />Créer depuis un email</button></div>
         </div>
 
         {error && <div role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error"><AlertCircle className="mr-1 inline h-4 w-4" />{error}</div>}
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted"><div><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <div className="grid min-h-56 place-items-center rounded-[12px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Aucune relance dans cette catégorie.</div></div> : <div className="space-y-2">{visibleItems.map((item) => {
+          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <div className="grid min-h-56 place-items-center rounded-[12px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Aucune relance dans cette catégorie.</div></div> : <div className="space-y-2">{visibleItems.map((item) => {
             const busy = pendingId === item.id;
             const overdue = item.status === 'pending' && new Date(item.due_date).getTime() < Date.now();
             return <article key={item.id} className="rounded-[11px] border border-border bg-surface p-4" data-testid="follow-up-row">

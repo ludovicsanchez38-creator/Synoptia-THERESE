@@ -10,6 +10,7 @@ import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } fro
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 interface LLMStepProps {
   onNext: (provider: api.LLMProvider | null) => void;
@@ -344,7 +345,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               key={provider.id}
               role="radio"
               aria-checked={isSelected}
+              tabIndex={isSelected ? 0 : -1}
               onClick={() => handleSelectProvider(provider.id)}
+              onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
               disabled={!isAvailable && provider.id === 'ollama'}
               className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left focus:outline-none focus:ring-2 focus:ring-accent-cyan ${
                 isSelected
@@ -421,6 +424,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   <button
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
+                    aria-label={showApiKey ? 'Masquer la clé API' : 'Afficher la clé API'}
+                    aria-pressed={showApiKey}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
                   >
                     {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

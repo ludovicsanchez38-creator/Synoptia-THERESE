@@ -3,6 +3,7 @@
 
 import { Accessibility, Sun, Moon } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 export function AccessibilityTab() {
   const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl';
@@ -47,7 +48,9 @@ export function AccessibilityTab() {
               key={v}
               role="radio"
               aria-checked={theme === v}
+              tabIndex={theme === v ? 0 : -1}
               onClick={() => setTheme(v)}
+              onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 theme === v
                   ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'
@@ -99,7 +102,9 @@ export function AccessibilityTab() {
               key={size}
               role="radio"
               aria-checked={fontSize === size}
+              tabIndex={fontSize === size ? 0 : -1}
               onClick={() => setFontSize(size)}
+              onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 fontSize === size
                   ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'

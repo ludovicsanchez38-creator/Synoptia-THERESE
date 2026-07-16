@@ -353,6 +353,16 @@ p, span, div:not(:hover), section { transition: none; }
   }
 }
 
+/* Préférence applicative, appliquée à la racine comme la préférence système. */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* Animations */
 @keyframes spin { to { transform: rotate(360deg); } }
 

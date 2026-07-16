@@ -218,6 +218,7 @@ export function ContactsMemoryCanvas({
                   key={contact.id}
                   type="button"
                   onClick={() => onSelectContact(contact.id)}
+                  aria-current={selectedContact?.id === contact.id ? 'true' : undefined}
                   className={`flex w-full items-center gap-2 rounded-[9px] px-2 py-2 text-left ${
                     selectedContact?.id === contact.id ? 'bg-[var(--k4bg)]' : 'hover:bg-surface-2'
                   }`}

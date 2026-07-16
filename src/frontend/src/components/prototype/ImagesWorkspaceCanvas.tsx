@@ -21,6 +21,7 @@ import {
   type ImageResponse,
 } from '../../services/api/images';
 import { getCloudConsent, recordCloudConsent } from '../../lib/consent';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 const PROVIDERS: Array<{ id: ImageProvider; label: string; availability: keyof ImageProviderStatus }> = [
   { id: 'gpt-image-2', label: 'GPT Image 2', availability: 'openai_available' },
@@ -53,6 +54,8 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ImageResponse | null>(null);
   const generationLocked = useRef(false);
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
 
   async function refresh() {
     setLoading(true);
@@ -131,11 +134,11 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <aside className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[62%] xl:min-w-[720px]" data-testid="images-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="images-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[62%] xl:min-w-[720px]" data-testid="images-workspace-canvas">
       <header className="flex shrink-0 items-start gap-3 border-b border-border bg-surface px-5 py-4 pr-16">
         <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--k3bg)] text-[var(--k3)] shadow-[2px_2px_0_var(--btn-shadow-color)]"><ImageIcon className="h-4 w-4" /></span>
         <div>
-          <h2 className="text-lg font-bold text-text">Studio Images</h2>
+          <h2 id="images-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Studio Images</h2>
           <p className="mt-0.5 text-xs text-text-muted">Génération réelle, aperçu local et historique conservé.</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer le studio Images" className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted"><PanelRightClose className="h-4 w-4" /></button>
@@ -172,7 +175,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
 
         <section className="min-h-0 overflow-y-auto p-5">
           <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-text">Historique réel</h3><p className="mt-0.5 text-[10px] text-text-muted">{images.length} image{images.length > 1 ? 's' : ''} chargée{images.length > 1 ? 's' : ''} sur 50 maximum</p></div><button type="button" onClick={() => void refresh()} disabled={loading} className="grid h-8 w-8 place-items-center rounded-[8px] border border-border bg-surface text-text-muted" aria-label="Actualiser l’historique"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /></button></div>
-          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted"><Loader2 className="mb-2 h-5 w-5 animate-spin" />Chargement des images…</div> : images.length === 0 ? <div className="mt-5 grid min-h-64 place-items-center rounded-[13px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Aucune image générée pour le moment.</div></div> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{images.map((image) => <button key={image.id} type="button" onClick={() => setSelected(image)} className={`overflow-hidden rounded-[11px] border bg-surface text-left ${selected?.id === image.id ? 'border-text ring-2 ring-[#22D3EE]/30' : 'border-border'}`}><img src={getImageDownloadUrl(image.id)} alt={image.prompt} className="aspect-square w-full object-cover" /><span className="block truncate px-2 py-2 text-[10px] font-medium text-text">{image.prompt}</span></button>)}</div>{selected && <div className="mt-4 rounded-[13px] border border-border bg-surface p-4" data-testid="selected-generated-image"><img src={getImageDownloadUrl(selected.id)} alt={selected.prompt} className="max-h-[420px] w-full rounded-[9px] object-contain" /><div className="mt-3 flex items-start gap-3"><div className="min-w-0 flex-1"><p className="text-xs font-semibold leading-5 text-text">{selected.prompt}</p><p className="mt-1 text-[10px] text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><button type="button" onClick={() => void downloadGeneratedImage(selected.id)} className="inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"><Download className="h-3.5 w-3.5" />Enregistrer</button></div></div>}</>}
+          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted" role="status"><Loader2 className="mb-2 h-5 w-5 animate-spin" />Chargement des images…</div> : images.length === 0 ? <div className="mt-5 grid min-h-64 place-items-center rounded-[13px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Aucune image générée pour le moment.</div></div> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Historique des images">{images.map((image) => <button key={image.id} type="button" aria-pressed={selected?.id === image.id} onClick={() => setSelected(image)} className={`overflow-hidden rounded-[11px] border bg-surface text-left ${selected?.id === image.id ? 'border-text ring-2 ring-[#22D3EE]/30' : 'border-border'}`}><img src={getImageDownloadUrl(image.id)} alt={image.prompt} className="aspect-square w-full object-cover" /><span className="block truncate px-2 py-2 text-[10px] font-medium text-text">{image.prompt}</span></button>)}</div>{selected && <div className="mt-4 rounded-[13px] border border-border bg-surface p-4" data-testid="selected-generated-image"><img src={getImageDownloadUrl(selected.id)} alt={selected.prompt} className="max-h-[420px] w-full rounded-[9px] object-contain" /><div className="mt-3 flex items-start gap-3"><div className="min-w-0 flex-1"><p className="text-xs font-semibold leading-5 text-text">{selected.prompt}</p><p className="mt-1 text-[10px] text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><button type="button" onClick={() => void downloadGeneratedImage(selected.id)} className="inline-flex shrink-0 items-center gap-1.5 rounded-[8px] border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"><Download className="h-3.5 w-3.5" />Enregistrer</button></div></div>}</>}
         </section>
       </div>
     </aside>

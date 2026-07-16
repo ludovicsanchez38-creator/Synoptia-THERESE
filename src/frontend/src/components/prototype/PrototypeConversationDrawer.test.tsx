@@ -108,7 +108,7 @@ describe('PrototypeConversationDrawer', () => {
     render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Actions pour Préparation rendez-vous réel' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Renommer' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Renommer' }));
     fireEvent.change(screen.getByLabelText('Nouveau titre'), { target: { value: 'Rendez-vous Camille' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
@@ -120,7 +120,7 @@ describe('PrototypeConversationDrawer', () => {
     render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Actions pour Préparation rendez-vous réel' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Supprimer' }));
 
     expect(screen.getByTestId('conversation-delete-confirmation')).toBeInTheDocument();
     expect(deleteRemote).not.toHaveBeenCalled();
@@ -149,5 +149,23 @@ describe('PrototypeConversationDrawer', () => {
     expect(useChatStore.getState().currentConversationId).toBeNull();
     expect(onClose).not.toHaveBeenCalled();
     expect(onOpenChat).not.toHaveBeenCalled();
+  });
+
+  it('ferme le menu avant le tiroir avec Échap et expose le pattern menu', () => {
+    const onClose = vi.fn();
+    render(<PrototypeConversationDrawer onClose={onClose} onOpenChat={vi.fn()} />);
+
+    const trigger = screen.getByRole('button', { name: 'Actions pour Préparation rendez-vous réel' });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menuitem', { name: 'Renommer' })).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(trigger).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

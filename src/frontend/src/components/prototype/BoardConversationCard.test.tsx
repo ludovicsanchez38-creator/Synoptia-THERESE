@@ -71,7 +71,7 @@ describe('Board 0.40 conversationnel', () => {
     expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Faut-il lancer un pilote maintenant ?');
     expect(screen.getByLabelText('Question stratégique')).toBeDisabled();
     expect(screen.getByLabelText('Contexte du Board')).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Souverain/ })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /Souverain/ })).toBeDisabled();
     expect(onStart).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et lancer' }));

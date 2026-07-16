@@ -48,6 +48,7 @@ interface PresetCategoryProps {
 }
 
 function PresetCategory({
+  category,
   label,
   icon,
   presets,
@@ -57,12 +58,15 @@ function PresetCategory({
   defaultCollapsed = false,
 }: PresetCategoryProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const panelId = `mcp-preset-category-${category}`;
 
   return (
     <div>
       {/* Category header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
+        aria-expanded={!collapsed}
+        aria-controls={panelId}
         className="flex items-center gap-2 w-full text-left mb-2 group"
       >
         <span className="text-accent-cyan/70 group-hover:text-accent-cyan transition-colors">
@@ -83,6 +87,7 @@ function PresetCategory({
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
+            id={panelId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -98,11 +103,9 @@ function PresetCategory({
                 const isInstalling = installingPreset === preset.id;
 
                 return (
-                  <button
+                  <div
                     key={preset.id}
-                    onClick={() => !isInstalled && !isInstalling && onInstall(preset.id)}
-                    disabled={isInstalled || isInstalling}
-                    className={`p-3 rounded-lg border text-left transition-all ${
+                    className={`relative p-3 rounded-lg border text-left transition-all ${
                       runningServer
                         ? 'bg-green-500/10 border-green-500/30 cursor-default'
                         : isInstalled
@@ -112,7 +115,14 @@ function PresetCategory({
                         : 'bg-background/60 border-border/50 hover:border-accent-cyan/50'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
+                    <button
+                      type="button"
+                      aria-label={isInstalled ? `${preset.name} est installé` : `Installer ${preset.name}`}
+                      onClick={() => onInstall(preset.id)}
+                      disabled={isInstalled || isInstalling}
+                      className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+                    />
+                    <div className="pointer-events-none relative z-10 flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-medium text-text">{preset.name}</span>
                         {preset.popular && (
@@ -137,9 +147,9 @@ function PresetCategory({
                             href={preset.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-0.5 hover:bg-border/30 rounded transition-colors"
+                            className="pointer-events-auto p-0.5 hover:bg-border/30 rounded transition-colors"
                             title={`Voir ${preset.name}`}
+                            aria-label={`Voir le site de ${preset.name}`}
                           >
                             <ExternalLink className="w-3 h-3 text-text-muted hover:text-accent-cyan" />
                           </a>
@@ -153,13 +163,13 @@ function PresetCategory({
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-text-muted line-clamp-2">{preset.description}</p>
+                    <p className="pointer-events-none relative z-10 text-xs text-text-muted line-clamp-2">{preset.description}</p>
                     {preset.env_required && preset.env_required.length > 0 && (
-                      <p className="text-xs text-warning mt-1">
+                      <p className="pointer-events-none relative z-10 text-xs text-warning mt-1">
                         Requiert: {preset.env_required.join(', ')}
                       </p>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -487,11 +497,11 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setShowPresets(!showPresets)}>
+          <Button variant="ghost" size="sm" onClick={() => setShowPresets(!showPresets)} aria-expanded={showPresets} aria-controls="mcp-presets-panel">
             <Download className="w-4 h-4 mr-2" />
             Presets
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setShowAddServer(!showAddServer)}>
+          <Button variant="ghost" size="sm" onClick={() => setShowAddServer(!showAddServer)} aria-expanded={showAddServer} aria-controls="mcp-add-server-panel">
             <Plus className="w-4 h-4 mr-2" />
             Ajouter
           </Button>
@@ -502,6 +512,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       <AnimatePresence>
         {showPresets && (
           <motion.div
+            id="mcp-presets-panel"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -541,6 +552,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               {/* Barre de recherche */}
               <input
                 type="text"
+                aria-label="Rechercher un preset MCP"
                 value={presetFilter}
                 onChange={(e) => setPresetFilter(e.target.value)}
                 placeholder="Rechercher un preset..."
@@ -621,6 +633,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       <AnimatePresence>
         {showAddServer && (
           <motion.div
+            id="mcp-add-server-panel"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -713,8 +726,11 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             >
               {/* Server Header */}
               <div className="flex items-center justify-between p-3">
-                <div
-                  className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                <button
+                  type="button"
+                  aria-expanded={expandedServer === server.id}
+                  aria-controls={`mcp-server-details-${server.id}`}
+                  className="flex items-center gap-3 flex-1 cursor-pointer text-left hover:opacity-80 transition-opacity"
                   onClick={() => setExpandedServer(expandedServer === server.id ? null : server.id)}
                 >
                   <div className={`w-2 h-2 rounded-full ${
@@ -737,7 +753,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                       </p>
                     )}
                   </div>
-                </div>
+                </button>
 
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-text-muted">
@@ -752,11 +768,16 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                       }}
                       className="p-1 rounded hover:bg-red-500/10 transition-colors"
                       title="Supprimer"
+                      aria-label={`Supprimer ${server.name}`}
                     >
                       <Trash2 className="w-3 h-3 text-red-400" />
                     </button>
                   )}
                   <button
+                    type="button"
+                    aria-label={`${expandedServer === server.id ? 'Replier' : 'Déplier'} ${server.name}`}
+                    aria-expanded={expandedServer === server.id}
+                    aria-controls={`mcp-server-details-${server.id}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setExpandedServer(expandedServer === server.id ? null : server.id);
@@ -776,6 +797,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               <AnimatePresence>
                 {expandedServer === server.id && (
                   <motion.div
+                    id={`mcp-server-details-${server.id}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}

@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components -- prototype catalogue and its visual browser intentionally share one module */
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useIsPresent } from 'framer-motion';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 import {
   Bell,
   Bot,
@@ -39,7 +41,6 @@ import {
 import { CharacterPortrait } from './DecisionMissionPrototype';
 import type { AppView } from '../../stores/navigationStore';
 import type { ClassicAction, ClassicSettingsTab } from '../../lib/classicNavigation';
-import { usePrototypeDialogFocusTrap } from './usePrototypeDialogFocusTrap';
 
 export type CapabilityGroupId = 'organize' | 'business' | 'create' | 'decide' | 'automate' | 'control';
 export type PrototypeScenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -351,7 +352,8 @@ export function CapabilityCenter({
   const [selectedGroup, setSelectedGroup] = useState<CapabilityGroupId>('organize');
   const [query, setQuery] = useState('');
   const dialogRef = useRef<HTMLElement>(null);
-  usePrototypeDialogFocusTrap(dialogRef);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
 
   const visibleCapabilities = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -376,7 +378,7 @@ export function CapabilityCenter({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Capacités de Thérèse"
+        aria-labelledby="capability-center-title"
         tabIndex={-1}
         initial={{ y: 18, scale: 0.985 }}
         animate={{ y: 0, scale: 1 }}
@@ -391,7 +393,7 @@ export function CapabilityCenter({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-[-0.025em] text-text">Ce que Thérèse sait mobiliser</h2>
+              <h2 id="capability-center-title" data-dialog-autofocus tabIndex={-1} className="text-xl font-bold tracking-[-0.025em] text-text outline-none">Ce que Thérèse sait mobiliser</h2>
               <span className="rounded-full bg-bg px-2 py-1 text-[10px] font-semibold text-text-muted">{capabilities.length} capacités</span>
             </div>
             <p className="mt-1 text-sm text-text-muted">Tu demandes un résultat. Thérèse combine les fonctions utiles et garde les détails techniques en retrait.</p>
@@ -402,7 +404,7 @@ export function CapabilityCenter({
         </header>
 
         <div className="flex min-h-0 flex-1">
-          <nav className="w-[250px] shrink-0 border-r border-border bg-surface-2 p-3" aria-label="Intentions">
+          <nav role="tablist" aria-orientation="vertical" className="w-[250px] shrink-0 border-r border-border bg-surface-2 p-3" aria-label="Intentions">
             <div className="mb-3 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">Je veux…</div>
             {capabilityGroups.map((group) => {
               const Icon = group.icon;
@@ -410,7 +412,13 @@ export function CapabilityCenter({
               return (
                 <button
                   key={group.id}
+                  id={`capability-group-${group.id}`}
                   type="button"
+                  role="tab"
+                  aria-selected={selectedGroup === group.id}
+                  aria-controls="capability-results-panel"
+                  tabIndex={selectedGroup === group.id ? 0 : -1}
+                  onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'vertical')}
                   onClick={() => {
                     setSelectedGroup(group.id);
                     setQuery('');
@@ -437,12 +445,14 @@ export function CapabilityCenter({
             </div>
           </nav>
 
-          <div className="flex min-w-0 flex-1 flex-col">
+          <div id="capability-results-panel" role="tabpanel" aria-labelledby={`capability-group-${selectedGroup}`} className="flex min-w-0 flex-1 flex-col">
             <div className="border-b border-border px-5 py-4">
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
                 <input
                   data-dialog-autofocus
+                  type="search"
+                  aria-label="Rechercher une capacité"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Chercher une capacité, un résultat ou un outil…"
@@ -463,6 +473,7 @@ export function CapabilityCenter({
             </div>
 
             <div className="flex-1 overflow-y-auto bg-bg p-5">
+              <div className="sr-only" role="status" aria-live="polite">{visibleCapabilities.length} capacité{visibleCapabilities.length > 1 ? 's' : ''} affichée{visibleCapabilities.length > 1 ? 's' : ''}</div>
               {visibleCapabilities.length === 0 ? (
                 <div className="grid h-full place-items-center text-center">
                   <div>
@@ -511,7 +522,7 @@ export function CapabilityCenter({
 
             <footer className="flex items-center justify-between border-t border-border bg-surface px-5 py-3 text-[10px] text-text-muted">
               <span>Une capacité ouvre le parcours réel correspondant ou prépare une demande à poursuivre dans le chat.</span>
-              <span className="font-semibold text-text-muted">Langage naturel · ⌘K · Capacités</span>
+              <span className="font-semibold text-text-muted">Langage naturel · {/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'} · Capacités</span>
             </footer>
           </div>
         </div>
@@ -542,7 +553,8 @@ export function TrustCenter({
   onOpenAdvanced: () => void;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
-  usePrototypeDialogFocusTrap(dialogRef);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
 
   return (
     <motion.div
