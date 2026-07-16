@@ -13,7 +13,7 @@ import {
   Loader2,
   Mail,
   Menu,
-  MessageSquare,
+  HelpCircle,
   PanelRightClose,
   Plus,
   Receipt,
@@ -1133,7 +1133,6 @@ export function ConversationCanvasPrototype() {
               <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
             <IconButton label="Agenda" onClick={() => openEmbeddedView('calendar')}><Calendar className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
           </div>
         </header>
 
@@ -1148,7 +1147,7 @@ export function ConversationCanvasPrototype() {
             <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             <div className="mt-auto flex flex-col items-center gap-1.5">
-              <IconButton label="Aide" onClick={() => openChat('/aide')}><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
+              <IconButton label="Aide" onClick={() => openChat("/aide")}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
               <button type="button" onClick={() => openSettings('profile')} aria-label="Ouvrir le profil" className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
             </div>
           </nav>
