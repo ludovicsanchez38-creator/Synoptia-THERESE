@@ -17,6 +17,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { recordCloudConsent } from '../../lib/consent';
 import { apiFetch } from './core';
 import {
   getVoiceLocalPreference,
@@ -126,6 +127,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
 
   it("préférence 'false' explicite -> Groq, jamais le local ni le status", async () => {
     setVoiceLocalPreferred(false);
+    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
     mockedFetch.mockResolvedValueOnce(okJson({ text: 'cloud' }));
 
     await transcribeAudio(AUDIO);
@@ -149,6 +151,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
   });
 
   it('préférence absente + voix locale pas prête -> persiste false et route Groq', async () => {
+    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
     mockedFetch
       .mockResolvedValueOnce(localStatus({ ready: false }))
       .mockResolvedValueOnce(okJson({ text: 'cloud' }));
@@ -172,6 +175,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
   });
 
   it('préférence absente + status injoignable -> Groq sans persister (on retentera)', async () => {
+    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
     mockedFetch
       .mockRejectedValueOnce(new Error('backend down'))
       .mockResolvedValueOnce(okJson({ text: 'cloud' }));
@@ -190,5 +194,35 @@ describe('synthesizeSpeech', () => {
 
     await expect(synthesizeSpeech('Bonjour')).resolves.toBe(wav);
     expect(calledUrls()[0]).toContain('/api/voice/tts');
+  });
+});
+
+describe('US-004 - consentement cloud avant transcription vocale', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockedFetch.mockReset();
+  });
+
+  it('cloud sans consentement : refuse, aucun audio envoyé', async () => {
+    setVoiceLocalPreferred(false); // choix cloud explicite (Groq)
+    await expect(transcribeAudio(AUDIO)).rejects.toMatchObject({ status: 403 });
+    expect(mockedFetch).not.toHaveBeenCalled();
+  });
+
+  it('cloud avec consentement pour un AUTRE fournisseur : refuse', async () => {
+    setVoiceLocalPreferred(false);
+    recordCloudConsent(undefined, { provider: 'OpenAI', dataCategories: [] });
+    await expect(transcribeAudio(AUDIO)).rejects.toMatchObject({ status: 403 });
+    expect(mockedFetch).not.toHaveBeenCalled();
+  });
+
+  it('cloud avec consentement Groq : envoie la transcription', async () => {
+    setVoiceLocalPreferred(false);
+    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
+    mockedFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ text: 'bonjour' }) } as Response);
+
+    await expect(transcribeAudio(AUDIO)).resolves.toBe('bonjour');
+    expect(mockedFetch).toHaveBeenCalledOnce();
+    expect(calledUrls()[0]).toContain('/api/voice/transcribe');
   });
 });
