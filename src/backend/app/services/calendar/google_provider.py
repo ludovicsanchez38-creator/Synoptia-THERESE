@@ -94,9 +94,11 @@ class GoogleCalendarProvider(CalendarProvider):
         current = await self._service.get_calendar(calendar_id)
 
         # Build update payload
+        from urllib.parse import quote
+
         from app.services.http_client import get_http_client
 
-        url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}"
+        url = f"https://www.googleapis.com/calendar/v3/calendars/{quote(str(calendar_id), safe='')}"
         headers = {
             "Authorization": f"Bearer {self._service.access_token}",
             "Content-Type": "application/json",

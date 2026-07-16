@@ -727,6 +727,17 @@ async def _list_events_google(
     except Exception as e:
         logger.error(f"Failed to list events: {e}")
         _raise_if_google_403(e)
+        # Robustesse (recette Ludo 16/07) : un calendrier Google introuvable ou
+        # inaccessible (404) ne doit pas casser tout l'agenda en 500. On
+        # dégrade en liste vide pour ce calendrier ; l'affichage continue avec
+        # les autres calendriers.
+        import httpx
+
+        if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 404:
+            logger.warning(
+                f"Calendrier Google introuvable (404), ignoré : {calendar_id}"
+            )
+            return []
         raise HTTPException(status_code=500, detail=str(e))
 
 
