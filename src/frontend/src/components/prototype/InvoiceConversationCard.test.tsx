@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Contact, Invoice } from '../../services/api';
 import { InvoiceWorkspaceCanvas, InvoiceWorkspaceCard } from './InvoiceConversationCard';
@@ -63,6 +64,7 @@ describe('InvoiceWorkspaceCanvas', () => {
         onRetry={vi.fn()}
         onRetryInvoice={vi.fn()}
         onCreateDraft={vi.fn()}
+        onCreateContact={vi.fn()}
         onOpenClassic={vi.fn()}
       />,
     );
@@ -85,6 +87,7 @@ describe('InvoiceWorkspaceCanvas', () => {
         onRetry={vi.fn()}
         onRetryInvoice={vi.fn()}
         onCreateDraft={onCreateDraft}
+        onCreateContact={vi.fn()}
         onOpenClassic={vi.fn()}
       />,
     );
@@ -110,5 +113,45 @@ describe('InvoiceWorkspaceCanvas', () => {
 
     resolveCreation?.({ ...invoice, subtotal_ht: 490, total_tax: 98, total_ttc: 588 });
     expect(await screen.findByTestId('devis-draft-saved')).toHaveTextContent('Aucun PDF n’a été généré et aucun email n’a été envoyé');
+  });
+
+  it('crée le premier contact dans le canevas puis le sélectionne pour poursuivre le devis', async () => {
+    const onCreateContact = vi.fn().mockResolvedValue(contact);
+
+    function FirstDevisHarness() {
+      const [workspace, setWorkspace] = useState(() => data({ invoices: [], contacts: [] }));
+      return (
+        <InvoiceWorkspaceCanvas
+          resource={{ status: 'ready', data: workspace, error: null }}
+          invoiceResource={null}
+          selection="new-devis"
+          onRetry={vi.fn()}
+          onRetryInvoice={vi.fn()}
+          onCreateDraft={vi.fn()}
+          onCreateContact={async (payload) => {
+            const createdContact = await onCreateContact(payload);
+            setWorkspace((current) => ({ ...current, contacts: [createdContact] }));
+            return createdContact;
+          }}
+          onOpenClassic={vi.fn()}
+        />
+      );
+    }
+
+    render(<FirstDevisHarness />);
+    expect(screen.getByTestId('invoice-first-contact-form')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Entreprise du nouveau contact'), { target: { value: 'Atelier Martin' } });
+    fireEvent.change(screen.getByLabelText('Email du nouveau contact'), { target: { value: 'camille@example.test' } });
+    const createButton = screen.getByRole('button', { name: 'Créer et continuer le devis' });
+    fireEvent.click(createButton);
+    fireEvent.click(createButton);
+
+    await waitFor(() => expect(onCreateContact).toHaveBeenCalledTimes(1));
+    expect(onCreateContact).toHaveBeenCalledWith(expect.objectContaining({
+      company: 'Atelier Martin',
+      email: 'camille@example.test',
+    }));
+    expect(await screen.findByLabelText('Client du devis')).toHaveValue(contact.id);
   });
 });

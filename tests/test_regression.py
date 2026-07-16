@@ -1676,6 +1676,9 @@ class TestBUG033FileBrowserAccent:
 
 
 VOICE_RECORDER_TS = FRONTEND / "hooks" / "useVoiceRecorder.ts"
+VOICE_DICTATION_BUTTON_TSX = (
+    FRONTEND / "components" / "chat" / "VoiceDictationButton.tsx"
+)
 
 
 class TestBUG034MicrophonePluginReady:
@@ -1690,9 +1693,13 @@ class TestBUG034MicrophonePluginReady:
 
     def test_chat_input_disables_mic_when_not_ready(self):
         """ChatInput doit désactiver le micro quand le plugin n'est pas prêt."""
-        content = CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "pluginReady" in content, (
-            "ChatInput doit utiliser pluginReady pour désactiver le bouton micro"
+        chat_content = CHAT_INPUT_TSX.read_text(encoding="utf-8")
+        button_content = VOICE_DICTATION_BUTTON_TSX.read_text(encoding="utf-8")
+        assert "VoiceDictationButton" in chat_content, (
+            "ChatInput doit utiliser le bouton de dictée partagé"
+        )
+        assert "pluginReady" in button_content and "!pluginReady" in button_content, (
+            "VoiceDictationButton doit utiliser pluginReady pour désactiver le micro"
         )
 
 

@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { Send, Square, Paperclip, X, Cpu, Search } from 'lucide-react';
+import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings } from 'lucide-react';
 import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -16,6 +16,7 @@ import { handleClientActionChunk } from '../../lib/clientActions';
 import { ActionChips } from './ActionChips';
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
+import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
 import {
   hasVariableTokens,
@@ -98,18 +99,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     setQueuedPrompt,
   } = useChatStore();
   const { connectionState, setActivity } = useStatusStore();
+  const openSettings = usePanelStore((state) => state.openSettings);
 
   // US-007 : Autosave brouillon
   const { saveDraft, restoreDraft, clearDraft, lastSavedAt } = useAutosave(currentConversationId);
 
   const isOffline = connectionState !== 'connected';
   const hasQueuedPrompt = queuedPrompt !== null;
-  const isDisabled = isOffline || hasQueuedPrompt;
 
   // F-12 : modèle LLM actif + sélecteur rapide
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<LLMProvider | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
+  const modelChecking = modelAvailable === null;
+  const modelUnavailable = modelAvailable === false;
+  const isDisabled = isOffline || hasQueuedPrompt || modelChecking || modelUnavailable;
 
   const loadLLMConfig = useCallback(() => {
     getLLMConfig()
@@ -117,8 +122,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         setCurrentModel(cfg.model);
         setCurrentProvider(cfg.provider);
         setAvailableModels(cfg.available_models || []);
+        setModelAvailable(cfg.available !== false);
       })
-      .catch(() => {});
+      .catch(() => setModelAvailable(false));
   }, []);
 
   useEffect(() => {
@@ -137,6 +143,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       const cfg = await setLLMConfig(currentProvider, newModel);
       setCurrentModel(cfg.model);
       setAvailableModels(cfg.available_models || []);
+      setModelAvailable(cfg.available !== false);
       window.dispatchEvent(new Event('therese:llm-config-changed'));
     } catch {
       // Silently fail - model stays unchanged
@@ -306,7 +313,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
-    if (!trimmed || isOffline) return;
+    if (!trimmed || isOffline || modelAvailable !== true) return;
 
     // Detection {{action: agent_id}} -> rediriger vers le panneau Actions
     const actionMatch = trimmed.match(/\{\{action\s*:\s*([a-zA-Z0-9_-]+)\s*\}\}/i);
@@ -566,7 +573,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
+  }, [input, isOffline, modelAvailable, isStreaming, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
@@ -779,10 +786,32 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {/* Inline drop zone */}
       <InlineDropZone isDragging={isDragging} />
 
+      {modelUnavailable && (
+        <div
+          className="mb-3 flex items-start gap-3 rounded-xl border border-warning/35 bg-[var(--color-warning-tint)] px-4 py-3"
+          data-testid="chat-model-unavailable"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-text">Choisis d’abord un modèle</p>
+            <p className="mt-1 text-xs leading-5 text-text-muted">Aucun modèle actif ne peut répondre. Configure une clé cloud ou démarre Ollama avec un modèle local.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openSettings('ai')}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Ouvrir les réglages IA
+          </button>
+        </div>
+      )}
+
       {/* Tranche 1c : puces d'actions déterministes sur conversation vide -
           un clic insère la syntaxe {action: ...}, l'utilisateur complète et
           envoie (exécution locale, allowlist backend). */}
-      {!input && !isStreaming && (currentConversation()?.messages?.length ?? 0) === 0 && (
+      {!modelUnavailable && !input && !isStreaming && (currentConversation()?.messages?.length ?? 0) === 0 && (
         <ActionChips onInsert={(text) => setInput(text)} />
       )}
 
@@ -856,7 +885,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       </AnimatePresence>
 
       {/* F-12/F-14/F-15 : sélecteur de modèle actif (pill interactif) */}
-      {currentModel && (
+      {currentModel && !modelUnavailable && (
         <div className="flex items-center px-2 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
             <Cpu className="w-3.5 h-3.5 text-accent-cyan" />
@@ -934,9 +963,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 ? 'Un message en file d\'attente'
                 : isStreaming
                   ? 'Ajouter un message à la file...'
-                  : isOffline
-                    ? 'En attente de connexion...'
-                    : "Comment puis-je t'aider ?"
+                  : modelChecking
+                    ? 'Vérification du modèle disponible...'
+                    : modelUnavailable
+                      ? 'Choisis d’abord un modèle dans les réglages IA'
+                      : isOffline
+                        ? 'En attente de connexion...'
+                        : "Comment puis-je t'aider ?"
             }
             disabled={isDisabled}
             rows={MIN_ROWS}

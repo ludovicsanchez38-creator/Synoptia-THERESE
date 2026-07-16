@@ -71,6 +71,10 @@ class TestUserProfile:
         assert profile["name"] == "Ludo Sanchez"
         assert profile["company"] == "Synoptia"
 
+        onboarding_response = await client.get("/api/config/onboarding-complete")
+        assert onboarding_response.status_code == 200
+        assert onboarding_response.json()["completed"] is True
+
     @pytest.mark.asyncio
     async def test_update_profile(self, client: AsyncClient):
         """Test updating existing profile."""
@@ -135,6 +139,40 @@ class TestLLMConfiguration:
 
         assert "provider" in config
         assert "model" in config
+        assert isinstance(config["available"], bool)
+
+    @pytest.mark.asyncio
+    async def test_get_llm_config_reports_unavailable_without_key_or_local_model(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """M6 : un nom de modèle configuré ne suffit pas à le rendre utilisable."""
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+
+        import app.routers.config as config_router
+        import app.services.llm as llm_module
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        config = LLMConfig(
+            provider=LLMProvider.OLLAMA,
+            model="gemma4-tia:latest",
+            base_url="http://localhost:11434",
+        )
+        monkeypatch.setattr(
+            llm_module,
+            "get_llm_service",
+            lambda: SimpleNamespace(config=config),
+        )
+        monkeypatch.setattr(
+            config_router,
+            "_available_models_for",
+            AsyncMock(return_value=[]),
+        )
+
+        response = await client.get("/api/config/llm")
+
+        assert response.status_code == 200
+        assert response.json()["available"] is False
 
     @pytest.mark.asyncio
     async def test_set_llm_provider(self, client: AsyncClient):
@@ -145,6 +183,35 @@ class TestLLMConfiguration:
         })
 
         assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("provider", "model"),
+        [
+            ("perplexity", "sonar-pro"),
+            ("deepseek", "deepseek-v4-pro"),
+            ("infomaniak", "mix"),
+        ],
+    )
+    async def test_set_llm_cloud_provider_uses_its_saved_key(
+        self,
+        client: AsyncClient,
+        provider: str,
+        model: str,
+    ):
+        """M6 : chaque fournisseur cloud proposé reste utilisable sans redémarrage."""
+        key_response = await client.post(
+            "/api/config/api-key",
+            json={"provider": provider, "api_key": f"test-key-{provider}"},
+        )
+        assert key_response.status_code == 200
+
+        response = await client.post(
+            "/api/config/llm",
+            json={"provider": provider, "model": model},
+        )
+        assert response.status_code == 200
+        assert response.json()["available"] is True
 
     @pytest.mark.asyncio
     async def test_set_invalid_provider(self, client: AsyncClient):

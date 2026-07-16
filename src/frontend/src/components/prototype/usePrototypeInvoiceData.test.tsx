@@ -5,6 +5,7 @@ vi.mock('../../services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/api')>();
   return {
     ...actual,
+    createContact: vi.fn(),
     createInvoice: vi.fn(),
     getBillingProfileStatus: vi.fn(),
     getInvoice: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('../../services/api', async (importOriginal) => {
 });
 
 import {
+  createContact,
   createInvoice,
   getBillingProfileStatus,
   getInvoice,
@@ -23,6 +25,7 @@ import {
   type Invoice,
 } from '../../services/api';
 import { useInvoiceStore } from '../../stores/invoiceStore';
+import { useContactsStore } from '../../stores/contactsStore';
 import { usePrototypeInvoiceData } from './usePrototypeInvoiceData';
 
 const contact: Contact = {
@@ -44,11 +47,13 @@ describe('usePrototypeInvoiceData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useInvoiceStore.setState({ invoices: [], currentInvoiceId: null });
+    useContactsStore.setState({ contacts: [], searchResults: null, loaded: false, loading: false, error: null });
     vi.mocked(listInvoices).mockResolvedValue([invoice]);
     vi.mocked(listContacts).mockResolvedValue([contact]);
     vi.mocked(getBillingProfileStatus).mockResolvedValue({ is_complete: true, missing: [] });
     vi.mocked(getInvoice).mockResolvedValue(invoice);
     vi.mocked(createInvoice).mockResolvedValue(invoice);
+    vi.mocked(createContact).mockResolvedValue(contact);
   });
 
   it('charge les sources, rafraîchit le détail et crée un unique brouillon explicite', async () => {
@@ -70,6 +75,17 @@ describe('usePrototypeInvoiceData', () => {
     });
     expect(createInvoice).toHaveBeenCalledTimes(1);
     expect(createInvoice).toHaveBeenCalledWith(expect.objectContaining({ document_type: 'devis' }));
+
+    await act(async () => {
+      await result.current.createInvoiceContact({ company: 'Atelier Martin' });
+    });
+    expect(createContact).toHaveBeenCalledWith(expect.objectContaining({
+      company: 'Atelier Martin',
+      source: 'facturation',
+      stage: 'contact',
+    }));
+    expect(result.current.resource.data?.contacts).toContainEqual(contact);
+    expect(useContactsStore.getState().contacts).toContainEqual(contact);
   });
 
   it('ne charge rien hors du scénario Facturation', () => {

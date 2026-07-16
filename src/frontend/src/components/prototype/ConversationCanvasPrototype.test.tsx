@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../stores/chatStore';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 
 const voiceHarness = vi.hoisted(() => ({
@@ -81,6 +82,7 @@ vi.mock('./usePrototypeInvoiceData', () => ({
     openInvoice: vi.fn(),
     retryInvoice: vi.fn(),
     createDevisDraft: vi.fn(),
+    createInvoiceContact: vi.fn(),
   }),
 }));
 
@@ -125,6 +127,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
       currentConversationId: null,
       isStreaming: false,
     });
+    useAccessibilityStore.setState({ theme: 'light', highContrast: false });
   });
 
   it('ajoute la dictée classique au composeur de la coque', () => {
@@ -158,5 +161,19 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
 
     fireEvent.click(navigation.getByRole('button', { name: 'Historique' }));
     expect(screen.getByLabelText('Historique des conversations')).toHaveFocus();
+  });
+
+  it('propage le thème et le contraste sur la racine de la coque et garde le fond du composeur tokenisé', () => {
+    useAccessibilityStore.setState({ theme: 'dark', highContrast: true });
+    render(<ConversationCanvasPrototype />);
+
+    const shell = screen.getByTestId('conversation-canvas-prototype');
+    expect(shell).toHaveAttribute('data-theme', 'dark');
+    expect(shell).toHaveAttribute('data-high-contrast', 'true');
+    expect(screen.getByTestId('prototype-composer-backdrop').className).toContain('var(--color-bg)');
+
+    act(() => useAccessibilityStore.setState({ theme: 'light', highContrast: false }));
+    expect(shell).toHaveAttribute('data-theme', 'light');
+    expect(shell).not.toHaveAttribute('data-high-contrast');
   });
 });

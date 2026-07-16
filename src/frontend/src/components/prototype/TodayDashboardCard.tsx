@@ -123,7 +123,7 @@ export function TodayDashboardCard({
           </div>
         </StateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {visibleItems.map((item) => {
             const Icon = attentionIcons[item.kind];
             return (
@@ -140,7 +140,7 @@ export function TodayDashboardCard({
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-text">{item.title}</span>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      item.urgent ? 'bg-[#FDE8E8] text-error' : 'bg-[#EEF3F9] text-text-muted'
+                      item.urgent ? 'bg-[var(--color-error-tint)] text-error' : 'bg-surface-2 text-text-muted'
                     }`}>
                       {item.badge}
                     </span>

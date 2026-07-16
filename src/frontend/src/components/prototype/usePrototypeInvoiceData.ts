@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  createContact,
   createInvoice,
   getBillingProfileStatus,
   getInvoice,
@@ -9,6 +10,7 @@ import {
   type CreateInvoiceRequest,
   type Invoice,
 } from '../../services/api';
+import { useContactsStore } from '../../stores/contactsStore';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import type { ReadResource } from './usePrototypeReadData';
 
@@ -75,6 +77,25 @@ export function usePrototypeInvoiceData(enabled = true) {
     return created;
   }, []);
 
+  const createInvoiceContact = useCallback(async (data: Partial<Contact>) => {
+    const created = await createContact({
+      ...data,
+      stage: 'contact',
+      source: 'facturation',
+    });
+    useContactsStore.getState().upsertLocal(created);
+    setResource((current) => current.status === 'ready'
+      ? {
+          ...current,
+          data: {
+            ...current.data,
+            contacts: [created, ...current.data.contacts.filter((item) => item.id !== created.id)],
+          },
+        }
+      : current);
+    return created;
+  }, []);
+
   const openInvoice = useCallback(async (invoiceId: string) => {
     setSelectedInvoiceId(invoiceId);
     const activeRequest = ++detailRequestId.current;
@@ -122,5 +143,6 @@ export function usePrototypeInvoiceData(enabled = true) {
     openInvoice,
     retryInvoice,
     createDevisDraft,
+    createInvoiceContact,
   };
 }

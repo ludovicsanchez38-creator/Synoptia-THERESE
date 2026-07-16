@@ -4,7 +4,7 @@
  * Second step of the onboarding wizard - Configure user profile.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -19,6 +19,9 @@ interface ProfileStepProps {
 export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const savingRef = useRef(false);
+  const continueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileForm, setProfileForm] = useState({
     name: '',
     nickname: '',
@@ -28,6 +31,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
     location: '',
     context: '',
   });
+
+  useEffect(() => () => {
+    if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
+  }, []);
 
   async function handleImportClaudeMd() {
     try {
@@ -58,13 +65,18 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   }
 
   async function handleSaveAndContinue() {
+    if (savingRef.current) return;
     if (!profileForm.name.trim()) {
       setError('Le nom est obligatoire');
+      setSaveState('error');
       return;
     }
 
+    savingRef.current = true;
     setLoading(true);
     setError(null);
+    setSaveState('saving');
+    let saved = false;
 
     try {
       await api.setProfile({
@@ -76,11 +88,15 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         location: profileForm.location,
         context: profileForm.context,
       });
-      onNext();
+      saved = true;
+      setSaveState('success');
+      continueTimerRef.current = setTimeout(onNext, 650);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+      setSaveState('error');
     } finally {
       setLoading(false);
+      if (!saved) savingRef.current = false;
     }
   }
 
@@ -130,6 +146,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               onChange={(e) => {
                 setProfileForm((prev) => ({ ...prev, name: e.target.value }));
                 setError(null);
+                setSaveState('idle');
               }}
               placeholder="Ton nom complet"
               className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
@@ -217,29 +234,38 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
             <AlertCircle className="w-4 h-4 text-red-400" />
             <span className="text-sm text-red-400">{error}</span>
+          </div>
+        )}
+        {saveState === 'success' && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg" role="status">
+            <span className="text-sm text-success">Profil enregistré. L’onboarding ne se relancera pas au prochain démarrage.</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
       <div className="flex justify-between mt-6 pt-4 border-t border-border/30">
-        <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
+        <Button variant="ghost" onClick={onBack} disabled={loading || saveState === 'success'} data-testid="onboarding-prev-btn">
           Retour
         </Button>
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={handleSkip} data-testid="onboarding-skip-btn">
+          <Button variant="ghost" onClick={handleSkip} disabled={loading || saveState === 'success'} data-testid="onboarding-skip-btn">
             Passer
           </Button>
           <Button
             variant="primary"
             onClick={handleSaveAndContinue}
-            disabled={loading}
+            disabled={loading || saveState === 'success'}
             data-testid="onboarding-next-btn"
           >
-            {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement en cours...</>) : 'Continuer'}
+            {saveState === 'success'
+              ? 'Profil enregistré'
+              : loading
+                ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement en cours...</>)
+                : 'Continuer'}
           </Button>
         </div>
       </div>

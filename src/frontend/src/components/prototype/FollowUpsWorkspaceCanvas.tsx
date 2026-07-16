@@ -114,7 +114,7 @@ export function FollowUpsWorkspaceCanvas({
     <aside className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[58%] xl:min-w-[680px]" data-testid="follow-ups-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--color-warning-tint)] text-warning shadow-[2px_2px_0_#101C36]"><Bell className="h-4 w-4" /></span>
+          <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--color-warning-tint)] text-warning shadow-[2px_2px_0_var(--btn-shadow-color)]"><Bell className="h-4 w-4" /></span>
           <div><h2 className="text-lg font-bold text-text">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances réelles liées aux emails, modifiables sans quitter le fil.</p></div>
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer les relances" className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted"><PanelRightClose className="h-4 w-4" /></button>

@@ -141,7 +141,7 @@ export function MeetingAgendaCard({
           </div>
         </StateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {events.map((event) => (
             <button key={meetingEventKey(event)} type="button" onClick={() => onOpenEvent(meetingEventKey(event))} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-[var(--k3bg)] text-[var(--k3)]"><Clock3 className="h-4 w-4" /></span>

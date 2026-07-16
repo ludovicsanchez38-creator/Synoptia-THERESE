@@ -116,7 +116,7 @@ export function ContactsMemoryCard({
       ) : recentContacts.length === 0 ? (
         <EmptyContacts onOpenClassic={onOpenClassic} />
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {recentContacts.map((contact) => (
             <button
               key={contact.id}
@@ -141,7 +141,7 @@ export function ContactsMemoryCard({
         <button
           type="button"
           onClick={onOpenClassic}
-          className="w-full border-t border-border bg-surface-2 px-4 py-3 text-center text-xs font-semibold text-[var(--k4)] hover:bg-[#F3F0FB]"
+          className="w-full border-t border-border bg-surface-2 px-4 py-3 text-center text-xs font-semibold text-[var(--k4)] hover:bg-[var(--k4bg)]"
         >
           Voir les {resource.data.length - recentContacts.length} autres contacts
         </button>

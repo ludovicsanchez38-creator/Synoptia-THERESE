@@ -672,6 +672,29 @@ async def get_qdrant_stats():
 # ============================================================
 
 
+async def _mark_onboarding_completed(session: AsyncSession) -> Preference:
+    """Pose le marqueur d'onboarding de façon idempotente."""
+    result = await session.execute(
+        select(Preference).where(Preference.key == "onboarding_completed")
+    )
+    pref = result.scalar_one_or_none()
+    now = datetime.now(UTC)
+    if pref:
+        pref.value = "true"
+        pref.category = "system"
+        pref.updated_at = now
+    else:
+        pref = Preference(
+            key="onboarding_completed",
+            value="true",
+            category="system",
+            updated_at=now,
+        )
+        session.add(pref)
+    await session.commit()
+    return pref
+
+
 @router.get("/profile", response_model=UserProfileResponse | None)
 async def get_profile(session: AsyncSession = Depends(get_session)):
     """
@@ -741,6 +764,11 @@ async def set_profile(
 
     # Update cache for LLM service
     set_cached_profile(saved_profile)
+
+    # L'identité est le premier jalon durable de l'onboarding. Le marqueur est
+    # posé côté backend dès que ce profil valide est enregistré, afin qu'un
+    # arrêt pendant les étapes suivantes ne relance pas le wizard au démarrage.
+    await _mark_onboarding_completed(session)
 
     return UserProfileResponse(
         name=saved_profile.name,
@@ -1014,6 +1042,11 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
 
     # Get available models for the provider (source unique partagee avec POST)
     available_models = await _available_models_for(config.provider.value)
+    config_available = (
+        bool(available_models)
+        if config.provider.value == "ollama"
+        else bool(config.api_key and config.model)
+    )
 
     # Inclure le modele actif dans la liste s il est custom
     if config.model and config.model not in available_models:
@@ -1023,6 +1056,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         provider=config.provider.value,
         model=config.model,
         available_models=available_models,
+        available=config_available,
         effort=config.effort,
     )
 
@@ -1072,6 +1106,9 @@ async def set_llm_config(
         LLMProvider.MISTRAL: ("MISTRAL_API_KEY", "mistral_api_key"),
         LLMProvider.GROK: ("XAI_API_KEY", "grok_api_key"),
         LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
+        LLMProvider.PERPLEXITY: ("PERPLEXITY_API_KEY", "perplexity_api_key"),
+        LLMProvider.DEEPSEEK: ("DEEPSEEK_API_KEY", "deepseek_api_key"),
+        LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
     }
 
     if provider == LLMProvider.OLLAMA:
@@ -1151,6 +1188,11 @@ async def set_llm_config(
     # Liste des modèles disponibles : même source que le GET (symétrie GET/POST,
     # sinon le selecteur frontend tombait a 1 seul modele apres bascule cloud).
     post_available_models = await _available_models_for(provider.value)
+    config_available = (
+        bool(post_available_models)
+        if provider == LLMProvider.OLLAMA
+        else bool(api_key and request.model)
+    )
 
     # Inclure le modele custom dans la reponse POST aussi
     if request.model and request.model not in post_available_models:
@@ -1160,6 +1202,7 @@ async def set_llm_config(
         provider=request.provider,
         model=request.model,
         available_models=post_available_models,
+        available=config_available,
         effort=effective_effort,
     )
 
@@ -1287,17 +1330,29 @@ async def get_onboarding_status(session: AsyncSession = Depends(get_session)):
             "completed_at": pref.updated_at.isoformat() if pref.updated_at else None,
         }
 
-    # Si pas de flag mais DB contient des donnees -> onboarding deja fait
-    # (cas d'une DB restauree depuis un backup anterieur au flag)
+    # Si pas de flag mais un profil ou des données existent -> onboarding déjà
+    # engagé. Cela répare aussi les installations arrêtées juste après l'étape
+    # Profil avant l'introduction du marquage immédiat.
+    profile_result = await session.execute(
+        select(Preference).where(
+            Preference.key == "user_profile",
+            Preference.category == "identity",
+        )
+    )
+    has_profile = profile_result.scalar_one_or_none() is not None
+
     conv_count = await session.execute(select(func.count()).select_from(Conversation))
     contact_count = await session.execute(select(func.count()).select_from(Contact))
     has_data = (conv_count.scalar_one() > 0) or (contact_count.scalar_one() > 0)
 
-    if has_data:
-        new_pref = Preference(key="onboarding_completed", value="true", category="system")
-        session.add(new_pref)
-        await session.commit()
-        return {"completed": True, "completed_at": None}
+    if has_profile or has_data:
+        repaired_pref = await _mark_onboarding_completed(session)
+        return {
+            "completed": True,
+            "completed_at": repaired_pref.updated_at.isoformat()
+            if repaired_pref.updated_at
+            else None,
+        }
 
     return {"completed": False, "completed_at": None}
 
@@ -1309,24 +1364,7 @@ async def set_onboarding_complete(session: AsyncSession = Depends(get_session)):
 
     This is called when the user finishes the onboarding wizard.
     """
-    # Get or create preference
-    result = await session.execute(
-        select(Preference).where(Preference.key == "onboarding_completed")
-    )
-    pref = result.scalar_one_or_none()
-
-    if pref:
-        pref.value = "true"
-        pref.updated_at = datetime.now(UTC)
-    else:
-        pref = Preference(
-            key="onboarding_completed",
-            value="true",
-            category="system",
-        )
-        session.add(pref)
-
-    await session.commit()
+    pref = await _mark_onboarding_completed(session)
 
     return {
         "completed": True,

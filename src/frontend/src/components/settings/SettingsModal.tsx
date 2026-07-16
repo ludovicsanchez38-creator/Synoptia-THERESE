@@ -255,6 +255,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
       setCorruptedKeys(prev => prev.filter(k => k !== selectedProvider));
       setApiKeyInput('');
+      window.dispatchEvent(new Event('therese:llm-config-changed'));
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
