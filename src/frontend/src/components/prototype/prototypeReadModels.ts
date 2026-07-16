@@ -109,12 +109,6 @@ function followUpToAttention(followUp: DashboardFollowUp, today: string): TodayA
   };
 }
 
-function isLowStakeSoloEvent(event: DashboardEvent): boolean {
-  if (event.attendees_count > 0 || event.crm_contact_ids.length > 0) return false;
-  const normalized = event.summary.toLocaleLowerCase('fr-FR');
-  return /\b(d[eé]jeuner|courses?|sport|gym|pause|personnel|perso)\b/.test(normalized);
-}
-
 function eventTimestamp(event: DashboardEvent): string {
   return event.start_datetime || event.start_date || '';
 }
@@ -136,15 +130,14 @@ export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionIt
   const otherTasks = data.urgent_tasks.filter((task) => !isOverdue(task.due_date, data.date));
   const overdueFollowUps = data.due_follow_ups.filter((followUp) => isOverdue(followUp.due_date, data.date));
   const otherFollowUps = data.due_follow_ups.filter((followUp) => !isOverdue(followUp.due_date, data.date));
-  const curatedEvents = data.events
-    .filter((event) => !isLowStakeSoloEvent(event))
+  // Décision Ludo 16/07 : le brief se limite aux vrais points d'attention.
+  // Seuls les événements à enjeu (participants ou contact CRM) y figurent ;
+  // tout l'agenda solo sans engagement bascule dans « Vue complète », plutôt
+  // que de tenter de deviner par mots-clés ce qui est perso (risque de masquer
+  // un créneau important ou de laisser passer un « casse-croûte »).
+  const engagedEvents = data.events
+    .filter((event) => event.attendees_count > 0 || event.crm_contact_ids.length > 0)
     .sort((left, right) => eventTimestamp(left).localeCompare(eventTimestamp(right)));
-  const engagedEvents = curatedEvents.filter(
-    (event) => event.attendees_count > 0 || event.crm_contact_ids.length > 0,
-  );
-  const otherEvents = curatedEvents.filter(
-    (event) => event.attendees_count === 0 && event.crm_contact_ids.length === 0,
-  );
 
   return [
     ...overdueTasks.map((task) => taskToAttention(task, data.date)),
@@ -154,7 +147,6 @@ export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionIt
     ...otherFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
     ...otherTasks.map((task) => taskToAttention(task, data.date)),
     ...data.stale_prospects.map(prospectToAttention),
-    ...otherEvents.map(eventToAttention),
   ];
 }
 
