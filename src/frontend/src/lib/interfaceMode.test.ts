@@ -40,31 +40,61 @@ describe('resolveInterfaceMode', () => {
 });
 
 describe('resolveRuntimeInterfaceMode', () => {
-  it('autorise le prototype pendant le développement local', () => {
+  it("autorise les forçages par URL et variable de build pendant le développement local", () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: true,
       isExplicitDevelopmentBuild: true,
       search: '?interface=conversation-canvas',
+      buildMode: 'classic',
+      storedMode: 'classic',
     })).toBe('conversation-canvas');
   });
 
-  it('force toujours l’interface classique dans un build distribuable', () => {
+  it('respecte le choix bêta mémorisé dans un build de production', () => {
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: false,
+      isExplicitDevelopmentBuild: false,
+      storedMode: 'conversation-canvas',
+    })).toBe('conversation-canvas');
+  });
+
+  it("ignore l'URL et la variable de build en production", () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: false,
       isExplicitDevelopmentBuild: false,
       search: '?interface=conversation-canvas',
       buildMode: 'conversation-canvas',
-      storedMode: 'conversation-canvas',
+      storedMode: 'classic',
     })).toBe('classic');
   });
 
-  it('reste verrouillé si le mode Vite simule le développement dans un build', () => {
+  it('conserve le classique par défaut si le choix de production est absent ou invalide', () => {
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: false,
+      isExplicitDevelopmentBuild: false,
+    })).toBe('classic');
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: false,
+      isExplicitDevelopmentBuild: false,
+      storedMode: 'experimental',
+    })).toBe('classic');
+  });
+
+  it('réserve aussi les forçages dev au serveur Vite identifié par le flag explicite', () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: true,
       isExplicitDevelopmentBuild: false,
       search: '?interface=conversation-canvas',
       buildMode: 'conversation-canvas',
-      storedMode: 'conversation-canvas',
+      storedMode: 'classic',
     })).toBe('classic');
+
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: true,
+      isExplicitDevelopmentBuild: false,
+      search: '?interface=classic',
+      buildMode: 'classic',
+      storedMode: 'conversation-canvas',
+    })).toBe('conversation-canvas');
   });
 });

@@ -1,11 +1,9 @@
 /**
  * Sélecteur réversible de l'interface THÉRÈSE.
  *
- * La 0.40 peut être testée sans remplacer l'interface stable :
- * 1. le paramètre d'URL est prioritaire ;
- * 2. puis la variable de build ;
- * 3. puis le choix bêta conservé localement ;
- * 4. l'interface classique reste la valeur sûre par défaut.
+ * En production, seul le choix utilisateur conservé localement est appliqué.
+ * En développement, l'URL et la variable de build permettent aussi de forcer
+ * ponctuellement un mode. L'interface classique reste la valeur par défaut.
  */
 
 export type InterfaceMode = 'classic' | 'conversation-canvas';
@@ -57,15 +55,18 @@ export function resolveInterfaceMode({
 export function resolveRuntimeInterfaceMode({
   isDevelopment,
   isExplicitDevelopmentBuild,
-  ...options
+  search,
+  buildMode,
+  storedMode,
 }: ResolveRuntimeInterfaceModeOptions): InterfaceMode {
-  // Garde-fou pré-bêta : deux preuves indépendantes sont nécessaires. Un
-  // `vite build --mode development` pose DEV mais pas le flag de dev explicite.
-  if (!isDevelopment || !isExplicitDevelopmentBuild) {
-    return 'classic';
+  // L'URL et la variable Vite sont des outils de développement. Le flag
+  // explicite évite qu'un `vite build --mode development` les expose dans un
+  // build distribuable, sans bloquer le choix bêta mémorisé par l'utilisateur.
+  if (isDevelopment && isExplicitDevelopmentBuild) {
+    return resolveInterfaceMode({ search, buildMode, storedMode });
   }
 
-  return resolveInterfaceMode(options);
+  return parseMode(storedMode) ?? 'classic';
 }
 
 export function getInterfaceMode(): InterfaceMode {

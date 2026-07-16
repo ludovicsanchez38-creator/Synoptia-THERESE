@@ -6,6 +6,7 @@ import { RefreshCw, Download, CheckCircle, ExternalLink, Info, MessageSquareWarn
 import { Button } from '../ui/Button';
 import { useBackendStore } from '../../hooks/useBackend';
 import { checkHealth } from '../../services/api';
+import { InterfaceBetaToggle } from './InterfaceBetaToggle';
 
 const GITHUB_REPO = 'ludovicsanchez38-creator/Synoptia-THERESE';
 const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
@@ -152,6 +153,9 @@ export function AboutTab() {
           </div>
         </div>
       </div>
+
+      {/* Opt-in explicite pour l'interface 0.40, appliqué au prochain bootstrap. */}
+      <InterfaceBetaToggle />
 
       {/* US-012 : communauté et retours - le testeur alpha doit pouvoir
           signaler un bug sans connaître l'URL Discord par coeur */}
