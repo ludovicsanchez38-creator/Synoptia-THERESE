@@ -167,6 +167,7 @@ export {
   generateImage,
   getImageStatus,
   getImageDownloadUrl,
+  fetchImageObjectUrl,
   downloadGeneratedImage,
   listGeneratedImages,
   type ImageProvider,
