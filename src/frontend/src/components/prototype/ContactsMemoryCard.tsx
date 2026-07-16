@@ -76,7 +76,7 @@ export function ContactsMemoryCard({
           </span>
           <div>
             <h2 id="contacts-memory-title" className="text-sm font-semibold text-text">Contacts et mémoire</h2>
-            <div className="text-[11px] text-text-muted">
+            <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.length} contact${resource.data.length > 1 ? 's' : ''} dans la mémoire locale`
                 : 'Lecture de la mémoire locale'}
@@ -86,7 +86,7 @@ export function ContactsMemoryCard({
         <button
           type="button"
           onClick={onOpenClassic}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text hover:bg-surface-2"
+          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
         >
           Vue complète
         </button>
@@ -124,7 +124,7 @@ export function ContactsMemoryCard({
               onClick={() => onOpenContact(contact.id)}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
             >
-              <ContactAvatar contact={contact} className="h-9 w-9 text-[11px]" />
+              <ContactAvatar contact={contact} className="h-9 w-9 text-xs" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-text">{contactDisplayName(contact)}</span>
                 <span className="mt-0.5 block truncate text-xs text-text-muted">
@@ -174,7 +174,7 @@ export function ContactsMemoryCanvas({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           <Users className="h-3.5 w-3.5" />
           Mémoire locale
         </div>
@@ -200,8 +200,8 @@ export function ContactsMemoryCanvas({
       ) : contacts.length === 0 ? (
         <EmptyContacts onOpenClassic={onOpenClassic} />
       ) : (
-        <div className="grid min-h-0 flex-1 grid-cols-[210px_minmax(0,1fr)]">
-          <aside className="min-h-0 border-r border-border bg-surface p-3">
+        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(160px,40%)_minmax(0,1fr)] sm:grid-cols-[210px_minmax(0,1fr)] sm:grid-rows-1">
+          <aside className="min-h-0 border-b border-border bg-surface p-3 sm:border-b-0 sm:border-r">
             <div className="relative mb-3">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-text-muted" />
               <input
@@ -223,7 +223,7 @@ export function ContactsMemoryCanvas({
                     selectedContact?.id === contact.id ? 'bg-[var(--k4bg)]' : 'hover:bg-surface-2'
                   }`}
                 >
-                  <ContactAvatar contact={contact} className="h-7 w-7 text-[9px]" />
+                  <ContactAvatar contact={contact} className="h-7 w-7 text-xs" />
                   <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{contactDisplayName(contact)}</span>
                 </button>
               ))}
@@ -261,7 +261,7 @@ export function ContactsMemoryCanvas({
                 </div>
 
                 <div className="mt-5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Notes mémorisées</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Notes mémorisées</div>
                   <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-[12px] border border-border bg-surface p-3 text-sm leading-6 text-text">
                     {selectedContact.notes || 'Aucune note enregistrée pour ce contact.'}
                   </div>
@@ -270,7 +270,7 @@ export function ContactsMemoryCanvas({
                 {selectedContact.tags && selectedContact.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-1.5">
                     {selectedContact.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-[10px] font-semibold text-[var(--k4)]">{tag}</span>
+                      <span key={tag} className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-xs font-semibold text-[var(--k4)]">{tag}</span>
                     ))}
                   </div>
                 )}

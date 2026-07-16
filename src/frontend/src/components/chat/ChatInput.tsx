@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings } from 'lucide-react';
+import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings, RefreshCw } from 'lucide-react';
 import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -51,6 +51,11 @@ interface PendingCloudConsent {
   dataCategories: string[];
 }
 
+interface AttachedFile extends DroppedFile {
+  indexStatus: 'indexing' | 'ready' | 'error';
+  indexError?: string;
+}
+
 const cloudProviderLabels: Partial<Record<LLMProvider, string>> = {
   anthropic: 'Anthropic', openai: 'OpenAI', gemini: 'Google Gemini', mistral: 'Mistral',
   grok: 'xAI', openrouter: 'OpenRouter', perplexity: 'Perplexity', deepseek: 'DeepSeek',
@@ -87,12 +92,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const [inputRect, setInputRect] = useState<DOMRect | null>(null);
-  const [attachedFiles, setAttachedFiles] = useState<DroppedFile[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const attachedPathsRef = useRef(new Set<string>());
   // Chantier 4 Variables V1 : aperçu de résolution {nom} (debounced) et
   // confirmation par double-envoi quand des variables sont inconnues.
   const [variablesPreview, setVariablesPreview] = useState<VariablesPreview | null>(null);
   const unknownConfirmedRef = useRef(false);
-  const [isIndexing, setIsIndexing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -118,7 +123,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const openSettings = usePanelStore((state) => state.openSettings);
 
   // US-007 : Autosave brouillon
-  const { saveDraft, restoreDraft, clearDraft, lastSavedAt } = useAutosave(currentConversationId);
+  const { saveDraft, restoreDraft, clearDraft, retrySave, lastSavedAt, draftError } = useAutosave(currentConversationId);
 
   const isOffline = connectionState !== 'connected';
   const hasQueuedPrompt = queuedPrompt !== null;
@@ -130,6 +135,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const cloudConsentGrantedRef = useRef(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
+  const [modelChangeError, setModelChangeError] = useState<string | null>(null);
+  const [failedModel, setFailedModel] = useState<string | null>(null);
   const modelChecking = modelAvailable === null;
   const modelUnavailable = modelAvailable === false;
   const isDisabled = isOffline || hasQueuedPrompt || modelChecking || modelUnavailable;
@@ -157,14 +164,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   const handleModelChange = useCallback(async (newModel: string) => {
     if (!currentProvider || newModel === currentModel) return;
+    setModelChangeError(null);
     try {
       const cfg = await setLLMConfig(currentProvider, newModel);
       setCurrentModel(cfg.model);
       setAvailableModels(cfg.available_models || []);
       setModelAvailable(cfg.available !== false);
+      setFailedModel(null);
       window.dispatchEvent(new Event('therese:llm-config-changed'));
-    } catch {
-      // Silently fail - model stays unchanged
+    } catch (reason) {
+      setFailedModel(newModel);
+      setModelChangeError(reason instanceof Error ? reason.message : 'Le modèle n’a pas pu être changé.');
     }
   }, [currentProvider, currentModel]);
 
@@ -176,26 +186,41 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   );
 
   // File drop handling (with deduplication)
-  const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
-    setAttachedFiles((prev) => {
-      // Deduplicate by path
-      const existingPaths = new Set(prev.map((f) => f.path));
-      const newFiles = files.filter((f) => !existingPaths.has(f.path));
-      return [...prev, ...newFiles];
-    });
-
-    // Auto-index dropped files
-    setIsIndexing(true);
+  const indexAttachment = useCallback(async (path: string) => {
+    setAttachedFiles((current) => current.map((file) => (
+      file.path === path ? { ...file, indexStatus: 'indexing', indexError: undefined } : file
+    )));
     try {
-      for (const file of files) {
-        await indexFile(file.path);
-      }
-    } catch (err) {
-      console.error('Failed to index files:', err);
-    } finally {
-      setIsIndexing(false);
+      await indexFile(path);
+      setAttachedFiles((current) => current.map((file) => (
+        file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
+      )));
+    } catch (reason) {
+      setAttachedFiles((current) => current.map((file) => (
+        file.path === path
+          ? {
+              ...file,
+              indexStatus: 'error',
+              indexError: reason instanceof Error ? reason.message : 'Indexation impossible.',
+            }
+          : file
+      )));
     }
   }, []);
+
+  const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
+    const newFiles = files.filter((file) => {
+      if (attachedPathsRef.current.has(file.path)) return false;
+      attachedPathsRef.current.add(file.path);
+      return true;
+    });
+    if (newFiles.length === 0) return;
+    setAttachedFiles((current) => [
+      ...current,
+      ...newFiles.map((file): AttachedFile => ({ ...file, indexStatus: 'indexing' })),
+    ]);
+    await Promise.all(newFiles.map((file) => indexAttachment(file.path)));
+  }, [indexAttachment]);
 
   const { isDragging } = useFileDrop({
     onDrop: handleFilesDropped,
@@ -221,7 +246,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   // Remove attached file
   const removeFile = useCallback((index: number) => {
-    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+    setAttachedFiles((current) => {
+      const removed = current[index];
+      if (removed) attachedPathsRef.current.delete(removed.path);
+      return current.filter((_, currentIndex) => currentIndex !== index);
+    });
   }, []);
 
   // Handle browser file input change (fallback when Tauri dialog unavailable)
@@ -331,6 +360,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline || modelAvailable !== true) return;
+    if (attachedFiles.some((file) => file.indexStatus !== 'ready')) return;
 
     // Detection {{action: agent_id}} -> rediriger vers le panneau Actions
     const actionMatch = trimmed.match(/\{\{action\s*:\s*([a-zA-Z0-9_-]+)\s*\}\}/i);
@@ -415,8 +445,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // Add user message
     addMessage({ role: 'user', content: messageContent });
     setInput('');
-    clearDraft(); // US-007 : Supprimer le brouillon après envoi
     setAttachedFiles([]); // Clear attached files after sending
+    attachedPathsRef.current.clear();
 
     // Reset textarea height
     if (textareaRef.current) {
@@ -569,6 +599,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       stopBatching();
       // Finalize the message (remove streaming flag)
       updateMessage(assistantMessageId, accumulatedContent);
+      clearDraft();
     } catch (error) {
       // Stop batching on error
       stopBatching();
@@ -608,7 +639,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt]);
+  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
@@ -911,21 +942,42 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* Attached files */}
       {attachedFiles.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="mb-2 flex flex-wrap gap-2" aria-label="Pièces jointes">
           {attachedFiles.map((file, index) => (
-            <FileChip
-              key={`${file.path}-${index}`}
-              name={file.name}
-              mimeType={file.mimeType}
-              size={file.size}
-              onRemove={() => removeFile(index)}
-            />
+            <div key={`${file.path}-${index}`} className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-surface-elevated p-1">
+              <FileChip
+                name={file.name}
+                mimeType={file.mimeType}
+                size={file.size}
+                onRemove={() => removeFile(index)}
+                className="border-0 bg-transparent"
+              />
+              <span
+                role={file.indexStatus === 'error' ? 'alert' : 'status'}
+                aria-live="polite"
+                className={`rounded-[6px] px-2 py-1 text-xs font-semibold ${
+                  file.indexStatus === 'ready'
+                    ? 'bg-[var(--color-success-tint)] text-success'
+                    : file.indexStatus === 'error'
+                      ? 'bg-[var(--color-error-tint)] text-error'
+                      : 'bg-[var(--color-info-tint)] text-info'
+                }`}
+              >
+                {file.indexStatus === 'ready' ? 'Prêt' : file.indexStatus === 'error' ? 'Échec' : 'Indexation'}
+              </span>
+              {file.indexStatus === 'error' && (
+                <button
+                  type="button"
+                  onClick={() => void indexAttachment(file.path)}
+                  className="min-h-11 rounded-[7px] px-2 text-xs font-semibold text-error hover:bg-[var(--color-error-tint)]"
+                  aria-label={`Réessayer l’indexation de ${file.name}`}
+                >
+                  Réessayer
+                </button>
+              )}
+              {file.indexError && <span className="sr-only">{file.indexError}</span>}
+            </div>
           ))}
-          {isIndexing && (
-            <span className="text-xs text-text-muted self-center ml-2">
-              Indexation...
-            </span>
-          )}
         </div>
       )}
 
@@ -978,10 +1030,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             )}
             {currentProvider && (
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-[6px] ${
+                className={`text-xs px-1.5 py-0.5 rounded-[6px] ${
                   currentProvider === 'ollama'
-                    ? 'bg-green-500/15 text-green-300'
-                    : 'bg-orange-500/15 text-orange-300'
+                    ? 'bg-[var(--color-success-tint)] text-success'
+                    : 'bg-[var(--color-warning-tint)] text-warning'
                 }`}
                 title={
                   currentProvider === 'ollama'
@@ -993,6 +1045,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {modelChangeError && (
+        <div role="alert" className="mb-2 flex items-center gap-2 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">Changement de modèle non enregistré. {modelChangeError}</span>
+          {failedModel && (
+            <button type="button" onClick={() => void handleModelChange(failedModel)} className="min-h-11 rounded-[7px] border border-error px-2 font-semibold">
+              Réessayer
+            </button>
+          )}
         </div>
       )}
 
@@ -1022,7 +1086,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           variant="ghost"
           size="icon"
           data-testid="chat-attach-btn"
-          className="flex-shrink-0 h-9 w-9"
+          className="h-11 w-11 flex-shrink-0"
           disabled={isDisabled}
           onClick={handleAttachClick}
           title={`Joindre un fichier (${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'}O)`}
@@ -1087,7 +1151,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <Button
             variant="primary"
             size="icon"
-            className="flex-shrink-0 h-9 w-9 bg-error hover:bg-error/80"
+            className="h-11 w-11 flex-shrink-0 bg-error-fill text-error-ink hover:bg-error-fill/80"
             onClick={stopStreaming}
             title="Arrêter la réponse"
             aria-label="Arrêter la réponse"
@@ -1099,9 +1163,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <Button
             variant="ghost"
             size="icon"
-            className="flex-shrink-0 h-9 w-9 text-accent-cyan hover:bg-accent-cyan/10"
+            className="h-11 w-11 flex-shrink-0 text-accent hover:bg-accent-tint"
             onClick={handleDeepResearch}
-            disabled={isDisabled}
+            disabled={isDisabled || attachedFiles.some((file) => file.indexStatus !== 'ready')}
             title="Recherche approfondie (multi-sources)"
             aria-label="Lancer une recherche approfondie"
           >
@@ -1112,9 +1176,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           variant="primary"
           size="icon"
           data-testid="chat-send-btn"
-          className="flex-shrink-0 h-9 w-9"
+          className="h-11 w-11 flex-shrink-0"
           onClick={sendMessage}
-          disabled={isDisabled || !input.trim()}
+          disabled={isDisabled || !input.trim() || attachedFiles.some((file) => file.indexStatus !== 'ready')}
           title={isStreaming ? 'Envoyer en file d\'attente' : 'Envoyer (↵)'}
           aria-label={isStreaming ? 'Mettre le message en file d’attente' : 'Envoyer le message'}
         >
@@ -1127,6 +1191,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         <div role="alert" className="mt-2 flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 p-2">
           <p className="flex-1 text-xs text-error">{voiceError}</p>
           <button type="button" onClick={() => setVoiceError(null)} aria-label="Fermer l’erreur de dictée" className="text-error"><X className="h-3.5 w-3.5" /></button>
+        </div>
+      )}
+
+      {draftError && (
+        <div role="alert" className="mt-2 flex items-center gap-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-2 text-xs text-error">
+          <p className="min-w-0 flex-1">{draftError}</p>
+          <button type="button" onClick={retrySave} className="min-h-11 rounded-[7px] border border-error px-2 font-semibold">Réessayer</button>
         </div>
       )}
 

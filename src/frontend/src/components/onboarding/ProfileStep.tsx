@@ -234,13 +234,13 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
-            <AlertCircle className="w-4 h-4 text-red-400" />
-            <span className="text-sm text-red-400">{error}</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg" role="alert">
+            <AlertCircle className="w-4 h-4 text-error" />
+            <span className="text-sm text-error">{error}</span>
           </div>
         )}
         {saveState === 'success' && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg" role="status">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg" role="status">
             <span className="text-sm text-success">Profil enregistré. L’onboarding ne se relancera pas au prochain démarrage.</span>
           </div>
         )}

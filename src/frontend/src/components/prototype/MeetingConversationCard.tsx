@@ -99,7 +99,7 @@ export function MeetingAgendaCard({
           </span>
           <div>
             <h2 id="meeting-agenda-title" className="text-sm font-semibold text-text">Prochains rendez-vous</h2>
-            <p className="text-[11px] text-text-muted">
+            <p className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.events.length} événement${resource.data.events.length > 1 ? 's' : ''} sur 90 jours`
                 : 'Lecture des calendriers disponibles'}
@@ -107,11 +107,11 @@ export function MeetingAgendaCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-2.5 py-1.5 text-[11px] font-semibold text-white">
+          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-2.5 py-1.5 text-xs font-semibold text-white">
             <Plus className="h-3.5 w-3.5" />
             Nouvel événement
           </button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text hover:bg-surface-2">
+          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2">
             Agenda complet
           </button>
         </div>
@@ -149,7 +149,7 @@ export function MeetingAgendaCard({
                 <strong className="block truncate text-sm text-text">{event.summary || 'Événement sans titre'}</strong>
                 <span className="mt-0.5 block truncate text-xs text-text-muted">{formatEventDate(event)}{event.location ? ` · ${event.location}` : ''}</span>
               </span>
-              {event.attendees && event.attendees.length > 0 && <span className="shrink-0 text-[10px] font-semibold text-text-muted">{event.attendees.length} participant{event.attendees.length > 1 ? 's' : ''}</span>}
+              {event.attendees && event.attendees.length > 0 && <span className="shrink-0 text-xs font-semibold text-text-muted">{event.attendees.length} participant{event.attendees.length > 1 ? 's' : ''}</span>}
               <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
             </button>
           ))}
@@ -157,7 +157,7 @@ export function MeetingAgendaCard({
       )}
 
       {resource.status === 'ready' && resource.data.unavailableSources.length > 0 && (
-        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-[10px] text-warning">
+        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-xs text-warning">
           Source{resource.data.unavailableSources.length > 1 ? 's' : ''} indisponible{resource.data.unavailableSources.length > 1 ? 's' : ''} : {resource.data.unavailableSources.join(', ')}.
         </div>
       )}
@@ -307,14 +307,14 @@ function EventPreparation({
             <h3 className="text-lg font-bold text-text">{event.summary || 'Événement sans titre'}</h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Clock3 className="h-3.5 w-3.5" />{formatEventDate(event)}</p>
           </div>
-          <span className="rounded-full bg-[var(--k3bg)] px-2.5 py-1 text-[10px] font-semibold text-[var(--k3)]">{event.all_day ? 'Journée entière' : 'Rendez-vous'}</span>
+          <span className="rounded-full bg-[var(--k3bg)] px-2.5 py-1 text-xs font-semibold text-[var(--k3)]">{event.all_day ? 'Journée entière' : 'Rendez-vous'}</span>
         </div>
         {event.location && <p className="mt-3 flex items-center gap-2 rounded-[9px] bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-[var(--k3)]" />{event.location}</p>}
         {event.description && <div className="mt-3 whitespace-pre-wrap rounded-[9px] bg-surface-2 px-3 py-3 text-xs leading-5 text-text">{event.description}</div>}
       </section>
 
       <section>
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">Participants et contacts reliés</div>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Participants et contacts reliés</div>
         {event.attendees && event.attendees.length > 0 ? (
           <div className="space-y-2">
             {event.attendees.map((attendee) => {
@@ -322,7 +322,7 @@ function EventPreparation({
               return (
                 <div key={attendee} className="rounded-[11px] border border-border bg-surface p-3">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-[11px] font-bold text-accent">{contact ? contactInitials(contact) : <Users className="h-4 w-4" />}</span>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-xs font-bold text-accent">{contact ? contactInitials(contact) : <Users className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{contact ? contactDisplayName(contact) : attendee}</strong><span className="block truncate text-xs text-text-muted">{contact ? [contact.company, contact.stage, contact.email].filter(Boolean).join(' · ') : 'Pas de correspondance CRM exacte'}</span></div>
                   </div>
                   {contact?.notes && <p className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-xs leading-5 text-text-muted">{contact.notes}</p>}
@@ -334,7 +334,7 @@ function EventPreparation({
       </section>
 
       <section>
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">Points à vérifier</div>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Points à vérifier</div>
         <div className="space-y-2">
           {(checks.length > 0 ? checks : ['L’événement contient une date, un contexte et au moins un participant.']).map((item) => (
             <div key={item} className="flex gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2.5 text-xs leading-5 text-text"><CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${checks.length ? 'text-warning' : 'text-accent'}`} />{item}</div>
@@ -361,8 +361,8 @@ function EventPreparation({
       )}
 
       <section>
-        <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">Historique CRM disponible</div>
-        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => <div key={activity.id} className="rounded-[10px] border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{activity.title}</strong><span className="mt-0.5 block text-[10px] text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {activity.type}</span>{activity.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{activity.description}</p>}</div>)}</div> : <p className="rounded-[10px] border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Historique CRM disponible</div>
+        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => <div key={activity.id} className="rounded-[10px] border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{activity.title}</strong><span className="mt-0.5 block text-xs text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {activity.type}</span>{activity.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{activity.description}</p>}</div>)}</div> : <p className="rounded-[10px] border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
       </section>
 
       {context.unavailableSources.length > 0 && <div className="rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Source indisponible : {context.unavailableSources.join(', ')}.</div>}
@@ -395,7 +395,7 @@ export function MeetingWorkspaceCanvas({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted"><Calendar className="h-3.5 w-3.5" />Agenda et CRM</div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Calendar className="h-3.5 w-3.5" />Agenda et CRM</div>
         <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">{target === 'new-event' ? 'Nouvel événement' : 'Préparation du rendez-vous'}</h2>
         <p className="mt-1 text-sm text-text-muted">Événement réel, contexte local vérifiable et actions confirmées.</p>
       </div>

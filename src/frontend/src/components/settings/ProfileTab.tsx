@@ -175,13 +175,13 @@ export function ProfileTab({
             <div className="flex items-center justify-between px-5 py-3 border-t border-border/50">
               <div className="flex items-center gap-2">
                 {mdError && (
-                  <span className="text-sm text-red-400 flex items-center gap-1">
+                  <span className="text-sm text-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {mdError}
                   </span>
                 )}
                 {mdSaved && (
-                  <span className="text-sm text-green-400 flex items-center gap-1">
+                  <span className="text-sm text-success flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     Sauvegardé
                   </span>
@@ -212,12 +212,12 @@ export function ProfileTab({
 
       {/* Statut du profil */}
       {profile ? (
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <Check className="w-4 h-4 text-green-400" />
-          <span className="text-sm text-green-400">Profil configuré : {profile.display_name}</span>
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+          <Check className="w-4 h-4 text-success" />
+          <span className="text-sm text-success">Profil configuré : {profile.display_name}</span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
           <AlertCircle className="w-4 h-4 text-warning" />
           <span className="text-sm text-warning">Profil non configuré - Configure ton identité</span>
         </div>
@@ -399,7 +399,7 @@ export function ProfileTab({
 
       {/* Erreur */}
       {error && (
-        <p className="text-sm text-red-400 flex items-center gap-1">
+        <p className="text-sm text-error flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           {error}
         </p>
@@ -407,7 +407,7 @@ export function ProfileTab({
 
       {/* Succès */}
       {saved && (
-        <p className="text-sm text-green-400 flex items-center gap-1">
+        <p className="text-sm text-success flex items-center gap-1">
           <Check className="w-3 h-3" />
           Profil enregistré
         </p>

@@ -16,7 +16,9 @@
   --color-border: #E2E8F3;
 
   --color-text: #101C36;
-  --color-text-muted: #5B6A82;
+  /* 5.81:1 sur #F3F6FC : marge AA pour le texte secondaire, y compris
+     après variation de rendu et d'antialiasing. */
+  --color-text-muted: #526178;
 
   /* Alias de compatibilité (historiques, ~188 usages) : background = fond appli, text-primary = texte principal.
      Mêmes valeurs que bg/text, déclinés dans chaque thème ci-dessous. */
@@ -41,6 +43,14 @@
   --color-warning: #A16207;
   --color-error: #B91C1C;
   --color-info: #1D4ED8;
+  --color-success-fill: #047857;
+  --color-success-ink: #FFFFFF;
+  --color-warning-fill: #A16207;
+  --color-warning-ink: #FFFFFF;
+  --color-error-fill: #A61B1B;
+  --color-error-ink: #FFFFFF;
+  --color-info-fill: #1D4ED8;
+  --color-info-ink: #FFFFFF;
 
   /* Typography */
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -81,6 +91,7 @@
   --color-success-tint: #E7F7EF;
   --color-warning-tint: #FFF8E8;
   --color-error-tint: #FFF1F1;
+  --color-info-tint: #EAF1FF;
 }
 
 /* ============================================================
@@ -112,6 +123,14 @@
   --color-warning: #F59E0B;
   --color-error: #EF4444;
   --color-info: #60A5FA;
+  --color-success-fill: #34D399;
+  --color-success-ink: #06121F;
+  --color-warning-fill: #FBBF24;
+  --color-warning-ink: #06121F;
+  --color-error-fill: #F87171;
+  --color-error-ink: #06121F;
+  --color-info-fill: #60A5FA;
+  --color-info-ink: #06121F;
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
@@ -131,6 +150,7 @@
   --color-success-tint: rgba(16, 185, 129, 0.13);
   --color-warning-tint: rgba(245, 158, 11, 0.13);
   --color-error-tint: rgba(239, 68, 68, 0.13);
+  --color-info-tint: rgba(96, 165, 250, 0.13);
 
   /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
   --btn-ink: #E6EDF7;
@@ -439,6 +459,18 @@ html[data-reduce-motion="true"] *::after {
   --color-warning: #FFFF00;
   --color-error: #FF0000;
   --color-info: #00BFFF;
+  --color-success-fill: #00FF00;
+  --color-success-ink: #000000;
+  --color-warning-fill: #FFFF00;
+  --color-warning-ink: #000000;
+  --color-error-fill: #FF0000;
+  --color-error-ink: #000000;
+  --color-info-fill: #00BFFF;
+  --color-info-ink: #000000;
+  --color-success-tint: #001F00;
+  --color-warning-tint: #242400;
+  --color-error-tint: #260000;
+  --color-info-tint: #001D26;
 
   --glow: none;
   --glass-bg: rgba(0, 0, 0, 0.95);

@@ -169,7 +169,7 @@ export function VariablesSection() {
                 <code className="text-xs text-accent-cyan shrink-0">
                   {'{'}{variable.name}{'}'}
                 </code>
-                <span className="text-[10px] uppercase text-text-muted shrink-0">
+                <span className="text-xs uppercase text-text-muted shrink-0">
                   {variable.kind === 'list' ? 'liste' : 'texte'}
                 </span>
                 {editing === variable.name ? (

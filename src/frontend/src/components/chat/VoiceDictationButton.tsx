@@ -71,7 +71,7 @@ export function VoiceDictationButton({
                 {[2, 4, 3, 5, 2].map((height, index) => (
                   <span key={`${height}-${index}`} className="w-1 animate-pulse rounded-full bg-accent-cyan" style={{ height: `${height * 2}px` }} />
                 ))}
-                <span className="ml-1 text-[10px] text-text-muted">Aperçu audio en direct</span>
+                <span className="ml-1 text-xs text-text-muted">Aperçu audio en direct</span>
               </div>
             </div>
           ) : (
@@ -87,8 +87,8 @@ export function VoiceDictationButton({
       size="icon"
       data-testid={testId}
       className={cn(
-        'flex-shrink-0 h-9 w-9 transition-all',
-        isRecording && 'bg-error hover:bg-error/90 animate-pulse',
+        'h-11 w-11 flex-shrink-0 transition-all',
+        isRecording && 'bg-error-fill text-error-ink hover:bg-error-fill/90 animate-pulse',
         className,
       )}
       disabled={disabled || isProcessing || !pluginReady}
