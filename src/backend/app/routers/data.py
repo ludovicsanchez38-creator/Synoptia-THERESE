@@ -48,8 +48,9 @@ from app.services.audit import (
     AuditService,
     log_activity,
 )
+from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
 from app.services.maintenance import maintenance_mode
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -824,6 +825,7 @@ def _safe_extractall(tar, dest) -> None:
 @router.post("/backup")
 async def create_backup(
     session: AsyncSession = Depends(get_session),
+    password: str | None = Body(default=None, embed=True),
 ):
     """
     Create a complete backup of all data (US-011 / US-BAK-03).
@@ -831,12 +833,29 @@ async def create_backup(
     US-011 : sauvegarde TOUT (DB + Qdrant + images + mcp_servers.json) dans une
     archive .tar.gz, pas seulement therese.db. Sans ça, un restore perdait la
     mémoire vectorielle, les images et la config MCP.
+
+    US-003 : si une passphrase est fournie, l'archive complète est chiffrée
+    (.tar.gz.enc) - l'archive contient la clé de chiffrement pour rester
+    restaurable après perte de la machine (US-014), donc sans chiffrement elle
+    équivaut à une base en clair. La passphrase doit être non vide.
     """
     backup_dir = _backups_dir()
 
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_name = f"therese_backup_{timestamp}"
     archive_path = backup_dir / f"{backup_name}.tar.gz"
+
+    # US-003 : la passphrase est requise. L'archive embarque la clé de
+    # chiffrement (pour rester restaurable après perte de la machine, US-014),
+    # donc une sauvegarde en clair équivaudrait à une base en clair : on refuse.
+    if password is None or not password.strip():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Une passphrase est requise pour chiffrer la sauvegarde. "
+                "Conserve-la précieusement : elle est indispensable pour restaurer."
+            ),
+        )
 
     try:
         included = _create_archive(archive_path)
@@ -847,12 +866,28 @@ async def create_backup(
             detail=f"Sauvegarde impossible à garantir : {exc}",
         ) from exc
 
+    enc_path = backup_dir / f"{backup_name}.tar.gz.enc"
+    try:
+        encrypt_backup_archive(archive_path, enc_path, password)
+    except Exception as exc:
+        archive_path.unlink(missing_ok=True)
+        enc_path.unlink(missing_ok=True)
+        logger.exception("Chiffrement de la sauvegarde échoué")
+        raise HTTPException(
+            status_code=500, detail=f"Chiffrement de la sauvegarde impossible : {exc}"
+        ) from exc
+    # L'archive en clair ne doit jamais subsister à côté de la version chiffrée.
+    archive_path.unlink(missing_ok=True)
+    archive_path = enc_path
+    encrypted = True
+
     metadata = {
         "created_at": datetime.now(UTC).isoformat(),
         "app_version": settings.app_version,
         "archive_path": str(archive_path),
         "backup_name": backup_name,
         "included": included,
+        "encrypted": encrypted,
     }
     metadata_path = backup_dir / f"{backup_name}.json"
     with open(metadata_path, "w") as f:
@@ -872,6 +907,7 @@ async def create_backup(
         "path": str(archive_path),
         "created_at": metadata["created_at"],
         "included": included,
+        "encrypted": encrypted,
     }
 
 
@@ -913,11 +949,16 @@ async def list_backups():
 async def restore_backup(
     backup_name: str,
     confirm: bool = False,
+    password: str | None = Body(default=None, embed=True),
 ):
     """
     Restore from a backup (US-BAK-04).
 
     ATTENTION: This will replace current data.
+
+    US-003 : une sauvegarde chiffrée (.tar.gz.enc) exige la passphrase, déchiffrée
+    vers une archive temporaire AVANT toute étape destructive (un mauvais mot de
+    passe échoue proprement sans toucher aux données courantes).
     """
     import shutil
     from pathlib import Path
@@ -946,11 +987,30 @@ async def restore_backup(
         raise HTTPException(status_code=403, detail="Chemin de backup non autorisé")
 
     archive = backup_dir / f"{backup_name}.tar.gz"
+    encrypted_archive = backup_dir / f"{backup_name}.tar.gz.enc"
     legacy_db = backup_dir / f"{backup_name}.db"  # compat ascendante
     metadata_file = backup_dir / f"{backup_name}.json"
 
-    if not archive.exists() and not legacy_db.exists():
+    if not archive.exists() and not encrypted_archive.exists() and not legacy_db.exists():
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouvé")
+
+    # US-003 : sauvegarde chiffrée -> on déchiffre vers une archive temporaire
+    # AVANT toute étape destructive. Passphrase absente/incorrecte = échec propre,
+    # aucune donnée courante touchée. Le temp clair est supprimé dans le finally.
+    decrypted_temp: Path | None = None
+    if encrypted_archive.exists() and not archive.exists():
+        if not password:
+            raise HTTPException(
+                status_code=400,
+                detail="Cette sauvegarde est chiffrée : fournis la passphrase pour la restaurer.",
+            )
+        decrypted_temp = backup_dir / f".{backup_name}.restore.tar.gz"
+        try:
+            decrypt_backup_archive(encrypted_archive, decrypted_temp, password)
+        except ValueError as exc:
+            decrypted_temp.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        archive = decrypted_temp
 
     # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
     # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
@@ -979,6 +1039,8 @@ async def restore_backup(
     try:
         await maintenance_mode.begin()
     except RuntimeError as exc:
+        if decrypted_temp is not None:
+            decrypted_temp.unlink(missing_ok=True)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     try:
@@ -1022,6 +1084,9 @@ async def restore_backup(
             ) from e
     finally:
         maintenance_mode.end()
+        # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
+        if decrypted_temp is not None:
+            decrypted_temp.unlink(missing_ok=True)
 
     # Load metadata if exists
     metadata = {}

@@ -55,6 +55,9 @@ export function PrivacyTab() {
   const [dataMessage, setDataMessage] = useState<string | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
   const [restoreConfirmation, setRestoreConfirmation] = useState<string | null>(null);
+  // US-003 : passphrase de chiffrement de la sauvegarde (requise) et de restauration.
+  const [backupPassword, setBackupPassword] = useState('');
+  const [restorePassword, setRestorePassword] = useState('');
   const [backupDeleteConfirmation, setBackupDeleteConfirmation] = useState<string | null>(null);
   const [deleteAllArmed, setDeleteAllArmed] = useState(false);
   const [deletePhrase, setDeletePhrase] = useState('');
@@ -96,17 +99,24 @@ export function PrivacyTab() {
   }
 
   async function handleCreateBackup() {
+    // US-003 : la sauvegarde est chiffrée, la passphrase est obligatoire.
+    if (!backupPassword.trim()) {
+      setDataError('Choisis une passphrase pour chiffrer la sauvegarde. Conserve-la : elle est indispensable pour restaurer.');
+      return;
+    }
     await runDataOperation('backup', async () => {
-      await createBackup();
+      await createBackup(backupPassword);
+      setBackupPassword('');
       await refreshBackups();
-      setDataMessage('Sauvegarde complète créée localement.');
+      setDataMessage('Sauvegarde complète chiffrée créée localement.');
     });
   }
 
   async function handleRestoreBackup(backupName: string) {
     await runDataOperation(`restore:${backupName}`, async () => {
-      const result = await restoreBackup(backupName);
+      const result = await restoreBackup(backupName, restorePassword || undefined);
       setRestoreConfirmation(null);
+      setRestorePassword('');
       setDataMessage(result.note || 'Sauvegarde restaurée. Redémarre Thérèse.');
       await refreshBackups();
     });
@@ -219,6 +229,15 @@ export function PrivacyTab() {
               {dataOperation === 'export' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
               Exporter toutes mes données
             </Button>
+            <input
+              type="password"
+              value={backupPassword}
+              onChange={(e) => setBackupPassword(e.target.value)}
+              placeholder="Passphrase de chiffrement"
+              aria-label="Passphrase de chiffrement de la sauvegarde"
+              autoComplete="new-password"
+              className="rounded-lg border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+            />
             <Button
               variant="primary"
               size="sm"
@@ -229,6 +248,9 @@ export function PrivacyTab() {
               Créer une sauvegarde
             </Button>
           </div>
+          <p className="mt-1 text-[11px] text-text-muted">
+            La sauvegarde est chiffrée par cette passphrase. Conserve-la : sans elle, la restauration est impossible.
+          </p>
         </div>
 
         {dataMessage && <div role="status" className="mb-3 rounded-lg border border-success/40 bg-[var(--color-success-tint)] px-3 py-2 text-xs text-success">{dataMessage}</div>}
@@ -272,8 +294,17 @@ export function PrivacyTab() {
                     {restoreConfirmation === backup.backup_name && (
                       <div className="mt-3 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
                         Cette restauration remplace l’état courant. Une sauvegarde de sécurité sera créée automatiquement.
+                        <input
+                          type="password"
+                          value={restorePassword}
+                          onChange={(e) => setRestorePassword(e.target.value)}
+                          placeholder="Passphrase de la sauvegarde"
+                          aria-label="Passphrase de la sauvegarde à restaurer"
+                          autoComplete="off"
+                          className="mt-2 w-full rounded-lg border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+                        />
                         <div className="mt-2 flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => setRestoreConfirmation(null)}>Annuler</Button>
+                          <Button variant="ghost" size="sm" onClick={() => { setRestoreConfirmation(null); setRestorePassword(''); }}>Annuler</Button>
                           <Button variant="danger" size="sm" onClick={() => void handleRestoreBackup(backup.backup_name)} disabled={dataOperation !== null}>Confirmer la restauration</Button>
                         </div>
                       </div>

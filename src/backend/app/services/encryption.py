@@ -454,3 +454,61 @@ def decrypt_value(ciphertext: str) -> str:
 def is_value_encrypted(value: str) -> bool:
     """Helper pour verifier si une valeur est chiffree."""
     return get_encryption_service().is_encrypted(value)
+
+
+# --- US-003 : chiffrement des archives de sauvegarde par passphrase ---
+# L'archive .tar.gz contient la cle de chiffrement (.encryption_key) pour rester
+# restaurable apres perte de la machine (le Keychain part avec l'ancienne
+# machine, cf US-014) : sans chiffrement, l'archive equivaut donc a une base en
+# clair. On chiffre TOUTE l'archive avec une cle derivee d'une passphrase
+# utilisateur (PBKDF2-HMAC-SHA256, 480k iterations) + un sel FRAIS par sauvegarde
+# stocke en tete du fichier (le sel ne peut pas vivre dans l'archive, sinon elle
+# serait impossible a dechiffrer sur une nouvelle machine).
+
+_BACKUP_MAGIC = b"THBK1"
+_BACKUP_SALT_LEN = 16
+_BACKUP_KDF_ITERATIONS = 480000
+
+
+def _derive_backup_key(password: str, salt: bytes) -> bytes:
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=_BACKUP_KDF_ITERATIONS,
+    )
+    return base64.urlsafe_b64encode(kdf.derive(password.encode("utf-8")))
+
+
+def encrypt_backup_archive(plain_path, enc_path, password: str) -> None:
+    """Chiffre une archive .tar.gz en .tar.gz.enc avec une passphrase (0600)."""
+    from pathlib import Path
+
+    if not password:
+        raise ValueError("Une passphrase est requise pour chiffrer la sauvegarde")
+    salt = os.urandom(_BACKUP_SALT_LEN)
+    token = Fernet(_derive_backup_key(password, salt)).encrypt(Path(plain_path).read_bytes())
+    fd = os.open(enc_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+    try:
+        os.write(fd, _BACKUP_MAGIC + salt + token)
+    finally:
+        os.close(fd)
+
+
+def decrypt_backup_archive(enc_path, plain_path, password: str) -> None:
+    """Dechiffre .tar.gz.enc -> .tar.gz. Leve ValueError si passphrase incorrecte
+    ou archive corrompue."""
+    from pathlib import Path
+
+    if not password:
+        raise ValueError("Passphrase requise pour restaurer une sauvegarde chiffree")
+    raw = Path(enc_path).read_bytes()
+    if raw[: len(_BACKUP_MAGIC)] != _BACKUP_MAGIC:
+        raise ValueError("Format d'archive chiffree invalide")
+    salt = raw[len(_BACKUP_MAGIC) : len(_BACKUP_MAGIC) + _BACKUP_SALT_LEN]
+    token = raw[len(_BACKUP_MAGIC) + _BACKUP_SALT_LEN :]
+    try:
+        data = Fernet(_derive_backup_key(password, salt)).decrypt(token)
+    except InvalidToken as exc:
+        raise ValueError("Passphrase incorrecte ou archive corrompue") from exc
+    Path(plain_path).write_bytes(data)
