@@ -5,7 +5,7 @@
  * Choix du modèle par agent, chemin source, statut.
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Zap, RefreshCw, CheckCircle, XCircle, AlertCircle, Headphones, Wrench, FolderOpen, Plus } from 'lucide-react';
 import { getAgentStatus, getAgentConfig, updateAgentConfig } from '../../services/api/agents';
 import type { AgentStatusResponse, AgentConfigResponse } from '../../services/api/agents';
@@ -149,26 +149,46 @@ export function AgentsTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const setSourcePath = useAtelierStore((s) => s.setSourcePath);
 
-  useEffect(() => {
-    Promise.all([
-      getAgentStatus().catch(() => null),
-      getAgentConfig().catch(() => null),
-    ]).then(([s, c]) => {
-      setStatus(s);
-      setConfig(c);
-      if (c?.source_path) setSourcePathInput(c.source_path);
-      if (c?.katia_model) setThereseModel(c.katia_model);
-      if (c?.zezette_model) setZezetteModel(c.zezette_model);
-      if (c?.available_models) setModels(c.available_models);
-      setLoading(false);
-    });
+  const loadAgents = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    const [statusResult, configResult] = await Promise.allSettled([
+      getAgentStatus(),
+      getAgentConfig(),
+    ]);
+    if (statusResult.status === 'fulfilled') setStatus(statusResult.value);
+    if (configResult.status === 'fulfilled') {
+      const config = configResult.value;
+      setConfig(config);
+      if (config.source_path) setSourcePathInput(config.source_path);
+      if (config.katia_model) setThereseModel(config.katia_model);
+      if (config.zezette_model) setZezetteModel(config.zezette_model);
+      if (config.available_models) setModels(config.available_models);
+    }
+    const unavailable = [
+      statusResult.status === 'rejected' ? 'statut' : null,
+      configResult.status === 'rejected' ? 'configuration' : null,
+    ].filter((label): label is string => Boolean(label));
+    if (unavailable.length > 0) {
+      setLoadError(`Agents : ${unavailable.join(' et ')} indisponible${unavailable.length > 1 ? 's' : ''}. Les valeurs visibles sont des valeurs de secours.`);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void loadAgents();
+  }, [loadAgents]);
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
+    setSaved(false);
     try {
       const updated = await updateAgentConfig({
         source_path: sourcePath.trim() || undefined,
@@ -179,10 +199,14 @@ export function AgentsTab() {
       if (sourcePath.trim()) setSourcePath(sourcePath.trim());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-      const s = await getAgentStatus().catch(() => null);
-      setStatus(s);
-    } catch {
-      // silent
+      try {
+        setStatus(await getAgentStatus());
+        setStatusError(null);
+      } catch {
+        setStatusError('Configuration enregistrée, mais son statut n’a pas pu être actualisé.');
+      }
+    } catch (reason) {
+      setSaveError(reason instanceof Error ? reason.message : 'La configuration des agents n’a pas pu être enregistrée.');
     } finally {
       setSaving(false);
     }
@@ -190,8 +214,12 @@ export function AgentsTab() {
 
   const handleRefreshStatus = async () => {
     setLoading(true);
-    const s = await getAgentStatus().catch(() => null);
-    setStatus(s);
+    setStatusError(null);
+    try {
+      setStatus(await getAgentStatus());
+    } catch (reason) {
+      setStatusError(reason instanceof Error ? reason.message : 'Le statut des agents est indisponible.');
+    }
     setLoading(false);
   };
 
@@ -205,6 +233,12 @@ export function AgentsTab() {
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div role="alert" className="rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+          <p>{loadError}</p>
+          <button type="button" onClick={() => void loadAgents()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer</button>
+        </div>
+      )}
       {/* Header */}
       <div>
         <h3 className="text-base font-semibold text-text flex items-center gap-2">
@@ -233,7 +267,7 @@ export function AgentsTab() {
           <StatusRow label="Git" ok={status?.git_available} />
           <StatusRow label="Dépôt détecté" ok={status?.repo_detected} />
           {status?.repo_error && !status?.repo_detected && (
-            <div className="mt-1 ml-1 text-xs text-red-400/80">
+            <div className="mt-1 ml-1 text-xs text-error">
               {status.repo_error}
             </div>
           )}
@@ -246,6 +280,12 @@ export function AgentsTab() {
             </div>
           )}
         </div>
+        {statusError && (
+          <div role="alert" className="mt-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
+            <p>{statusError}</p>
+            <button type="button" onClick={() => void handleRefreshStatus()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+          </div>
+        )}
       </div>
 
       {/* Choix du modèle par agent */}
@@ -257,7 +297,7 @@ export function AgentsTab() {
           icon={<Headphones size={12} />}
           accentClass="text-purple-400"
           value={katiaModel}
-          onChange={setThereseModel}
+          onChange={(value) => { setThereseModel(value); setSaved(false); }}
           models={models}
           placeholder="anthropic/claude-opus-4-8"
         />
@@ -265,9 +305,9 @@ export function AgentsTab() {
         <AgentModelSelect
           label="Zézette (Dev)"
           icon={<Wrench size={12} />}
-          accentClass="text-amber-400"
+          accentClass="text-warning"
           value={zezetteModel}
-          onChange={setZezetteModel}
+          onChange={(value) => { setZezetteModel(value); setSaved(false); }}
           models={models}
           placeholder="anthropic/claude-opus-4-8"
         />
@@ -286,7 +326,7 @@ export function AgentsTab() {
             type="text"
             aria-label="Chemin du code source"
             value={sourcePath}
-            onChange={(e) => setSourcePathInput(e.target.value)}
+            onChange={(e) => { setSourcePathInput(e.target.value); setSaved(false); }}
             placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE"
             className="flex-1 rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
           />
@@ -301,6 +341,7 @@ export function AgentsTab() {
                 });
                 if (selected && typeof selected === 'string') {
                   setSourcePathInput(selected);
+                  setSaved(false);
                 }
               } catch {
                 // Annulation utilisateur
@@ -316,12 +357,19 @@ export function AgentsTab() {
       </div>
 
       {/* Bouton sauver global */}
+      {saveError && (
+        <div role="alert" className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+          <p>{saveError}</p>
+          <button type="button" onClick={() => void handleSave()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+        </div>
+      )}
+      {saved && <p role="status" className="rounded-lg border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success">Configuration enregistrée.</p>}
       <button
         onClick={handleSave}
         disabled={saving}
         className="w-full rounded-lg bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
       >
-        {saving ? 'Sauvegarde...' : saved ? 'Sauvegardé' : 'Sauvegarder la configuration'}
+        {saving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
       </button>
     </div>
   );
@@ -332,11 +380,11 @@ function StatusRow({ label, ok }: { label: string; ok?: boolean }) {
     <div className="flex items-center justify-between">
       <span className="text-text-muted">{label}</span>
       {ok === undefined ? (
-        <AlertCircle size={14} className="text-text-muted/50" />
+        <AlertCircle size={14} className="text-text-muted" aria-label="Indisponible" />
       ) : ok ? (
-        <CheckCircle size={14} className="text-green-400" />
+        <CheckCircle size={14} className="text-success" />
       ) : (
-        <XCircle size={14} className="text-red-400" />
+        <XCircle size={14} className="text-error" />
       )}
     </div>
   );

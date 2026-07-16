@@ -4899,13 +4899,13 @@ class TestBUGTrafficLightsMacOnWindows:
             "src/frontend/src/components/onboarding/OnboardingWizard.tsx"
         ).read_text(encoding="utf-8")
         # Le bloc traffic lights ne doit PAS apparaître hors du guard isMac
-        # Vérifier que bg-red-500 + bg-yellow-500 sont dans un contexte isMac
+        # Vérifier que le contrôle d'erreur sémantique est dans un contexte isMac
         idx_guard = src.find("{isMac && (")
-        idx_red = src.find("bg-red-500 hover:bg-red-600")
+        idx_error = src.find("bg-error-fill")
         assert idx_guard != -1, "Guard isMac manquant"
-        assert idx_red != -1, "Bouton rouge manquant"
-        assert idx_red > idx_guard, (
-            "Le bouton rouge (traffic light) apparaît avant le guard isMac"
+        assert idx_error != -1, "Contrôle de fermeture sémantique manquant"
+        assert idx_error > idx_guard, (
+            "Le contrôle de fermeture apparaît avant le guard isMac"
         )
 
 

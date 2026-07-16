@@ -62,9 +62,9 @@ const RISKS: RiskItem[] = [
 ];
 
 const severityColors = {
-  high: 'text-red-400 bg-red-500/10 border-red-500/30',
-  medium: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  low: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+  high: 'text-error bg-[var(--color-error-tint)] border-error/40',
+  medium: 'text-warning bg-[var(--color-warning-tint)] border-warning/40',
+  low: 'text-info bg-[var(--color-info-tint)] border-info/40',
 };
 
 const severityLabels = {
@@ -94,8 +94,8 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
     >
       {/* Header avec warning */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30">
-          <Shield className="w-8 h-8 text-amber-400" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--color-warning-tint)] border border-warning/40">
+          <Shield className="w-8 h-8 text-warning" />
         </div>
         <h2 className="text-2xl font-bold text-text">Sécurité et confidentialité</h2>
         <p className="text-text-muted max-w-md mx-auto">
@@ -105,11 +105,11 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       </div>
 
       {/* Alert banner */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-        <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--color-warning-tint)] border border-warning/40">
+        <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm">
-          <p className="text-amber-200 font-medium">Important</p>
-          <p className="text-amber-200/80 mt-1">
+          <p className="text-warning font-medium">Important</p>
+          <p className="text-warning mt-1">
             Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives.
             Commence avec le minimum de permissions nécessaires.
           </p>

@@ -375,7 +375,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                     </span>
                   )}
                   {provider.id === 'ollama' && !isAvailable && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
                       Non disponible
                     </span>
                   )}
@@ -383,7 +383,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                 <p className="text-xs text-text-muted mt-0.5">{provider.description}</p>
               </div>
               {provider.id !== 'ollama' && (
-                <div className={`shrink-0 ${providerHasKey ? 'text-green-400' : 'text-text-muted'}`}>
+                <div className={`shrink-0 ${providerHasKey ? 'text-success' : 'text-text-muted'}`}>
                   {providerHasKey ? <Check className="w-4 h-4" /> : <Key className="w-4 h-4" />}
                 </div>
               )}
@@ -396,9 +396,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       {needsApiKey && selectedProvider && (
         <div className="space-y-3 mb-6 pt-4 border-t border-border/30">
           {hasApiKey ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">Clé API configurée (chiffrée localement)</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+              <Check className="w-4 h-4 text-success" />
+              <span className="text-sm text-success">Clé API configurée (chiffrée localement)</span>
             </div>
           ) : (
             <>
@@ -419,7 +419,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                       }
                     }}
                     placeholder={currentProviderConfig?.keyPlaceholder || 'Clé API...'}
-                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/70 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                   />
                   <button
                     type="button"
@@ -457,7 +457,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           )}
 
           {saved && (
-            <div className="flex items-center gap-2 text-sm text-green-400">
+            <div className="flex items-center gap-2 text-sm text-success">
               <Check className="w-3 h-3" />
               Clé API enregistrée
             </div>
@@ -505,15 +505,15 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
-          <AlertCircle className="w-4 h-4 text-red-400" />
-          <span className="text-sm text-red-400">{error}</span>
+        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-[var(--color-error-tint)] border border-error/40 rounded-lg" role="alert">
+          <AlertCircle className="w-4 h-4 text-error" />
+          <span className="text-sm text-error">{error}</span>
         </div>
       )}
 
       {/* Warning if no API key configured */}
       {needsApiKey && !hasApiKey && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
           <span className="text-sm text-warning">
             Sans clé API, THÉRÈSE ne pourra pas fonctionner. Configure une clé ou utilise Ollama.

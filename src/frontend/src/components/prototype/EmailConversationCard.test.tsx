@@ -52,6 +52,7 @@ describe('EmailInboxCard', () => {
     );
 
     expect(screen.getByText('Camille Martin')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Non lu\. Camille Martin/ })).toBeInTheDocument();
     expect(screen.getByText('Prioritaire')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Préparation du rendez-vous'));
     expect(onOpenMessage).toHaveBeenCalledWith('message-1');
@@ -106,5 +107,54 @@ describe('EmailMessageCanvas', () => {
       html: false,
     }));
     expect(await screen.findByTestId('email-draft-saved')).toHaveTextContent('Aucun message n’a été envoyé');
+  });
+
+  it('confirme le remplacement IA, permet de l’annuler et invalide tout faux statut enregistré', async () => {
+    const onGenerateDraft = vi.fn().mockResolvedValue('Proposition IA');
+    const onSaveDraft = vi.fn().mockResolvedValue({ id: 'draft-2' });
+    render(
+      <EmailMessageCanvas
+        resource={{ status: 'ready', data: message(), error: null }}
+        onRetry={vi.fn()}
+        onGenerateDraft={onGenerateDraft}
+        onSaveDraft={onSaveDraft}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+
+    const body = await screen.findByLabelText('Corps du brouillon');
+    fireEvent.change(body, { target: { value: 'Mon texte manuel' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Générer une proposition' }));
+    expect(onGenerateDraft).not.toHaveBeenCalled();
+    expect(screen.getByText(/Remplacer le brouillon actuel/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remplacer' }));
+    await waitFor(() => expect(body).toHaveValue('Proposition IA'));
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler le remplacement IA' }));
+    expect(body).toHaveValue('Mon texte manuel');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme brouillon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    expect(await screen.findByTestId('email-draft-saved')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Objet du brouillon'), { target: { value: 'Objet modifié' } });
+    expect(screen.queryByTestId('email-draft-saved')).not.toBeInTheDocument();
+  });
+
+  it('lie l’erreur au premier champ fautif et le focalise', async () => {
+    render(
+      <EmailMessageCanvas
+        resource={{ status: 'ready', data: message(), error: null }}
+        onRetry={vi.fn()}
+        onGenerateDraft={vi.fn()}
+        onSaveDraft={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    const recipient = await screen.findByLabelText('Destinataire du brouillon');
+    fireEvent.change(recipient, { target: { value: 'invalide' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme brouillon' }));
+    await waitFor(() => expect(recipient).toHaveFocus());
+    expect(recipient).toHaveAttribute('aria-invalid', 'true');
+    expect(recipient).toHaveAttribute('aria-describedby', 'email-draft-error');
   });
 });

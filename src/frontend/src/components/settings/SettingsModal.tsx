@@ -46,6 +46,14 @@ const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: 
   { id: 'about', label: 'À propos', icon: Info },
 ];
 
+async function loadSetting<T>(label: string, request: Promise<T>, fallback: T) {
+  try {
+    return { value: await request, unavailable: null as string | null };
+  } catch {
+    return { value: fallback, unavailable: label };
+  }
+}
+
 export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
     () => requestedTab ?? resolveClassicSettingsTab(window.location.search) ?? 'profile',
@@ -54,6 +62,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadWarnings, setLoadWarnings] = useState<string[]>([]);
+  const [operationStatus, setOperationStatus] = useState<string | null>(null);
+  const [retryOperation, setRetryOperation] = useState<(() => void) | null>(null);
   const { isContributeur, setUXMode } = useUXMode();
   const visibleTabs = ALL_TABS.filter(
     (tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab,
@@ -141,30 +152,55 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   }, [isOpen]);
 
   async function refreshStats() {
+    setError(null);
+    setRetryOperation(null);
     try {
       const statsData = await api.getStats();
       setStats(statsData);
+      setOperationStatus('Statistiques actualisées.');
     } catch (err) {
-      console.error('Échec du rafraîchissement des stats:', err);
+      setError(err instanceof Error ? err.message : 'Impossible d’actualiser les statistiques.');
+      setRetryOperation(() => () => void refreshStats());
     }
   }
 
   async function loadSettings() {
     setLoading(true);
-    try {
-      const [keysResult, llmConfig, preferences, statsData, profileData, workingDirData, ollamaStatusData, systemResourcesData, groqKeyStatus, webSearchStatus] = await Promise.all([
-        api.getApiKeysWithCorrupted().catch((): api.ApiKeysResult => ({ keys: {} as Record<string, boolean>, corrupted: [] })),
-        api.getLLMConfig().catch(() => ({ provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] })),
-        api.getPreferences().catch(() => ({})),
-        api.getStats().catch(() => null),
-        api.getProfile().catch(() => null),
-        api.getWorkingDirectory().catch(() => ({ path: null, exists: false })),
-        api.getOllamaStatus().catch(() => null),
-        api.getSystemResources().catch(() => null),
-        api.hasGroqKey().catch(() => false),
-        api.getWebSearchStatus().catch(() => ({ enabled: true })),
-      ]);
+    setLoadWarnings([]);
+    const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
+      loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [] }),
+      loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] }),
+      loadSetting('préférences', api.getPreferences(), {}),
+      loadSetting('statistiques', api.getStats(), null),
+      loadSetting('profil', api.getProfile(), null),
+      loadSetting('dossier de travail', api.getWorkingDirectory(), { path: null, exists: false }),
+      loadSetting('statut Ollama', api.getOllamaStatus(), null),
+      loadSetting('ressources système', api.getSystemResources(), null),
+      loadSetting('clé Groq', api.hasGroqKey(), false),
+      loadSetting('recherche web', api.getWebSearchStatus(), {
+        enabled: true,
+        providers: { gemini: 'indisponible', others: 'indisponible' },
+        description: 'Valeur de secours',
+      }),
+    ]);
 
+    const unavailable = [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState]
+      .map((state) => state.unavailable)
+      .filter((label): label is string => Boolean(label));
+    setLoadWarnings(unavailable);
+
+    const keysResult = keysState.value;
+    const llmConfig = llmState.value;
+    const preferences = preferencesState.value;
+    const statsData = statsState.value;
+    const profileData = profileState.value;
+    const workingDirData = workingDirState.value;
+    const ollamaStatusData = ollamaState.value;
+    const systemResourcesData = resourcesState.value;
+    const groqKeyStatus = groqState.value;
+    const webSearchStatus = webSearchState.value;
+
+    try {
       const keys = keysResult.keys;
       setApiKeys(keys);
       setCorruptedKeys(keysResult.corrupted);
@@ -219,7 +255,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
         }
       }
     } catch (err) {
-      console.error('Échec du chargement des paramètres:', err);
+      setLoadWarnings((current) => [...new Set([...current, 'données de configuration'])]);
+      setError(err instanceof Error ? err.message : 'La configuration chargée est inutilisable.');
     } finally {
       setLoading(false);
     }
@@ -227,6 +264,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
   async function retestOllama() {
     setRetestingOllama(true);
+    setError(null);
+    setRetryOperation(null);
     try {
       const statusData = await api.getOllamaStatus();
       if (statusData) {
@@ -235,8 +274,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
           setOllamaModels(statusData.models.map((m: { name: string }) => m.name));
         }
       }
-    } catch {
-      // laisser l'état précédent
+      setOperationStatus('Statut Ollama actualisé.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Impossible d’actualiser le statut Ollama.');
+      setRetryOperation(() => () => void retestOllama());
     } finally {
       setRetestingOllama(false);
     }
@@ -352,17 +393,25 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   async function handleToggleWebSearch() {
     const newValue = !webSearchEnabled;
     setWebSearchLoading(true);
+    setError(null);
+    setOperationStatus('Enregistrement de la recherche web…');
+    setRetryOperation(null);
     try {
       await api.setWebSearchEnabled(newValue);
       setWebSearchEnabled(newValue);
+      setOperationStatus('Recherche web enregistrée.');
     } catch (err) {
-      console.error('Échec du changement recherche web:', err);
+      setOperationStatus(null);
+      setError(err instanceof Error ? err.message : 'La recherche web n’a pas pu être enregistrée.');
+      setRetryOperation(() => () => void handleToggleWebSearch());
     } finally {
       setWebSearchLoading(false);
     }
   }
 
   async function handleSelectProvider(provider: api.LLMProvider) {
+    const previousProvider = selectedProvider;
+    const previousModel = selectedModel;
     setSelectedProvider(provider);
 
     const providerConfig = PROVIDERS.find(p => p.id === provider);
@@ -374,32 +423,55 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
     if (defaultModel) {
       setSelectedModel(defaultModel);
+      setError(null);
+      setOperationStatus('Enregistrement du fournisseur IA…');
+      setRetryOperation(null);
       try {
         await api.setLLMConfig(provider, defaultModel);
         window.dispatchEvent(new Event('therese:llm-config-changed'));
+        setOperationStatus('Fournisseur IA enregistré.');
       } catch (err) {
-        console.error('Échec de la sauvegarde de la config LLM:', err);
+        setSelectedProvider(previousProvider);
+        setSelectedModel(previousModel);
+        setOperationStatus(null);
+        setError(err instanceof Error ? err.message : 'Le fournisseur IA n’a pas pu être enregistré.');
+        setRetryOperation(() => () => void handleSelectProvider(provider));
       }
     }
   }
 
   async function handleSelectModel(modelId: string) {
+    const previousModel = selectedModel;
     setSelectedModel(modelId);
+    setError(null);
+    setOperationStatus('Enregistrement du modèle IA…');
+    setRetryOperation(null);
     try {
       await api.setLLMConfig(selectedProvider, modelId);
       window.dispatchEvent(new Event('therese:llm-config-changed'));
+      setOperationStatus('Modèle IA enregistré.');
     } catch (err) {
-      console.error('Échec de la sauvegarde de la config LLM:', err);
+      setSelectedModel(previousModel);
+      setOperationStatus(null);
+      setError(err instanceof Error ? err.message : 'Le modèle IA n’a pas pu être enregistré.');
+      setRetryOperation(() => () => void handleSelectModel(modelId));
     }
   }
 
   async function handleToggleAutoExtract() {
     const newValue = !autoExtractEntities;
     setAutoExtractEntities(newValue);
+    setError(null);
+    setOperationStatus('Enregistrement de l’extraction automatique…');
+    setRetryOperation(null);
     try {
       await api.setPreference('auto_extract_entities', newValue, 'memory');
+      setOperationStatus('Extraction automatique enregistrée.');
     } catch (err) {
-      console.error('Échec de la sauvegarde de la préférence:', err);
+      setAutoExtractEntities(!newValue);
+      setOperationStatus(null);
+      setError(err instanceof Error ? err.message : 'La préférence n’a pas pu être enregistrée.');
+      setRetryOperation(() => () => void handleToggleAutoExtract());
     }
   }
 
@@ -487,11 +559,17 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       });
 
       if (selected && typeof selected === 'string') {
+        setError(null);
+        setOperationStatus('Enregistrement du dossier de travail…');
+        setRetryOperation(null);
         const result = await api.setWorkingDirectory(selected);
         setWorkingDir(result.path);
+        setOperationStatus('Dossier de travail enregistré.');
       }
     } catch (err) {
-      console.error('Échec de la sélection du dossier de travail:', err);
+      setOperationStatus(null);
+      setError(err instanceof Error ? err.message : 'Le dossier de travail n’a pas pu être enregistré.');
+      setRetryOperation(() => () => void handleSelectWorkingDir());
     }
   }
 
@@ -653,10 +731,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-surface border border-border rounded-xl shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 flex max-h-[calc(100vh-1rem)] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl sm:max-h-[85vh] ${Z_LAYER.MODAL}`}
           >
             {/* En-tête */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+            <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
               <h2 className="text-lg font-semibold text-text">Paramètres</h2>
               <Button variant="ghost" size="icon" onClick={onClose} data-testid="settings-close-btn" aria-label="Fermer les paramètres">
                 <X className="w-5 h-5" />
@@ -664,11 +742,11 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             </div>
 
             {/* Corps : sidebar + contenu */}
-            <div className="flex-1 flex overflow-hidden min-h-0">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
               {/* Sidebar navigation */}
-              <nav role="tablist" aria-label="Rubriques des paramètres" aria-orientation="vertical" className="w-44 shrink-0 border-r border-border/30 py-2 overflow-y-auto bg-background/30">
+              <nav role="tablist" aria-label="Rubriques des paramètres" className="flex w-full shrink-0 items-stretch gap-1 overflow-x-auto border-b border-border/30 bg-background/30 p-2 sm:block sm:w-44 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-2">
                 {/* Toggle Mode Contributeur */}
-                <div className="px-4 py-3 border-b border-border/30 mb-2">
+                <div className="mb-0 min-w-40 shrink-0 border-r border-border/30 px-2 py-2 sm:mb-2 sm:min-w-0 sm:border-b sm:border-r-0 sm:px-4 sm:py-3">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <div className="relative">
                       <input
@@ -683,7 +761,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-medium text-text block leading-tight">Mode Contributeur</span>
-                      <span className="text-[10px] text-text-muted leading-tight">Fonctions avancées</span>
+                      <span className="text-xs text-text-muted leading-tight">Fonctions avancées</span>
                     </div>
                   </label>
                 </div>
@@ -701,10 +779,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                       data-testid={`settings-tab-${tab.id}`}
                       onClick={() => selectTab(tab.id)}
                       onKeyDown={(event) => handleTabKeyDown(event, index)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                      className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors sm:w-full sm:gap-3 sm:border-b-0 sm:border-r-2 sm:px-4 ${
                         isActive
-                          ? 'bg-accent-cyan/10 text-accent-cyan border-r-2 border-accent-cyan'
-                          : 'text-text-muted hover:text-text hover:bg-surface-elevated/30'
+                          ? 'border-accent-cyan bg-accent-tint text-accent'
+                          : 'border-transparent text-text-muted hover:bg-surface-elevated/30 hover:text-text'
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
@@ -720,14 +798,27 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                 role="tabpanel"
                 aria-labelledby={`settings-tab-${activeTab}`}
                 tabIndex={0}
-                className="flex-1 overflow-y-auto p-6 outline-none"
+                className="min-w-0 flex-1 overflow-y-auto p-4 outline-none sm:p-6"
               >
+                {loadWarnings.length > 0 && (
+                  <div role="alert" className="mb-4 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+                    <p><strong>Valeurs de secours affichées.</strong> Indisponible{loadWarnings.length > 1 ? 's' : ''} : {loadWarnings.join(', ')}.</p>
+                    <button type="button" onClick={() => void loadSettings()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer le chargement</button>
+                  </div>
+                )}
+                {operationStatus && <p role="status" className="mb-4 rounded-lg border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{operationStatus}</p>}
+                {error && retryOperation && (
+                  <div role="alert" className="mb-4 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+                    <p>{error}</p>
+                    <button type="button" onClick={retryOperation} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+                  </div>
+                )}
                 {renderContent()}
               </div>
             </div>
 
             {/* Pied de page */}
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-border/50 shrink-0">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-border/50 px-4 py-3 sm:px-6 sm:py-4">
               <Button variant="ghost" onClick={onClose}>
                 Fermer
               </Button>

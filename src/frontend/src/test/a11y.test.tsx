@@ -63,7 +63,10 @@ function tokens(block: string): Record<string, string> {
 }
 
 const LIGHT = tokens(extractBlock('@theme'));
-const DARK = { ...LIGHT, ...tokens(extractBlock('[data-theme="dark"]')) };
+const LIGHT_ROOT = tokens(extractBlock(':root'));
+const LIGHT_ALL = { ...LIGHT, ...LIGHT_ROOT };
+const DARK = { ...LIGHT_ALL, ...tokens(extractBlock('[data-theme="dark"]')) };
+const HIGH_CONTRAST = { ...DARK, ...tokens(extractBlock('[data-high-contrast="true"]')) };
 
 const SEMANTIC_NAMES = ['success', 'warning', 'error', 'info'] as const;
 for (const name of SEMANTIC_NAMES) {
@@ -79,6 +82,7 @@ const DARK_SURFACE = DARK['surface'];
 
 const LIGHT_SEMANTIC = Object.fromEntries(SEMANTIC_NAMES.map((n) => [n, LIGHT[n]]));
 const DARK_SEMANTIC = Object.fromEntries(SEMANTIC_NAMES.map((n) => [n, DARK[n]]));
+const HIGH_CONTRAST_SEMANTIC = Object.fromEntries(SEMANTIC_NAMES.map((n) => [n, HIGH_CONTRAST[n]]));
 
 describe('US-013 : contraste AA des tokens sémantiques', () => {
   it.each(Object.entries(LIGHT_SEMANTIC))(
@@ -97,9 +101,36 @@ describe('US-013 : contraste AA des tokens sémantiques', () => {
     }
   );
 
+  it.each(Object.entries(HIGH_CONTRAST_SEMANTIC))(
+    'contraste élevé : %s lisible sur fond et surface (>= 4.5:1)',
+    (_name, color) => {
+      expect(contrast(color, HIGH_CONTRAST['bg'])).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(color, HIGH_CONTRAST['surface'])).toBeGreaterThanOrEqual(4.5);
+    }
+  );
+
   it('texte principal lisible dans les deux thèmes', () => {
     expect(contrast(LIGHT['text'], LIGHT_BG)).toBeGreaterThanOrEqual(7);
     expect(contrast(DARK['text'], DARK_BG)).toBeGreaterThanOrEqual(7);
+  });
+
+  it('texte secondaire AA en clair, sombre et contraste élevé', () => {
+    expect(contrast(LIGHT_ALL['text-muted'], LIGHT_BG)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(DARK['text-muted'], DARK_BG)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(HIGH_CONTRAST['text-muted'], HIGH_CONTRAST['bg'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(SEMANTIC_NAMES)('les boutons %s gardent un contraste texte/fond >= 4.5:1 dans chaque thème', (name) => {
+    for (const theme of [LIGHT_ALL, DARK, HIGH_CONTRAST]) {
+      expect(theme[`${name}-fill`]).toBeTruthy();
+      expect(theme[`${name}-ink`]).toBeTruthy();
+      expect(contrast(theme[`${name}-ink`], theme[`${name}-fill`])).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it.each(SEMANTIC_NAMES)('le texte %s reste AA sur sa teinte claire', (name) => {
+    expect(LIGHT_ALL[`${name}-tint`]).toBeTruthy();
+    expect(contrast(LIGHT_ALL[name], LIGHT_ALL[`${name}-tint`])).toBeGreaterThanOrEqual(4.5);
   });
 });
 

@@ -282,8 +282,8 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-green-500/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-          <Cloud className="w-5 h-5 text-green-400" />
+        <div className="w-10 h-10 rounded-[6px] bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <Cloud className="w-5 h-5 text-success" />
         </div>
         <div>
           <h3 className="font-medium text-text">Synchronisation CRM</h3>
@@ -295,19 +295,19 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
       {/* Error/Success messages */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="p-3 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />
-            <span className="text-sm text-red-400 whitespace-pre-line">{error}</span>
+            <AlertCircle className="w-4 h-4 text-error mt-0.5" />
+            <span className="text-sm text-error whitespace-pre-line">{error}</span>
           </div>
         </div>
       )}
 
       {success && (
-        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+        <div className="p-3 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
           <div className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-green-400">{success}</span>
+            <Check className="w-4 h-4 text-success" />
+            <span className="text-sm text-success">{success}</span>
           </div>
         </div>
       )}
@@ -362,7 +362,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                   value={sheetSearch}
                   onChange={(e) => setSheetSearch(e.target.value)}
                   placeholder="Rechercher une feuille..."
-                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded text-xs text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
                 />
               </div>
             )}
@@ -415,7 +415,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
             placeholder="ID du spreadsheet (ex: 1gXhiy43...)"
-            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
           <Button
             variant="ghost"
@@ -436,7 +436,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         <div className="flex items-center justify-between">
           <span className="text-sm text-text">Authentification</span>
           {hasAuthMethod ? (
-            <span className="text-xs text-green-400 flex items-center gap-1">
+            <span className="text-xs text-success flex items-center gap-1">
               <Check className="w-3 h-3" /> Disponible
             </span>
           ) : (
@@ -448,21 +448,21 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         <div className="space-y-1 text-xs">
           <div className="flex items-center gap-2">
             {config?.has_token ? (
-              <Check className="w-3 h-3 text-green-400" />
+              <Check className="w-3 h-3 text-success" />
             ) : (
               <Link2 className="w-3 h-3 text-text-muted" />
             )}
-            <span className={config?.has_token ? 'text-green-400' : 'text-text-muted'}>
+            <span className={config?.has_token ? 'text-success' : 'text-text-muted'}>
               OAuth Google Sheets
             </span>
           </div>
           <div className="flex items-center gap-2">
             {apiKeys.has_gemini_key ? (
-              <Check className="w-3 h-3 text-green-400" />
+              <Check className="w-3 h-3 text-success" />
             ) : (
               <Key className="w-3 h-3 text-text-muted" />
             )}
-            <span className={apiKeys.has_gemini_key ? 'text-green-400' : 'text-text-muted'}>
+            <span className={apiKeys.has_gemini_key ? 'text-success' : 'text-text-muted'}>
               Clé API Gemini (fallback)
             </span>
           </div>
@@ -522,7 +522,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             </Button>
           </div>
           {importError && (
-            <p className="text-xs text-red-400">{importError}</p>
+            <p className="text-xs text-error">{importError}</p>
           )}
           <div className="space-y-2">
             <div>
@@ -532,7 +532,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientIdInput}
                 onChange={(e) => setClientIdInput(e.target.value)}
                 placeholder="...apps.googleusercontent.com"
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
               />
             </div>
             <div>
@@ -542,7 +542,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientSecretInput}
                 onChange={(e) => setClientSecretInput(e.target.value)}
                 placeholder="GOCSPX-..."
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
               />
             </div>
           </div>

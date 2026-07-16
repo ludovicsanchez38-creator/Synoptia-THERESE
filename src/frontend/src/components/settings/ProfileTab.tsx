@@ -175,13 +175,13 @@ export function ProfileTab({
             <div className="flex items-center justify-between px-5 py-3 border-t border-border/50">
               <div className="flex items-center gap-2">
                 {mdError && (
-                  <span className="text-sm text-red-400 flex items-center gap-1">
+                  <span className="text-sm text-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {mdError}
                   </span>
                 )}
                 {mdSaved && (
-                  <span className="text-sm text-green-400 flex items-center gap-1">
+                  <span role="status" className="text-sm text-success flex items-center gap-1">
                     <Check className="w-3 h-3" />
                     Sauvegardé
                   </span>
@@ -212,12 +212,12 @@ export function ProfileTab({
 
       {/* Statut du profil */}
       {profile ? (
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <Check className="w-4 h-4 text-green-400" />
-          <span className="text-sm text-green-400">Profil configuré : {profile.display_name}</span>
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+          <Check className="w-4 h-4 text-success" />
+          <span className="text-sm text-success">Profil configuré : {profile.display_name}</span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
           <AlertCircle className="w-4 h-4 text-warning" />
           <span className="text-sm text-warning">Profil non configuré - Configure ton identité</span>
         </div>
@@ -237,7 +237,7 @@ export function ProfileTab({
                 setError(null);
               }}
               placeholder="Ludovic Sanchez"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -248,7 +248,7 @@ export function ProfileTab({
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ludo"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ export function ProfileTab({
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Synoptïa"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -273,7 +273,7 @@ export function ProfileTab({
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Entrepreneur IA"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -287,7 +287,7 @@ export function ProfileTab({
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ludo@synoptia.fr"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -298,7 +298,7 @@ export function ProfileTab({
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Manosque, France"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -312,7 +312,7 @@ export function ProfileTab({
             value={profileForm.address}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
             placeholder="294 Montée des Genêts, 04100 Manosque"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
           />
         </div>
 
@@ -325,7 +325,7 @@ export function ProfileTab({
               value={profileForm.siren}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
               placeholder="991 606 781"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -336,7 +336,7 @@ export function ProfileTab({
               value={profileForm.tva_intra}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
               placeholder="FR 08 991 606 781"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
         </div>
@@ -351,7 +351,7 @@ export function ProfileTab({
               value={profileForm.siret}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
               placeholder="991 606 781 00011"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -362,7 +362,7 @@ export function ProfileTab({
               value={profileForm.code_ape}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
               placeholder="6202A"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
         </div>
@@ -375,7 +375,7 @@ export function ProfileTab({
             value={profileForm.nda}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
             placeholder="93 04 01236 04"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
           />
         </div>
 
@@ -383,7 +383,7 @@ export function ProfileTab({
           <label htmlFor="settings-profile-context" className="text-xs text-text-muted mb-1 block">
             Contexte additionnel
           </label>
-          <p className="text-xs text-text-muted/60 mb-1.5">
+          <p className="text-xs text-text-muted mb-1.5">
             Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses (offres, secteur, projets en cours...).
           </p>
           <textarea
@@ -392,14 +392,14 @@ export function ProfileTab({
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
           />
         </div>
       </div>
 
       {/* Erreur */}
       {error && (
-        <p className="text-sm text-red-400 flex items-center gap-1">
+        <p className="text-sm text-error flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           {error}
         </p>
@@ -407,7 +407,7 @@ export function ProfileTab({
 
       {/* Succès */}
       {saved && (
-        <p className="text-sm text-green-400 flex items-center gap-1">
+        <p role="status" className="text-sm text-success flex items-center gap-1">
           <Check className="w-3 h-3" />
           Profil enregistré
         </p>

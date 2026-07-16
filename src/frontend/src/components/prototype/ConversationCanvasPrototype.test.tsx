@@ -207,7 +207,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
     render(<ConversationCanvasPrototype />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Vue du jour' }));
 
     expect(screen.getByRole('heading', { name: 'Aucune priorité détectée' })).toBeInTheDocument();
     expect(screen.queryByTestId('prototype-unified-view')).not.toBeInTheDocument();

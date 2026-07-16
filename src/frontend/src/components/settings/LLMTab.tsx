@@ -319,7 +319,7 @@ export function LLMTab({
                       </span>
                     )}
                     {provider.id === 'ollama' && !isAvailable && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
                         Non disponible
                       </span>
                     )}
@@ -327,7 +327,7 @@ export function LLMTab({
                   <p className="text-xs text-text-muted mt-0.5">{provider.description}</p>
                 </div>
                 {provider.id !== 'ollama' && (
-                  <div className={`shrink-0 ${corruptedKeys.includes(provider.id) ? 'text-red-400' : providerHasKey ? 'text-green-400' : 'text-text-muted'}`}>
+                  <div className={`shrink-0 ${corruptedKeys.includes(provider.id) ? 'text-error' : providerHasKey ? 'text-success' : 'text-text-muted'}`}>
                     {corruptedKeys.includes(provider.id) ? <XCircle className="w-4 h-4" /> : providerHasKey ? <Check className="w-4 h-4" /> : <Key className="w-4 h-4" />}
                   </div>
                 )}
@@ -354,17 +354,17 @@ export function LLMTab({
 
           {/* Statut */}
           {corruptedKeys.includes(selectedProvider) ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <XCircle className="w-4 h-4 text-red-400" />
-              <span className="text-sm text-red-400">Clé API corrompue - ressaisis-la</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
+              <XCircle className="w-4 h-4 text-error" />
+              <span className="text-sm text-error">Clé API corrompue - ressaisis-la</span>
             </div>
           ) : hasApiKey ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-green-400">Clé API configurée</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+              <Check className="w-4 h-4 text-success" />
+              <span className="text-sm text-success">Clé API configurée</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
               <AlertCircle className="w-4 h-4 text-warning" />
               <span className="text-sm text-warning">Aucune clé API configurée</span>
             </div>
@@ -389,7 +389,7 @@ export function LLMTab({
                     }
                   }}
                   placeholder={currentProviderConfig?.keyPlaceholder || '...'}
-                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                 />
                 <button
                   type="button"
@@ -412,7 +412,7 @@ export function LLMTab({
 
             {/* Erreur */}
             {error && (
-              <p className="text-sm text-red-400 flex items-center gap-1">
+              <p className="text-sm text-error flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {error}
               </p>
@@ -420,7 +420,7 @@ export function LLMTab({
 
             {/* Succès */}
             {saved && (
-              <p className="text-sm text-green-400 flex items-center gap-1">
+              <p role="status" className="text-sm text-success flex items-center gap-1">
                 <Check className="w-3 h-3" />
                 Clé API enregistrée
               </p>
@@ -448,8 +448,8 @@ export function LLMTab({
       {selectedProvider === 'ollama' && (
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-green-500/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-              <Database className="w-5 h-5 text-green-400" />
+            <div className="w-10 h-10 rounded-[6px] bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+              <Database className="w-5 h-5 text-success" />
             </div>
             <div>
               <h3 className="font-medium text-text">Ollama Local</h3>
@@ -463,14 +463,14 @@ export function LLMTab({
 
           <div className="flex items-center gap-2">
             {ollamaStatus?.available ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg flex-1">
-                <Check className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-green-400">Ollama connecté ({ollamaStatus.base_url})</span>
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg flex-1">
+                <Check className="w-4 h-4 text-success" />
+                <span className="text-sm text-success">Ollama connecté ({ollamaStatus.base_url})</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg flex-1">
-                <AlertCircle className="w-4 h-4 text-red-400" />
-                <span className="text-sm text-red-400">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg flex-1">
+                <AlertCircle className="w-4 h-4 text-error" />
+                <span className="text-sm text-error">
                   {ollamaStatus?.error || 'Ollama non disponible'}
                 </span>
               </div>
@@ -562,16 +562,15 @@ function ModelSelector({
         id="settings-llm-model"
         value={selectedModel}
         onChange={(e) => onSelectModel(e.target.value)}
-        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-bg [&>option]:text-text"
-        style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
+        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
       >
         {availableModels.map((model) => (
-          <option key={model.id} value={model.id} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+          <option key={model.id} value={model.id}>
             {model.name} {model.badge ? `(${model.badge})` : ''}
           </option>
         ))}
         {isCustomModel && (
-          <option value={selectedModel} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+          <option value={selectedModel}>
             {selectedModel} (personnalisé)
           </option>
         )}
@@ -604,7 +603,7 @@ function ModelSelector({
                 selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-8' :
                 'identifiant-du-modele'
               }
-              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
             />
             <Button
               variant="primary"
@@ -646,6 +645,9 @@ function EffortSelector({
 }) {
   const [effort, setEffort] = useState<string>('auto');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [failedEffort, setFailedEffort] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -654,53 +656,71 @@ function EffortSelector({
       .then((cfg) => {
         if (!cancelled) setEffort(cfg.effort || 'auto');
       })
-      .catch(() => {});
+      .catch((reason) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : 'Effort de raisonnement indisponible.');
+      });
     return () => {
       cancelled = true;
     };
   }, []);
 
   async function handleChange(value: string) {
+    const previous = effort;
     setEffort(value);
     setSaving(true);
+    setError(null);
+    setStatus('Enregistrement de l’effort…');
+    setFailedEffort(null);
     try {
       await api.setLLMConfig(
         selectedProvider as api.LLMProvider,
         selectedModel,
         value as LLMEffort
       );
+      setStatus('Effort de raisonnement enregistré.');
     } catch (err) {
-      console.error('Effort non enregistré:', err);
+      setEffort(previous);
+      setStatus(null);
+      setFailedEffort(value);
+      setError(err instanceof Error ? err.message : 'L’effort de raisonnement n’a pas pu être enregistré.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <div>
         <label htmlFor="llm-effort" className="text-sm text-text-muted">
           Effort de raisonnement
         </label>
-        <p className="text-[11px] text-text-muted/70">
+        <p className="text-xs text-text-muted">
           Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5,
           modèles Ollama « thinking »). Auto laisse le modèle décider.
         </p>
-      </div>
-      <select
+        </div>
+        <select
         id="llm-effort"
         value={effort}
         disabled={saving}
-        onChange={(e) => handleChange(e.target.value)}
-        className="px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-bg [&>option]:text-text"
-        style={{ backgroundColor: 'var(--color-background, #0B1226)', color: 'var(--color-text, #E6EDF7)' }}
+        onChange={(e) => void handleChange(e.target.value)}
+        className="px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
       >
         {EFFORT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value} style={{ backgroundColor: '#0B1226', color: '#E6EDF7' }}>
+          <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>
         ))}
-      </select>
+        </select>
+      </div>
+      {status && <p role="status" className="mt-2 text-xs text-info">{status}</p>}
+      {error && (
+        <div role="alert" className="mt-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
+          <p>{error}</p>
+          <button type="button" onClick={() => failedEffort && void handleChange(failedEffort)} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+        </div>
+      )}
     </div>
   );
 }

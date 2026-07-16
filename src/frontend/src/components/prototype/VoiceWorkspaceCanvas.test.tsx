@@ -54,5 +54,16 @@ describe('VoiceWorkspaceCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Générer l’audio local' }));
     await waitFor(() => expect(synthesizeSpeech).toHaveBeenCalledWith('Bonjour Ludo'));
     expect(await screen.findByText('Audio généré localement')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Texte à lire'), { target: { value: 'Texte modifié' } });
+    expect(screen.queryByText('Audio généré localement')).not.toBeInTheDocument();
+  });
+
+  it('affiche une erreur de synthèse dans le panneau concerné avec Réessayer', async () => {
+    vi.mocked(synthesizeSpeech).mockRejectedValueOnce(new Error('Piper indisponible'));
+    render(<VoiceWorkspaceCanvas onClose={vi.fn()} onContinueInChat={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Texte à lire'), { target: { value: 'Bonjour Ludo' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Générer l’audio local' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Piper indisponible');
+    expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
   });
 });

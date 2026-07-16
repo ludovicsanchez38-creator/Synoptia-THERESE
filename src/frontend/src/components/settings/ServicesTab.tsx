@@ -51,7 +51,7 @@ export function ServicesTab({
   apiKeys,
   showApiKey,
   setShowApiKey,
-  error: _error,
+  error,
   setError,
   selectedImageProvider,
   onSelectImageProvider,
@@ -78,10 +78,13 @@ export function ServicesTab({
   autoExtractEntities,
   onToggleAutoExtract,
 }: ServicesTabProps) {
-  void _error;
-
   return (
     <div className="space-y-6">
+      {error && (
+        <div role="alert" className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+          {error}
+        </div>
+      )}
       {/* Chantier 5 : profil des exports Word (Atelier + conversations) */}
       <ExportProfileSection />
       <VariablesSection />
@@ -137,11 +140,11 @@ export function ServicesTab({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text">{provider.name}</span>
                       {hasImageKey ? (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-success-tint)] text-success">
                           Clé OK
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-warning">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
                           Clé requise
                         </span>
                       )}
@@ -168,7 +171,7 @@ export function ServicesTab({
                           }
                         }}
                         placeholder={provider.keyPlaceholder}
-                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                       />
                       <button
                         type="button"
@@ -190,7 +193,7 @@ export function ServicesTab({
                   </div>
 
                   {isSaved && (
-                    <p className="text-sm text-green-400 flex items-center gap-1">
+                    <p role="status" className="text-sm text-success flex items-center gap-1">
                       <Check className="w-3 h-3" />
                       Clé enregistrée
                     </p>
@@ -224,12 +227,12 @@ export function ServicesTab({
         </div>
 
         {hasGroqKey ? (
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <Check className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-green-400">Dictée vocale active</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+            <Check className="w-4 h-4 text-success" />
+            <span className="text-sm text-success">Dictée vocale active</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
             <AlertCircle className="w-4 h-4 text-warning" />
             <span className="text-sm text-warning">Dictée vocale désactivée</span>
           </div>
@@ -253,7 +256,7 @@ export function ServicesTab({
                   }
                 }}
                 placeholder="gsk_..."
-                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
               />
               <button
                 type="button"
@@ -271,7 +274,7 @@ export function ServicesTab({
           </div>
 
           {groqSaved && (
-            <p className="text-sm text-green-400 flex items-center gap-1">
+            <p role="status" className="text-sm text-success flex items-center gap-1">
               <Check className="w-3 h-3" />
               Clé Groq enregistrée
             </p>
@@ -338,7 +341,7 @@ export function ServicesTab({
               </button>
             </p>
             {hasBraveKey && (
-              <span className="flex items-center gap-1 text-xs text-green-400">
+              <span className="flex items-center gap-1 text-xs text-success">
                 <Check className="w-3 h-3" /> OK
               </span>
             )}
@@ -355,6 +358,7 @@ export function ServicesTab({
             <Button variant="primary" size="sm" onClick={onSaveBraveKey} disabled={braveSaving || !braveKeyInput.trim()} className="text-xs px-3">
               {braveSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : braveSaved ? <Check className="w-3 h-3" /> : 'Sauver'}
             </Button>
+            {braveSaved && <span role="status" className="sr-only">Clé Brave Search sauvegardée.</span>}
           </div>
         </div>
       </div>

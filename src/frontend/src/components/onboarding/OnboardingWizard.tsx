@@ -88,7 +88,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 ${Z_LAYER.ONBOARDING} flex items-center justify-center`}
+          className={`fixed inset-0 ${Z_LAYER.ONBOARDING} flex items-center justify-center p-2 sm:p-4`}
         >
           {/* Backdrop with blur */}
           <motion.div
@@ -103,26 +103,29 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
           <div
             data-tauri-drag-region
             data-dialog-allow
-            className={`absolute top-0 left-0 right-0 h-10 ${Z_LAYER.ONBOARDING_TOP} flex items-center px-4`}
+            className={`absolute left-0 right-0 top-0 h-12 ${Z_LAYER.ONBOARDING_TOP} flex items-center px-2 sm:px-4`}
           >
             {/* Window controls (macOS style uniquement) */}
             {isMac && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center" aria-label="Contrôles de la fenêtre">
                 <button
                   onClick={handleClose}
-                  className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+                  className="grid h-11 w-11 place-items-center rounded-full"
                   title="Fermer"
-                />
+                  aria-label="Fermer la fenêtre"
+                ><span className="h-3 w-3 rounded-full bg-error-fill" /></button>
                 <button
                   onClick={handleMinimize}
-                  className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
+                  className="grid h-11 w-11 place-items-center rounded-full"
                   title="Réduire"
-                />
+                  aria-label="Réduire la fenêtre"
+                ><span className="h-3 w-3 rounded-full bg-warning-fill" /></button>
                 <button
                   onClick={handleMaximize}
-                  className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+                  className="grid h-11 w-11 place-items-center rounded-full"
                   title="Agrandir"
-                />
+                  aria-label="Agrandir la fenêtre"
+                ><span className="h-3 w-3 rounded-full bg-success-fill" /></button>
               </div>
             )}
             {/* Windows/Linux : decorations:false → pas de barre de titre native.
@@ -130,7 +133,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             {isDesktopNonMac && (
               <button
                 onClick={handleClose}
-                className="ml-auto p-1 rounded hover:bg-surface-elevated/60 transition-colors text-text-muted hover:text-text"
+                className="ml-auto grid h-11 w-11 place-items-center rounded text-text-muted transition-colors hover:bg-surface-elevated/60 hover:text-text"
                 title="Fermer (Échap)"
                 aria-label="Fermer"
               >
@@ -152,41 +155,29 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             data-testid="onboarding-wizard"
-            className="relative w-full max-w-2xl max-h-[90vh] bg-surface border border-border/50 rounded-2xl shadow-2xl flex flex-col mt-10"
+            className="relative mt-12 flex max-h-[calc(100vh-4rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-2xl"
           >
             <h1 id="onboarding-title" tabIndex={-1} data-dialog-autofocus className="sr-only">
               Configuration initiale de Thérèse
             </h1>
             {/* Progress Header */}
-            <div className="px-8 py-4 border-b border-border/30">
+            <div className="border-b border-border/30 px-3 py-3 sm:px-8 sm:py-4">
               {/* Step Indicators */}
-              <ol className="flex items-center justify-between" aria-label="Étapes de configuration">
+              <ol className="grid grid-cols-6 items-center" aria-label="Étapes de configuration">
                 {STEPS.map((step, index) => (
-                  <li key={step.id} className="flex items-center" aria-current={index === currentStep ? 'step' : undefined}>
+                  <li key={step.id} className="flex min-w-0 items-center justify-center" aria-current={index === currentStep ? 'step' : undefined}>
                     <span className="sr-only">{step.title}</span>
                     {/* Step Circle */}
                     <motion.div
                       initial={false}
-                      animate={{
-                        scale: index === currentStep ? 1.1 : 1,
-                        backgroundColor:
-                          index < currentStep
-                            ? 'rgb(34 211 238)' // accent-cyan
-                            : index === currentStep
-                            ? 'rgba(34, 211, 238, 0.2)'
-                            : 'rgba(255, 255, 255, 0.05)',
-                        borderColor:
-                          index <= currentStep
-                            ? 'rgb(34 211 238)'
-                            : 'rgba(255, 255, 255, 0.1)',
-                      }}
+                      animate={{ scale: index === currentStep ? 1.1 : 1 }}
                       transition={{ duration: 0.2 }}
-                      className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border-2 sm:h-8 sm:w-8 ${
                         index < currentStep
-                          ? 'text-white' // sur le fond cyan vif plein : blanc lisible dans les 2 themes
+                          ? 'border-accent-fill bg-accent-fill text-accent-ink'
                           : index === currentStep
-                          ? 'text-text' // sur le fond cyan teinte (20%) : texte token lisible (clair/sombre)
-                          : 'text-text-muted'
+                          ? 'border-accent bg-accent-tint text-text'
+                          : 'border-border bg-surface-2 text-text-muted'
                       }`}
                     >
                       {index < currentStep ? (
@@ -198,7 +189,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
 
                     {/* Connector Line */}
                     {index < STEPS.length - 1 && (
-                      <div className="w-12 h-0.5 mx-1">
+                      <div className="mx-1 hidden h-0.5 w-12 sm:block">
                         <motion.div
                           initial={{ scaleX: 0 }}
                           animate={{ scaleX: index < currentStep ? 1 : 0 }}
@@ -212,7 +203,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                 ))}
               </ol>
 
-              <div className="mt-1 grid grid-cols-6 gap-1 text-center text-[10px] font-medium text-text-muted" aria-hidden="true">
+              <div className="mt-1 hidden grid-cols-6 gap-1 text-center text-xs font-medium text-text-muted sm:grid" aria-hidden="true">
                 {STEPS.map((step) => <span key={step.id}>{step.title}</span>)}
               </div>
               <p className="mt-2 text-center text-xs font-semibold text-text">

@@ -233,7 +233,7 @@ export function PrototypeConversationDrawer({
           </div>
         ) : grouped.map(([label, items]) => (
           <section key={label} className="mb-4">
-            <div className="mb-1 flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">
+            <div className="mb-1 flex items-center gap-1.5 px-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
               <History className="h-3 w-3" />
               {label}
             </div>
@@ -242,10 +242,10 @@ export function PrototypeConversationDrawer({
                 {editingId === conversation.id ? (
                   <div className="rounded-[9px] border border-[#22D3EE] bg-surface p-2">
                     <input autoFocus aria-label="Nouveau titre" value={editingTitle} maxLength={120} onChange={(event) => setEditingTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveTitle(conversation); if (event.key === 'Escape') setEditingId(null); }} className="w-full rounded-[7px] border border-border px-2 py-1.5 text-sm text-text outline-none" />
-                    <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-[10px] font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-[6px] bg-text px-2 py-1 text-[10px] font-semibold text-white">Enregistrer</button></div>
+                    <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-xs font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-[6px] bg-text px-2 py-1 text-xs font-semibold text-white">Enregistrer</button></div>
                   </div>
                 ) : deleteConfirmationId === conversation.id ? (
-                  <div className="rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error" data-testid="conversation-delete-confirmation"><strong>Supprimer définitivement cette conversation ?</strong><div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setDeleteConfirmationId(null)} className="rounded-[6px] bg-surface px-2 py-1 font-semibold">Annuler</button><button type="button" onClick={() => void confirmDelete(conversation)} className="rounded-[6px] bg-[#A61B1B] px-2 py-1 font-semibold text-white">Confirmer la suppression</button></div></div>
+                  <div className="rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error" data-testid="conversation-delete-confirmation"><strong>Supprimer définitivement cette conversation ?</strong><div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setDeleteConfirmationId(null)} className="rounded-[6px] bg-surface px-2 py-1 font-semibold">Annuler</button><button type="button" onClick={() => void confirmDelete(conversation)} className="rounded-[6px] bg-error-fill px-2 py-1 font-semibold text-error-ink">Confirmer la suppression</button></div></div>
                 ) : (
                   <>
                     <button
@@ -259,7 +259,7 @@ export function PrototypeConversationDrawer({
                       }`}
                     >
                       <span className="block truncate text-sm font-semibold text-text">{conversation.title || 'Nouvelle conversation'}</span>
-                      <span className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-text-muted">
+                      <span className="mt-0.5 flex items-center justify-between gap-2 text-xs text-text-muted">
                         <span>{updatedLabel(conversation.updatedAt)}</span>
                         <span>{conversation.messages.length || conversation.messageCount || 0} message{(conversation.messages.length || conversation.messageCount || 0) > 1 ? 's' : ''}</span>
                       </span>
