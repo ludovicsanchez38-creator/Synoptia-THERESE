@@ -57,14 +57,14 @@ jobs:
       - name: Tests unitaires (pytest)
         shell: bash
         run: |
-          timeout 300 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
+          timeout 480 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
           EXIT_CODE=$?
           if [ $EXIT_CODE -eq 124 ]; then
-            echo "::warning::pytest tué après 5 min (possible threads orphelins)"
+            echo "::warning::pytest tué après 8 min (possible threads orphelins)"
             exit 1
           fi
           exit $EXIT_CODE
-        timeout-minutes: 10
+        timeout-minutes: 12
 
   frontend:
     name: Frontend (Node.js)

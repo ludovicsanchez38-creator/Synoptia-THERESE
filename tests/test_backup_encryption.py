@@ -67,7 +67,7 @@ async def test_backup_produit_une_archive_chiffree(client):
     assert body["path"].endswith(".tar.gz.enc")
     # Ce n'est pas un tar lisible tel quel.
     with pytest.raises(tarfile.ReadError):
-        tarfile.open(body["path"], "r:gz")
+        tarfile.open(body["path"], "r:gz")  # noqa: SIM115 (on vérifie qu'il lève)
 
 
 @pytest.mark.asyncio
