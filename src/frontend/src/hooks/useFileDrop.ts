@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { isTauri } from '../lib/utils';
 
 export interface DroppedFile {
   path: string;
@@ -116,6 +117,10 @@ export function useFileDrop(options: UseFileDropOptions = {}): FileDropState & {
 
   // Set up Tauri listeners ONCE
   useEffect(() => {
+    // Le drop de fichiers repose sur l'API évènements Tauri, absente en
+    // navigateur de dev (elle y jetait « Failed to setup file drop listeners »
+    // à chaque montage). On ne tente le setup que sous Tauri.
+    if (!isTauri()) return;
     // Prevent double setup (React StrictMode)
     if (isSetupRef.current) return;
     isSetupRef.current = true;
