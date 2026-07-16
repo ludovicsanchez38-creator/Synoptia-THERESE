@@ -4,7 +4,7 @@
  * Third step of the onboarding wizard - Configure LLM provider and API key.
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
@@ -148,6 +148,27 @@ const PROVIDERS: ProviderConfig[] = [
   },
 ];
 
+const LLM_SETUP_TIMEOUT_MS = 10_000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(
+      () => reject(new Error('La vérification des modèles prend trop de temps.')),
+      timeoutMs,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    );
+  });
+}
+
 export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
@@ -157,33 +178,48 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [configuring, setConfiguring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const loadRequestRef = useRef(0);
+  const configuringRef = useRef(false);
 
-  // Load initial state
-  useEffect(() => {
-    async function loadState() {
-      try {
-        const [keys, ollamaStatusData] = await Promise.all([
-          api.getApiKeys().catch(() => ({})),
-          api.getOllamaStatus().catch(() => null),
-        ]);
-        setApiKeys(keys);
-        if (ollamaStatusData) {
-          setOllamaStatus(ollamaStatusData);
-          if (ollamaStatusData.available && ollamaStatusData.models.length > 0) {
-            setOllamaModels(ollamaStatusData.models.map(m => m.name));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load LLM state:', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadState = useCallback(async () => {
+    const activeRequest = ++loadRequestRef.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [keys, ollamaStatusData] = await withTimeout(Promise.all([
+        api.getApiKeys(),
+        api.getOllamaStatus(),
+      ]), LLM_SETUP_TIMEOUT_MS);
+      if (activeRequest !== loadRequestRef.current) return;
+      setApiKeys(keys);
+      setOllamaStatus(ollamaStatusData);
+      setOllamaModels(
+        ollamaStatusData.available
+          ? ollamaStatusData.models.map((model) => model.name)
+          : [],
+      );
+    } catch (err) {
+      if (activeRequest !== loadRequestRef.current) return;
+      console.error('Failed to load LLM state:', err);
+      setLoadError(
+        err instanceof Error && err.message.includes('trop de temps')
+          ? `${err.message} Tu peux réessayer ou configurer plus tard.`
+          : 'Impossible de vérifier les modèles disponibles. Tu peux réessayer ou configurer plus tard.',
+      );
+    } finally {
+      if (activeRequest === loadRequestRef.current) setLoading(false);
     }
-    loadState();
   }, []);
+
+  useEffect(() => {
+    void loadState();
+    return () => { loadRequestRef.current += 1; };
+  }, [loadState]);
 
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
   const hasApiKey = apiKeys[selectedProvider] === true;
@@ -239,29 +275,29 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   }
 
   async function handleContinue() {
-    // Save LLM config
+    if (configuringRef.current) return;
+    configuringRef.current = true;
+    setConfiguring(true);
+    setError(null);
     try {
       await api.setLLMConfig(selectedProvider, selectedModel);
       onNext();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la configuration');
+      configuringRef.current = false;
+      setConfiguring(false);
     }
   }
 
-  // Note: canContinue is computed inline in the render for button disabled state
-  function _canContinue() {
-    if (selectedProvider === 'ollama') {
-      return ollamaStatus?.available && ollamaModels.length > 0;
-    }
-    // Check apiKeys state directly (updated after save) OR just saved
-    return apiKeys[selectedProvider] === true || saved;
-  }
-  void _canContinue; // suppress unused warning
+  const canContinue = selectedProvider === 'ollama'
+    ? Boolean(ollamaStatus?.available && ollamaModels.length > 0 && selectedModel)
+    : hasApiKey || saved;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 flex-col items-center justify-center gap-3" role="status">
         <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+        <p className="text-sm text-text-muted">Vérification des modèles disponibles…</p>
       </div>
     );
   }
@@ -440,8 +476,19 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       )}
 
       {/* Error */}
+      {loadError && (
+        <div className="mb-6 rounded-lg border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-3" role="alert">
+          <div className="flex items-start gap-2 text-sm text-warning">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="flex-1">{loadError}</span>
+          </div>
+          <button type="button" onClick={() => void loadState()} className="mt-3 text-xs font-semibold text-text underline underline-offset-2">
+            Réessayer la vérification
+          </button>
+        </div>
+      )}
       {error && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-red-500/10 border border-red-500/20 rounded-lg" role="alert">
           <AlertCircle className="w-4 h-4 text-red-400" />
           <span className="text-sm text-red-400">{error}</span>
         </div>
@@ -459,21 +506,21 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
       {/* Footer */}
       <div className="flex justify-between pt-4 border-t border-border/30">
-        <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
+        <Button variant="ghost" onClick={onBack} disabled={configuring} data-testid="onboarding-prev-btn">
           Retour
         </Button>
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={onNext} data-testid="onboarding-skip-btn">
-            Passer
+          <Button variant="ghost" onClick={onNext} disabled={configuring} data-testid="onboarding-skip-btn">
+            Configurer plus tard
           </Button>
           <Button
             variant="primary"
             onClick={handleContinue}
-            disabled={needsApiKey && !hasApiKey}
-            title={needsApiKey && !hasApiKey ? 'Configure une clé API ou clique sur "Passer"' : undefined}
+            disabled={configuring || !canContinue}
+            title={!canContinue ? 'Configure une clé API, démarre Ollama ou choisis « Configurer plus tard »' : undefined}
             data-testid="onboarding-next-btn"
           >
-            Continuer
+            {configuring ? 'Configuration…' : 'Continuer'}
           </Button>
         </div>
       </div>

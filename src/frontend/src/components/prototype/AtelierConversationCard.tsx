@@ -52,10 +52,10 @@ function statusLabel(status: string): string {
 
 function statusClasses(status: string): string {
   if (status === 'review') return 'bg-[var(--color-warning-tint)] text-warning';
-  if (status === 'merged' || status === 'done') return 'bg-[#E6F6EE] text-success';
+  if (status === 'merged' || status === 'done') return 'bg-[var(--color-success-tint)] text-success';
   if (status === 'in_progress' || status === 'pending') return 'bg-accent-tint text-accent';
   if (status === 'error' || status === 'rejected') return 'bg-[var(--color-error-tint)] text-error';
-  return 'bg-[#EDF1F7] text-text-muted';
+  return 'bg-surface-2 text-text-muted';
 }
 
 export function AtelierHistoryCard({
@@ -109,7 +109,7 @@ export function AtelierHistoryCard({
       ) : tasks.length === 0 ? (
         <StateShell><div className="text-center" data-testid="atelier-history-empty"><Code2 className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucune mission enregistrée</p><p className="mt-1 text-xs text-text-muted">Aucun fichier ne sera touché avant ta confirmation.</p><button type="button" onClick={onNewMission} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Préparer une mission</button></div></StateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {tasks.map((task) => (
             <button key={task.id} type="button" onClick={() => onOpenTask(task.id)} className="flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--k4bg)] text-[var(--k4)]"><History className="h-4 w-4" /></span>
@@ -204,7 +204,7 @@ function DiffViewer({ diff }: { diff: DiffResponse }) {
   return (
     <section className="rounded-[13px] border border-border bg-surface" data-testid="atelier-diff">
       <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 text-xs"><strong className="text-text">Diff relu depuis {diff.branch_name}</strong><span className="text-success">+{diff.total_additions}</span><span className="text-error">-{diff.total_deletions}</span><span className="text-text-muted">{diff.files.length} fichier{diff.files.length > 1 ? 's' : ''}</span></div>
-      <div className="divide-y divide-[#EDF1F7]">{diff.files.map((file) => <div key={file.file_path}><button type="button" onClick={() => setExpanded(expanded === file.file_path ? null : file.file_path)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-xs hover:bg-surface-2">{expanded === file.file_path ? <ChevronDown className="h-3.5 w-3.5 text-text-muted" /> : <ChevronRight className="h-3.5 w-3.5 text-text-muted" />}<FileCode2 className="h-3.5 w-3.5 text-[var(--k4)]" /><span className="min-w-0 flex-1 truncate font-semibold text-text">{file.file_path}</span><span className="text-success">+{file.additions}</span><span className="text-error">-{file.deletions}</span></button>{expanded === file.file_path && file.diff_hunk && <pre className="max-h-80 overflow-auto bg-[#0A0F1E] p-4 text-[10px] leading-5 text-[#B6C7DA]">{file.diff_hunk}</pre>}</div>)}</div>
+      <div className="divide-y divide-border">{diff.files.map((file) => <div key={file.file_path}><button type="button" onClick={() => setExpanded(expanded === file.file_path ? null : file.file_path)} className="flex w-full items-center gap-2 px-4 py-3 text-left text-xs hover:bg-surface-2">{expanded === file.file_path ? <ChevronDown className="h-3.5 w-3.5 text-text-muted" /> : <ChevronRight className="h-3.5 w-3.5 text-text-muted" />}<FileCode2 className="h-3.5 w-3.5 text-[var(--k4)]" /><span className="min-w-0 flex-1 truncate font-semibold text-text">{file.file_path}</span><span className="text-success">+{file.additions}</span><span className="text-error">-{file.deletions}</span></button>{expanded === file.file_path && file.diff_hunk && <pre className="max-h-80 overflow-auto bg-[#0A0F1E] p-4 text-[10px] leading-5 text-[#B6C7DA]">{file.diff_hunk}</pre>}</div>)}</div>
     </section>
   );
 }

@@ -83,6 +83,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { useConversationSync } from '../../hooks/useConversationSync';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { usePanelStore } from '../../stores/panelStore';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
 import type { AppView } from '../../stores/navigationStore';
@@ -196,6 +197,7 @@ function ContextCanvas({
   onRetryInvoices,
   onRetryInvoice,
   onCreateDevisDraft,
+  onCreateInvoiceContact,
   onRetryBoard,
   onRetryBoardDecision,
   onStartBoard,
@@ -244,6 +246,7 @@ function ContextCanvas({
   onRetryInvoices: () => void;
   onRetryInvoice: () => void;
   onCreateDevisDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  onCreateInvoiceContact: (data: Partial<Contact>) => Promise<Contact>;
   onRetryBoard: () => void;
   onRetryBoardDecision: () => void;
   onStartBoard: (request: BoardRequest) => Promise<void>;
@@ -314,6 +317,7 @@ function ContextCanvas({
           onRetry={onRetryInvoices}
           onRetryInvoice={onRetryInvoice}
           onCreateDraft={onCreateDevisDraft}
+          onCreateContact={onCreateInvoiceContact}
           onOpenClassic={() => onOpenView('invoices')}
         />
       ) : scenario === 'board' ? (
@@ -519,6 +523,8 @@ function CommandPalette({
 }
 
 export function ConversationCanvasPrototype() {
+  const theme = useAccessibilityStore((state) => state.theme);
+  const highContrast = useAccessibilityStore((state) => state.highContrast);
   const initialScenario = useMemo<Scenario>(() => {
     const value = new URLSearchParams(window.location.search).get('scenario');
     return value === 'memory' || value === 'email' || value === 'meeting' || value === 'invoice' || value === 'board' || value === 'atelier' ? value : 'today';
@@ -559,6 +565,7 @@ export function ConversationCanvasPrototype() {
     openInvoice,
     retryInvoice,
     createDevisDraft,
+    createInvoiceContact,
   } = usePrototypeInvoiceData(scenario === 'invoice');
   const {
     resource: boardResource,
@@ -963,7 +970,12 @@ export function ConversationCanvasPrototype() {
         : 'Poursuivre dans le chat';
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-bg text-text" data-testid="conversation-canvas-prototype">
+    <div
+      className="h-screen w-screen overflow-hidden bg-bg text-text"
+      data-testid="conversation-canvas-prototype"
+      data-theme={theme}
+      data-high-contrast={highContrast ? 'true' : undefined}
+    >
       <div className="flex h-full flex-col">
         <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
           <div className="flex flex-1 items-center gap-4">
@@ -1061,7 +1073,7 @@ export function ConversationCanvasPrototype() {
               <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   <div className="mb-7 flex items-start gap-3">
-                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[2px_2px_0_#101C36]" />
+                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[2px_2px_0_var(--btn-shadow-color)]" />
                     <div>
                       <h1 className="text-[24px] font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
@@ -1273,12 +1285,15 @@ export function ConversationCanvasPrototype() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,#F3F6FC_70%,transparent)] px-5 pb-5 pt-12 sm:px-8">
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
+                data-testid="prototype-composer-backdrop"
+              >
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   <div className="rounded-[18px] border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (
                       <div className="mx-1 mt-1 flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-2.5 py-2 text-xs text-[var(--k4)]">
-                        <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[#EAE1FB] text-[var(--k4)]">
+                        <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[var(--k4bg)] text-[var(--k4)]">
                           <SelectedCapabilityIcon className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0 flex-1 truncate"><span className="font-semibold">Capacité :</span> {selectedCapability.title}</span>
@@ -1352,7 +1367,7 @@ export function ConversationCanvasPrototype() {
                           disabled={destinationIsPending}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
-                          className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_#101C36] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-[#E6EBF2] disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
+                          className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_var(--btn-shadow-color)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
                         >
                           {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>
@@ -1452,6 +1467,7 @@ export function ConversationCanvasPrototype() {
                   onRetryInvoices={() => void refreshInvoices()}
                   onRetryInvoice={() => void retryInvoice()}
                   onCreateDevisDraft={createDevisDraft}
+                  onCreateInvoiceContact={createInvoiceContact}
                   onRetryBoard={() => void refreshBoard()}
                   onRetryBoardDecision={() => void retryBoardDecision()}
                   onStartBoard={startBoardDeliberation}

@@ -84,8 +84,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Quotidien',
     description: 'Voir l’essentiel et transformer les informations entrantes en actions.',
     icon: Calendar,
-    color: '#0F8FB3',
-    tint: '#DEF4F9',
+    color: 'var(--k1)',
+    tint: 'var(--k1bg)',
   },
   {
     id: 'business',
@@ -93,8 +93,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Activité',
     description: 'Suivre les personnes, les projets et le cycle commercial de bout en bout.',
     icon: Briefcase,
-    color: '#BE1A72',
-    tint: '#FBE3F0',
+    color: 'var(--k3)',
+    tint: 'var(--k3bg)',
   },
   {
     id: 'create',
@@ -102,8 +102,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Création',
     description: 'Passer d’une idée à un livrable utilisable, dans le bon format.',
     icon: FileText,
-    color: '#B45309',
-    tint: '#FAEFDC',
+    color: 'var(--k2)',
+    tint: 'var(--k2bg)',
   },
   {
     id: 'decide',
@@ -111,8 +111,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Décision',
     description: 'Chercher, vérifier, comparer et éclairer une décision importante.',
     icon: Gavel,
-    color: '#7C3AED',
-    tint: '#F0E9FC',
+    color: 'var(--k4)',
+    tint: 'var(--k4bg)',
   },
   {
     id: 'automate',
@@ -120,8 +120,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Automatisation',
     description: 'Faire exécuter des tâches répétitives par des actions, outils et agents.',
     icon: Workflow,
-    color: '#0F766E',
-    tint: '#DDF5F1',
+    color: 'var(--color-success)',
+    tint: 'var(--color-success-tint)',
   },
   {
     id: 'control',
@@ -129,8 +129,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Contrôle',
     description: 'Garder la main sur les données, les modèles, les coûts et le comportement.',
     icon: ShieldCheck,
-    color: '#334155',
-    tint: '#E9EEF5',
+    color: 'var(--color-text-muted)',
+    tint: 'var(--color-surface-2)',
   },
 ];
 
@@ -386,7 +386,7 @@ export function CapabilityCenter({
         className="flex h-[min(760px,88vh)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[20px] border border-border bg-surface shadow-[0_34px_90px_rgba(16,28,54,0.28)]"
       >
         <header className="flex items-start gap-5 border-b border-border px-6 py-5">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-text bg-accent-tint text-accent shadow-[2px_2px_0_#101C36]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-text bg-accent-tint text-accent shadow-[2px_2px_0_var(--btn-shadow-color)]">
             <Sparkles className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -462,7 +462,7 @@ export function CapabilityCenter({
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#FDFEFF] p-5">
+            <div className="flex-1 overflow-y-auto bg-bg p-5">
               {visibleCapabilities.length === 0 ? (
                 <div className="grid h-full place-items-center text-center">
                   <div>

@@ -503,7 +503,18 @@ class HealthResponse(BaseModel):
 class LLMConfigUpdate(BaseModel):
     """LLM configuration update request."""
 
-    provider: Literal["anthropic", "openai", "gemini", "mistral", "grok", "openrouter", "ollama"]
+    provider: Literal[
+        "anthropic",
+        "openai",
+        "gemini",
+        "mistral",
+        "grok",
+        "openrouter",
+        "perplexity",
+        "deepseek",
+        "infomaniak",
+        "ollama",
+    ]
     model: str
     # Effort de raisonnement (10/07/2026) : auto = defaut serveur (rien
     # d'envoye). None = ne pas toucher au reglage existant.
@@ -516,6 +527,7 @@ class LLMConfigResponse(BaseModel):
     provider: str
     model: str
     available_models: list[str] = []
+    available: bool = False
     effort: str | None = None  # Effort de raisonnement courant (None = Auto)
 
 

@@ -166,6 +166,8 @@ export interface LLMConfig {
   provider: LLMProvider;
   model: string;
   available_models: string[];
+  /** Disponibilité réelle du modèle actif : clé cloud présente ou Ollama opérationnel. */
+  available?: boolean;
   effort?: string | null;
 }
 

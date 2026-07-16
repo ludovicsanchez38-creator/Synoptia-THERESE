@@ -106,7 +106,7 @@ export function BoardHistoryCard({
       ) : decisions.length === 0 ? (
         <StateShell><div className="text-center" data-testid="board-history-empty"><Gavel className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucune décision enregistrée</p><p className="mt-1 text-xs text-text-muted">Une délibération ne démarrera qu’après ta confirmation.</p><button type="button" onClick={onNewBoard} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Convoquer le Board</button></div></StateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {decisions.map((decision) => (
             <button key={decision.id} type="button" onClick={() => onOpenDecision(decision.id)} className="flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-[var(--k4bg)] text-[var(--k4)]"><History className="h-4 w-4" /></span>

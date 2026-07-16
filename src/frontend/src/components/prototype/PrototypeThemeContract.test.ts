@@ -20,6 +20,7 @@ describe('contrat de thème de la coque 0.40', () => {
       'text-[#7B8AA3]',
       'border-[#DCE4F1]',
       'border-[#E4EAF3]',
+      '0_#101C36',
     ];
 
     for (const { name, source } of componentSources) {

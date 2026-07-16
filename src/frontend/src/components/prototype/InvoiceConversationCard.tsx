@@ -154,7 +154,7 @@ export function InvoiceWorkspaceCard({
           </div>
         </StateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {invoices.map((invoice) => {
             const contact = resource.data.contacts.find((item) => item.id === invoice.contact_id);
             return (
@@ -210,7 +210,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
 
       <section className="overflow-hidden rounded-[13px] border border-border bg-surface">
         <div className="border-b border-border px-4 py-3 text-sm font-bold text-text">Lignes</div>
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {invoice.lines.map((line) => (
             <div key={line.id} className="grid grid-cols-[1fr_auto] gap-3 px-4 py-3 text-xs">
               <div><strong className="text-text">{line.description}</strong><p className="mt-0.5 text-text-muted">{line.quantity} × {formatMoney(line.unit_price_ht, invoice.currency)} · TVA {line.tva_rate}%</p></div>
@@ -246,9 +246,11 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
 function DevisDraftForm({
   data,
   onCreateDraft,
+  onCreateContact,
 }: {
   data: InvoiceWorkspaceData;
   onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
 }) {
   const [contactId, setContactId] = useState('');
   const [currency, setCurrency] = useState('EUR');
@@ -264,6 +266,10 @@ function DevisDraftForm({
   const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Invoice | null>(null);
+  const [contactForm, setContactForm] = useState({ firstName: '', lastName: '', company: '', email: '' });
+  const [contactSaving, setContactSaving] = useState(false);
+  const contactSavingRef = useRef(false);
+  const [contactError, setContactError] = useState<string | null>(null);
 
   const totals = useMemo(() => lines.reduce((result, line) => {
     const quantity = parseDecimal(line.quantity) || 0;
@@ -334,8 +340,69 @@ function DevisDraftForm({
     }
   }
 
+  async function createFirstContact() {
+    if (contactSavingRef.current) return;
+    if (!contactForm.firstName.trim() && !contactForm.lastName.trim() && !contactForm.company.trim()) {
+      setContactError('Renseigne au moins un prénom, un nom ou une entreprise.');
+      return;
+    }
+    contactSavingRef.current = true;
+    setContactSaving(true);
+    setContactError(null);
+    try {
+      const contact = await onCreateContact({
+        first_name: contactForm.firstName.trim() || null,
+        last_name: contactForm.lastName.trim() || null,
+        company: contactForm.company.trim() || null,
+        email: contactForm.email.trim() || null,
+      });
+      setContactId(contact.id);
+    } catch {
+      setContactError('Impossible de créer le contact pour le moment.');
+    } finally {
+      contactSavingRef.current = false;
+      setContactSaving(false);
+    }
+  }
+
   if (data.contacts.length === 0) {
     const contactsUnavailable = data.unavailableSources.includes('contacts');
+    if (!contactsUnavailable) {
+      return (
+        <div className="space-y-4" data-testid="invoice-first-contact-form">
+          <section className="rounded-[13px] border border-border bg-surface p-4">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-accent"><Users className="h-4 w-4" /></span>
+              <div>
+                <h3 className="text-sm font-bold text-text">Crée le client de ce premier devis</h3>
+                <p className="mt-1 text-xs leading-5 text-text-muted">Le contact sera enregistré dans le CRM puis sélectionné automatiquement. Tu restes dans ce canevas.</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="text-xs text-text-muted">Prénom
+                <input aria-label="Prénom du nouveau contact" value={contactForm.firstName} onChange={(event) => setContactForm((current) => ({ ...current, firstName: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+              <label className="text-xs text-text-muted">Nom
+                <input aria-label="Nom du nouveau contact" value={contactForm.lastName} onChange={(event) => setContactForm((current) => ({ ...current, lastName: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+              <label className="text-xs text-text-muted">Entreprise
+                <input aria-label="Entreprise du nouveau contact" value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+              <label className="text-xs text-text-muted">Email
+                <input aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+            </div>
+            {contactError && <p className="mt-3 text-xs font-semibold text-error" role="alert">{contactError}</p>}
+            <div className="mt-4 flex justify-end">
+              <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">
+                {contactSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {contactSaving ? 'Création du contact…' : 'Créer et continuer le devis'}
+              </button>
+            </div>
+          </section>
+        </div>
+      );
+    }
     return (
       <StateShell>
         <div className="text-center" data-testid="invoice-no-contact">
@@ -454,6 +521,7 @@ export function InvoiceWorkspaceCanvas({
   onRetry,
   onRetryInvoice,
   onCreateDraft,
+  onCreateContact,
   onOpenClassic,
 }: {
   resource: ReadResource<InvoiceWorkspaceData>;
@@ -462,6 +530,7 @@ export function InvoiceWorkspaceCanvas({
   onRetry: () => void;
   onRetryInvoice: () => void;
   onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
   onOpenClassic: () => void;
 }) {
   return (
@@ -478,7 +547,7 @@ export function InvoiceWorkspaceCanvas({
         ) : resource.status === 'error' ? (
           <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
         ) : selection === 'new-devis' ? (
-          <DevisDraftForm data={resource.data} onCreateDraft={onCreateDraft} />
+          <DevisDraftForm data={resource.data} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
         ) : !invoiceResource || invoiceResource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement du document…</div></StateShell>
         ) : invoiceResource.status === 'error' ? (

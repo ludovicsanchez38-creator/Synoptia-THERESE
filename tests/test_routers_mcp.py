@@ -104,9 +104,9 @@ class TestMCPPresets:
             ):
                 response = await client.post(f"/api/mcp/presets/{preset_id}/install")
 
-            # Should either succeed or fail gracefully
-            # May get 500 if duplicate command+args already exist in singleton service
-            assert response.status_code in [200, 400, 404]
+            # Should either succeed or fail gracefully. A missing local runtime
+            # (for example npx) is reported as an unprocessable preset.
+            assert response.status_code in [200, 400, 404, 422]
 
 
 class TestMCPTools:

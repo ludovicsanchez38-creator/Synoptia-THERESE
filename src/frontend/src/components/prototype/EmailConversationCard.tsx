@@ -130,7 +130,7 @@ export function EmailInboxCard({
           </div>
         </EmailStateShell>
       ) : (
-        <div className="divide-y divide-[#EDF1F7]">
+        <div className="divide-y divide-border">
           {visibleMessages.map((message) => {
             const priority = priorityLabel(message);
             return (
