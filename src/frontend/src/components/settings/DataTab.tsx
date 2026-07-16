@@ -115,6 +115,10 @@ function DemoModeSection() {
           </p>
         </div>
         <button
+          type="button"
+          role="switch"
+          aria-label="Activer le mode Démo"
+          aria-checked={demoEnabled}
           onClick={toggleDemo}
           className={`relative w-11 h-6 rounded-full transition-colors ${
             demoEnabled ? 'bg-accent-cyan' : 'bg-border'

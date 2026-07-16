@@ -1,7 +1,7 @@
 /**
  * US-013 : le focus est piégé dans les modales et restauré à la fermeture.
  */
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { useDialogFocusTrap } from './useDialogFocusTrap';
@@ -12,6 +12,7 @@ function Harness({ withEscape = true }: { withEscape?: boolean }) {
   useDialogFocusTrap(ref, {
     active: open,
     onEscape: withEscape ? () => setOpen(false) : undefined,
+    isolateBackground: true,
   });
   return (
     <div>
@@ -58,6 +59,29 @@ describe('useDialogFocusTrap (US-013)', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('rend le contenu extérieur inerte et le restaure à la fermeture', () => {
+    const { getByTestId } = render(<Harness />);
+    const trigger = getByTestId('trigger');
+    fireEvent.click(trigger);
+
+    expect(trigger).toHaveAttribute('inert');
+    expect(trigger).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(trigger).not.toHaveAttribute('inert');
+    expect(trigger).not.toHaveAttribute('aria-hidden');
+  });
+
+  it('privilégie la cible de focus initial explicitement désignée', () => {
+    function PreferredHarness() {
+      const ref = useRef<HTMLDivElement>(null);
+      useDialogFocusTrap(ref, { active: true });
+      return <div ref={ref} role="dialog"><button>Premier</button><h2 tabIndex={-1} data-dialog-autofocus>Cible</h2></div>;
+    }
+    render(<PreferredHarness />);
+    expect(screen.getByRole('heading', { name: 'Cible' })).toHaveFocus();
   });
 
   it("sans onEscape, Escape ne ferme pas (wizards multi-étapes)", () => {

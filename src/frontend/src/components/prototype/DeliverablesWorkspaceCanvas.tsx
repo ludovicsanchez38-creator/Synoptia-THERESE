@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   BriefcaseBusiness,
@@ -22,6 +22,8 @@ import {
   usePrototypeDeliverableProjectData,
   usePrototypeDeliverablesProjects,
 } from './usePrototypeDeliverablesData';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 type DeliverableStatus = 'all' | 'a_faire' | 'en_cours' | 'en_revision' | 'valide';
 
@@ -126,6 +128,8 @@ export function DeliverablesWorkspaceCanvas({
   const { resource: projectsResource, refresh: refreshProjects, limitReached: projectLimitReached } = usePrototypeDeliverablesProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<DeliverableStatus>('all');
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
 
   useEffect(() => {
     if (projectsResource.status !== 'ready') return;
@@ -170,11 +174,11 @@ export function DeliverablesWorkspaceCanvas({
           : selectedProject?.status || 'Statut inconnu';
 
   return (
-    <aside className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="deliverables-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
       <button type="button" onClick={onClose} aria-label="Fermer le suivi client" className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted shadow-sm hover:text-text"><PanelRightClose className="h-4 w-4" /></button>
       <header className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted"><FileCheck2 className="h-3.5 w-3.5" />Lecture locale unifiée</div>
-        <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">Livrables et suivi client</h2>
+        <h2 id="deliverables-workspace-title" data-dialog-autofocus tabIndex={-1} className="mt-2 text-xl font-bold tracking-[-0.02em] text-text outline-none">Livrables et suivi client</h2>
         <p className="mt-1 text-sm text-text-muted">Promis, livré, tâches restantes et facturation du contact, sans modifier les données.</p>
       </header>
 
@@ -194,10 +198,10 @@ export function DeliverablesWorkspaceCanvas({
             <section className="mt-4 rounded-[13px] border border-border bg-surface p-4">
               <div className="flex items-start justify-between gap-3"><div><div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted"><UserRound className="h-3 w-3" />{contactLabel}</div><h3 className="mt-1 text-base font-bold text-text">{view.project.name}</h3></div><span className="rounded-full bg-bg px-2 py-1 text-[10px] font-semibold text-text-muted">{projectStatus}</span></div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center"><div className="rounded-[9px] bg-surface-2 p-2"><div className="text-lg font-bold text-text">{detail?.deliverables.status === 'ready' ? view.deliverables.length : '—'}</div><div className="text-[9px] text-text-muted">Livrables</div></div><div className="rounded-[9px] bg-accent-tint p-2"><div className="text-lg font-bold text-success">{detail?.deliverables.status === 'ready' ? view.validated : '—'}</div><div className="text-[9px] text-text-muted">Validés</div></div><div className="rounded-[9px] bg-surface-2 p-2"><div className="text-lg font-bold text-text">{detail?.tasks.status === 'ready' ? view.tasks.length : '—'}</div><div className="text-[9px] text-text-muted">Tâches ouvertes</div></div></div>
-              {detail?.deliverables.status === 'ready' && <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2"><div className="h-full rounded-full bg-[var(--k1)] transition-[width]" style={{ width: `${view.deliverables.length ? Math.round((view.validated / view.deliverables.length) * 100) : 0}%` }} /></div>}
+              {detail?.deliverables.status === 'ready' && <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-label="Livrables validés" aria-valuemin={0} aria-valuemax={view.deliverables.length} aria-valuenow={view.validated} aria-valuetext={`${view.validated} livrable${view.validated > 1 ? 's' : ''} validé${view.validated > 1 ? 's' : ''} sur ${view.deliverables.length}`}><div className="h-full rounded-full bg-[var(--k1)] transition-[width]" style={{ width: `${view.deliverables.length ? Math.round((view.validated / view.deliverables.length) * 100) : 0}%` }} /></div>}
             </section>
 
-            <div className="mt-4 flex flex-wrap gap-1.5">{STATUS_FILTERS.map((filter) => <button key={filter.id} type="button" onClick={() => setStatusFilter(filter.id)} className={`rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${statusFilter === filter.id ? 'border-text bg-text text-white' : 'border-border bg-surface text-text-muted'}`}>{filter.label}</button>)}</div>
+            <div role="toolbar" aria-label="Filtrer les livrables" className="mt-4 flex flex-wrap gap-1.5">{STATUS_FILTERS.map((filter) => <button key={filter.id} data-deliverable-filter type="button" aria-pressed={statusFilter === filter.id} tabIndex={statusFilter === filter.id ? 0 : -1} onKeyDown={(event) => handleRovingFocus(event, '[data-deliverable-filter]', 'horizontal')} onClick={() => setStatusFilter(filter.id)} className={`rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${statusFilter === filter.id ? 'border-text bg-text text-white' : 'border-border bg-surface text-text-muted'}`}>{filter.label}</button>)}</div>
 
             <section className="mt-3 space-y-2" aria-label="Livrables du projet">
               {!detail || detail.deliverables.status === 'loading' ? <div className="flex items-center justify-center gap-2 rounded-[11px] border border-border bg-surface px-4 py-7 text-xs text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement des livrables…</div> : detail.deliverables.status === 'error' ? <div role="alert" className="rounded-[11px] border border-warning/40 bg-[var(--color-warning-tint)] px-4 py-4 text-xs text-warning">{detail.deliverables.error}</div> : view.filteredDeliverables.length > 0 ? view.filteredDeliverables.map((deliverable) => <DeliverableRow key={deliverable.id} deliverable={deliverable} />) : <div className="rounded-[11px] border border-dashed border-[#C8D3E3] bg-surface px-4 py-7 text-center text-xs text-text-muted">{view.deliverables.length === 0 ? 'Aucun livrable réel n’est encore rattaché à ce projet.' : 'Aucun livrable avec ce statut.'}</div>}

@@ -47,7 +47,7 @@ describe('Calculateurs conversationnels 0.40', () => {
 
   it('bloque localement un score ICE hors limites', () => {
     render(<CalculatorWorkspaceCanvas onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'ICE' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'ICE' }));
     fireEvent.change(screen.getByLabelText('Impact'), { target: { value: '11' } });
     fireEvent.click(screen.getByRole('button', { name: 'Calculer avec le moteur local' }));
 
@@ -61,7 +61,7 @@ describe('Calculateurs conversationnels 0.40', () => {
       interpretation: 'Bon score ICE.',
     });
     render(<CalculatorWorkspaceCanvas onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'ICE' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'ICE' }));
     fireEvent.change(screen.getByLabelText('Impact'), { target: { value: '8' } });
     fireEvent.change(screen.getByLabelText('Confiance'), { target: { value: '7' } });
     fireEvent.change(screen.getByLabelText('Facilité'), { target: { value: '6' } });
@@ -77,7 +77,7 @@ describe('Calculateurs conversationnels 0.40', () => {
       interpretation: 'Très bon score RICE.',
     });
     render(<CalculatorWorkspaceCanvas onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'RICE' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'RICE' }));
     fireEvent.change(screen.getByLabelText('Portée par trimestre'), { target: { value: '1000' } });
     fireEvent.change(screen.getByLabelText('Impact RICE'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Confiance'), { target: { value: '80' } });
@@ -94,7 +94,7 @@ describe('Calculateurs conversationnels 0.40', () => {
       npv: -39669.42, interpretation: 'VAN négative.',
     });
     render(<CalculatorWorkspaceCanvas onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'VAN' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'VAN' }));
     fireEvent.change(screen.getByLabelText('Investissement initial'), { target: { value: '100000' } });
     fireEvent.change(screen.getByLabelText('Taux d’actualisation par période'), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText('Flux de trésorerie par période'), { target: { value: '30000 ; 40000' } });
@@ -105,7 +105,7 @@ describe('Calculateurs conversationnels 0.40', () => {
 
   it('refuse un seuil de rentabilité sans marge unitaire positive', () => {
     render(<CalculatorWorkspaceCanvas onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Seuil' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Seuil' }));
     fireEvent.change(screen.getByLabelText('Coûts fixes'), { target: { value: '50000' } });
     fireEvent.change(screen.getByLabelText('Coût variable par unité'), { target: { value: '60' } });
     fireEvent.change(screen.getByLabelText('Prix de vente par unité'), { target: { value: '50' } });

@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { ChatInput } from './ChatInput';
 
 const apiMocks = vi.hoisted(() => ({
@@ -56,6 +57,7 @@ describe('ChatInput sans modèle', () => {
       queuedPrompt: null,
     });
     usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
+    useAccessibilityStore.setState({ showKeyboardHints: true });
   });
 
   it('explique l’absence de modèle, bloque l’envoi et ouvre les réglages IA', async () => {
@@ -95,6 +97,21 @@ describe('ChatInput sans modèle', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Micro indisponible');
     fireEvent.click(screen.getByRole('button', { name: 'Fermer l’erreur de dictée' }));
     expect(screen.queryByText('Micro indisponible')).not.toBeInTheDocument();
+  });
+
+  it('masque immédiatement les indications de raccourcis selon le réglage d’accessibilité', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'ollama', model: 'gemma4-tia:latest',
+      available_models: ['gemma4-tia:latest'], available: true,
+    });
+    render(<ChatInput />);
+    await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    expect(screen.getByText(/nouvelle ligne/)).toBeInTheDocument();
+    expect(screen.getByText(/commandes/)).toBeInTheDocument();
+
+    act(() => useAccessibilityStore.setState({ showKeyboardHints: false }));
+    expect(screen.queryByText(/nouvelle ligne/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/commandes/)).not.toBeInTheDocument();
   });
 
   it('demande le consentement au premier envoi cloud en nommant le fournisseur et les données', async () => {

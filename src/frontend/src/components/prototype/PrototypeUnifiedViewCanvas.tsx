@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { AppView } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 const HomeView = lazy(() => import('../home/HomeView').then((module) => ({ default: module.HomeView })));
 const CRMPanel = lazy(() => import('../crm').then((module) => ({ default: module.CRMPanel })));
@@ -36,15 +37,17 @@ export function PrototypeUnifiedViewCanvas({
 }) {
   const openNewContact = usePanelStore((state) => state.openNewContact);
   const openEditContact = usePanelStore((state) => state.openEditContact);
+  const dialogRef = useRef<HTMLElement>(null);
+  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
 
   return (
-    <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg" data-testid="prototype-unified-view" data-view={view}>
+    <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="prototype-unified-view-title" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg" data-testid="prototype-unified-view" data-view={view}>
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
         <button type="button" onClick={onClose} aria-label="Revenir à la conversation unifiée" className="flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-xs font-medium text-text-muted hover:bg-surface-elevated hover:text-text">
           <ArrowLeft className="h-4 w-4" />
           Retour
         </button>
-        <h2 className="text-sm font-semibold text-text">{viewLabels[view]}</h2>
+        <h2 id="prototype-unified-view-title" data-dialog-autofocus tabIndex={-1} className="text-sm font-semibold text-text outline-none">{viewLabels[view]}</h2>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
         <Suspense fallback={<div className="grid h-full place-items-center text-sm text-text-muted">Chargement…</div>}>

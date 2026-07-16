@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 // Configuration des providers LLM
 export interface ProviderConfig {
@@ -275,7 +276,7 @@ export function LLMTab({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2" role="radiogroup" aria-label="Fournisseur LLM">
           {PROVIDERS.map((provider) => {
             const isAvailable = provider.id === 'ollama'
               ? ollamaStatus?.available
@@ -285,7 +286,12 @@ export function LLMTab({
             return (
               <button
                 key={provider.id}
+                type="button"
+                role="radio"
+                aria-checked={selectedProvider === provider.id}
+                tabIndex={selectedProvider === provider.id ? 0 : -1}
                 onClick={() => onSelectProvider(provider.id)}
+                onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
                 disabled={!isAvailable && provider.id === 'ollama'}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
                   selectedProvider === provider.id
@@ -388,6 +394,8 @@ export function LLMTab({
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
+                  aria-label={showApiKey ? 'Masquer la clé API' : 'Afficher la clé API'}
+                  aria-pressed={showApiKey}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
                 >
                   {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -475,6 +483,7 @@ export function LLMTab({
                 onClick={onRetestOllama}
                 disabled={retestingOllama}
                 title="Re-tester la connexion Ollama"
+                aria-label="Re-tester la connexion Ollama"
                 className="shrink-0"
               >
                 <RefreshCw className={`w-4 h-4 ${retestingOllama ? 'animate-spin' : ''}`} />

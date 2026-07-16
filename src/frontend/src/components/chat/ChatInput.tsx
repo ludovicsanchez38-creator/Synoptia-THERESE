@@ -31,6 +31,7 @@ import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 import { getCloudConsent, recordCloudConsent } from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
 const MIN_ROWS = 2;
 const MAX_ROWS = 12;
@@ -96,6 +97,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const showKeyboardHints = useAccessibilityStore((state) => state.showKeyboardHints);
 
   const {
     addMessage,
@@ -941,7 +943,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               {queuedPrompt}
             </span>
             <button
+              type="button"
               onClick={() => setQueuedPrompt(null)}
+              aria-label="Annuler le message en file d’attente"
               className="flex-shrink-0 text-text-muted/60 hover:text-text transition-colors"
             >
               <X className="w-4 h-4" />
@@ -957,6 +961,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             <Cpu className="w-3.5 h-3.5 text-accent-cyan" />
             {availableModels.length > 1 ? (
               <select
+                aria-label="Modèle de conversation"
                 value={currentModel}
                 onChange={(e) => handleModelChange(e.target.value)}
                 className="text-xs font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
@@ -1021,6 +1026,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           disabled={isDisabled}
           onClick={handleAttachClick}
           title={`Joindre un fichier (${/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+'}O)`}
+          aria-label="Joindre un fichier"
         >
           <Paperclip className="w-5 h-5" />
         </Button>
@@ -1084,6 +1090,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             className="flex-shrink-0 h-9 w-9 bg-error hover:bg-error/80"
             onClick={stopStreaming}
             title="Arrêter la réponse"
+            aria-label="Arrêter la réponse"
           >
             <Square className="w-4 h-4" />
           </Button>
@@ -1096,6 +1103,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             onClick={handleDeepResearch}
             disabled={isDisabled}
             title="Recherche approfondie (multi-sources)"
+            aria-label="Lancer une recherche approfondie"
           >
             <Search className="w-4 h-4" />
           </Button>
@@ -1108,6 +1116,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           onClick={sendMessage}
           disabled={isDisabled || !input.trim()}
           title={isStreaming ? 'Envoyer en file d\'attente' : 'Envoyer (↵)'}
+          aria-label={isStreaming ? 'Mettre le message en file d’attente' : 'Envoyer le message'}
         >
           <Send className="w-4 h-4" />
         </Button>
@@ -1133,15 +1142,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* Hints + indicateur sauvegarde */}
       <div className="flex items-center justify-center gap-4 mt-2">
-        <p className="text-xs text-text-muted">
+        {showKeyboardHints && <p className="text-xs text-text-muted">
           <kbd className="px-1 rounded bg-surface-elevated">⇧</kbd>+
           <kbd className="px-1 rounded bg-surface-elevated">↵</kbd> nouvelle ligne
-        </p>
-        <p className="text-xs text-text-muted">
+        </p>}
+        {showKeyboardHints && <p className="text-xs text-text-muted">
           <kbd className="px-1 rounded bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
           <kbd className="px-1 rounded bg-surface-elevated">K</kbd> commandes
-        </p>
-        {suggestion && (
+        </p>}
+        {showKeyboardHints && suggestion && (
           <p className="text-xs text-accent-cyan/60">
             <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd> accepter
           </p>

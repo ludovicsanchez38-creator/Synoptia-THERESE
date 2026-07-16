@@ -13,6 +13,7 @@ import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility
 import * as api from './services/api';
 import { Z_LAYER } from './styles/z-layers';
 import { getInterfaceMode } from './lib/interfaceMode';
+import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
 const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
@@ -41,6 +42,7 @@ function ApplicationBootstrap() {
   const setReduceMotion = useAccessibilityStore((state) => state.setReduceMotion);
   // US-013 : MotionConfig global
   const reduceMotion = useAccessibilityStore((state) => state.reduceMotion);
+  useAccessibilityRoot(fontSize, reduceMotion);
 
   // Refonte DA : applique le theme clair/sombre sur <html> pour que tout le
   // document (body, #root, chrome de fenetre) suive les variables de couleur.
@@ -165,7 +167,6 @@ function ApplicationBootstrap() {
       <MotionConfig reducedMotion={reduceMotion ? 'always' : 'user'}>
       <div
         className="relative h-screen w-screen bg-bg text-text overflow-hidden"
-        style={{ fontSize }}
         data-testid="app-main"
         data-interface-mode={interfaceMode}
         data-theme={theme}

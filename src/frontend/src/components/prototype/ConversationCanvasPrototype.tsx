@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import {
   ArrowUp,
   Bell,
@@ -92,8 +92,8 @@ import { PanelContainer } from '../chat/PanelContainer';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
-import { usePrototypeDialogFocusTrap } from './usePrototypeDialogFocusTrap';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
@@ -177,7 +177,7 @@ function SourceChip({ icon, label }: { icon: ReactNode; label: string }) {
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
+    <div role="presentation" className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
       {children}
     </div>
   );
@@ -285,14 +285,26 @@ function ContextCanvas({
   onOpenBoardPanel: () => void;
   onOpenAtelierPanel: () => void;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
+
   return (
     <motion.aside
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="prototype-context-canvas-title"
+      tabIndex={-1}
       initial={{ x: 32, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 32, opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
       className="absolute inset-y-0 right-0 z-20 h-full w-full max-w-[620px] border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none"
     >
+      <h2 id="prototype-context-canvas-title" data-dialog-autofocus tabIndex={-1} className="sr-only">
+        {scenarioLabels[scenario]}
+      </h2>
       <button
         type="button"
         onClick={onClose}
@@ -387,8 +399,10 @@ function CommandPalette({
   onAction: (actionId: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [activeOption, setActiveOption] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
-  usePrototypeDialogFocusTrap(dialogRef);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
   const visibleCapabilities = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
@@ -412,6 +426,30 @@ function CommandPalette({
         .includes(normalized),
     ).slice(0, 6);
   }, [query]);
+  const scenarioCount = query ? 0 : 7;
+  const optionCount = scenarioCount + visibleCapabilities.length + visibleActions.length;
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+
+  useEffect(() => {
+    setActiveOption(0);
+  }, [query]);
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      setActiveOption((current) => {
+        if (optionCount === 0) return 0;
+        if (event.key === 'Home') return 0;
+        if (event.key === 'End') return optionCount - 1;
+        return event.key === 'ArrowDown'
+          ? (current + 1) % optionCount
+          : (current - 1 + optionCount) % optionCount;
+      });
+    } else if (event.key === 'Enter' && optionCount > 0) {
+      event.preventDefault();
+      dialogRef.current?.querySelectorAll<HTMLElement>('[role="option"]')[activeOption]?.click();
+    }
+  };
 
   return (
     <motion.div
@@ -438,21 +476,35 @@ function CommandPalette({
           <input
             autoFocus
             data-dialog-autofocus
+            role="combobox"
+            aria-label="Rechercher une commande, un parcours ou une capacité"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls="prototype-command-results"
+            aria-activedescendant={optionCount > 0 ? `prototype-command-option-${activeOption}` : undefined}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Chercher ou demander à Thérèse…"
             className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
           />
-          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">esc</kbd>
+          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">Échap</kbd>
+          <button type="button" onClick={onClose} className="rounded-[7px] border border-border px-2 py-1 text-[10px] font-semibold text-text-muted hover:text-text">Fermer</button>
         </div>
-        <div className="max-h-[440px] overflow-y-auto p-2">
+        <div id="prototype-command-results" role="listbox" aria-label="Résultats" className="max-h-[440px] overflow-y-auto p-2">
+          <div className="sr-only" role="status" aria-live="polite">{optionCount} résultat{optionCount > 1 ? 's' : ''}</div>
           {!query && (
             <>
               <SectionLabel>Parcours</SectionLabel>
-              {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item) => (
+              {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item, optionIndex) => (
                 <button
                   key={item}
+                  id={`prototype-command-option-${optionIndex}`}
+                  role="option"
+                  aria-selected={activeOption === optionIndex}
+                  tabIndex={-1}
                   type="button"
+                  onMouseEnter={() => setActiveOption(optionIndex)}
                   onClick={() => {
                     onSelect(item);
                     onClose();
@@ -488,12 +540,18 @@ function CommandPalette({
           )}
 
           <SectionLabel>{query ? `${visibleCapabilities.length} résultat${visibleCapabilities.length > 1 ? 's' : ''}` : 'Capacités fréquentes'}</SectionLabel>
-          {visibleCapabilities.map((capability) => {
+          {visibleCapabilities.map((capability, capabilityIndex) => {
             const Icon = capability.icon;
+            const optionIndex = scenarioCount + capabilityIndex;
             return (
               <button
                 key={capability.id}
+                id={`prototype-command-option-${optionIndex}`}
+                role="option"
+                aria-selected={activeOption === optionIndex}
+                tabIndex={-1}
                 type="button"
+                onMouseEnter={() => setActiveOption(optionIndex)}
                 onClick={() => {
                   onCapability(capability);
                   onClose();
@@ -524,19 +582,20 @@ function CommandPalette({
             <>
               <div className="my-2 h-px bg-border" />
               <SectionLabel>Commandes de l’application</SectionLabel>
-              {visibleActions.map((action) => (
-                <button key={action.id} type="button" onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg">
+              {visibleActions.map((action, actionIndex) => {
+                const optionIndex = scenarioCount + visibleCapabilities.length + actionIndex;
+                return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg">
                   <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
                   {action.shortcut && <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">{action.shortcut}</kbd>}
-                </button>
-              ))}
+                </button>;
+              })}
             </>
           )}
         </div>
         <div className="flex items-center justify-between border-t border-border bg-surface-2 px-4 py-2 text-[10px] text-text-muted">
           <span>{capabilities.length} capacités indexées</span>
-          <span>Recherche par résultat, fonction ou outil</span>
+          <span>Recherche par résultat, fonction ou outil · {isMac ? '⌘K' : 'Ctrl+K'}</span>
         </div>
       </motion.div>
     </motion.div>
@@ -658,6 +717,11 @@ export function ConversationCanvasPrototype() {
     return true;
   }, [isStreaming]);
 
+  const closeConversationDrawer = useCallback(() => setDrawerOpen(false), []);
+  const closeCommandPalette = useCallback(() => setCommandOpen(false), []);
+  const closeCapabilityCenter = useCallback(() => setCapabilityCenterOpen(false), []);
+  const closeTrustCenter = useCallback(() => setTrustCenterOpen(false), []);
+
   const openConversationDrawer = useCallback((surface: PrototypeConversationDrawerSurface) => {
     setDrawerSurface(surface);
     setDrawerOpen(true);
@@ -667,9 +731,9 @@ export function ConversationCanvasPrototype() {
   }, []);
 
   const toggleConversationDrawer = useCallback(() => {
-    if (drawerOpen) setDrawerOpen(false);
+    if (drawerOpen) closeConversationDrawer();
     else openConversationDrawer('history');
-  }, [drawerOpen, openConversationDrawer]);
+  }, [closeConversationDrawer, drawerOpen, openConversationDrawer]);
 
   useEffect(() => {
     let active = true;
@@ -750,7 +814,7 @@ export function ConversationCanvasPrototype() {
     setLastCollapsedRightPanel({ kind: 'embedded', view: embeddedView });
     setEmbeddedView(null);
   }, [embeddedView]);
-  const collapseToolPanel = (tool: RightPanelTool) => {
+  const collapseToolPanel = useCallback((tool: RightPanelTool) => {
     setLastCollapsedRightPanel({ kind: 'tool', tool });
     if (tool === 'calculator') setCalculatorOpen(false);
     else if (tool === 'deliverables') setDeliverablesOpen(false);
@@ -758,12 +822,12 @@ export function ConversationCanvasPrototype() {
     else if (tool === 'follow-ups') setFollowUpsOpen(false);
     else setVoiceOpen(false);
     setCanvasOpen(false);
-  };
-  const collapseScenarioPanel = () => {
+  }, []);
+  const collapseScenarioPanel = useCallback(() => {
     if (scenario === 'today') return;
     setLastCollapsedRightPanel({ kind: 'scenario', scenario });
     setCanvasOpen(false);
-  };
+  }, [scenario]);
   const reopenLastRightPanel = () => {
     if (!lastCollapsedRightPanel || blockStreamingNavigation()) return;
     const panel = lastCollapsedRightPanel;
@@ -815,38 +879,26 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (commandOpen) setCommandOpen(false);
-        else if (capabilityCenterOpen) setCapabilityCenterOpen(false);
-        else if (trustCenterOpen) setTrustCenterOpen(false);
-        else if (drawerOpen) setDrawerOpen(false);
+        if (commandOpen) closeCommandPalette();
+        else if (capabilityCenterOpen) closeCapabilityCenter();
+        else if (trustCenterOpen) closeTrustCenter();
+        else if (drawerOpen) closeConversationDrawer();
         else if (chatOpen) {
           if (blockStreamingNavigation()) return;
           setChatOpen(false);
           setChatInitialPrompt(null);
         } else if (embeddedView) collapseEmbeddedView();
-        else if (calculatorOpen) {
-          setCalculatorOpen(false);
-          setCanvasOpen(false);
-        } else if (deliverablesOpen) {
-          setDeliverablesOpen(false);
-          setCanvasOpen(false);
-        } else if (imagesOpen) {
-          setImagesOpen(false);
-          setCanvasOpen(false);
-        } else if (followUpsOpen) {
-          setFollowUpsOpen(false);
-          setCanvasOpen(false);
-        } else if (voiceOpen) {
-          setVoiceOpen(false);
-          setCanvasOpen(false);
-        } else if (canvasOpen) {
-          setCanvasOpen(false);
-        }
+        else if (calculatorOpen) collapseToolPanel('calculator');
+        else if (deliverablesOpen) collapseToolPanel('deliverables');
+        else if (imagesOpen) collapseToolPanel('images');
+        else if (followUpsOpen) collapseToolPanel('follow-ups');
+        else if (voiceOpen) collapseToolPanel('voice');
+        else if (canvasOpen) collapseScenarioPanel();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, collapseEmbeddedView, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
+  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, closeCapabilityCenter, closeCommandPalette, closeConversationDrawer, closeTrustCenter, collapseEmbeddedView, collapseScenarioPanel, collapseToolPanel, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
 
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
@@ -1036,7 +1088,7 @@ export function ConversationCanvasPrototype() {
       data-high-contrast={highContrast ? 'true' : undefined}
     >
       <div className="flex h-full flex-col">
-        <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
+        <header data-dialog-allow className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4">
           <div className="flex flex-1 items-center gap-4">
             <div className="flex items-center gap-2" aria-hidden="true">
               <span className="h-3 w-3 rounded-full bg-[#FF605C]" />
@@ -1082,7 +1134,7 @@ export function ConversationCanvasPrototype() {
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
-              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">⌘K</kbd>
+              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
             <IconButton label="Notifications" onClick={() => chooseScenario('today')}><Bell className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
@@ -1090,7 +1142,7 @@ export function ConversationCanvasPrototype() {
         </header>
 
         <div className="relative flex min-h-0 flex-1">
-          <nav aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
+          <nav data-dialog-allow aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
             <IconButton label="Conversations" onClick={toggleConversationDrawer} active={drawerOpen}>
               <Menu className="h-[18px] w-[18px]" />
             </IconButton>
@@ -1101,11 +1153,11 @@ export function ConversationCanvasPrototype() {
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             <div className="mt-auto flex flex-col items-center gap-1.5">
               <IconButton label="Aide" onClick={() => openChat('/aide')}><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
-              <button type="button" onClick={() => openSettings('profile')} className="grid h-9 w-9 place-items-center rounded-full border border-text bg-text text-[11px] font-bold text-white shadow-[2px_2px_0_#22D3EE]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
+              <button type="button" onClick={() => openSettings('profile')} aria-label="Ouvrir le profil" className="grid h-9 w-9 place-items-center rounded-full border border-text bg-text text-[11px] font-bold text-white shadow-[2px_2px_0_#22D3EE]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
             </div>
           </nav>
 
-          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer surface={drawerSurface} navigationLocked={isStreaming} onClose={() => setDrawerOpen(false)} onOpenChat={() => openChat()} />}</AnimatePresence>
+          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer surface={drawerSurface} navigationLocked={isStreaming} onClose={closeConversationDrawer} onOpenChat={() => openChat()} />}</AnimatePresence>
 
           <main id="main-content" className="relative flex min-w-0 flex-1 overflow-hidden">
             {chatOpen ? (
@@ -1335,6 +1387,7 @@ export function ConversationCanvasPrototype() {
                           key={item}
                           type="button"
                           onClick={() => chooseScenario(item)}
+                          aria-pressed={scenario === item}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold ${
                             scenario === item
                               ? 'border-text bg-text text-white'
@@ -1369,6 +1422,7 @@ export function ConversationCanvasPrototype() {
                     {destinationUsesChat ? (
                       <textarea
                         ref={composerRef}
+                        aria-label="Message à Thérèse"
                         value={composerValue}
                         onChange={(event) => setComposerValue(event.target.value)}
                         onKeyDown={(event) => {
@@ -1429,7 +1483,7 @@ export function ConversationCanvasPrototype() {
                         <button
                           type="button"
                           onClick={submitComposer}
-                          disabled={destinationIsPending}
+                          disabled={destinationIsPending || (destinationUsesChat && !composerValue.trim())}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
                           className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[#22D3EE] text-[#06121F] shadow-[2px_2px_0_var(--btn-shadow-color)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
@@ -1571,18 +1625,18 @@ export function ConversationCanvasPrototype() {
       <AnimatePresence>
         {commandOpen && (
           <CommandPalette
-            onClose={() => setCommandOpen(false)}
+            onClose={closeCommandPalette}
             onSelect={chooseScenario}
             onCapability={chooseCapability}
             onAction={runUnifiedAction}
           />
         )}
         {capabilityCenterOpen && (
-          <CapabilityCenter onClose={() => setCapabilityCenterOpen(false)} onChoose={chooseCapability} />
+          <CapabilityCenter onClose={closeCapabilityCenter} onChoose={chooseCapability} />
         )}
         {trustCenterOpen && (
           <TrustCenter
-            onClose={() => setTrustCenterOpen(false)}
+            onClose={closeTrustCenter}
             onOpenPrivacy={() => openSettings('privacy')}
             onOpenAdvanced={() => openSettings('advanced')}
           />

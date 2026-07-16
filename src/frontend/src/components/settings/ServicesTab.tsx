@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { IMAGE_PROVIDERS } from './LLMTab';
 import { ExportProfileSection } from './ExportProfileSection';
 import { VariablesSection } from './VariablesSection';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
@@ -99,7 +100,7 @@ export function ServicesTab({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4" role="radiogroup" aria-label="Fournisseur de génération d’images">
           {IMAGE_PROVIDERS.map((provider) => {
             const hasImageKey = apiKeys[provider.apiKeyId] === true;
             const keyInput = imageKeyInputs[provider.apiKeyId] || '';
@@ -109,7 +110,12 @@ export function ServicesTab({
             return (
               <div key={provider.id} className="space-y-2">
                 <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedImageProvider === provider.id}
+                  tabIndex={selectedImageProvider === provider.id ? 0 : -1}
                   onClick={() => onSelectImageProvider(provider.id)}
+                  onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
                     selectedImageProvider === provider.id
                       ? 'bg-accent-cyan/10 border-accent-cyan/50'
@@ -167,6 +173,8 @@ export function ServicesTab({
                       <button
                         type="button"
                         onClick={() => setShowApiKey(!showApiKey)}
+                        aria-label={showApiKey ? `Masquer la clé API ${provider.keyName}` : `Afficher la clé API ${provider.keyName}`}
+                        aria-pressed={showApiKey}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
                       >
                         {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -250,6 +258,8 @@ export function ServicesTab({
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
+                aria-label={showApiKey ? 'Masquer la clé API Groq' : 'Afficher la clé API Groq'}
+                aria-pressed={showApiKey}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
               >
                 {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -290,6 +300,10 @@ export function ServicesTab({
             </p>
           </div>
           <button
+            type="button"
+            role="switch"
+            aria-label="Activer la recherche Web"
+            aria-checked={webSearchEnabled}
             onClick={onToggleWebSearch}
             disabled={webSearchLoading}
             className={`relative w-12 h-6 rounded-full transition-colors ${
@@ -331,6 +345,7 @@ export function ServicesTab({
           </div>
           <div className="flex gap-2">
             <input
+              aria-label="Clé API Brave Search"
               type="password"
               value={braveKeyInput}
               onChange={(e) => setBraveKeyInput(e.target.value)}
@@ -357,6 +372,10 @@ export function ServicesTab({
             </p>
           </div>
           <button
+            type="button"
+            role="switch"
+            aria-label="Activer l’extraction automatique"
+            aria-checked={autoExtractEntities}
             onClick={onToggleAutoExtract}
             className={`w-12 h-6 rounded-full p-1 transition-colors ${
               autoExtractEntities ? 'bg-accent-cyan' : 'bg-border'

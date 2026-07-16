@@ -2,7 +2,7 @@
 // Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap, Shield } from 'lucide-react';
+import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap, Shield, Accessibility } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -16,6 +16,7 @@ import { ServicesTab } from './ServicesTab';
 import { ToolsPanel } from './ToolsPanel';
 import { AdvancedTab } from './AdvancedTab';
 import { AboutTab } from './AboutTab';
+import { AccessibilityTab } from './AccessibilityTab';
 import { AgentsTab } from './AgentsTab';
 import { PrivacyTab } from './PrivacyTab';
 import { resolveModelForProvider } from './modelResolution';
@@ -31,12 +32,13 @@ interface SettingsModalProps {
   requestedTab?: ClassicSettingsTab | null;
 }
 
-type Tab = 'profile' | 'ai' | 'services' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
+type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
 
 const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: boolean }[] = [
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'ai', label: 'IA', icon: Cpu },
   { id: 'services', label: 'Services', icon: Layers },
+  { id: 'accessibility', label: 'Accessibilité', icon: Accessibility },
   { id: 'tools', label: 'Outils', icon: Wrench, contributeurOnly: true },
   { id: 'agents', label: 'Agents', icon: Zap, contributeurOnly: true },
   { id: 'privacy', label: 'Confidentialité', icon: Shield },
@@ -53,11 +55,14 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { isContributeur, setUXMode } = useUXMode();
+  const visibleTabs = ALL_TABS.filter(
+    (tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab,
+  );
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
   // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
   const dialogRef = useRef<HTMLDivElement>(null);
-  useDialogFocusTrap(dialogRef, { active: isOpen });
+  useDialogFocusTrap(dialogRef, { active: isOpen, isolateBackground: true });
 
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
@@ -573,6 +578,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             onToggleAutoExtract={handleToggleAutoExtract}
           />
         );
+      case 'accessibility':
+        return <AccessibilityTab />;
       case 'tools':
         return <ToolsPanel onError={setError} />;
       case 'advanced':
@@ -593,12 +600,37 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     }
   }
 
+  function selectTab(tab: Tab) {
+    setActiveTab(tab);
+    setError(null);
+  }
+
+  function handleTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    const previous = event.key === 'ArrowUp' || event.key === 'ArrowLeft';
+    const next = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+    if (!previous && !next && event.key !== 'Home' && event.key !== 'End') return;
+    event.preventDefault();
+    const nextIndex = event.key === 'Home'
+      ? 0
+      : event.key === 'End'
+        ? visibleTabs.length - 1
+        : previous
+          ? (index - 1 + visibleTabs.length) % visibleTabs.length
+          : (index + 1) % visibleTabs.length;
+    const tab = visibleTabs[nextIndex];
+    selectTab(tab.id);
+    requestAnimationFrame(() => {
+      document.getElementById(`settings-tab-${tab.id}`)?.focus();
+    });
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
+            data-dialog-backdrop
             variants={overlayVariants}
             initial="initial"
             animate="animate"
@@ -626,7 +658,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             {/* En-tête */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <h2 className="text-lg font-semibold text-text">Paramètres</h2>
-              <Button variant="ghost" size="icon" onClick={onClose} data-testid="settings-close-btn">
+              <Button variant="ghost" size="icon" onClick={onClose} data-testid="settings-close-btn" aria-label="Fermer les paramètres">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -634,7 +666,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             {/* Corps : sidebar + contenu */}
             <div className="flex-1 flex overflow-hidden min-h-0">
               {/* Sidebar navigation */}
-              <nav className="w-44 shrink-0 border-r border-border/30 py-2 overflow-y-auto bg-background/30">
+              <nav role="tablist" aria-label="Rubriques des paramètres" aria-orientation="vertical" className="w-44 shrink-0 border-r border-border/30 py-2 overflow-y-auto bg-background/30">
                 {/* Toggle Mode Contributeur */}
                 <div className="px-4 py-3 border-b border-border/30 mb-2">
                   <label className="flex items-center gap-2 cursor-pointer group">
@@ -655,16 +687,20 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                     </div>
                   </label>
                 </div>
-                {ALL_TABS
-                  .filter((tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab)
-                  .map((tab) => {
+                {visibleTabs.map((tab, index) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
+                      id={`settings-tab-${tab.id}`}
+                      role="tab"
+                      aria-selected={isActive}
+                      aria-controls={`settings-panel-${tab.id}`}
+                      tabIndex={isActive ? 0 : -1}
                       data-testid={`settings-tab-${tab.id}`}
-                      onClick={() => { setActiveTab(tab.id); setError(null); }}
+                      onClick={() => selectTab(tab.id)}
+                      onKeyDown={(event) => handleTabKeyDown(event, index)}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                         isActive
                           ? 'bg-accent-cyan/10 text-accent-cyan border-r-2 border-accent-cyan'
@@ -679,7 +715,13 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
               </nav>
 
               {/* Contenu */}
-              <div className="flex-1 overflow-y-auto p-6">
+              <div
+                id={`settings-panel-${activeTab}`}
+                role="tabpanel"
+                aria-labelledby={`settings-tab-${activeTab}`}
+                tabIndex={0}
+                className="flex-1 overflow-y-auto p-6 outline-none"
+              >
                 {renderContent()}
               </div>
             </div>

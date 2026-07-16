@@ -1,10 +1,9 @@
 // Onglet Avancé - Paramètres THÉRÈSE
 // Regroupe : Stockage, Accessibilité, Performance, Limites, CRM Sync
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Database, FolderOpen, Check, ChevronDown } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { AccessibilityTab } from './AccessibilityTab';
 import { PerformanceTab } from './PerformanceTab';
 import { LimitsTab } from './LimitsTab';
 import { CRMSyncPanel } from './CRMSyncPanel';
@@ -29,18 +28,21 @@ function CollapsibleSection({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const panelId = useId();
 
   return (
     <div className="border border-border/30 rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
         className="w-full flex items-center justify-between px-4 py-3 bg-surface-elevated/30 hover:bg-surface-elevated/50 transition-colors text-left"
       >
         <span className="text-sm font-medium text-text">{title}</span>
         <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="px-4 py-4 border-t border-border/20">
+        <div id={panelId} className="px-4 py-4 border-t border-border/20">
           {children}
         </div>
       )}
@@ -106,11 +108,6 @@ export function AdvancedTab({
             </>
           )}
         </div>
-      </CollapsibleSection>
-
-      {/* Accessibilité */}
-      <CollapsibleSection title="Accessibilité">
-        <AccessibilityTab />
       </CollapsibleSection>
 
       {/* Performance */}

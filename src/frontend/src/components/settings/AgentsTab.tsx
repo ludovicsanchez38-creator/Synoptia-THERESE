@@ -77,6 +77,7 @@ function AgentModelSelect({
         </button>
       </div>
       <select
+        aria-label={`Modèle pour ${label}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
@@ -104,6 +105,7 @@ function AgentModelSelect({
           </p>
           <div className="flex gap-2">
             <input
+              aria-label={`Identifiant de modèle personnalisé pour ${label}`}
               type="text"
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
@@ -220,6 +222,8 @@ export function AgentsTab() {
           <h4 className="text-sm font-medium text-text">Statut</h4>
           <button
             onClick={handleRefreshStatus}
+            type="button"
+            aria-label="Actualiser le statut des agents"
             className="text-xs text-text-muted hover:text-text transition"
           >
             <RefreshCw size={14} />
@@ -280,6 +284,7 @@ export function AgentsTab() {
         <div className="flex gap-2">
           <input
             type="text"
+            aria-label="Chemin du code source"
             value={sourcePath}
             onChange={(e) => setSourcePathInput(e.target.value)}
             placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE"
@@ -303,6 +308,7 @@ export function AgentsTab() {
             }}
             className="shrink-0 rounded-lg border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-purple-500/50 transition"
             title="Parcourir..."
+            aria-label="Parcourir les dossiers"
           >
             <FolderOpen size={16} />
           </button>
