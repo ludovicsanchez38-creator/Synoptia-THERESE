@@ -119,6 +119,12 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
     billing_complete = False
     try:
         profile = get_cached_profile()
+        if profile is None:
+            # Cache vide après un démarrage avec profil chiffré : lecture de
+            # secours en session (déchiffre et répare le cache au passage).
+            from app.services.user_profile import get_user_profile
+
+            profile = await get_user_profile(session)
         if profile is not None:
             billing_complete = profile.is_billing_complete()
     except Exception as e:
