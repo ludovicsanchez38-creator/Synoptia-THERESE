@@ -40,15 +40,19 @@ os.environ.setdefault("THERESE_BACKUP_KDF_ITERATIONS", "1000")
 
 from app.main import app  # noqa: E402  (doit être importé APRÈS le setup os.environ ci-dessus)
 
+# US-001 : le middleware d'auth est fail-closed (503 quand aucun token de session).
+# Le lifespan de test n'en génère pas ; on coupe donc l'auth explicitement, AU
+# NIVEAU MODULE (jamais posé en production). Doit être ici et pas seulement dans
+# _test_lifespan : certains tests utilisent un TestClient qui n'entre pas dans le
+# contexte de lifespan (ex. sync_client), et se prenaient sinon un 503 générique.
+app.state.auth_disabled = True  # noqa: E402
+
 
 # Remplacer le lifespan par un lifespan minimal pour les tests
 # (init DB seulement, pas de Qdrant, embeddings, MCP, skills)
 @asynccontextmanager
 async def _test_lifespan(_app):
     from app.models.database import close_db, init_db
-    # US-001 : le middleware d'auth est fail-closed (503 quand aucun token). Le
-    # lifespan de test ne genere pas de token de session ; on coupe donc l'auth
-    # explicitement via ce drapeau (jamais pose en production).
     _app.state.auth_disabled = True
     await init_db()
     yield
