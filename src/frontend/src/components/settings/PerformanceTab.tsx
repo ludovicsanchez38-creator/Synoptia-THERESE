@@ -102,13 +102,13 @@ export function PerformanceTab() {
           {/* Statut SLA */}
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
             status.streaming.meets_sla
-              ? 'bg-green-500/10 border border-green-500/20'
-              : 'bg-yellow-500/10 border border-yellow-500/20'
+              ? 'bg-[var(--color-success-tint)] border border-success/40'
+              : 'bg-[var(--color-warning-tint)] border border-warning/40'
           }`}>
             {status.streaming.meets_sla ? (
               <>
-                <Check className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-green-400">SLA respecté ({"<"} 2s)</span>
+                <Check className="w-4 h-4 text-success" />
+                <span className="text-sm text-success">SLA respecté ({"<"} 2s)</span>
               </>
             ) : (
               <>

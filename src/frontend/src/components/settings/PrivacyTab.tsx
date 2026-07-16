@@ -182,16 +182,16 @@ export function PrivacyTab() {
       {/* Section : Stockage */}
       <section className="rounded-lg border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-          <HardDrive className="w-4 h-4 text-green-400" />
+          <HardDrive className="w-4 h-4 text-success" />
           Stockage
         </h4>
-        <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3">
-          <p className="text-sm text-green-300">
+        <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3">
+          <p className="text-sm text-success">
             Toutes tes données sont stockées localement sur ta machine. Aucune donnée n'est
             envoyée à un serveur externe (sauf les requêtes aux modèles IA si tu utilises un
             provider cloud comme Anthropic, OpenAI ou Google).
           </p>
-          <p className="text-xs text-green-300/70 mt-2">
+          <p className="text-xs text-success mt-2">
             Base de données SQLite + index vectoriel Qdrant, le tout dans ton dossier utilisateur.
           </p>
         </div>
@@ -231,13 +231,13 @@ export function PrivacyTab() {
           </div>
         </div>
 
-        {dataMessage && <div role="status" className="mb-3 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-300">{dataMessage}</div>}
-        {dataError && <div role="alert" className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">{dataError}</div>}
+        {dataMessage && <div role="status" className="mb-3 rounded-lg border border-success/40 bg-[var(--color-success-tint)] px-3 py-2 text-xs text-success">{dataMessage}</div>}
+        {dataError && <div role="alert" className="mb-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{dataError}</div>}
 
         <div className="overflow-hidden rounded-lg border border-border/30">
           <div className="flex items-center justify-between bg-surface-elevated/40 px-3 py-2">
             <span className="text-xs font-semibold text-text">Sauvegardes disponibles</span>
-            <button type="button" onClick={() => void refreshBackups()} className="text-[10px] font-medium text-accent-cyan hover:underline">Actualiser</button>
+            <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan hover:underline">Actualiser</button>
           </div>
           {backupLoading ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement…</div>
@@ -253,7 +253,7 @@ export function PrivacyTab() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-xs font-medium text-text">{backup.backup_name}</div>
-                        <div className="mt-0.5 text-[10px] text-text-muted">
+                        <div className="mt-0.5 text-xs text-text-muted">
                           {new Date(backup.created_at).toLocaleString('fr-FR')}
                           {typeof backup.size_bytes === 'number' ? ` · ${(backup.size_bytes / 1_048_576).toFixed(1)} Mo` : ''}
                         </div>
@@ -270,7 +270,7 @@ export function PrivacyTab() {
                       </div>
                     </div>
                     {restoreConfirmation === backup.backup_name && (
-                      <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                      <div className="mt-3 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
                         Cette restauration remplace l’état courant. Une sauvegarde de sécurité sera créée automatiquement.
                         <div className="mt-2 flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => setRestoreConfirmation(null)}>Annuler</Button>
@@ -279,7 +279,7 @@ export function PrivacyTab() {
                       </div>
                     )}
                     {backupDeleteConfirmation === backup.backup_name && (
-                      <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-200">
+                      <div className="mt-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
                         Supprimer définitivement cette archive locale ?
                         <div className="mt-2 flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => setBackupDeleteConfirmation(null)}>Annuler</Button>
@@ -320,7 +320,7 @@ export function PrivacyTab() {
       {/* Section : Durées de conservation */}
       <section className="rounded-lg border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-amber-400" />
+          <Clock className="w-4 h-4 text-warning" />
           Durées de conservation
         </h4>
         <div className="overflow-hidden rounded-lg border border-border/30">
@@ -355,21 +355,21 @@ export function PrivacyTab() {
           <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
             <Download className="w-5 h-5 text-accent-cyan mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Exporter</span>
-            <span className="block text-[10px] text-text-muted">
+            <span className="block text-xs text-text-muted">
               L’export global est disponible ci-dessus ; l’export individuel reste accessible dans le CRM.
             </span>
           </div>
           <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
-            <EyeOff className="w-5 h-5 text-amber-400 mx-auto mb-2" />
+            <EyeOff className="w-5 h-5 text-warning mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Anonymiser</span>
-            <span className="block text-[10px] text-text-muted">
+            <span className="block text-xs text-text-muted">
               Tu peux anonymiser un contact à tout moment via le CRM (bouton RGPD &gt; Anonymiser).
             </span>
           </div>
           <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
-            <Trash2 className="w-5 h-5 text-red-400 mx-auto mb-2" />
+            <Trash2 className="w-5 h-5 text-error mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Supprimer</span>
-            <span className="block text-[10px] text-text-muted">
+            <span className="block text-xs text-text-muted">
               La suppression globale est protégée par une confirmation explicite ci-dessous.
             </span>
           </div>
@@ -377,11 +377,11 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Effacement global */}
-      <section className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+      <section className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-4">
         <div className="flex items-start gap-3">
-          <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+          <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-error" />
           <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-semibold text-red-300">Supprimer toutes mes données</h4>
+            <h4 className="text-sm font-semibold text-error">Supprimer toutes mes données</h4>
             <p className="mt-1 text-xs leading-5 text-text-muted">
               Efface les données métier, conversations, réglages personnels et index vectoriels. Les journaux d’audit légaux et les sauvegardes locales restent conservés.
             </p>
@@ -390,8 +390,8 @@ export function PrivacyTab() {
                 Préparer la suppression
               </Button>
             ) : (
-              <div className="mt-3 rounded-lg border border-red-500/30 bg-background/40 p-3">
-                <label htmlFor="delete-all-confirmation" className="block text-xs font-medium text-red-200">
+              <div className="mt-3 rounded-lg border border-error/40 bg-background/40 p-3">
+                <label htmlFor="delete-all-confirmation" className="block text-xs font-medium text-error">
                   Saisis SUPPRIMER pour confirmer
                 </label>
                 <input
@@ -399,7 +399,7 @@ export function PrivacyTab() {
                   value={deletePhrase}
                   onChange={(event) => setDeletePhrase(event.target.value)}
                   autoComplete="off"
-                  className="mt-2 w-full rounded-md border border-red-500/30 bg-background px-3 py-2 text-sm text-text outline-none focus:border-red-400"
+                  className="mt-2 w-full rounded-md border border-error/40 bg-background px-3 py-2 text-sm text-text outline-none focus:border-red-400"
                 />
                 <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <Button variant="ghost" size="sm" onClick={() => { setDeleteAllArmed(false); setDeletePhrase(''); }}>Annuler</Button>
@@ -473,7 +473,7 @@ export function PrivacyTab() {
                 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
                 [&::-webkit-slider-thumb]:bg-accent-cyan [&::-webkit-slider-thumb]:cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-text-muted mt-1">
+            <div className="flex justify-between text-xs text-text-muted mt-1">
               <span>12 mois</span>
               <span>36 mois</span>
               <span>60 mois</span>
@@ -501,7 +501,7 @@ export function PrivacyTab() {
             )}
           </Button>
           {error && (
-            <span className="text-xs text-red-400">{error}</span>
+            <span className="text-xs text-error">{error}</span>
           )}
         </div>
       </section>

@@ -4,7 +4,7 @@
  * Final step of the onboarding wizard - Celebration and recap.
  */
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PartyPopper, Check, User, Cpu, FolderOpen, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import * as api from '../../services/api';
@@ -30,29 +30,32 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [summaryUnavailable, setSummaryUnavailable] = useState<string[]>([]);
 
-  // Load summary data
-  useEffect(() => {
-    async function loadSummary() {
-      try {
-        const [profile, llmConfig, workingDirData] = await Promise.all([
-          api.getProfile().catch(() => null),
-          api.getLLMConfig().catch(() => null),
-          api.getWorkingDirectory().catch(() => ({ path: null, exists: false })),
-        ]);
-        setSummary({
-          profile,
-          llmConfig,
-          workingDir: workingDirData?.path || null,
-        });
-      } catch (err) {
-        console.error('Failed to load summary:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadSummary();
+  const loadSummary = useCallback(async () => {
+    setLoading(true);
+    setSummaryUnavailable([]);
+    const [profileResult, llmResult, workingDirResult] = await Promise.allSettled([
+      api.getProfile(),
+      api.getLLMConfig(),
+      api.getWorkingDirectory(),
+    ]);
+    setSummary({
+      profile: profileResult.status === 'fulfilled' ? profileResult.value : null,
+      llmConfig: llmResult.status === 'fulfilled' ? llmResult.value : null,
+      workingDir: workingDirResult.status === 'fulfilled' ? workingDirResult.value?.path || null : null,
+    });
+    setSummaryUnavailable([
+      profileResult.status === 'rejected' ? 'Profil' : null,
+      llmResult.status === 'rejected' ? 'LLM' : null,
+      workingDirResult.status === 'rejected' ? 'Dossier de travail' : null,
+    ].filter((label): label is string => Boolean(label)));
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
 
   async function handleComplete() {
     setCompleting(true);
@@ -74,6 +77,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
       title: 'Profil',
       value: summary.profile?.display_name || 'Non configuré',
       configured: !!summary.profile?.name,
+      unavailable: summaryUnavailable.includes('Profil'),
     },
     {
       icon: Cpu,
@@ -82,6 +86,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         ? `${summary.llmConfig.provider} / ${summary.llmConfig.model.split('-').slice(0, 2).join('-')}`
         : 'Non configuré',
       configured: !!summary.llmConfig,
+      unavailable: summaryUnavailable.includes('LLM'),
     },
     {
       icon: FolderOpen,
@@ -90,6 +95,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         ? summary.workingDir.split('/').slice(-2).join('/')
         : 'Non configuré',
       configured: !!summary.workingDir,
+      unavailable: summaryUnavailable.includes('Dossier de travail'),
     },
   ];
 
@@ -143,6 +149,17 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         transition={{ delay: 0.5 }}
         className="w-full max-w-md space-y-3 mb-6"
       >
+        {loading && (
+          <div role="status" className="rounded-xl border border-info/40 bg-[var(--color-info-tint)] p-4 text-sm text-info">
+            Vérification de la configuration…
+          </div>
+        )}
+        {!loading && summaryUnavailable.length > 0 && (
+          <div role="alert" className="rounded-xl border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-left text-sm text-warning">
+            <p><strong>Récapitulatif partiel.</strong> Indisponible{summaryUnavailable.length > 1 ? 's' : ''} : {summaryUnavailable.join(', ')}.</p>
+            <button type="button" onClick={() => void loadSummary()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer</button>
+          </div>
+        )}
         {!loading && summaryItems.map((item, index) => (
           <motion.div
             key={item.title}
@@ -154,8 +171,8 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
             <div
               className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                 item.configured
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-yellow-500/20 text-warning'
+                  ? 'bg-[var(--color-success-tint)] text-success'
+                  : 'bg-[var(--color-warning-tint)] text-warning'
               }`}
             >
               {item.configured ? <Check className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}
@@ -163,7 +180,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text">{item.title}</p>
               <p className="text-xs text-text-muted truncate" title={String(item.value)}>
-                {item.value}
+                {item.unavailable ? 'Indisponible' : item.value}
               </p>
             </div>
           </motion.div>
@@ -191,14 +208,15 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-left w-full max-w-md"
+          className="mb-4 p-3 rounded-xl bg-[var(--color-error-tint)] border border-error/40 text-left w-full max-w-md"
+          role="alert"
         >
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            <span className="text-sm text-red-400 flex-1">{error}</span>
+            <AlertCircle className="w-4 h-4 text-error shrink-0" />
+            <span className="text-sm text-error flex-1">{error}</span>
             <button
               onClick={handleRetry}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+              className="flex items-center gap-1 text-xs text-error hover:text-error transition-colors"
             >
               <RefreshCw className="w-3 h-3" />
               Réessayer

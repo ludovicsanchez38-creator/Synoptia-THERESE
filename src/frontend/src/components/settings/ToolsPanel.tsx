@@ -107,7 +107,7 @@ function PresetCategory({
                     key={preset.id}
                     className={`relative p-3 rounded-lg border text-left transition-all ${
                       runningServer
-                        ? 'bg-green-500/10 border-green-500/30 cursor-default'
+                        ? 'bg-[var(--color-success-tint)] border-success/40 cursor-default'
                         : isInstalled
                         ? 'bg-background/60 border-border/50 cursor-default opacity-60'
                         : isInstalling
@@ -129,13 +129,13 @@ function PresetCategory({
                           <Star className="w-3 h-3 text-warning fill-yellow-400" />
                         )}
                         {preset.risk_level === 'high' && (
-                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400" title={preset.risk_warning}>
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error" title={preset.risk_warning}>
                             <ShieldAlert className="w-2.5 h-2.5" />
                             Élevé
                           </span>
                         )}
                         {preset.risk_level === 'medium' && (
-                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title={preset.risk_warning}>
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning" title={preset.risk_warning}>
                             <ShieldAlert className="w-2.5 h-2.5" />
                             Moyen
                           </span>
@@ -155,7 +155,7 @@ function PresetCategory({
                           </a>
                         )}
                         {isInstalling && <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />}
-                        {!isInstalling && runningServer && <Check className="w-4 h-4 text-green-400" />}
+                        {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
                           <span title="Installé mais inactif - cliquer pour démarrer">
                             <AlertCircle className="w-4 h-4 text-warning" />
@@ -432,11 +432,11 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   function _getStatusColor(serverStatus: api.MCPServerStatus) {
     switch (serverStatus) {
       case 'running':
-        return 'text-green-400';
+        return 'text-success';
       case 'starting':
         return 'text-warning';
       case 'error':
-        return 'text-red-400';
+        return 'text-error';
       default:
         return 'text-text-muted';
     }
@@ -447,19 +447,19 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     switch (serverStatus) {
       case 'running':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-success-tint)] text-success">
             Actif
           </span>
         );
       case 'starting':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-warning">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
             Démarrage...
           </span>
         );
       case 'error':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
             Erreur
           </span>
         );
@@ -531,15 +531,15 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
               {/* BUG-083 : Avertissement si npx manquant */}
               {requirementsCheck && !requirementsCheck.all_satisfied && (
-                <div className="flex items-start gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="flex items-start gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                  <div className="text-xs text-yellow-300">
+                  <div className="text-xs text-warning">
                     <p className="font-medium mb-1">Prérequis manquants</p>
                     {Object.entries(requirementsCheck.commands)
                       .filter(([, v]) => !(v as { available: boolean }).available)
                       .map(([cmd]) => (
                         <p key={cmd} className="text-warning">
-                          <code className="bg-yellow-500/20 px-1 rounded">{cmd}</code> non trouvé sur le système
+                          <code className="bg-[var(--color-warning-tint)] px-1 rounded">{cmd}</code> non trouvé sur le système
                         </p>
                       ))}
                     {requirementsCheck.help_message && (
@@ -748,7 +748,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     </p>
                     {/* Show error inline if present */}
                     {server.error && (
-                      <p className="text-xs text-red-400 mt-1 line-clamp-1" title={server.error}>
+                      <p className="text-xs text-error mt-1 line-clamp-1" title={server.error}>
                         {server.error}
                       </p>
                     )}
@@ -766,11 +766,11 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                         e.stopPropagation();
                         handleDeleteServer(server.id);
                       }}
-                      className="p-1 rounded hover:bg-red-500/10 transition-colors"
+                      className="p-1 rounded hover:bg-[var(--color-error-tint)] transition-colors"
                       title="Supprimer"
                       aria-label={`Supprimer ${server.name}`}
                     >
-                      <Trash2 className="w-3 h-3 text-red-400" />
+                      <Trash2 className="w-3 h-3 text-error" />
                     </button>
                   )}
                   <button
@@ -806,9 +806,9 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     <div className="p-3 space-y-3">
                       {/* Error message */}
                       {server.error && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                          <span className="text-xs text-red-400">{server.error}</span>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
+                          <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                          <span className="text-xs text-error">{server.error}</span>
                         </div>
                       )}
 
@@ -847,7 +847,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteServer(server.id)}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          className="text-error hover:text-error hover:bg-[var(--color-error-tint)]"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Supprimer
@@ -933,8 +933,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               className="relative bg-surface border border-border rounded-xl p-6 max-w-md w-full shadow-2xl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-red-400" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-error-tint)] flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-error" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-text">Supprimer ce serveur MCP ?</h3>

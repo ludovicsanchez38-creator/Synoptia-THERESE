@@ -125,17 +125,17 @@ export function InvoiceWorkspaceCard({
           </span>
           <div>
             <h2 id="invoice-workspace-title" className="text-sm font-semibold text-text">Devis et factures</h2>
-            <p className="text-[11px] text-text-muted">
+            <p className="text-xs text-text-muted">
               {resource.status === 'ready' ? `${resource.data.invoices.length} document${resource.data.invoices.length > 1 ? 's' : ''} enregistré${resource.data.invoices.length > 1 ? 's' : ''}` : 'Lecture de la facturation locale'}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-2.5 py-1.5 text-[11px] font-semibold text-white">
+          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-2.5 py-1.5 text-xs font-semibold text-white">
             <Plus className="h-3.5 w-3.5" />
             Nouveau devis
           </button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text hover:bg-surface-2">
+          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2">
             Facturation complète
           </button>
         </div>
@@ -184,7 +184,7 @@ export function InvoiceWorkspaceCard({
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <strong className="text-sm text-text">{invoice.invoice_number}</strong>
-                    <span className="rounded-full bg-bg px-2 py-0.5 text-[10px] font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
+                    <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-text-muted">{contactLabel(contact)} · {invoice.document_type}</span>
                 </span>
@@ -197,7 +197,7 @@ export function InvoiceWorkspaceCard({
       )}
 
       {resource.status === 'ready' && resource.data.unavailableSources.length > 0 && (
-        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-[10px] text-warning">
+        <div className="border-t border-border bg-[var(--color-warning-tint)] px-4 py-2 text-xs text-warning">
           Source{resource.data.unavailableSources.length > 1 ? 's' : ''} indisponible{resource.data.unavailableSources.length > 1 ? 's' : ''} : {resource.data.unavailableSources.join(', ')}.
         </div>
       )}
@@ -212,18 +212,18 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
       <section className="rounded-[13px] border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
             <h3 className="mt-1 text-lg font-bold text-text">{invoice.invoice_number}</h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{contactLabel(contact)}</p>
           </div>
           <div className="text-right">
-            <span className="rounded-full bg-bg px-2.5 py-1 text-[10px] font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
+            <span className="rounded-full bg-bg px-2.5 py-1 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
             <div className="mt-2 text-xl font-bold text-text">{formatMoney(invoice.total_ttc, invoice.currency)}</div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-[10px] text-text-muted">Émission</span><strong>{formatDate(invoice.issue_date)}</strong></div>
-          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-[10px] text-text-muted">Échéance</span><strong>{formatDate(invoice.due_date)}</strong></div>
+          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Émission</span><strong>{formatDate(invoice.issue_date)}</strong></div>
+          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Échéance</span><strong>{formatDate(invoice.due_date)}</strong></div>
         </div>
       </section>
 
@@ -506,7 +506,7 @@ function DevisDraftForm({
         >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-text">Lignes du devis</h3>
-          <button type="button" onClick={() => { setConfirmationSnapshot(null); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex items-center gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
+          <button type="button" onClick={() => { setConfirmationSnapshot(null); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex items-center gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
         </div>
         <div className="mt-3 space-y-3">
           {lines.map((line, index) => (
@@ -552,7 +552,7 @@ function DevisDraftForm({
             </div>
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
+              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-[8px] bg-success-fill px-3 py-2 text-xs font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
             </div>
           </div>
         )}
@@ -587,7 +587,7 @@ export function InvoiceWorkspaceCanvas({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-muted"><Receipt className="h-3.5 w-3.5" />Facturation locale</div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Receipt className="h-3.5 w-3.5" />Facturation locale</div>
         <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">{selection === 'new-devis' ? 'Nouveau devis brouillon' : 'Détail du document'}</h2>
         <p className="mt-1 text-sm text-text-muted">Les données affichées viennent du module Facturation existant.</p>
       </div>

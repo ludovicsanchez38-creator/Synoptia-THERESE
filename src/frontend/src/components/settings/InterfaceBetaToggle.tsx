@@ -82,7 +82,7 @@ export function InterfaceBetaToggle({
       )}
 
       {storageError && (
-        <p role="alert" className="mt-3 text-xs text-red-400">
+        <p role="alert" className="mt-3 text-xs text-error">
           Impossible d'enregistrer ce choix sur cet appareil.
         </p>
       )}

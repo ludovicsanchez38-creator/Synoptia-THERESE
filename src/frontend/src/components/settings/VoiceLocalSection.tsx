@@ -114,8 +114,8 @@ export function VoiceLocalSection() {
         </div>
       ) : status.ready ? (
         <>
-          <div className="rounded-lg bg-green-500/5 border border-green-500/20 p-3 mb-4">
-            <p className="text-sm text-green-300">
+          <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3 mb-4">
+            <p className="text-sm text-success">
               Voix locale prête (modèle Whisper « {status.active_whisper_model ?? status.default_whisper_model} »).
               Quand elle est activée pour le micro, ton audio ne quitte jamais ta machine.
             </p>
@@ -174,12 +174,12 @@ export function VoiceLocalSection() {
             Activer la voix locale
           </Button>
           {status.setup.state === 'error' && (
-            <p className="text-xs text-red-400 mt-2">
+            <p className="text-xs text-error mt-2">
               Échec du téléchargement : {status.setup.error} - réessaie (la reprise
               continue où ça s'était arrêté).
             </p>
           )}
-          {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+          {error && <p className="text-xs text-error mt-2">{error}</p>}
         </>
       )}
     </section>
