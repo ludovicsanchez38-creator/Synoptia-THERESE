@@ -5,7 +5,7 @@
 | Sujet | Décision | Motif |
 |---|---|---|
 | Migration | progressive et réversible | préserver les usages et isoler les régressions |
-| Interface 0.40 | bêta opt-in par interrupteur dans les réglages, classique par défaut | décision prise par Ludo le 15/07/2026 : laisser chaque utilisateur essayer la nouvelle interface sans l’imposer |
+| Interface 0.40 | nouvelle interface par défaut, avec retour durable au mode classique depuis Paramètres → À propos | décision prise par Ludo le 16/07/2026 : généraliser la coque 0.40 tout en conservant un repli explicite et réversible |
 | Source métier | backend et stores existants | éviter deux vérités concurrentes |
 | Navigation | une coque, des canevas contextuels | réduire le morcellement sans perdre la profondeur |
 | Actions sensibles | aperçu puis confirmation | garder la maîtrise des effets externes |

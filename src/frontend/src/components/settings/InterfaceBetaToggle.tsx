@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react';
 
 import {
   INTERFACE_MODE_STORAGE_KEY,
+  resolveInterfaceMode,
   type InterfaceMode,
 } from '../../lib/interfaceMode';
 import { Button } from '../ui/Button';
@@ -11,18 +12,19 @@ interface InterfaceBetaToggleProps {
   onReload?: () => void;
 }
 
-function isConversationCanvasStored(): boolean {
+function isConversationCanvasSelected(): boolean {
   try {
-    return window.localStorage.getItem(INTERFACE_MODE_STORAGE_KEY) === 'conversation-canvas';
+    const storedMode = window.localStorage.getItem(INTERFACE_MODE_STORAGE_KEY);
+    return resolveInterfaceMode({ storedMode }) === 'conversation-canvas';
   } catch {
-    return false;
+    return true;
   }
 }
 
 export function InterfaceBetaToggle({
   onReload = () => window.location.reload(),
 }: InterfaceBetaToggleProps) {
-  const [enabled, setEnabled] = useState(isConversationCanvasStored);
+  const [enabled, setEnabled] = useState(isConversationCanvasSelected);
   const [reloadSuggested, setReloadSuggested] = useState(false);
   const [storageError, setStorageError] = useState(false);
 
@@ -44,10 +46,10 @@ export function InterfaceBetaToggle({
       <div className="flex items-center justify-between gap-4">
         <div>
           <label htmlFor="interface-beta-toggle" className="text-sm font-medium text-text cursor-pointer">
-            Essayer la nouvelle interface (bêta)
+            Essayer la nouvelle interface
           </label>
           <p className="text-xs text-text-muted mt-1">
-            Le mode classique reste sélectionné par défaut.
+            La nouvelle interface est active par défaut. Désactive-la pour revenir au mode classique.
           </p>
         </div>
         <button

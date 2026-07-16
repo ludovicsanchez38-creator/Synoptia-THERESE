@@ -11,43 +11,43 @@ describe('InterfaceBetaToggle', () => {
     installLocalStorageStub();
   });
 
-  it('active la bêta, mémorise le mode et propose de recharger', () => {
+  it("affiche la nouvelle interface active par défaut et permet de choisir l'ancienne", () => {
     const onReload = vi.fn();
     render(<InterfaceBetaToggle onReload={onReload} />);
 
     const toggle = screen.getByRole('switch', {
-      name: 'Essayer la nouvelle interface (bêta)',
+      name: 'Essayer la nouvelle interface',
     });
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
 
     fireEvent.click(toggle);
 
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
       INTERFACE_MODE_STORAGE_KEY,
-      'conversation-canvas',
+      'classic',
     );
-    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
 
     fireEvent.click(screen.getByRole('button', { name: 'Recharger maintenant' }));
     expect(onReload).toHaveBeenCalledOnce();
   });
 
-  it('désactive une bêta mémorisée et restaure durablement le mode classique', () => {
-    window.localStorage.setItem(INTERFACE_MODE_STORAGE_KEY, 'conversation-canvas');
+  it('réactive la nouvelle interface depuis un choix classique mémorisé', () => {
+    window.localStorage.setItem(INTERFACE_MODE_STORAGE_KEY, 'classic');
     render(<InterfaceBetaToggle />);
 
     const toggle = screen.getByRole('switch', {
-      name: 'Essayer la nouvelle interface (bêta)',
+      name: 'Essayer la nouvelle interface',
     });
-    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
 
     fireEvent.click(toggle);
 
     expect(window.localStorage.setItem).toHaveBeenLastCalledWith(
       INTERFACE_MODE_STORAGE_KEY,
-      'classic',
+      'conversation-canvas',
     );
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('button', { name: 'Recharger maintenant' })).toBeInTheDocument();
   });
 });
