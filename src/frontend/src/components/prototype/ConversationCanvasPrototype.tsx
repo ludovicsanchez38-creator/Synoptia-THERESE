@@ -53,7 +53,10 @@ import { DeliverablesWorkspaceCanvas } from './DeliverablesWorkspaceCanvas';
 import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
 import { FollowUpsWorkspaceCanvas } from './FollowUpsWorkspaceCanvas';
 import { VoiceWorkspaceCanvas } from './VoiceWorkspaceCanvas';
-import { PrototypeConversationDrawer } from './PrototypeConversationDrawer';
+import {
+  PrototypeConversationDrawer,
+  type PrototypeConversationDrawerSurface,
+} from './PrototypeConversationDrawer';
 import { PrototypeChatSurface } from './PrototypeChatSurface';
 import { PrototypeUnifiedViewCanvas } from './PrototypeUnifiedViewCanvas';
 import { usePrototypeEmailData, type EmailLength, type EmailTone } from './usePrototypeEmailData';
@@ -88,6 +91,7 @@ import { listUserCommands, type UserCommand } from '../../services/api/commands'
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
 import { usePrototypeDialogFocusTrap } from './usePrototypeDialogFocusTrap';
+import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 
@@ -582,6 +586,7 @@ export function ConversationCanvasPrototype() {
     resetRun: resetAtelierRun,
   } = usePrototypeAtelierData(scenario === 'atelier');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
   const [trustCenterOpen, setTrustCenterOpen] = useState(false);
@@ -594,12 +599,14 @@ export function ConversationCanvasPrototype() {
     initialScenario === 'atelier' ? 'new-mission' : null,
   );
   const [composerValue, setComposerValue] = useState('');
+  const [composerVoiceError, setComposerVoiceError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
   const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const createConversation = useChatStore((state) => state.createConversation);
   const isStreaming = useChatStore((state) => state.isStreaming);
   const openSettings = usePanelStore((state) => state.openSettings);
@@ -621,6 +628,19 @@ export function ConversationCanvasPrototype() {
     });
     return true;
   }, [isStreaming]);
+
+  const openConversationDrawer = useCallback((surface: PrototypeConversationDrawerSurface) => {
+    setDrawerSurface(surface);
+    setDrawerOpen(true);
+    setCommandOpen(false);
+    setCapabilityCenterOpen(false);
+    setTrustCenterOpen(false);
+  }, []);
+
+  const toggleConversationDrawer = useCallback(() => {
+    if (drawerOpen) setDrawerOpen(false);
+    else openConversationDrawer('history');
+  }, [drawerOpen, openConversationDrawer]);
 
   useEffect(() => {
     let active = true;
@@ -708,7 +728,7 @@ export function ConversationCanvasPrototype() {
     onNewConversation: startConversation,
     onShowShortcuts: openShortcuts,
     onToggleMemoryPanel: () => embeddedView === 'memory' ? setEmbeddedView(null) : openEmbeddedView('memory'),
-    onToggleConversationSidebar: () => setDrawerOpen((open) => !open),
+    onToggleConversationSidebar: toggleConversationDrawer,
     onToggleBoardPanel: toggleBoardPanel,
     onToggleEmailPanel: () => openEmbeddedView('email'),
     onToggleCalendarPanel: () => openEmbeddedView('calendar'),
@@ -869,6 +889,19 @@ export function ConversationCanvasPrototype() {
     if (composerValue.trim()) openChat(composerValue);
   }
 
+  const handleComposerTranscript = useCallback((text: string) => {
+    setComposerValue((previous) => {
+      const trimmed = previous.trim();
+      return trimmed ? `${trimmed} ${text}` : text;
+    });
+    composerRef.current?.focus();
+  }, []);
+
+  const handleComposerVoiceError = useCallback((error: string) => {
+    setComposerVoiceError(error);
+    setTimeout(() => setComposerVoiceError(null), 5000);
+  }, []);
+
   function runUnifiedAction(actionId: string) {
     const viewByAction: Partial<Record<string, Exclude<AppView, 'chat'>>> = {
       'home.open': 'home',
@@ -988,13 +1021,13 @@ export function ConversationCanvasPrototype() {
 
         <div className="relative flex min-h-0 flex-1">
           <nav aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
-            <IconButton label="Conversations" onClick={() => setDrawerOpen((open) => !open)} active={drawerOpen}>
+            <IconButton label="Conversations" onClick={toggleConversationDrawer} active={drawerOpen}>
               <Menu className="h-[18px] w-[18px]" />
             </IconButton>
             <div className="my-2 h-px w-7 bg-border" />
-            <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Rechercher" onClick={() => { setCommandOpen(true); setCapabilityCenterOpen(false); setTrustCenterOpen(false); }}><Search className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Historique" onClick={() => setDrawerOpen(true)}><History className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Nouvelle conversation" onClick={() => openConversationDrawer('new')}><Plus className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Rechercher" onClick={() => openConversationDrawer('search')}><Search className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             <div className="mt-auto flex flex-col items-center gap-1.5">
               <IconButton label="Aide" onClick={() => openChat('/aide')}><MessageSquare className="h-[18px] w-[18px]" /></IconButton>
@@ -1002,7 +1035,7 @@ export function ConversationCanvasPrototype() {
             </div>
           </nav>
 
-          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer navigationLocked={isStreaming} onClose={() => setDrawerOpen(false)} onOpenChat={() => openChat()} />}</AnimatePresence>
+          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer surface={drawerSurface} navigationLocked={isStreaming} onClose={() => setDrawerOpen(false)} onOpenChat={() => openChat()} />}</AnimatePresence>
 
           <main id="main-content" className="relative flex min-w-0 flex-1 overflow-hidden">
             {chatOpen ? (
@@ -1256,6 +1289,7 @@ export function ConversationCanvasPrototype() {
                     )}
                     {destinationUsesChat ? (
                       <textarea
+                        ref={composerRef}
                         value={composerValue}
                         onChange={(event) => setComposerValue(event.target.value)}
                         onKeyDown={(event) => {
@@ -1282,6 +1316,11 @@ export function ConversationCanvasPrototype() {
                           : 'Cette capacité ouvre sa surface fonctionnelle réelle. Aucun message ne sera envoyé et aucune donnée ne sera modifiée par ce passage.'}
                       </div>
                     )}
+                    {composerVoiceError && (
+                      <div role="alert" className="mx-1 mb-2 rounded-[8px] border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+                        {composerVoiceError}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
                       <div className="flex items-center gap-1">
                         <button
@@ -1299,6 +1338,14 @@ export function ConversationCanvasPrototype() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="hidden text-[10px] font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
+                        {destinationUsesChat && (
+                          <VoiceDictationButton
+                            onTranscript={handleComposerTranscript}
+                            onError={handleComposerVoiceError}
+                            testId="prototype-chat-voice-btn"
+                            className="rounded-[10px] border border-transparent text-text-muted hover:border-border hover:bg-bg hover:text-text"
+                          />
+                        )}
                         <button
                           type="button"
                           onClick={submitComposer}

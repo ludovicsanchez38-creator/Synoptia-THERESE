@@ -69,6 +69,41 @@ describe('PrototypeConversationDrawer', () => {
     expect(onOpenChat).toHaveBeenCalledTimes(1);
   });
 
+  it('expose les trois surfaces du tiroir sans panneau concurrent', () => {
+    const { rerender } = render(
+      <PrototypeConversationDrawer
+        surface="new"
+        onClose={vi.fn()}
+        onOpenChat={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Nouvelle conversation' })).toHaveFocus();
+
+    rerender(
+      <PrototypeConversationDrawer
+        surface="search"
+        onClose={vi.fn()}
+        onOpenChat={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText('Rechercher une conversation')).toHaveFocus();
+
+    fireEvent.change(screen.getByLabelText('Rechercher une conversation'), {
+      target: { value: 'rendez-vous' },
+    });
+    rerender(
+      <PrototypeConversationDrawer
+        surface="history"
+        onClose={vi.fn()}
+        onOpenChat={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Historique des conversations')).toHaveFocus();
+    expect(screen.getByLabelText('Rechercher une conversation')).toHaveValue('');
+  });
+
   it('persiste le renommage dans le backend', async () => {
     render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
 

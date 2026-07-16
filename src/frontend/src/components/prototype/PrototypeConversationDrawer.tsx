@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileDown, History, MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useChatStore, type Conversation } from '../../stores/chatStore';
@@ -12,7 +12,10 @@ interface PrototypeConversationDrawerProps {
   onClose: () => void;
   onOpenChat: () => void;
   navigationLocked?: boolean;
+  surface?: PrototypeConversationDrawerSurface;
 }
+
+export type PrototypeConversationDrawerSurface = 'new' | 'search' | 'history';
 
 function dateLabel(date: Date): string {
   const value = new Date(date);
@@ -53,6 +56,7 @@ export function PrototypeConversationDrawer({
   onClose,
   onOpenChat,
   navigationLocked = false,
+  surface = 'history',
 }: PrototypeConversationDrawerProps) {
   const [query, setQuery] = useState('');
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -60,6 +64,9 @@ export function PrototypeConversationDrawer({
   const [editingTitle, setEditingTitle] = useState('');
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const newConversationRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
   const conversations = useChatStore((state) => state.conversations);
   const currentConversationId = useChatStore((state) => state.currentConversationId);
   const createConversation = useChatStore((state) => state.createConversation);
@@ -74,6 +81,14 @@ export function PrototypeConversationDrawer({
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
   }, [conversations, query]);
   const grouped = useMemo(() => groupConversations(filtered), [filtered]);
+
+  useEffect(() => {
+    if (surface !== 'search') setQuery('');
+
+    if (surface === 'new') newConversationRef.current?.focus();
+    else if (surface === 'search') searchRef.current?.focus();
+    else historyRef.current?.focus();
+  }, [surface]);
 
   const rejectLockedNavigation = () => {
     if (!navigationLocked) return false;
@@ -138,6 +153,7 @@ export function PrototypeConversationDrawer({
 
       <div className="shrink-0 p-3">
         <button
+          ref={newConversationRef}
           type="button"
           onClick={startConversation}
           className="mb-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-3 py-2.5 text-sm font-semibold text-white shadow-[2px_2px_0_#22D3EE]"
@@ -148,6 +164,7 @@ export function PrototypeConversationDrawer({
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
           <input
+            ref={searchRef}
             aria-label="Rechercher une conversation"
             placeholder="Rechercher…"
             value={query}
@@ -157,7 +174,13 @@ export function PrototypeConversationDrawer({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3" data-testid="prototype-conversation-list">
+      <div
+        ref={historyRef}
+        tabIndex={-1}
+        aria-label="Historique des conversations"
+        className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 outline-none"
+        data-testid="prototype-conversation-list"
+      >
         {error && <div role="alert" className="mb-2 rounded-[8px] border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{error}</div>}
         {filtered.length === 0 ? (
           <div className="flex min-h-40 flex-col items-center justify-center px-5 text-center text-text-muted">

@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { Send, Square, Paperclip, Mic, MicOff, Loader2, X, Cpu, Search } from 'lucide-react';
+import { Send, Square, Paperclip, X, Cpu, Search } from 'lucide-react';
 import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -24,11 +24,11 @@ import {
 } from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
-import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
+import { VoiceDictationButton } from './VoiceDictationButton';
 
 const MIN_ROWS = 2;
 const MAX_ROWS = 12;
@@ -189,25 +189,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   }, []);
 
   const [voiceError, setVoiceError] = useState<string | null>(null);
-  // Voice is always supported now (Tauri plugin or Web API fallback)
-  const voiceSupported = true;
-
   const handleVoiceError = useCallback((error: string) => {
-    console.error('Voice recording error:', error);
     setVoiceError(error);
     // Auto-clear error after 5 seconds
     setTimeout(() => setVoiceError(null), 5000);
   }, []);
-
-  const {
-    isRecording,
-    isProcessing,
-    pluginReady,
-    toggleRecording,
-  } = useVoiceRecorder({
-    onTranscript: handleTranscript,
-    onError: handleVoiceError,
-  });
 
   // Remove attached file
   const removeFile = useCallback((index: number) => {
@@ -974,37 +960,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         </div>
 
         {/* Voice button */}
-        <Button
-          variant={isRecording ? 'primary' : 'ghost'}
-          size="icon"
-          data-testid="chat-voice-btn"
-          className={cn(
-            'flex-shrink-0 h-9 w-9 transition-all',
-            isRecording && 'bg-error hover:bg-error/90 animate-pulse',
-            !voiceSupported && 'opacity-50 cursor-not-allowed'
-          )}
-          disabled={isDisabled || isProcessing || !voiceSupported || !pluginReady}
-          onClick={voiceSupported && pluginReady ? toggleRecording : undefined}
-          title={
-            !voiceSupported
-              ? 'Dictée vocale non disponible (prochainement)'
-              : !pluginReady
-                ? 'Chargement du micro...'
-              : isProcessing
-                ? 'Transcription en cours...'
-                : isRecording
-                  ? 'Arrêter l\'enregistrement'
-                  : 'Message vocal'
-          }
-        >
-          {isProcessing ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : isRecording ? (
-            <MicOff className="w-5 h-5" />
-          ) : (
-            <Mic className={cn('w-5 h-5', !voiceSupported && 'text-text-muted')} />
-          )}
-        </Button>
+        <VoiceDictationButton
+          onTranscript={handleTranscript}
+          onError={handleVoiceError}
+          disabled={isDisabled}
+        />
 
         {/* Send / Stop buttons */}
         {isStreaming && (
