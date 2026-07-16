@@ -204,7 +204,13 @@ async def get_user_profile(
                 return None
 
         data = json.loads(value)
-        return UserProfile.from_dict(data)
+        profile = UserProfile.from_dict(data)
+        # Auto-réparation du cache process : le préchargement au démarrage ne
+        # déchiffre pas (allow_decrypt=False pour ne pas bloquer sur le
+        # trousseau), donc un profil chiffré laissait le cache vide jusqu'à la
+        # prochaine sauvegarde et les statuts de facturation mentaient.
+        set_cached_profile(profile)
+        return profile
 
     except Exception as e:
         logger.error(f"Failed to load user profile: {e}")

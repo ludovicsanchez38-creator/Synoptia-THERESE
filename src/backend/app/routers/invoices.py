@@ -515,13 +515,19 @@ async def convert_invoice(
 
 
 @router.get("/billing/profile-status")
-async def billing_profile_status():
+async def billing_profile_status(session: AsyncSession = Depends(get_session)):
     """Statut de complétude du profil émetteur (P0-PROD-2).
 
     Permet à l'UI de poser un garde-fou avant la 1re facture : raison sociale (ou
     nom), SIRET et adresse sont requis pour une facture conforme et opposable.
     """
     profile = get_cached_profile()
+    if profile is None:
+        # Cache vide après un démarrage avec profil chiffré : lecture de
+        # secours en session (déchiffre et répare le cache au passage).
+        from app.services.user_profile import get_user_profile
+
+        profile = await get_user_profile(session)
     if profile is None:
         return {
             "is_complete": False,
