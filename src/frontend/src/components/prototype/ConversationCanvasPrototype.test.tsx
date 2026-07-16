@@ -204,14 +204,15 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(screen.queryByTestId('reopen-right-panel-tab')).not.toBeInTheDocument();
   });
 
-  it('branche la cloche sur le Brief du jour de la coque', () => {
+  it('le bouton Agenda de l’en-tête ouvre la vue agenda (recette Ludo : plus de bouton inerte)', () => {
     window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
     render(<ConversationCanvasPrototype />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Vue du jour' }));
+    // Décision Ludo 16/07 : l'icône calendrier de l'en-tête ne remet plus sur
+    // la vue courante (action sans effet) mais ouvre l'agenda intégré.
+    fireEvent.click(screen.getByRole('button', { name: 'Agenda' }));
 
-    expect(screen.getByRole('heading', { name: 'Aucune priorité détectée' })).toBeInTheDocument();
-    expect(screen.queryByTestId('prototype-unified-view')).not.toBeInTheDocument();
+    expect(screen.getByTestId('prototype-unified-view')).toBeInTheDocument();
   });
 
   it('garde le nom d’espace comme étiquette passive sans ouvrir les réglages', () => {

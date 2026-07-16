@@ -1132,7 +1132,7 @@ export function ConversationCanvasPrototype() {
               Rechercher
               <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
-            <IconButton label="Vue du jour" onClick={() => chooseScenario('today')}><Calendar className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Agenda" onClick={() => openEmbeddedView('calendar')}><Calendar className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
           </div>
         </header>
