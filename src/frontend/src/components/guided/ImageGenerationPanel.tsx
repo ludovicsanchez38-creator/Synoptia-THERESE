@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { ImageProvider } from './actionData';
 import { cn } from '../../lib/utils';
+import { fetchImageObjectUrl } from '../../services/api';
 
 export type ImageGenerationStatus = 'idle' | 'generating' | 'success' | 'error';
 
@@ -78,11 +79,29 @@ export function ImageGenerationPanel({
   const config = providerConfig[provider];
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  // US-001 : l'image est chargee via un fetch authentifie (en-tete X-Therese-Token)
+  // puis affichee en object URL (blob) au lieu de <img src={url}?token=...>. Le
+  // token ne transite donc plus jamais dans l'URL ni dans le DOM.
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
 
-  // Reset states when imageUrl changes
   useEffect(() => {
     setImageLoaded(false);
     setImageError(false);
+    setResolvedSrc(null);
+    if (!imageUrl) return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    fetchImageObjectUrl(imageUrl)
+      .then((url) => {
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        objectUrl = url;
+        setResolvedSrc(url);
+      })
+      .catch(() => { if (!cancelled) setImageError(true); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
   }, [imageUrl]);
 
   return (
@@ -216,9 +235,9 @@ export function ImageGenerationPanel({
               </div>
             )}
 
-            {/* Actual image */}
+            {/* Actual image (blob authentifié, US-001) */}
             <img
-              src={imageUrl}
+              src={resolvedSrc ?? undefined}
               alt={prompt || 'Image générée'}
               className={cn(
                 'w-full h-auto max-h-64 object-contain',

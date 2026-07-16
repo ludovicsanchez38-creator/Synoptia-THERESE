@@ -4,7 +4,7 @@
  * Génération et gestion d'images IA.
  */
 
-import { API_BASE, apiFetch, ApiError, request, getSessionToken } from './core';
+import { API_BASE, apiFetch, ApiError, request } from './core';
 
 export type ImageProvider = 'gpt-image-2' | 'nanobanan-pro' | 'fal-flux-pro';
 
@@ -47,9 +47,26 @@ export async function generateImage(req: ImageGenerateRequest): Promise<ImageRes
 }
 
 export function getImageDownloadUrl(imageId: string): string {
-  const token = getSessionToken();
-  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-  return `${API_BASE}/api/images/download/${imageId}${tokenParam}`;
+  // US-001 : plus de ?token= dans l'URL (le token ne doit jamais transiter en
+  // clair dans une URL ni finir dans le DOM/les logs). L'authentification passe
+  // par l'en-tete X-Therese-Token via apiFetch ; pour un affichage <img>, passer
+  // par fetchImageObjectUrl (fetch authentifie -> blob).
+  return `${API_BASE}/api/images/download/${imageId}`;
+}
+
+/**
+ * Récupère une image en blob authentifié (en-tête X-Therese-Token) et renvoie
+ * une object URL utilisable dans un <img src>. À révoquer (URL.revokeObjectURL)
+ * après usage. US-001 : remplace l'ancien <img src={url}?token=...> qui exposait
+ * le token dans le DOM. `downloadUrl` = sortie de getImageDownloadUrl(id).
+ */
+export async function fetchImageObjectUrl(downloadUrl: string): Promise<string> {
+  const response = await apiFetch(downloadUrl);
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText);
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
 }
 
 export async function downloadGeneratedImage(imageId: string): Promise<void> {

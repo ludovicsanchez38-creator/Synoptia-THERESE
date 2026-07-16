@@ -43,6 +43,10 @@ from app.main import app  # noqa: E402  (doit être importé APRÈS le setup os.
 @asynccontextmanager
 async def _test_lifespan(_app):
     from app.models.database import close_db, init_db
+    # US-001 : le middleware d'auth est fail-closed (503 quand aucun token). Le
+    # lifespan de test ne genere pas de token de session ; on coupe donc l'auth
+    # explicitement via ce drapeau (jamais pose en production).
+    _app.state.auth_disabled = True
     await init_db()
     yield
     await close_db()

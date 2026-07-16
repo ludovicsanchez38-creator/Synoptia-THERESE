@@ -585,12 +585,31 @@ async def auth_middleware(request: Request, call_next):
     if any(request.url.path.startswith(p) for p in exempt_paths):
         return await call_next(request)
 
-    # Verifier le token (header ou query param pour les balises <img>) (SEC-010)
-    token = request.headers.get("X-Therese-Token") or request.query_params.get("token")
+    # US-001 : le token ne transite plus JAMAIS en clair dans l'URL (?token=).
+    # Seul l'en-tete X-Therese-Token est accepte ; les telechargements d'images
+    # passent desormais par un fetch authentifie -> blob (plus de token dans le
+    # DOM de la webview ni dans les logs d'acces).
+    token = request.headers.get("X-Therese-Token")
     expected = getattr(request.app.state, "session_token", None)
 
+    # US-001 : fail-CLOSED. Tant que le token de session n'est pas encore pret,
+    # on refuse tout (les endpoints d'amorcage sont deja exemptes plus haut) au
+    # lieu de laisser passer toutes les requetes (ancien fail-open : la garde
+    # `if expected and ...` sautait entierement quand expected valait None).
+    # En production le token est toujours genere au demarrage (startup) avant que
+    # l'app ne serve. Le lifespan de TEST ne genere pas de token et pose
+    # explicitement app.state.auth_disabled=True pour couper l'auth : c'est le
+    # SEUL chemin qui laisse passer sans token, jamais atteignable en production.
+    if not expected:
+        if getattr(request.app.state, "auth_disabled", False):
+            return await call_next(request)
+        return JSONResponse(
+            status_code=503,
+            content={"code": "AUTH_NOT_READY", "message": "Service en cours d'initialisation"},
+        )
+
     # Utilise secrets.compare_digest pour eviter les timing attacks (SEC-025)
-    if expected and (not token or not secrets.compare_digest(token, expected)):
+    if not token or not secrets.compare_digest(token, expected):
         return JSONResponse(
             status_code=401,
             content={"code": "UNAUTHORIZED", "message": "Token de session invalide ou manquant"},

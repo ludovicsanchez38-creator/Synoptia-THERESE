@@ -34,7 +34,7 @@ SyntaxHighlighter.registerLanguage('markup', xml);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 SyntaxHighlighter.registerLanguage('yml', yaml);
 SyntaxHighlighter.registerLanguage('sql', sql);
-import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile } from '../../services/api';
+import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile, apiFetch } from '../../services/api';
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
@@ -148,8 +148,9 @@ export const MessageBubble = memo(function MessageBubble({
     if (isImage && message.imageId) {
       // Copier l'image dans le presse-papier
       try {
+        // US-001 : fetch authentifié par en-tête (plus de ?token= dans l'URL).
         const url = getImageDownloadUrl(message.imageId);
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         const blob = await response.blob();
         await navigator.clipboard.write([
           new ClipboardItem({ [blob.type]: blob }),
