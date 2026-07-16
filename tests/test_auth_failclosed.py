@@ -7,7 +7,6 @@
   et le DOM de la webview), seul l'en-tete X-Therese-Token est valide.
 """
 import pytest
-
 from app.main import app
 
 

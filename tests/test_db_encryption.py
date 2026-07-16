@@ -135,7 +135,7 @@ class TestRuntime:
 
         # L'archive est un blob chiffré : illisible tel quel comme tar.
         with pytest.raises(tarfile.ReadError):
-            tarfile.open(enc_path, "r:gz")
+            tarfile.open(enc_path, "r:gz")  # noqa: SIM115 (on vérifie qu'il lève)
 
         # Déchiffrée avec la passphrase : DB déjà chiffrée + clé autosuffisante.
         plain = Path(enc_path + ".dec")

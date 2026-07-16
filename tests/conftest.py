@@ -34,6 +34,9 @@ os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-test-
 # du trousseau de la machine (Keychain absent en CI, prompts possibles en dev).
 # Le chemin chiffré reste ENTIÈREMENT exercé (engines + migration + backup).
 os.environ.setdefault("THERESE_DB_KEY", "ad" * 32)
+# US-003 : KDF de sauvegarde abaissé en test (480k iterations sinon, inutilement
+# coûteux sur des archives jetables et cumulatif sur toute la suite -> timeout CI).
+os.environ.setdefault("THERESE_BACKUP_KDF_ITERATIONS", "1000")
 
 from app.main import app  # noqa: E402  (doit être importé APRÈS le setup os.environ ci-dessus)
 

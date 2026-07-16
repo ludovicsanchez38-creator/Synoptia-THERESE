@@ -467,7 +467,9 @@ def is_value_encrypted(value: str) -> bool:
 
 _BACKUP_MAGIC = b"THBK1"
 _BACKUP_SALT_LEN = 16
-_BACKUP_KDF_ITERATIONS = 480000
+# 480k iterations en production ; abaissable via env pour accelerer la suite de
+# tests (la robustesse du KDF n'a pas d'objet sur des archives jetables de test).
+_BACKUP_KDF_ITERATIONS = int(os.environ.get("THERESE_BACKUP_KDF_ITERATIONS", "480000"))
 
 
 def _derive_backup_key(password: str, salt: bytes) -> bytes:
