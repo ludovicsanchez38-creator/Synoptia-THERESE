@@ -138,8 +138,20 @@ export async function transcribeAudio(
   });
 
   if (!response.ok) {
-    const message = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, message || undefined);
+    // Le backend renvoie { code, message } : on extrait le message lisible au
+    // lieu d'afficher le JSON brut à l'utilisateur (ex. « Clé API Groq non
+    // configurée » plutôt que {"code":"HTTP_ERROR",...}, finding Codex 16/07).
+    const raw = await response.text().catch(() => null);
+    let message = raw || undefined;
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.message === 'string') message = parsed.message;
+      } catch {
+        // Corps non-JSON : on garde le texte tel quel.
+      }
+    }
+    throw new ApiError(response.status, response.statusText, message);
   }
 
   const data = await response.json() as TranscriptionResponse;

@@ -155,7 +155,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             data-testid="onboarding-wizard"
-            className="relative mt-12 flex max-h-[calc(100vh-4rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-2xl"
+            className="relative my-6 flex max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-2xl"
           >
             <h1 id="onboarding-title" tabIndex={-1} data-dialog-autofocus className="sr-only">
               Configuration initiale de Thérèse

@@ -81,11 +81,15 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
     },
     {
       icon: Cpu,
+      // « Configuré » doit refléter la disponibilité RÉELLE (clé cloud présente
+      // ou Ollama opérationnel), pas la simple existence d'un provider par
+      // défaut : sinon « Configurer plus tard » affichait quand même une coche
+      // verte et openai/gpt-5.5 (faux succès, finding Codex 16/07).
       title: 'LLM',
-      value: summary.llmConfig
+      value: summary.llmConfig?.available
         ? `${summary.llmConfig.provider} / ${summary.llmConfig.model.split('-').slice(0, 2).join('-')}`
-        : 'Non configuré',
-      configured: !!summary.llmConfig,
+        : 'À configurer',
+      configured: !!summary.llmConfig?.available,
       unavailable: summaryUnavailable.includes('LLM'),
     },
     {
@@ -113,8 +117,11 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.3 }}
-      className="flex flex-col items-center text-center px-8 py-6 h-full overflow-y-auto"
+      className="flex flex-col px-8 py-6 h-full"
     >
+      {/* Zone scrollable : le pied de page reste épinglé, jamais coupé hors de
+          la fenêtre même à 1280×900 (finding Codex 16/07). */}
+      <div className="flex flex-1 flex-col items-center text-center overflow-y-auto min-h-0 w-full">
       {/* Celebration Animation */}
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
@@ -225,8 +232,10 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         </motion.div>
       )}
 
-      {/* Footer */}
-      <div className="flex justify-between w-full pt-4 border-t border-border/30">
+      </div>
+
+      {/* Footer épinglé - toujours visible */}
+      <div className="flex justify-between w-full pt-4 mt-4 border-t border-border/30 shrink-0">
         <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
           Retour
         </Button>

@@ -29,7 +29,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { cn } from '../../lib/utils';
+import { cn, isTauri } from '../../lib/utils';
 import { indexFile, getWorkingDirectory, type FileMetadata } from '../../services/api';
 import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
 import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
@@ -197,6 +197,15 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   // Initialize with working directory (from settings) or home directory
   useEffect(() => {
     async function init() {
+      // L'exploration de fichiers repose sur l'API Tauri (homeDir, readDir),
+      // absente en navigateur : sans ce garde, homeDir() jetait « Cannot read
+      // properties of undefined (reading invoke) » (finding Codex 16/07). Hors
+      // app native, on affiche un état clair au lieu de planter.
+      if (!isTauri()) {
+        setError('Les fichiers locaux sont accessibles depuis l’application THÉRÈSE.');
+        setLoading(false);
+        return;
+      }
       try {
         // First, try to get the configured working directory
         const workingDir = await getWorkingDirectory().catch(() => null);
