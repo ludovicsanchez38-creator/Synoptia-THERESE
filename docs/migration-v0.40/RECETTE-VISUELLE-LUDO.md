@@ -4,10 +4,12 @@ Version condensée et actionnable de la matrice de `RECETTE-ET-RELEASE.md`,
 pensée pour une passe manuelle unique. Cocher au fil de l'eau, noter chaque
 défaut avec une capture, envoyer le tout à OPT sur Telegram.
 
-Préparation : `make dev`, ouvrir les Paramètres, puis dans « À propos » activer
-« Essayer la nouvelle interface (bêta) » et choisir « Recharger maintenant ».
-Le paramètre `?interface=conversation-canvas` reste disponible comme solution de
-secours en développement.
+Préparation : `make dev`. La nouvelle interface est désormais le mode par
+défaut, il n’est plus nécessaire de l’activer manuellement pour cette recette.
+Si un choix classique explicite a été mémorisé sur ce poste, l’interrupteur
+« Essayer la nouvelle interface » dans Paramètres → À propos permet de revenir
+à la coque 0.40. Le paramètre `?interface=conversation-canvas` reste disponible
+comme solution de secours en développement.
 
 ## 1. Affichage et thème (5 min)
 
@@ -51,12 +53,13 @@ secours en développement.
 
 1. En mode `conversation-canvas`, ouvrir 2-3 objets réels (un contact, un
    email, une facture) et créer un brouillon non envoyé.
-2. Dans Paramètres → À propos, désactiver « Essayer la nouvelle interface
-   (bêta) », puis recharger comme proposé.
+2. Dans Paramètres → À propos, désactiver « Essayer la nouvelle interface »,
+   puis recharger comme proposé.
 3. Retrouver exactement les mêmes objets dans les vues historiques.
 4. Réactiver l’interrupteur, recharger et vérifier qu’aucun doublon n’a été créé.
 5. Fermer et relancer : le mode choisi persiste aussi dans un build de
-   production. Sans choix valide, le classique reste le mode par défaut.
+   production. Sans choix valide, la nouvelle interface reste le mode par
+   défaut.
 
 ## 6. Verdict
 
@@ -66,5 +69,6 @@ secours en développement.
   avant le build candidat.
 
 Rappel : cette recette valide l'interface en dev. Le GO bêta exige en plus le
-paquet Tauri signé et le pré-vol données (fait par OPT sur copie). Le mode par
-défaut a été décidé par Ludo le 15/07/2026 et consigné dans `DECISIONS.md`.
+paquet Tauri signé et le pré-vol données (fait par OPT sur copie). Le passage de
+la nouvelle interface en mode par défaut a été décidé par Ludo le 16/07/2026 et
+consigné dans `DECISIONS.md`.

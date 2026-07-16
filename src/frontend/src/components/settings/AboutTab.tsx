@@ -154,7 +154,7 @@ export function AboutTab() {
         </div>
       </div>
 
-      {/* Opt-in explicite pour l'interface 0.40, appliqué au prochain bootstrap. */}
+      {/* Sélecteur réversible de l'interface, appliqué au prochain bootstrap. */}
       <InterfaceBetaToggle />
 
       {/* US-012 : communauté et retours - le testeur alpha doit pouvoir

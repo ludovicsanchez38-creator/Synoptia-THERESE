@@ -3,6 +3,7 @@ import { MotionConfig } from 'framer-motion';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { CommonToolConfirmationLayer } from './components/app/CommonToolConfirmationLayer';
 import { PrototypeExternalActionConfirmationProvider } from './components/app/ExternalActionConfirmation';
+import { NewInterfaceIntro } from './components/app/NewInterfaceIntro';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
@@ -204,6 +205,7 @@ function ApplicationBootstrap() {
             onComplete={handleOnboardingComplete}
           />
         </Suspense>
+        {!showOnboarding && interfaceMode === 'conversation-canvas' && <NewInterfaceIntro />}
       </div>
       </MotionConfig>
     </GlobalErrorBoundary>

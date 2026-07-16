@@ -1143,7 +1143,7 @@ export function ConversationCanvasPrototype() {
               <Menu className="h-[18px] w-[18px]" />
             </IconButton>
             <div className="my-2 h-px w-7 bg-border" />
-            <IconButton label="Nouvelle conversation" onClick={() => openConversationDrawer('new')}><Plus className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Rechercher" onClick={() => openConversationDrawer('search')}><Search className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>

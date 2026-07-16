@@ -159,14 +159,15 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(composer).toHaveFocus();
   });
 
-  it('route nouvelle conversation, recherche et historique vers le même tiroir', () => {
+  it('le + du rail crée directement une conversation sans rouvrir un tiroir (fin du double +), recherche et historique vont au tiroir', () => {
     render(<ConversationCanvasPrototype />);
     const navigation = within(screen.getByRole('navigation', { name: 'Navigation principale' }));
 
+    // Décision Ludo 16/07 : le + du rail ouvre directement le chat vierge, sans
+    // passer par le tiroir qui a lui-même un « Nouvelle conversation » (double +).
     fireEvent.click(navigation.getByRole('button', { name: 'Nouvelle conversation' }));
-    const drawer = screen.getByTestId('prototype-conversation-drawer');
-    expect(drawer).toBeInTheDocument();
-    expect(within(drawer).getByRole('button', { name: 'Nouvelle conversation' })).toHaveFocus();
+    expect(screen.getByTestId('prototype-chat-surface')).toBeInTheDocument();
+    expect(screen.queryByTestId('prototype-conversation-drawer')).not.toBeInTheDocument();
 
     fireEvent.click(navigation.getByRole('button', { name: 'Rechercher' }));
     expect(screen.getByLabelText('Rechercher une conversation')).toHaveFocus();

@@ -100,23 +100,24 @@ candidat.
 6. La 0.40 n’est publiée qu’après recette des parcours critiques et test réel de
    retour à l’interface classique, puis signature du build candidat.
 
-## Activation contrôlée
+## Sélection réversible
 
 En production, la préférence locale choisie dans les réglages est respectée,
-puis l’interface classique sert de défaut. En développement uniquement, l’URL
+puis la nouvelle interface sert de défaut. En développement uniquement, l’URL
 et la variable de build peuvent prendre la priorité pour faciliter la revue.
 
 | Besoin | Activation |
 |---|---|
-| Bêta opt-in | Réglages → À propos → « Essayer la nouvelle interface (bêta) » |
-| Retour durable au classique | Désactiver le même interrupteur |
+| Mode par défaut | nouvelle interface, sans activation manuelle |
+| Retour durable au classique | Désactiver « Essayer la nouvelle interface » |
+| Retour durable à la nouvelle interface | Réglages → À propos → « Essayer la nouvelle interface » |
 | Revue ponctuelle en développement | `?interface=conversation-canvas` |
 | Compatibilité du prototype en développement | `?prototype=conversation-canvas` |
 | Démarrage local du prototype | `VITE_THERESE_INTERFACE_MODE=conversation-canvas` |
 
-La variable de build est documentée dans `src/frontend/.env.example`. Aucun de
-ces mécanismes n’active la nouvelle interface par défaut : sans opt-in valide,
-THÉRÈSE démarre en mode classique.
+La variable de build est documentée dans `src/frontend/.env.example`. Sans
+préférence locale valide, THÉRÈSE démarre en mode `conversation-canvas` et
+présente une seule fois le rappel du chemin de retour au mode classique.
 
 ## Dossier de préparation
 

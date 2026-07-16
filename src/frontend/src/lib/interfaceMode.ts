@@ -1,9 +1,9 @@
 /**
  * Sélecteur réversible de l'interface THÉRÈSE.
  *
- * En production, seul le choix utilisateur conservé localement est appliqué.
- * En développement, l'URL et la variable de build permettent aussi de forcer
- * ponctuellement un mode. L'interface classique reste la valeur par défaut.
+ * En production, le choix utilisateur conservé localement est appliqué s'il
+ * est valide. En développement, l'URL et la variable de build permettent aussi
+ * de forcer ponctuellement un mode. La coque conversationnelle est le défaut.
  */
 
 export type InterfaceMode = 'classic' | 'conversation-canvas';
@@ -32,6 +32,12 @@ function parseMode(value: string | null | undefined): InterfaceMode | null {
   return null;
 }
 
+export function hasExplicitInterfaceModeChoice(
+  storedMode: string | null | undefined,
+): boolean {
+  return parseMode(storedMode) !== null;
+}
+
 export function resolveInterfaceMode({
   search = '',
   buildMode,
@@ -49,7 +55,7 @@ export function resolveInterfaceMode({
     return 'conversation-canvas';
   }
 
-  return parseMode(buildMode) ?? parseMode(storedMode) ?? 'classic';
+  return parseMode(buildMode) ?? parseMode(storedMode) ?? 'conversation-canvas';
 }
 
 export function resolveRuntimeInterfaceMode({
@@ -61,12 +67,12 @@ export function resolveRuntimeInterfaceMode({
 }: ResolveRuntimeInterfaceModeOptions): InterfaceMode {
   // L'URL et la variable Vite sont des outils de développement. Le flag
   // explicite évite qu'un `vite build --mode development` les expose dans un
-  // build distribuable, sans bloquer le choix bêta mémorisé par l'utilisateur.
+  // build distribuable, sans bloquer le choix mémorisé par l'utilisateur.
   if (isDevelopment && isExplicitDevelopmentBuild) {
     return resolveInterfaceMode({ search, buildMode, storedMode });
   }
 
-  return parseMode(storedMode) ?? 'classic';
+  return parseMode(storedMode) ?? 'conversation-canvas';
 }
 
 export function getInterfaceMode(): InterfaceMode {

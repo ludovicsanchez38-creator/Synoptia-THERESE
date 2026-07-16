@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { resolveInterfaceMode, resolveRuntimeInterfaceMode } from './interfaceMode';
 
 describe('resolveInterfaceMode', () => {
-  it("conserve l'interface classique par défaut", () => {
-    expect(resolveInterfaceMode()).toBe('classic');
+  it("active l'interface 0.40 par défaut", () => {
+    expect(resolveInterfaceMode()).toBe('conversation-canvas');
   });
 
   it("active l'interface 0.40 avec le nouveau paramètre d'URL", () => {
@@ -14,12 +14,16 @@ describe('resolveInterfaceMode', () => {
     expect(resolveInterfaceMode({ search: '?prototype=conversation-canvas&scenario=today' })).toBe('conversation-canvas');
   });
 
-  it('permet un build bêta activé explicitement', () => {
+  it('respecte la variable de mode en développement', () => {
     expect(resolveInterfaceMode({ buildMode: 'conversation-canvas' })).toBe('conversation-canvas');
   });
 
-  it('permet une activation locale persistante pour un bêta-testeur', () => {
+  it('respecte un choix conversationnel explicite et persistant', () => {
     expect(resolveInterfaceMode({ storedMode: 'conversation-canvas' })).toBe('conversation-canvas');
+  });
+
+  it('respecte un choix classique explicite sans forçage de développement', () => {
+    expect(resolveInterfaceMode({ storedMode: 'classic' })).toBe('classic');
   });
 
   it("permet de forcer l'interface classique pour revenir en arrière", () => {
@@ -30,12 +34,12 @@ describe('resolveInterfaceMode', () => {
     })).toBe('classic');
   });
 
-  it('ignore les valeurs inconnues et revient au mode sûr', () => {
+  it('ignore les valeurs inconnues et revient au nouveau mode par défaut', () => {
     expect(resolveInterfaceMode({
       search: '?interface=experimental',
       buildMode: 'enabled',
       storedMode: 'new',
-    })).toBe('classic');
+    })).toBe('conversation-canvas');
   });
 });
 
@@ -48,9 +52,16 @@ describe('resolveRuntimeInterfaceMode', () => {
       buildMode: 'classic',
       storedMode: 'classic',
     })).toBe('conversation-canvas');
+
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: true,
+      isExplicitDevelopmentBuild: true,
+      buildMode: 'classic',
+      storedMode: 'conversation-canvas',
+    })).toBe('classic');
   });
 
-  it('respecte le choix bêta mémorisé dans un build de production', () => {
+  it('respecte le choix mémorisé dans un build de production', () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: false,
       isExplicitDevelopmentBuild: false,
@@ -68,16 +79,16 @@ describe('resolveRuntimeInterfaceMode', () => {
     })).toBe('classic');
   });
 
-  it('conserve le classique par défaut si le choix de production est absent ou invalide', () => {
+  it("utilise l'interface 0.40 par défaut si le choix de production est absent ou invalide", () => {
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: false,
       isExplicitDevelopmentBuild: false,
-    })).toBe('classic');
+    })).toBe('conversation-canvas');
     expect(resolveRuntimeInterfaceMode({
       isDevelopment: false,
       isExplicitDevelopmentBuild: false,
       storedMode: 'experimental',
-    })).toBe('classic');
+    })).toBe('conversation-canvas');
   });
 
   it('réserve aussi les forçages dev au serveur Vite identifié par le flag explicite', () => {
@@ -96,5 +107,13 @@ describe('resolveRuntimeInterfaceMode', () => {
       buildMode: 'classic',
       storedMode: 'conversation-canvas',
     })).toBe('conversation-canvas');
+  });
+
+  it('respecte un choix classique explicite dans un build de production', () => {
+    expect(resolveRuntimeInterfaceMode({
+      isDevelopment: false,
+      isExplicitDevelopmentBuild: false,
+      storedMode: 'classic',
+    })).toBe('classic');
   });
 });
