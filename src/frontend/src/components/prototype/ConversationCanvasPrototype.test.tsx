@@ -202,15 +202,13 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(screen.queryByRole('button', { name: /Rouvrir le panneau/ })).not.toBeInTheDocument();
   });
 
-  it('le bouton Agenda de l’en-tête ouvre la vue agenda (recette Ludo : plus de bouton inerte)', () => {
-    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
+  it('n’a plus d’icône calendrier isolée dans l’en-tête (retirée, recette Ludo)', () => {
     render(<ConversationCanvasPrototype />);
 
-    // Décision Ludo 16/07 : l'icône calendrier de l'en-tête ne remet plus sur
-    // la vue courante (action sans effet) mais ouvre l'agenda intégré.
-    fireEvent.click(screen.getByRole('button', { name: 'Agenda' }));
-
-    expect(screen.getByTestId('prototype-unified-view')).toBeInTheDocument();
+    // Décision Ludo 16/07 : l'ancien bouton cloche recyclé en raccourci agenda
+    // faisait doublon avec la capacité Agenda ; il est retiré de l'en-tête.
+    const header = screen.getByRole('banner');
+    expect(within(header).queryByRole('button', { name: 'Agenda' })).not.toBeInTheDocument();
   });
 
   it('garde le nom d’espace comme étiquette passive sans ouvrir les réglages', () => {
