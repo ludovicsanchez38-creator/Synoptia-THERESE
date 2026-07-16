@@ -449,9 +449,11 @@ class TestMCPServiceConfiguration:
         return MCPService(config_path=config_path), config_path
 
     def test_config_path_default(self):
-        """Le chemin config par défaut est ~/.therese/mcp_servers.json."""
+        """Le chemin config par défaut suit settings.data_dir (isolation par espace)."""
+        from app.config import settings
+
         service = MCPService()
-        expected = Path.home() / ".therese" / "mcp_servers.json"
+        expected = Path(str(settings.data_dir)) / "mcp_servers.json"
         assert service.config_path == expected
 
     def test_config_path_custom(self, tmp_path):
