@@ -10,10 +10,22 @@ Phase 2 - Calendar
 import logging
 from datetime import datetime
 from typing import Any
+from urllib.parse import quote
 
 from app.services.http_client import get_http_client
 
 logger = logging.getLogger(__name__)
+
+
+def _enc(segment: str) -> str:
+    """Encode un identifiant Google (calendar_id, event_id) pour un segment d'URL.
+
+    Les IDs de calendriers Google spéciaux contiennent des caractères réservés,
+    notamment `#` (ex. `...#weeknum@group.v.calendar.google.com`, jours fériés,
+    numéros de semaine). Sans encodage, le `#` tronque l'URL en fragment et
+    Google renvoie 404 -> l'agenda échouait en 500 (recette Ludo 16/07).
+    """
+    return quote(str(segment), safe="")
 
 
 class CalendarService:
@@ -70,7 +82,7 @@ class CalendarService:
         """
         client = await get_http_client()
         response = await client.get(
-            f"{self.BASE_URL}/calendars/{calendar_id}",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}",
             headers=self.headers,
             timeout=30.0,
         )
@@ -114,7 +126,7 @@ class CalendarService:
         """
         client = await get_http_client()
         response = await client.delete(
-            f"{self.BASE_URL}/calendars/{calendar_id}",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}",
             headers=self.headers,
             timeout=30.0,
         )
@@ -171,7 +183,7 @@ class CalendarService:
 
         client = await get_http_client()
         response = await client.get(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events",
             headers=self.headers,
             params=params,
             timeout=30.0,
@@ -192,7 +204,7 @@ class CalendarService:
         """
         client = await get_http_client()
         response = await client.get(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events/{_enc(event_id)}",
             headers=self.headers,
             timeout=30.0,
         )
@@ -243,7 +255,7 @@ class CalendarService:
 
         client = await get_http_client()
         response = await client.post(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events",
             headers=self.headers,
             json=payload,
             timeout=30.0,
@@ -301,7 +313,7 @@ class CalendarService:
 
         client = await get_http_client()
         response = await client.put(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events/{_enc(event_id)}",
             headers=self.headers,
             json=current_event,
             timeout=30.0,
@@ -319,7 +331,7 @@ class CalendarService:
         """
         client = await get_http_client()
         response = await client.delete(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events/{event_id}",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events/{_enc(event_id)}",
             headers=self.headers,
             timeout=30.0,
         )
@@ -341,7 +353,7 @@ class CalendarService:
 
         client = await get_http_client()
         response = await client.post(
-            f"{self.BASE_URL}/calendars/{calendar_id}/events/quickAdd",
+            f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events/quickAdd",
             headers=self.headers,
             params=params,
             timeout=30.0,
