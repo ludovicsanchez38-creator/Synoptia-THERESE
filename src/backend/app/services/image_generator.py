@@ -97,7 +97,12 @@ class ImageGeneratorService:
 
     def __init__(self, output_dir: Path | None = None):
         """Initialize image generator."""
-        self.output_dir = output_dir or Path.home() / ".therese" / "images"
+        # Respecte le répertoire de données configuré (settings.data_dir) au lieu
+        # de coder ~/.therese en dur : sinon un espace THERESE_DATA_DIR distinct
+        # voyait les images d'un autre espace (isolation cassée, finding Codex 16/07).
+        from app.config import settings
+
+        self.output_dir = output_dir or Path(str(settings.data_dir)) / "images"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     async def generate(

@@ -212,7 +212,12 @@ class MCPService:
 
     def __init__(self, config_path: Path | None = None):
         """Initialize MCP service."""
-        self.config_path = config_path or Path.home() / ".therese" / "mcp_servers.json"
+        # Respecte settings.data_dir (isolation par espace) au lieu de ~/.therese
+        # en dur : un espace THERESE_DATA_DIR distinct voyait la config MCP d'un
+        # autre espace (finding Codex 16/07).
+        from app.config import settings
+
+        self.config_path = config_path or Path(str(settings.data_dir)) / "mcp_servers.json"
         self.servers: dict[str, MCPServer] = {}
         self._processes: dict[str, asyncio.subprocess.Process] = {}
         self._request_id = 0
