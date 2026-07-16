@@ -6,6 +6,7 @@ import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, 
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
+import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 
 // Configuration des providers LLM
 export interface ProviderConfig {
@@ -216,6 +217,7 @@ export interface LLMTabProps {
   setShowApiKey: (v: boolean) => void;
   ollamaStatus: api.OllamaStatus | null;
   ollamaModels: string[];
+  systemResources: api.SystemResources | null;
   saving: boolean;
   saved: boolean;
   error: string | null;
@@ -239,6 +241,7 @@ export function LLMTab({
   setShowApiKey,
   ollamaStatus,
   ollamaModels,
+  systemResources,
   saving,
   saved,
   error,
@@ -488,6 +491,12 @@ export function LLMTab({
         onSelectModel={onSelectModel}
         selectedProvider={selectedProvider}
       />
+      {selectedProvider === 'ollama' && selectedModel && (
+        <LocalModelFeasibility
+          model={ollamaStatus?.models.find((model) => model.name === selectedModel)}
+          resources={systemResources}
+        />
+      )}
 
     </div>
   );
@@ -527,7 +536,7 @@ function ModelSelector({
   return (
     <div className="space-y-3 pt-4 border-t border-border/30">
       <div className="flex items-center justify-between">
-        <label className="text-sm text-text-muted">Modèle</label>
+        <label htmlFor="settings-llm-model" className="text-sm text-text-muted">Modèle</label>
         {selectedProvider !== 'ollama' && (
           <button
             onClick={() => setShowCustomInput(!showCustomInput)}
@@ -541,6 +550,7 @@ function ModelSelector({
       </div>
 
       <select
+        id="settings-llm-model"
         value={selectedModel}
         onChange={(e) => onSelectModel(e.target.value)}
         className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-bg [&>option]:text-text"

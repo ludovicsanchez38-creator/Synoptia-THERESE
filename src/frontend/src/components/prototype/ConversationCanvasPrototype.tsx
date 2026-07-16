@@ -6,7 +6,7 @@ import {
   Bot,
   Briefcase,
   Calendar,
-  ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Folder,
   HardDrive,
@@ -95,6 +95,11 @@ import { usePrototypeDialogFocusTrap } from './usePrototypeDialogFocusTrap';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
+type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
+type CollapsedRightPanel =
+  | { kind: 'embedded'; view: Exclude<AppView, 'chat'> }
+  | { kind: 'scenario'; scenario: Exclude<Scenario, 'today'> }
+  | { kind: 'tool'; tool: RightPanelTool };
 
 const scenarioLabels: Record<Scenario, string> = {
   today: 'Mes priorités du jour',
@@ -115,6 +120,20 @@ const scenarioPrompts: Record<Scenario, string> = {
   board: 'Retrouve mes dernières décisions ou aide-moi à cadrer une nouvelle question stratégique.',
   atelier: 'Demande à l’Atelier de simplifier l’onboarding sans toucher aux données existantes.',
 };
+
+const rightPanelToolLabels: Record<RightPanelTool, string> = {
+  calculator: 'Calculateurs',
+  deliverables: 'Suivi client',
+  images: 'Images',
+  'follow-ups': 'Relances',
+  voice: 'Voix',
+};
+
+function collapsedRightPanelLabel(panel: CollapsedRightPanel): string {
+  if (panel.kind === 'embedded') return panel.view;
+  if (panel.kind === 'scenario') return scenarioLabels[panel.scenario];
+  return rightPanelToolLabels[panel.tool];
+}
 
 function IconButton({
   label,
@@ -611,6 +630,7 @@ export function ConversationCanvasPrototype() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
   const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
+  const [lastCollapsedRightPanel, setLastCollapsedRightPanel] = useState<CollapsedRightPanel | null>(null);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -723,6 +743,47 @@ export function ConversationCanvasPrototype() {
     setComposerValue('');
     setEmbeddedView(view);
   };
+  const collapseEmbeddedView = useCallback(() => {
+    if (!embeddedView) return;
+    setLastCollapsedRightPanel({ kind: 'embedded', view: embeddedView });
+    setEmbeddedView(null);
+  }, [embeddedView]);
+  const collapseToolPanel = (tool: RightPanelTool) => {
+    setLastCollapsedRightPanel({ kind: 'tool', tool });
+    if (tool === 'calculator') setCalculatorOpen(false);
+    else if (tool === 'deliverables') setDeliverablesOpen(false);
+    else if (tool === 'images') setImagesOpen(false);
+    else if (tool === 'follow-ups') setFollowUpsOpen(false);
+    else setVoiceOpen(false);
+    setCanvasOpen(false);
+  };
+  const collapseScenarioPanel = () => {
+    if (scenario === 'today') return;
+    setLastCollapsedRightPanel({ kind: 'scenario', scenario });
+    if (scenario === 'board') cancelBoardDeliberation();
+    if (scenario === 'atelier') void cancelAtelierMission();
+    setCanvasOpen(false);
+  };
+  const reopenLastRightPanel = () => {
+    if (!lastCollapsedRightPanel || blockStreamingNavigation()) return;
+    const panel = lastCollapsedRightPanel;
+    setLastCollapsedRightPanel(null);
+    if (panel.kind === 'embedded') {
+      openEmbeddedView(panel.view);
+      return;
+    }
+
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    setEmbeddedView(null);
+    setCalculatorOpen(panel.kind === 'tool' && panel.tool === 'calculator');
+    setDeliverablesOpen(panel.kind === 'tool' && panel.tool === 'deliverables');
+    setImagesOpen(panel.kind === 'tool' && panel.tool === 'images');
+    setFollowUpsOpen(panel.kind === 'tool' && panel.tool === 'follow-ups');
+    setVoiceOpen(panel.kind === 'tool' && panel.tool === 'voice');
+    if (panel.kind === 'scenario') setScenario(panel.scenario);
+    setCanvasOpen(true);
+  };
   const displayName = profile?.nickname?.trim() || profile?.display_name?.trim().split(/\s+/)[0] || null;
   const workspaceName = profile?.company?.trim() || 'Espace de travail';
 
@@ -762,7 +823,7 @@ export function ConversationCanvasPrototype() {
           if (blockStreamingNavigation()) return;
           setChatOpen(false);
           setChatInitialPrompt(null);
-        } else if (embeddedView) setEmbeddedView(null);
+        } else if (embeddedView) collapseEmbeddedView();
         else if (calculatorOpen) {
           setCalculatorOpen(false);
           setCanvasOpen(false);
@@ -787,7 +848,7 @@ export function ConversationCanvasPrototype() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, chatOpen, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, scenario, trustCenterOpen, voiceOpen]);
+  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, chatOpen, collapseEmbeddedView, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, scenario, trustCenterOpen, voiceOpen]);
 
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
@@ -809,7 +870,9 @@ export function ConversationCanvasPrototype() {
     setCanvasOpen(next !== 'today' && next !== 'email' && next !== 'invoice' && next !== 'board');
     setComposerValue('');
     setSelectedCapability(null);
-    conversationScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof conversationScrollRef.current?.scrollTo === 'function') {
+      conversationScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   function chooseCapability(capability: CapabilityItem) {
@@ -994,11 +1057,10 @@ export function ConversationCanvasPrototype() {
             </div>
           </div>
 
-          <button type="button" onClick={() => openSettings('profile')} className="flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text hover:bg-surface">
+          <div className="flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
             <Briefcase className="h-3.5 w-3.5 text-accent" />
             {workspaceName}
-            <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
-          </button>
+          </div>
 
           <div className="flex flex-1 items-center justify-end gap-1.5">
             <button
@@ -1026,7 +1088,7 @@ export function ConversationCanvasPrototype() {
               Rechercher
               <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-[9px] text-text-muted">⌘K</kbd>
             </button>
-            <IconButton label="Notifications" onClick={() => openEmbeddedView('home')}><Bell className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Notifications" onClick={() => chooseScenario('today')}><Bell className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Paramètres" onClick={() => openSettings('profile')}><Settings className="h-[18px] w-[18px]" /></IconButton>
           </div>
         </header>
@@ -1067,7 +1129,7 @@ export function ConversationCanvasPrototype() {
                 }}
               />
             ) : embeddedView ? (
-              <PrototypeUnifiedViewCanvas view={embeddedView} onClose={() => setEmbeddedView(null)} />
+              <PrototypeUnifiedViewCanvas view={embeddedView} onClose={collapseEmbeddedView} />
             ) : (
             <section className="relative flex min-w-0 flex-1 flex-col bg-bg">
               <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
@@ -1384,15 +1446,13 @@ export function ConversationCanvasPrototype() {
               {calculatorOpen ? (
                 <CalculatorWorkspaceCanvas
                   onClose={() => {
-                    setCalculatorOpen(false);
-                    setCanvasOpen(false);
+                    collapseToolPanel('calculator');
                   }}
                 />
               ) : deliverablesOpen ? (
                 <DeliverablesWorkspaceCanvas
                   onClose={() => {
-                    setDeliverablesOpen(false);
-                    setCanvasOpen(false);
+                    collapseToolPanel('deliverables');
                   }}
                   onOpenProjects={() => openEmbeddedView('projects')}
                   onOpenInvoices={() => openEmbeddedView('invoices')}
@@ -1400,23 +1460,20 @@ export function ConversationCanvasPrototype() {
               ) : imagesOpen ? (
                 <ImagesWorkspaceCanvas
                   onClose={() => {
-                    setImagesOpen(false);
-                    setCanvasOpen(false);
+                    collapseToolPanel('images');
                   }}
                 />
               ) : followUpsOpen ? (
                 <FollowUpsWorkspaceCanvas
                   onClose={() => {
-                    setFollowUpsOpen(false);
-                    setCanvasOpen(false);
+                    collapseToolPanel('follow-ups');
                   }}
                   onOpenEmail={() => openEmbeddedView('email')}
                 />
               ) : voiceOpen ? (
                 <VoiceWorkspaceCanvas
                   onClose={() => {
-                    setVoiceOpen(false);
-                    setCanvasOpen(false);
+                    collapseToolPanel('voice');
                   }}
                   onContinueInChat={(prompt) => {
                     setVoiceOpen(false);
@@ -1428,9 +1485,7 @@ export function ConversationCanvasPrototype() {
                 <ContextCanvas
                   scenario={scenario}
                   onClose={() => {
-                    if (scenario === 'board') cancelBoardDeliberation();
-                    if (scenario === 'atelier') void cancelAtelierMission();
-                    setCanvasOpen(false);
+                    collapseScenarioPanel();
                   }}
                   contactsResource={contactsResource}
                   emailMessageResource={emailMessageResource}
@@ -1491,6 +1546,18 @@ export function ConversationCanvasPrototype() {
                 />
               )}
             </AnimatePresence>
+            {lastCollapsedRightPanel && !embeddedView && !canvasOpen && (
+              <button
+                type="button"
+                onClick={reopenLastRightPanel}
+                aria-label={`Rouvrir le panneau ${collapsedRightPanelLabel(lastCollapsedRightPanel)}`}
+                title={`Rouvrir le panneau ${collapsedRightPanelLabel(lastCollapsedRightPanel)}`}
+                data-testid="reopen-right-panel-tab"
+                className="absolute right-0 top-1/2 z-30 grid h-12 w-7 -translate-y-1/2 place-items-center rounded-l-[10px] border border-r-0 border-border bg-surface text-text-muted shadow-[-4px_4px_14px_rgba(16,28,54,0.15)] hover:bg-surface-2 hover:text-text"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
           </main>
         </div>
       </div>

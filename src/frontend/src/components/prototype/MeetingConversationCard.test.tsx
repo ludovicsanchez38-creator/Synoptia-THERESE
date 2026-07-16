@@ -58,6 +58,23 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     await waitFor(() => expect(onCreateEvent).toHaveBeenCalledTimes(1));
   });
 
+  it('permet d’annuler explicitement la confirmation Agenda sans créer', () => {
+    const onCreateEvent = vi.fn();
+    render(<MeetingWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
+      target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={onCreateEvent}
+      onCreateNote={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Point annulé' } });
+    fireEvent.click(screen.getByText('Vérifier avant création'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+
+    expect(onCreateEvent).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Confirmer la création' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Vérifier avant création' })).toBeInTheDocument();
+  });
+
   it('montre le contexte sourcé et confirme séparément la note CRM', async () => {
     const onCreateNote = vi.fn().mockResolvedValue(activity);
     render(<MeetingWorkspaceCanvas

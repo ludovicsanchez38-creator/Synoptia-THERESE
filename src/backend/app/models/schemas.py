@@ -560,6 +560,15 @@ class OllamaStatusResponse(BaseModel):
     error: str | None = None
 
 
+class SystemResourcesResponse(BaseModel):
+    """Ressources utiles au choix prudent d'un modèle local."""
+
+    total_ram_bytes: int | None
+    safe_local_model_ram_bytes: int | None
+    ollama_context_margin_bytes: int
+    detection_method: str
+
+
 # ============================================================
 # Onboarding Schemas
 # ============================================================

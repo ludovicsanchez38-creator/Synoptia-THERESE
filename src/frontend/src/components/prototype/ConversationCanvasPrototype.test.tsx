@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../stores/chatStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { usePanelStore } from '../../stores/panelStore';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 
 const voiceHarness = vi.hoisted(() => ({
@@ -128,6 +129,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
       isStreaming: false,
     });
     useAccessibilityStore.setState({ theme: 'light', highContrast: false });
+    usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
   });
 
   it('ajoute la dictée classique au composeur de la coque', () => {
@@ -175,5 +177,37 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     act(() => useAccessibilityStore.setState({ theme: 'light', highContrast: false }));
     expect(shell).toHaveAttribute('data-theme', 'light');
     expect(shell).not.toHaveAttribute('data-high-contrast');
+  });
+
+  it('affiche une languette qui rouvre le dernier canevas replié', () => {
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
+    render(<ConversationCanvasPrototype />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer le canevas' }));
+    const tab = screen.getByRole('button', { name: 'Rouvrir le panneau Retrouver un contact' });
+    expect(tab).toBeInTheDocument();
+
+    fireEvent.click(tab);
+    expect(screen.getByRole('button', { name: 'Fermer le canevas' })).toBeInTheDocument();
+    expect(screen.queryByTestId('reopen-right-panel-tab')).not.toBeInTheDocument();
+  });
+
+  it('branche la cloche sur le Brief du jour de la coque', () => {
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=memory');
+    render(<ConversationCanvasPrototype />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
+
+    expect(screen.getByRole('heading', { name: 'Ton attention aujourd’hui' })).toBeInTheDocument();
+    expect(screen.queryByTestId('prototype-unified-view')).not.toBeInTheDocument();
+  });
+
+  it('garde le nom d’espace comme étiquette passive sans ouvrir les réglages', () => {
+    render(<ConversationCanvasPrototype />);
+
+    const workspaceLabel = screen.getByTestId('workspace-label');
+    expect(workspaceLabel.tagName).toBe('DIV');
+    fireEvent.click(workspaceLabel);
+    expect(usePanelStore.getState().showSettings).toBe(false);
   });
 });
