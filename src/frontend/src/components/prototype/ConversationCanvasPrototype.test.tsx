@@ -10,6 +10,13 @@ const voiceHarness = vi.hoisted(() => ({
   toggleRecording: vi.fn(),
 }));
 
+const activityHarness = vi.hoisted(() => ({
+  boardRun: { status: 'idle' } as any,
+  atelierRun: { status: 'idle' } as any,
+  cancelBoard: vi.fn(),
+  cancelAtelier: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../hooks/useVoiceRecorder', () => ({
   useVoiceRecorder: vi.fn((options: { onTranscript?: (text: string) => void }) => {
     voiceHarness.onTranscript = options.onTranscript ?? null;
@@ -21,6 +28,8 @@ vi.mock('../../hooks/useVoiceRecorder', () => ({
       startRecording: vi.fn(),
       stopRecording: vi.fn(),
       toggleRecording: voiceHarness.toggleRecording,
+      cancelProcessing: vi.fn(),
+      elapsedSeconds: 0,
       error: null,
     };
   }),
@@ -91,12 +100,12 @@ vi.mock('./usePrototypeBoardData', () => ({
   usePrototypeBoardData: () => ({
     resource: { status: 'loading', data: null, error: null },
     decisionResource: { status: 'loading', data: null, error: null },
-    run: { status: 'idle' },
+    run: activityHarness.boardRun,
     refresh: vi.fn(),
     openDecision: vi.fn(),
     retryDecision: vi.fn(),
     startDeliberation: vi.fn(),
-    cancelDeliberation: vi.fn(),
+    cancelDeliberation: activityHarness.cancelBoard,
     resetRun: vi.fn(),
   }),
 }));
@@ -106,13 +115,13 @@ vi.mock('./usePrototypeAtelierData', () => ({
     resource: { status: 'loading', data: null, error: null },
     taskResource: { status: 'loading', data: null, error: null },
     diffResource: { status: 'loading', data: null, error: null },
-    run: { status: 'idle' },
+    run: activityHarness.atelierRun,
     actionPending: null,
     refresh: vi.fn(),
     openTask: vi.fn(),
     retryTask: vi.fn(),
     startMission: vi.fn(),
-    cancelMission: vi.fn(),
+    cancelMission: activityHarness.cancelAtelier,
     mutateTask: vi.fn(),
     resetRun: vi.fn(),
   }),
@@ -122,6 +131,8 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     voiceHarness.onTranscript = null;
+    activityHarness.boardRun = { status: 'idle' };
+    activityHarness.atelierRun = { status: 'idle' };
     window.history.replaceState({}, '', '/?interface=conversation-canvas');
     useChatStore.setState({
       conversations: [],
@@ -198,7 +209,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Notifications' }));
 
-    expect(screen.getByRole('heading', { name: 'Ton attention aujourd’hui' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Aucune priorité détectée' })).toBeInTheDocument();
     expect(screen.queryByTestId('prototype-unified-view')).not.toBeInTheDocument();
   });
 
@@ -209,5 +220,27 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(workspaceLabel.tagName).toBe('DIV');
     fireEvent.click(workspaceLabel);
     expect(usePanelStore.getState().showSettings).toBe(false);
+  });
+
+  it('masque les travaux engagés sans les annuler et permet de les rouvrir depuis la coque', () => {
+    activityHarness.boardRun = { status: 'running', phase: 'Synthèse', question: 'Décider', advisors: {} };
+    activityHarness.atelierRun = { status: 'running', phase: 'Tests', instruction: 'Modifier', agents: {}, events: [], tests: [] };
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=atelier');
+    render(<ConversationCanvasPrototype />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer le canevas' }));
+    expect(activityHarness.cancelAtelier).not.toHaveBeenCalled();
+    expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
+    expect(screen.getByTestId('shell-background-activities')).toHaveTextContent('Atelier en arrière-plan · Tests');
+    expect(screen.getByTestId('shell-background-activities')).toHaveTextContent('Board en arrière-plan · Synthèse');
+
+    fireEvent.click(screen.getByRole('button', { name: /Board en arrière-plan/ }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
+    expect(screen.getByTestId('shell-background-activities')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mes priorités du jour' }));
+    expect(activityHarness.cancelAtelier).not.toHaveBeenCalled();
+    expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
   });
 });

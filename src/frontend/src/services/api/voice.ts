@@ -119,6 +119,7 @@ async function resolveUseLocalForTranscription(): Promise<boolean> {
 export async function transcribeAudio(
   audioBlob: Blob,
   filename = 'recording.webm',
+  signal?: AbortSignal,
 ): Promise<string> {
   // Voix locale activée : l'audio ne quitte JAMAIS la machine. Pas de repli
   // cloud silencieux en cas d'échec - ce serait trahir le choix de l'utilisateur.
@@ -133,6 +134,7 @@ export async function transcribeAudio(
   const response = await apiFetch(endpoint, {
     method: 'POST',
     body: formData,
+    signal,
   });
 
   if (!response.ok) {

@@ -260,16 +260,16 @@ export function usePrototypeBoardData(enabled = true) {
   }, []);
 
   useEffect(() => {
-    if (!enabled) return undefined;
-    void refresh();
-    return () => {
+    if (enabled) void refresh();
+  }, [enabled, refresh]);
+
+  useEffect(() => () => {
       historyRequestId.current += 1;
       detailRequestId.current += 1;
       abortController.current?.abort();
       abortController.current = null;
       running.current = false;
-    };
-  }, [enabled, refresh]);
+  }, []);
 
   return {
     resource,

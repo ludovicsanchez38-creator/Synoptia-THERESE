@@ -158,4 +158,31 @@ describe('usePrototypeBoardData', () => {
     release?.();
     await act(async () => first);
   });
+
+  it('laisse le flux actif quand le canevas Board est simplement masqué', async () => {
+    consentCloud();
+    let signal: AbortSignal | undefined;
+    let release: (() => void) | undefined;
+    vi.mocked(streamDeliberation).mockImplementation(async function* (_request, activeSignal) {
+      signal = activeSignal;
+      yield { type: 'advisor_start', role: 'analyst', content: '' };
+      await new Promise<void>((resolve) => { release = resolve; });
+      yield { type: 'error', content: 'Fin contrôlée du test' };
+    });
+    const { result, rerender } = renderHook(
+      ({ enabled }) => usePrototypeBoardData(enabled),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+    let deliberation: Promise<void> | undefined;
+    act(() => { deliberation = result.current.startDeliberation({ question: decision.question, mode: 'cloud' }); });
+    await waitFor(() => expect(result.current.run.status).toBe('running'));
+    rerender({ enabled: false });
+
+    expect(signal?.aborted).toBe(false);
+    expect(result.current.run.status).toBe('running');
+    release?.();
+    await act(async () => deliberation);
+  });
 });

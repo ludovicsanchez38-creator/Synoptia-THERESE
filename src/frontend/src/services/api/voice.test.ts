@@ -112,6 +112,18 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
     expect(audio.name).toBe('réunion.m4a');
   });
 
+  it('transmet le signal d’annulation à l’upload de transcription', async () => {
+    setVoiceLocalPreferred(true);
+    mockedFetch.mockResolvedValueOnce(okJson({ text: 'réunion' }));
+    const controller = new AbortController();
+
+    await transcribeAudio(AUDIO, 'dictée.webm', controller.signal);
+
+    expect(mockedFetch.mock.calls[0][1]).toEqual(expect.objectContaining({
+      signal: controller.signal,
+    }));
+  });
+
   it("préférence 'false' explicite -> Groq, jamais le local ni le status", async () => {
     setVoiceLocalPreferred(false);
     mockedFetch.mockResolvedValueOnce(okJson({ text: 'cloud' }));

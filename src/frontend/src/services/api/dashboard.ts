@@ -18,6 +18,8 @@ export interface DashboardEvent {
   end_datetime: string | null;
   location: string | null;
   all_day: boolean;
+  attendees_count: number;
+  crm_contact_ids: string[];
 }
 
 export interface DashboardTask {
@@ -39,6 +41,16 @@ export interface DashboardInvoice {
   status: string;
 }
 
+export interface DashboardFollowUp {
+  id: string;
+  due_date: string;
+  note: string | null;
+  email_subject: string | null;
+  email_from: string | null;
+  contact_id: string | null;
+  contact_name: string | null;
+}
+
 export interface DashboardProspect {
   id: string;
   name: string;
@@ -51,6 +63,7 @@ export interface DashboardProspect {
 export interface DashboardSummary {
   events_count: number;
   tasks_count: number;
+  follow_ups_count: number;
   invoices_count: number;
   prospects_count: number;
 }
@@ -59,6 +72,7 @@ export interface TodayDashboard {
   date: string;
   events: DashboardEvent[];
   urgent_tasks: DashboardTask[];
+  due_follow_ups: DashboardFollowUp[];
   overdue_invoices: DashboardInvoice[];
   stale_prospects: DashboardProspect[];
   summary: DashboardSummary;

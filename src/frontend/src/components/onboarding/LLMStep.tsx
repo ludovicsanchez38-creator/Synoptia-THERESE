@@ -12,7 +12,7 @@ import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 
 interface LLMStepProps {
-  onNext: () => void;
+  onNext: (provider: api.LLMProvider | null) => void;
   onBack: () => void;
 }
 
@@ -285,7 +285,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     setError(null);
     try {
       await api.setLLMConfig(selectedProvider, selectedModel);
-      onNext();
+      onNext(selectedProvider);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la configuration');
       configuringRef.current = false;
@@ -522,7 +522,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           Retour
         </Button>
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={onNext} disabled={configuring} data-testid="onboarding-skip-btn">
+          <Button variant="ghost" onClick={() => onNext(null)} disabled={configuring} data-testid="onboarding-skip-btn">
             Configurer plus tard
           </Button>
           <Button

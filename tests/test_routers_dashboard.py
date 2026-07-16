@@ -2,11 +2,80 @@
 from datetime import date, datetime, time, timedelta
 
 import pytest
-from app.models.entities import Calendar, Contact, EmailAccount, Task
+from app.models.entities import (
+    Calendar,
+    CalendarEvent,
+    Contact,
+    EmailAccount,
+    EmailFollowUp,
+    EmailMessage,
+    Task,
+)
 from httpx import AsyncClient
 
 
 class TestToday:
+    @pytest.mark.asyncio
+    async def test_today_agrege_relances_et_enjeu_des_evenements(
+        self, client: AsyncClient, db_session
+    ):
+        now = datetime.now()
+        contact = Contact(
+            id="ct-brief-client",
+            first_name="Camille",
+            last_name="Martin",
+            email="camille@example.test",
+            stage="client",
+        )
+        account = EmailAccount(id="acc-brief", email="ludo@example.test")
+        message = EmailMessage(
+            id="msg-brief",
+            thread_id="thread-brief",
+            account_id=account.id,
+            subject="Proposition à relancer",
+            from_email="camille@example.test",
+            from_name="Camille Martin",
+            to_emails='["ludo@example.test"]',
+            date=now,
+            internal_date=now,
+            labels='["INBOX"]',
+        )
+        calendar = Calendar(id="cal-brief", summary="Agenda", provider="local")
+        meeting = CalendarEvent(
+            id="event-brief",
+            calendar_id=calendar.id,
+            summary="Point client",
+            start_datetime=datetime.combine(date.today(), time(10, 0)),
+            end_datetime=datetime.combine(date.today(), time(11, 0)),
+            attendees='[{"email":"Camille@Example.Test"}]',
+        )
+        follow_up = EmailFollowUp(
+            id="follow-up-brief",
+            email_message_id=message.id,
+            contact_id=contact.id,
+            due_date=date.today().isoformat() + "T12:00:00",
+            note="Rappeler après lecture",
+        )
+        db_session.add_all([contact, account, message, calendar, meeting, follow_up])
+        await db_session.commit()
+
+        resp = await client.get("/api/dashboard/today")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["events"][0]["attendees_count"] == 1
+        assert data["events"][0]["crm_contact_ids"] == [contact.id]
+        assert data["due_follow_ups"] == [{
+            "id": follow_up.id,
+            "due_date": follow_up.due_date,
+            "note": follow_up.note,
+            "email_subject": message.subject,
+            "email_from": message.from_name,
+            "contact_id": contact.id,
+            "contact_name": "Camille Martin",
+        }]
+        assert data["summary"]["follow_ups_count"] == 1
+
     @pytest.mark.asyncio
     async def test_today_tache_en_retard_priorisee_en_tete(
         self, client: AsyncClient, db_session

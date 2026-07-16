@@ -168,9 +168,11 @@ export function MeetingAgendaCard({
 function NewEventForm({
   data,
   onCreate,
+  onAbandon,
 }: {
   data: MeetingWorkspaceData;
   onCreate: (request: CreateEventRequest) => Promise<CalendarEvent>;
+  onAbandon: () => void;
 }) {
   const defaultCalendar = data.calendars.find((calendar) => calendar.primary) || data.calendars[0];
   const [calendarId, setCalendarId] = useState(defaultCalendar?.id || '');
@@ -249,7 +251,7 @@ function NewEventForm({
         <div className="rounded-[12px] border border-accent-cyan/30 bg-accent-tint p-4">
           <div className="flex gap-2 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><span>Créer « {summary.trim()} » le {new Date(start).toLocaleString('fr-FR')} dans « {selectedCalendar?.summary || 'calendrier sélectionné'} » ({selectedCalendar?.provider === 'google' ? 'Google Calendar' : selectedCalendar?.provider === 'caldav' ? 'CalDAV' : 'local'}){selectedAccount ? `, compte ${selectedAccount.email}` : ''}{parsedAttendees.length ? `, avec ${parsedAttendees.length} participant${parsedAttendees.length > 1 ? 's' : ''}` : ''}. Fuseau : {Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris'}.</span></div>
           <div className="mt-3 flex gap-2">
-            <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
+            <button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error">Annuler</button>
             <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button>
             <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Confirmer la création</button>
           </div>
@@ -262,9 +264,11 @@ function NewEventForm({
 function EventPreparation({
   context,
   onCreateNote,
+  onAbandon,
 }: {
   context: MeetingEventContext;
   onCreateNote: (eventId: string, contactId: string, description: string) => Promise<unknown>;
+  onAbandon: () => void;
 }) {
   const { event, relatedContacts, activities } = context;
   const [contactId, setContactId] = useState(relatedContacts[0]?.id || '');
@@ -342,14 +346,14 @@ function EventPreparation({
         <section className="rounded-[13px] border border-border bg-surface p-4">
           <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-[var(--k3)]" /><h3 className="text-sm font-bold text-text">Ajouter une note de rendez-vous</h3></div>
           <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
-          <select value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
-          <textarea value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-[9px] border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
+          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
+          <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-[9px] border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
           {!confirming ? (
             <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-[9px] bg-text px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
           ) : (
             <div className="mt-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3">
               <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
-              <div className="mt-2 flex gap-2"><button type="button" onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">{pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Confirmer l’ajout</button></div>
+              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">{pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Confirmer l’ajout</button></div>
             </div>
           )}
           {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
@@ -375,6 +379,7 @@ export function MeetingWorkspaceCanvas({
   onRetryEvent,
   onCreateEvent,
   onCreateNote,
+  onAbandon,
   onOpenClassic,
 }: {
   resource: ReadResource<MeetingWorkspaceData>;
@@ -384,6 +389,7 @@ export function MeetingWorkspaceCanvas({
   onRetryEvent: () => void;
   onCreateEvent: (request: CreateEventRequest) => Promise<CalendarEvent>;
   onCreateNote: (eventId: string, contactId: string, description: string) => Promise<unknown>;
+  onAbandon: () => void;
   onOpenClassic: () => void;
 }) {
   return (
@@ -397,10 +403,10 @@ export function MeetingWorkspaceCanvas({
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Chargement de l’agenda…</div>
           : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
-            : target === 'new-event' ? <NewEventForm data={resource.data} onCreate={onCreateEvent} />
+            : target === 'new-event' ? <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />
               : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je rassemble le contexte exact…</div>
                 : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
-                  : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} />
+                  : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>
 

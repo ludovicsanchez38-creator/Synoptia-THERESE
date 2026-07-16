@@ -35,6 +35,8 @@ export function VoiceDictationButton({
     isProcessing,
     pluginReady,
     toggleRecording,
+    cancelProcessing,
+    elapsedSeconds,
   } = useVoiceRecorder({
     onTranscript,
     onError: handleError,
@@ -48,8 +50,39 @@ export function VoiceDictationButton({
         ? "Arrêter l'enregistrement"
         : 'Message vocal';
 
+  const elapsedLabel = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, '0')}:${String(elapsedSeconds % 60).padStart(2, '0')}`;
+
   return (
-    <Button
+    <div className="relative flex shrink-0 items-center">
+      {(isRecording || isProcessing) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute bottom-full right-0 z-30 mb-2 min-w-52 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
+          data-testid={`${testId}-status`}
+        >
+          {isRecording ? (
+            <div>
+              <div className="flex items-center gap-2 font-semibold text-error">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
+                Écoute {elapsedLabel}
+              </div>
+              <div className="mt-1 flex items-end gap-0.5" aria-label="Aperçu live de la dictée">
+                {[2, 4, 3, 5, 2].map((height, index) => (
+                  <span key={`${height}-${index}`} className="w-1 animate-pulse rounded-full bg-accent-cyan" style={{ height: `${height * 2}px` }} />
+                ))}
+                <span className="ml-1 text-[10px] text-text-muted">Aperçu audio en direct</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2 font-semibold"><Loader2 className="h-3.5 w-3.5 animate-spin" />Transcription en cours</span>
+              <button type="button" onClick={cancelProcessing} className="rounded-[6px] border border-error px-2 py-1 font-semibold text-error">Annuler</button>
+            </div>
+          )}
+        </div>
+      )}
+      <Button
       variant={isRecording ? 'primary' : 'ghost'}
       size="icon"
       data-testid={testId}
@@ -62,14 +95,15 @@ export function VoiceDictationButton({
       onClick={() => void toggleRecording()}
       title={label}
       aria-label={label}
-    >
-      {isProcessing ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : isRecording ? (
-        <MicOff className="h-5 w-5" />
-      ) : (
-        <Mic className="h-5 w-5" />
-      )}
-    </Button>
+      >
+        {isProcessing ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : isRecording ? (
+          <MicOff className="h-5 w-5" />
+        ) : (
+          <Mic className="h-5 w-5" />
+        )}
+      </Button>
+    </div>
   );
 }

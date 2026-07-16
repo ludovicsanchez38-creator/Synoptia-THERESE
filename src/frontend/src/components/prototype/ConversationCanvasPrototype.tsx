@@ -11,6 +11,7 @@ import {
   Folder,
   HardDrive,
   History,
+  Loader2,
   Mail,
   Menu,
   MessageSquare,
@@ -326,6 +327,7 @@ function ContextCanvas({
           onRetryEvent={onRetryMeetingEvent}
           onCreateEvent={onCreateMeetingEvent}
           onCreateNote={onCreateMeetingNote}
+          onAbandon={onClose}
           onOpenClassic={() => onOpenView('calendar')}
         />
       ) : scenario === 'invoice' ? (
@@ -760,8 +762,6 @@ export function ConversationCanvasPrototype() {
   const collapseScenarioPanel = () => {
     if (scenario === 'today') return;
     setLastCollapsedRightPanel({ kind: 'scenario', scenario });
-    if (scenario === 'board') cancelBoardDeliberation();
-    if (scenario === 'atelier') void cancelAtelierMission();
     setCanvasOpen(false);
   };
   const reopenLastRightPanel = () => {
@@ -840,20 +840,16 @@ export function ConversationCanvasPrototype() {
           setVoiceOpen(false);
           setCanvasOpen(false);
         } else if (canvasOpen) {
-          if (scenario === 'board') cancelBoardDeliberation();
-          if (scenario === 'atelier') void cancelAtelierMission();
           setCanvasOpen(false);
         }
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, cancelAtelierMission, cancelBoardDeliberation, capabilityCenterOpen, chatOpen, collapseEmbeddedView, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, scenario, trustCenterOpen, voiceOpen]);
+  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, collapseEmbeddedView, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
 
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
-    if (scenario === 'board') cancelBoardDeliberation();
-    if (scenario === 'atelier') void cancelAtelierMission();
     setScenario(next);
     setChatOpen(false);
     setChatInitialPrompt(null);
@@ -965,11 +961,11 @@ export function ConversationCanvasPrototype() {
       return trimmed ? `${trimmed} ${text}` : text;
     });
     composerRef.current?.focus();
+    setComposerVoiceError(null);
   }, []);
 
   const handleComposerVoiceError = useCallback((error: string) => {
     setComposerVoiceError(error);
-    setTimeout(() => setComposerVoiceError(null), 5000);
   }, []);
 
   function runUnifiedAction(actionId: string) {
@@ -1134,6 +1130,12 @@ export function ConversationCanvasPrototype() {
             <section className="relative flex min-w-0 flex-1 flex-col bg-bg">
               <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
+                  {(boardRun.status === 'running' || atelierRun.status === 'running') && (
+                    <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
+                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Loader2 className="h-3.5 w-3.5 animate-spin" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
+                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Loader2 className="h-3.5 w-3.5 animate-spin" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
+                    </div>
+                  )}
                   <div className="mb-7 flex items-start gap-3">
                     <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[2px_2px_0_var(--btn-shadow-color)]" />
                     <div>
@@ -1394,8 +1396,9 @@ export function ConversationCanvasPrototype() {
                       </div>
                     )}
                     {composerVoiceError && (
-                      <div role="alert" className="mx-1 mb-2 rounded-[8px] border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
-                        {composerVoiceError}
+                      <div role="alert" className="mx-1 mb-2 flex items-start gap-2 rounded-[8px] border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+                        <span className="flex-1">{composerVoiceError}</span>
+                        <button type="button" onClick={() => setComposerVoiceError(null)} aria-label="Fermer l’erreur de dictée"><X className="h-3.5 w-3.5" /></button>
                       </div>
                     )}
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">

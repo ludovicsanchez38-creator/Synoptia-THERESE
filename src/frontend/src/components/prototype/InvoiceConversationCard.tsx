@@ -27,6 +27,25 @@ interface DraftLine {
   tvaRate: number;
 }
 
+type FrozenDevisRequest = CreateInvoiceRequest & Required<Pick<CreateInvoiceRequest, 'currency' | 'issue_date' | 'due_date' | 'validite_jours'>>;
+
+interface DevisDraftSnapshot {
+  request: FrozenDevisRequest;
+  recipient: string;
+  totalTtc: number;
+}
+
+function validateDevisSnapshot(snapshot: DevisDraftSnapshot): string | null {
+  const request = snapshot.request;
+  if (!request.contact_id) return 'Le destinataire figé est introuvable.';
+  if (!request.lines.length) return 'Le devis figé ne contient aucune ligne.';
+  if (request.lines.some((line) => !line.description.trim())) return 'Une ligne figée n’a pas de description.';
+  if (request.lines.some((line) => line.quantity < 1 || line.unit_price_ht < 0)) return 'Un montant figé est invalide.';
+  if (!request.issue_date || !request.due_date || request.due_date < request.issue_date) return 'Les dates figées sont incohérentes.';
+  if (!request.validite_jours || request.validite_jours < 1) return 'La validité figée est invalide.';
+  return null;
+}
+
 const statusLabels: Record<string, string> = {
   draft: 'Brouillon', sent: 'Envoyé', paid: 'Payé', overdue: 'En retard',
   cancelled: 'Annulé', converted: 'Converti', accepted: 'Accepté',
@@ -261,7 +280,7 @@ function DevisDraftForm({
   const [lines, setLines] = useState<DraftLine[]>([
     { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 },
   ]);
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationSnapshot, setConfirmationSnapshot] = useState<DevisDraftSnapshot | null>(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -282,8 +301,27 @@ function DevisDraftForm({
   }, { ht: 0, tax: 0 }), [lines]);
 
   function updateLine(index: number, updates: Partial<DraftLine>) {
+    setConfirmationSnapshot(null);
     setLines((current) => current.map((line, lineIndex) => lineIndex === index ? { ...line, ...updates } : line));
     setCreated(null);
+  }
+
+  function buildRequest(): FrozenDevisRequest {
+    return {
+      contact_id: contactId,
+      document_type: 'devis',
+      currency,
+      issue_date: issueDate,
+      due_date: dueDate,
+      validite_jours: Number.parseInt(validity, 10),
+      notes: notes.trim() || undefined,
+      lines: lines.map((line) => ({
+        description: line.description.trim(),
+        quantity: parseDecimal(line.quantity) || 0,
+        unit_price_ht: parseDecimal(line.unitPrice) || 0,
+        tva_rate: line.tvaRate,
+      })),
+    };
   }
 
   function validate(): string | null {
@@ -306,32 +344,30 @@ function DevisDraftForm({
       return;
     }
     setError(null);
-    setConfirmationOpen(true);
+    setConfirmationSnapshot({
+      request: buildRequest(),
+      recipient: contactLabel(data.contacts.find((contact) => contact.id === contactId)),
+      totalTtc: totals.ht + totals.tax,
+    });
   }
 
   async function confirmCreation() {
     if (savingRef.current) return;
+    if (!confirmationSnapshot) return;
+    const validationError = validateDevisSnapshot(confirmationSnapshot);
+    if (validationError) {
+      setError(validationError);
+      setConfirmationSnapshot(null);
+      return;
+    }
+    const snapshot = confirmationSnapshot;
     savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
-      const invoice = await onCreateDraft({
-        contact_id: contactId,
-        document_type: 'devis',
-        currency,
-        issue_date: issueDate,
-        due_date: dueDate,
-        validite_jours: Number.parseInt(validity, 10),
-        notes: notes.trim() || undefined,
-        lines: lines.map((line) => ({
-          description: line.description.trim(),
-          quantity: parseDecimal(line.quantity) || 0,
-          unit_price_ht: parseDecimal(line.unitPrice) || 0,
-          tva_rate: line.tvaRate,
-        })),
-      });
+      const invoice = await onCreateDraft(snapshot.request);
       setCreated(invoice);
-      setConfirmationOpen(false);
+      setConfirmationSnapshot(null);
     } catch {
       setError('Impossible d’enregistrer le devis brouillon.');
     } finally {
@@ -429,6 +465,12 @@ function DevisDraftForm({
         </div>
       )}
 
+      <fieldset
+        disabled={confirmationSnapshot !== null}
+        onChangeCapture={() => setConfirmationSnapshot(null)}
+        className="contents disabled:opacity-70"
+        data-testid="devis-recipient-fields"
+      >
       <section className="rounded-[13px] border border-border bg-surface p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs text-text-muted sm:col-span-2">Client
@@ -453,11 +495,18 @@ function DevisDraftForm({
           </label>
         </div>
       </section>
+      </fieldset>
 
       <section className="rounded-[13px] border border-border bg-surface p-4">
+        <fieldset
+          disabled={confirmationSnapshot !== null}
+          onChangeCapture={() => setConfirmationSnapshot(null)}
+          className="contents disabled:opacity-70"
+          data-testid="devis-line-fields"
+        >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-text">Lignes du devis</h3>
-          <button type="button" onClick={() => setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }])} className="inline-flex items-center gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
+          <button type="button" onClick={() => { setConfirmationSnapshot(null); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex items-center gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-[11px] font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
         </div>
         <div className="mt-3 space-y-3">
           {lines.map((line, index) => (
@@ -468,7 +517,7 @@ function DevisDraftForm({
               <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="rounded-[8px] border border-border bg-surface px-2 py-2 text-xs">
                 {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
               </select>
-              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => setLines((current) => current.filter((_, lineIndex) => lineIndex !== index))} className="grid h-8 w-8 place-items-center rounded-[8px] text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
+              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { setConfirmationSnapshot(null); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 place-items-center rounded-[8px] text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           ))}
         </div>
@@ -479,6 +528,7 @@ function DevisDraftForm({
           HT {formatMoney(totals.ht, currency)} · TVA {formatMoney(totals.tax, currency)}
           <strong className="ml-3 text-sm text-text">TTC {formatMoney(totals.ht + totals.tax, currency)}</strong>
         </div>
+        </fieldset>
 
         {error && <p className="mt-3 text-xs font-semibold text-error" role="alert">{error}</p>}
         {created && (
@@ -488,27 +538,28 @@ function DevisDraftForm({
           </div>
         )}
 
-        {confirmationOpen && (
+        {confirmationSnapshot && (
           <div className="mt-3 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3" data-testid="devis-draft-confirmation">
             <div className="flex items-start gap-2 text-xs text-accent">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <div>
                 <strong>Confirmer la création du devis brouillon</strong>
-                <p className="mt-1">Client : {contactLabel(data.contacts.find((contact) => contact.id === contactId))}</p>
-                <p>Montant TTC : {formatMoney(totals.ht + totals.tax, currency)}</p>
+                <p className="mt-1">Destinataire : {confirmationSnapshot.recipient}</p>
+                <p>Montant TTC : {formatMoney(confirmationSnapshot.totalTtc, confirmationSnapshot.request.currency)}</p>
+                <p>Échéance : {formatDate(confirmationSnapshot.request.due_date)}</p>
                 <p className="mt-1 font-semibold">Cette action crée un document local. Elle ne génère aucun PDF et n’envoie rien.</p>
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
+              <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
               <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
             </div>
           </div>
         )}
 
-        <div className="mt-4 flex justify-end">
+        {!confirmationSnapshot && <div className="mt-4 flex justify-end">
           <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
-        </div>
+        </div>}
       </section>
     </div>
   );

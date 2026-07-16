@@ -68,6 +68,10 @@ describe('Board 0.40 conversationnel', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la délibération' }));
     expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Jusqu’à six appels LLM');
+    expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Faut-il lancer un pilote maintenant ?');
+    expect(screen.getByLabelText('Question stratégique')).toBeDisabled();
+    expect(screen.getByLabelText('Contexte du Board')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Souverain/ })).toBeDisabled();
     expect(onStart).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et lancer' }));
@@ -75,6 +79,27 @@ describe('Board 0.40 conversationnel', () => {
       'therese-cloud-consent', expect.stringContaining('"accepted":true'),
     );
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ mode: 'cloud' }));
+  });
+
+  it('réserve l’annulation d’un Board engagé à une confirmation dédiée', () => {
+    const onCancel = vi.fn();
+    const runningRun: BoardRunState = {
+      ...idleRun,
+      status: 'running',
+      question: 'Faut-il lancer le pilote ?',
+      phase: 'Consultation des conseillers',
+    };
+    render(<BoardWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }} decisionResource={null}
+      run={runningRun} target="current" onRetry={vi.fn()} onRetryDecision={vi.fn()}
+      onStart={vi.fn()} onCancel={onCancel} onReset={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la délibération' }));
+    expect(screen.getByTestId('board-cancel-confirmation')).toBeInTheDocument();
+    expect(onCancel).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’annulation' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it('rend le détail sauvegardé sans inventer les providers historiques', () => {

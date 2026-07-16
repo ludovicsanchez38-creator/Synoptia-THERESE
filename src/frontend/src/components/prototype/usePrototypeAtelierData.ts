@@ -443,9 +443,10 @@ export function usePrototypeAtelierData(enabled = true) {
   }, []);
 
   useEffect(() => {
-    if (!enabled) return undefined;
-    void refresh();
-    return () => {
+    if (enabled) void refresh();
+  }, [enabled, refresh]);
+
+  useEffect(() => () => {
       historyRequestId.current += 1;
       detailRequestId.current += 1;
       if (running.current && runningTaskId.current) {
@@ -453,8 +454,7 @@ export function usePrototypeAtelierData(enabled = true) {
       }
       abortController.current?.abort();
       abortController.current = null;
-    };
-  }, [enabled, refresh]);
+  }, []);
 
   return {
     resource,

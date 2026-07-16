@@ -23,6 +23,8 @@ interface UseVoiceRecorderReturn {
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
   toggleRecording: () => Promise<void>;
+  cancelProcessing: () => void;
+  elapsedSeconds: number;
   error: string | null;
 }
 
@@ -66,6 +68,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
   const [state, setState] = useState<RecordingState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [pluginReady, setPluginReady] = useState(_pluginLoaded);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // BUG-034 : suivre le chargement async du plugin Tauri
   useEffect(() => {
@@ -85,6 +88,17 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const transcriptionControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (state !== 'recording') return undefined;
+    const startedAt = Date.now();
+    setElapsedSeconds(0);
+    const interval = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [state]);
 
   const startRecordingTauri = useCallback(async () => {
     if (!tauriMicRecorder) {
@@ -105,6 +119,8 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     const savePath = await tauriMicRecorder.stopRecording();
     console.log('[VoiceRecorder] Recording saved at:', savePath);
     setState('processing');
+    const controller = new AbortController();
+    transcriptionControllerRef.current = controller;
 
     try {
       // Read the recorded file and send for transcription
@@ -119,18 +135,23 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
       }
 
       // Send to backend for transcription
-      const transcript = await api.transcribeAudio(audioBlob);
+      if (controller.signal.aborted) return;
+      const transcript = await api.transcribeAudio(audioBlob, 'recording.wav', controller.signal);
       console.log('[VoiceRecorder] Transcript received:', transcript?.substring(0, 50));
 
       if (transcript && onTranscript) {
         onTranscript(transcript);
       }
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('[VoiceRecorder] Transcription error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Erreur de transcription';
       setError(errorMsg);
       onError?.(errorMsg);
     } finally {
+      if (transcriptionControllerRef.current === controller) {
+        transcriptionControllerRef.current = null;
+      }
       setState('idle');
     }
   }, [onTranscript, onError]);
@@ -196,6 +217,8 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
 
     mediaRecorder.onstop = async () => {
       setState('processing');
+      const controller = new AbortController();
+      transcriptionControllerRef.current = controller;
       console.log('[VoiceRecorder] Recording stopped, processing...');
 
       try {
@@ -206,18 +229,23 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
           throw new Error('Enregistrement vide - vérifiez les permissions micro');
         }
 
-        const transcript = await api.transcribeAudio(audioBlob);
+        if (controller.signal.aborted) return;
+        const transcript = await api.transcribeAudio(audioBlob, 'recording.webm', controller.signal);
         console.log('[VoiceRecorder] Transcript received:', transcript?.substring(0, 50));
 
         if (transcript && onTranscript) {
           onTranscript(transcript);
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('[VoiceRecorder] Transcription error:', err);
         const errorMsg = err instanceof Error ? err.message : 'Erreur de transcription';
         setError(errorMsg);
         onError?.(errorMsg);
       } finally {
+        if (transcriptionControllerRef.current === controller) {
+          transcriptionControllerRef.current = null;
+        }
         setState('idle');
       }
     };
@@ -274,6 +302,20 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     }
   }, [state, startRecording, stopRecording]);
 
+  const cancelProcessing = useCallback(() => {
+    transcriptionControllerRef.current?.abort();
+    transcriptionControllerRef.current = null;
+    setState('idle');
+  }, []);
+
+  useEffect(() => () => {
+    transcriptionControllerRef.current?.abort();
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
   return {
     state,
     isRecording: state === 'recording',
@@ -282,6 +324,8 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
     startRecording,
     stopRecording,
     toggleRecording,
+    cancelProcessing,
+    elapsedSeconds,
     error,
   };
 }

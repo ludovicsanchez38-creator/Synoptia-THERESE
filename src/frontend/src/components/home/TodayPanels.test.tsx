@@ -22,9 +22,10 @@ function makeData(overrides: Partial<TodayDashboard> = {}): TodayDashboard {
     date: TODAY,
     events: [],
     urgent_tasks: [],
+    due_follow_ups: [],
     overdue_invoices: [],
     stale_prospects: [],
-    summary: { events_count: 0, tasks_count: 0, invoices_count: 0, prospects_count: 0 },
+    summary: { events_count: 0, tasks_count: 0, follow_ups_count: 0, invoices_count: 0, prospects_count: 0 },
     ...overrides,
   };
 }

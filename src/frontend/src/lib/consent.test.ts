@@ -33,4 +33,14 @@ describe('consentement transfert cloud (US-003 RGPD-4)', () => {
   it('retourne null tant qu’aucun consentement n’est donné', () => {
     expect(getCloudConsent()).toBeNull();
   });
+
+  it('trace le fournisseur et les catégories de données annoncées', () => {
+    recordCloudConsent('2026-07-16T10:00:00.000Z', {
+      provider: 'OpenAI',
+      dataCategories: ['message', 'contexte utile'],
+    });
+    expect(getCloudConsent()).toMatchObject({
+      provider: 'OpenAI', dataCategories: ['message', 'contexte utile'],
+    });
+  });
 });

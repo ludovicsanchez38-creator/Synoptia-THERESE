@@ -16,15 +16,22 @@ import {
   getImageStatus,
   listGeneratedImages,
   type ImageProvider,
+  type ImageGenerateRequest,
   type ImageProviderStatus,
   type ImageResponse,
 } from '../../services/api/images';
+import { getCloudConsent, recordCloudConsent } from '../../lib/consent';
 
 const PROVIDERS: Array<{ id: ImageProvider; label: string; availability: keyof ImageProviderStatus }> = [
   { id: 'gpt-image-2', label: 'GPT Image 2', availability: 'openai_available' },
   { id: 'nanobanan-pro', label: 'Nano Banana', availability: 'gemini_available' },
   { id: 'fal-flux-pro', label: 'Fal Flux Pro', availability: 'fal_available' },
 ];
+
+interface ImageGenerationSnapshot {
+  request: Required<Pick<ImageGenerateRequest, 'prompt' | 'provider' | 'size' | 'quality'>>;
+  providerLabel: string;
+}
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -42,7 +49,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('medium');
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationSnapshot, setConfirmationSnapshot] = useState<ImageGenerationSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ImageResponse | null>(null);
   const generationLocked = useRef(false);
@@ -84,17 +91,34 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       return;
     }
     setError(null);
-    setConfirmationOpen(true);
+    setConfirmationSnapshot({
+      request: { prompt: prompt.trim(), provider, size, quality },
+      providerLabel: activeProvider.label,
+    });
   }
 
   async function confirmGeneration() {
     if (generationLocked.current) return;
+    if (!confirmationSnapshot) return;
+    const snapshot = confirmationSnapshot;
+    const snapshotProvider = PROVIDERS.find((item) => item.id === snapshot.request.provider);
+    if (snapshot.request.prompt.trim().length < 8 || !snapshotProvider || !providerStatus?.[snapshotProvider.availability]) {
+      setError('L’instantané de génération n’est plus valide. Reprends la préparation.');
+      setConfirmationSnapshot(null);
+      return;
+    }
     generationLocked.current = true;
     setPending(true);
-    setConfirmationOpen(false);
+    setConfirmationSnapshot(null);
     setError(null);
     try {
-      const created = await generateImage({ prompt: prompt.trim(), provider, size, quality });
+      if (!getCloudConsent()?.accepted) {
+        recordCloudConsent(undefined, {
+          provider: snapshot.providerLabel,
+          dataCategories: ['description du visuel', 'format', 'qualité'],
+        });
+      }
+      const created = await generateImage(snapshot.request);
       setImages((current) => [created, ...current.filter((image) => image.id !== created.id)]);
       setSelected(created);
       setPrompt('');
@@ -120,6 +144,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(300px,0.8fr)_minmax(360px,1.2fr)]">
         <section className="overflow-y-auto border-r border-border p-5">
           <h3 className="text-sm font-bold text-text">Nouveau visuel</h3>
+          <fieldset disabled={confirmationSnapshot !== null} onChangeCapture={() => setConfirmationSnapshot(null)} className="contents disabled:opacity-70" data-testid="image-generation-fields">
           <label className="mt-4 block text-xs font-semibold text-text">Description
             <textarea aria-label="Description du visuel" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={6} placeholder="Décris le sujet, la composition, le style et ce qui ne doit pas apparaître…" className="mt-2 w-full resize-y rounded-[10px] border border-border bg-surface p-3 text-sm font-normal leading-6 text-text outline-none focus:border-[#22D3EE]" />
           </label>
@@ -140,8 +165,9 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="mt-4 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
+          </fieldset>
           {error && <div role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error"><AlertCircle className="mr-1 inline h-4 w-4" />{error}</div>}
-          {confirmationOpen ? <div className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="image-generation-confirmation"><strong>Confirmer la génération avec {activeProvider.label} ?</strong><p className="mt-1">Format {size}, qualité {quality}. Cette action peut consommer un crédit du provider.</p><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmGeneration()} disabled={pending} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et générer</button></div></div> : <button type="button" onClick={requestGeneration} disabled={pending || loading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</button>}
+          {confirmationSnapshot ? <div className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="image-generation-confirmation"><strong>Confirmer la génération avec {confirmationSnapshot.providerLabel} ?</strong><p className="mt-1 font-semibold">Prompt : {confirmationSnapshot.request.prompt}</p><p>Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.</p>{!getCloudConsent()?.accepted && <p className="mt-1">En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</p>}<div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmGeneration()} disabled={pending} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et générer</button></div></div> : <button type="button" onClick={requestGeneration} disabled={pending || loading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</button>}
         </section>
 
         <section className="min-h-0 overflow-y-auto p-5">

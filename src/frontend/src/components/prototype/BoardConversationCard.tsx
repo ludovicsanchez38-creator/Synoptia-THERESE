@@ -144,6 +144,7 @@ function AdvisorOpinionCard({ advisor, info }: { advisor?: PrototypeAdvisorState
 
 function BoardRunView({ run, advisors, onCancel, onReset }: { run: BoardRunState; advisors: AdvisorInfo[]; onCancel: () => void; onReset: () => void }) {
   const completed = Object.values(run.advisors).filter((advisor) => advisor.isComplete).length;
+  const [cancelConfirmationOpen, setCancelConfirmationOpen] = useState(false);
   return (
     <div className="space-y-4" data-testid="board-run-view">
       <section className="rounded-[13px] border border-border bg-surface p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-muted">Question soumise</span><h3 className="mt-1 text-sm font-bold leading-6 text-text">{run.question}</h3></div><span className="rounded-full bg-[var(--k4bg)] px-2.5 py-1 text-[10px] font-semibold text-[var(--k4)]">{run.mode === 'sovereign' ? 'Souverain' : 'Cloud'}</span></div>{run.context && <p className="mt-3 border-t border-border pt-3 text-xs leading-5 text-text-muted">{run.context}</p>}</section>
@@ -160,7 +161,7 @@ function BoardRunView({ run, advisors, onCancel, onReset }: { run: BoardRunState
       {run.status === 'cancelled' && <div className="rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Délibération annulée. Aucun résultat complet n’est présenté comme une décision.</div>}
       {run.status === 'complete' && <div className="flex items-start gap-2 rounded-[10px] border border-success/40 bg-[var(--color-success-tint)] p-3 text-xs text-success"><CheckCircle2 className="h-4 w-4 shrink-0" /><span><strong>Décision enregistrée.</strong>{run.decisionId ? ` Identifiant : ${run.decisionId}` : ''}</span></div>}
 
-      <div className="flex justify-end gap-2">{run.status === 'running' ? <button type="button" onClick={onCancel} className="inline-flex items-center gap-1.5 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error"><Square className="h-3.5 w-3.5 fill-current" />Annuler la délibération</button> : <button type="button" onClick={onReset} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Nouvelle question</button>}</div>
+      {run.status === 'running' && cancelConfirmationOpen ? <div className="rounded-[10px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error" data-testid="board-cancel-confirmation"><strong>Annuler la délibération engagée ?</strong><p className="mt-1">Les appels en cours seront interrompus. Tu peux aussi masquer ce canevas et laisser le Board continuer en arrière-plan.</p><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setCancelConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold text-text">Continuer en arrière-plan</button><button type="button" onClick={() => { setCancelConfirmationOpen(false); onCancel(); }} className="rounded-[8px] bg-error px-3 py-2 font-semibold text-white">Confirmer l’annulation</button></div></div> : <div className="flex justify-end gap-2">{run.status === 'running' ? <button type="button" onClick={() => setCancelConfirmationOpen(true)} className="inline-flex items-center gap-1.5 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error"><Square className="h-3.5 w-3.5 fill-current" />Annuler la délibération</button> : <button type="button" onClick={onReset} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Nouvelle question</button>}</div>}
     </div>
   );
 }
@@ -169,28 +170,68 @@ function NewBoardForm({ advisors, run, onStart }: { advisors: AdvisorInfo[]; run
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [mode, setMode] = useState<BoardMode>('cloud');
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationSnapshot, setConfirmationSnapshot] = useState<(BoardRequest & { advisorCount: number }) | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  function validateSnapshot(snapshot: BoardRequest): string | null {
+    if (snapshot.question.trim().length < 10) {
+      return 'La question doit contenir au moins 10 caractères.';
+    }
+    if (snapshot.mode !== 'cloud' && snapshot.mode !== 'sovereign') {
+      return 'Le mode de délibération figé est invalide.';
+    }
+    return null;
+  }
+
   function requestConfirmation() {
-    if (question.trim().length < 10) {
-      setError('La question doit contenir au moins 10 caractères.');
+    const snapshot = {
+      question: question.trim(),
+      context: context.trim() || undefined,
+      mode,
+      advisorCount: advisors.length || 5,
+    };
+    const validationError = validateSnapshot(snapshot);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setError(null);
-    setConfirmationOpen(true);
+    setConfirmationSnapshot(snapshot);
+  }
+
+  function confirmStart() {
+    if (!confirmationSnapshot) return;
+    const validationError = validateSnapshot(confirmationSnapshot);
+    if (validationError) {
+      setError(validationError);
+      setConfirmationSnapshot(null);
+      return;
+    }
+    if (confirmationSnapshot.mode === 'cloud') {
+      recordCloudConsent(undefined, {
+        provider: 'Board cloud',
+        dataCategories: ['question', 'contexte utile', 'profil local utile', 'résultats web'],
+      });
+    }
+    void onStart({
+      question: confirmationSnapshot.question,
+      context: confirmationSnapshot.context,
+      mode: confirmationSnapshot.mode,
+    });
   }
 
   return (
     <div className="space-y-4" data-testid="board-new-form">
+      <fieldset disabled={confirmationSnapshot !== null} onChangeCapture={() => setConfirmationSnapshot(null)} className="contents disabled:opacity-70" data-testid="board-form-fields">
       <section className="rounded-[13px] border border-border bg-surface p-4"><label className="block text-xs font-semibold text-text">Question stratégique<textarea aria-label="Question stratégique" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Quelle décision veux-tu éclairer ?" className="mt-2 h-28 w-full resize-y rounded-[9px] border border-border p-3 text-sm font-normal leading-6 text-text outline-none focus:border-[var(--k4)]" /></label><label className="mt-3 block text-xs font-semibold text-text">Contexte utile, facultatif<textarea aria-label="Contexte du Board" value={context} onChange={(event) => setContext(event.target.value)} placeholder="Contraintes, hypothèses, chiffres ou échéance…" className="mt-2 h-24 w-full resize-y rounded-[9px] border border-border p-3 text-xs font-normal leading-5 text-text outline-none focus:border-[var(--k4)]" /></label></section>
       <section className="rounded-[13px] border border-border bg-surface p-4"><h3 className="text-xs font-bold text-text">Mode de délibération</h3><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => setMode('cloud')} className={`rounded-[10px] border p-3 text-left ${mode === 'cloud' ? 'border-[var(--k4)] bg-[var(--k4bg)]' : 'border-border'}`}><Globe className="h-4 w-4 text-[var(--k4)]" /><strong className="mt-2 block text-xs text-text">Cloud</strong><span className="mt-1 block text-[10px] leading-4 text-text-muted">Providers configurés et recherche web.</span></button><button type="button" onClick={() => setMode('sovereign')} className={`rounded-[10px] border p-3 text-left ${mode === 'sovereign' ? 'border-[var(--k4)] bg-[var(--k4bg)]' : 'border-border'}`}><ShieldCheck className="h-4 w-4 text-[var(--k4)]" /><strong className="mt-2 block text-xs text-text">Souverain</strong><span className="mt-1 block text-[10px] leading-4 text-text-muted">Ollama local, sans recherche web.</span></button></div></section>
       <section className="rounded-[13px] border border-border bg-surface p-4"><div className="flex items-center gap-2 text-xs font-bold text-text"><Users className="h-4 w-4 text-[var(--k4)]" />Conseillers réellement configurés</div><div className="mt-3 grid grid-cols-5 gap-2">{advisorOrder.map((role) => { const advisor = advisors.find((item) => item.role === role); return <div key={role} className="text-center"><CharacterPortrait index={advisorPortraits[role]} className="mx-auto h-9 w-9 rounded-[8px] border border-text" /><span className="mt-1 block truncate text-[9px] text-text-muted">{advisor?.name || role}</span></div>; })}</div></section>
+      </fieldset>
       {error && <p className="text-xs font-semibold text-error" role="alert">{error}</p>}
-      {confirmationOpen && (
-        <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3" data-testid="board-confirmation"><div className="flex items-start gap-2 text-xs text-accent"><ShieldCheck className="h-4 w-4 shrink-0" /><div><strong>Confirmer le lancement du Board</strong><p className="mt-1">Mode : {mode === 'cloud' ? 'Cloud avec recherche web' : 'Souverain via Ollama local'}</p><p>Conseillers : {advisors.length || 5}</p><p className="mt-1 font-semibold">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>{mode === 'sovereign' && <p className="mt-1 font-semibold">Ollama doit être disponible. Aucun repli cloud ne sera effectué.</p>}</div></div><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button><button type="button" disabled={run.status === 'running'} onClick={() => { if (mode === 'cloud') recordCloudConsent(); void onStart({ question: question.trim(), context: context.trim() || undefined, mode }); }} className="inline-flex items-center gap-1.5 rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"><Play className="h-3.5 w-3.5 fill-current" />Confirmer et lancer</button></div></div>
+      {confirmationSnapshot && (
+        <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3" data-testid="board-confirmation"><div className="flex items-start gap-2 text-xs text-accent"><ShieldCheck className="h-4 w-4 shrink-0" /><div><strong>Confirmer le lancement du Board</strong><p className="mt-1 font-semibold">Question : {confirmationSnapshot.question}</p>{confirmationSnapshot.context && <p>Contexte : {confirmationSnapshot.context}</p>}<p>Mode : {confirmationSnapshot.mode === 'cloud' ? 'Cloud avec recherche web' : 'Souverain via Ollama local'}</p><p>Conseillers : {confirmationSnapshot.advisorCount}</p><p className="mt-1 font-semibold">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>{confirmationSnapshot.mode === 'sovereign' && <p className="mt-1 font-semibold">Ollama doit être disponible. Aucun repli cloud ne sera effectué.</p>}</div></div><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button><button type="button" disabled={run.status === 'running'} onClick={confirmStart} className="inline-flex items-center gap-1.5 rounded-[8px] bg-[#047857] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"><Play className="h-3.5 w-3.5 fill-current" />Confirmer et lancer</button></div></div>
       )}
-      {!confirmationOpen && <div className="flex justify-end"><button type="button" onClick={requestConfirmation} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><Gavel className="h-3.5 w-3.5" />Préparer la délibération</button></div>}
+      {!confirmationSnapshot && <div className="flex justify-end"><button type="button" onClick={requestConfirmation} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><Gavel className="h-3.5 w-3.5" />Préparer la délibération</button></div>}
     </div>
   );
 }
