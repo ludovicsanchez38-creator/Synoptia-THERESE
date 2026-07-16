@@ -64,7 +64,7 @@ describe('prototypeReadModels', () => {
     expect(items[2]).toMatchObject({ targetView: 'calendar', title: 'Point client' });
   });
 
-  it('masque le personnel solo sans enjeu et relègue les événements solo restants', () => {
+  it('limite le brief aux événements à enjeu et exclut tout l’agenda solo', () => {
     const data = dashboard();
     data.events = [
       { ...data.events[0], id: 'lunch', summary: 'Déjeuner', attendees_count: 0, crm_contact_ids: [] },
@@ -73,10 +73,12 @@ describe('prototypeReadModels', () => {
     ];
 
     const items = buildTodayAttentionItems(data);
-    expect(items.map((item) => item.id)).not.toContain('event-lunch');
-    expect(items.map((item) => item.id).indexOf('event-e1')).toBeLessThan(
-      items.map((item) => item.id).indexOf('event-focus'),
-    );
+    const ids = items.map((item) => item.id);
+    // Décision Ludo 16/07 : seuls les événements avec participants ou contact
+    // CRM restent dans le brief ; tout l'agenda solo bascule dans Vue complète.
+    expect(ids).not.toContain('event-lunch');
+    expect(ids).not.toContain('event-focus');
+    expect(ids).toContain('event-e1');
   });
 
   it('construit un nom et des initiales sans inventer de donnée', () => {
