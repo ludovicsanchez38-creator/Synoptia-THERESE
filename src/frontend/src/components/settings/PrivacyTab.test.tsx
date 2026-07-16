@@ -66,13 +66,16 @@ describe('PrivacyTab - opérations globales', () => {
     fireEvent.click(exportButton);
     await waitFor(() => expect(downloadAllData).toHaveBeenCalledOnce());
 
+    // US-003 : la sauvegarde exige une passphrase de chiffrement.
+    fireEvent.change(screen.getByLabelText('Passphrase de chiffrement de la sauvegarde'), { target: { value: 'ma-passphrase' } });
     fireEvent.click(screen.getByRole('button', { name: 'Créer une sauvegarde' }));
-    await waitFor(() => expect(createBackup).toHaveBeenCalledOnce());
+    await waitFor(() => expect(createBackup).toHaveBeenCalledWith('ma-passphrase'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Restaurer' }));
     expect(screen.getByText(/remplace l’état courant/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Passphrase de la sauvegarde à restaurer'), { target: { value: 'ma-passphrase' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer la restauration' }));
-    await waitFor(() => expect(restoreBackup).toHaveBeenCalledWith(backup.backup_name));
+    await waitFor(() => expect(restoreBackup).toHaveBeenCalledWith(backup.backup_name, 'ma-passphrase'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la suppression' }));
     const confirmation = screen.getByLabelText('Saisis SUPPRIMER pour confirmer');

@@ -92,14 +92,24 @@ export function getBackupStatus(): Promise<BackupStatus> {
   return request<BackupStatus>('/api/data/backup/status');
 }
 
-export function createBackup(): Promise<BackupCreateResponse> {
-  return request<BackupCreateResponse>('/api/data/backup', { method: 'POST' });
+// US-003 : la sauvegarde est chiffree par une passphrase (l'archive embarque la
+// cle de chiffrement, donc une archive en clair equivaudrait a une base en clair).
+export function createBackup(password: string): Promise<BackupCreateResponse> {
+  return request<BackupCreateResponse>('/api/data/backup', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
 }
 
-export function restoreBackup(backupName: string): Promise<RestoreBackupResponse> {
+// password requis pour une sauvegarde chiffree ; optionnel pour une ancienne
+// sauvegarde en clair (compat ascendante).
+export function restoreBackup(
+  backupName: string,
+  password?: string,
+): Promise<RestoreBackupResponse> {
   return request<RestoreBackupResponse>(
     `/api/data/restore/${encodeURIComponent(backupName)}?confirm=true`,
-    { method: 'POST' },
+    { method: 'POST', body: JSON.stringify({ password: password ?? null }) },
   );
 }
 

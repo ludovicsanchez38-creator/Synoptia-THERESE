@@ -113,29 +113,38 @@ class TestRuntime:
 
     @pytest.mark.asyncio
     async def test_backup_contient_la_db_chiffree(self, client):
-        """US-011 x US-014 : l'archive de backup embarque la DB CHIFFRÉE
-        (une restauration sur une autre machine sans la clé est illisible)."""
+        """US-011 x US-014 x US-003 : l'archive de backup est chiffrée par
+        passphrase ET embarque la DB déjà chiffrée + la clé (restaurable sur une
+        autre machine AVEC la passphrase, totalement illisible sans)."""
         import tarfile
+        from pathlib import Path
 
-        resp = await client.post("/api/data/backup")
-        assert resp.status_code == 200
-        archive_path = resp.json()["path"]
-
-        with tarfile.open(archive_path, "r:gz") as tar:
-            member = tar.extractfile("therese.db")
-            header = member.read(16)
-            names = tar.getnames()
-        assert header != b"SQLite format 3\x00", (
-            "le backup contiendrait une DB en CLAIR"
+        from app.services.encryption import (
+            decrypt_backup_archive,
+            get_encryption_service,
         )
-        # Revue adversariale : l'archive doit être AUTOSUFFISANTE - sans la
-        # clé, un backup restauré sur une machine neuve est illisible et
-        # l'app ne démarre plus (la raison d'être du backup disparaît).
-        # NB : en test la clé vient de THERESE_DB_KEY, mais le fichier
-        # .encryption_key existe dès que le service de chiffrement a tourné.
-        from app.services.encryption import get_encryption_service
 
+        pwd = "Passphrase-Test-123"
         get_encryption_service().encrypt("probe")  # force la création de la clé
-        resp2 = await client.post("/api/data/backup")
-        with tarfile.open(resp2.json()["path"], "r:gz") as tar2:
-            assert ".encryption_key" in tar2.getnames(), names
+
+        resp = await client.post("/api/data/backup", json={"password": pwd})
+        assert resp.status_code == 200
+        enc_path = resp.json()["path"]
+        assert enc_path.endswith(".tar.gz.enc"), enc_path
+        assert resp.json()["encrypted"] is True
+
+        # L'archive est un blob chiffré : illisible tel quel comme tar.
+        with pytest.raises(tarfile.ReadError):
+            tarfile.open(enc_path, "r:gz")
+
+        # Déchiffrée avec la passphrase : DB déjà chiffrée + clé autosuffisante.
+        plain = Path(enc_path + ".dec")
+        decrypt_backup_archive(enc_path, plain, pwd)
+        try:
+            with tarfile.open(plain, "r:gz") as tar:
+                header = tar.extractfile("therese.db").read(16)
+                names = tar.getnames()
+            assert header != b"SQLite format 3\x00", "DB en CLAIR dans le backup"
+            assert ".encryption_key" in names, names
+        finally:
+            plain.unlink(missing_ok=True)

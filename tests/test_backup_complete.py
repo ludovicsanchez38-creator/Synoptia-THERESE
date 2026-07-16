@@ -22,7 +22,7 @@ async def test_backup_restore_round_trip_complet(client):
     (data_dir / "mcp_servers.json").write_text('{"servers": []}', encoding="utf-8")
 
     # Backup
-    resp = await client.post("/api/data/backup")
+    resp = await client.post("/api/data/backup", json={"password": "Passphrase-Test-123"})
     assert resp.status_code == 200
     name = resp.json()["backup_name"]
 
@@ -32,7 +32,9 @@ async def test_backup_restore_round_trip_complet(client):
     (data_dir / "mcp_servers.json").unlink()
 
     # Restore
-    resp = await client.post(f"/api/data/restore/{name}?confirm=true")
+    resp = await client.post(
+        f"/api/data/restore/{name}?confirm=true", json={"password": "Passphrase-Test-123"}
+    )
     assert resp.status_code == 200
 
     # Les données annexes sont revenues à l'identique
@@ -46,7 +48,7 @@ async def test_backup_liste_les_elements_inclus(client):
     data_dir = Path(settings.data_dir)
     (data_dir / "mcp_servers.json").write_text("{}", encoding="utf-8")
 
-    resp = await client.post("/api/data/backup")
+    resp = await client.post("/api/data/backup", json={"password": "Passphrase-Test-123"})
     assert resp.status_code == 200
     body = resp.json()
     assert "therese.db" in body.get("included", [])
@@ -62,14 +64,16 @@ async def test_restore_supprime_les_orphelins(client):
     (data_dir / "qdrant").mkdir(parents=True, exist_ok=True)
     (data_dir / "qdrant" / "ancien.bin").write_bytes(b"etat-1")
 
-    resp = await client.post("/api/data/backup")
+    resp = await client.post("/api/data/backup", json={"password": "Passphrase-Test-123"})
     assert resp.status_code == 200
     name = resp.json()["backup_name"]
 
     # Pollution APRÈS le backup : un orphelin qui n'est PAS dans l'archive
     (data_dir / "qdrant" / "orphelin.bin").write_bytes(b"cree-apres-backup")
 
-    resp = await client.post(f"/api/data/restore/{name}?confirm=true")
+    resp = await client.post(
+        f"/api/data/restore/{name}?confirm=true", json={"password": "Passphrase-Test-123"}
+    )
     assert resp.status_code == 200
 
     # L'état du backup est revenu, l'orphelin a disparu
