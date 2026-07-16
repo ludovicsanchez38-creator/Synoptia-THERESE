@@ -58,7 +58,18 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [selected, setSelected] = useState<ImageResponse | null>(null);
   const generationLocked = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
+  const confirmationRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
+
+  // La confirmation d'une action payante remplace le bouton en bas de la colonne
+  // scrollable : à 1280×900 elle naissait sous le pli (finding Codex CODEX-09).
+  // On l'amène à l'écran dès qu'elle apparaît pour qu'Annuler / Confirmer soient
+  // visibles sans deviner qu'il faut faire défiler.
+  useEffect(() => {
+    if (confirmationSnapshot) {
+      confirmationRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [confirmationSnapshot]);
 
   async function refresh() {
     setLoading(true);
@@ -198,7 +209,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
           <div className="mt-4 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
           </fieldset>
           {error && <div id="image-generation-error" role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error"><p><AlertCircle className="mr-1 inline h-4 w-4" />{error}</p>{errorContext && <button type="button" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>}</div>}
-          {confirmationSnapshot ? <div className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="image-generation-confirmation"><strong>Confirmer la génération avec {confirmationSnapshot.providerLabel} ?</strong><p className="mt-1 font-semibold">Prompt : {confirmationSnapshot.request.prompt}</p><p>Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.</p>{!getCloudConsent()?.accepted && <p className="mt-1">En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</p>}<div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmGeneration()} disabled={pending} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et générer</button></div></div> : <button type="button" onClick={requestGeneration} disabled={pending || loading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</button>}
+          {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="image-generation-confirmation"><strong>Confirmer la génération avec {confirmationSnapshot.providerLabel} ?</strong><p className="mt-1 font-semibold">Prompt : {confirmationSnapshot.request.prompt}</p><p>Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.</p>{!getCloudConsent()?.accepted && <p className="mt-1">En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</p>}<div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmGeneration()} disabled={pending} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et générer</button></div></div> : <button type="button" onClick={requestGeneration} disabled={pending || loading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</button>}
         </section>
 
         <section className="min-h-0 overflow-y-auto p-5">
