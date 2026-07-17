@@ -136,8 +136,9 @@ describe('ChatInput sans modèle', () => {
 
     fireEvent.click(screen.getByTestId('chat-send-btn'));
     fireEvent.click(screen.getByRole('button', { name: 'Autoriser et envoyer' }));
+    // Consentement v2 (revue 0.40) : finalité llm + ID du fournisseur en clé.
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      'therese-cloud-consent', expect.stringContaining('"provider":"OpenAI"'),
+      'therese-cloud-consent', expect.stringContaining('"llm:openai"'),
     );
     await waitFor(() => expect(apiMocks.streamMessage).toHaveBeenCalledTimes(1));
   });

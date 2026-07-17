@@ -104,12 +104,51 @@ export function getSessionToken(): string | null {
   return _sessionToken;
 }
 
-export function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(options.headers);
+/**
+ * Délai maximal commun des appels API (revue 0.40) : une requête bloquée ne
+ * doit plus figer un écran sans limite. Le délai couvre l'attente de la
+ * RÉPONSE (en-têtes) : une fois la réponse arrivée, le corps (téléchargement,
+ * flux SSE) n'est plus soumis au délai.
+ */
+export const API_TIMEOUT_MS = 30_000;
+
+export type ApiFetchOptions = RequestInit & {
+  /**
+   * Délai maximal en millisecondes, `null` pour désactiver. À désactiver sur
+   * les flux SSE (le premier octet peut attendre un modèle local froid), les
+   * appels LLM non-stream et les transferts de fichiers longs.
+   */
+  timeoutMs?: number | null;
+};
+
+export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Response> {
+  const { timeoutMs = API_TIMEOUT_MS, ...init } = options;
+  const headers = new Headers(init.headers);
   if (_sessionToken) {
     headers.set('X-Therese-Token', _sessionToken);
   }
-  return fetch(url, { ...options, headers });
+  if (timeoutMs == null) {
+    return fetch(url, { ...init, headers });
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(
+    () => controller.abort(new DOMException(`Délai de ${timeoutMs} ms dépassé`, 'TimeoutError')),
+    timeoutMs,
+  );
+  const callerSignal = init.signal;
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      controller.abort(callerSignal.reason);
+    } else {
+      callerSignal.addEventListener('abort', () => controller.abort(callerSignal.reason), {
+        once: true,
+      });
+    }
+  }
+  return fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
+    clearTimeout(timer),
+  );
 }
 
 // API Error
@@ -127,7 +166,7 @@ export class ApiError extends Error {
 // HTTP helpers
 export async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiFetchOptions = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   let response: Response;

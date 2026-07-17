@@ -17,6 +17,7 @@ import { CompleteStep } from './CompleteStep';
 import type { LLMProvider } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { isMacPlatform } from '../../lib/platform';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -45,8 +46,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: handleClose, isolateBackground: true });
 
   // BUG-traffic-lights : afficher les traffic lights uniquement sur macOS
-  // navigator.platform est déprécié mais reste le seul moyen fiable sous WKWebView (Tauri macOS)
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+  // (détection centralisée dans lib/platform.ts depuis la revue 0.40)
+  const isMac = isMacPlatform();
   // Sur Windows + Linux : tauri.conf.json a decorations:false → pas de barre de titre native
   // On affiche un bouton fermer minimaliste pour que la fenêtre soit fermable
   const isDesktopNonMac = typeof navigator !== 'undefined' && !isMac;

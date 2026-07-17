@@ -13,7 +13,7 @@ import {
   type BoardSynthesis,
 } from '../../services/api/board';
 import type { ReadResource } from './usePrototypeReadData';
-import { getCloudConsent } from '../../lib/consent';
+import { hasCloudConsent } from '../../lib/consent';
 
 export interface PrototypeAdvisorState {
   role: AdvisorRole;
@@ -112,7 +112,7 @@ export function usePrototypeBoardData(enabled = true) {
       }));
       return;
     }
-    if ((request.mode || 'cloud') === 'cloud' && !getCloudConsent()?.accepted) {
+    if ((request.mode || 'cloud') === 'cloud' && !hasCloudConsent('llm')) {
       setRun((current) => ({
         ...current,
         status: 'error',

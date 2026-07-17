@@ -31,6 +31,7 @@ import {
 } from './CapabilityCenter';
 import { CharacterPortrait } from './DecisionMissionPrototype';
 import { WindowControls } from '../window/WindowControls';
+import { isMacPlatform } from '../../lib/platform';
 import { startWindowDrag } from '../../lib/windowChrome';
 import {
   AtelierHistoryCard,
@@ -1045,7 +1046,7 @@ export function ConversationCanvasPrototype() {
     >
       <div className="flex h-full flex-col">
         <header data-dialog-allow onMouseDown={startWindowDrag} className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 select-none sm:px-4">
-          <WindowControls />
+          <WindowControls side="left" />
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <div className="flex min-w-0 items-center gap-2.5">
               <span className="relative h-2.5 w-2.5 rounded-full bg-accent-fill" aria-hidden="true">
@@ -1085,8 +1086,9 @@ export function ConversationCanvasPrototype() {
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
-              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'}</kbd>
+              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
+            <WindowControls side="right" />
           </div>
         </header>
 

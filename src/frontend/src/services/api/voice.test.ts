@@ -17,7 +17,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { recordCloudConsent } from '../../lib/consent';
+import { grantCloudConsent } from '../../lib/consent';
 import { apiFetch } from './core';
 import {
   getVoiceLocalPreference,
@@ -127,7 +127,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
 
   it("préférence 'false' explicite -> Groq, jamais le local ni le status", async () => {
     setVoiceLocalPreferred(false);
-    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
+    grantCloudConsent('voice', 'Groq', ['audio']);
     mockedFetch.mockResolvedValueOnce(okJson({ text: 'cloud' }));
 
     await transcribeAudio(AUDIO);
@@ -151,7 +151,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
   });
 
   it('préférence absente + voix locale pas prête -> persiste false et route Groq', async () => {
-    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
+    grantCloudConsent('voice', 'Groq', ['audio']);
     mockedFetch
       .mockResolvedValueOnce(localStatus({ ready: false }))
       .mockResolvedValueOnce(okJson({ text: 'cloud' }));
@@ -175,7 +175,7 @@ describe('BUG-129 - transcribeAudio route selon le tri-état', () => {
   });
 
   it('préférence absente + status injoignable -> Groq sans persister (on retentera)', async () => {
-    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
+    grantCloudConsent('voice', 'Groq', ['audio']);
     mockedFetch
       .mockRejectedValueOnce(new Error('backend down'))
       .mockResolvedValueOnce(okJson({ text: 'cloud' }));
@@ -211,14 +211,14 @@ describe('US-004 - consentement cloud avant transcription vocale', () => {
 
   it('cloud avec consentement pour un AUTRE fournisseur : refuse', async () => {
     setVoiceLocalPreferred(false);
-    recordCloudConsent(undefined, { provider: 'OpenAI', dataCategories: [] });
+    grantCloudConsent('voice', 'OpenAI', []);
     await expect(transcribeAudio(AUDIO)).rejects.toMatchObject({ status: 403 });
     expect(mockedFetch).not.toHaveBeenCalled();
   });
 
   it('cloud avec consentement Groq : envoie la transcription', async () => {
     setVoiceLocalPreferred(false);
-    recordCloudConsent(undefined, { provider: 'Groq', dataCategories: ['audio'] });
+    grantCloudConsent('voice', 'Groq', ['audio']);
     mockedFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ text: 'bonjour' }) } as Response);
 
     await expect(transcribeAudio(AUDIO)).resolves.toBe('bonjour');

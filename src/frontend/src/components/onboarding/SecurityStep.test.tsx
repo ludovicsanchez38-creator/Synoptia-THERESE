@@ -32,9 +32,10 @@ describe('SecurityStep - consentement cloud conditionnel', () => {
     fireEvent.click(next);
 
     expect(onNext).toHaveBeenCalledTimes(1);
+    // Consentement v2 (revue 0.40) : finalité llm + ID du fournisseur en clé.
     expect(localStorage.setItem).toHaveBeenCalledWith(
       'therese-cloud-consent',
-      expect.stringContaining('"provider":"OpenAI"'),
+      expect.stringContaining('"llm:openai"'),
     );
   });
 

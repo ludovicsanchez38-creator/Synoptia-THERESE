@@ -83,6 +83,7 @@ export async function generateNotifications(): Promise<{
 }> {
   const response = await apiFetch(`${API_BASE}/api/notifications/generate`, {
     method: "POST",
+    timeoutMs: null, // analyse LLM de l'activité : long
   });
   if (!response.ok) {
     const d = await response.json().catch(() => ({}));

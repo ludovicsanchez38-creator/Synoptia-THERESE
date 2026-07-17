@@ -129,6 +129,7 @@ export async function sendMessage(req: ChatRequest): Promise<ChatResponse> {
   return request<ChatResponse>('/api/chat/send', {
     method: 'POST',
     body: JSON.stringify({ ...req, stream: false }),
+    timeoutMs: null, // LLM non-stream : la réponse n'arrive qu'à la fin
   });
 }
 
@@ -143,6 +144,7 @@ export async function* streamMessage(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...req, stream: true }),
     signal,
+    timeoutMs: null, // SSE : le premier octet peut attendre un modèle local froid
   });
 
   if (!response.ok) {
@@ -203,6 +205,7 @@ export async function* streamDeepResearch(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
     signal,
+    timeoutMs: null, // deep-research SSE : longue phase de recherche avant le flux
   });
 
   if (!response.ok) {

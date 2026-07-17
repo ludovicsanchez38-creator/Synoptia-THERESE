@@ -16,7 +16,7 @@ import { AdvisorArcLayout } from './AdvisorArcLayout';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
-import { getCloudConsent } from '../../lib/consent';
+import { hasCloudConsent } from '../../lib/consent';
 import {
   streamDeliberation,
   listBoardDecisions,
@@ -138,8 +138,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       return 'La question doit contenir au moins 10 caractères.';
     }
     if (mode === 'cloud') {
-      const consent = getCloudConsent();
-      if (!consent?.accepted) {
+      if (!hasCloudConsent('llm')) {
         return 'Le consentement au transfert cloud est absent. Active-le dans l’étape de sécurité avant de lancer le Board cloud.';
       }
     }

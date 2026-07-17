@@ -147,6 +147,7 @@ export async function* streamAgentRequest(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
+    timeoutMs: null, // flux SSE d'agent : long par nature
   });
 
   if (!response.ok) {
@@ -408,6 +409,7 @@ export async function* streamAgentSpawn(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
+    timeoutMs: null, // flux SSE d'agent : long par nature
   });
 
   if (!response.ok) {

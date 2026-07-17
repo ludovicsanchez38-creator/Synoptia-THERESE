@@ -43,6 +43,7 @@ export async function generateImage(req: ImageGenerateRequest): Promise<ImageRes
   return request<ImageResponse>('/api/images/generate', {
     method: 'POST',
     body: JSON.stringify(req),
+    timeoutMs: null, // génération d'image : souvent bien au-delà de 30 s
   });
 }
 
