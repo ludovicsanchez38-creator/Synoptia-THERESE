@@ -233,7 +233,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             {/* Header - en standalone, les actions vivent ici (harmonisation
                 17/07 : la barre « Nouveau contact » pleine largeur en pied de
                 page était un vestige du tiroir, absurde sur une vue) */}
-            <div className="h-14 flex items-center justify-between px-4 border-b border-border/50">
+            <div className="flex min-h-14 flex-wrap items-center justify-between gap-y-2 border-b border-border/50 px-4 py-2">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[6px] border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
                   <Users className="h-5 w-5 text-accent" />
@@ -248,8 +248,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     onClick={() => vcfInputRef.current?.click()}
                     title="Importer des contacts (.vcf)"
                   >
-                    <Upload className="mr-1.5 h-4 w-4" />
-                    Importer
+                    <Upload className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Importer</span>
                   </Button>
                   <Button
                     variant="ghost"
@@ -257,17 +257,18 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     onClick={handleExportVCF}
                     title="Exporter les contacts (.vcf)"
                   >
-                    <Download className="mr-1.5 h-4 w-4" />
-                    Exporter
+                    <Download className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Exporter</span>
                   </Button>
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={onNewContact}
                     data-testid="memory-add-contact-btn"
+                    title="Nouveau contact"
                   >
-                    <Plus className="mr-1.5 h-4 w-4" />
-                    Nouveau contact
+                    <Plus className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Nouveau contact</span>
                   </Button>
                 </div>
               ) : (

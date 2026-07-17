@@ -98,6 +98,9 @@ export function EmailList({ accountId }: EmailListProps) {
       // l'ancienne liste (souvent l'INBOX) s'afficher sous cet onglet.
       if (result.warning) {
         setMessages([]);
+        // F3b revue : sans purge de la sélection, le volet droit affichait
+        // « Message introuvable » au lieu de l'état vide.
+        setCurrentMessage(null);
         setError(result.warning);
         return;
       }

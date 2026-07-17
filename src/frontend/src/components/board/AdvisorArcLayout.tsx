@@ -102,7 +102,7 @@ export function AdvisorArcLayout({
       {/* Arc layout for md+ screens */}
       {/* Hauteur au contenu : les 260 px réservés dataient du grand fond
           illustré - sans lui, c'était du vide (remarque Ludo 17/07) */}
-      <div className="relative hidden justify-center gap-3 pt-2 md:flex">
+      <div className="relative hidden justify-center gap-3 pb-10 pt-2 md:flex">
         {/* Halo atmosphérique neutre (les anciens visages androïdes en
             filigrane sont partis avec le strip - remarque Ludo 17/07) */}
         <div
