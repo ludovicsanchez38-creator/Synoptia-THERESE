@@ -1179,21 +1179,34 @@ async def restore_backup(
                 _verify_restored_db()
             else:
                 shutil.copy2(legacy_db, settings.db_path)
-        except HTTPException:
+        except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
             _rollback()
-            _finalize_safety_archive(
+            kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            if kept and isinstance(exc.detail, str):
+                # F2 : dire aussi sur ce chemin que l'état d'avant tentative est
+                # conservé, chiffré avec la passphrase qui vient d'être saisie.
+                exc.detail = (
+                    f"{exc.detail} L'état d'avant tentative est conservé en "
+                    "sauvegarde chiffrée avec la passphrase saisie."
+                )
             raise
         except Exception as e:
             _rollback()
-            _finalize_safety_archive(
+            kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
+            )
+            suffix = (
+                " L'état d'avant tentative est conservé en sauvegarde chiffrée "
+                "avec la passphrase saisie."
+                if kept
+                else ""
             )
             raise HTTPException(
                 status_code=500,
-                detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.",
+                detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.{suffix}",
             ) from e
     finally:
         maintenance_mode.end()
