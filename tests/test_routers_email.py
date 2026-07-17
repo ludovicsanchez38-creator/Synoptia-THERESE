@@ -108,3 +108,72 @@ async def test_get_gmail_message_returns_normalized_contract(client, db_session)
     assert data["to_emails"] == ["ludo@gmail.test"]
     assert data["body_plain"] == "Corps Gmail normalise"
     assert data["is_read"] is False
+
+
+class TestBug122RepliSilencieuxInbox:
+    """BUG-122 rouvert (Dr_logic, 11/07) : quand le dossier Envoyés/Brouillons/
+    Corbeille n'était pas résolu sur le serveur IMAP, la route servait l'INBOX
+    ENTIÈRE sous l'onglet, sans un mot. Attendu : liste vide + avertissement
+    explicite, et l'INBOX n'est jamais servie à la place d'un dossier spécial."""
+
+    def _account(self):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            email="t@example.org", imap_password="enc", imap_host="imap.example.org",
+            imap_port=993, smtp_host="smtp.example.org", smtp_port=465,
+            smtp_use_tls=True, provider="imap",
+        )
+
+    @pytest.mark.asyncio
+    async def test_dossier_introuvable_ne_sert_pas_l_inbox(self, monkeypatch):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.routers import email as email_router
+
+        fake = MagicMock()
+        fake.resolve_folder_for_label = AsyncMock(return_value=None)
+        fake.list_messages = AsyncMock(return_value=([], None))
+        monkeypatch.setattr(email_router, "get_email_provider", lambda **kw: fake)
+        monkeypatch.setattr(email_router, "decrypt_value", lambda v: "pw")
+
+        result = await email_router._list_messages_imap(self._account(), 50, None, "SENT")
+
+        assert result["messages"] == []
+        assert "warning" in result and "Envoyés" in result["warning"]
+        fake.list_messages.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_dossier_resolu_est_bien_utilise(self, monkeypatch):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.routers import email as email_router
+
+        fake = MagicMock()
+        fake.resolve_folder_for_label = AsyncMock(return_value="Sent Items")
+        fake.list_messages = AsyncMock(return_value=([], None))
+        monkeypatch.setattr(email_router, "get_email_provider", lambda **kw: fake)
+        monkeypatch.setattr(email_router, "decrypt_value", lambda v: "pw")
+
+        result = await email_router._list_messages_imap(self._account(), 50, None, "SENT")
+
+        assert "warning" not in result
+        assert fake.list_messages.await_args.kwargs["folder"] == "Sent Items"
+
+    @pytest.mark.asyncio
+    async def test_resolution_en_erreur_ne_sert_pas_l_inbox(self, monkeypatch):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.routers import email as email_router
+
+        fake = MagicMock()
+        fake.resolve_folder_for_label = AsyncMock(side_effect=RuntimeError("list KO"))
+        fake.list_messages = AsyncMock(return_value=([], None))
+        monkeypatch.setattr(email_router, "get_email_provider", lambda **kw: fake)
+        monkeypatch.setattr(email_router, "decrypt_value", lambda v: "pw")
+
+        result = await email_router._list_messages_imap(self._account(), 50, None, "TRASH")
+
+        assert result["messages"] == []
+        assert "Corbeille" in result.get("warning", "")
+        fake.list_messages.assert_not_awaited()

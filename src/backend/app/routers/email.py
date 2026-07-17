@@ -907,10 +907,32 @@ async def _list_messages_imap(
                 folder = await provider.resolve_folder_for_label(first_label)
             except Exception as e:
                 logger.warning(
-                    "Résolution du dossier IMAP pour %s échouée (%s), repli INBOX",
+                    "Résolution du dossier IMAP pour %s échouée : %s",
                     first_label,
                     e,
                 )
+            # BUG-122 re-rouvert (harmonisation 17/07) : dossier spécial NON
+            # résolu -> ne JAMAIS servir l'INBOX à sa place (c'était le repli
+            # silencieux vu par Dr_logic : Envoyés/Brouillons/Corbeille
+            # affichaient toute la boîte). Liste vide + avertissement honnête.
+            if folder is None:
+                label_fr = {
+                    "SENT": "Envoyés",
+                    "DRAFT": "Brouillons",
+                    "DRAFTS": "Brouillons",
+                    "TRASH": "Corbeille",
+                    "SPAM": "Indésirables",
+                }.get(first_label, first_label)
+                return {
+                    "messages": [],
+                    "nextPageToken": None,
+                    "resultSizeEstimate": 0,
+                    "warning": (
+                        f"Dossier « {label_fr} » introuvable sur ce serveur IMAP. "
+                        "Rien n'est affiché plutôt que de montrer la boîte de "
+                        "réception à sa place."
+                    ),
+                }
 
     try:
         # BUG-095: list_messages returns a tuple (messages, next_token)

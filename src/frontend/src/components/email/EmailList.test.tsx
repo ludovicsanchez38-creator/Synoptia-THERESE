@@ -101,3 +101,31 @@ describe('EmailList - confirmation de suppression 0.40', () => {
     expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
   });
 });
+
+describe('BUG-122 - dossier IMAP introuvable', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    seedStore();
+  });
+
+  it('affiche l’avertissement du backend et vide la liste périmée', async () => {
+    listEmailMessagesMock.mockResolvedValue({
+      messages: [],
+      nextPageToken: null,
+      resultSizeEstimate: 0,
+      warning: 'Dossier « Envoyés » introuvable sur ce serveur IMAP. Rien n’est affiché plutôt que de montrer la boîte de réception à sa place.',
+    });
+
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EmailList accountId="acc-1" />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText(/Dossier « Envoyés » introuvable/)).toBeInTheDocument(),
+    );
+    // L'ancienne liste (INBOX en cache) ne doit plus être affichée.
+    expect(screen.queryByText('Contrat à valider')).not.toBeInTheDocument();
+  });
+});
