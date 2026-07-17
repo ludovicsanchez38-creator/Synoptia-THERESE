@@ -152,6 +152,17 @@ export function UpdateBanner() {
         phase: 'error',
         message: errorMessage,
       });
+
+      // Revue 0.40.1 (F8) : le backend a été arrêté volontairement avant
+      // l'installation (prepare_backend_shutdown + /api/shutdown). Si la mise
+      // à jour échoue ici, la session resterait SANS moteur et sans relance
+      // automatique - on le relance explicitement (réarme aussi le watcher).
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('restart_backend');
+      } catch {
+        // Hors Tauri ou relance impossible : le bandeau moteur prendra le relais.
+      }
     }
   }, []);
 
