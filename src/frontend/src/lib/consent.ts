@@ -1,46 +1,97 @@
 /**
  * THÉRÈSE v2 - Consentement transfert cloud (US-003 / RGPD-4)
  *
- * Le consentement n'est demandé que lorsqu'un fournisseur cloud est actif :
- * à l'onboarding s'il est configuré, sinon au premier usage réel. La trace
- * persistée nomme le fournisseur et les catégories de données annoncées.
+ * V2 (revue 0.40) : un consentement par FINALITÉ et par FOURNISSEUR. La v1 ne
+ * stockait qu'un enregistrement global : consentir aux images écrasait le
+ * fournisseur LLM, et la dictée cloud (qui exige Groq) devenait indéblocable.
+ * RGPD art. 7 : un consentement donné pour une finalité (ex. messages vers
+ * OpenAI) ne vaut pas pour une autre (audio vers Groq).
  */
 export const CLOUD_CONSENT_KEY = 'therese-cloud-consent';
-export const CLOUD_CONSENT_VERSION = '1';
+export const CLOUD_CONSENT_VERSION = '2';
 
-export interface CloudConsentRecord {
-  accepted: boolean;
-  version: string;
+export type CloudPurpose = 'llm' | 'voice' | 'images';
+
+export interface CloudGrant {
+  purpose: CloudPurpose;
+  provider: string;
   timestamp: string;
-  provider?: string;
   dataCategories?: string[];
 }
 
-export interface CloudConsentDetails {
-  provider: string;
-  dataCategories: string[];
+interface CloudConsentStoreV2 {
+  version: '2';
+  grants: Record<string, CloudGrant>;
 }
 
-export function recordCloudConsent(
-  timestamp: string = new Date().toISOString(),
-  details?: CloudConsentDetails,
-): CloudConsentRecord {
-  const record: CloudConsentRecord = {
-    accepted: true,
-    version: CLOUD_CONSENT_VERSION,
-    timestamp,
-    ...details,
-  };
-  localStorage.setItem(CLOUD_CONSENT_KEY, JSON.stringify(record));
-  return record;
+function grantKey(purpose: CloudPurpose, provider: string): string {
+  return `${purpose}:${provider.trim().toLowerCase()}`;
 }
 
-export function getCloudConsent(): CloudConsentRecord | null {
+function loadStore(): CloudConsentStoreV2 {
+  const empty: CloudConsentStoreV2 = { version: '2', grants: {} };
   const raw = localStorage.getItem(CLOUD_CONSENT_KEY);
-  if (!raw) return null;
+  if (!raw) return empty;
   try {
-    return JSON.parse(raw) as CloudConsentRecord;
+    const parsed = JSON.parse(raw);
+    if (parsed?.version === '2' && parsed.grants && typeof parsed.grants === 'object') {
+      return parsed as CloudConsentStoreV2;
+    }
+    // Migration v1 : l'enregistrement global était posé par l'onboarding pour
+    // le fournisseur LLM choisi -> il devient un consentement 'llm' seul.
+    if (parsed?.accepted === true) {
+      const provider = typeof parsed.provider === 'string' && parsed.provider ? parsed.provider : 'inconnu';
+      const migrated: CloudConsentStoreV2 = {
+        version: '2',
+        grants: {
+          [grantKey('llm', provider)]: {
+            purpose: 'llm',
+            provider,
+            timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
+            dataCategories: Array.isArray(parsed.dataCategories) ? parsed.dataCategories : undefined,
+          },
+        },
+      };
+      saveStore(migrated);
+      return migrated;
+    }
+    return empty;
   } catch {
-    return null;
+    return empty;
   }
+}
+
+function saveStore(store: CloudConsentStoreV2): void {
+  localStorage.setItem(CLOUD_CONSENT_KEY, JSON.stringify(store));
+}
+
+export function grantCloudConsent(
+  purpose: CloudPurpose,
+  provider: string,
+  dataCategories?: string[],
+  timestamp: string = new Date().toISOString(),
+): CloudGrant {
+  const store = loadStore();
+  const grant: CloudGrant = { purpose, provider, timestamp, dataCategories };
+  store.grants[grantKey(purpose, provider)] = grant;
+  saveStore(store);
+  return grant;
+}
+
+export function hasCloudConsent(purpose: CloudPurpose, provider?: string): boolean {
+  const store = loadStore();
+  if (provider !== undefined) {
+    return grantKey(purpose, provider) in store.grants;
+  }
+  return Object.values(store.grants).some((g) => g.purpose === purpose);
+}
+
+export function revokeCloudConsent(purpose: CloudPurpose, provider: string): void {
+  const store = loadStore();
+  delete store.grants[grantKey(purpose, provider)];
+  saveStore(store);
+}
+
+export function listCloudConsents(): CloudGrant[] {
+  return Object.values(loadStore().grants);
 }

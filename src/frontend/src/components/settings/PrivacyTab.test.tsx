@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
 import { PrivacyTab } from './PrivacyTab';
 import {
   createBackup,
@@ -82,5 +83,70 @@ describe('PrivacyTab - opérations globales', () => {
     fireEvent.change(confirmation, { target: { value: 'SUPPRIMER' } });
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement' }));
     await waitFor(() => expect(deleteAllData).toHaveBeenCalledOnce());
+  });
+
+  it('après effacement global, annonce honnêtement les sauvegardes conservées (revue 0.40)', async () => {
+    vi.mocked(deleteAllData).mockResolvedValue({
+      deleted: true,
+      message: 'Toutes tes données ont été supprimées conformément au RGPD Art. 17',
+      note: 'Les logs d’audit sont conservés. 2 sauvegarde(s) conservée(s) : supprime-les depuis la liste des sauvegardes si tu veux vraiment tout effacer.',
+      backups_kept: 2,
+    });
+    render(<PrivacyTab />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Préparer la suppression' }));
+    fireEvent.change(screen.getByLabelText('Saisis SUPPRIMER pour confirmer'), { target: { value: 'SUPPRIMER' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer définitivement' }));
+
+    await waitFor(() => expect(deleteAllData).toHaveBeenCalledOnce());
+    expect(await screen.findByText(/2 sauvegarde\(s\) conservée\(s\)/)).toBeInTheDocument();
+  });
+});
+
+describe('PrivacyTab - consentements cloud (revue 0.40)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(listBackups).mockResolvedValue([]);
+    // Le setup global mocke localStorage sans persistance : on installe une
+    // mémoire réelle pour que grant/revoke se relisent.
+    const store: Record<string, string> = {};
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => {
+        store[k] = v;
+      },
+      removeItem: (k: string) => {
+        delete store[k];
+      },
+      clear: () => {
+        for (const k of Object.keys(store)) delete store[k];
+      },
+    });
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('permet d’autoriser la dictée cloud Groq depuis les réglages (fin de l’impasse)', async () => {
+    render(<PrivacyTab />);
+
+    expect(await screen.findByText('Consentements cloud')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Autoriser la dictée cloud (Groq)' }));
+
+    expect(hasCloudConsent('voice', 'Groq')).toBe(true);
+    // Le consentement accordé apparaît dans la liste avec sa révocation.
+    expect(await screen.findByText('Audio de la dictée')).toBeInTheDocument();
+  });
+
+  it('révoque un consentement sans toucher les autres', async () => {
+    grantCloudConsent('voice', 'Groq', ['audio de la dictée']);
+    grantCloudConsent('llm', 'openai', ['messages']);
+    render(<PrivacyTab />);
+
+    const row = (await screen.findByText('Audio de la dictée')).closest('li');
+    expect(row).not.toBeNull();
+    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Révoquer' }));
+
+    expect(hasCloudConsent('voice', 'Groq')).toBe(false);
+    expect(hasCloudConsent('llm', 'openai')).toBe(true);
   });
 });

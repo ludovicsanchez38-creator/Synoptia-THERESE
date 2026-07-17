@@ -29,7 +29,7 @@ import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, s
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
-import { getCloudConsent, recordCloudConsent } from '../../lib/consent';
+import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
@@ -132,7 +132,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [currentModel, setCurrentModel] = useState<string | null>(null);
   const [currentProvider, setCurrentProvider] = useState<LLMProvider | null>(null);
   const [pendingCloudConsent, setPendingCloudConsent] = useState<PendingCloudConsent | null>(null);
-  const cloudConsentGrantedRef = useRef(false);
+  // Mémorise le FOURNISSEUR accordé dans la session : changer de fournisseur
+  // redemande un accord (consentement par fournisseur, revue 0.40).
+  const cloudConsentGrantedRef = useRef<string | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
   const [modelChangeError, setModelChangeError] = useState<string | null>(null);
@@ -412,7 +414,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     if (
       currentProvider && currentProvider !== 'ollama'
-      && !cloudConsentGrantedRef.current && !getCloudConsent()?.accepted
+      && cloudConsentGrantedRef.current !== currentProvider
+      && !hasCloudConsent('llm', currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'message',
@@ -658,7 +661,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     if (
       currentProvider && currentProvider !== 'ollama'
-      && !cloudConsentGrantedRef.current && !getCloudConsent()?.accepted
+      && cloudConsentGrantedRef.current !== currentProvider
+      && !hasCloudConsent('llm', currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'deep-research',
@@ -745,11 +749,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setPendingCloudConsent(null);
       return;
     }
-    recordCloudConsent(undefined, {
-      provider: pendingCloudConsent.providerLabel,
-      dataCategories: pendingCloudConsent.dataCategories,
-    });
-    cloudConsentGrantedRef.current = true;
+    grantCloudConsent('llm', pendingCloudConsent.provider, pendingCloudConsent.dataCategories);
+    cloudConsentGrantedRef.current = pendingCloudConsent.provider;
     const action = pendingCloudConsent.action;
     setPendingCloudConsent(null);
     window.setTimeout(() => {

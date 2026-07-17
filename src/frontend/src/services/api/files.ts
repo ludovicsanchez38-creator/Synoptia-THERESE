@@ -66,6 +66,7 @@ export async function uploadProjectFile(
   const response = await apiFetch(`${API_BASE}/api/files/upload`, {
     method: 'POST',
     body: formData,
+    timeoutMs: null, // gros fichiers : l'envoi du corps précède la réponse
     // Pas de Content-Type header : le browser le met automatiquement avec boundary
   });
 

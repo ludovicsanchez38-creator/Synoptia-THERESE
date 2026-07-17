@@ -98,6 +98,7 @@ export function createBackup(password: string): Promise<BackupCreateResponse> {
   return request<BackupCreateResponse>('/api/data/backup', {
     method: 'POST',
     body: JSON.stringify({ password }),
+    timeoutMs: null, // archivage + chiffrement de tout le data dir
   });
 }
 
@@ -109,7 +110,7 @@ export function restoreBackup(
 ): Promise<RestoreBackupResponse> {
   return request<RestoreBackupResponse>(
     `/api/data/restore/${encodeURIComponent(backupName)}?confirm=true`,
-    { method: 'POST', body: JSON.stringify({ password: password ?? null }) },
+    { method: 'POST', body: JSON.stringify({ password: password ?? null }), timeoutMs: null },
   );
 }
 
@@ -117,6 +118,6 @@ export function deleteBackup(backupName: string): Promise<{ deleted: boolean; ba
   return request(`/api/data/backups/${encodeURIComponent(backupName)}`, { method: 'DELETE' });
 }
 
-export function deleteAllData(): Promise<{ deleted: boolean; message: string; note: string }> {
+export function deleteAllData(): Promise<{ deleted: boolean; message: string; note: string; backups_kept?: number }> {
   return request('/api/data/all?confirm=true', { method: 'DELETE' });
 }

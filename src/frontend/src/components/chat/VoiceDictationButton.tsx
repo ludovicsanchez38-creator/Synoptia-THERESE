@@ -1,6 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Loader2, Mic, MicOff } from 'lucide-react';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
+import { needsVoiceCloudConsent, VOICE_CLOUD_PROVIDER } from '../../services/api/voice';
+import { grantCloudConsent } from '../../lib/consent';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 
@@ -17,6 +19,10 @@ interface VoiceDictationButtonProps {
  *
  * Le hook existant reste l'unique point d'entrée pour l'enregistrement, les
  * permissions micro et le routage local/cloud tri-état de la transcription.
+ *
+ * Revue 0.40 : si la dictée partirait vers le cloud sans consentement Groq,
+ * l'accord est demandé AU CLIC micro (au lieu d'un 403 après enregistrement,
+ * qui renvoyait vers un réglage inexistant - impasse).
  */
 export function VoiceDictationButton({
   onTranscript,
@@ -42,6 +48,23 @@ export function VoiceDictationButton({
     onError: handleError,
   });
 
+  const [consentAsk, setConsentAsk] = useState(false);
+
+  const handleMicClick = useCallback(async () => {
+    // L'arrêt d'un enregistrement en cours ne doit jamais être bloqué.
+    if (!isRecording && !isProcessing && (await needsVoiceCloudConsent())) {
+      setConsentAsk(true);
+      return;
+    }
+    void toggleRecording();
+  }, [isRecording, isProcessing, toggleRecording]);
+
+  const confirmVoiceConsent = useCallback(() => {
+    grantCloudConsent('voice', VOICE_CLOUD_PROVIDER, ['audio de la dictée']);
+    setConsentAsk(false);
+    void toggleRecording();
+  }, [toggleRecording]);
+
   const label = !pluginReady
     ? 'Chargement du micro...'
     : isProcessing
@@ -54,6 +77,36 @@ export function VoiceDictationButton({
 
   return (
     <div className="relative flex shrink-0 items-center">
+      {consentAsk && (
+        <div
+          role="dialog"
+          aria-label="Consentement dictée cloud"
+          className="absolute bottom-full right-0 z-30 mb-2 w-64 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
+          data-testid={`${testId}-consent`}
+        >
+          <p className="font-semibold">Autoriser la dictée cloud ?</p>
+          <p className="mt-1 text-text-muted">
+            La transcription envoie ton audio à {VOICE_CLOUD_PROVIDER}. Tu peux aussi activer la
+            voix 100 % locale dans Paramètres &gt; Confidentialité.
+          </p>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConsentAsk(false)}
+              className="rounded-[6px] border border-border px-2 py-1 font-semibold text-text-muted"
+            >
+              Pas maintenant
+            </button>
+            <button
+              type="button"
+              onClick={confirmVoiceConsent}
+              className="rounded-[6px] bg-text px-2 py-1 font-semibold text-white"
+            >
+              Autoriser et dicter
+            </button>
+          </div>
+        </div>
+      )}
       {(isRecording || isProcessing) && (
         <div
           role="status"
@@ -92,7 +145,7 @@ export function VoiceDictationButton({
         className,
       )}
       disabled={disabled || isProcessing || !pluginReady}
-      onClick={() => void toggleRecording()}
+      onClick={() => void handleMicClick()}
       title={label}
       aria-label={label}
       >

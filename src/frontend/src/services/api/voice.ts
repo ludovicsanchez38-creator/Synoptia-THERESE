@@ -4,12 +4,12 @@
  * Transcription audio via Groq Whisper, ou 100 % locale (faster-whisper).
  */
 
-import { getCloudConsent } from '../../lib/consent';
+import { hasCloudConsent } from '../../lib/consent';
 import { API_BASE, apiFetch, ApiError } from './core';
 
 /** Fournisseur cloud de transcription vocale (Groq Whisper). Le consentement
  *  cloud doit être spécifique à ce fournisseur (US-004 / RGPD art. 7). */
-const VOICE_CLOUD_PROVIDER = 'Groq';
+export const VOICE_CLOUD_PROVIDER = 'Groq';
 
 export interface TranscriptionResponse {
   text: string;
@@ -73,6 +73,7 @@ export async function setupVoiceLocal(model?: string): Promise<void> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(model ? { model } : {}),
+    timeoutMs: null, // téléchargement du modèle Whisper : potentiellement long
   });
   if (!response.ok) {
     const message = await response.text().catch(() => null);
@@ -121,6 +122,22 @@ async function resolveUseLocalForTranscription(): Promise<boolean> {
   return false;
 }
 
+/**
+ * La prochaine dictée partirait-elle vers le cloud SANS consentement Groq ?
+ * (revue 0.40 : permet de demander l'accord au moment du clic micro, au lieu
+ * d'échouer en 403 après l'enregistrement.)
+ */
+export async function needsVoiceCloudConsent(): Promise<boolean> {
+  if (hasCloudConsent('voice', VOICE_CLOUD_PROVIDER)) return false;
+  try {
+    return !(await resolveUseLocalForTranscription());
+  } catch {
+    // Installation locale en cours : l'erreur dédiée s'affichera au vrai
+    // déclenchement, inutile de demander un consentement cloud ici.
+    return false;
+  }
+}
+
 export async function transcribeAudio(
   audioBlob: Blob,
   filename = 'recording.webm',
@@ -135,12 +152,11 @@ export async function transcribeAudio(
   // pour un autre fournisseur (ex. images OpenAI) ne vaut pas pour la voix : on
   // exige que le fournisseur consenti soit bien Groq, sinon on refuse l'envoi.
   if (!useLocal) {
-    const consent = getCloudConsent();
-    if (!consent?.accepted || consent.provider !== VOICE_CLOUD_PROVIDER) {
+    if (!hasCloudConsent('voice', VOICE_CLOUD_PROVIDER)) {
       throw new ApiError(
         403,
         'Consentement requis',
-        `La transcription cloud enverrait ton audio à ${VOICE_CLOUD_PROVIDER}. Autorise le transfert cloud dans Paramètres > Confidentialité, ou active la transcription 100 % locale.`,
+        `La transcription cloud enverrait ton audio à ${VOICE_CLOUD_PROVIDER}. Autorise la dictée cloud dans Paramètres > Confidentialité > Consentements cloud, ou active la transcription 100 % locale.`,
       );
     }
   }
@@ -156,6 +172,7 @@ export async function transcribeAudio(
     method: 'POST',
     body: formData,
     signal,
+    timeoutMs: null, // envoi audio + transcription : long sur les dictées longues
   });
 
   if (!response.ok) {
@@ -185,6 +202,7 @@ export async function synthesizeSpeech(text: string, voice = 'fr'): Promise<Blob
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice }),
+    timeoutMs: null, // synthèse locale Piper : dépend de la longueur du texte
   });
   if (!response.ok) {
     const message = await response.text().catch(() => null);

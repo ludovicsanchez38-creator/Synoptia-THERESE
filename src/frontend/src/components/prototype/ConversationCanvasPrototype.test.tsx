@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../stores/chatStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
@@ -33,6 +33,13 @@ vi.mock('../../hooks/useVoiceRecorder', () => ({
       error: null,
     };
   }),
+}));
+
+// Revue 0.40 : le bouton de dictée pré-vérifie le consentement Groq - mock
+// pour rester hors réseau et garder le comportement « dictée directe ».
+vi.mock('../../services/api/voice', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  needsVoiceCloudConsent: vi.fn().mockResolvedValue(false),
 }));
 
 vi.mock('../../hooks/useConversationSync', () => ({
@@ -143,14 +150,14 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
   });
 
-  it('ajoute la dictée classique au composeur de la coque', () => {
+  it('ajoute la dictée classique au composeur de la coque', async () => {
     render(<ConversationCanvasPrototype />);
 
     const composer = screen.getByPlaceholderText('Demande à Thérèse d’organiser, créer ou agir…');
     fireEvent.change(composer, { target: { value: 'Prépare le rendez-vous' } });
     fireEvent.click(screen.getByTestId('prototype-chat-voice-btn'));
 
-    expect(voiceHarness.toggleRecording).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(voiceHarness.toggleRecording).toHaveBeenCalledTimes(1));
     expect(voiceHarness.onTranscript).not.toBeNull();
 
     act(() => voiceHarness.onTranscript?.('avec Camille demain'));

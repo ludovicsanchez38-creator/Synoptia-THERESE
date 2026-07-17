@@ -99,6 +99,7 @@ export async function* streamDeliberation(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
     signal,
+    timeoutMs: null, // délibération 5 conseillers : LLM long avant le flux
   });
 
   if (!response.ok) {

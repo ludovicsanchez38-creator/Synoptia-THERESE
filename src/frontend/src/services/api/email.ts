@@ -407,6 +407,7 @@ export async function classifyEmail(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ force_reclassify: forceReclassify }),
+      timeoutMs: null, // classification LLM
     }
   );
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -430,6 +431,7 @@ export async function generateEmailResponse(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tone, length }),
+      timeoutMs: null, // génération LLM de la réponse
     }
   );
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }

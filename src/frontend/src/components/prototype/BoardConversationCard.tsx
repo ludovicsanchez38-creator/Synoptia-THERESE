@@ -26,7 +26,7 @@ import type {
 import { CharacterPortrait } from './DecisionMissionPrototype';
 import type { BoardRunState, BoardWorkspaceData, PrototypeAdvisorState } from './usePrototypeBoardData';
 import type { ReadResource } from './usePrototypeReadData';
-import { recordCloudConsent } from '../../lib/consent';
+import { grantCloudConsent } from '../../lib/consent';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 
 export type BoardTarget = string | 'new-board' | 'current' | null;
@@ -210,10 +210,7 @@ function NewBoardForm({ advisors, run, onStart }: { advisors: AdvisorInfo[]; run
       return;
     }
     if (confirmationSnapshot.mode === 'cloud') {
-      recordCloudConsent(undefined, {
-        provider: 'Board cloud',
-        dataCategories: ['question', 'contexte utile', 'profil local utile', 'résultats web'],
-      });
+      grantCloudConsent('llm', 'board', ['question', 'contexte utile', 'profil local utile', 'résultats web']);
     }
     void onStart({
       question: confirmationSnapshot.question,

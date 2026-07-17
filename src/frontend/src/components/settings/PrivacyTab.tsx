@@ -19,6 +19,13 @@ import {
   type BackupMetadata,
 } from '../../services/api/data';
 import { VoiceLocalSection } from './VoiceLocalSection';
+import {
+  grantCloudConsent,
+  listCloudConsents,
+  revokeCloudConsent,
+  type CloudGrant,
+  type CloudPurpose,
+} from '../../lib/consent';
 
 // Types de données stockées
 const DATA_TYPES = [
@@ -42,6 +49,13 @@ const RETENTION_TABLE = [
   { type: 'Mémoire IA', duree: 'Illimitée (locale)', justification: 'Contexte personnel' },
 ];
 
+// Revue 0.40 : consentements cloud par finalité et fournisseur (RGPD art. 7)
+const PURPOSE_LABELS: Record<CloudPurpose, string> = {
+  llm: 'Messages et contexte (assistant IA)',
+  voice: 'Audio de la dictée',
+  images: 'Descriptions des visuels (Studio Images)',
+};
+
 export function PrivacyTab() {
   const [purgeEnabled, setPurgeEnabled] = useState(true);
   const [purgeMonths, setPurgeMonths] = useState(36);
@@ -58,6 +72,22 @@ export function PrivacyTab() {
   // US-003 : passphrase de chiffrement de la sauvegarde (requise) et de restauration.
   const [backupPassword, setBackupPassword] = useState('');
   const [restorePassword, setRestorePassword] = useState('');
+  // Revue 0.40 : la dictée cloud exigeait Groq sans AUCUN parcours pour
+  // l'autoriser -> impasse. Cette section liste et gère les consentements.
+  const [cloudGrants, setCloudGrants] = useState<CloudGrant[]>(() => listCloudConsents());
+  const voiceGranted = cloudGrants.some(
+    (g) => g.purpose === 'voice' && g.provider.toLowerCase() === 'groq',
+  );
+
+  function handleGrantVoiceConsent() {
+    grantCloudConsent('voice', 'Groq', ['audio de la dictée']);
+    setCloudGrants(listCloudConsents());
+  }
+
+  function handleRevokeConsent(grant: CloudGrant) {
+    revokeCloudConsent(grant.purpose, grant.provider);
+    setCloudGrants(listCloudConsents());
+  }
   const [backupDeleteConfirmation, setBackupDeleteConfirmation] = useState<string | null>(null);
   const [deleteAllArmed, setDeleteAllArmed] = useState(false);
   const [deletePhrase, setDeletePhrase] = useState('');
@@ -134,10 +164,13 @@ export function PrivacyTab() {
   async function handleDeleteAll() {
     if (deletePhrase !== 'SUPPRIMER') return;
     await runDataOperation('delete-all', async () => {
-      await deleteAllData();
+      const result = await deleteAllData();
       setDeleteAllArmed(false);
       setDeletePhrase('');
-      setDataMessage('Toutes les données utilisateur ont été supprimées. Les journaux légaux sont conservés.');
+      // Message aligné sur ce que le backend a RÉELLEMENT fait (revue 0.40) :
+      // il annonce notamment les sauvegardes volontairement conservées.
+      setDataMessage(`${result.message}. ${result.note}`);
+      await refreshBackups();
     });
   }
 
@@ -324,6 +357,53 @@ export function PrivacyTab() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* Section : Consentements cloud par finalité (revue 0.40) */}
+      <section className="rounded-lg border border-border/50 p-4">
+        <h4 className="mb-1 flex items-center gap-2 text-sm font-semibold text-text">
+          <UserCheck className="h-4 w-4 text-accent-cyan" />
+          Consentements cloud
+        </h4>
+        <p className="text-xs leading-5 text-text-muted">
+          Chaque finalité a son propre accord : autoriser un fournisseur pour les messages
+          ne l’autorise ni pour la voix ni pour les images.
+        </p>
+        {cloudGrants.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {cloudGrants.map((grant) => (
+              <li
+                key={`${grant.purpose}:${grant.provider}`}
+                className="flex items-center justify-between gap-3 rounded-lg bg-surface-elevated/30 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-text">{PURPOSE_LABELS[grant.purpose]}</p>
+                  <p className="text-xs text-text-muted">
+                    {grant.provider} - accordé le {new Date(grant.timestamp).toLocaleDateString('fr-FR')}
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => handleRevokeConsent(grant)}>
+                  Révoquer
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {cloudGrants.length === 0 && (
+          <p className="mt-3 text-xs text-text-muted">
+            Aucun consentement cloud accordé : tout reste local tant que tu n’autorises rien.
+          </p>
+        )}
+        {!voiceGranted && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-surface px-3 py-2">
+            <p className="text-xs text-text-muted">
+              Dictée cloud (Groq) : non autorisée. La dictée reste possible en 100 % local.
+            </p>
+            <Button variant="secondary" size="sm" onClick={handleGrantVoiceConsent}>
+              Autoriser la dictée cloud (Groq)
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Section : Voix locale souveraine (activation un clic) */}

@@ -174,6 +174,7 @@ export async function deleteDocument(id: string): Promise<{ success: boolean; me
 export async function generateOutline(documentId: string): Promise<DocumentSection[]> {
   return request<DocumentSection[]>(`/api/documents/${documentId}/outline`, {
     method: 'POST',
+    timeoutMs: null, // génération LLM de la trame complète
   });
 }
 
@@ -259,6 +260,7 @@ export async function* draftSection(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     signal,
+    timeoutMs: null, // rédaction SSE : le premier octet peut attendre le modèle
   });
 
   if (!response.ok) {

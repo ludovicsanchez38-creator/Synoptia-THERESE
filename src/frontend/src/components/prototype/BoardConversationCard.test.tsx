@@ -75,8 +75,9 @@ describe('Board 0.40 conversationnel', () => {
     expect(onStart).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et lancer' }));
+    // Consentement v2 (revue 0.40) : finalité llm, clé board.
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
-      'therese-cloud-consent', expect.stringContaining('"accepted":true'),
+      'therese-cloud-consent', expect.stringContaining('"llm:board"'),
     );
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ mode: 'cloud' }));
   });

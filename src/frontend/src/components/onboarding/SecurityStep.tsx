@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { recordCloudConsent } from '../../lib/consent';
+import { grantCloudConsent } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
 
 interface SecurityStepProps {
@@ -222,11 +222,8 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         </button>
         <button
           onClick={() => {
-            if (cloudEnabled && providerLabel) {
-              recordCloudConsent(undefined, {
-                provider: providerLabel,
-                dataCategories: ['messages', 'pièces jointes sélectionnées', 'contexte utile'],
-              });
+            if (cloudEnabled && provider) {
+              grantCloudConsent('llm', provider, ['messages', 'pièces jointes sélectionnées', 'contexte utile']);
             }
             onNext();
           }}
