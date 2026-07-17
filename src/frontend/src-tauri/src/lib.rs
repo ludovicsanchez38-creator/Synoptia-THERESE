@@ -206,8 +206,210 @@ fn kill_zombie_backends() {
 pub struct BackendPort(pub Mutex<u16>);
 
 /// État du sidecar backend (release uniquement)
-struct SidecarState {
-    child: Mutex<Option<tauri_plugin_shell::process::CommandChild>>,
+pub(crate) struct SidecarState {
+    pub(crate) child: Mutex<Option<tauri_plugin_shell::process::CommandChild>>,
+    /// Revue 0.40 : arrêt volontaire (quit, relance post-update) - dans ce cas
+    /// une terminaison du sidecar ne doit PAS déclencher de redémarrage.
+    pub(crate) shutting_down: std::sync::atomic::AtomicBool,
+    /// Relances consécutives depuis le dernier run stable (>2 min).
+    /// (Lu uniquement par le code sidecar, compilé en release.)
+    #[cfg_attr(debug_assertions, allow(dead_code))]
+    pub(crate) restart_attempts: std::sync::atomic::AtomicU32,
+}
+
+/// Lance (ou relance) le sidecar backend - release uniquement.
+///
+/// Revue 0.40 : extrait du setup pour permettre le redémarrage contrôlé après
+/// un crash (une panne du moteur local imposait de relancer toute l'app).
+#[cfg(not(debug_assertions))]
+pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
+    use tauri_plugin_shell::ShellExt;
+    use tauri_plugin_shell::process::CommandEvent;
+
+    // Tuer les anciens process backend zombies AVANT le lancement
+    kill_zombie_backends();
+
+    let port = BACKEND_PORT;
+    let port_str = port.to_string();
+
+    // Stocker le port pour le frontend
+    let backend_port = app.state::<BackendPort>();
+    *backend_port.0.lock().unwrap() = port;
+
+    let home_dir = dirs::home_dir().unwrap_or_default();
+    let models_path = home_dir
+        .join(".therese/models")
+        .to_string_lossy()
+        .to_string();
+
+    // Rediriger le dossier TEMP du sidecar vers ~/.therese/runtime/
+    // Evite le scan antivirus sur %TEMP% qui bloque l'extraction PyInstaller
+    let runtime_path = home_dir
+        .join(".therese/runtime")
+        .to_string_lossy()
+        .to_string();
+    let _ = std::fs::create_dir_all(&runtime_path);
+
+    log_sidecar(&format!("Démarrage sidecar sur port {}", port));
+
+    // macOS : supprimer la quarantaine préventivement (ciblé, pas tous les xattr)
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(macos_dir) = exe.parent() {
+                log_sidecar(&format!("Suppression quarantaine : {}", macos_dir.display()));
+                let _ = std::process::Command::new("xattr")
+                    .args(["-dr", "com.apple.quarantine", &macos_dir.to_string_lossy()])
+                    .output();
+            }
+        }
+    }
+
+    // Créer la commande sidecar (peut échouer si binaire introuvable)
+    match app.shell().sidecar("backend") {
+        Ok(cmd) => {
+            let cmd = cmd
+                .args(["--host", "127.0.0.1", "--port", &port_str])
+                .env("THERESE_PORT", &port_str)
+                .env("THERESE_ENV", "production")
+                .env("SENTENCE_TRANSFORMERS_HOME", &models_path)
+                // Rediriger TEMP/TMP/TMPDIR vers ~/.therese/runtime/
+                // PyInstaller --onefile extrait dans TEMP/_MEIxxxx
+                // %TEMP% est scanne par Windows Defender, causant des crashs silencieux
+                // TMPDIR est prioritaire sur macOS/Linux
+                .env("TMPDIR", &runtime_path)
+                .env("TEMP", &runtime_path)
+                .env("TMP", &runtime_path);
+
+            // BUG-044 / BUG-051 : Linux onedir - passer le chemin des libs au wrapper shell.
+            // PyInstaller onedir produit backend/ (dossier) au lieu d'un binaire unique.
+            // Le sidecar est un wrapper shell qui utilise THERESE_BACKEND_LIBS pour
+            // trouver le vrai binaire et configurer LD_LIBRARY_PATH.
+            // BUG-051 : tauri.linux.conf.json déclare les resources dans binaries/backend-libs/*,
+            // donc resource_dir() doit joindre "binaries/backend-libs" (pas juste "backend-libs").
+            #[cfg(target_os = "linux")]
+            let cmd = {
+                let libs_path = match app.path().resource_dir() {
+                    Ok(p) => p.join("binaries").join("backend-libs").to_string_lossy().to_string(),
+                    Err(e) => {
+                        log_sidecar(&format!("resource_dir() erreur : {}", e));
+                        String::new()
+                    }
+                };
+                log_sidecar(&format!("THERESE_BACKEND_LIBS = {}", libs_path));
+                cmd.env("THERESE_BACKEND_LIBS", libs_path)
+            };
+
+            match cmd.spawn() {
+                Ok((mut rx, child)) => {
+                    let msg = format!("Sidecar démarré (PID: {}, port: {})", child.pid(), port);
+                    println!("[THÉRÈSE] {}", msg);
+                    log_sidecar(&msg);
+
+                    // Stocker le child pour le kill propre à la fermeture
+                    let state = app.state::<SidecarState>();
+                    *state.child.lock().unwrap() = Some(child);
+                    emit_sidecar_status(app, "running", 0);
+
+                    // Logger stdout/stderr du sidecar + surveiller sa fin
+                    // pour la relance contrôlée (revue 0.40)
+                    let handle = app.clone();
+                    let started_at = std::time::Instant::now();
+                    tauri::async_runtime::spawn(async move {
+                        while let Some(event) = rx.recv().await {
+                            match event {
+                                CommandEvent::Stdout(line) => {
+                                    let text = String::from_utf8_lossy(&line);
+                                    print!("[backend] {}", text);
+                                    log_sidecar(&format!("[stdout] {}", text.trim()));
+                                }
+                                CommandEvent::Stderr(line) => {
+                                    let text = String::from_utf8_lossy(&line);
+                                    eprint!("[backend] {}", text);
+                                    log_sidecar(&format!("[stderr] {}", text.trim()));
+                                }
+                                CommandEvent::Terminated(payload) => {
+                                    let msg = format!(
+                                        "Sidecar terminé (code: {:?}, signal: {:?})",
+                                        payload.code, payload.signal
+                                    );
+                                    println!("[THÉRÈSE] {}", msg);
+                                    log_sidecar(&msg);
+                                    // Revue 0.40 : une panne du sidecar
+                                    // n'impose plus de relancer toute l'app
+                                    handle_sidecar_termination(&handle, started_at);
+                                    break;
+                                }
+                                _ => {}
+                            }
+                        }
+                    });
+                }
+                Err(e) => {
+                    let msg = format!("Erreur lancement sidecar : {}", e);
+                    eprintln!("[THÉRÈSE] {}", msg);
+                    log_sidecar(&msg);
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.emit("sidecar-error", &msg);
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            let msg = format!("Binaire sidecar introuvable : {}", e);
+            eprintln!("[THÉRÈSE] {}", msg);
+            log_sidecar(&msg);
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.emit("sidecar-error", &msg);
+            }
+        }
+    }
+}
+
+/// Réaction à une terminaison INATTENDUE du sidecar : jusqu'à 3 relances avec
+/// délai progressif (1 s, 3 s, 10 s). Un run stable de plus de 2 minutes remet
+/// le compteur à zéro : seuls les crashs en boucle épuisent les tentatives.
+#[cfg(not(debug_assertions))]
+fn handle_sidecar_termination(app: &tauri::AppHandle, started_at: std::time::Instant) {
+    use std::sync::atomic::Ordering;
+
+    let state = app.state::<SidecarState>();
+    if state.shutting_down.load(Ordering::SeqCst) {
+        return; // quit ou relance post-update : rien à faire
+    }
+    if started_at.elapsed() > std::time::Duration::from_secs(120) {
+        state.restart_attempts.store(0, Ordering::SeqCst);
+    }
+    let attempt = state.restart_attempts.fetch_add(1, Ordering::SeqCst) + 1;
+    if attempt > 3 {
+        log_sidecar("Sidecar : 3 relances épuisées, abandon (bouton Relancer côté interface)");
+        emit_sidecar_status(app, "failed", attempt - 1);
+        return;
+    }
+    let delay_s = [1u64, 3, 10][(attempt as usize) - 1];
+    log_sidecar(&format!("Relance du sidecar dans {} s (tentative {}/3)", delay_s, attempt));
+    emit_sidecar_status(app, "restarting", attempt);
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(delay_s));
+        // L'app a pu se fermer pendant l'attente : re-vérifier avant de relancer.
+        let state = handle.state::<SidecarState>();
+        if state.shutting_down.load(std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        spawn_backend_sidecar(&handle);
+    });
+}
+
+/// Informe le frontend de l'état du moteur local (bandeau de statut).
+#[cfg(not(debug_assertions))]
+fn emit_sidecar_status(app: &tauri::AppHandle, status: &str, attempt: u32) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.emit(
+            "sidecar-status",
+            serde_json::json!({ "state": status, "attempt": attempt }),
+        );
+    }
 }
 
 /// Initialize Tauri plugins and setup
@@ -234,6 +436,8 @@ pub fn run() {
         )
         .manage(SidecarState {
             child: Mutex::new(None),
+            shutting_down: std::sync::atomic::AtomicBool::new(false),
+            restart_attempts: std::sync::atomic::AtomicU32::new(0),
         })
         .manage(BackendPort(Mutex::new(BACKEND_PORT)))
         .setup(|app| {
@@ -281,143 +485,10 @@ pub fn run() {
             }
 
             // En release uniquement : lancer le sidecar backend
+            // (extrait dans spawn_backend_sidecar pour permettre la relance
+            // contrôlée après un crash - revue 0.40)
             #[cfg(not(debug_assertions))]
-            {
-                use tauri_plugin_shell::ShellExt;
-                use tauri_plugin_shell::process::CommandEvent;
-
-                // Tuer les anciens process backend zombies AVANT le lancement
-                kill_zombie_backends();
-
-                let port = BACKEND_PORT;
-                let port_str = port.to_string();
-
-                // Stocker le port pour le frontend
-                let backend_port = app.state::<BackendPort>();
-                *backend_port.0.lock().unwrap() = port;
-
-                let home_dir = dirs::home_dir().unwrap_or_default();
-                let models_path = home_dir
-                    .join(".therese/models")
-                    .to_string_lossy()
-                    .to_string();
-
-                // Rediriger le dossier TEMP du sidecar vers ~/.therese/runtime/
-                // Evite le scan antivirus sur %TEMP% qui bloque l'extraction PyInstaller
-                let runtime_path = home_dir
-                    .join(".therese/runtime")
-                    .to_string_lossy()
-                    .to_string();
-                let _ = std::fs::create_dir_all(&runtime_path);
-
-                log_sidecar(&format!("Démarrage sidecar sur port {}", port));
-
-                // macOS : supprimer la quarantaine préventivement (ciblé, pas tous les xattr)
-                #[cfg(target_os = "macos")]
-                {
-                    if let Ok(exe) = std::env::current_exe() {
-                        if let Some(macos_dir) = exe.parent() {
-                            log_sidecar(&format!("Suppression quarantaine : {}", macos_dir.display()));
-                            let _ = std::process::Command::new("xattr")
-                                .args(["-dr", "com.apple.quarantine", &macos_dir.to_string_lossy()])
-                                .output();
-                        }
-                    }
-                }
-
-                // Créer la commande sidecar (peut échouer si binaire introuvable)
-                match app.shell().sidecar("backend") {
-                    Ok(cmd) => {
-                        let cmd = cmd
-                            .args(["--host", "127.0.0.1", "--port", &port_str])
-                            .env("THERESE_PORT", &port_str)
-                            .env("THERESE_ENV", "production")
-                            .env("SENTENCE_TRANSFORMERS_HOME", &models_path)
-                            // Rediriger TEMP/TMP/TMPDIR vers ~/.therese/runtime/
-                            // PyInstaller --onefile extrait dans TEMP/_MEIxxxx
-                            // %TEMP% est scanne par Windows Defender, causant des crashs silencieux
-                            // TMPDIR est prioritaire sur macOS/Linux
-                            .env("TMPDIR", &runtime_path)
-                            .env("TEMP", &runtime_path)
-                            .env("TMP", &runtime_path);
-
-                        // BUG-044 / BUG-051 : Linux onedir - passer le chemin des libs au wrapper shell.
-                        // PyInstaller onedir produit backend/ (dossier) au lieu d'un binaire unique.
-                        // Le sidecar est un wrapper shell qui utilise THERESE_BACKEND_LIBS pour
-                        // trouver le vrai binaire et configurer LD_LIBRARY_PATH.
-                        // BUG-051 : tauri.linux.conf.json déclare les resources dans binaries/backend-libs/*,
-                        // donc resource_dir() doit joindre "binaries/backend-libs" (pas juste "backend-libs").
-                        #[cfg(target_os = "linux")]
-                        let cmd = {
-                            let libs_path = match app.path().resource_dir() {
-                                Ok(p) => p.join("binaries").join("backend-libs").to_string_lossy().to_string(),
-                                Err(e) => {
-                                    log_sidecar(&format!("resource_dir() erreur : {}", e));
-                                    String::new()
-                                }
-                            };
-                            log_sidecar(&format!("THERESE_BACKEND_LIBS = {}", libs_path));
-                            cmd.env("THERESE_BACKEND_LIBS", libs_path)
-                        };
-
-                        match cmd.spawn() {
-                            Ok((mut rx, child)) => {
-                                let msg = format!("Sidecar démarré (PID: {}, port: {})", child.pid(), port);
-                                println!("[THÉRÈSE] {}", msg);
-                                log_sidecar(&msg);
-
-                                // Stocker le child pour le kill propre à la fermeture
-                                let state = app.state::<SidecarState>();
-                                *state.child.lock().unwrap() = Some(child);
-
-                                // Logger stdout/stderr du sidecar dans le fichier de log
-                                tauri::async_runtime::spawn(async move {
-                                    while let Some(event) = rx.recv().await {
-                                        match event {
-                                            CommandEvent::Stdout(line) => {
-                                                let text = String::from_utf8_lossy(&line);
-                                                print!("[backend] {}", text);
-                                                log_sidecar(&format!("[stdout] {}", text.trim()));
-                                            }
-                                            CommandEvent::Stderr(line) => {
-                                                let text = String::from_utf8_lossy(&line);
-                                                eprint!("[backend] {}", text);
-                                                log_sidecar(&format!("[stderr] {}", text.trim()));
-                                            }
-                                            CommandEvent::Terminated(payload) => {
-                                                let msg = format!(
-                                                    "Sidecar terminé (code: {:?}, signal: {:?})",
-                                                    payload.code, payload.signal
-                                                );
-                                                println!("[THÉRÈSE] {}", msg);
-                                                log_sidecar(&msg);
-                                                break;
-                                            }
-                                            _ => {}
-                                        }
-                                    }
-                                });
-                            }
-                            Err(e) => {
-                                let msg = format!("Erreur lancement sidecar : {}", e);
-                                eprintln!("[THÉRÈSE] {}", msg);
-                                log_sidecar(&msg);
-                                if let Some(window) = app.get_webview_window("main") {
-                                    let _ = window.emit("sidecar-error", &msg);
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        let msg = format!("Binaire sidecar introuvable : {}", e);
-                        eprintln!("[THÉRÈSE] {}", msg);
-                        log_sidecar(&msg);
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.emit("sidecar-error", &msg);
-                        }
-                    }
-                }
-            }
+            spawn_backend_sidecar(app.handle());
 
             Ok(())
         })
@@ -425,11 +496,20 @@ pub fn run() {
             commands::greet,
             commands::get_system_info,
             commands::get_backend_port,
+            commands::restart_backend,
         ])
         .build(tauri::generate_context!())
         .expect("error while building THÉRÈSE");
 
     app.run(|app_handle, event| {
+        // Revue 0.40 : dès qu'une sortie est demandée, marquer l'arrêt comme
+        // volontaire pour que la fin du sidecar ne déclenche aucune relance.
+        if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
+            app_handle
+                .state::<SidecarState>()
+                .shutting_down
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
         if let RunEvent::Exit = event {
             let state = app_handle.state::<SidecarState>();
             let mut guard = state.child.lock().unwrap();
