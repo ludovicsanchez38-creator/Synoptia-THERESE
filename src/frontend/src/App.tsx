@@ -7,6 +7,7 @@ import { NewInterfaceIntro } from './components/app/NewInterfaceIntro';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
+import { SidecarStatusBanner } from './components/ui/SidecarStatusBanner';
 import { GlobalErrorBoundary } from './components/ui/GlobalErrorBoundary';
 import { useHealthCheck } from './hooks/useHealthCheck';
 import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore';
@@ -174,6 +175,7 @@ function ApplicationBootstrap() {
         data-high-contrast={highContrast ? 'true' : undefined}
       >
         <UpdateBanner />
+        <SidecarStatusBanner />
         {/* Skip link accessibilite (visible uniquement au focus clavier) */}
         <a
           href="#main-content"
