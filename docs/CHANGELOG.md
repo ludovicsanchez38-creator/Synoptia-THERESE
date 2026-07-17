@@ -13,6 +13,16 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - **RGPD** : l'export complet de données et le droit à l'oubli couvrent désormais les documents de l'atelier (documents, sections, pistes), qui en étaient absents.
 - **Correctif export de conversation** : le téléchargement d'un export de conversation (Markdown/Word) utilisait une adresse incomplète et pouvait échouer selon le mode de lancement de l'app - corrigé.
 
+## [v0.40.0-alpha] - 17 juillet 2026 - Interface unifiée et sécurité renforcée
+
+Grande étape : une seule interface pour tout piloter, plus un lot de durcissement sécurité et données.
+
+- **Nouvelle interface unifiée** : tout part d'une conversation, un espace de travail contextuel s'ouvre à côté pour consulter, modifier et valider. Un centre de capacités regroupe les parcours autour de six intentions métier. L'ancienne interface reste accessible le temps de la transition, avec un rappel au premier lancement.
+- **Sauvegardes chiffrées** : les sauvegardes sont désormais protégées par une phrase secrète, une archive qui traîne n'équivaut plus à une base en clair.
+- **Consentement cloud spécifique** : rien ne part vers un service en ligne, dictée vocale comprise, sans accord explicite, et cet accord est propre à chaque fournisseur.
+- **Surface fichiers verrouillée** : l'application ne peut plus lire de fichiers sensibles de la machine (clés, identifiants), et les images distantes des emails (pixels traceurs) sont bloquées par défaut.
+- **Authentification locale durcie** : refus par défaut, et le jeton de session ne circule plus dans les adresses ni l'affichage.
+
 ## [v0.24.4-alpha] - 13 juin 2026 - Emails, calendrier et historique réparés
 
 Correctifs des bugs remontés par les testeurs le 12 juin.
