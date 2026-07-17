@@ -627,6 +627,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       saveDraft(trimmed);
       // Interruption volontaire : afficher le texte déjà reçu
       if (error instanceof DOMException && error.name === 'AbortError') {
+        // Revue harmonisation F2a : l'utilisateur a ARRÊTÉ la réponse - la
+        // navigation reçue est annulée avec le reste, pas de vue surprise.
+        pendingClientAction = null;
         updateMessage(assistantMessageId, accumulatedContent || '*(interrompu)*');
       } else {
         console.error('Error sending message:', error);
