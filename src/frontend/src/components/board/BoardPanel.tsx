@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useIsPresent } from 'framer-motion';
+import type { ReactNode } from 'react';
 import {
   X,
   Send,
@@ -41,6 +42,51 @@ interface AdvisorState {
   provider?: string;
   isLoading: boolean;
   isComplete: boolean;
+}
+
+/**
+ * Coquille animée du dialog Board : porte le focus trap via useIsPresent pour
+ * que la protection (Échap, isolation) tienne PENDANT l'animation de sortie
+ * d'AnimatePresence - un trap piloté par isOpen lâchait 150 ms trop tôt et un
+ * second Échap fermait la vue située dessous (revue harmonisation F1).
+ */
+function BoardDialogShell({
+  onEscape,
+  children,
+}: {
+  onEscape: () => void;
+  children: ReactNode;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const isPresent = useIsPresent();
+  useDialogFocusTrap(dialogRef, {
+    active: isPresent,
+    onEscape,
+    isolateBackground: true,
+  });
+
+  return (
+    <motion.div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Board de décision"
+      data-testid="board-panel"
+      variants={modalVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className={cn(
+        'fixed inset-4 md:inset-8 lg:inset-12',
+        'bg-surface rounded-2xl border border-border',
+        Z_LAYER.MODAL, 'overflow-hidden flex flex-col',
+        'shadow-2xl'
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
@@ -124,16 +170,6 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     setContext('');
     onClose();
   }, [resetDeliberation, onClose]);
-
-  // Revue harmonisation F1 : Échap passe par la PILE des focus traps (le trap
-  // du dessus seul pilote le clavier) - un écouteur window contournait la pile
-  // et laissait le trap d'une vue embarquée fermer la vue SOUS le Board.
-  const boardDialogRef = useRef<HTMLDivElement>(null);
-  useDialogFocusTrap(boardDialogRef, {
-    active: !!isOpen,
-    onEscape: handleCloseAndReset,
-    isolateBackground: true,
-  });
 
   const handleCancelDeliberation = useCallback(() => {
     if (abortRef.current) {
@@ -368,24 +404,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
           />
 
           {/* Panel */}
-          <motion.div
-            ref={boardDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Board de décision"
-            data-testid="board-panel"
-            variants={modalVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className={cn(
-              'fixed inset-4 md:inset-8 lg:inset-12',
-              'bg-surface rounded-2xl border border-border',
-              Z_LAYER.MODAL, 'overflow-hidden flex flex-col',
-              'shadow-2xl'
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <BoardDialogShell onEscape={handleCloseAndReset}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
@@ -685,7 +704,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
+          </BoardDialogShell>
         </>
       )}
     </AnimatePresence>
