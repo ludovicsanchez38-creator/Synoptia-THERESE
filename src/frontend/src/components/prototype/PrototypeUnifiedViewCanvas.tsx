@@ -49,7 +49,10 @@ export function PrototypeUnifiedViewCanvas({
         </button>
         <h2 id="prototype-unified-view-title" data-dialog-autofocus tabIndex={-1} className="text-sm font-semibold text-text outline-none">{viewLabels[view]}</h2>
       </header>
-      <div className="min-h-0 flex-1 overflow-hidden">
+      {/* flex-col obligatoire : borne la hauteur des panels embarqués
+          (sinon leur scroll interne est inerte - bug « impossible de
+          scroller dans le mail », revue harmonisation 17/07) */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Suspense fallback={<div className="grid h-full place-items-center text-sm text-text-muted">Chargement…</div>}>
           {view === 'home' && <HomeView />}
           {view === 'crm' && <CRMPanel standalone />}

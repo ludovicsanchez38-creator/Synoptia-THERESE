@@ -380,7 +380,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         )}
 
         {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
@@ -629,7 +629,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         )}
 
         {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
