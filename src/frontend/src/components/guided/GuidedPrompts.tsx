@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GUIDED_ACTIONS, type GuidedAction, type SubOption, type FileFormat, type ImageProvider } from './actionData';
 import { ActionCard } from './ActionCard';
@@ -440,11 +441,9 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
         <div className="relative w-20 h-20 mx-auto mb-4">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
           <div className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
-            <img
-              src="/therese-avatar.png"
-              alt="THERESE"
-              className="w-full h-full object-cover"
-            />
+            {/* Harmonisation 17/07 : portrait officiel de la nouvelle
+                interface (l'ancien PNG cyberpunk part avec les vestiges) */}
+            <CharacterPortrait index={0} className="h-full w-full" />
           </div>
         </div>
         <h2 className="text-xl font-semibold text-text mb-2 gradient-text">
