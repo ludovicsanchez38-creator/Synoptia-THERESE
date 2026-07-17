@@ -71,6 +71,7 @@ import { usePrototypeBoardData, type BoardWorkspaceData } from './usePrototypeBo
 import { usePrototypeAtelierData, type AtelierWorkspaceData } from './usePrototypeAtelierData';
 import { useContactsResource, useTodayDashboardResource, type ReadResource } from './usePrototypeReadData';
 import { getActions, runAction } from '../../lib/actionRegistry';
+import { CLIENT_ACTION_EVENT } from '../../lib/clientActions';
 import type { CreateInvoiceRequest, Invoice } from '../../services/api/invoices';
 import type { EmailMessage, SendEmailRequest } from '../../services/api/email';
 import type { Contact } from '../../services/api/memory';
@@ -688,14 +689,17 @@ export function ConversationCanvasPrototype() {
   useConversationSync();
 
   const blockStreamingNavigation = useCallback(() => {
-    if (!isStreaming) return false;
+    // BUG-139 : lire l'état VIVANT du store, pas la valeur capturée au dernier
+    // rendu - la navigation déterministe s'exécute juste après la fin du flux,
+    // avant le re-rendu, et se faisait refuser par une fermeture périmée.
+    if (!useChatStore.getState().isStreaming) return false;
     useStatusStore.getState().addNotification({
       type: 'warning',
       title: 'Réponse en cours',
       message: 'Arrête la réponse avant de changer de vue ou de conversation.',
     });
     return true;
-  }, [isStreaming]);
+  }, []);
 
   const closeConversationDrawer = useCallback(() => setDrawerOpen(false), []);
   const closeCommandPalette = useCallback(() => setCommandOpen(false), []);
@@ -977,6 +981,21 @@ export function ConversationCanvasPrototype() {
     setComposerVoiceError(error);
   }, []);
 
+  // BUG-139 : les navigations déterministes du chat ({action: ouvrir crm})
+  // arrivent par cet événement - la coque le revendique et ouvre la vue
+  // EMBARQUÉE (le registre classique ne pilote pas cette interface).
+  const runUnifiedActionRef = useRef<(actionId: string) => void>(() => {});
+  useEffect(() => {
+    const onClientAction = (event: Event) => {
+      const detail = (event as CustomEvent<{ actionId?: string }>).detail;
+      if (!detail?.actionId) return;
+      event.preventDefault();
+      runUnifiedActionRef.current(detail.actionId);
+    };
+    window.addEventListener(CLIENT_ACTION_EVENT, onClientAction);
+    return () => window.removeEventListener(CLIENT_ACTION_EVENT, onClientAction);
+  }, []);
+
   function runUnifiedAction(actionId: string) {
     const viewByAction: Partial<Record<string, Exclude<AppView, 'chat'>>> = {
       'home.open': 'home',
@@ -1014,6 +1033,7 @@ export function ConversationCanvasPrototype() {
     if (actionId === 'shortcuts.open') { openShortcuts(); return; }
     runAction(actionId);
   }
+  runUnifiedActionRef.current = runUnifiedAction;
 
   const SelectedCapabilityIcon = selectedCapability?.icon;
   const selectedDestination = selectedCapability?.destination;
