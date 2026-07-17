@@ -6,6 +6,7 @@
  */
 
 import { useMemo, useEffect, useRef } from 'react';
+import { localDateKey } from '../../lib/civilDate';
 import { motion } from 'framer-motion';
 import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
@@ -203,7 +204,7 @@ function MonthView({
   const weekDays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
   const currentMonth = monthStart.getMonth();
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = localDateKey(today);
 
   return (
     <div className="h-full flex flex-col p-6">
@@ -219,7 +220,7 @@ function MonthView({
       {/* Calendar grid */}
       <div className="flex-1 grid grid-cols-7 gap-2 overflow-hidden">
         {days.map((day, index) => {
-          const dateKey = day.toISOString().split('T')[0];
+          const dateKey = localDateKey(day);
           const dayEvents = eventsByDate[dateKey] || [];
           const isCurrentMonth = day.getMonth() === currentMonth;
           const isToday = dateKey === todayStr;
@@ -344,14 +345,14 @@ function WeekView({
   }, [selectedDate, weekStartHour]);
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = localDateKey(today);
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
 
   // La semaine contient-elle aujourd'hui ?
   const weekContainsToday = weekDates.some(
-    (d) => d.toISOString().split('T')[0] === todayStr
+    (d) => localDateKey(d) === todayStr
   );
 
   // Position de la ligne rouge (en px depuis le haut de la grille)
@@ -377,7 +378,7 @@ function WeekView({
         <div className="w-16 shrink-0" />
         {/* Colonnes jours */}
         {weekDates.map((date, i) => {
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = localDateKey(date);
           const isToday = dateStr === todayStr;
           return (
             <div
@@ -406,7 +407,7 @@ function WeekView({
             <span className="text-xs text-text-muted">Journée</span>
           </div>
           {weekDates.map((date, i) => {
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = localDateKey(date);
             const dayAllDay = allDayByDate[dateStr] || [];
             return (
               <div
@@ -472,7 +473,7 @@ function WeekView({
 
             {/* Colonnes par jour */}
             {weekDates.map((date, colIndex) => {
-              const dateStr = date.toISOString().split('T')[0];
+              const dateStr = localDateKey(date);
               const isToday = dateStr === todayStr;
               const dayEvents = timedByDate[dateStr] || [];
               const dayLayoutByEventId = layoutByEventId[dateStr] || {};
@@ -542,7 +543,7 @@ function DayView({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const dateStr = useMemo(() => {
-    return selectedDate.toISOString().split('T')[0];
+    return localDateKey(selectedDate);
   }, [selectedDate]);
 
   // Séparer événements journée entière et horaires
@@ -590,7 +591,7 @@ function DayView({
   }, [selectedDate, dayStartHour]);
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = localDateKey(today);
   const isToday = dateStr === todayStr;
   const now = new Date();
   const currentHour = now.getHours();

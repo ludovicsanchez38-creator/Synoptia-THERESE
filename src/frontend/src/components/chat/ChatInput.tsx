@@ -26,6 +26,7 @@ import {
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
+import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
@@ -513,6 +514,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);
 
+      // BUG-139 : navigation déterministe différée à la fin du flux
+
+      let pendingClientAction: StreamChunk | null = null;
+
       for await (const chunk of stream) {
         // Capture the backend conversation ID from the first chunk
         if (chunk.conversation_id && !backendConversationId) {
@@ -575,7 +580,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           // Actions déterministes (tranche 1a) : le backend a résolu un
           // message-action pur ({action: ouvrir email}) - exécution locale
           // via le registre d'actions, aucun LLM impliqué.
-          handleClientActionChunk(chunk);
+          // BUG-139 : STASH, exécution après la fin du flux - le chunk arrive
+          // avant `done`, or la coque refuse de changer de vue pendant un
+          // stream (« Arrête la réponse avant de changer de vue »).
+          pendingClientAction = chunk;
         } else if (chunk.type === 'skill_file_error') {
           // Fichiers générés visibles (10/07) : un échec de génération ne
           // reste plus silencieux (avant : logs backend seulement, réponse
@@ -597,6 +605,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         } else if (chunk.type === 'error') {
           throw new Error(chunk.content || "Erreur lors de la génération");
         }
+      }
+
+      // BUG-139 : le flux est terminé, la navigation demandée peut s'exécuter
+      // (la coque revendique l'événement et ouvre la vue embarquée).
+      if (pendingClientAction) {
+        setStreaming(false);
+        handleClientActionChunk(pendingClientAction);
+        pendingClientAction = null;
       }
 
       // Stop batching and do final update
