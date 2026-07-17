@@ -1005,10 +1005,16 @@ class TestPortFixe17293:
         )
 
     def test_core_ts_fallback_17293(self):
-        """core.ts doit utiliser le port 17293 comme fallback."""
+        """core.ts doit garder 17293 comme port par défaut.
+
+        Revue 0.40 : le défaut est devenu surchargable par
+        VITE_THERESE_BACKEND_PORT (E2E isolés sur backend jetable), mais
+        l'invariant produit reste : sans surcharge explicite, 17293.
+        """
         content = API_CORE_TS.read_text(encoding="utf-8")
-        assert "http://127.0.0.1:17293" in content, (
-            "core.ts doit utiliser http://127.0.0.1:17293 comme API_BASE"
+        assert "VITE_THERESE_BACKEND_PORT ?? 17293" in content, (
+            "core.ts doit garder 17293 comme port par défaut "
+            "(surchargable uniquement par VITE_THERESE_BACKEND_PORT)"
         )
 
     def test_core_ts_no_port_8000_check(self):

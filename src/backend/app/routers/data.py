@@ -11,6 +11,7 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from app.config import settings
@@ -973,7 +974,7 @@ async def list_backups():
 
 
 def _register_pre_restore_backup(
-    backup_dir, name: str, artifact, encrypted: bool, included: list[str]
+    backup_dir: Path, name: str, artifact: Path, encrypted: bool, included: list[str]
 ) -> None:
     """Donne des métadonnées à l'archive de sécurité pre_restore_*.
 
@@ -996,7 +997,7 @@ def _register_pre_restore_backup(
         logger.exception("Métadonnées de l'archive de sécurité non écrites")
 
 
-def _prune_pre_restore_backups(backup_dir, keep: str) -> None:
+def _prune_pre_restore_backups(backup_dir: Path, keep: str) -> None:
     """Rétention : une seule archive de sécurité, la plus récente.
 
     Purge artefacts ET métadonnées des pre_restore_* antérieurs, y compris les
