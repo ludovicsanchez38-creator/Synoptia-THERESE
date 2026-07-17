@@ -19,6 +19,13 @@ import { cn } from '../../lib/utils';
 import type { AdvisorRole } from '../../services/api';
 import type { BoardMode } from './ModeSelector';
 import advisorsBg from '../../assets/board/advisors-bg.png';
+// Harmonisation 17/07 : mêmes portraits que la nouvelle interface
+// (BoardConversationCard) - un seul visage par conseiller dans toute l'app.
+import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
+
+const ADVISOR_PORTRAITS: Record<AdvisorRole, number> = {
+  analyst: 1, strategist: 2, devil: 3, pragmatic: 4, visionary: 5,
+};
 
 const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
   analyst: BarChart3,
@@ -38,8 +45,6 @@ const ADVISOR_META: Record<AdvisorRole, { name: string; color: string; personali
 
 const ROLES: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmatic', 'visionary'];
 const ARC_ANGLES = [-50, -25, 0, 25, 50]; // Degrees for 5 cards
-// Background position X pour chaque strip de l'image (5 bandes verticales)
-const BG_POSITIONS = ['0%', '25%', '50%', '75%', '100%'];
 
 export interface OllamaModelInfo {
   name: string;
@@ -126,34 +131,21 @@ export function AdvisorArcLayout({
                 transform: `translateY(${yOffset}px) rotate(${angle * 0.1}deg)`,
               }}
             >
-              {/* Avatar avec visage androïde */}
+              {/* Portrait partagé avec la nouvelle interface, anneau couleur conservé */}
               <div
-                className="w-16 h-16 rounded-full mb-2 relative overflow-hidden"
+                className="w-16 h-16 rounded-[14px] mb-2 relative overflow-hidden"
                 style={{
-                  boxShadow: `0 0 16px ${meta.color}30, inset 0 0 8px ${meta.color}10`,
+                  boxShadow: `0 0 16px ${meta.color}30`,
                   outline: `2px solid ${meta.color}50`,
                   outlineOffset: '2px',
                 }}
               >
-                {/* Image de fond - strip du conseiller */}
+                <CharacterPortrait index={ADVISOR_PORTRAITS[role]} className="h-full w-full" />
                 <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: `url(${advisorsBg})`,
-                    backgroundSize: '500% auto',
-                    backgroundPosition: `${BG_POSITIONS[i]} 15%`,
-                  }}
-                />
-                {/* Overlay sombre + teinte couleur */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(180deg, ${meta.color}20 0%, ${meta.color}40 100%)`,
-                  }}
-                />
-                {/* Icône en overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Icon className="w-5 h-5 drop-shadow-lg" style={{ color: '#fff' }} />
+                  className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-tl-[8px]"
+                  style={{ backgroundColor: meta.color }}
+                >
+                  <Icon className="h-3 w-3 text-white" />
                 </div>
               </div>
 
@@ -205,10 +197,16 @@ export function AdvisorArcLayout({
               )}
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center mb-1"
-                style={{ backgroundColor: `${meta.color}15` }}
+                className="relative mb-1 h-10 w-10 overflow-hidden rounded-[10px]"
+                style={{ outline: `2px solid ${meta.color}50` }}
               >
-                <Icon className="w-4 h-4" style={{ color: meta.color }} />
+                <CharacterPortrait index={ADVISOR_PORTRAITS[role]} className="h-full w-full" />
+                <div
+                  className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-tl-[6px]"
+                  style={{ backgroundColor: meta.color }}
+                >
+                  <Icon className="h-2.5 w-2.5 text-white" />
+                </div>
               </div>
               <span className="text-[10px] font-medium text-center" style={{ color: meta.color }}>
                 {meta.name}
