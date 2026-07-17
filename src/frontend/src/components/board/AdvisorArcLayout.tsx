@@ -100,14 +100,16 @@ export function AdvisorArcLayout({
       )}
 
       {/* Arc layout for md+ screens */}
-      <div className="hidden md:flex justify-center items-end gap-3 min-h-[260px] relative">
+      {/* Hauteur au contenu : les 260 px réservés dataient du grand fond
+          illustré - sans lui, c'était du vide (remarque Ludo 17/07) */}
+      <div className="relative hidden justify-center gap-3 pt-2 md:flex">
         {/* Halo atmosphérique neutre (les anciens visages androïdes en
             filigrane sont partis avec le strip - remarque Ludo 17/07) */}
         <div
           className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
           style={{
             background:
-              'radial-gradient(ellipse 70% 60% at center 30%, var(--color-accent-tint) 0%, transparent 75%)',
+              'radial-gradient(ellipse 70% 90% at center 40%, var(--color-accent-tint) 0%, transparent 75%)',
           }}
         />
 
