@@ -93,6 +93,15 @@ export function EmailList({ accountId }: EmailListProps) {
 
       if (controller.signal.aborted) return;
 
+      // BUG-122 : dossier spécial introuvable côté serveur -> le backend
+      // assume une liste vide avec avertissement ; ne surtout pas laisser
+      // l'ancienne liste (souvent l'INBOX) s'afficher sous cet onglet.
+      if (result.warning) {
+        setMessages([]);
+        setError(result.warning);
+        return;
+      }
+
       // BUG-061: Utiliser les données enrichies du list endpoint directement
       // Plus besoin de re-fetch chaque message individuellement (économise 50+ appels API)
       const errorMessages = (result.messages as any[]).filter((msg) => msg.error);

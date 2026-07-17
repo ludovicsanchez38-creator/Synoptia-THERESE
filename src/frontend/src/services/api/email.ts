@@ -58,6 +58,8 @@ export interface EmailMessageListResponse {
   messages: EmailMessageListItem[];
   nextPageToken?: string;
   resultSizeEstimate?: number;
+  /** BUG-122 : dossier IMAP spécial introuvable - liste vide assumée. */
+  warning?: string;
 }
 
 export interface EmailLabel {
