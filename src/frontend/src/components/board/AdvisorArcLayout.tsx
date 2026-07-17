@@ -18,7 +18,6 @@ import {
 import { cn } from '../../lib/utils';
 import type { AdvisorRole } from '../../services/api';
 import type { BoardMode } from './ModeSelector';
-import advisorsBg from '../../assets/board/advisors-bg.png';
 // Harmonisation 17/07 : mêmes portraits que la nouvelle interface
 // (BoardConversationCard) - un seul visage par conseiller dans toute l'app.
 import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
@@ -102,15 +101,13 @@ export function AdvisorArcLayout({
 
       {/* Arc layout for md+ screens */}
       <div className="hidden md:flex justify-center items-end gap-3 min-h-[260px] relative">
-        {/* Image de fond atmosphérique */}
+        {/* Halo atmosphérique neutre (les anciens visages androïdes en
+            filigrane sont partis avec le strip - remarque Ludo 17/07) */}
         <div
-          className="absolute inset-0 rounded-2xl overflow-hidden opacity-[0.07] pointer-events-none"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
           style={{
-            backgroundImage: `url(${advisorsBg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center 20%',
-            maskImage: 'radial-gradient(ellipse 80% 70% at center, black 30%, transparent 80%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at center, black 30%, transparent 80%)',
+            background:
+              'radial-gradient(ellipse 70% 60% at center 30%, var(--color-accent-tint) 0%, transparent 75%)',
           }}
         />
 
