@@ -5,8 +5,13 @@
  * Sprint 2 - PERF-2.2: Extracted from monolithic api.ts
  */
 
-/** URL de base du backend (port fixe 17293) */
-export let API_BASE = 'http://127.0.0.1:17293';
+/**
+ * Port par défaut du backend. Surchargable au build/dev par
+ * VITE_THERESE_BACKEND_PORT : les E2E isolés (revue 0.40) pointent ainsi le
+ * frontend vers leur backend jetable au lieu de l'instance réelle (17293).
+ */
+const DEFAULT_BACKEND_PORT = Number(import.meta.env.VITE_THERESE_BACKEND_PORT ?? 17293);
+export let API_BASE = `http://127.0.0.1:${DEFAULT_BACKEND_PORT}`;
 
 /**
  * Singleton : une seule promesse d'init partagée entre toutes les fenêtres/appels.
@@ -74,7 +79,7 @@ export function initApiBase(): Promise<void> {
     } catch {
       // Fallback : port 17293 déjà défini dans API_BASE
     }
-    console.log('[API] Fallback port 17293 (mode dev)');
+    console.log(`[API] Fallback port ${DEFAULT_BACKEND_PORT} (mode dev)`);
   })();
   return _initPromise;
 }

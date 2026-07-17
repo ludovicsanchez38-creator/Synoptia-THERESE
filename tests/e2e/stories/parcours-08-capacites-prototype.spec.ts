@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { BACKEND_URL } from './helpers/backend';
 
 async function json(route: Route, body: unknown) {
   await route.fulfill({
@@ -9,7 +10,7 @@ async function json(route: Route, body: unknown) {
 }
 
 async function installReadOnlyShell(page: Page) {
-  await page.route('http://127.0.0.1:17293/**', async (route) => {
+  await page.route(`${BACKEND_URL}/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/api/auth/token') return json(route, { token: 'test-session-token' });
     if (pathname === '/api/config/onboarding-complete') {
@@ -311,7 +312,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
   test('Livrables agrège le suivi réel en lecture seule', async ({ page }, testInfo) => {
     const mutations: string[] = [];
     page.on('request', (request) => {
-      if (request.url().startsWith('http://127.0.0.1:17293/') && request.method() !== 'GET') {
+      if (request.url().startsWith(`${BACKEND_URL}/`) && request.method() !== 'GET') {
         mutations.push(`${request.method()} ${new URL(request.url()).pathname}`);
       }
     });

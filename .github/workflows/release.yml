@@ -28,9 +28,17 @@ jobs:
           fi
           echo "Cle de signature updater presente."
 
+  # Revue 0.40 : la release n'attendait pas la CI (lancées en parallèle sur le
+  # tag) - rien n'empêchait de publier avant le verdict des tests. La CI
+  # complète est désormais un prérequis du build.
+  ci:
+    name: CI complète (gate de release)
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   build:
     name: Build ${{ matrix.platform.name }}
-    needs: preflight
+    needs: [preflight, ci]
     strategy:
       fail-fast: false
       matrix:
