@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -124,16 +125,15 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     onClose();
   }, [resetDeliberation, onClose]);
 
-  // Harmonisation 17/07 : Échap doit fermer le Board comme tout modal de
-  // l'app (constaté en recette : le modal restait ouvert et bloquait la page).
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleCloseAndReset();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, handleCloseAndReset]);
+  // Revue harmonisation F1 : Échap passe par la PILE des focus traps (le trap
+  // du dessus seul pilote le clavier) - un écouteur window contournait la pile
+  // et laissait le trap d'une vue embarquée fermer la vue SOUS le Board.
+  const boardDialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(boardDialogRef, {
+    active: !!isOpen,
+    onEscape: handleCloseAndReset,
+    isolateBackground: true,
+  });
 
   const handleCancelDeliberation = useCallback(() => {
     if (abortRef.current) {
@@ -369,6 +369,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
           {/* Panel */}
           <motion.div
+            ref={boardDialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Board de décision"

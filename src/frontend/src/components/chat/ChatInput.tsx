@@ -495,6 +495,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       if (bufferTimer) { clearTimeout(bufferTimer); bufferTimer = null; }
     };
 
+    // BUG-139 : navigation déterministe différée à la FIN du flux (revue
+    // harmonisation F2 : déclarée hors du try pour être exécutée du finally,
+    // y compris quand le flux se termine en erreur - la navigation reçue
+    // reste valide).
+    let pendingClientAction: StreamChunk | null = null;
     try {
       // Only send conversation_id if it's synced with backend
       const conversation = currentConversation();
@@ -513,10 +518,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);
-
-      // BUG-139 : navigation déterministe différée à la fin du flux
-
-      let pendingClientAction: StreamChunk | null = null;
 
       for await (const chunk of stream) {
         // Capture the backend conversation ID from the first chunk
@@ -607,14 +608,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         }
       }
 
-      // BUG-139 : le flux est terminé, la navigation demandée peut s'exécuter
-      // (la coque revendique l'événement et ouvre la vue embarquée).
-      if (pendingClientAction) {
-        setStreaming(false);
-        handleClientActionChunk(pendingClientAction);
-        pendingClientAction = null;
-      }
-
       // Stop batching and do final update
       stopBatching();
       // Finalize the message (remove streaming flag)
@@ -667,6 +660,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       abortRef.current = null;
       setStreaming(false);
       setActivity('idle');
+      // BUG-139 (revue harmonisation F2) : la navigation reçue s'exécute même
+      // si le flux s'est terminé en erreur, mais PAS si un message a été mis
+      // en file pendant l'action - l'auto-envoi reprend la main, et naviguer
+      // démonterait ChatInput avant lui (prompt fantôme au prochain montage).
+      if (pendingClientAction && !useChatStore.getState().queuedPrompt) {
+        handleClientActionChunk(pendingClientAction);
+      }
+      pendingClientAction = null;
     }
   }, [input, isOffline, modelAvailable, isStreaming, currentProvider, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 
