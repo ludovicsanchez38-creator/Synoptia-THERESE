@@ -466,9 +466,22 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               {/* Messages List */}
               {currentAccountId && <EmailList accountId={currentAccountId} />}
 
-              {/* Message Detail */}
-              {currentMessageId && currentAccountId && (
+              {/* Message Detail - état vide aligné sur la DA 0.40
+                  (harmonisation 17/07 : le volet droit restait un grand vide) */}
+              {currentMessageId && currentAccountId ? (
                 <EmailDetail accountId={currentAccountId} messageId={currentMessageId} />
+              ) : (
+                <div className="hidden min-w-0 flex-1 items-center justify-center bg-bg lg:flex">
+                  <div className="flex max-w-xs flex-col items-center text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-border bg-surface-2">
+                      <Mail className="h-6 w-6 text-text-muted" />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-text">Sélectionne un message</p>
+                    <p className="mt-1 text-xs leading-5 text-text-muted">
+                      Son contenu s'affiche ici. Les rubriques à gauche filtrent la boîte : réception, envoyés, brouillons, favoris, corbeille.
+                    </p>
+                  </div>
+                </div>
               )}
             </>
           )}
