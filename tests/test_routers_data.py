@@ -198,6 +198,35 @@ class TestDataDeletion:
         assert len(list_response.json()) == 0
 
     @pytest.mark.asyncio
+    async def test_delete_all_purge_fichiers_disque_et_annonce_backups(self, client: AsyncClient):
+        """Revue 0.40 : la route vidait les tables et Qdrant mais laissait
+        images/ et outputs/ sur disque, et le message affirmait que TOUT était
+        supprimé. Attendu : purge des fichiers utilisateur + annonce honnête
+        des sauvegardes conservées."""
+        from pathlib import Path
+
+        from app.config import settings
+
+        data_dir = Path(settings.data_dir)
+        (data_dir / "images").mkdir(parents=True, exist_ok=True)
+        (data_dir / "images" / "photo.png").write_bytes(b"pixels")
+        (data_dir / "outputs").mkdir(parents=True, exist_ok=True)
+        (data_dir / "outputs" / "doc.docx").write_bytes(b"docx")
+
+        backup = await client.post("/api/data/backup", json={"password": "pw-solide-123"})
+        assert backup.status_code == 200
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+        result = response.json()
+
+        assert not (data_dir / "images" / "photo.png").exists()
+        assert not (data_dir / "outputs" / "doc.docx").exists()
+        # Les sauvegardes sont volontairement conservées, et on le DIT.
+        assert result["backups_kept"] >= 1
+        assert "sauvegarde" in result["note"].lower()
+
+    @pytest.mark.asyncio
     async def test_delete_all_data_purges_documents_sections_pistes(self, client: AsyncClient):
         """DELETE /api/data/all?confirm=true (RGPD Art. 17) purge aussi
         l'atelier documentaire - sinon le droit a l'oubli laisse des

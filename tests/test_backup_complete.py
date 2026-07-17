@@ -81,6 +81,87 @@ async def test_restore_supprime_les_orphelins(client):
     assert not (data_dir / "qdrant" / "orphelin.bin").exists()
 
 
+@pytest.mark.asyncio
+async def test_pre_restore_devient_une_sauvegarde_visible_et_chiffree(client):
+    """Revue 0.40 : l'archive pre_restore_* restait en clair, sans métadonnées
+    (donc invisible dans la liste) et jamais nettoyée -> ~230 Mo cachés par
+    restauration. Attendu : convertie en sauvegarde chiffrée visible, avec la
+    passphrase que l'utilisateur vient de saisir pour restaurer."""
+    resp = await client.post("/api/data/backup", json={"password": "Passphrase-Test-123"})
+    assert resp.status_code == 200
+    name = resp.json()["backup_name"]
+
+    resp = await client.post(
+        f"/api/data/restore/{name}?confirm=true", json={"password": "Passphrase-Test-123"}
+    )
+    assert resp.status_code == 200
+    safety = resp.json()["safety_backup"]
+
+    backup_dir = Path(settings.data_dir) / "backups"
+    # Plus d'archive en clair qui traîne
+    assert not (backup_dir / f"{safety}.tar.gz").exists()
+    # À la place : archive chiffrée + métadonnées -> visible et supprimable
+    assert (backup_dir / f"{safety}.tar.gz.enc").exists()
+    assert (backup_dir / f"{safety}.json").exists()
+
+    listed = await client.get("/api/data/backups")
+    entry = next(b for b in listed.json()["backups"] if b.get("backup_name") == safety)
+    assert entry.get("encrypted") is True
+
+
+@pytest.mark.asyncio
+async def test_pre_restore_retention_une_seule_archive(client):
+    """Deux restaurations successives ne laissent qu'UNE archive de sécurité
+    (la plus récente) - sinon le dossier de données gonfle sans limite."""
+    resp = await client.post("/api/data/backup", json={"password": "Passphrase-Test-123"})
+    assert resp.status_code == 200
+    name = resp.json()["backup_name"]
+
+    r1 = await client.post(
+        f"/api/data/restore/{name}?confirm=true", json={"password": "Passphrase-Test-123"}
+    )
+    assert r1.status_code == 200
+    first_safety = r1.json()["safety_backup"]
+
+    r2 = await client.post(
+        f"/api/data/restore/{name}?confirm=true", json={"password": "Passphrase-Test-123"}
+    )
+    assert r2.status_code == 200
+    second_safety = r2.json()["safety_backup"]
+    assert second_safety != first_safety
+
+    backup_dir = Path(settings.data_dir) / "backups"
+    artefacts = sorted(p.name for p in backup_dir.glob("pre_restore_*") if p.suffix != ".json")
+    assert artefacts == [f"{second_safety}.tar.gz.enc"]
+    assert not (backup_dir / f"{first_safety}.json").exists()
+    assert (backup_dir / f"{second_safety}.json").exists()
+
+
+@pytest.mark.asyncio
+async def test_pre_restore_legacy_sans_passphrase_reste_visible(client):
+    """Restauration d'une sauvegarde legacy en clair (pré-US-003, aucune
+    passphrase disponible) : l'archive de sécurité ne peut pas être chiffrée,
+    mais elle doit quand même devenir visible (métadonnées, encrypted=False)."""
+    data_dir = Path(settings.data_dir)
+    backup_dir = data_dir / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    legacy_name = "legacy_plain_backup"
+    with tarfile.open(backup_dir / f"{legacy_name}.tar.gz", "w:gz") as tar:
+        tar.add(str(data_dir / "therese.db"), arcname="therese.db")
+
+    resp = await client.post(f"/api/data/restore/{legacy_name}?confirm=true")
+    assert resp.status_code == 200
+    safety = resp.json()["safety_backup"]
+
+    assert (backup_dir / f"{safety}.tar.gz").exists()
+    assert (backup_dir / f"{safety}.json").exists()
+
+    listed = await client.get("/api/data/backups")
+    entry = next(b for b in listed.json()["backups"] if b.get("backup_name") == safety)
+    assert entry.get("encrypted") is False
+
+
 class _CheckpointConnection:
     def __init__(self, rows):
         self.rows = list(rows)
