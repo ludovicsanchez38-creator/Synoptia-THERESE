@@ -5,6 +5,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
 import { Brain, Shield, Zap } from 'lucide-react';
 
 interface WelcomeStepProps {
@@ -45,10 +46,9 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
         className="mb-6 sm:mb-8"
       >
-        <img
-          src="/therese-avatar.png"
-          alt="THÉRÈSE"
-          className="w-24 h-24 rounded-2xl mb-6 mx-auto border border-border/30"
+        <CharacterPortrait
+          index={0}
+          className="mx-auto mb-6 h-24 w-24 rounded-2xl border border-border/30"
         />
         <h1 className="mb-3 text-3xl font-bold text-text sm:text-4xl">
           Bienvenue sur THÉRÈSE

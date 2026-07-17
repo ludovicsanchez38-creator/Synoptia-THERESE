@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Brain, GitBranch, ChevronLeft, Plus, Trash2, ArrowRightLeft, BookOpen, type LucideIcon } from 'lucide-react';
 import { useCommandsStore } from '../../stores/commandsStore';
@@ -163,11 +164,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
         <div className="relative w-20 h-20 mx-auto mb-4">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
           <div className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
-            <img
-              src="/therese-avatar.png"
-              alt="THÉRÈSE"
-              className="w-full h-full object-cover"
-            />
+            <CharacterPortrait index={0} className="h-full w-full" />
           </div>
         </div>
         <h2 className="text-xl font-semibold text-text mb-2 gradient-text">
