@@ -501,12 +501,39 @@ async def delete_all_data(
     except Exception:
         logger.warning("Impossible de purger la collection Qdrant")
 
+    # Revue 0.40 : « toutes mes données » doit couvrir les fichiers sur disque
+    # (images générées, fichiers produits par les skills), pas seulement les
+    # tables. Les sauvegardes sont conservées à dessein (filet de l'utilisateur,
+    # supprimables une à une depuis l'interface) - et on l'annonce.
+    import shutil
+    from pathlib import Path
+
+    data_dir = Path(settings.data_dir)
+    for sub in ("images", "outputs"):
+        target = data_dir / sub
+        if target.exists():
+            shutil.rmtree(target, ignore_errors=True)
+        target.mkdir(parents=True, exist_ok=True)
+
+    backups_dir = data_dir / "backups"
+    backups_kept = len(list(backups_dir.glob("*.json"))) if backups_dir.exists() else 0
+
     logger.warning("Toutes les donnees utilisateur ont ete supprimees (RGPD)")
+
+    if backups_kept:
+        note = (
+            "Les logs d'audit sont conservés pour des raisons légales. "
+            f"{backups_kept} sauvegarde(s) conservée(s) : supprime-les depuis "
+            "la liste des sauvegardes si tu veux vraiment tout effacer."
+        )
+    else:
+        note = "Les logs d'audit sont conservés pour des raisons légales"
 
     return {
         "deleted": True,
         "message": "Toutes tes données ont été supprimées conformément au RGPD Art. 17",
-        "note": "Les logs d'audit sont conservés pour des raisons légales",
+        "note": note,
+        "backups_kept": backups_kept,
     }
 
 
@@ -945,6 +972,44 @@ async def list_backups():
     return {"backups": backups}
 
 
+def _register_pre_restore_backup(
+    backup_dir, name: str, artifact, encrypted: bool, included: list[str]
+) -> None:
+    """Donne des métadonnées à l'archive de sécurité pre_restore_*.
+
+    Revue 0.40 : sans .json, list_backups ne la voyait pas -> archive invisible
+    dans l'interface, impossible à supprimer, ~230 Mo cachés par restauration.
+    Ne lève jamais : la restauration a réussi, l'enregistrement est best-effort."""
+    try:
+        metadata = {
+            "created_at": datetime.now(UTC).isoformat(),
+            "app_version": settings.app_version,
+            "archive_path": str(artifact),
+            "backup_name": name,
+            "included": included,
+            "encrypted": encrypted,
+            "kind": "pre_restore",
+        }
+        with open(backup_dir / f"{name}.json", "w") as f:
+            json.dump(metadata, f, indent=2)
+    except Exception:
+        logger.exception("Métadonnées de l'archive de sécurité non écrites")
+
+
+def _prune_pre_restore_backups(backup_dir, keep: str) -> None:
+    """Rétention : une seule archive de sécurité, la plus récente.
+
+    Purge artefacts ET métadonnées des pre_restore_* antérieurs, y compris les
+    archives invisibles laissées par les versions d'avant 0.40.1."""
+    try:
+        for path in backup_dir.glob("pre_restore_*"):
+            if path.name.startswith(keep):
+                continue
+            path.unlink(missing_ok=True)
+    except Exception:
+        logger.exception("Purge des anciennes archives de sécurité en échec")
+
+
 @router.post("/restore/{backup_name}")
 async def restore_backup(
     backup_name: str,
@@ -1014,8 +1079,11 @@ async def restore_backup(
 
     # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
     # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
-    current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+    # %f : deux restaurations dans la même seconde ne doivent pas se partager
+    # la même archive de sécurité.
+    current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
     safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
+    safety_included: list[str] = []
 
     def _wipe_volatile_dirs() -> None:
         # Restore PROPRE : on retire qdrant/ et images/ avant extraction pour ne
@@ -1050,7 +1118,7 @@ async def restore_backup(
         await close_db()
 
         try:
-            _create_archive(safety_archive)
+            safety_included = _create_archive(safety_archive)
         except Exception as exc:
             raise HTTPException(
                 status_code=500,
@@ -1075,9 +1143,15 @@ async def restore_backup(
         except HTTPException:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
             _rollback()
+            _register_pre_restore_backup(
+                backup_dir, current_backup_name, safety_archive, False, safety_included
+            )
             raise
         except Exception as e:
             _rollback()
+            _register_pre_restore_backup(
+                backup_dir, current_backup_name, safety_archive, False, safety_included
+            )
             raise HTTPException(
                 status_code=500,
                 detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.",
@@ -1087,6 +1161,27 @@ async def restore_backup(
         # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
+
+    # Revue 0.40 : l'archive de sécurité devient une sauvegarde à part entière
+    # (visible dans la liste, supprimable), chiffrée avec la passphrase que
+    # l'utilisateur vient de saisir quand il y en a une (restauration legacy en
+    # clair : pas de passphrase disponible, on la garde en clair mais visible).
+    safety_artifact = safety_archive
+    safety_encrypted = False
+    if password:
+        safety_enc = backup_dir / f"{current_backup_name}.tar.gz.enc"
+        try:
+            encrypt_backup_archive(safety_archive, safety_enc, password)
+            safety_archive.unlink(missing_ok=True)
+            safety_artifact = safety_enc
+            safety_encrypted = True
+        except Exception:
+            safety_enc.unlink(missing_ok=True)
+            logger.exception("Archive de sécurité non chiffrable : conservée en clair")
+    _register_pre_restore_backup(
+        backup_dir, current_backup_name, safety_artifact, safety_encrypted, safety_included
+    )
+    _prune_pre_restore_backups(backup_dir, keep=current_backup_name)
 
     # Load metadata if exists
     metadata = {}
@@ -1122,15 +1217,34 @@ async def delete_backup(backup_name: str):
     if not str(backup_path.resolve()).startswith(str(backup_dir.resolve())):
         raise HTTPException(status_code=403, detail="Chemin de backup non autorisé")
 
-    # US-011 : archive .tar.gz (nouveau) ou .db legacy
-    archive = backup_dir / f"{backup_name}.tar.gz"
-    legacy_db = backup_dir / f"{backup_name}.db"
+    # US-011/US-003 : archive .tar.gz (pré-chiffrement), .tar.gz.enc (0.40+,
+    # seul format encore produit) ou .db legacy. Revue 0.40 : sans le .enc,
+    # toute sauvegarde récente répondait 404 et restait sur disque.
+    from pathlib import Path
+
+    candidates = [
+        backup_dir / f"{backup_name}.tar.gz",
+        backup_dir / f"{backup_name}.tar.gz.enc",
+        backup_dir / f"{backup_name}.db",
+    ]
     metadata_file = backup_dir / f"{backup_name}.json"
 
-    if not archive.exists() and not legacy_db.exists():
+    # L'artefact référencé par les métadonnées fait foi (chemin borné au
+    # dossier backups, même garde que le nom plus haut).
+    if metadata_file.exists():
+        try:
+            with open(metadata_file) as f:
+                metadata = json.load(f)
+            artifact = Path(str(metadata.get("archive_path") or metadata.get("db_path") or ""))
+            if artifact.name and str(artifact.resolve()).startswith(str(backup_dir.resolve())):
+                candidates.append(artifact)
+        except Exception:
+            logger.debug("Métadonnées illisibles pour le backup %s", backup_name)
+
+    if not any(c.exists() for c in candidates) and not metadata_file.exists():
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouvé")
 
-    for f in (archive, legacy_db, metadata_file):
+    for f in (*candidates, metadata_file):
         if f.exists():
             f.unlink()
 

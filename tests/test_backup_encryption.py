@@ -71,6 +71,31 @@ async def test_backup_produit_une_archive_chiffree(client):
 
 
 @pytest.mark.asyncio
+async def test_suppression_backup_chiffre_cycle_complet(client):
+    """Revue 0.40 : DELETE /backups/{name} ne cherchait que .tar.gz/.db, or la
+    0.40 ne produit QUE des .tar.gz.enc -> 404 et l'archive restait sur disque."""
+    from pathlib import Path
+
+    created = await client.post("/api/data/backup", json={"password": "pw-solide-123"})
+    assert created.status_code == 200
+    name = created.json()["backup_name"]
+    enc_path = Path(created.json()["path"])
+    metadata_path = enc_path.parent / f"{name}.json"
+    assert enc_path.exists() and metadata_path.exists()
+
+    resp = await client.delete(f"/api/data/backups/{name}")
+    assert resp.status_code == 200
+    assert resp.json()["deleted"] is True
+
+    assert not enc_path.exists()
+    assert not metadata_path.exists()
+
+    listed = await client.get("/api/data/backups")
+    names = [b.get("backup_name") for b in listed.json()["backups"]]
+    assert name not in names
+
+
+@pytest.mark.asyncio
 async def test_restore_chiffre_sans_passphrase_refuse(client):
     created = await client.post("/api/data/backup", json={"password": "pw-solide-123"})
     name = created.json()["backup_name"]
