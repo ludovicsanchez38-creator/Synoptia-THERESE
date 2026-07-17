@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { BACKEND_URL } from './helpers/backend';
 
 const calendar = {
   id: 'calendar-local',
@@ -60,7 +61,7 @@ async function installReadOnlyMeetingBackend(page: Page) {
     localStorage.setItem('onboarding_complete', 'true');
   });
 
-  await page.route('http://127.0.0.1:17293/**', async (route) => {
+  await page.route(`${BACKEND_URL}/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const { pathname } = url;

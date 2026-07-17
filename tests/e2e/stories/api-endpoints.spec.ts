@@ -8,7 +8,7 @@
 
 import { test, expect } from '@playwright/test';
 
-const BACKEND_URL = 'http://localhost:17293';
+import { BACKEND_URL } from './helpers/backend';
 
 let authToken: string;
 

@@ -95,3 +95,7 @@ docs/code-review/rapport-securite.md
 .claude/worktrees/
 .agents-sync-paused
 scratchpad/
+
+# Rapports Playwright (artefacts de CI, pas du code - revue 0.40)
+playwright-report/
+test-results/
