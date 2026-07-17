@@ -223,10 +223,54 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
   const panelBody = (
     <>
-            {/* Header */}
+            <input
+              ref={(el) => { vcfInputRef.current = el; }}
+              type="file"
+              accept=".vcf"
+              className="hidden"
+              onChange={handleImportVCF}
+            />
+            {/* Header - en standalone, les actions vivent ici (harmonisation
+                17/07 : la barre « Nouveau contact » pleine largeur en pied de
+                page était un vestige du tiroir, absurde sur une vue) */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-border/50">
-              <h2 className="text-lg font-semibold text-text">Mémoire</h2>
-              {!standalone && (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[6px] border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
+                  <Users className="h-5 w-5 text-accent" />
+                </div>
+                <h2 className="text-lg font-semibold text-text">Mémoire</h2>
+              </div>
+              {standalone ? (
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => vcfInputRef.current?.click()}
+                    title="Importer des contacts (.vcf)"
+                  >
+                    <Upload className="mr-1.5 h-4 w-4" />
+                    Importer
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleExportVCF}
+                    title="Exporter les contacts (.vcf)"
+                  >
+                    <Download className="mr-1.5 h-4 w-4" />
+                    Exporter
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={onNewContact}
+                    data-testid="memory-add-contact-btn"
+                  >
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    Nouveau contact
+                  </Button>
+                </div>
+              ) : (
                 <Button variant="ghost" size="icon" onClick={onClose}>
                   <X className="w-5 h-5" />
                 </Button>
@@ -511,14 +555,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
               )}
             </AnimatePresence>
 
-            {/* Footer - Add button */}
-            {(
+            {/* Footer - Add button (mode tiroir uniquement : en vue, les
+                actions sont dans l'entête) */}
+            {!standalone && (
               <div className="p-3 border-t border-border/50 space-y-2">
                 <Button
                   variant="primary"
                   className="w-full"
                   onClick={onNewContact}
-                  data-testid="memory-add-contact-btn"
+                  data-testid="memory-add-contact-btn-drawer"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nouveau contact
@@ -533,13 +578,6 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     <Upload className="w-4 h-4 mr-2" />
                     Importer VCF
                   </Button>
-                  <input
-                    ref={(el) => { vcfInputRef.current = el; }}
-                    type="file"
-                    accept=".vcf"
-                    className="hidden"
-                    onChange={handleImportVCF}
-                  />
                   <Button
                     variant="ghost"
                     className="flex-1"
@@ -634,7 +672,7 @@ function ContactsList({
           {/* Avatar - clickable */}
           <button
             onClick={() => onSelect(contact)}
-            className="flex items-center gap-3 flex-1 min-w-0"
+            className="flex items-center gap-3 flex-1 min-w-0 text-left"
           >
             <div className="w-10 h-10 rounded-full bg-accent-tint border border-border flex items-center justify-center text-sm font-medium text-text flex-shrink-0">
               {getInitials(contact.first_name, contact.last_name)}
@@ -728,8 +766,8 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title="RGPD non defini">
-        ?
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
+        RGPD ?
       </span>
     );
   }
