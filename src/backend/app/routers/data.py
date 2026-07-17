@@ -510,7 +510,7 @@ async def delete_all_data(
     from pathlib import Path
 
     data_dir = Path(settings.data_dir)
-    for sub in ("images", "outputs"):
+    for sub in ("images", "outputs", "projects"):
         target = data_dir / sub
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
@@ -1011,6 +1011,44 @@ def _prune_pre_restore_backups(backup_dir: Path, keep: str) -> None:
         logger.exception("Purge des anciennes archives de sécurité en échec")
 
 
+def _finalize_safety_archive(
+    backup_dir: Path,
+    name: str,
+    plain_archive: Path,
+    password: str | None,
+    included: list[str],
+) -> bool:
+    """Convertit l'archive de sécurité pre_restore en sauvegarde chiffrée
+    visible, ou la SUPPRIME si le chiffrement est impossible.
+
+    Revue 0.40.1 (F1/F2, US-003) : l'archive contient .encryption_key, donc un
+    .tar.gz persistant équivaut à une base en clair - aucun clair ne survit à
+    cette fonction, y compris après un échec de restauration ou de chiffrement.
+    Quand elle est conservée, l'archive est chiffrée avec la passphrase que
+    l'utilisateur vient de saisir pour restaurer (dit explicitement côté
+    interface : si cette passphrase vient d'un tiers, ce tiers la connaît).
+    Ne lève jamais. Retourne True si une sauvegarde a été conservée."""
+    kept = False
+    try:
+        if password and plain_archive.exists():
+            enc = backup_dir / f"{name}.tar.gz.enc"
+            try:
+                encrypt_backup_archive(plain_archive, enc, password)
+                _register_pre_restore_backup(backup_dir, name, enc, True, included)
+                kept = True
+            except Exception:
+                enc.unlink(missing_ok=True)
+                logger.exception(
+                    "Archive de sécurité non chiffrable : supprimée (US-003, jamais de clair)"
+                )
+        elif plain_archive.exists():
+            logger.info("Restauration sans passphrase : archive de sécurité supprimée (US-003)")
+    finally:
+        plain_archive.unlink(missing_ok=True)
+        _prune_pre_restore_backups(backup_dir, keep=name)
+    return kept
+
+
 @router.post("/restore/{backup_name}")
 async def restore_backup(
     backup_name: str,
@@ -1144,14 +1182,14 @@ async def restore_backup(
         except HTTPException:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
             _rollback()
-            _register_pre_restore_backup(
-                backup_dir, current_backup_name, safety_archive, False, safety_included
+            _finalize_safety_archive(
+                backup_dir, current_backup_name, safety_archive, password, safety_included
             )
             raise
         except Exception as e:
             _rollback()
-            _register_pre_restore_backup(
-                backup_dir, current_backup_name, safety_archive, False, safety_included
+            _finalize_safety_archive(
+                backup_dir, current_backup_name, safety_archive, password, safety_included
             )
             raise HTTPException(
                 status_code=500,
@@ -1163,26 +1201,12 @@ async def restore_backup(
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
 
-    # Revue 0.40 : l'archive de sécurité devient une sauvegarde à part entière
-    # (visible dans la liste, supprimable), chiffrée avec la passphrase que
-    # l'utilisateur vient de saisir quand il y en a une (restauration legacy en
-    # clair : pas de passphrase disponible, on la garde en clair mais visible).
-    safety_artifact = safety_archive
-    safety_encrypted = False
-    if password:
-        safety_enc = backup_dir / f"{current_backup_name}.tar.gz.enc"
-        try:
-            encrypt_backup_archive(safety_archive, safety_enc, password)
-            safety_archive.unlink(missing_ok=True)
-            safety_artifact = safety_enc
-            safety_encrypted = True
-        except Exception:
-            safety_enc.unlink(missing_ok=True)
-            logger.exception("Archive de sécurité non chiffrable : conservée en clair")
-    _register_pre_restore_backup(
-        backup_dir, current_backup_name, safety_artifact, safety_encrypted, safety_included
+    # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
+    # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais
+    # de clair persistant, l'archive contient la clé de chiffrement).
+    safety_kept = _finalize_safety_archive(
+        backup_dir, current_backup_name, safety_archive, password, safety_included
     )
-    _prune_pre_restore_backups(backup_dir, keep=current_backup_name)
 
     # Load metadata if exists
     metadata = {}
@@ -1195,8 +1219,17 @@ async def restore_backup(
         "restored_from": backup_name,
         "restored_at": datetime.now(UTC).isoformat(),
         "backup_metadata": metadata,
-        "safety_backup": current_backup_name,
-        "note": "Redémarre l'application pour appliquer les changements",
+        "safety_backup": current_backup_name if safety_kept else None,
+        "note": (
+            "Redémarre l'application pour appliquer les changements. "
+            + (
+                "L'état d'avant restauration est conservé en sauvegarde chiffrée "
+                "avec la passphrase que tu viens de saisir."
+                if safety_kept
+                else "Sans passphrase, l'état d'avant restauration n'est pas conservé "
+                "(aucune archive en clair n'est laissée sur disque)."
+            )
+        ),
     }
 
 

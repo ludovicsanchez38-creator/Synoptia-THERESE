@@ -9,6 +9,7 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.config import settings
 from app.models.database import get_session
 from app.models.entities import FileMetadata
 from app.models.schemas import FileIndexRequest, FileResponse
@@ -295,7 +296,8 @@ async def upload_file(
         raise HTTPException(status_code=404, detail="Projet non trouvé")
 
     # Créer le dossier de stockage
-    therese_dir = Path.home() / ".therese" / "projects" / project_id / "files"
+    # Revue 0.40.1 (F3) : suit THERESE_DATA_DIR (prod inchangée : ~/.therese)
+    therese_dir = Path(settings.data_dir) / "projects" / project_id / "files"
     therese_dir.mkdir(parents=True, exist_ok=True)
 
     # Sauvegarder le fichier

@@ -78,9 +78,21 @@ export function PrivacyTab() {
   const voiceGranted = cloudGrants.some(
     (g) => g.purpose === 'voice' && g.provider.toLowerCase() === 'groq',
   );
+  const boardGranted = cloudGrants.some(
+    (g) => g.purpose === 'llm' && g.provider.toLowerCase() === 'board',
+  );
 
   function handleGrantVoiceConsent() {
     grantCloudConsent('voice', 'Groq', ['audio de la dictée']);
+    setCloudGrants(listCloudConsents());
+  }
+
+  function handleGrantBoardConsent() {
+    // Revue 0.40.1 (F4) : accord dédié au Board, qui interroge PLUSIEURS
+    // fournisseurs IA (les conseillers configurés), pas un seul.
+    grantCloudConsent('llm', 'board', [
+      'question', 'contexte utile', 'profil local utile', 'résultats web',
+    ]);
     setCloudGrants(listCloudConsents());
   }
 
@@ -379,7 +391,10 @@ export function PrivacyTab() {
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-text">{PURPOSE_LABELS[grant.purpose]}</p>
                   <p className="text-xs text-text-muted">
-                    {grant.provider} - accordé le {new Date(grant.timestamp).toLocaleDateString('fr-FR')}
+                    {grant.provider.toLowerCase() === 'board'
+                      ? 'Board (plusieurs fournisseurs IA)'
+                      : grant.provider}{' '}
+                    - accordé le {new Date(grant.timestamp).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => handleRevokeConsent(grant)}>
@@ -401,6 +416,16 @@ export function PrivacyTab() {
             </p>
             <Button variant="secondary" size="sm" onClick={handleGrantVoiceConsent}>
               Autoriser la dictée cloud (Groq)
+            </Button>
+          </div>
+        )}
+        {!boardGranted && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-surface px-3 py-2">
+            <p className="text-xs text-text-muted">
+              Board cloud : non autorisé. Il interroge plusieurs fournisseurs IA (jusqu'à six appels par délibération).
+            </p>
+            <Button variant="secondary" size="sm" onClick={handleGrantBoardConsent}>
+              Autoriser le Board cloud
             </Button>
           </div>
         )}

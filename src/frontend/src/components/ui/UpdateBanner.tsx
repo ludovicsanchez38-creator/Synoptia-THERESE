@@ -80,6 +80,14 @@ export function UpdateBanner() {
       // BUG-099 : Arrêter le backend sidecar AVANT l'installation
       // pour éviter le verrou backend.exe sur Windows
       try {
+        // Revue 0.40.1 (F8) : marquer l'arrêt comme volontaire côté Rust,
+        // sinon le watcher relance le backend pendant l'installation.
+        try {
+          const { invoke } = await import('@tauri-apps/api/core');
+          await invoke('prepare_backend_shutdown');
+        } catch {
+          // Hors Tauri (dev navigateur) : rien à préparer.
+        }
         await fetch(`${API_BASE}/api/shutdown`, { method: 'POST' });
         // Health check poll : attendre que le backend soit vraiment mort
         const MAX_WAIT = 10_000;

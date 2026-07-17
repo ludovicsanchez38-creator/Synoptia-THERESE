@@ -138,10 +138,11 @@ async def test_pre_restore_retention_une_seule_archive(client):
 
 
 @pytest.mark.asyncio
-async def test_pre_restore_legacy_sans_passphrase_reste_visible(client):
-    """Restauration d'une sauvegarde legacy en clair (pré-US-003, aucune
-    passphrase disponible) : l'archive de sécurité ne peut pas être chiffrée,
-    mais elle doit quand même devenir visible (métadonnées, encrypted=False)."""
+async def test_pre_restore_legacy_sans_passphrase_aucun_clair(client):
+    """Restauration legacy en clair (pré-US-003, pas de passphrase) : le
+    chiffrement de l'archive de sécurité est impossible -> elle n'est PAS
+    conservée. US-003 : l'archive contient .encryption_key, un .tar.gz
+    persistant équivaudrait à une base en clair (revue 0.40.1, F1)."""
     data_dir = Path(settings.data_dir)
     backup_dir = data_dir / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -152,14 +153,34 @@ async def test_pre_restore_legacy_sans_passphrase_reste_visible(client):
 
     resp = await client.post(f"/api/data/restore/{legacy_name}?confirm=true")
     assert resp.status_code == 200
-    safety = resp.json()["safety_backup"]
+    body = resp.json()
+    assert body["safety_backup"] is None
+    assert "en clair" in body["note"]
 
-    assert (backup_dir / f"{safety}.tar.gz").exists()
-    assert (backup_dir / f"{safety}.json").exists()
+    # Aucune archive pre_restore ne subsiste, ni en clair ni en métadonnées.
+    assert list(backup_dir.glob("pre_restore_*")) == []
 
-    listed = await client.get("/api/data/backups")
-    entry = next(b for b in listed.json()["backups"] if b.get("backup_name") == safety)
-    assert entry.get("encrypted") is False
+
+@pytest.mark.asyncio
+async def test_echec_de_restauration_ne_laisse_aucun_clair(client):
+    """Échec APRÈS création de l'archive de sécurité (DB restaurée illisible) :
+    rollback, et aucun pre_restore_*.tar.gz en clair ne survit (revue 0.40.1,
+    F1 - avant ce fix, l'échec enregistrait l'archive en clair)."""
+    data_dir = Path(settings.data_dir)
+    backup_dir = data_dir / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    bad_db = data_dir / "db-invalide.bin"
+    bad_db.write_bytes(b"pas une base sqlite du tout")
+    legacy_name = "legacy_backup_corrompu"
+    with tarfile.open(backup_dir / f"{legacy_name}.tar.gz", "w:gz") as tar:
+        tar.add(str(bad_db), arcname="therese.db")
+
+    resp = await client.post(f"/api/data/restore/{legacy_name}?confirm=true")
+    assert resp.status_code in (409, 500)
+
+    plaintext = [p.name for p in backup_dir.glob("pre_restore_*.tar.gz")]
+    assert plaintext == [], f"archives en clair persistantes : {plaintext}"
 
 
 class _CheckpointConnection:
