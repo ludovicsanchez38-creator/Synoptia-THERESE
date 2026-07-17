@@ -294,7 +294,9 @@ async def lifespan(app: FastAPI):
 
     # Generate session auth token (SEC-010)
     token = secrets.token_urlsafe(32)
-    token_path = FilePath.home() / ".therese" / ".session_token"
+    # Revue 0.40.1 (F11) : le token suit THERESE_DATA_DIR - une instance de
+    # test/E2E n'écrase plus le jeton du profil réel (~/.therese inchangé en prod).
+    token_path = FilePath(settings.data_dir) / ".session_token"
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_text(token)
     os.chmod(str(token_path), 0o600)
@@ -329,7 +331,7 @@ async def lifespan(app: FastAPI):
 
     # Cleanup session token
     try:
-        token_path = FilePath.home() / ".therese" / ".session_token"
+        token_path = FilePath(settings.data_dir) / ".session_token"
         if token_path.exists():
             token_path.unlink()
     except Exception as e:

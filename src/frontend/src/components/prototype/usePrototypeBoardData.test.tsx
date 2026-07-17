@@ -45,8 +45,15 @@ const decision: BoardDecisionDetail = {
 };
 
 function consentCloud() {
+  // Consentement v2 (revue 0.40.1, F4) : le Board exige SON accord dédié
+  // (finalité llm, clé board) - un consentement LLM quelconque ne suffit plus.
   vi.mocked(window.localStorage.getItem).mockReturnValue(JSON.stringify({
-    accepted: true, version: '1', timestamp: '2026-07-13T10:00:00Z',
+    version: '2',
+    grants: {
+      'llm:board': {
+        purpose: 'llm', provider: 'board', timestamp: '2026-07-13T10:00:00Z',
+      },
+    },
   }));
 }
 

@@ -210,6 +210,8 @@ function NewBoardForm({ advisors, run, onStart }: { advisors: AdvisorInfo[]; run
       return;
     }
     if (confirmationSnapshot.mode === 'cloud') {
+      // Consentement dédié au Board : il vaut pour l'ENSEMBLE des
+      // fournisseurs configurés des conseillers (multi-fournisseurs).
       grantCloudConsent('llm', 'board', ['question', 'contexte utile', 'profil local utile', 'résultats web']);
     }
     void onStart({

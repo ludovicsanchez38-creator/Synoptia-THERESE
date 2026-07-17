@@ -32,6 +32,7 @@ export async function indexFile(path: string): Promise<FileMetadata> {
   return request<FileMetadata>('/api/files/index', {
     method: 'POST',
     body: JSON.stringify({ path }),
+    timeoutMs: null, // indexation (embeddings) : long sur les gros documents
   });
 }
 

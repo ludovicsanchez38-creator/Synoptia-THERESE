@@ -212,6 +212,9 @@ class TestDataDeletion:
         (data_dir / "images" / "photo.png").write_bytes(b"pixels")
         (data_dir / "outputs").mkdir(parents=True, exist_ok=True)
         (data_dir / "outputs" / "doc.docx").write_bytes(b"docx")
+        # F3 revue 0.40.1 : les fichiers de projets sur disque aussi
+        (data_dir / "projects" / "proj-1" / "files").mkdir(parents=True, exist_ok=True)
+        (data_dir / "projects" / "proj-1" / "files" / "contrat.pdf").write_bytes(b"pdf")
 
         backup = await client.post("/api/data/backup", json={"password": "pw-solide-123"})
         assert backup.status_code == 200
@@ -222,6 +225,7 @@ class TestDataDeletion:
 
         assert not (data_dir / "images" / "photo.png").exists()
         assert not (data_dir / "outputs" / "doc.docx").exists()
+        assert not (data_dir / "projects" / "proj-1" / "files" / "contrat.pdf").exists()
         # Les sauvegardes sont volontairement conservées, et on le DIT.
         assert result["backups_kept"] >= 1
         assert "sauvegarde" in result["note"].lower()

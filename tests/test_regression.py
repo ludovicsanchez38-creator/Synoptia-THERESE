@@ -1017,6 +1017,17 @@ class TestPortFixe17293:
             "(surchargable uniquement par VITE_THERESE_BACKEND_PORT)"
         )
 
+    def test_pas_de_config_playwright_secondaire(self):
+        """Revue 0.40.1 (F10) : une seconde config Playwright vivait dans
+        src/frontend, SANS backend jetable ni garde anti-17293 - `npx
+        playwright test` depuis ce dossier exécutait les E2E contre
+        l'instance THÉRÈSE réelle. Seule la config racine doit exister."""
+        rogue = FRONTEND.parent / "playwright.config.ts"
+        assert not rogue.exists(), (
+            "src/frontend/playwright.config.ts ne doit pas exister : "
+            "les E2E passent par la config racine (backend jetable isolé)"
+        )
+
     def test_core_ts_no_port_8000_check(self):
         """core.ts ne doit plus vérifier port !== 8000."""
         content = API_CORE_TS.read_text(encoding="utf-8")

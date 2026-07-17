@@ -65,6 +65,7 @@ export async function executeSkill(
   return request<SkillExecuteResponse>(`/api/skills/execute/${skillId}`, {
     method: 'POST',
     body: JSON.stringify(req),
+    timeoutMs: null, // exécution de skill : peut inclure une génération LLM
   });
 }
 

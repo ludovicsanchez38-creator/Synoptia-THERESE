@@ -112,7 +112,7 @@ export function usePrototypeBoardData(enabled = true) {
       }));
       return;
     }
-    if ((request.mode || 'cloud') === 'cloud' && !hasCloudConsent('llm')) {
+    if ((request.mode || 'cloud') === 'cloud' && !hasCloudConsent('llm', 'board')) {
       setRun((current) => ({
         ...current,
         status: 'error',

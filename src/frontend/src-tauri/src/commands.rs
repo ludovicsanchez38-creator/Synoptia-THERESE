@@ -62,3 +62,17 @@ pub fn restart_backend(app: tauri::AppHandle) -> Result<(), String> {
         Err("Mode développement : relance le backend via make dev".to_string())
     }
 }
+
+/// Marque l'arrêt du backend comme VOLONTAIRE avant un POST /api/shutdown
+/// (updater) : la fin du sidecar ne déclenchera aucune relance automatique
+/// (revue 0.40.1, F8 - une relance pendant l'installation Windows reprenait
+/// un verrou sur l'exécutable et faisait échouer la mise à jour).
+#[tauri::command]
+pub fn prepare_backend_shutdown(app: tauri::AppHandle) {
+    use std::sync::atomic::Ordering;
+    use tauri::Manager;
+
+    app.state::<crate::SidecarState>()
+        .shutting_down
+        .store(true, Ordering::SeqCst);
+}

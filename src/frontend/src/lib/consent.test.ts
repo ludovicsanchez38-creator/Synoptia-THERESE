@@ -82,7 +82,10 @@ describe('consentement cloud v2 - par finalité et fournisseur (US-003 RGPD-4)',
     expect(voice?.timestamp).toBeTruthy();
   });
 
-  it('migre un enregistrement v1 accepté vers un consentement LLM seul', () => {
+  it('ignore un enregistrement v1 : chaque finalité redemande son accord', () => {
+    // Revue 0.40.1 (F5) : le v1 était ambigu (posé aussi par le Studio Images
+    // ou le Board) - le migrer vers 'llm' inventerait un consentement texte
+    // jamais donné. Il est donc ignoré, sans erreur.
     localStorage.setItem(
       CLOUD_CONSENT_KEY,
       JSON.stringify({
@@ -93,11 +96,13 @@ describe('consentement cloud v2 - par finalité et fournisseur (US-003 RGPD-4)',
         dataCategories: ['messages'],
       }),
     );
-    expect(hasCloudConsent('llm', 'OpenAI')).toBe(true);
-    expect(hasCloudConsent('llm')).toBe(true);
-    // Le consentement v1 ne valait PAS pour la voix ni les images.
+    expect(hasCloudConsent('llm', 'OpenAI')).toBe(false);
+    expect(hasCloudConsent('llm')).toBe(false);
     expect(hasCloudConsent('voice', 'Groq')).toBe(false);
     expect(hasCloudConsent('images')).toBe(false);
+    // Et un nouvel accord s'enregistre normalement par-dessus.
+    grantCloudConsent('llm', 'openai');
+    expect(hasCloudConsent('llm', 'openai')).toBe(true);
   });
 
   it('un enregistrement v1 refusé ne migre rien', () => {

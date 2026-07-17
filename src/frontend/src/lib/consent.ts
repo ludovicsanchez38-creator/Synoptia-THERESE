@@ -37,24 +37,12 @@ function loadStore(): CloudConsentStoreV2 {
     if (parsed?.version === '2' && parsed.grants && typeof parsed.grants === 'object') {
       return parsed as CloudConsentStoreV2;
     }
-    // Migration v1 : l'enregistrement global était posé par l'onboarding pour
-    // le fournisseur LLM choisi -> il devient un consentement 'llm' seul.
-    if (parsed?.accepted === true) {
-      const provider = typeof parsed.provider === 'string' && parsed.provider ? parsed.provider : 'inconnu';
-      const migrated: CloudConsentStoreV2 = {
-        version: '2',
-        grants: {
-          [grantKey('llm', provider)]: {
-            purpose: 'llm',
-            provider,
-            timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
-            dataCategories: Array.isArray(parsed.dataCategories) ? parsed.dataCategories : undefined,
-          },
-        },
-      };
-      saveStore(migrated);
-      return migrated;
-    }
+    // Revue 0.40.1 (F5/F6) : PAS de migration automatique du v1. L'ancien
+    // enregistrement était global et ambigu (posé indifféremment par
+    // l'onboarding LLM, le Board ou le Studio Images, tantôt avec un label,
+    // tantôt un id) : le reclasser dans une finalité serait deviner un
+    // consentement jamais donné. On repart de zéro - chaque finalité redemande
+    // UNE fois son accord précis au prochain usage.
     return empty;
   } catch {
     return empty;

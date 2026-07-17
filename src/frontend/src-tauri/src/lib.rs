@@ -337,7 +337,7 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                                     log_sidecar(&msg);
                                     // Revue 0.40 : une panne du sidecar
                                     // n'impose plus de relancer toute l'app
-                                    handle_sidecar_termination(&handle, started_at);
+                                    handle_sidecar_termination(&handle, started_at, payload.code);
                                     break;
                                 }
                                 _ => {}
@@ -352,6 +352,9 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                     if let Some(window) = app.get_webview_window("main") {
                         let _ = window.emit("sidecar-error", &msg);
                     }
+                    // Revue 0.40.1 (F9) : l'échec de spawn entre dans le
+                    // cycle de relance (sinon cul-de-sac muet).
+                    schedule_sidecar_retry(app);
                 }
             }
         }
@@ -362,23 +365,24 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.emit("sidecar-error", &msg);
             }
+            // Revue 0.40.1 (F9) : même cul-de-sac -> cycle de relance
+            // (utile si le binaire apparaît après coup, sinon état failed).
+            schedule_sidecar_retry(app);
         }
     }
 }
 
-/// Réaction à une terminaison INATTENDUE du sidecar : jusqu'à 3 relances avec
-/// délai progressif (1 s, 3 s, 10 s). Un run stable de plus de 2 minutes remet
-/// le compteur à zéro : seuls les crashs en boucle épuisent les tentatives.
+/// Programme une relance du sidecar : jusqu'à 3 tentatives avec délai
+/// progressif (1 s, 3 s, 10 s), puis état `failed` (bouton Relancer côté UI).
+/// Utilisé après une terminaison inattendue ET après un échec de spawn
+/// (revue 0.40.1, F9 : un spawn en erreur entrait dans un cul-de-sac muet).
 #[cfg(not(debug_assertions))]
-fn handle_sidecar_termination(app: &tauri::AppHandle, started_at: std::time::Instant) {
+fn schedule_sidecar_retry(app: &tauri::AppHandle) {
     use std::sync::atomic::Ordering;
 
     let state = app.state::<SidecarState>();
     if state.shutting_down.load(Ordering::SeqCst) {
         return; // quit ou relance post-update : rien à faire
-    }
-    if started_at.elapsed() > std::time::Duration::from_secs(120) {
-        state.restart_attempts.store(0, Ordering::SeqCst);
     }
     let attempt = state.restart_attempts.fetch_add(1, Ordering::SeqCst) + 1;
     if attempt > 3 {
@@ -399,6 +403,35 @@ fn handle_sidecar_termination(app: &tauri::AppHandle, started_at: std::time::Ins
         }
         spawn_backend_sidecar(&handle);
     });
+}
+
+/// Réaction à une terminaison du sidecar. Un run stable de plus de 2 minutes
+/// remet le compteur à zéro : seuls les crashs en boucle épuisent les
+/// tentatives.
+#[cfg(not(debug_assertions))]
+fn handle_sidecar_termination(
+    app: &tauri::AppHandle,
+    started_at: std::time::Instant,
+    exit_code: Option<i32>,
+) {
+    use std::sync::atomic::Ordering;
+
+    let state = app.state::<SidecarState>();
+    if state.shutting_down.load(Ordering::SeqCst) {
+        return; // quit ou relance post-update : rien à faire
+    }
+    // Revue 0.40.1 (F8) : un exit code 0 est un arrêt DEMANDÉ (ex. POST
+    // /api/shutdown par l'updater avant relaunch) - relancer le backend à ce
+    // moment reprendrait un verrou sur l'exécutable et casserait la mise à
+    // jour Windows. Un crash réel sort avec un code non nul ou un signal.
+    if exit_code == Some(0) {
+        log_sidecar("Sidecar terminé proprement (code 0) : arrêt volontaire, pas de relance");
+        return;
+    }
+    if started_at.elapsed() > std::time::Duration::from_secs(120) {
+        state.restart_attempts.store(0, Ordering::SeqCst);
+    }
+    schedule_sidecar_retry(app);
 }
 
 /// Informe le frontend de l'état du moteur local (bandeau de statut).
@@ -497,6 +530,7 @@ pub fn run() {
             commands::get_system_info,
             commands::get_backend_port,
             commands::restart_backend,
+            commands::prepare_backend_shutdown,
         ])
         .build(tauri::generate_context!())
         .expect("error while building THÉRÈSE");

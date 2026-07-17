@@ -138,8 +138,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       return 'La question doit contenir au moins 10 caractères.';
     }
     if (mode === 'cloud') {
-      if (!hasCloudConsent('llm')) {
-        return 'Le consentement au transfert cloud est absent. Active-le dans l’étape de sécurité avant de lancer le Board cloud.';
+      // Revue 0.40.1 (F4) : le Board sollicite PLUSIEURS fournisseurs cloud -
+      // un consentement LLM quelconque (ex. OpenAI seul) ne suffit pas.
+      if (!hasCloudConsent('llm', 'board')) {
+        return 'Le Board cloud interroge plusieurs fournisseurs IA. Autorise-le dans Paramètres > Confidentialité > Consentements cloud, ou lance-le depuis la nouvelle interface qui te demandera confirmation.';
       }
     }
     if (mode === 'sovereign' && !ollamaAvailable) {

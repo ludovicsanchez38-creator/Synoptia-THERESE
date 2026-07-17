@@ -94,7 +94,8 @@ let _sessionToken: string | null = null;
 
 export async function initializeAuth(): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/token`);
+    // Borné : un backend muet au démarrage ne doit pas bloquer l'app (F7).
+    const response = await apiFetch(`${API_BASE}/api/auth/token`, { timeoutMs: 10_000 });
     if (response.ok) {
       const data = await response.json();
       _sessionToken = data.token;
