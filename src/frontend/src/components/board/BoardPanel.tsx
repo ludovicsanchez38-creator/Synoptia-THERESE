@@ -124,6 +124,17 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     onClose();
   }, [resetDeliberation, onClose]);
 
+  // Harmonisation 17/07 : Échap doit fermer le Board comme tout modal de
+  // l'app (constaté en recette : le modal restait ouvert et bloquait la page).
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCloseAndReset();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, handleCloseAndReset]);
+
   const handleCancelDeliberation = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
@@ -421,7 +432,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="icon" onClick={handleCloseAndReset}>
+                <Button variant="ghost" size="icon" aria-label="Fermer le Board" onClick={handleCloseAndReset}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
