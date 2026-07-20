@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
 import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './SlashCommandsMenu';
-import { handleClientActionChunk } from '../../lib/clientActions';
+import { handleClientActionChunk, runNavigationAction } from '../../lib/clientActions';
 import { ActionChips } from './ActionChips';
 import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
@@ -797,8 +797,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   // Handle slash command selection
   const handleSlashCommandSelect = useCallback((command: SlashCommand) => {
-    setInput(command.prefix);
     setShowSlashMenu(false);
+    // BUG-139 (suite) : une commande de navigation s'exécute immédiatement
+    // (dictée, zéro aller-retour) au lieu d'insérer un message à envoyer.
+    if (command.actionId) {
+      setInput('');
+      runNavigationAction(command.actionId);
+      return;
+    }
+    setInput(command.prefix);
     textareaRef.current?.focus();
   }, []);
 
