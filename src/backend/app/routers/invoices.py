@@ -344,8 +344,14 @@ async def update_invoice(
 
     # Mise à jour des lignes
     if request.lines is not None:
-        # Supprimer les anciennes lignes
-        for line in invoice.lines:
+        # BUG-147 : détacher la collection AVANT la suppression. Sinon
+        # invoice.lines garde les instances en état « deleted » et le
+        # session.add(invoice) plus bas re-cascade dessus ->
+        # InvalidRequestError « Instance '<InvoiceLine ...>' has been
+        # deleted » (500 « Failed to fetch » côté UI).
+        old_lines = list(invoice.lines)
+        invoice.lines = []
+        for line in old_lines:
             await session.delete(line)
         await session.flush()
 
@@ -366,6 +372,12 @@ async def update_invoice(
             )
             session.add(line)
             db_lines.append(line)
+
+        # La session tourne en expire_on_commit=False : la relecture finale
+        # repasse par l'identity map et ne repeuple PAS une relation déjà
+        # chargée. La collection en mémoire doit donc refléter les nouvelles
+        # lignes, sinon la réponse renvoie une facture sans lignes.
+        invoice.lines = db_lines
 
         # Recalculer les totaux a partir des lignes en memoire
         subtotal_ht, total_tax, total_ttc = _calculate_invoice_totals(db_lines)

@@ -224,6 +224,49 @@ class TestInvoicesCRUD:
         assert updated["invoice_number"] == invoice["invoice_number"]
 
     @pytest.mark.asyncio
+    async def test_update_invoice_lines_remplacees(self, client: AsyncClient):
+        """BUG-147 : PUT avec lines remplace les lignes sans InvalidRequestError.
+
+        La route supprimait les anciennes lignes puis re-adoptait l'invoice
+        (session.add) alors que la collection invoice.lines contenait encore
+        les instances supprimees -> sqlalchemy.exc.InvalidRequestError
+        « Instance '<InvoiceLine ...>' has been deleted » au commit, remonte
+        en « Failed to fetch » cote UI.
+        """
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+        assert len(invoice["lines"]) == 1
+
+        response = await client.put(f"/api/invoices/{invoice['id']}", json={
+            "lines": [
+                {
+                    "description": "Prestation revisee",
+                    "quantity": 3.0,
+                    "unit_price_ht": 400.0,
+                    "tva_rate": 20.0,
+                },
+                {
+                    "description": "Option ajoutee",
+                    "quantity": 1.0,
+                    "unit_price_ht": 100.0,
+                    "tva_rate": 20.0,
+                },
+            ],
+        })
+
+        assert response.status_code == 200, f"Echec update lignes: {response.text}"
+        updated = response.json()
+        assert len(updated["lines"]) == 2
+        assert {line["description"] for line in updated["lines"]} == {"Prestation revisee", "Option ajoutee"}
+        assert updated["subtotal_ht"] == pytest.approx(1300.0)
+        assert updated["total_ttc"] == pytest.approx(1560.0)
+
+        # L'etat persiste est verifiable en relecture (pas de mise a jour partielle)
+        reread = await client.get(f"/api/invoices/{invoice['id']}")
+        assert reread.status_code == 200
+        assert len(reread.json()["lines"]) == 2
+
+    @pytest.mark.asyncio
     async def test_mark_invoice_paid(self, client: AsyncClient):
         """PATCH /api/invoices/{id}/mark-paid marque une facture comme payee."""
         contact_id = await _create_contact(client)
