@@ -4,7 +4,59 @@ THERESE v2 - Web Search Service Tests
 Tests for US-WEB-01 to US-WEB-05.
 """
 
+from unittest.mock import patch
+
 import pytest
+
+
+class TestBrowserToolAvailabilityBUG141:
+    """BUG-141 : playwright est une dependance OPTIONNELLE (extra e2e), jamais
+    embarquee dans l'app packagee. L'outil browser etait pourtant toujours
+    annonce au LLM -> « Erreur navigation : No module named 'playwright' »
+    chez tous les testeurs sur une simple question d'email mal routee.
+    """
+
+    def test_browser_tool_absent_quand_playwright_manque(self):
+        from app.services import web_search
+
+        with patch("app.services.web_search.importlib.util.find_spec", return_value=None):
+            assert web_search.browser_tool_available() is False
+
+    def test_browser_tool_present_quand_playwright_importable(self):
+        # Hermetique : ne depend pas de l'installation reelle de l'extra e2e
+        # (meme le venv de dev ne l'a pas forcement).
+        from app.services import web_search
+
+        with patch("app.services.web_search.importlib.util.find_spec", return_value=object()):
+            assert web_search.browser_tool_available() is True
+
+    def test_web_tools_exclut_le_browser_sans_playwright(self):
+        from app.services import web_search
+
+        with patch("app.services.web_search.browser_tool_available", return_value=False):
+            tools = web_search.web_tools()
+        names = [t["function"]["name"] for t in tools]
+        assert "web_search" in names
+        assert web_search.BROWSER_TOOL["function"]["name"] not in names
+
+    def test_web_tools_inclut_le_browser_avec_playwright(self):
+        from app.services import web_search
+
+        with patch("app.services.web_search.browser_tool_available", return_value=True):
+            tools = web_search.web_tools()
+        names = [t["function"]["name"] for t in tools]
+        assert "web_search" in names
+        assert web_search.BROWSER_TOOL["function"]["name"] in names
+
+    @pytest.mark.asyncio
+    async def test_execute_browser_action_repli_clair_sans_playwright(self):
+        from app.services import web_search
+
+        with patch("app.services.web_search.browser_tool_available", return_value=False):
+            result = await web_search.execute_browser_action({"url": "https://example.com"})
+
+        assert "navigation web" in result.lower()
+        assert "no module named" not in result.lower()
 
 
 class TestWebSearchService:
