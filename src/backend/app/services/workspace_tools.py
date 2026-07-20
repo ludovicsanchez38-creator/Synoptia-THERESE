@@ -85,8 +85,11 @@ SEND_EMAIL_TOOL = {
     "function": {
         "name": "send_email",
         "description": (
-            "Envoie un email depuis le compte connecte de l'utilisateur. "
-            "Utilise cet outil quand l'utilisateur demande d'envoyer un email."
+            "Envoie un email TEXTE depuis le compte connecte de l'utilisateur. "
+            "Utilise cet outil quand l'utilisateur demande d'envoyer un email. "
+            "Cet outil ne peut PAS envoyer de piece jointe : ne l'utilise "
+            "jamais pour transmettre une facture, un devis ou un fichier, et "
+            "ne pretends jamais avoir joint un document."
         ),
         "parameters": {
             "type": "object",

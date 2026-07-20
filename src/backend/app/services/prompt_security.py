@@ -196,6 +196,10 @@ class PromptSecurityService:
         # Escape any existing delimiters
         sanitized = sanitized.replace("---", "- - -")
         sanitized = sanitized.replace("###", "# # #")
+        # N1 (contre-vérif 0.41.1) : des données métier peuvent forger nos
+        # propres marqueurs ([End factures]...) pour SORTIR de l'enveloppe -
+        # neutralisés avant le wrap, seuls les marqueurs posés ici subsistent.
+        sanitized = re.sub(r"\[(?=(?:Source\s*:|End\b))", "(", sanitized)
 
         # Add clear source delimiter
         return f"[Source: {source}]\n{sanitized}\n[End {source}]"

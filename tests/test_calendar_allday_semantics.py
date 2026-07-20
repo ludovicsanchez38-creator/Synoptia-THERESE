@@ -94,6 +94,60 @@ class TestGoogleAlldaySemantics:
         assert dto.end == date(2026, 7, 19)
 
 
+class TestCacheMigrationAlldaySemantics:
+    """F4 contre-verif : les evenements Google/CalDAV deja en cache avaient une
+    fin EXCLUSIVE (stockee avant 0.41.1). Migration ad-hoc unique (marqueur
+    preferences) : -1 jour clampe, calendriers locaux intacts, idempotente."""
+
+    def _seed_db(self, db_path):
+        from contextlib import closing
+
+        from app.models.database import db_connect
+
+        with closing(db_connect(db_path)) as conn:
+            conn.execute("CREATE TABLE calendars (id TEXT PRIMARY KEY, provider TEXT)")
+            conn.execute(
+                "CREATE TABLE calendar_events (id TEXT PRIMARY KEY, calendar_id TEXT,"
+                " all_day INTEGER, start_date TEXT, end_date TEXT)"
+            )
+            conn.execute(
+                "CREATE TABLE preferences (id TEXT PRIMARY KEY, key TEXT UNIQUE,"
+                " value TEXT, category TEXT, created_at TEXT, updated_at TEXT)"
+            )
+            conn.execute("INSERT INTO calendars VALUES ('cal-g', 'google')")
+            conn.execute("INSERT INTO calendars VALUES ('cal-l', 'local')")
+            # Cache Google pre-0.41.1 : fin exclusive (20 = evenement d'un jour)
+            conn.execute("INSERT INTO calendar_events VALUES ('e-g', 'cal-g', 1, '2026-07-19', '2026-07-20')")
+            # Local : deja inclusif, ne doit PAS bouger
+            conn.execute("INSERT INTO calendar_events VALUES ('e-l', 'cal-l', 1, '2026-07-19', '2026-07-19')")
+            conn.commit()
+
+    def _end_dates(self, db_path):
+        from contextlib import closing
+
+        from app.models.database import db_connect
+
+        with closing(db_connect(db_path)) as conn:
+            rows = conn.execute("SELECT id, end_date FROM calendar_events").fetchall()
+        return dict(rows)
+
+    def test_conversion_unique_et_idempotente(self, tmp_path):
+        from app.models.database import apply_adhoc_migrations
+
+        db_path = tmp_path / "migration.db"
+        self._seed_db(db_path)
+
+        apply_adhoc_migrations(db_path)
+
+        ends = self._end_dates(db_path)
+        assert ends["e-g"] == "2026-07-19"  # exclusif -> inclusif
+        assert ends["e-l"] == "2026-07-19"  # local intact
+
+        # Idempotence : un second passage ne re-decremente pas
+        apply_adhoc_migrations(db_path)
+        assert self._end_dates(db_path)["e-g"] == "2026-07-19"
+
+
 class TestIcsAlldaySemantics:
     """F4 revue : DTEND est EXCLUSIF dans ICS (RFC 5545). L'import doit stocker
     une fin inclusive, l'export doit écrire DTEND = fin + 1 jour."""

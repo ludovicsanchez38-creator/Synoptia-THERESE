@@ -219,6 +219,61 @@ def apply_adhoc_migrations(db_path) -> None:
             )
             conn.commit()
             logger.info("Migration auto : table 'variables' créée")
+        # BUG-144 (0.41.1) : avant cette version, la fin « toute la journée »
+        # des événements Google/CalDAV en cache était stockée EXCLUSIVE
+        # (convention de ces protocoles) alors que l'app est INCLUSIVE.
+        # Conversion -1 jour clampée, UNE seule fois (marqueur preferences) -
+        # les calendriers locaux étaient déjà inclusifs et ne bougent pas.
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name IN"
+                " ('calendars', 'calendar_events', 'preferences')"
+            ).fetchall()
+        }
+        if {"calendars", "calendar_events", "preferences"} <= tables:
+            marker = conn.execute(
+                "SELECT value FROM preferences WHERE key = 'allday_end_semantics'"
+            ).fetchone()
+            if marker is None:
+                from datetime import UTC as _UTC
+                from datetime import date as _date
+                from datetime import datetime as _datetime
+                from datetime import timedelta as _timedelta
+                from uuid import uuid4 as _uuid4
+
+                rows = conn.execute(
+                    "SELECT e.id, e.start_date, e.end_date FROM calendar_events e"
+                    " JOIN calendars c ON c.id = e.calendar_id"
+                    " WHERE c.provider IN ('google', 'caldav') AND e.all_day = 1"
+                    " AND e.start_date IS NOT NULL AND e.end_date IS NOT NULL"
+                    " AND e.end_date > e.start_date"
+                ).fetchall()
+                converted = 0
+                for event_id, start_raw, end_raw in rows:
+                    try:
+                        new_end = max(
+                            _date.fromisoformat(start_raw),
+                            _date.fromisoformat(end_raw) - _timedelta(days=1),
+                        ).isoformat()
+                    except ValueError:
+                        continue
+                    conn.execute(
+                        "UPDATE calendar_events SET end_date = ? WHERE id = ?",
+                        (new_end, event_id),
+                    )
+                    converted += 1
+                now_iso = _datetime.now(_UTC).isoformat()
+                conn.execute(
+                    "INSERT INTO preferences (id, key, value, category, created_at, updated_at)"
+                    " VALUES (?, 'allday_end_semantics', '\"inclusive-0.41.1\"', 'general', ?, ?)",
+                    (str(_uuid4()), now_iso, now_iso),
+                )
+                conn.commit()
+                logger.info(
+                    "Migration auto : %d fin(s) all-day Google/CalDAV converties en sémantique inclusive",
+                    converted,
+                )
 
 
 # US-015 : tête Alembic épinglée. Une DB bootstrapée par create_all + les
