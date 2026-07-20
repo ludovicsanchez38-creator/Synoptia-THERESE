@@ -260,6 +260,8 @@ class GoogleCalendarProvider(CalendarProvider):
 
         all_day = "date" in start_obj
 
+        start: datetime | date | None
+        end: datetime | date | None
         if all_day:
             start = datetime.strptime(start_obj["date"], "%Y-%m-%d").date()
             # BUG-144 : fin exclusive (Google) -> inclusive (app), clampée

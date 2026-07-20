@@ -356,14 +356,14 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     pattern = f"%{query}%"
     statement = (
         select(Invoice, Contact)
-        .join(Contact, Contact.id == Invoice.contact_id)  # type: ignore[arg-type]
+        .join(Contact, Contact.id == Invoice.contact_id)
         .where(
-            Invoice.invoice_number.ilike(pattern)  # type: ignore[attr-defined]
-            | Contact.first_name.ilike(pattern)  # type: ignore[attr-defined]
-            | Contact.last_name.ilike(pattern)  # type: ignore[attr-defined]
-            | Contact.company.ilike(pattern)  # type: ignore[attr-defined]
+            Invoice.invoice_number.ilike(pattern)
+            | Contact.first_name.ilike(pattern)
+            | Contact.last_name.ilike(pattern)
+            | Contact.company.ilike(pattern)
         )
-        .order_by(Invoice.issue_date.desc())  # type: ignore[attr-defined]
+        .order_by(Invoice.issue_date.desc())
         .limit(10)
     )
     rows = (await session.execute(statement)).all()
