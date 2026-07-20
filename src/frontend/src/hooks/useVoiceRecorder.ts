@@ -28,14 +28,18 @@ export function microphoneErrorMessage(err: unknown): string {
         : '';
   const lower = text.toLowerCase();
 
-  if (/notallowed|permissiondenied|security|permission|denied|unauthorized/.test(lower)) {
+  // N2 contre-vérif : une erreur de FICHIER (écriture du WAV...) contenant
+  // « permission » ne doit pas être déguisée en permission micro.
+  const fileError = /file|path|write|\.wav|dossier|disque/.test(lower);
+
+  if (!fileError && /notallowed|permissiondenied|security|permission|denied|unauthorized/.test(lower)) {
     return (
       'Accès au micro refusé. Autorise le microphone pour THÉRÈSE : '
       + 'Windows : Paramètres > Confidentialité > Microphone ; '
       + 'macOS : Réglages Système > Confidentialité et sécurité > Microphone.'
     );
   }
-  if (/notfound|devicesnotfound|overconstrained|no (input )?device|device not found|no such device/.test(lower)) {
+  if (/notfound|devicesnotfound|overconstrained|no (default )?(input )?device|device not found|no such device/.test(lower)) {
     return 'Aucun micro détecté. Branche un micro ou vérifie qu\'il est activé dans le système.';
   }
   if (/notreadable|trackstart|abort|busy|in use|already in use/.test(lower)) {

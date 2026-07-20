@@ -288,7 +288,18 @@ describe('useVoiceRecorder', () => {
       const { microphoneErrorMessage } = await import('./useVoiceRecorder');
 
       expect(microphoneErrorMessage('No input device found')).toContain('Aucun micro');
+      // F10 contre-vérif : chaîne RÉELLE du plugin installé
+      expect(microphoneErrorMessage('No default input device available')).toContain('Aucun micro');
       expect(microphoneErrorMessage('Device already in use')).toContain('autre application');
+    });
+
+    it('N2 contre-vérif : une permission de FICHIER n’est pas déguisée en permission micro', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+
+      const message = microphoneErrorMessage('Permission denied writing file recording.wav');
+
+      expect(message).not.toContain('Autorise le microphone');
+      expect(message).toContain('recording.wav');
     });
   });
 });
