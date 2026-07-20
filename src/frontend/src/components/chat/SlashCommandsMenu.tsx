@@ -33,9 +33,12 @@ export interface SlashCommand {
   description: string;
   icon: React.ReactNode;
   prefix: string;
+  /** BUG-139 (suite) : navigation exécutée DIRECTEMENT à la sélection
+   * (runNavigationAction), sans insérer de message-action à envoyer. */
+  actionId?: string;
 }
 
-const SLASH_COMMANDS: SlashCommand[] = [
+export const SLASH_COMMANDS: SlashCommand[] = [
   // Actions déterministes (tranche 1a) : insèrent un message-action pur,
   // exécuté localement par le backend sans passer par le LLM.
   {
@@ -44,6 +47,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir la boîte email (action locale, sans IA)',
     icon: <Mail className="w-4 h-4" />,
     prefix: '{action: ouvrir email}',
+    actionId: 'email.open',
   },
   {
     id: 'ouvrir-crm',
@@ -51,6 +55,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir le pipeline CRM (action locale, sans IA)',
     icon: <UserPlus className="w-4 h-4" />,
     prefix: '{action: ouvrir crm}',
+    actionId: 'crm.open',
   },
   {
     id: 'ouvrir-memoire',
@@ -58,6 +63,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir la Mémoire (action locale, sans IA)',
     icon: <Search className="w-4 h-4" />,
     prefix: '{action: ouvrir mémoire}',
+    actionId: 'memory.open',
   },
   {
     id: 'ouvrir-calendrier',
@@ -65,6 +71,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir le Calendrier (action locale, sans IA)',
     icon: <Calendar className="w-4 h-4" />,
     prefix: '{action: ouvrir calendrier}',
+    actionId: 'calendar.open',
   },
   {
     id: 'ouvrir-taches',
@@ -72,6 +79,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir les Tâches (action locale, sans IA)',
     icon: <ListTodo className="w-4 h-4" />,
     prefix: '{action: ouvrir tâches}',
+    actionId: 'tasks.open',
   },
   {
     id: 'ouvrir-documents',
@@ -79,6 +87,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: "Ouvrir l'Atelier documentaire (action locale, sans IA)",
     icon: <FileText className="w-4 h-4" />,
     prefix: '{action: ouvrir documents}',
+    actionId: 'documents.open',
   },
   {
     id: 'ouvrir-facturation',
@@ -86,6 +95,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Ouvrir les Factures (action locale, sans IA)',
     icon: <FileSpreadsheet className="w-4 h-4" />,
     prefix: '{action: ouvrir facturation}',
+    actionId: 'invoices.open',
   },
   {
     id: 'produire-docx',

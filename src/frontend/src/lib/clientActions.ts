@@ -17,19 +17,28 @@ import { runAction } from './actionRegistry';
 
 export const CLIENT_ACTION_EVENT = 'therese:client-action';
 
-export function handleClientActionChunk(chunk: StreamChunk): boolean {
-  const ca = chunk.client_action as
-    | { action?: string; action_id?: string; target?: string }
-    | undefined;
-  if (!ca || ca.action !== 'navigate' || !ca.action_id) return false;
-
+/**
+ * Exécute une navigation déterministe côté client : événement revendicable
+ * (la coque 0.40 le prend si elle est montée), sinon registre classique.
+ * Utilisé par le stream (client_action backend) ET par la sélection directe
+ * d'une commande / de navigation (BUG-139 suite : dictée, zéro aller-retour).
+ */
+export function runNavigationAction(actionId: string): boolean {
   if (typeof window !== 'undefined') {
     const event = new CustomEvent(CLIENT_ACTION_EVENT, {
-      detail: { actionId: ca.action_id },
+      detail: { actionId },
       cancelable: true,
     });
     const notPrevented = window.dispatchEvent(event);
     if (!notPrevented) return true; // revendiqué par la coque
   }
-  return runAction(ca.action_id);
+  return runAction(actionId);
+}
+
+export function handleClientActionChunk(chunk: StreamChunk): boolean {
+  const ca = chunk.client_action as
+    | { action?: string; action_id?: string; target?: string }
+    | undefined;
+  if (!ca || ca.action !== 'navigate' || !ca.action_id) return false;
+  return runNavigationAction(ca.action_id);
 }

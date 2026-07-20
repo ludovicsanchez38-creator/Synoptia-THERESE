@@ -4,7 +4,7 @@
  * ({action: ouvrir email} -> navigation locale, zéro LLM).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleClientActionChunk } from './clientActions';
+import { handleClientActionChunk, runNavigationAction } from './clientActions';
 import { runAction } from './actionRegistry';
 
 vi.mock('./actionRegistry', async () => {
@@ -62,6 +62,26 @@ describe('handleClientActionChunk', () => {
       expect(received).toBe('tasks.open');
     } finally {
       window.removeEventListener('therese:client-action', spy);
+    }
+  });
+
+  // BUG-139 (suite, 20/07) : les commandes / de navigation s'exécutent
+  // DIRECTEMENT à la sélection (dictée), sans insérer de message-action.
+  it('runNavigationAction navigue via le registre quand personne ne revendique', () => {
+    expect(runNavigationAction('email.open')).toBe(true);
+    expect(mockedRun).toHaveBeenCalledWith('email.open');
+  });
+
+  it('runNavigationAction laisse la coque revendiquer sans appeler le registre', () => {
+    const claim = (e: Event) => {
+      e.preventDefault();
+    };
+    window.addEventListener('therese:client-action', claim);
+    try {
+      expect(runNavigationAction('crm.open')).toBe(true);
+      expect(mockedRun).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('therese:client-action', claim);
     }
   });
 
