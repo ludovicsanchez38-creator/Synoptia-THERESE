@@ -48,7 +48,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     render(<MeetingWorkspaceCanvas
       resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
       target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={onCreateEvent}
-      onCreateNote={vi.fn()} onAbandon={vi.fn()} onOpenClassic={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={vi.fn()} onOpenClassic={vi.fn()} onEnsureCalendar={vi.fn()}
     />);
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Point confirmé' } });
     fireEvent.click(screen.getByText('Vérifier avant création'));
@@ -64,7 +64,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     render(<MeetingWorkspaceCanvas
       resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
       target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={onCreateEvent}
-      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()} onEnsureCalendar={vi.fn()}
     />);
     fireEvent.change(screen.getByLabelText('Titre'), { target: { value: 'Point annulé' } });
     fireEvent.click(screen.getByText('Vérifier avant création'));
@@ -87,7 +87,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
       resource={{ status: 'ready', data: workspace, error: null }}
       eventResource={{ status: 'ready', data: context, error: null }} target={meetingEventKey(event)}
       onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
-      onCreateNote={onCreateNote} onAbandon={vi.fn()} onOpenClassic={vi.fn()}
+      onCreateNote={onCreateNote} onAbandon={vi.fn()} onOpenClassic={vi.fn()} onEnsureCalendar={vi.fn()}
     />);
     expect(screen.getByText('Contexte réel')).toBeInTheDocument();
     expect(screen.getByText('Historique réel')).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe('Rendez-vous 0.40 conversationnel', () => {
       resource={{ status: 'ready', data: workspace, error: null }}
       eventResource={{ status: 'ready', data: context, error: null }} target={meetingEventKey(event)}
       onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
-      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={onAbandon} onOpenClassic={vi.fn()} onEnsureCalendar={vi.fn()}
     />);
     fireEvent.change(screen.getByLabelText('Note de rendez-vous'), { target: { value: 'Note à abandonner' } });
     fireEvent.click(screen.getByRole('button', { name: 'Vérifier la note' }));
@@ -112,5 +112,59 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
 
     expect(onAbandon).toHaveBeenCalledTimes(1);
+  });
+});
+
+// BUG-143 : sur une base sans calendrier (lecture pure de la coque), « Préparer un
+// événement » aboutissait à un cul-de-sac « Aucun calendrier n'est disponible »,
+// perçu comme un bouton inerte (le canevas étant déjà ouvert). Le geste explicite
+// de création doit provisionner le calendrier local puis afficher le formulaire.
+describe('BUG-143 - préparation d’événement sans calendrier', () => {
+  const workspaceVide: MeetingWorkspaceData = {
+    calendars: [], events: [], contacts: [], accounts: [], unavailableSources: [],
+  };
+
+  function renderCanvasSansCalendrier(onEnsureCalendar: () => Promise<void>, onOpenClassic = vi.fn()) {
+    return render(<MeetingWorkspaceCanvas
+      resource={{ status: 'ready', data: workspaceVide, error: null }} eventResource={null}
+      target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={vi.fn()} onOpenClassic={onOpenClassic}
+      onEnsureCalendar={onEnsureCalendar}
+    />);
+  }
+
+  it('déclenche le provisionnement au lieu du cul-de-sac', async () => {
+    const onEnsureCalendar = vi.fn().mockResolvedValue(undefined);
+    renderCanvasSansCalendrier(onEnsureCalendar);
+
+    await waitFor(() => expect(onEnsureCalendar).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(/Aucun calendrier n’est disponible/)).not.toBeInTheDocument();
+  });
+
+  it('affiche un échec actionnable avec réessai et ouverture de l’Agenda', async () => {
+    const onEnsureCalendar = vi.fn().mockRejectedValue(new Error('réseau'));
+    const onOpenClassic = vi.fn();
+    renderCanvasSansCalendrier(onEnsureCalendar, onOpenClassic);
+
+    expect(await screen.findByText(/Impossible de préparer un calendrier/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    await waitFor(() => expect(onEnsureCalendar).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir l’Agenda' }));
+    expect(onOpenClassic).toHaveBeenCalledTimes(1);
+  });
+
+  it('ne provisionne pas quand un calendrier existe et affiche le formulaire', () => {
+    const onEnsureCalendar = vi.fn();
+    render(<MeetingWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }} eventResource={null}
+      target="new-event" onRetry={vi.fn()} onRetryEvent={vi.fn()} onCreateEvent={vi.fn()}
+      onCreateNote={vi.fn()} onAbandon={vi.fn()} onOpenClassic={vi.fn()}
+      onEnsureCalendar={onEnsureCalendar}
+    />);
+
+    expect(onEnsureCalendar).not.toHaveBeenCalled();
+    expect(screen.getByTestId('meeting-new-event-form')).toBeInTheDocument();
   });
 });

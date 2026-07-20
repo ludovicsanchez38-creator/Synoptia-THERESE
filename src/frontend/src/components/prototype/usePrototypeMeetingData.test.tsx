@@ -90,4 +90,46 @@ describe('usePrototypeMeetingData', () => {
     });
     expect(createEvent).toHaveBeenCalledWith(expect.objectContaining({ calendar_id: calendar.id }), undefined);
   });
+
+  // BUG-143 : sans calendrier (lecture pure createDefault:false sur une base vierge),
+  // « Préparer un événement » finissait sur un cul-de-sac. Le provisionnement du
+  // calendrier local n'a lieu qu'au geste explicite de création.
+  describe('ensureDefaultCalendar (BUG-143)', () => {
+    it('provisionne le calendrier par défaut à la demande et met à jour la ressource', async () => {
+      vi.mocked(listCalendars).mockResolvedValue([]);
+      vi.mocked(listEvents).mockResolvedValue([]);
+      const { result } = renderHook(() => usePrototypeMeetingData(true));
+      await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+      expect(result.current.resource.data?.calendars).toEqual([]);
+
+      vi.mocked(listCalendars).mockResolvedValueOnce([calendar]);
+      await act(async () => {
+        await result.current.ensureDefaultCalendar();
+      });
+
+      expect(listCalendars).toHaveBeenLastCalledWith(undefined);
+      expect(result.current.resource.data?.calendars).toEqual([calendar]);
+    });
+
+    it('ne rappelle pas l’API quand un calendrier existe déjà', async () => {
+      const { result } = renderHook(() => usePrototypeMeetingData(true));
+      await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+      const callsAvant = vi.mocked(listCalendars).mock.calls.length;
+
+      await act(async () => {
+        await result.current.ensureDefaultCalendar();
+      });
+
+      expect(vi.mocked(listCalendars).mock.calls.length).toBe(callsAvant);
+    });
+
+    it('échoue clairement si aucun calendrier ne peut être préparé', async () => {
+      vi.mocked(listCalendars).mockResolvedValue([]);
+      vi.mocked(listEvents).mockResolvedValue([]);
+      const { result } = renderHook(() => usePrototypeMeetingData(true));
+      await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+      await expect(result.current.ensureDefaultCalendar()).rejects.toThrow('calendrier');
+    });
+  });
 });
