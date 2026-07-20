@@ -14,6 +14,8 @@
  */
 import type { StreamChunk } from '../services/api/chat';
 import { runAction } from './actionRegistry';
+import { useChatStore } from '../stores/chatStore';
+import { useStatusStore } from '../stores/statusStore';
 
 export const CLIENT_ACTION_EVENT = 'therese:client-action';
 
@@ -24,6 +26,17 @@ export const CLIENT_ACTION_EVENT = 'therese:client-action';
  * d'une commande / de navigation (BUG-139 suite : dictée, zéro aller-retour).
  */
 export function runNavigationAction(actionId: string): boolean {
+  // F6 revue : pendant un streaming, naviguer démonterait le chat (mode
+  // classic sans autre garde) ou muterait l'état de navigation de la coque.
+  // État VIVANT du store (jamais une valeur capturée au rendu).
+  if (useChatStore.getState().isStreaming) {
+    useStatusStore.getState().addNotification({
+      type: 'warning',
+      title: 'Réponse en cours',
+      message: 'Arrête la réponse avant de changer de vue.',
+    });
+    return false;
+  }
   if (typeof window !== 'undefined') {
     const event = new CustomEvent(CLIENT_ACTION_EVENT, {
       detail: { actionId },

@@ -131,5 +131,28 @@ describe('usePrototypeMeetingData', () => {
 
       await expect(result.current.ensureDefaultCalendar()).rejects.toThrow('calendrier');
     });
+
+    it('F5 revue : deux appels concurrents partagent la même requête (un seul listCalendars)', async () => {
+      vi.mocked(listCalendars).mockResolvedValue([]);
+      vi.mocked(listEvents).mockResolvedValue([]);
+      const { result } = renderHook(() => usePrototypeMeetingData(true));
+      await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+      let resolveEnsure: (value: Calendar[]) => void = () => {};
+      vi.mocked(listCalendars).mockReturnValueOnce(new Promise<Calendar[]>((resolve) => {
+        resolveEnsure = resolve;
+      }));
+      const callsAvant = vi.mocked(listCalendars).mock.calls.length;
+
+      await act(async () => {
+        const p1 = result.current.ensureDefaultCalendar();
+        const p2 = result.current.ensureDefaultCalendar();
+        resolveEnsure([calendar]);
+        await Promise.all([p1, p2]);
+      });
+
+      expect(vi.mocked(listCalendars).mock.calls.length).toBe(callsAvant + 1);
+      expect(result.current.resource.data?.calendars).toEqual([calendar]);
+    });
   });
 });

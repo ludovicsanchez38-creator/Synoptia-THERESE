@@ -85,6 +85,20 @@ describe('handleClientActionChunk', () => {
     }
   });
 
+  it('F6 revue : refuse la navigation directe pendant un streaming (état vivant)', async () => {
+    const { useChatStore } = await import('../stores/chatStore');
+    const { useStatusStore } = await import('../stores/statusStore');
+    const notifsAvant = useStatusStore.getState().notifications.length;
+    useChatStore.setState({ isStreaming: true });
+    try {
+      expect(runNavigationAction('crm.open')).toBe(false);
+      expect(mockedRun).not.toHaveBeenCalled();
+      expect(useStatusStore.getState().notifications.length).toBe(notifsAvant + 1);
+    } finally {
+      useChatStore.setState({ isStreaming: false });
+    }
+  });
+
   it('ignore un chunk sans client_action exploitable', () => {
     expect(handleClientActionChunk({ type: 'client_action', content: '' } as never)).toBe(false);
     expect(

@@ -370,6 +370,43 @@ class TestEventsCreate:
         assert data["all_day"] is True
 
     @pytest.mark.asyncio
+    async def test_create_all_day_event_meme_date(self, client: AsyncClient):
+        """BUG-144 (F1 revue) : un evenement toute la journee d'un seul jour
+        (debut = fin, fin INCLUSIVE) doit passer la validation BACKEND aussi -
+        le schema refusait end <= start meme en journee entiere, donc l'UI
+        acceptait puis l'API repondait 422."""
+        cal = await _create_local_calendar(client)
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
+
+        response = await client.post("/api/calendar/events", json={
+            "calendar_id": cal["id"],
+            "summary": "Salon pro",
+            "start_date": today,
+            "end_date": today,
+        })
+
+        assert_response_ok(response)
+        data = response.json()
+        assert data["all_day"] is True
+        assert data["start_date"] == today
+        assert data["end_date"] == today
+
+    @pytest.mark.asyncio
+    async def test_create_all_day_event_fin_avant_debut_refusee(self, client: AsyncClient):
+        """La fin ne peut toujours pas PRECEDER le debut en journee entiere."""
+        cal = await _create_local_calendar(client)
+        today = datetime.now(UTC)
+
+        response = await client.post("/api/calendar/events", json={
+            "calendar_id": cal["id"],
+            "summary": "Salon pro",
+            "start_date": today.strftime("%Y-%m-%d"),
+            "end_date": (today - timedelta(days=1)).strftime("%Y-%m-%d"),
+        })
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
     async def test_create_event_google_requires_account(self, client: AsyncClient, sample_event_datetime):
         """POST /api/calendar/events - should require account_id for Google calendar."""
         event_data = {**sample_event_datetime, "calendar_id": "nonexistent"}
