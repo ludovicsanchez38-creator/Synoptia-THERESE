@@ -14,6 +14,23 @@ from typing import Literal, Optional
 logger = logging.getLogger(__name__)
 
 
+def allday_end_to_wire(end: date) -> date:
+    """BUG-144 : fin « toute la journée » vers le fil (Google / RFC 5545).
+
+    L'app est INCLUSIVE (la date de fin est un jour de l'événement), les
+    protocoles distants sont EXCLUSIFS (end.date / DTEND = lendemain du
+    dernier jour). Sans conversion, un événement d'un seul jour
+    (début = fin) est une plage vide pour Google.
+    """
+    return end + timedelta(days=1)
+
+
+def allday_end_from_wire(start: date, end: date) -> date:
+    """Fin « toute la journée » depuis le fil : exclusive -> inclusive, clampée
+    (une donnée dégénérée end <= start ne doit jamais rendre end < start)."""
+    return max(start, end - timedelta(days=1))
+
+
 @dataclass
 class CalendarDTO:
     """Data Transfer Object for calendars."""

@@ -19,6 +19,8 @@ from app.services.calendar.base_provider import (
     CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
+    allday_end_from_wire,
+    allday_end_to_wire,
 )
 from icalendar import Calendar as ICalendar
 from icalendar import Event as IEvent
@@ -299,7 +301,8 @@ class CalDAVProvider(CalendarProvider):
 
             if request.all_day:
                 vevent.add("dtstart", request.start if isinstance(request.start, date) else request.start.date())
-                vevent.add("dtend", request.end if isinstance(request.end, date) else request.end.date())
+                # BUG-144 : fin inclusive (app) -> exclusive (RFC 5545, DTEND)
+                vevent.add("dtend", allday_end_to_wire(request.end.date() if isinstance(request.end, datetime) else request.end))
             else:
                 start_dt = request.start if isinstance(request.start, datetime) else datetime.combine(request.start, datetime.min.time())
                 end_dt = request.end if isinstance(request.end, datetime) else datetime.combine(request.end, datetime.min.time())
@@ -402,7 +405,8 @@ class CalDAVProvider(CalendarProvider):
 
             if request.end is not None:
                 if request.all_day is True:
-                    vevent["dtend"] = vDate(request.end if isinstance(request.end, date) else request.end.date())
+                    # BUG-144 : fin inclusive (app) -> exclusive (RFC 5545, DTEND)
+                    vevent["dtend"] = vDate(allday_end_to_wire(request.end.date() if isinstance(request.end, datetime) else request.end))
                 else:
                     end_dt = request.end if isinstance(request.end, datetime) else datetime.combine(request.end, datetime.min.time())
                     if end_dt.tzinfo is None:
@@ -507,8 +511,11 @@ class CalDAVProvider(CalendarProvider):
 
         if dtend:
             end_val = dtend.dt
-            if isinstance(end_val, (datetime, date)):
+            if isinstance(end_val, datetime):
                 end = end_val
+            elif isinstance(end_val, date):
+                # BUG-144 : DTEND exclusif (RFC 5545) -> fin inclusive (app)
+                end = allday_end_from_wire(start, end_val) if isinstance(start, date) and not isinstance(start, datetime) else end_val
 
         # Extract attendees
         attendees = []
