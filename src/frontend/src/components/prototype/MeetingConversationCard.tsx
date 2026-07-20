@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   Calendar,
@@ -165,6 +165,46 @@ export function MeetingAgendaCard({
   );
 }
 
+// BUG-143 : la coque lit les calendriers en lecture pure (createDefault: false) ;
+// sur une base vierge il n'en existe aucun et le formulaire était remplacé par un
+// avertissement sans issue, perçu comme un bouton « Préparer un événement » inerte.
+// Le geste explicite de création provisionne ici le calendrier local par défaut.
+function CalendarProvisioning({
+  onEnsure,
+  onOpenClassic,
+}: {
+  onEnsure: () => Promise<void>;
+  onOpenClassic: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const runEnsure = useCallback(() => {
+    setFailed(false);
+    onEnsure().catch(() => setFailed(true));
+  }, [onEnsure]);
+
+  useEffect(() => {
+    runEnsure();
+  }, [runEnsure]);
+
+  if (failed) {
+    return (
+      <div className="rounded-[12px] border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="meeting-calendar-provisioning-error">
+        <p>Impossible de préparer un calendrier pour le moment.</p>
+        <div className="mt-3 flex gap-2">
+          <button type="button" onClick={runEnsure} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button>
+          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir l’Agenda</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted" role="status" data-testid="meeting-calendar-provisioning">
+      <Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je prépare ton calendrier local…
+    </div>
+  );
+}
+
 function NewEventForm({
   data,
   onCreate,
@@ -231,10 +271,6 @@ function NewEventForm({
     } finally {
       setPending(false);
     }
-  }
-
-  if (data.calendars.length === 0) {
-    return <div className="rounded-[12px] border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning">Aucun calendrier n’est disponible. Ouvre Agenda pour terminer la configuration.</div>;
   }
 
   return (
@@ -389,6 +425,7 @@ export function MeetingWorkspaceCanvas({
   onCreateNote,
   onAbandon,
   onOpenClassic,
+  onEnsureCalendar,
 }: {
   resource: ReadResource<MeetingWorkspaceData>;
   eventResource: ReadResource<MeetingEventContext> | null;
@@ -399,6 +436,7 @@ export function MeetingWorkspaceCanvas({
   onCreateNote: (eventId: string, contactId: string, description: string) => Promise<unknown>;
   onAbandon: () => void;
   onOpenClassic: () => void;
+  onEnsureCalendar: () => Promise<void>;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -411,7 +449,9 @@ export function MeetingWorkspaceCanvas({
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Chargement de l’agenda…</div>
           : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
-            : target === 'new-event' ? <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />
+            : target === 'new-event' ? (resource.data.calendars.length === 0
+              ? <CalendarProvisioning onEnsure={onEnsureCalendar} onOpenClassic={onOpenClassic} />
+              : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
               : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je rassemble le contexte exact…</div>
                 : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
                   : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />

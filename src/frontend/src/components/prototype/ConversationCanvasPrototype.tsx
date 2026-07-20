@@ -196,6 +196,7 @@ function ContextCanvas({
   onRetryMeetingEvent,
   onCreateMeetingEvent,
   onCreateMeetingNote,
+  onEnsureMeetingCalendar,
   onRetryInvoices,
   onRetryInvoice,
   onCreateDevisDraft,
@@ -245,6 +246,7 @@ function ContextCanvas({
   onRetryMeetingEvent: () => void;
   onCreateMeetingEvent: (request: CreateEventRequest) => Promise<CalendarEvent>;
   onCreateMeetingNote: (eventId: string, contactId: string, description: string) => Promise<ActivityResponse>;
+  onEnsureMeetingCalendar: () => Promise<void>;
   onRetryInvoices: () => void;
   onRetryInvoice: () => void;
   onCreateDevisDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
@@ -321,6 +323,7 @@ function ContextCanvas({
           onRetryEvent={onRetryMeetingEvent}
           onCreateEvent={onCreateMeetingEvent}
           onCreateNote={onCreateMeetingNote}
+          onEnsureCalendar={onEnsureMeetingCalendar}
           onAbandon={onClose}
           onOpenClassic={() => onOpenView('calendar')}
         />
@@ -617,6 +620,7 @@ export function ConversationCanvasPrototype() {
     refresh: refreshMeeting,
     openEvent: openMeetingEvent,
     retryEvent: retryMeetingEvent,
+    ensureDefaultCalendar: ensureMeetingCalendar,
     createCalendarEvent: createMeetingEvent,
     createMeetingNote,
   } = usePrototypeMeetingData(scenario === 'meeting');
@@ -1543,6 +1547,7 @@ export function ConversationCanvasPrototype() {
                     return created;
                   }}
                   onCreateMeetingNote={createMeetingNote}
+                  onEnsureMeetingCalendar={ensureMeetingCalendar}
                   onRetryInvoices={() => void refreshInvoices()}
                   onRetryInvoice={() => void retryInvoice()}
                   onCreateDevisDraft={createDevisDraft}
