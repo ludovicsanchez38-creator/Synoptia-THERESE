@@ -116,3 +116,45 @@ describe('EventForm - confirmation 0.40', () => {
     });
   });
 });
+
+// BUG-144 : un événement « toute la journée » limité à une seule date doit être
+// accepté (début = fin). La règle reste stricte pour les événements horaires.
+describe('EventForm - toute la journée (BUG-144)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createEventMock.mockResolvedValue({ ...existingEvent, id: 'event-created' });
+  });
+
+  function renderAllDayForm(endValue: string) {
+    seedCalendar();
+    const { container } = render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EventForm />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+    fireEvent.change(screen.getByPlaceholderText("Titre de l'événement"), {
+      target: { value: 'Salon pro' },
+    });
+    fireEvent.click(screen.getByLabelText('Événement sur toute la journée'));
+    const dates = container.querySelectorAll('input[type="date"]');
+    expect(dates).toHaveLength(2);
+    fireEvent.change(dates[0], { target: { value: '2026-07-19' } });
+    fireEvent.change(dates[1], { target: { value: endValue } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+  }
+
+  it('accepte une même date de début et de fin', async () => {
+    renderAllDayForm('2026-07-19');
+
+    const preview = await screen.findByTestId('external-action-confirmation');
+    expect(preview).toHaveTextContent('2026-07-19');
+    expect(screen.queryByText('La date de fin doit être postérieure à la date de début.')).not.toBeInTheDocument();
+  });
+
+  it('refuse toujours une fin antérieure au début', async () => {
+    renderAllDayForm('2026-07-18');
+
+    expect(await screen.findByText(/date de fin/)).toBeInTheDocument();
+    expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
+  });
+});

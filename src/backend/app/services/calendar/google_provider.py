@@ -14,6 +14,8 @@ from app.services.calendar.base_provider import (
     CalendarProvider,
     CreateEventRequest,
     UpdateEventRequest,
+    allday_end_from_wire,
+    allday_end_to_wire,
 )
 from app.services.calendar_service import CalendarService
 
@@ -161,7 +163,10 @@ class GoogleCalendarProvider(CalendarProvider):
         # Build start/end objects
         if request.all_day:
             start = {"date": request.start.strftime("%Y-%m-%d") if isinstance(request.start, (date, datetime)) else str(request.start)}
-            end = {"date": request.end.strftime("%Y-%m-%d") if isinstance(request.end, (date, datetime)) else str(request.end)}
+            # BUG-144 : fin inclusive (app) -> exclusive (Google), sinon un
+            # événement d'un seul jour (début = fin) est une plage vide.
+            end_date = request.end.date() if isinstance(request.end, datetime) else request.end
+            end = {"date": allday_end_to_wire(end_date).strftime("%Y-%m-%d")}
         else:
             start_dt = request.start if isinstance(request.start, datetime) else datetime.combine(request.start, datetime.min.time())
             end_dt = request.end if isinstance(request.end, datetime) else datetime.combine(request.end, datetime.min.time())
@@ -201,7 +206,9 @@ class GoogleCalendarProvider(CalendarProvider):
 
         if request.end is not None:
             if request.all_day is True:
-                end = {"date": request.end.strftime("%Y-%m-%d") if isinstance(request.end, (date, datetime)) else str(request.end)}
+                # BUG-144 : fin inclusive (app) -> exclusive (Google)
+                end_date = request.end.date() if isinstance(request.end, datetime) else request.end
+                end = {"date": allday_end_to_wire(end_date).strftime("%Y-%m-%d")}
             else:
                 end_dt = request.end if isinstance(request.end, datetime) else datetime.combine(request.end, datetime.min.time())
                 end = {"dateTime": end_dt.isoformat(), "timeZone": request.timezone or "Europe/Paris"}
@@ -255,7 +262,8 @@ class GoogleCalendarProvider(CalendarProvider):
 
         if all_day:
             start = datetime.strptime(start_obj["date"], "%Y-%m-%d").date()
-            end = datetime.strptime(end_obj["date"], "%Y-%m-%d").date()
+            # BUG-144 : fin exclusive (Google) -> inclusive (app), clampée
+            end = allday_end_from_wire(start, datetime.strptime(end_obj["date"], "%Y-%m-%d").date())
         else:
             start_str = start_obj.get("dateTime", "")
             end_str = end_obj.get("dateTime", "")

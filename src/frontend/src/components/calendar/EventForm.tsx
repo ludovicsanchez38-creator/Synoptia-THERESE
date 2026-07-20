@@ -111,10 +111,14 @@ export function EventForm() {
     // des timestamps locaux : juste même autour des changements d'heure (DST) — revue F3.
     const startKey = allDay ? startDate : `${startDate}T${startTime}`;
     const endKey = allDay ? endDate : `${endDate}T${endTime}`;
-    if (endKey <= startKey) {
+    // BUG-144 : en « toute la journée », début = fin est un événement d'un
+    // seul jour, valide (la fin est INCLUSIVE dans l'app). La règle reste
+    // stricte pour les événements horaires.
+    const endInvalid = allDay ? endKey < startKey : endKey <= startKey;
+    if (endInvalid) {
       setFormError(
         allDay
-          ? 'La date de fin doit être postérieure à la date de début.'
+          ? 'La date de fin ne peut pas précéder la date de début.'
           : "La date et l'heure de fin doivent être postérieures au début."
       );
       return;
