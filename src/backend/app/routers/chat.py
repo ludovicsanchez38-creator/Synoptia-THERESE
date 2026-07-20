@@ -1351,7 +1351,7 @@ async def _do_stream_response(
         if "list_calendar_events" in tool_names:
             capabilities += "- **list_calendar_events** / **create_calendar_event** : Consulter et creer des evenements dans le calendrier.\n"
         if "search_invoices" in tool_names:
-            capabilities += "- **search_invoices** : Retrouver une facture, un devis ou un avoir LOCAL par sa reference (ex: FACT-2026-001) ou par client. Utilise-le AU LIEU de dire que tu ne peux pas chercher les documents locaux, et ne propose JAMAIS de recreer un document existant.\n"
+            capabilities += "- **search_invoices** : Retrouver une facture, un devis ou un avoir LOCAL par sa reference (ex: FACT-2026-001) ou par client. Utilise-le AU LIEU de dire que tu ne peux pas chercher les documents locaux, et ne propose JAMAIS de recreer un document existant. L'envoi d'une facture en piece jointe par email est IMPOSSIBLE pour le moment : n'utilise pas send_email pour ca, oriente vers la vue Facturation.\n"
         if "read_contact" in tool_names:
             capabilities += "- **read_contact** : Lire la fiche complete d'un contact (coordonnees, notes, stage, score, interactions). Utilise-le AU LIEU d'inventer le contexte client.\n"
         if "generate_document" in tool_names:

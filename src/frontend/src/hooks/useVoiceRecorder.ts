@@ -16,22 +16,33 @@ export type RecordingState = 'idle' | 'recording' | 'processing';
  * disent QUELLE permission activer, comme attendu par la fiche testeur.
  */
 export function microphoneErrorMessage(err: unknown): string {
-  if (err instanceof DOMException) {
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError') {
-      return (
-        'Accès au micro refusé. Autorise le microphone pour THÉRÈSE : '
-        + 'Windows : Paramètres > Confidentialité > Microphone ; '
-        + 'macOS : Réglages Système > Confidentialité et sécurité > Microphone.'
-      );
-    }
-    if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' || err.name === 'OverconstrainedError') {
-      return 'Aucun micro détecté. Branche un micro ou vérifie qu\'il est activé dans le système.';
-    }
-    if (err.name === 'NotReadableError' || err.name === 'TrackStartError' || err.name === 'AbortError') {
-      return 'Le micro est occupé par une autre application. Ferme-la puis réessaie.';
-    }
+  // F10 revue : le plugin Tauri (app packagée) rejette en CHAÎNE ou en Error
+  // native, pas en DOMException - on mappe donc sur le TEXTE de l'erreur,
+  // en incluant le name des DOMException du chemin Web getUserMedia.
+  const text = err instanceof DOMException
+    ? `${err.name} ${err.message}`
+    : err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : '';
+  const lower = text.toLowerCase();
+
+  if (/notallowed|permissiondenied|security|permission|denied|unauthorized/.test(lower)) {
+    return (
+      'Accès au micro refusé. Autorise le microphone pour THÉRÈSE : '
+      + 'Windows : Paramètres > Confidentialité > Microphone ; '
+      + 'macOS : Réglages Système > Confidentialité et sécurité > Microphone.'
+    );
+  }
+  if (/notfound|devicesnotfound|overconstrained|no (input )?device|device not found|no such device/.test(lower)) {
+    return 'Aucun micro détecté. Branche un micro ou vérifie qu\'il est activé dans le système.';
+  }
+  if (/notreadable|trackstart|abort|busy|in use|already in use/.test(lower)) {
+    return 'Le micro est occupé par une autre application. Ferme-la puis réessaie.';
   }
   if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'string' && err.trim()) return err;
   return 'Impossible d\'accéder au microphone';
 }
 

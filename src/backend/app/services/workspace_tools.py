@@ -353,15 +353,18 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     if not query:
         return "Erreur : indique une référence (ex: FACT-2026-001) ou un nom de client."
 
-    pattern = f"%{query}%"
+    # F8 revue : % et _ sont des jokers ILIKE - échappés, sinon une requête
+    # « % » retourne arbitrairement les dernières factures.
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    pattern = f"%{escaped}%"
     statement = (
         select(Invoice, Contact)
         .join(Contact, Contact.id == Invoice.contact_id)
         .where(
-            Invoice.invoice_number.ilike(pattern)
-            | Contact.first_name.ilike(pattern)
-            | Contact.last_name.ilike(pattern)
-            | Contact.company.ilike(pattern)
+            Invoice.invoice_number.ilike(pattern, escape="\\")
+            | Contact.first_name.ilike(pattern, escape="\\")
+            | Contact.last_name.ilike(pattern, escape="\\")
+            | Contact.company.ilike(pattern, escape="\\")
         )
         .order_by(Invoice.issue_date.desc())
         .limit(10)
@@ -384,12 +387,18 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
             f"{invoice.total_ttc:.2f} {invoice.currency} TTC, "
             f"statut {invoice.status}, émise le {invoice.issue_date.date().isoformat()}"
         )
+    # F9 revue : les noms/sociétés des contacts sont des données NON FIABLES
+    # réinjectées dans la boucle LLM - mêmes délimiteurs que les emails.
+    from app.services.prompt_security import get_prompt_security
+
+    listing = get_prompt_security().sanitize_for_context("\n".join(lines), source="factures")
     guidance = (
         "\n\nPour l'envoyer par email : ouvre la vue Facturation, sélectionne le "
-        "document et génère son PDF. L'envoi direct en pièce jointe depuis le chat "
-        "n'est pas encore disponible - ne promets pas cet envoi."
+        "document et génère son PDF. L'envoi en pièce jointe depuis le chat est "
+        "IMPOSSIBLE pour le moment : n'appelle PAS send_email pour transmettre "
+        "cette facture et ne prétends jamais l'avoir envoyée."
     )
-    return f"{len(rows)} document(s) trouvé(s) :\n" + "\n".join(lines) + guidance
+    return f"{len(rows)} document(s) trouvé(s) :\n{listing}{guidance}"
 
 
 async def _generate_document(args: dict, session: AsyncSession) -> str:

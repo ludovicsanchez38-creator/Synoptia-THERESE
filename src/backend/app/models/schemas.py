@@ -674,8 +674,14 @@ class CreateEventRequest(BaseModel):
                 end = date.fromisoformat(self.end_date)
         except ValueError as exc:
             raise ValueError("Format de date ou d'heure invalide") from exc
-        if end <= start:
-            raise ValueError("La fin doit être postérieure au début")
+        # BUG-144 : en journée entière, début = fin est un événement d'un seul
+        # jour (la fin est INCLUSIVE dans l'app). Les horaires restent
+        # strictement croissants.
+        if timed_complete:
+            if end <= start:
+                raise ValueError("La fin doit être postérieure au début")
+        elif end < start:
+            raise ValueError("La fin ne peut pas précéder le début")
 
         if self.timezone:
             try:

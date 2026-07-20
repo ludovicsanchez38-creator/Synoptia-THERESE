@@ -8,6 +8,7 @@ import logging
 from datetime import UTC
 
 import vobject
+from app.services.calendar.base_provider import allday_end_from_wire
 from icalendar import Calendar
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,11 @@ def parse_ics(content: bytes) -> list[dict]:
 
         # Convertir en datetime si c'est une date
         if all_day:
+            # BUG-144 (F4 revue) : DTEND est EXCLUSIF dans ICS (RFC 5545),
+            # l'app stocke une fin INCLUSIVE. Sans DTEND, l'événement dure
+            # un seul jour (end_dt retombe déjà sur start_dt).
+            if dtend is not None:
+                end_dt = allday_end_from_wire(start_dt, end_dt)
             start_str = start_dt.isoformat()
             end_str = end_dt.isoformat()
         else:

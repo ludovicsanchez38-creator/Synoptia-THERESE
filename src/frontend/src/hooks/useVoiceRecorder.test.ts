@@ -265,11 +265,30 @@ describe('useVoiceRecorder', () => {
       expect(microphoneErrorMessage(err)).toContain('autre application');
     });
 
-    it('retombe sur le message de l’erreur sinon', async () => {
+    it('retombe sur le message de l’erreur sinon, générique en dernier recours', async () => {
       const { microphoneErrorMessage } = await import('./useVoiceRecorder');
 
       expect(microphoneErrorMessage(new Error('Plugin micro non disponible'))).toBe('Plugin micro non disponible');
-      expect(microphoneErrorMessage('boom')).toContain('microphone');
+      // Une chaîne inconnue du plugin reste plus utile affichée telle quelle
+      expect(microphoneErrorMessage('boom')).toBe('boom');
+      expect(microphoneErrorMessage(42)).toContain('microphone');
+    });
+
+    // F10 revue : dans l'app packagée, le hook privilégie le plugin Tauri dont
+    // les rejets invoke arrivent en CHAÎNE (pas en DOMException) - le mapping
+    // doit aussi couvrir ces formes.
+    it('mappe les erreurs chaîne du plugin Tauri (permission)', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+
+      expect(microphoneErrorMessage('Permission denied by the user')).toContain('Autorise le microphone');
+      expect(microphoneErrorMessage(new Error('Access is denied.'))).toContain('Confidentialité');
+    });
+
+    it('mappe les erreurs chaîne du plugin Tauri (périphérique absent ou occupé)', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+
+      expect(microphoneErrorMessage('No input device found')).toContain('Aucun micro');
+      expect(microphoneErrorMessage('Device already in use')).toContain('autre application');
     });
   });
 });

@@ -10,7 +10,7 @@ Local First - Multi-Provider
 
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.models.database import get_session
@@ -28,6 +28,7 @@ from app.models.schemas_calendar import (
     CalDAVTestRequest,
 )
 from app.routers.email import ensure_valid_access_token
+from app.services.calendar.base_provider import allday_end_from_wire, allday_end_to_wire
 from app.services.calendar.provider_factory import (
     get_calendar_provider,
     list_caldav_presets,
@@ -54,6 +55,29 @@ def _validate_timezone(tz: str | None) -> str:
     except (ZoneInfoNotFoundError, ValueError):
         return "Europe/Paris"
     return tz
+
+
+def _google_allday_end_inclusive(start_obj: dict[str, str], end_obj: dict[str, str]) -> str | None:
+    """BUG-144 (F2 revue) : end.date Google est EXCLUSIF (lendemain du dernier
+    jour), l'app est INCLUSIVE. Conversion clampée à la lecture des réponses
+    Google avant stockage local."""
+    end_raw = end_obj.get("date")
+    if not end_raw:
+        return None
+    start_raw = start_obj.get("date")
+    if not start_raw:
+        return str(end_raw)
+    inclusive: date = allday_end_from_wire(
+        date.fromisoformat(start_raw), date.fromisoformat(end_raw)
+    )
+    return inclusive.isoformat()
+
+
+def _google_allday_end_exclusive(end_value: str) -> str:
+    """Fin « toute la journée » inclusive (app) -> exclusive (Google). Sans
+    +1 jour, un événement d'un seul jour (début = fin) est une plage vide."""
+    exclusive: date = allday_end_to_wire(date.fromisoformat(end_value))
+    return exclusive.isoformat()
 
 
 # ============================================================
@@ -653,7 +677,7 @@ async def _list_events_google(
                 existing_event.location = event_data.get("location")
                 if all_day:
                     existing_event.start_date = start_obj.get("date")
-                    existing_event.end_date = end_obj.get("date")
+                    existing_event.end_date = _google_allday_end_inclusive(start_obj, end_obj)
                 else:
                     existing_event.start_datetime = datetime.fromisoformat(
                         start_obj["dateTime"].replace("Z", "")
@@ -678,7 +702,7 @@ async def _list_events_google(
                     description=event_data.get("description"),
                     location=event_data.get("location"),
                     start_date=start_obj.get("date") if all_day else None,
-                    end_date=end_obj.get("date") if all_day else None,
+                    end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
                     start_datetime=(
                         datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
                         if not all_day
@@ -871,7 +895,7 @@ async def _create_event_google(
             end = {"dateTime": request.end_datetime, "timeZone": event_tz}
         elif request.start_date and request.end_date:
             start = {"date": request.start_date}
-            end = {"date": request.end_date}
+            end = {"date": _google_allday_end_exclusive(request.end_date)}
         else:
             raise HTTPException(
                 status_code=400,
@@ -900,7 +924,7 @@ async def _create_event_google(
             description=event_data.get("description"),
             location=event_data.get("location"),
             start_date=start_obj.get("date") if all_day else None,
-            end_date=end_obj.get("date") if all_day else None,
+            end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
             start_datetime=(
                 datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
                 if not all_day
@@ -1032,7 +1056,11 @@ async def update_event(
         end = (
             {"dateTime": request.end_datetime, "timeZone": event_tz}
             if request.end_datetime
-            else ({"date": request.end_date} if request.end_date else None)
+            else (
+                {"date": _google_allday_end_exclusive(request.end_date)}
+                if request.end_date
+                else None
+            )
         )
 
         event_data = await calendar_service.update_event(
@@ -1058,7 +1086,7 @@ async def update_event(
             db_event.location = event_data.get("location")
             if all_day_flag:
                 db_event.start_date = start_obj.get("date")
-                db_event.end_date = end_obj.get("date")
+                db_event.end_date = _google_allday_end_inclusive(start_obj, end_obj)
             else:
                 db_event.start_datetime = datetime.fromisoformat(
                     start_obj["dateTime"].replace("Z", "")
@@ -1193,7 +1221,7 @@ async def quick_add_event(
             description=event_data.get("description"),
             location=event_data.get("location"),
             start_date=start_obj.get("date") if all_day else None,
-            end_date=end_obj.get("date") if all_day else None,
+            end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
             start_datetime=(
                 datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
                 if not all_day
@@ -1475,7 +1503,9 @@ async def export_ics_file(
         if evt.all_day and evt.start_date:
             ie.add("dtstart", date_type.fromisoformat(evt.start_date))
             if evt.end_date:
-                ie.add("dtend", date_type.fromisoformat(evt.end_date))
+                # BUG-144 (F4 revue) : DTEND est EXCLUSIF (RFC 5545), la fin
+                # stockée est INCLUSIVE -> +1 jour à l'export.
+                ie.add("dtend", allday_end_to_wire(date_type.fromisoformat(evt.end_date)))
         elif evt.start_datetime:
             ie.add("dtstart", evt.start_datetime)
             if evt.end_datetime:

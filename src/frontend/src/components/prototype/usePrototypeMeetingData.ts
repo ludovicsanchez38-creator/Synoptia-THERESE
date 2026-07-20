@@ -188,16 +188,29 @@ export function usePrototypeMeetingData(enabled = true) {
   // base vierge n'a aucun calendrier et « Préparer un événement » finissait sur un
   // cul-de-sac. Le calendrier local par défaut n'est provisionné qu'ici, au geste
   // explicite de création (parité avec l'Agenda complet, cf BUG-120).
+  const ensurePending = useRef<Promise<void> | null>(null);
   const ensureDefaultCalendar = useCallback(async () => {
     const data = workspace.current;
     if (!data || data.calendars.length > 0) return;
-    const calendars = uniqueCalendars(await listCalendars(undefined));
-    if (calendars.length === 0) {
-      throw new Error('Aucun calendrier n’a pu être préparé.');
+    // F5 revue : les appels concurrents (remontage rapide, StrictMode en dev)
+    // partagent la même requête en vol - sinon deux create_default simultanés
+    // sur une base vierge peuvent créer deux calendriers.
+    if (!ensurePending.current) {
+      ensurePending.current = (async () => {
+        const calendars = uniqueCalendars(await listCalendars(undefined));
+        if (calendars.length === 0) {
+          throw new Error('Aucun calendrier n’a pu être préparé.');
+        }
+        const current = workspace.current;
+        if (!current) return;
+        const nextData = { ...current, calendars };
+        workspace.current = nextData;
+        setResource({ status: 'ready', data: nextData, error: null });
+      })().finally(() => {
+        ensurePending.current = null;
+      });
     }
-    const nextData = { ...data, calendars };
-    workspace.current = nextData;
-    setResource({ status: 'ready', data: nextData, error: null });
+    return ensurePending.current;
   }, []);
 
   const createCalendarEvent = useCallback(async (request: CreateEventRequest) => {

@@ -92,3 +92,116 @@ class TestGoogleAlldaySemantics:
         dto = provider._gevent_to_dto(gevent, "cal-1")
 
         assert dto.end == date(2026, 7, 19)
+
+
+class TestIcsAlldaySemantics:
+    """F4 revue : DTEND est EXCLUSIF dans ICS (RFC 5545). L'import doit stocker
+    une fin inclusive, l'export doit écrire DTEND = fin + 1 jour."""
+
+    def test_import_ics_fin_exclusive_devient_inclusive(self):
+        from app.services.import_service import parse_ics
+
+        ics = (
+            b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n"
+            b"UID:evt-1\r\nSUMMARY:Salon pro\r\n"
+            b"DTSTART;VALUE=DATE:20260719\r\nDTEND;VALUE=DATE:20260720\r\n"
+            b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+
+        events = parse_ics(ics)
+
+        assert len(events) == 1
+        assert events[0]["all_day"] is True
+        assert events[0]["start"] == "2026-07-19"
+        # 1 seul jour : DTEND exclusif 20 -> fin inclusive 19
+        assert events[0]["end"] == "2026-07-19"
+
+    def test_import_ics_sans_dtend_reste_un_jour(self):
+        from app.services.import_service import parse_ics
+
+        ics = (
+            b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n"
+            b"UID:evt-2\r\nSUMMARY:Salon\r\n"
+            b"DTSTART;VALUE=DATE:20260719\r\n"
+            b"END:VEVENT\r\nEND:VCALENDAR\r\n"
+        )
+
+        events = parse_ics(ics)
+
+        assert events[0]["end"] == "2026-07-19"
+
+    @pytest.mark.asyncio
+    async def test_export_ics_ecrit_dtend_exclusif(self, client):
+        cal = (await client.post("/api/calendar/calendars", json={
+            "name": "Local export", "provider": "local",
+        })).json()
+        created = await client.post("/api/calendar/events", json={
+            "calendar_id": cal["id"], "summary": "Salon pro",
+            "start_date": "2026-07-19", "end_date": "2026-07-19",
+        })
+        assert created.status_code == 200, created.text
+
+        response = await client.get("/api/calendar/export-ics")
+
+        assert response.status_code == 200
+        body = response.content.decode()
+        assert "DTSTART;VALUE=DATE:20260719" in body
+        # Fin inclusive 19 -> DTEND exclusif 20 (RFC 5545)
+        assert "DTEND;VALUE=DATE:20260720" in body
+
+
+class TestGoogleRoutesAlldaySemantics:
+    """F2 revue : les routes calendrier Google (routers/calendar.py) passent
+    par CalendarService DIRECTEMENT, pas par GoogleCalendarProvider - les
+    conversions inclusif/exclusif doivent s'appliquer la aussi, a l'ecriture
+    (end.date envoye a Google) ET au stockage local (end_date relu).
+    """
+
+    @pytest.mark.asyncio
+    async def test_create_route_envoie_fin_exclusive_et_stocke_inclusif(self):
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from app.models.entities import EmailAccount
+        from app.models.schemas import CreateEventRequest
+        from app.routers.calendar import _create_event_google
+
+        request = CreateEventRequest(
+            calendar_id="primary", summary="Salon pro",
+            start_date="2026-07-19", end_date="2026-07-19",
+        )
+
+        captured: dict = {}
+        stored: list = []
+
+        class FakeCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def create_event(self, **kwargs):
+                captured.update(kwargs)
+                return {
+                    "id": "evt-1", "summary": kwargs["summary"],
+                    "start": kwargs["start"], "end": kwargs["end"],
+                    "status": "confirmed",
+                }
+
+        account = EmailAccount(id="acc-1", email="t@example.com", provider="gmail", access_token="tok")
+        session = MagicMock()
+        session.get = AsyncMock(return_value=account)
+        session.add = MagicMock(side_effect=stored.append)
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+
+        with patch("app.routers.calendar.CalendarService", FakeCalendarService), patch(
+            "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
+        ):
+            await _create_event_google("acc-1", request, session)
+
+        # Vers Google : fin EXCLUSIVE (+1 jour), sinon plage vide refusee
+        assert captured["start"] == {"date": "2026-07-19"}
+        assert captured["end"] == {"date": "2026-07-20"}
+        # Stockage local : fin INCLUSIVE (relue depuis la reponse Google)
+        events = [obj for obj in stored if getattr(obj, "end_date", None)]
+        assert events, "aucun CalendarEvent stocke"
+        assert events[0].start_date == "2026-07-19"
+        assert events[0].end_date == "2026-07-19"
