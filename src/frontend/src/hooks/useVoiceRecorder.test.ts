@@ -236,4 +236,40 @@ describe('useVoiceRecorder', () => {
       expect(typeof result.current.stopRecording).toBe('function');
     });
   });
+
+  // BUG-145 : « Impossible d'accéder au microphone » sans aucune piste. Les
+  // DOMException de getUserMedia sont mappées vers des messages actionnables
+  // (permission à activer, micro absent, micro occupé).
+  describe('microphoneErrorMessage (BUG-145)', () => {
+    it('guide vers les réglages de permission quand l’accès est refusé', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+      const err = new DOMException('Permission denied', 'NotAllowedError');
+
+      const message = microphoneErrorMessage(err);
+
+      expect(message).toContain('Autorise le microphone');
+      expect(message).toContain('Confidentialité');
+    });
+
+    it('signale un micro absent', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+      const err = new DOMException('Requested device not found', 'NotFoundError');
+
+      expect(microphoneErrorMessage(err)).toContain('Aucun micro');
+    });
+
+    it('signale un micro occupé par une autre application', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+      const err = new DOMException('Could not start audio source', 'NotReadableError');
+
+      expect(microphoneErrorMessage(err)).toContain('autre application');
+    });
+
+    it('retombe sur le message de l’erreur sinon', async () => {
+      const { microphoneErrorMessage } = await import('./useVoiceRecorder');
+
+      expect(microphoneErrorMessage(new Error('Plugin micro non disponible'))).toBe('Plugin micro non disponible');
+      expect(microphoneErrorMessage('boom')).toContain('microphone');
+    });
+  });
 });

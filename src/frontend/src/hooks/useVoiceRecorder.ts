@@ -10,6 +10,31 @@ import * as api from '../services/api';
 
 export type RecordingState = 'idle' | 'recording' | 'processing';
 
+/**
+ * BUG-145 : les DOMException de getUserMedia (« Permission denied »…) sont
+ * cryptiques et en anglais. On les mappe vers des messages actionnables qui
+ * disent QUELLE permission activer, comme attendu par la fiche testeur.
+ */
+export function microphoneErrorMessage(err: unknown): string {
+  if (err instanceof DOMException) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError') {
+      return (
+        'Accès au micro refusé. Autorise le microphone pour THÉRÈSE : '
+        + 'Windows : Paramètres > Confidentialité > Microphone ; '
+        + 'macOS : Réglages Système > Confidentialité et sécurité > Microphone.'
+      );
+    }
+    if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError' || err.name === 'OverconstrainedError') {
+      return 'Aucun micro détecté. Branche un micro ou vérifie qu\'il est activé dans le système.';
+    }
+    if (err.name === 'NotReadableError' || err.name === 'TrackStartError' || err.name === 'AbortError') {
+      return 'Le micro est occupé par une autre application. Ferme-la puis réessaie.';
+    }
+  }
+  if (err instanceof Error && err.message) return err.message;
+  return 'Impossible d\'accéder au microphone';
+}
+
 interface UseVoiceRecorderOptions {
   onTranscript?: (text: string) => void;
   onError?: (error: string) => void;
@@ -279,7 +304,9 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
         await startRecordingWeb();
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Impossible d\'accéder au microphone';
+      // BUG-145 : message actionnable (quelle permission activer) plutôt que
+      // le libellé brut de getUserMedia.
+      const errorMsg = microphoneErrorMessage(err);
       setError(errorMsg);
       onError?.(errorMsg);
       setState('idle');
