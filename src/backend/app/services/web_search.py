@@ -5,6 +5,7 @@ Provides web search capabilities for LLMs.
 Supports Brave Search (with API key) and DuckDuckGo (free fallback).
 """
 
+import importlib.util
 import logging
 import re
 from dataclasses import dataclass
@@ -520,8 +521,32 @@ BROWSER_TOOL = {
 }
 
 
+def browser_tool_available() -> bool:
+    """BUG-141 : playwright est une dépendance optionnelle (extra e2e), absente
+    de l'app packagée (PyInstaller). L'outil browser ne doit être annoncé au
+    LLM que si le module est réellement importable, sinon tout appel finit en
+    « No module named 'playwright' » chez l'utilisateur.
+    """
+    return importlib.util.find_spec("playwright") is not None
+
+
+def web_tools() -> list[dict[str, Any]]:
+    """Outils web à annoncer au LLM selon les capacités de l'installation."""
+    tools: list[dict[str, Any]] = [WEB_SEARCH_TOOL]
+    if browser_tool_available():
+        tools.append(BROWSER_TOOL)
+    return tools
+
+
 async def execute_browser_action(arguments: dict[str, Any]) -> str:
     """Exécute une action browser via le browser agent."""
+    if not browser_tool_available():
+        return (
+            "La navigation web n'est pas disponible dans cette installation. "
+            "Réponds à partir des données locales (emails, contacts, calendrier, "
+            "fichiers) ou utilise web_search."
+        )
+
     from app.services.browser_agent import get_browser_agent
 
     agent = get_browser_agent()

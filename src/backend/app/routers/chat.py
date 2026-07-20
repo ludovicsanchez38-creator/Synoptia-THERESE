@@ -61,10 +61,9 @@ from app.services.tool_confirmations import (
     requires_confirmation,
 )
 from app.services.web_search import (
-    BROWSER_TOOL,
-    WEB_SEARCH_TOOL,
     execute_browser_action,
     execute_web_search,
+    web_tools,
 )
 from app.services.workspace_tools import (
     WORKSPACE_TOOL_NAMES,
@@ -1328,9 +1327,11 @@ async def _do_stream_response(
         # Add workspace tools (email, calendar)
         tools = WORKSPACE_TOOLS + tools
 
-        # Add web_search + browser tools for non-Gemini providers (if enabled)
+        # Add web_search + browser tools for non-Gemini providers (if enabled).
+        # BUG-141 : le browser n'est annoncé que si playwright est importable
+        # (dépendance optionnelle e2e, absente de l'app packagée).
         if web_search_enabled and llm_service.config.provider.value != "gemini":
-            tools = [WEB_SEARCH_TOOL, BROWSER_TOOL] + tools
+            tools = web_tools() + tools
 
     if tools:
         logger.info(f"Providing {len(tools)} tools to LLM")
