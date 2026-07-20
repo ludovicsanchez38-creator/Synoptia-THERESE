@@ -13,7 +13,6 @@ from datetime import date
 from unittest.mock import AsyncMock
 
 import pytest
-
 from app.services.calendar.base_provider import (
     CreateEventRequest,
     UpdateEventRequest,

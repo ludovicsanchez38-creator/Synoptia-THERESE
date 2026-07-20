@@ -10,7 +10,6 @@ reference ou par client, pour le presenter et guider l'utilisateur.
 from datetime import UTC, datetime
 
 import pytest
-
 from app.models.entities import Contact, Invoice
 from app.services.workspace_tools import WORKSPACE_TOOL_NAMES, execute_workspace_tool
 
