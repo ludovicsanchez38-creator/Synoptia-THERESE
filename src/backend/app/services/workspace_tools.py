@@ -243,6 +243,32 @@ GENERATE_DOCUMENT_TOOL = {
 
 
 # All workspace tools
+# BUG-148 : sans cet outil, « envoie la facture FACT-2026-001 » finissait en
+# « je n'ai pas d'outil de recherche pour les documents locaux » et le modele
+# proposait de RECREER la facture.
+SEARCH_INVOICES_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "search_invoices",
+        "description": (
+            "Recherche les factures, devis et avoirs LOCAUX de l'utilisateur "
+            "par reference (ex: FACT-2026-001, DEV-2026-007) ou par nom de "
+            "client. Utilise cet outil des qu'une facture ou un devis est "
+            "mentionne par sa reference ou son client."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Reference (meme partielle) ou nom/societe du client",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
 WORKSPACE_TOOLS = [
     READ_EMAILS_TOOL,
     SUMMARIZE_EMAILS_TOOL,
@@ -251,6 +277,7 @@ WORKSPACE_TOOLS = [
     LIST_CALENDAR_EVENTS_TOOL,
     CREATE_CALENDAR_EVENT_TOOL,
     GENERATE_DOCUMENT_TOOL,
+    SEARCH_INVOICES_TOOL,
 ]
 
 # P8 (2e passage personas) : routage chat -> skill Office en OUTIL appelable
@@ -284,6 +311,8 @@ async def execute_workspace_tool(
         return await _create_calendar_event(arguments, session)
     elif tool_name == "generate_document":
         return await _generate_document(arguments, session)
+    elif tool_name == "search_invoices":
+        return await _search_invoices(arguments, session)
     else:
         return f"Outil inconnu : {tool_name}"
 
@@ -314,6 +343,53 @@ def drain_generated_files() -> list[dict[str, Any]]:
     bucket = _TURN_GENERATED_FILES.get() or []
     _TURN_GENERATED_FILES.set(None)
     return list(bucket)
+
+
+async def _search_invoices(args: dict, session: AsyncSession) -> str:
+    """BUG-148 : retrouve les factures/devis/avoirs locaux par reference ou client."""
+    from app.models.entities import Contact, Invoice
+
+    query = (args.get("query") or "").strip()
+    if not query:
+        return "Erreur : indique une référence (ex: FACT-2026-001) ou un nom de client."
+
+    pattern = f"%{query}%"
+    statement = (
+        select(Invoice, Contact)
+        .join(Contact, Contact.id == Invoice.contact_id)  # type: ignore[arg-type]
+        .where(
+            Invoice.invoice_number.ilike(pattern)  # type: ignore[attr-defined]
+            | Contact.first_name.ilike(pattern)  # type: ignore[attr-defined]
+            | Contact.last_name.ilike(pattern)  # type: ignore[attr-defined]
+            | Contact.company.ilike(pattern)  # type: ignore[attr-defined]
+        )
+        .order_by(Invoice.issue_date.desc())  # type: ignore[attr-defined]
+        .limit(10)
+    )
+    rows = (await session.execute(statement)).all()
+
+    if not rows:
+        return (
+            f"Aucune facture ni devis local ne correspond à « {query} ». "
+            "Vérifie la référence dans la vue Facturation."
+        )
+
+    types = {"facture": "Facture", "devis": "Devis", "avoir": "Avoir"}
+    lines = []
+    for invoice, contact in rows:
+        client = contact.display_name if contact else "client inconnu"
+        lines.append(
+            f"- {types.get(invoice.document_type, invoice.document_type)} "
+            f"{invoice.invoice_number} : {client}, "
+            f"{invoice.total_ttc:.2f} {invoice.currency} TTC, "
+            f"statut {invoice.status}, émise le {invoice.issue_date.date().isoformat()}"
+        )
+    guidance = (
+        "\n\nPour l'envoyer par email : ouvre la vue Facturation, sélectionne le "
+        "document et génère son PDF. L'envoi direct en pièce jointe depuis le chat "
+        "n'est pas encore disponible - ne promets pas cet envoi."
+    )
+    return f"{len(rows)} document(s) trouvé(s) :\n" + "\n".join(lines) + guidance
 
 
 async def _generate_document(args: dict, session: AsyncSession) -> str:
