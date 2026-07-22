@@ -382,6 +382,29 @@ async def test_config_legacy_seule_sert_encore_de_repli(db_session) -> None:
 
 
 @pytest.mark.asyncio
+async def test_update_config_sans_katia_model_conserve_la_legacy(db_session) -> None:
+    """F10 contre-vérif : legacy seule + mise à jour d'un AUTRE champ ->
+    la valeur legacy reste le repli, rien n'est perdu."""
+    from app.models.entities import Preference
+    from app.models.schemas_agents import AgentConfigUpdate
+    from app.routers.agents import update_config
+    from sqlmodel import select as sql_select
+
+    db_session.add(Preference(key="agent_therese_model", value="gpt-5.6-terra"))
+    await db_session.commit()
+
+    config = await update_config(AgentConfigUpdate(source_path="/tmp/repo"), db_session)
+
+    assert config.katia_model == "gpt-5.6-terra"
+    legacy = (
+        await db_session.execute(
+            sql_select(Preference).where(Preference.key == "agent_therese_model")
+        )
+    ).scalar_one_or_none()
+    assert legacy is not None
+
+
+@pytest.mark.asyncio
 async def test_update_config_purge_la_cle_legacy(db_session) -> None:
     from app.models.entities import Preference
     from app.models.schemas_agents import AgentConfigUpdate

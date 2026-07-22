@@ -10,26 +10,30 @@ import { purgeLocalPersistence } from './purgeLocalData';
 // Le setup global remplace localStorage par des vi.fn() SANS stockage : on
 // installe ici un vrai stub en mémoire (key/length inclus, utilisés par le
 // helper pour énumérer les clés).
-function installRealLocalStorage(): void {
+function makeMemoryStorage(): Storage {
   const data = new Map<string, string>();
-  Object.defineProperty(window, 'localStorage', {
-    configurable: true,
-    value: {
-      getItem: (key: string) => (data.has(key) ? data.get(key)! : null),
-      setItem: (key: string, value: string) => void data.set(key, String(value)),
-      removeItem: (key: string) => void data.delete(key),
-      clear: () => data.clear(),
-      key: (index: number) => [...data.keys()][index] ?? null,
-      get length() {
-        return data.size;
-      },
+  return {
+    getItem: (key: string) => (data.has(key) ? data.get(key)! : null),
+    setItem: (key: string, value: string) => void data.set(key, String(value)),
+    removeItem: (key: string) => void data.delete(key),
+    clear: () => data.clear(),
+    key: (index: number) => [...data.keys()][index] ?? null,
+    get length() {
+      return data.size;
     },
-  });
+  } as Storage;
+}
+
+function installRealStorages(): void {
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: makeMemoryStorage() });
+  Object.defineProperty(window, 'sessionStorage', { configurable: true, value: makeMemoryStorage() });
 }
 
 describe('purgeLocalPersistence (BUG-153)', () => {
-  beforeEach(() => {
-    installRealLocalStorage();
+  beforeEach(async () => {
+    installRealStorages();
+    const { __resetPersistenceForTests } = await import('./debouncedStorage');
+    __resetPersistenceForTests();
   });
 
   it('supprime toutes les clés therese-* du localStorage', () => {
@@ -70,5 +74,39 @@ describe('purgeLocalPersistence (BUG-153)', () => {
     purgeLocalPersistence({ reload });
 
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  // F2 revue : le handoff classic (sessionStorage, jusqu'à 4000 caractères de
+  // texte utilisateur) survivait à la purge ET au reload.
+  it('purge aussi le sessionStorage (therese-* et therese:*)', () => {
+    sessionStorage.setItem('therese:classic-prompt-handoff', 'texte perso en attente');
+    sessionStorage.setItem('therese-quelconque', 'x');
+    sessionStorage.setItem('autre-app', 'conservée');
+
+    purgeLocalPersistence();
+
+    expect(sessionStorage.getItem('therese:classic-prompt-handoff')).toBeNull();
+    expect(sessionStorage.getItem('therese-quelconque')).toBeNull();
+    expect(sessionStorage.getItem('autre-app')).toBe('conservée');
+  });
+
+  // F1 revue (CRITIQUE) : le stockage débouncé zustand gardait des écritures
+  // en attente et les FLUSHAIT sur pagehide - déclenché justement par le
+  // reload de la purge : therese-chat était réécrit après suppression.
+  it('désarme le stockage débouncé : plus aucune écriture après la purge', async () => {
+    const { createDebouncedStorage } = await import('./debouncedStorage');
+    const storage = createDebouncedStorage(50);
+    storage.setItem('therese-chat', '{"conversations":["secrète"]}');
+
+    purgeLocalPersistence();
+    // pagehide (déclenché par le reload) tentait le flush des écritures en attente
+    window.dispatchEvent(new Event('pagehide'));
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    expect(localStorage.getItem('therese-chat')).toBeNull();
+    // Et les écritures POSTÉRIEURES (stream encore vivant) sont ignorées aussi
+    storage.setItem('therese-chat', '{"conversations":["encore"]}');
+    window.dispatchEvent(new Event('pagehide'));
+    expect(localStorage.getItem('therese-chat')).toBeNull();
   });
 });

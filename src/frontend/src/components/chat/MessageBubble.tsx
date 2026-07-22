@@ -393,6 +393,24 @@ export const MessageBubble = memo(function MessageBubble({
                 );
               },
               img({ src, alt }) {
+                // F4 revue 0.41.2 : la CSP img-src autorise https: (opt-in
+                // des images d'emails) - le rendu Markdown ne doit PAS en
+                // profiter : une réponse LLM contenant ![](https://tracker/x)
+                // déclencherait une requête sans consentement (pixel, ou URL
+                // exfiltrant des données de contexte). Seules les sources
+                // locales (backend, data:, blob:) sont rendues ; le reste
+                // devient un lien inerte.
+                const isLocalSource = typeof src === 'string'
+                  && (/^(data:|blob:)/i.test(src)
+                    || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(src)
+                    || !/^[a-z][a-z0-9+.-]*:/i.test(src));
+                if (!isLocalSource) {
+                  return (
+                    <span className="my-1 inline-block rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-text-muted">
+                      Image externe non chargée : <span className="break-all">{typeof src === 'string' ? src : ''}</span>
+                    </span>
+                  );
+                }
                 return (
                   <div className="my-3 rounded-xl overflow-hidden border border-border bg-black/20">
                     <img

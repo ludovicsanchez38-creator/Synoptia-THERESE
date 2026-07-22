@@ -698,6 +698,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     setShowSlashMenu(false);
     addMessage({ role: 'user', content: `[Recherche approfondie] ${trimmed}` });
+    // F9 revue : ce second chemin d'envoi doit aussi ramener en bas
+    window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
     setInput('');
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 

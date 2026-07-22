@@ -362,30 +362,42 @@ def _fold(text: str) -> str:
     )
 
 
+def _safe_label(label: str) -> str:
+    """F7 revue : le label part dans une phrase d'instruction au modèle -
+    aplatir les retours ligne, neutraliser les crochets (marqueurs
+    d'enveloppe) et borner la longueur."""
+    flattened = " ".join(label.split())
+    return flattened.replace("[", "(").replace("]", ")")[:60]
+
+
 def _close_matches(folded_query: str, contacts: list[Contact]) -> list[str]:
     """BUG-146 : rapprochements orthographiques (« Baudin » ~ « BODIN »).
 
     Similarité difflib >= 0.7 entre la requête normalisée et chaque champ
     nominal, 3 suggestions max, libellées avec la société pour lever le doute.
+    F6 revue : requête et champs BORNÉS à 64 caractères - quatre
+    SequenceMatcher par contact sur des entrées longues bloquaient la boucle
+    asyncio (~376 ms CPU mesurés à 1000 contacts x requête de 1000 chars).
     """
     if len(folded_query) < 3:
         return []
+    query = folded_query[:64]
     scored: list[tuple[float, str]] = []
     seen: set[str] = set()
     for contact in contacts:
         fields = [contact.first_name, contact.last_name, contact.display_name, contact.company]
         best = max(
             (
-                SequenceMatcher(None, folded_query, _fold(field)).ratio()
+                SequenceMatcher(None, query, _fold(field)[:64]).ratio()
                 for field in fields
                 if field and len(field) >= 3
             ),
             default=0.0,
         )
         if best >= 0.7:
-            label = contact.display_name or ""
+            label = _safe_label(contact.display_name or "")
             if contact.company:
-                label = f"{label} ({contact.company})"
+                label = _safe_label(f"{label} ({contact.company})")
             if label and label not in seen:
                 seen.add(label)
                 scored.append((best, label))

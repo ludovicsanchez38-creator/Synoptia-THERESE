@@ -8,16 +8,47 @@
  * page (pas de perte de la dernière écriture).
  */
 
+// BUG-153 (F1 revue) : pendant la purge RGPD, le flush de fermeture
+// (pagehide, déclenché par le reload de la purge) RÉÉCRIVAIT les écritures
+// en attente après la suppression des clés. Kill switch global : la purge
+// désarme toutes les instances et coupe toute écriture jusqu'au reload.
+let persistenceDisabled = false;
+const instances: Array<() => void> = [];
+
+export function discardAllPendingWrites(): void {
+  persistenceDisabled = true;
+  for (const discard of instances) discard();
+}
+
+/** Réservé aux tests : réarme la persistance (en prod, seul le reload le fait). */
+export function __resetPersistenceForTests(): void {
+  persistenceDisabled = false;
+  instances.length = 0;
+}
+
 export function createDebouncedStorage(delayMs = 400): Storage {
   let timer: ReturnType<typeof setTimeout> | null = null;
   // Map par clé (revue adversariale : un pending unique perdait la 1re
   // écriture si un second store adoptait le même wrapper)
   const pending = new Map<string, string>();
 
+  const discard = () => {
+    pending.clear();
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+  instances.push(discard);
+
   const flush = () => {
     if (timer) {
       clearTimeout(timer);
       timer = null;
+    }
+    if (persistenceDisabled) {
+      pending.clear();
+      return;
     }
     for (const [key, value] of pending) {
       localStorage.setItem(key, value);
@@ -42,6 +73,7 @@ export function createDebouncedStorage(delayMs = 400): Storage {
       return localStorage.getItem(key);
     },
     setItem(key: string, value: string): void {
+      if (persistenceDisabled) return;
       pending.set(key, value);
       if (!timer) {
         timer = setTimeout(flush, delayMs);
