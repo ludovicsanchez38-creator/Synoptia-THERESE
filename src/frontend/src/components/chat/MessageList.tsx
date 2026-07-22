@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Virtuoso } from 'react-virtuoso';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { useChatStore } from '../../stores/chatStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { announceToScreenReader } from '../../lib/accessibility';
@@ -98,6 +98,18 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     [isStreaming]
   );
 
+  // Suggestion Dr_logic 20/07 : ENVOYER un message ramène toujours en bas
+  // (même si on avait remonté l'historique) ; pendant la réponse, le scroll
+  // manuel reste respecté (followOutput ci-dessus ne change pas).
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  useEffect(() => {
+    const onScrollBottom = () => {
+      virtuosoRef.current?.scrollToIndex({ index: 'LAST', behavior: 'smooth' });
+    };
+    window.addEventListener('therese:scroll-chat-bottom', onScrollBottom);
+    return () => window.removeEventListener('therese:scroll-chat-bottom', onScrollBottom);
+  }, []);
+
   const itemContent = useCallback(
     (index: number, message: Message) => (
       <div className="max-w-3xl mx-auto px-4 py-2" data-testid="chat-message-item">
@@ -162,6 +174,7 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
           donc initialTopMostItemIndex repositionne en bas (sinon on héritait
           d'un offset en pixels arbitraire de la conversation précédente). */}
       <Virtuoso
+        ref={virtuosoRef}
         key={conversation.id}
         style={{ height: '100%' }}
         data={displayMessages}
