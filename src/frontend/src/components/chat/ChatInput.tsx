@@ -449,6 +449,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     // Add user message
     addMessage({ role: 'user', content: messageContent });
+    // Suggestion Dr_logic 20/07 : l'ENVOI ramène toujours en bas de la
+    // conversation (le scroll manuel reste respecté PENDANT la réponse).
+    window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
     setInput('');
     setAttachedFiles([]); // Clear attached files after sending
     attachedPathsRef.current.clear();
