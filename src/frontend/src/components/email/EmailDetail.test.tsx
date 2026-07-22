@@ -219,4 +219,20 @@ describe('BUG-151 - images distantes opt-in', () => {
     expect(container.querySelector('img[src^="https:"]')).toBeNull();
     expect(screen.getByRole('button', { name: /Afficher les images/ })).toBeInTheDocument();
   });
+
+  it("F3 contre-vérif : l'opt-in ne fuit pas entre COMPTES (UID IMAP locaux, même messageId)", async () => {
+    storeMessages = [makeMessage({ id: 'm-shared', body_html: HTML_AVEC_IMAGE })];
+
+    const { EmailDetail } = await import('./EmailDetail');
+    const { container, rerender } = render(<EmailDetail accountId="acc1" messageId="m-shared" />);
+    fireEvent.click(screen.getByRole('button', { name: /Afficher les images/ }));
+    await waitFor(() => {
+      expect(container.querySelector('img[src^="https:"]')).not.toBeNull();
+    });
+
+    // Même messageId, AUTRE compte : premier rendu bloqué
+    rerender(<EmailDetail accountId="acc2" messageId="m-shared" />);
+
+    expect(container.querySelector('img[src^="https:"]')).toBeNull();
+  });
 });

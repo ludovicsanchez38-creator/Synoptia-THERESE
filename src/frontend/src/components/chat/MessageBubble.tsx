@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useMemo } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 // US-010 : sans remark-gfm, react-markdown ne parse pas les tableaux GFM
@@ -34,7 +34,51 @@ SyntaxHighlighter.registerLanguage('markup', xml);
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 SyntaxHighlighter.registerLanguage('yml', yaml);
 SyntaxHighlighter.registerLanguage('sql', sql);
-import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile, apiFetch } from '../../services/api';
+import { downloadGeneratedImage, getImageDownloadUrl, downloadSkillFile, apiFetch, fetchImageObjectUrl } from '../../services/api';
+
+/** N1 contre-vérif 0.41.2 : les images locales (générées) exigent le header
+ * X-Therese-Token - un <img src> direct répond 401. Fetch authentifié ->
+ * objectURL, révoquée au démontage. */
+function LocalMarkdownImage({ src, alt }: { src: string; alt: string }) {
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let revoked: string | null = null;
+    let cancelled = false;
+    fetchImageObjectUrl(src)
+      .then((url) => {
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        revoked = url;
+        setObjectUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [src]);
+
+  if (failed) {
+    return (
+      <span className="my-1 inline-block rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-text-muted">
+        Image locale indisponible
+      </span>
+    );
+  }
+  if (!objectUrl) {
+    return <span className="my-1 inline-block h-24 w-full max-w-sm animate-pulse rounded-xl bg-surface-2" />;
+  }
+  return (
+    <span className="my-3 block overflow-hidden rounded-xl border border-border bg-black/20">
+      <img src={objectUrl} alt={alt} className="w-full h-auto max-h-96 object-contain" loading="lazy" />
+    </span>
+  );
+}
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
 import type { Message } from '../../stores/chatStore';
@@ -397,41 +441,27 @@ export const MessageBubble = memo(function MessageBubble({
                 // des images d'emails) - le rendu Markdown ne doit PAS en
                 // profiter : une réponse LLM contenant ![](https://tracker/x)
                 // déclencherait une requête sans consentement (pixel, ou URL
-                // exfiltrant des données de contexte). Seules les sources
-                // locales (backend, data:, blob:) sont rendues ; le reste
-                // devient un lien inerte.
-                const isLocalSource = typeof src === 'string'
-                  && (/^(data:|blob:)/i.test(src)
-                    || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(src)
-                    || !/^[a-z][a-z0-9+.-]*:/i.test(src));
-                if (!isLocalSource) {
+                // exfiltrant des données de contexte). Matrice :
+                // - vide (data:/blob: vidés par defaultUrlTransform, N2) ->
+                //   placeholder, jamais un <img src=""> ;
+                // - backend local (127.0.0.1/localhost) -> fetch AUTHENTIFIÉ
+                //   (N1 : un <img> direct répond 401 sans X-Therese-Token) ;
+                // - tout le reste, y compris protocol-relative // (F4) ->
+                //   placeholder inerte, aucune requête.
+                if (typeof src !== 'string' || !src) {
                   return (
                     <span className="my-1 inline-block rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-text-muted">
-                      Image externe non chargée : <span className="break-all">{typeof src === 'string' ? src : ''}</span>
+                      Image non affichable
                     </span>
                   );
                 }
+                if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(src)) {
+                  return <LocalMarkdownImage src={src} alt={alt || 'Image'} />;
+                }
                 return (
-                  <div className="my-3 rounded-xl overflow-hidden border border-border bg-black/20">
-                    <img
-                      src={src}
-                      alt={alt || 'Image'}
-                      className="w-full h-auto max-h-96 object-contain"
-                      loading="lazy"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = `
-                          <div class="p-8 flex flex-col items-center justify-center text-text-muted">
-                            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-sm">Impossible de charger l'image</span>
-                          </div>
-                        `;
-                      }}
-                    />
-                  </div>
+                  <span className="my-1 inline-block rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-text-muted">
+                    Image externe non chargée : <span className="break-all">{src}</span>
+                  </span>
                 );
               },
               h1({ children }) {
