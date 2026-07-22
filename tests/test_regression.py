@@ -5942,7 +5942,10 @@ class TestFrontendRegression:
         components_dir = FRONTEND / "components"
         violations = []
         for tsx_file in components_dir.rglob("*.tsx"):
-            if tsx_file.name in excluded:
+            # Les fichiers de TEST utilisent légitimement des URLs locales
+            # factices (ex. MessageBubble.test : image générée 127.0.0.1) -
+            # le garde vise le code de production.
+            if tsx_file.name in excluded or tsx_file.name.endswith(".test.tsx"):
                 continue
             content = tsx_file.read_text(encoding="utf-8")
             if "http://localhost:" in content or "http://127.0.0.1:" in content:
