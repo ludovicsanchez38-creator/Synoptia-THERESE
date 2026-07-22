@@ -37,6 +37,16 @@
   --color-accent-tint: #DEF4F9;
   --color-ring: #22D3EE;
 
+  /* Identité des agents de l'Atelier (BUG-150 : les text-*-400 Tailwind,
+     pensés fond sombre, rendaient « Codeur » quasi invisible en thème
+     clair). Assombris en CLAIR pour AA texte, éclaircis en SOMBRE. */
+  --agent-cyan: #0E7490;
+  --agent-magenta: #DB2777;
+  --agent-blue: #2563EB;
+  --agent-green: #047857;
+  --agent-purple: #9333EA;
+  --agent-amber: #B45309;
+
   /* Sémantiques - assombris en CLAIR pour WCAG AA en texte (US-013 :
      #F59E0B sur #F3F6FC ≈ 2.3:1, illisible ; les vives restent en sombre) */
   --color-success: #047857;
@@ -116,6 +126,14 @@
   --color-accent-ink: #06121F;
   --color-accent-tint: rgba(34, 211, 238, 0.12);
   --color-ring: #22D3EE;
+
+  /* Identité des agents de l'Atelier (BUG-150) : vives sur fond sombre */
+  --agent-cyan: #22D3EE;
+  --agent-magenta: #F472B6;
+  --agent-blue: #60A5FA;
+  --agent-green: #34D399;
+  --agent-purple: #C084FC;
+  --agent-amber: #FBBF24;
 
   /* Sémantiques - vives sur fond sombre (US-013 : info éclairci pour AA,
      #3B82F6 sur #0B1226 ≈ 4.0:1 limite) */

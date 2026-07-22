@@ -38,12 +38,12 @@ interface AgentSessionMessage {
 
 /** Couleurs par profil */
 const COLOR_MAP: Record<string, { accent: string; bg: string }> = {
-  cyan: { accent: "text-cyan-400", bg: "bg-cyan-500/10" },
-  magenta: { accent: "text-pink-400", bg: "bg-pink-500/10" },
-  blue: { accent: "text-blue-400", bg: "bg-blue-500/10" },
-  green: { accent: "text-emerald-400", bg: "bg-emerald-500/10" },
-  purple: { accent: "text-purple-400", bg: "bg-purple-500/10" },
-  amber: { accent: "text-amber-400", bg: "bg-amber-500/10" },
+  cyan: { accent: "text-[var(--agent-cyan)]", bg: "bg-cyan-500/10" },
+  magenta: { accent: "text-[var(--agent-magenta)]", bg: "bg-pink-500/10" },
+  blue: { accent: "text-[var(--agent-blue)]", bg: "bg-blue-500/10" },
+  green: { accent: "text-[var(--agent-green)]", bg: "bg-emerald-500/10" },
+  purple: { accent: "text-[var(--agent-purple)]", bg: "bg-purple-500/10" },
+  amber: { accent: "text-[var(--agent-amber)]", bg: "bg-amber-500/10" },
 };
 
 const DEFAULT_COLOR = { accent: "text-text-muted", bg: "bg-surface-2" };
@@ -117,7 +117,7 @@ function ThinkingDots({ color }: { color: string }) {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className={`inline-block h-1 w-1 rounded-full ${color === "text-cyan-400" ? "bg-cyan-400/60" : color === "text-pink-400" ? "bg-pink-400/60" : color === "text-blue-400" ? "bg-blue-400/60" : color === "text-emerald-400" ? "bg-emerald-400/60" : color === "text-purple-400" ? "bg-purple-400/60" : color === "text-amber-400" ? "bg-amber-400/60" : "bg-white/40"}`}
+          className={`inline-block h-1 w-1 rounded-full ${color === "text-[var(--agent-cyan)]" ? "bg-[var(--agent-cyan)]/60" : color === "text-[var(--agent-magenta)]" ? "bg-[var(--agent-magenta)]/60" : color === "text-[var(--agent-blue)]" ? "bg-[var(--agent-blue)]/60" : color === "text-[var(--agent-green)]" ? "bg-[var(--agent-green)]/60" : color === "text-[var(--agent-purple)]" ? "bg-[var(--agent-purple)]/60" : color === "text-[var(--agent-amber)]" ? "bg-[var(--agent-amber)]/60" : "bg-white/40"}`}
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{
             repeat: Infinity,

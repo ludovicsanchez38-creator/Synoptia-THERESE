@@ -21,32 +21,32 @@ const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = 
   cyan: {
     border: "border-cyan-500/30",
     bg: "bg-cyan-500/10",
-    text: "text-cyan-400",
+    text: "text-[var(--agent-cyan)]",
   },
   magenta: {
     border: "border-pink-500/30",
     bg: "bg-pink-500/10",
-    text: "text-pink-400",
+    text: "text-[var(--agent-magenta)]",
   },
   blue: {
     border: "border-blue-500/30",
     bg: "bg-blue-500/10",
-    text: "text-blue-400",
+    text: "text-[var(--agent-blue)]",
   },
   green: {
     border: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
-    text: "text-emerald-400",
+    text: "text-[var(--agent-green)]",
   },
   purple: {
     border: "border-purple-500/30",
     bg: "bg-purple-500/10",
-    text: "text-purple-400",
+    text: "text-[var(--agent-purple)]",
   },
   amber: {
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
-    text: "text-amber-400",
+    text: "text-[var(--agent-amber)]",
   },
 };
 
