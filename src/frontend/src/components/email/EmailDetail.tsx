@@ -39,11 +39,13 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const [bodyLoading, setBodyLoading] = useState(false);
   const [bodyError, setBodyError] = useState(false);
   // BUG-151 : opt-in PAR MESSAGE pour charger les images distantes (pixels de
-  // traçage) - jamais persisté. F3 revue : l'état est DÉRIVÉ du messageId
-  // (un reset en useEffect s'exécutait APRÈS le commit DOM : le mail B
-  // s'affichait un rendu avec images avant le reset - pixel déjà parti).
+  // traçage) - jamais persisté. F3 revue : l'état est DÉRIVÉ (un reset en
+  // useEffect s'exécutait APRÈS le commit DOM : le mail B s'affichait un
+  // rendu avec images avant le reset - pixel déjà parti). Clé COMPOSITE
+  // compte+message : les UID IMAP sont locaux à un compte, deux comptes
+  // peuvent porter le même messageId.
   const [imagesAllowedFor, setImagesAllowedFor] = useState<string | null>(null);
-  const showRemoteImages = imagesAllowedFor === messageId;
+  const showRemoteImages = imagesAllowedFor === `${accountId}:${messageId}`;
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
   const [showFollowUpForm, setShowFollowUpForm] = useState(false);
@@ -333,7 +335,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
                     <span>Les images distantes sont bloquées pour protéger ta vie privée.</span>
                     <button
                       type="button"
-                      onClick={() => setImagesAllowedFor(messageId)}
+                      onClick={() => setImagesAllowedFor(`${accountId}:${messageId}`)}
                       className="rounded-md border border-border px-2.5 py-1 font-semibold text-text hover:bg-surface"
                     >
                       Afficher les images

@@ -121,8 +121,10 @@ async def test_read_contact_suggestions_orthographe_proche(db_session):
     assert r["found"] is False
     assert any("BODIN" in s for s in r.get("suggestions", []))
     assert "Dupont" not in json.dumps(r.get("suggestions", []), ensure_ascii=False)
-    # Le message doit guider le modèle vers une question de clarification
-    assert "Voulais-tu dire" in r["message"] or "voulais-tu dire" in r["message"].lower()
+    # Le message guide vers une clarification SANS incorporer les noms
+    # (F7 : donnees non fiables hors de la phrase d'instruction)
+    assert "Voulais-tu dire" in r["message"]
+    assert "BODIN" not in r["message"]
 
 
 @pytest.mark.asyncio

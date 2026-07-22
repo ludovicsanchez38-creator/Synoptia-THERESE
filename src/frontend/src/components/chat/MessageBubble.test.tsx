@@ -12,11 +12,18 @@ import { MessageBubble, arePropsEqual } from './MessageBubble';
 import type { Message } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 
-const { downloadSkillFileMock } = vi.hoisted(() => ({ downloadSkillFileMock: vi.fn() }));
+const { downloadSkillFileMock, fetchImageObjectUrlMock } = vi.hoisted(() => ({
+  downloadSkillFileMock: vi.fn(),
+  fetchImageObjectUrlMock: vi.fn(),
+}));
 
 vi.mock('../../services/api', async () => {
   const actual = await vi.importActual<typeof import('../../services/api')>('../../services/api');
-  return { ...actual, downloadSkillFile: downloadSkillFileMock };
+  return {
+    ...actual,
+    downloadSkillFile: downloadSkillFileMock,
+    fetchImageObjectUrl: fetchImageObjectUrlMock,
+  };
 });
 
 function makeMessage(over: Partial<Message> = {}): Message {
@@ -271,5 +278,53 @@ describe('BUG-136 - plusieurs fichiers par tour', () => {
     render(<MessageBubble message={message as never} />);
     expect(screen.getAllByText('Fichier généré')).toHaveLength(1);
     expect(screen.getByText('legacy.docx')).toBeInTheDocument();
+  });
+});
+
+// F4/N1/N2 contre-vérif 0.41.2 : la CSP https: (opt-in images d'emails) ne
+// doit pas profiter au Markdown du chat ; les images LOCALES (générées) sont
+// servies avec authentification (fetch + objectURL, un <img> direct = 401) ;
+// ReactMarkdown vide les src data:/blob: (defaultUrlTransform) -> placeholder.
+describe('images Markdown du chat', () => {
+  it('ne charge pas une image https externe (placeholder inerte)', () => {
+    const { container } = render(
+      <MessageBubble message={makeMessage({ content: '![pixel](https://tracker.example/x.gif)' })} />
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText(/Image externe non chargée/)).toBeInTheDocument();
+  });
+
+  it('F4 : ne charge pas une URL protocol-relative (//)', () => {
+    const { container } = render(
+      <MessageBubble message={makeMessage({ content: '![pixel](//tracker.example/x.gif)' })} />
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText(/Image externe non chargée/)).toBeInTheDocument();
+  });
+
+  it('N1 : charge une image locale via le fetch authentifié (objectURL)', async () => {
+    fetchImageObjectUrlMock.mockResolvedValue('blob:mock-object-url');
+
+    const { container } = render(
+      <MessageBubble message={makeMessage({
+        content: '![générée](http://127.0.0.1:17293/api/images/download/abc)',
+      })} />
+    );
+
+    await waitFor(() => {
+      expect(fetchImageObjectUrlMock).toHaveBeenCalledWith('http://127.0.0.1:17293/api/images/download/abc');
+      expect(container.querySelector('img[src="blob:mock-object-url"]')).not.toBeNull();
+    });
+  });
+
+  it('N2 : un src vidé par ReactMarkdown (data:) devient un placeholder, pas un img cassé', () => {
+    const { container } = render(
+      <MessageBubble message={makeMessage({ content: '![x](data:image/png;base64,AAAA)' })} />
+    );
+
+    expect(container.querySelector('img[src=""]')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
   });
 });
