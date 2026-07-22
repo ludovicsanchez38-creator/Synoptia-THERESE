@@ -775,10 +775,13 @@ async def get_config(
 
     source_path = _get_source_path()
 
-    # Lire les modèles choisis en DB (avec fallback sur les anciennes clés "therese")
+    # Lire les modèles choisis en DB. BUG-149 : la clé LEGACY
+    # agent_therese_model est lue EN PREMIER pour ne servir que de repli -
+    # lue après, elle écrasait la sélection agent_katia_model à chaque
+    # lecture (l'Atelier réaffichait l'ancien modèle malgré la sauvegarde).
     katia_model = "claude-sonnet-4-6"
     zezette_model = "claude-sonnet-4-6"
-    for key in ("agent_katia_model", "agent_therese_model", "agent_zezette_model"):
+    for key in ("agent_therese_model", "agent_katia_model", "agent_zezette_model"):
         result = await session.execute(select(Preference).where(Preference.key == key))
         pref = result.scalar_one_or_none()
         if pref and pref.value:
@@ -849,6 +852,16 @@ async def update_config(
             pref.value = value
         else:
             session.add(Preference(key=key, value=value))
+
+    # BUG-149 : assainir la clé LEGACY dès qu'un modèle Katia est choisi,
+    # sinon elle resterait en base comme repli fantôme.
+    if "agent_katia_model" in updates:
+        result = await session.execute(
+            select(Preference).where(Preference.key == "agent_therese_model")
+        )
+        legacy = result.scalar_one_or_none()
+        if legacy:
+            await session.delete(legacy)
 
     if updates:
         await session.commit()
