@@ -343,3 +343,60 @@ async def test_agent_request_persists_reconstructible_history(
     assert task["commit_hash"] == "abc123def456"
     assert task["run_phase"] == "review"
     assert task["events"]
+
+
+# ============================================================
+# BUG-149 : le modèle choisi (ex. OpenRouter) n'apparaissait pas dans
+# l'Atelier - la clé LEGACY agent_therese_model, lue APRÈS
+# agent_katia_model, écrasait la sélection à chaque lecture.
+# ============================================================
+
+
+@pytest.mark.asyncio
+async def test_config_la_cle_legacy_n_ecrase_pas_le_modele_choisi(db_session) -> None:
+    from app.models.entities import Preference
+    from app.routers.agents import get_config
+
+    db_session.add(Preference(key="agent_therese_model", value="claude-sonnet-4-6"))
+    db_session.add(Preference(key="agent_katia_model", value="qwen/qwen3-coder"))
+    db_session.add(Preference(key="agent_zezette_model", value="qwen/qwen3-coder"))
+    await db_session.commit()
+
+    config = await get_config(db_session)
+
+    assert config.katia_model == "qwen/qwen3-coder"
+    assert config.zezette_model == "qwen/qwen3-coder"
+
+
+@pytest.mark.asyncio
+async def test_config_legacy_seule_sert_encore_de_repli(db_session) -> None:
+    from app.models.entities import Preference
+    from app.routers.agents import get_config
+
+    db_session.add(Preference(key="agent_therese_model", value="gpt-5.6-terra"))
+    await db_session.commit()
+
+    config = await get_config(db_session)
+
+    assert config.katia_model == "gpt-5.6-terra"
+
+
+@pytest.mark.asyncio
+async def test_update_config_purge_la_cle_legacy(db_session) -> None:
+    from app.models.entities import Preference
+    from app.models.schemas_agents import AgentConfigUpdate
+    from app.routers.agents import update_config
+    from sqlmodel import select as sql_select
+
+    db_session.add(Preference(key="agent_therese_model", value="claude-sonnet-4-6"))
+    await db_session.commit()
+
+    config = await update_config(AgentConfigUpdate(katia_model="qwen/qwen3-coder"), db_session)
+
+    assert config.katia_model == "qwen/qwen3-coder"
+    legacy = (
+        await db_session.execute(
+            sql_select(Preference).where(Preference.key == "agent_therese_model")
+        )
+    ).scalar_one_or_none()
+    assert legacy is None
