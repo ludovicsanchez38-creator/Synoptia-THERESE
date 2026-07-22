@@ -10,7 +10,11 @@ import json
 
 import pytest
 from app.models.entities import Contact, Project
-from app.services.memory_tools import execute_create_contact, execute_create_project
+from app.services.memory_tools import (
+    execute_create_contact,
+    execute_create_project,
+    execute_read_contact,
+)
 from sqlmodel import select
 
 
@@ -85,3 +89,49 @@ async def test_create_contact_requires_at_least_a_name(db_session):
     r = json.loads(await execute_create_contact({}, db_session))
     assert "error" in r
     assert await _count(db_session, Contact) == 0
+
+
+# ============================================================
+# BUG-146 : recherche de contact approchée (retours Dr_logic 19/07)
+# « Baudin » ne trouvait pas BODIN et le modèle partait en vrille sur un
+# résultat vide. La recherche exacte ignore désormais les accents, et un
+# zéro-résultat propose des rapprochements (« Voulais-tu dire BODIN ? »).
+# ============================================================
+
+
+@pytest.mark.asyncio
+async def test_read_contact_exact_insensible_aux_accents(db_session):
+    db_session.add(Contact(first_name="Jérôme", last_name="Delaunay"))
+    await db_session.commit()
+
+    r = json.loads(await execute_read_contact({"query": "jerome"}, db_session))
+
+    assert r["found"] is True
+    assert r["contacts"][0]["display_name"] == "Jérôme Delaunay"
+
+
+@pytest.mark.asyncio
+async def test_read_contact_suggestions_orthographe_proche(db_session):
+    db_session.add(Contact(first_name="Marc", last_name="BODIN", company="Forge SA"))
+    db_session.add(Contact(first_name="Julie", last_name="Dupont"))
+    await db_session.commit()
+
+    r = json.loads(await execute_read_contact({"query": "Baudin"}, db_session))
+
+    assert r["found"] is False
+    assert any("BODIN" in s for s in r.get("suggestions", []))
+    assert "Dupont" not in json.dumps(r.get("suggestions", []), ensure_ascii=False)
+    # Le message doit guider le modèle vers une question de clarification
+    assert "Voulais-tu dire" in r["message"] or "voulais-tu dire" in r["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_read_contact_zero_resultat_sans_proche_reste_propre(db_session):
+    db_session.add(Contact(first_name="Julie", last_name="Dupont"))
+    await db_session.commit()
+
+    r = json.loads(await execute_read_contact({"query": "Xylophone"}, db_session))
+
+    assert r["found"] is False
+    assert r.get("suggestions", []) == []
+    assert "Aucun contact" in r["message"]

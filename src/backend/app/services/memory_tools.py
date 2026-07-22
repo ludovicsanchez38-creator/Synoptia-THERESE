@@ -7,7 +7,9 @@ to directly add entities to the memory system during conversation.
 
 import json
 import logging
+import unicodedata
 from datetime import UTC, datetime
+from difflib import SequenceMatcher
 from typing import Any
 
 from app.models.entities import Contact, Project
@@ -351,6 +353,46 @@ async def execute_create_project(
         }, ensure_ascii=False)
 
 
+def _fold(text: str) -> str:
+    """Minuscule + suppression des accents (comparaison de noms robuste)."""
+    return "".join(
+        ch
+        for ch in unicodedata.normalize("NFD", text.lower())
+        if unicodedata.category(ch) != "Mn"
+    )
+
+
+def _close_matches(folded_query: str, contacts: list[Contact]) -> list[str]:
+    """BUG-146 : rapprochements orthographiques (« Baudin » ~ « BODIN »).
+
+    Similarité difflib >= 0.7 entre la requête normalisée et chaque champ
+    nominal, 3 suggestions max, libellées avec la société pour lever le doute.
+    """
+    if len(folded_query) < 3:
+        return []
+    scored: list[tuple[float, str]] = []
+    seen: set[str] = set()
+    for contact in contacts:
+        fields = [contact.first_name, contact.last_name, contact.display_name, contact.company]
+        best = max(
+            (
+                SequenceMatcher(None, folded_query, _fold(field)).ratio()
+                for field in fields
+                if field and len(field) >= 3
+            ),
+            default=0.0,
+        )
+        if best >= 0.7:
+            label = contact.display_name or ""
+            if contact.company:
+                label = f"{label} ({contact.company})"
+            if label and label not in seen:
+                seen.add(label)
+                scored.append((best, label))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return [label for _, label in scored[:3]]
+
+
 async def execute_read_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
@@ -369,20 +411,47 @@ async def execute_read_contact(
             ensure_ascii=False,
         )
 
-    q = query.lower()
+    # BUG-146 : recherche insensible aux ACCENTS (« jerome » doit trouver
+    # « Jérôme ») - la comparaison lower() seule ne suffisait pas.
+    q = _fold(query)
     result = await session.execute(select(Contact))
+    contacts = result.scalars().all()
     matches = [
         c
-        for c in result.scalars().all()
-        if q in (c.first_name or "").lower()
-        or q in (c.last_name or "").lower()
-        or q in (c.display_name or "").lower()
-        or q in (c.company or "").lower()
+        for c in contacts
+        if q in _fold(c.first_name or "")
+        or q in _fold(c.last_name or "")
+        or q in _fold(c.display_name or "")
+        or q in _fold(c.company or "")
     ]
 
     if not matches:
+        # BUG-146 : zéro résultat exact -> proposer les orthographes PROCHES
+        # (« Baudin » -> « Voulais-tu dire BODIN ? »). Sans cette main tendue,
+        # certains modèles partaient en vrille sur le résultat vide.
+        suggestions = _close_matches(q, contacts)
+        if suggestions:
+            return json.dumps(
+                {
+                    "found": False,
+                    "suggestions": suggestions,
+                    "message": (
+                        f"Aucun contact ne correspond exactement à « {query} ». "
+                        f"Voulais-tu dire : {', '.join(suggestions)} ? "
+                        "Demande confirmation à l'utilisateur avant de continuer."
+                    ),
+                },
+                ensure_ascii=False,
+            )
         return json.dumps(
-            {"found": False, "message": f"Aucun contact trouvé pour « {query} »."},
+            {
+                "found": False,
+                "suggestions": [],
+                "message": (
+                    f"Aucun contact trouvé pour « {query} ». "
+                    "Dis-le simplement à l'utilisateur, sans inventer de fiche."
+                ),
+            },
             ensure_ascii=False,
         )
 
