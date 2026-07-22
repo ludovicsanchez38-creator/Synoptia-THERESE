@@ -46,13 +46,18 @@ describe('emailReadModels', () => {
     });
   });
 
-  it('place les non lus puis les priorités hautes en premier et exclut les brouillons', () => {
+  // BUG-152 : le tri « non-lus d'abord » faisait remonter de VIEUX messages
+  // non lus (8-14/07) devant les récents - la carte d'accueil paraissait
+  // figée alors que la vue complète allait jusqu'à la veille. La carte
+  // reflète désormais les DERNIERS messages (date décroissante), le non-lu
+  // reste un indicateur visuel.
+  it('BUG-152 : trie par date décroissante, même face à de vieux non-lus', () => {
     const selected = selectInboxMessages([
-      cachedMessage({ id: 'read', is_read: true, priority: 'high' }),
-      cachedMessage({ id: 'unread-low', is_read: false, priority: 'low' }),
-      cachedMessage({ id: 'unread-high', is_read: false, priority: 'high' }),
-      cachedMessage({ id: 'draft', is_read: false, is_draft: true }),
+      cachedMessage({ id: 'vieux-non-lu', is_read: false, date: '2026-07-08T09:00:00Z' }),
+      cachedMessage({ id: 'recent-lu', is_read: true, date: '2026-07-20T18:00:00Z' }),
+      cachedMessage({ id: 'moyen-non-lu', is_read: false, date: '2026-07-14T10:00:00Z' }),
+      cachedMessage({ id: 'draft', is_read: false, is_draft: true, date: '2026-07-21T08:00:00Z' }),
     ]);
-    expect(selected.map((message) => message.id)).toEqual(['unread-high', 'unread-low', 'read']);
+    expect(selected.map((message) => message.id)).toEqual(['recent-lu', 'moyen-non-lu', 'vieux-non-lu']);
   });
 });

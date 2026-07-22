@@ -68,15 +68,12 @@ export function formatEmailDate(value: string): string {
 }
 
 export function selectInboxMessages(messages: EmailMessage[], limit = 6): EmailMessage[] {
+  // BUG-152 : trier « non-lus d'abord » faisait remonter de VIEUX messages
+  // non lus devant les récents - la carte d'accueil paraissait figée des
+  // jours en arrière alors que la vue complète était à jour. La carte
+  // montre les DERNIERS messages ; le non-lu reste un indicateur visuel.
   return [...messages]
     .filter((message) => !message.is_draft)
-    .sort((left, right) => {
-      if (left.is_read !== right.is_read) return left.is_read ? 1 : -1;
-      const priority = { high: 0, medium: 1, low: 2 } as const;
-      const leftPriority = left.priority ? priority[left.priority] : 3;
-      const rightPriority = right.priority ? priority[right.priority] : 3;
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
-      return (right.date || '').localeCompare(left.date || '');
-    })
+    .sort((left, right) => (right.date || '').localeCompare(left.date || ''))
     .slice(0, limit);
 }
