@@ -72,8 +72,14 @@ export function selectInboxMessages(messages: EmailMessage[], limit = 6): EmailM
   // non lus devant les récents - la carte d'accueil paraissait figée des
   // jours en arrière alors que la vue complète était à jour. La carte
   // montre les DERNIERS messages ; le non-lu reste un indicateur visuel.
+  // F5 revue : tri sur le TIMESTAMP parsé - Gmail transmet des dates
+  // RFC 2822 (« Tue, 21 Jul... ») que localeCompare triait par nom de jour.
+  const timestamp = (message: EmailMessage): number => {
+    const parsed = Date.parse(message.date || '');
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+  };
   return [...messages]
     .filter((message) => !message.is_draft)
-    .sort((left, right) => (right.date || '').localeCompare(left.date || ''))
+    .sort((left, right) => timestamp(right) - timestamp(left))
     .slice(0, limit);
 }

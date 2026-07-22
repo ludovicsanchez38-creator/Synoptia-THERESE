@@ -198,4 +198,25 @@ describe('BUG-151 - images distantes opt-in', () => {
 
     expect(screen.queryByRole('button', { name: /Afficher les images/ })).not.toBeInTheDocument();
   });
+
+  it("F3 revue : l'opt-in du mail A ne fuit pas sur le mail B (état dérivé du messageId)", async () => {
+    storeMessages = [
+      makeMessage({ id: 'm-a', body_html: HTML_AVEC_IMAGE }),
+      makeMessage({ id: 'm-b', body_html: '<p>B</p><img src="https://tracker.example.com/b.gif" alt="b">' }),
+    ];
+
+    const { EmailDetail } = await import('./EmailDetail');
+    const { container, rerender } = render(<EmailDetail accountId="acc1" messageId="m-a" />);
+    fireEvent.click(screen.getByRole('button', { name: /Afficher les images/ }));
+    await waitFor(() => {
+      expect(container.querySelector('img[src^="https:"]')).not.toBeNull();
+    });
+
+    // Changement de message SANS remontage : le PREMIER rendu de B doit déjà
+    // être bloqué (un reset en effet post-commit laissait partir le pixel).
+    rerender(<EmailDetail accountId="acc1" messageId="m-b" />);
+
+    expect(container.querySelector('img[src^="https:"]')).toBeNull();
+    expect(screen.getByRole('button', { name: /Afficher les images/ })).toBeInTheDocument();
+  });
 });

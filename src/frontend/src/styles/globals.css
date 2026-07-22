@@ -41,7 +41,8 @@
      pensés fond sombre, rendaient « Codeur » quasi invisible en thème
      clair). Assombris en CLAIR pour AA texte, éclaircis en SOMBRE. */
   --agent-cyan: #0E7490;
-  --agent-magenta: #DB2777;
+  /* F8 revue : #DB2777 ~ 4.25:1 sur #F3F6FC, sous AA -> pink-700 (~5.7:1) */
+  --agent-magenta: #BE185D;
   --agent-blue: #2563EB;
   --agent-green: #047857;
   --agent-purple: #9333EA;
@@ -472,6 +473,15 @@ html[data-reduce-motion="true"] *::after {
   --color-accent-magenta: #FF00FF;
   --color-accent-tint: #000000;
   --color-ring: #FFFFFF;
+
+  /* F8 revue : identité des agents en AAA sur fond noir (le mode contraste
+     élevé n'écrasait pas les --agent-*, laissant ~4:1) */
+  --agent-cyan: #67E8F9;
+  --agent-magenta: #F9A8D4;
+  --agent-blue: #93C5FD;
+  --agent-green: #6EE7B7;
+  --agent-purple: #D8B4FE;
+  --agent-amber: #FDE68A;
 
   --color-success: #00FF00;
   --color-warning: #FFFF00;

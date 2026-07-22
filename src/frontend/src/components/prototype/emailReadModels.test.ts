@@ -60,4 +60,24 @@ describe('emailReadModels', () => {
     ]);
     expect(selected.map((message) => message.id)).toEqual(['recent-lu', 'moyen-non-lu', 'vieux-non-lu']);
   });
+
+  // F5 revue : Gmail transmet le header Date RFC 2822 brut
+  // (« Tue, 21 Jul 2026 18:00:00 +0200 ») - localeCompare triait les noms
+  // de jours, pas les instants. Tri sur le timestamp parsé.
+  it('F5 : trie correctement les dates RFC 2822 de Gmail', () => {
+    const selected = selectInboxMessages([
+      cachedMessage({ id: 'mercredi-15', date: 'Wed, 15 Jul 2026 09:00:00 +0200' }),
+      cachedMessage({ id: 'mardi-21', date: 'Tue, 21 Jul 2026 18:00:00 +0200' }),
+      cachedMessage({ id: 'iso-20', date: '2026-07-20T10:00:00Z' }),
+    ]);
+    expect(selected.map((message) => message.id)).toEqual(['mardi-21', 'iso-20', 'mercredi-15']);
+  });
+
+  it('F5 : une date illisible passe en fin, sans casser le tri', () => {
+    const selected = selectInboxMessages([
+      cachedMessage({ id: 'cassee', date: 'n/a' }),
+      cachedMessage({ id: 'valide', date: '2026-07-20T10:00:00Z' }),
+    ]);
+    expect(selected.map((message) => message.id)).toEqual(['valide', 'cassee']);
+  });
 });

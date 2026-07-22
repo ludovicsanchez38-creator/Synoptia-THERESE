@@ -183,14 +183,13 @@ export function PrivacyTab() {
       // Message aligné sur ce que le backend a RÉELLEMENT fait (revue 0.40) :
       // il annonce notamment les sauvegardes volontairement conservées.
       setDataMessage(`${result.message}. ${result.note} L'application va redémarrer.`);
-      await refreshBackups();
       // BUG-153 : la purge doit AUSSI couvrir la persistance frontend
       // (conversations therese-chat, CRM, calendrier...), sinon les anciennes
       // données personnelles sont rechargées au démarrage et renvoyées au LLM.
-      // Le rechargement garantit des stores vierges (aucune réécriture zustand).
-      setTimeout(() => {
-        purgeLocalPersistence({ reload: () => window.location.reload() });
-      }, 1500);
+      // IMMÉDIATE (F1 revue : un délai élargit la course avec le stockage
+      // débouncé et une fermeture pouvait annuler la purge frontend) ; le
+      // rechargement garantit des stores vierges.
+      purgeLocalPersistence({ reload: () => window.location.reload() });
     });
   }
 
