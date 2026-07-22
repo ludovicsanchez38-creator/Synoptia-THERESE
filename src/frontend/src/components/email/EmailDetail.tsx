@@ -38,6 +38,12 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const [_loading, _setLoading] = useState(false);
   const [bodyLoading, setBodyLoading] = useState(false);
   const [bodyError, setBodyError] = useState(false);
+  // BUG-151 : opt-in PAR MESSAGE pour charger les images distantes (pixels de
+  // traçage) - jamais persisté, réinitialisé à chaque changement de message.
+  const [showRemoteImages, setShowRemoteImages] = useState(false);
+  useEffect(() => {
+    setShowRemoteImages(false);
+  }, [messageId]);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [trashError, setTrashError] = useState<string | null>(null);
   const [showFollowUpForm, setShowFollowUpForm] = useState(false);
@@ -315,10 +321,32 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
             <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" /> Chargement du message…
           </div>
         ) : message.body_html ? (
-          <div
-            className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan [&_a]:hover:!text-accent-cyan/80 [&_*]:!bg-transparent"
-            dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(message.body_html) }}
-          />
+          (() => {
+            const sanitized = sanitizeEmailHtml(message.body_html, {
+              allowRemoteImages: showRemoteImages,
+            });
+            const hasBlockedImages = !showRemoteImages && sanitized.includes('data-remote-blocked');
+            return (
+              <>
+                {hasBlockedImages && (
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted">
+                    <span>Les images distantes sont bloquées pour protéger ta vie privée.</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowRemoteImages(true)}
+                      className="rounded-md border border-border px-2.5 py-1 font-semibold text-text hover:bg-surface"
+                    >
+                      Afficher les images
+                    </button>
+                  </div>
+                )}
+                <div
+                  className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan [&_a]:hover:!text-accent-cyan/80 [&_*]:!bg-transparent"
+                  dangerouslySetInnerHTML={{ __html: sanitized }}
+                />
+              </>
+            );
+          })()
         ) : message.body_plain ? (
           <pre className="whitespace-pre-wrap text-sm text-text font-sans">{message.body_plain}</pre>
         ) : (

@@ -38,7 +38,10 @@ vi.mock('../../stores/emailStore', () => ({
 
 vi.mock('./ResponseGeneratorModal', () => ({ ResponseGeneratorModal: () => null }));
 vi.mock('./EmailPriorityBadge', () => ({ EmailPriorityBadge: () => null }));
-vi.mock('../../lib/sanitizeEmailHtml', () => ({ sanitizeEmailHtml: (s: string) => s }));
+// BUG-151 : la VRAIE sanitisation est nécessaire (blocage des images
+// distantes + opt-in allowRemoteImages) - l'ancien mock identité masquait
+// tout le comportement testé ici.
+vi.mock('../../lib/sanitizeEmailHtml', async (importOriginal) => await importOriginal());
 
 function makeMessage(overrides: Record<string, unknown> = {}) {
   return {
@@ -150,5 +153,49 @@ describe("BUG-102 - corps du mail chargé à l'ouverture", () => {
       expect(mockDeleteEmailMessage).toHaveBeenCalledWith('acc1', 'm1', false);
     });
     expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
+  });
+});
+
+// BUG-151 (Capov) : les images distantes étaient remplacées par des cadres
+// vides SANS aucun moyen de les afficher. Opt-in par message : bandeau
+// « Afficher les images » qui re-sanitise avec allowRemoteImages.
+describe('BUG-151 - images distantes opt-in', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const HTML_AVEC_IMAGE = '<p>Bonjour</p><img src="https://cdn.example.com/logo.png" alt="Logo">';
+
+  it('bloque les images par défaut et propose de les afficher', async () => {
+    storeMessages = [makeMessage({ id: 'm-img', body_html: HTML_AVEC_IMAGE })];
+
+    const { EmailDetail } = await import('./EmailDetail');
+    const { container } = render(<EmailDetail accountId="acc1" messageId="m-img" />);
+
+    expect(container.querySelector('img[src^="https:"]')).toBeNull();
+    expect(screen.getByRole('button', { name: /Afficher les images/ })).toBeInTheDocument();
+  });
+
+  it('affiche les images distantes après le clic', async () => {
+    storeMessages = [makeMessage({ id: 'm-img2', body_html: HTML_AVEC_IMAGE })];
+
+    const { EmailDetail } = await import('./EmailDetail');
+    const { container } = render(<EmailDetail accountId="acc1" messageId="m-img2" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Afficher les images/ }));
+
+    await waitFor(() => {
+      expect(container.querySelector('img[src="https://cdn.example.com/logo.png"]')).not.toBeNull();
+    });
+    expect(screen.queryByRole('button', { name: /Afficher les images/ })).not.toBeInTheDocument();
+  });
+
+  it("ne montre pas le bandeau quand le mail n'a pas d'image distante", async () => {
+    storeMessages = [makeMessage({ id: 'm-sans', body_html: '<p>Texte pur</p>' })];
+
+    const { EmailDetail } = await import('./EmailDetail');
+    render(<EmailDetail accountId="acc1" messageId="m-sans" />);
+
+    expect(screen.queryByRole('button', { name: /Afficher les images/ })).not.toBeInTheDocument();
   });
 });
