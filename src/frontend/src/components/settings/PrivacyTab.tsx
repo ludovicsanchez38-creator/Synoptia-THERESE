@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { Archive, Shield, Database, Clock, UserCheck, HardDrive, Loader2, Download, Trash2, EyeOff, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { purgeLocalPersistence } from '../../lib/purgeLocalData';
 import { getPurgeSettings, updatePurgeSettings } from '../../services/api/rgpd';
 import {
   createBackup,
@@ -181,8 +182,15 @@ export function PrivacyTab() {
       setDeletePhrase('');
       // Message aligné sur ce que le backend a RÉELLEMENT fait (revue 0.40) :
       // il annonce notamment les sauvegardes volontairement conservées.
-      setDataMessage(`${result.message}. ${result.note}`);
+      setDataMessage(`${result.message}. ${result.note} L'application va redémarrer.`);
       await refreshBackups();
+      // BUG-153 : la purge doit AUSSI couvrir la persistance frontend
+      // (conversations therese-chat, CRM, calendrier...), sinon les anciennes
+      // données personnelles sont rechargées au démarrage et renvoyées au LLM.
+      // Le rechargement garantit des stores vierges (aucune réécriture zustand).
+      setTimeout(() => {
+        purgeLocalPersistence({ reload: () => window.location.reload() });
+      }, 1500);
     });
   }
 
