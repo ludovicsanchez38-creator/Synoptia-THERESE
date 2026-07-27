@@ -65,6 +65,23 @@ describe('SettingsModal - fermeture', () => {
     expect(mention).toHaveTextContent('Avancé');
   });
 
+  // Triage 26/07 : « Indisponible : clés API » se lisait comme « il manque des
+  // clés », alors que cela veut dire « la lecture du réglage a échoué ». Le
+  // testeur a cru à un problème de configuration de la génération d'images.
+  it('l’avertissement de chargement parle de lecture, pas de configuration', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.getApiKeysWithCorrupted).mockRejectedValueOnce(new Error('backend injoignable'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(<SettingsModal isOpen onClose={vi.fn()} />);
+
+    const alerte = await screen.findByTestId('settings-load-warning');
+    expect(alerte.textContent).toMatch(/n’ont pas pu être lus|n'ont pas pu être lus/);
+    expect(alerte).toHaveTextContent('clés API');
+    expect(alerte.textContent).not.toMatch(/^Indisponible/);
+    consoleSpy.mockRestore();
+  });
+
   it('en mode contributeur, plus rien n’est masqué', () => {
     usePersonalisationStore.setState({ uxMode: 'contributeur' });
     render(<SettingsModal isOpen onClose={vi.fn()} />);

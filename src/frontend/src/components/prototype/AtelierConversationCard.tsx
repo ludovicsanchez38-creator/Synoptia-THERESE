@@ -44,7 +44,10 @@ function formatDate(value: string): string {
 function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     pending: 'En attente', in_progress: 'En cours', review: 'À valider',
-    done: 'Terminée sans changement', merged: 'Appliquée', rejected: 'Refusée',
+    // Triage 26/07 : « Terminée sans changement » se lisait comme un échec.
+    // Une mission d'analyse qui ne touche à aucun fichier est un résultat
+    // normal, et c'est même l'étape attendue avant toute modification.
+    done: 'Analyse terminée, aucun fichier modifié', merged: 'Appliquée', rejected: 'Refusée',
     cancelled: 'Annulée', error: 'En erreur',
   };
   return labels[status] || status;

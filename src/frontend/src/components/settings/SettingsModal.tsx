@@ -814,9 +814,18 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                 tabIndex={0}
                 className="min-w-0 flex-1 overflow-y-auto p-4 outline-none sm:p-6"
               >
+                {/* Triage 26/07 : « Indisponible : clés API » se lisait comme
+                    « il manque des clés » alors qu'il s'agit d'un échec de
+                    LECTURE. Le testeur a cru à un défaut de configuration de la
+                    génération d'images. */}
                 {loadWarnings.length > 0 && (
-                  <div role="alert" className="mb-4 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
-                    <p><strong>Valeurs de secours affichées.</strong> Indisponible{loadWarnings.length > 1 ? 's' : ''} : {loadWarnings.join(', ')}.</p>
+                  <div role="alert" data-testid="settings-load-warning" className="mb-4 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+                    <p>
+                      <strong>
+                        {loadWarnings.length > 1 ? 'Ces réglages n’ont pas pu être lus' : 'Ce réglage n’a pas pu être lu'} : {loadWarnings.join(', ')}.
+                      </strong>{' '}
+                      Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle.
+                    </p>
                     <button type="button" onClick={() => void loadSettings()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer le chargement</button>
                   </div>
                 )}
