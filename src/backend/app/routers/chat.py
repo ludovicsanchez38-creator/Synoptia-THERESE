@@ -225,6 +225,11 @@ async def _get_file_context(
                 mime_type=metadata["mime_type"],
             )
             session.add(file_meta)
+            # 3e passe de revue : la session gardait le verrou d'écriture SQLite
+            # (mono-écrivain) pendant tout l'encodage. Commit court d'abord, le
+            # résultat est consigné plus bas dans une seconde transaction.
+            await session.commit()
+            await session.refresh(file_meta)
 
             # Chunk and store in Qdrant (découpage hors boucle d'événements)
             chunks = await run_in_threadpool(

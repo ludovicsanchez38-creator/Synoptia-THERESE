@@ -246,7 +246,9 @@ async def index_payload(
                         chunk_count = len(chunks)
                         indexed_at = datetime.now(UTC)
                         ecriture_faite = True
-        elif not text_content:
+        elif not text_content and not (est_abandonnee and await est_abandonnee()):
+            # 3e passe de revue : ce chemin détruisait l'index sans consulter
+            # l'abandon. Une demande retirée ne doit rien effacer.
             logger.warning(f"No text extracted from {file_path}")
             if reindexation:
                 await get_qdrant_service().async_delete_by_entity(file_id)

@@ -184,41 +184,52 @@ class TestF1AbandonPendantLAttente:
 
 class TestN2CourseAvecLaSuppression:
     @pytest.mark.asyncio
-    async def test_la_suppression_attend_la_fin_de_l_indexation(self, db_session, fichier, monkeypatch):
-        """`delete_file` doit prendre le même verrou de chemin que l'indexation."""
+    async def test_la_vraie_suppression_attend_la_fin_de_l_indexation(
+        self, db_session, fichier, monkeypatch
+    ):
+        """`delete_file` (la vraie route) doit prendre le verrou de chemin."""
+        from app.models.database import get_session_context
         from app.routers import files as files_router
 
         faux = FauxQdrant()
         monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-
-        ordre: list[str] = []
-        depart = asyncio.Event()
-
-        def extraction_lente(_p):
-            ordre.append("extraction")
-            return "texte extrait"
-
-        monkeypatch.setattr(files_router, "extract_text", extraction_lente)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
 
         premiere = await files_router.index_payload(path=str(fichier))
-        ordre.clear()
+        file_id = premiere.id
+
+        ordre: list[str] = []
+        indexation_demarree = asyncio.Event()
+
+        def extraction_qui_signale(_p):
+            ordre.append("indexation")
+            return "nouveau texte"
+
+        monkeypatch.setattr(files_router, "extract_text", extraction_qui_signale)
 
         async def indexer():
-            depart.set()
+            indexation_demarree.set()
             return await files_router.index_payload(path=str(fichier))
 
         async def supprimer():
-            await depart.wait()
+            await indexation_demarree.wait()
             await asyncio.sleep(0)
-            async with files_router._verrou_de_chemin(str(fichier.resolve())):
-                ordre.append("suppression")
+            async with get_session_context() as session:
+                await files_router.delete_file(file_id, session)
+            ordre.append("suppression")
 
-        await asyncio.gather(indexer(), supprimer())
+        resultats = await asyncio.gather(indexer(), supprimer(), return_exceptions=True)
 
-        assert ordre[0] == "extraction", (
+        assert ordre and ordre[0] == "indexation", (
             "la suppression s'est glissée pendant l'indexation : vecteurs orphelins"
         )
-        assert premiere.id
+        # L'indexation peut légitimement finir en 409 (sa ligne a disparu), mais
+        # jamais laisser un succès silencieux avec des vecteurs orphelins.
+        for r in resultats:
+            if isinstance(r, Exception):
+                from fastapi import HTTPException
+
+                assert isinstance(r, HTTPException) and r.status_code == 409, repr(r)
 
 
 class TestN5CouvertureUpload:
