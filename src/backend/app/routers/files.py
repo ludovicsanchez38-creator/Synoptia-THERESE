@@ -110,6 +110,23 @@ async def list_files(
     ]
 
 
+async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: datetime) -> None:
+    """Enregistre l'issue de l'indexation dans une transaction courte."""
+    async with get_session_context() as session:
+        a_jour = await session.get(FileMetadata, file_id)
+        if a_jour is None:
+            # N2 : le fichier a été supprimé pendant le traitement. Ne pas
+            # laisser de vecteurs orphelins ni annoncer un succès.
+            await get_qdrant_service().async_delete_by_entity(file_id)
+            raise HTTPException(
+                status_code=409,
+                detail="Le fichier a été supprimé pendant son indexation.",
+            )
+        a_jour.chunk_count = chunk_count
+        a_jour.indexed_at = indexed_at
+        await session.commit()
+
+
 async def index_payload(
     path: str,
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
@@ -217,7 +234,14 @@ async def index_payload(
                     if not (est_abandonnee and await est_abandonnee()):
                         if reindexation:
                             await get_qdrant_service().async_delete_by_entity(file_id)
-                        await get_qdrant_service().async_add_memories(items)
+                        try:
+                            await get_qdrant_service().async_add_memories(items)
+                        except Exception:
+                            # Les anciens fragments viennent d'être retirés :
+                            # l'index est vide. Le consigner avant de propager,
+                            # sinon la base promettrait un contenu introuvable.
+                            await _consigner_resultat(file_id, 0, datetime.now(UTC))
+                            raise
                         logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
                         chunk_count = len(chunks)
                         indexed_at = datetime.now(UTC)
@@ -233,19 +257,7 @@ async def index_payload(
         # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
         # demande a été abandonnée : l'état précédent reste la vérité.
         if ecriture_faite:
-            async with get_session_context() as session:
-                a_jour = await session.get(FileMetadata, file_id)
-                if a_jour is None:
-                    # N2 : le fichier a été supprimé pendant le traitement. Ne
-                    # pas laisser de vecteurs orphelins ni annoncer un succès.
-                    await get_qdrant_service().async_delete_by_entity(file_id)
-                    raise HTTPException(
-                        status_code=409,
-                        detail="Le fichier a été supprimé pendant son indexation.",
-                    )
-                a_jour.chunk_count = chunk_count
-                a_jour.indexed_at = indexed_at
-                await session.commit()
+            await _consigner_resultat(file_id, chunk_count, indexed_at)
 
     return FileResponse(
         id=file_id,
