@@ -76,6 +76,7 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
@@ -197,8 +198,10 @@ async def _get_file_context(
         return None, f"Ce n'est pas un fichier: {file_path}"
 
     try:
-        # Extract text content
-        text_content = extract_text(path)
+        # Extract text content, hors boucle d'événements : joindre un gros
+        # document au chat gelait l'application au même titre que l'indexation
+        # depuis le composeur (BUG-155, troisième chemin trouvé en revue).
+        text_content = await run_in_threadpool(extract_text, path)
 
         if not text_content:
             return None, f"Impossible d'extraire le contenu de: {path.name}"
@@ -223,8 +226,16 @@ async def _get_file_context(
             )
             session.add(file_meta)
 
-            # Chunk and store in Qdrant
-            chunks = list(chunk_text(text_content, chunk_size=settings.chunk_size, overlap=settings.chunk_overlap))
+            # Chunk and store in Qdrant (découpage hors boucle d'événements)
+            chunks = await run_in_threadpool(
+                lambda: list(
+                    chunk_text(
+                        text_content,
+                        chunk_size=settings.chunk_size,
+                        overlap=settings.chunk_overlap,
+                    )
+                )
+            )
             qdrant = get_qdrant_service()
             items = []
 

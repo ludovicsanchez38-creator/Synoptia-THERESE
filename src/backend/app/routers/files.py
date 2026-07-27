@@ -159,6 +159,10 @@ async def index_payload(
                 existing.updated_at = datetime.now(UTC)
                 file_meta = existing
                 reindexation = True
+                # Mémorisés pour ne rien détruire si le nouveau traitement
+                # n'aboutit pas (N1).
+                chunk_count_existant = existing.chunk_count or 0
+                indexed_at_existant = existing.indexed_at
             else:
                 file_meta = FileMetadata(
                     path=str(file_path),
@@ -169,6 +173,8 @@ async def index_payload(
                 )
                 session.add(file_meta)
                 reindexation = False
+                chunk_count_existant = 0
+                indexed_at_existant = None
             await session.commit()
             await session.refresh(file_meta)
             file_id = file_meta.id
@@ -176,12 +182,17 @@ async def index_payload(
             created_at = file_meta.created_at
             extension = file_meta.extension
 
-        if reindexation:
-            await get_qdrant_service().async_delete_by_entity(file_id)
-
         # 2. Travail lourd, hors transaction et hors boucle d'événements.
+        #
+        # Contre-vérification du 27/07 (N1) : les anciens vecteurs étaient
+        # supprimés AVANT l'extraction. Une annulation ou une extraction en
+        # échec laissait alors un fichier sans aucun vecteur, présenté comme
+        # indexé. La suppression n'a lieu qu'une fois le nouveau contenu prêt
+        # et l'écriture décidée : jusque-là, l'index existant reste valide.
         text_content = await extract_text_async(file_path)
-        chunk_count = 0
+        chunk_count = chunk_count_existant
+        indexed_at = indexed_at_existant
+        ecriture_faite = False
 
         if text_content and not (est_abandonnee and await est_abandonnee()):
             chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
@@ -201,17 +212,37 @@ async def index_payload(
             ]
             if items and not (est_abandonnee and await est_abandonnee()):
                 async with INDEX_SEMAPHORE:
-                    await get_qdrant_service().async_add_memories(items)
-                logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
-                chunk_count = len(chunks)
+                    # L'attente du sémaphore peut durer : re-consulter l'abandon
+                    # juste avant d'écrire (finding F1 resté ouvert).
+                    if not (est_abandonnee and await est_abandonnee()):
+                        if reindexation:
+                            await get_qdrant_service().async_delete_by_entity(file_id)
+                        await get_qdrant_service().async_add_memories(items)
+                        logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
+                        chunk_count = len(chunks)
+                        indexed_at = datetime.now(UTC)
+                        ecriture_faite = True
         elif not text_content:
             logger.warning(f"No text extracted from {file_path}")
+            if reindexation:
+                await get_qdrant_service().async_delete_by_entity(file_id)
+            chunk_count = 0
+            indexed_at = datetime.now(UTC)
+            ecriture_faite = True
 
-        # 3. Transaction COURTE : consigner le résultat.
-        indexed_at = datetime.now(UTC)
-        async with get_session_context() as session:
-            a_jour = await session.get(FileMetadata, file_id)
-            if a_jour is not None:
+        # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
+        # demande a été abandonnée : l'état précédent reste la vérité.
+        if ecriture_faite:
+            async with get_session_context() as session:
+                a_jour = await session.get(FileMetadata, file_id)
+                if a_jour is None:
+                    # N2 : le fichier a été supprimé pendant le traitement. Ne
+                    # pas laisser de vecteurs orphelins ni annoncer un succès.
+                    await get_qdrant_service().async_delete_by_entity(file_id)
+                    raise HTTPException(
+                        status_code=409,
+                        detail="Le fichier a été supprimé pendant son indexation.",
+                    )
                 a_jour.chunk_count = chunk_count
                 a_jour.indexed_at = indexed_at
                 await session.commit()
@@ -283,16 +314,20 @@ async def delete_file(
     if not file_meta:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Remove embeddings from Qdrant
-    try:
-        qdrant = get_qdrant_service()
-        deleted_count = await qdrant.async_delete_by_entity(file_id)
-        logger.info(f"Deleted {deleted_count} embeddings for file {file_id}")
-    except Exception as e:
-        logger.warning(f"Failed to delete embeddings: {e}")
+    # Contre-vérification du 27/07 (N2) : sans ce verrou, la suppression pouvait
+    # s'intercaler pendant une indexation du même fichier - la ligne disparaissait
+    # et l'indexation écrivait ensuite ses vecteurs, restés orphelins.
+    async with _verrou_de_chemin(file_meta.path):
+        # Remove embeddings from Qdrant
+        try:
+            qdrant = get_qdrant_service()
+            deleted_count = await qdrant.async_delete_by_entity(file_id)
+            logger.info(f"Deleted {deleted_count} embeddings for file {file_id}")
+        except Exception as e:
+            logger.warning(f"Failed to delete embeddings: {e}")
 
-    await session.delete(file_meta)
-    await session.commit()
+        await session.delete(file_meta)
+        await session.commit()
 
     return {"deleted": True, "id": file_id}
 

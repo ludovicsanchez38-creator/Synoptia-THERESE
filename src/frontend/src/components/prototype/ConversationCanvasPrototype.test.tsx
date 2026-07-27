@@ -329,5 +329,31 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
         expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('PE');
       });
     });
+
+    // Contre-vérification N4 : deux chargements qui se chevauchent. La réponse
+    // la plus ancienne, arrivée en dernier, ne doit pas réafficher l'ancien nom.
+    it('une réponse tardive n’écrase pas un profil plus récent', async () => {
+      const { getProfile } = await import('../../services/api/config');
+      let resoudreLent: ((v: unknown) => void) | null = null;
+      vi.mocked(getProfile)
+        .mockImplementationOnce(
+          () => new Promise((r) => { resoudreLent = r as unknown as (v: unknown) => void; }) as never,
+        )
+        .mockResolvedValueOnce({ nickname: 'Perrine', display_name: 'Perrine' } as never);
+
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent('therese:profile-updated'));
+      });
+      await waitFor(() => expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('PE'));
+
+      await act(async () => {
+        resoudreLent?.({ nickname: 'Ludo', display_name: 'Ludovic' });
+        await Promise.resolve();
+      });
+
+      expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('PE');
+    });
   });
 });
