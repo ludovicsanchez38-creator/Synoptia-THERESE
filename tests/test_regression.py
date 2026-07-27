@@ -2825,8 +2825,12 @@ class TestBUGNEW_FilesExtractText:
 
     def test_extract_text_called(self):
         content = self.FILES_PY.read_text(encoding="utf-8")
-        assert "content = extract_text(file_path)" in content, (
-            "get_file_content doit appeler extract_text(file_path)"
+        # Depuis la revue du 27/07 (finding F3), l'extraction passe par le
+        # helper asynchrone : elle bloquait la boucle d'événements pendant la
+        # lecture d'un gros PDF. L'intention de la garde reste la même : la
+        # vraie extraction doit être appelée, jamais un contenu bouchon.
+        assert "content = await extract_text_async(file_path)" in content, (
+            "get_file_content doit appeler l'extraction réelle (hors boucle d'événements)"
         )
 
     def test_none_guard_present(self):

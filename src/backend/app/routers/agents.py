@@ -55,9 +55,10 @@ def repo_error_message(source_path: str) -> str:
     return (
         f"Le dossier « {source_path} » n'est pas un dépôt Git : le dossier .git "
         "est absent. Une archive ZIP téléchargée depuis GitHub ne contient pas "
-        "l'historique du projet, même si elle contient un fichier .gitignore. "
-        "Récupère le projet avec un clone, puis indique ce dossier : "
-        f"git clone <adresse du dépôt> \"{source_path}\""
+        "l'historique du projet, même si elle contient un fichier .gitignore.\n"
+        "Récupère le projet par un clone dans un dossier NEUF (Git refuse une "
+        "destination déjà remplie), puis indique ce nouveau dossier ici :\n"
+        "git clone <adresse du dépôt> therese-source"
     )
 _running_agent_tasks: dict[str, asyncio.Task[Any]] = {}
 _PROFILE_DISABLED_MUTATION_TOOLS = {"write_file", "run_command"}

@@ -4,19 +4,23 @@ THÉRÈSE v2 - Files Router
 Endpoints for file management and indexing.
 """
 
+import asyncio
 import logging
 import shutil
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from app.config import settings
-from app.models.database import get_session
+from app.models.database import get_session, get_session_context
 from app.models.entities import FileMetadata
 from app.models.schemas import FileIndexRequest, FileResponse
 from app.services.file_parser import chunk_text, extract_text, get_file_metadata
 from app.services.path_security import validate_indexable_file
 from app.services.qdrant import get_qdrant_service
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from starlette.concurrency import run_in_threadpool
@@ -31,6 +35,36 @@ router = APIRouter()
 # boucle d'événements : pendant l'indexation d'un gros document, plus aucune
 # requête n'était servie (chat, emails, agenda) et l'application semblait figée.
 # On les déporte dans le pool de threads.
+
+
+# Un dépôt massif lançait autant d'encodages simultanés que de fichiers
+# (revue du 27/07, finding F4). Deux à la fois suffisent sur une machine de
+# bureau et laissent de la place au reste de l'application.
+MAX_INDEXATIONS_SIMULTANEES = 2
+INDEX_SEMAPHORE = asyncio.Semaphore(MAX_INDEXATIONS_SIMULTANEES)
+
+# `FileMetadata.path` est UNIQUE : deux demandes sur le même fichier en même
+# temps levaient une contrainte d'intégrité (finding F1).
+# Chaque entrée porte son verrou et le nombre de demandes qui s'y rattachent :
+# purger sur `locked()` seul supprimerait le verrou alors qu'un appel attend
+# encore, et le suivant en créerait un second pour le même chemin.
+_verrous_par_chemin: dict[str, list[Any]] = {}
+
+
+@asynccontextmanager
+async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
+    entree = _verrous_par_chemin.get(chemin)
+    if entree is None:
+        entree = [asyncio.Lock(), 0]
+        _verrous_par_chemin[chemin] = entree
+    entree[1] += 1
+    try:
+        async with entree[0]:
+            yield
+    finally:
+        entree[1] -= 1
+        if entree[1] == 0 and _verrous_par_chemin.get(chemin) is entree:
+            _verrous_par_chemin.pop(chemin, None)
 
 
 async def extract_text_async(file_path: Path) -> str:
@@ -76,19 +110,30 @@ async def list_files(
     ]
 
 
-@router.post("/index", response_model=FileResponse)
-async def index_file(
-    request: FileIndexRequest,
-    session: AsyncSession = Depends(get_session),
-):
-    """
-    Index a file for RAG.
+async def index_payload(
+    path: str,
+    est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
+) -> FileResponse:
+    """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
-    Extracts content, chunks it, and stores embeddings in Qdrant.
+    Remédiation de la revue du 27/07/2026 (findings F1, F2 et F4) :
+
+    - La métadonnée est écrite et **committée** avant le travail lourd. Elle
+      restait auparavant dans une transaction ouverte pendant l'extraction et
+      les embeddings ; SQLite n'ayant qu'un seul écrivain (busy_timeout de 5 s),
+      une écriture concurrente - l'enregistrement d'un message de chat, par
+      exemple - pouvait échouer pendant l'indexation d'un gros document.
+    - Un verrou par chemin sérialise deux demandes portant sur le même fichier
+      (`FileMetadata.path` est UNIQUE : la course levait une contrainte).
+    - Un sémaphore borne les encodages simultanés : un dépôt massif lançait
+      autant d'encodages que de fichiers.
+    - `est_abandonnee` permet de renoncer avant l'étape la plus coûteuse quand
+      plus personne n'attend la réponse. L'extraction déjà lancée, elle, va à
+      son terme : un thread ne s'interrompt pas.
     """
     # Validation securite du chemin + type de fichier (SEC-002/003)
     try:
-        file_path = validate_indexable_file(request.path)
+        file_path = validate_indexable_file(path)
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
     except FileNotFoundError as e:
@@ -99,86 +144,102 @@ async def index_file(
     if not file_path.is_file():
         raise HTTPException(status_code=400, detail="Path is not a file")
 
-    # Get file info
     metadata = get_file_metadata(file_path)
 
-    # Check if already indexed
-    result = await session.execute(
-        select(FileMetadata).where(FileMetadata.path == str(file_path))
-    )
-    existing = result.scalar_one_or_none()
+    async with _verrou_de_chemin(str(file_path)):
+        # 1. Transaction COURTE : enregistrer le fichier, puis rendre la main.
+        async with get_session_context() as session:
+            result = await session.execute(
+                select(FileMetadata).where(FileMetadata.path == str(file_path))
+            )
+            existing = result.scalar_one_or_none()
+            if existing:
+                existing.size = metadata["size"]
+                existing.mime_type = metadata["mime_type"]
+                existing.updated_at = datetime.now(UTC)
+                file_meta = existing
+                reindexation = True
+            else:
+                file_meta = FileMetadata(
+                    path=str(file_path),
+                    name=metadata["name"],
+                    extension=metadata["extension"],
+                    size=metadata["size"],
+                    mime_type=metadata["mime_type"],
+                )
+                session.add(file_meta)
+                reindexation = False
+            await session.commit()
+            await session.refresh(file_meta)
+            file_id = file_meta.id
+            file_name = file_meta.name
+            created_at = file_meta.created_at
+            extension = file_meta.extension
 
-    if existing:
-        # Delete old embeddings
-        qdrant = get_qdrant_service()
-        await qdrant.async_delete_by_entity(existing.id)
+        if reindexation:
+            await get_qdrant_service().async_delete_by_entity(file_id)
 
-        # Update existing entry
-        existing.size = metadata["size"]
-        existing.mime_type = metadata["mime_type"]
-        existing.updated_at = datetime.now(UTC)
-        file_meta = existing
-    else:
-        # Create new entry
-        file_meta = FileMetadata(
-            path=str(file_path),
-            name=metadata["name"],
-            extension=metadata["extension"],
-            size=metadata["size"],
-            mime_type=metadata["mime_type"],
-        )
-        session.add(file_meta)
-        await session.flush()  # Get the ID
+        # 2. Travail lourd, hors transaction et hors boucle d'événements.
+        text_content = await extract_text_async(file_path)
+        chunk_count = 0
 
-    # Extract text content (hors boucle d'événements - BUG-155)
-    text_content = await extract_text_async(file_path)
+        if text_content and not (est_abandonnee and await est_abandonnee()):
+            chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
+            items = [
+                {
+                    "text": chunk,
+                    "memory_type": "file",
+                    "entity_id": file_id,
+                    "metadata": {
+                        "name": file_name,
+                        "path": str(file_path),
+                        "chunk_index": i,
+                        "total_chunks": len(chunks),
+                    },
+                }
+                for i, chunk in enumerate(chunks)
+            ]
+            if items and not (est_abandonnee and await est_abandonnee()):
+                async with INDEX_SEMAPHORE:
+                    await get_qdrant_service().async_add_memories(items)
+                logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
+                chunk_count = len(chunks)
+        elif not text_content:
+            logger.warning(f"No text extracted from {file_path}")
 
-    if text_content:
-        # Chunk the content (hors boucle d'événements - BUG-155)
-        chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
-
-        # Store embeddings in Qdrant
-        qdrant = get_qdrant_service()
-        items = []
-
-        for i, chunk in enumerate(chunks):
-            items.append({
-                "text": chunk,
-                "memory_type": "file",
-                "entity_id": file_meta.id,
-                "metadata": {
-                    "name": file_meta.name,
-                    "path": str(file_path),
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
-                },
-            })
-
-        if items:
-            await qdrant.async_add_memories(items)
-            logger.info(f"Indexed {len(chunks)} chunks for file {file_meta.name}")
-
-        file_meta.chunk_count = len(chunks)
-    else:
-        file_meta.chunk_count = 0
-        logger.warning(f"No text extracted from {file_path}")
-
-    file_meta.indexed_at = datetime.now(UTC)
-
-    await session.commit()
-    await session.refresh(file_meta)
+        # 3. Transaction COURTE : consigner le résultat.
+        indexed_at = datetime.now(UTC)
+        async with get_session_context() as session:
+            a_jour = await session.get(FileMetadata, file_id)
+            if a_jour is not None:
+                a_jour.chunk_count = chunk_count
+                a_jour.indexed_at = indexed_at
+                await session.commit()
 
     return FileResponse(
-        id=file_meta.id,
-        path=file_meta.path,
-        name=file_meta.name,
-        extension=file_meta.extension,
-        size=file_meta.size,
-        mime_type=file_meta.mime_type,
-        chunk_count=file_meta.chunk_count,
-        indexed_at=file_meta.indexed_at,
-        created_at=file_meta.created_at,
+        id=file_id,
+        path=str(file_path),
+        name=file_name,
+        extension=extension,
+        size=metadata["size"],
+        mime_type=metadata["mime_type"],
+        chunk_count=chunk_count,
+        indexed_at=indexed_at,
+        created_at=created_at,
     )
+
+
+@router.post("/index", response_model=FileResponse)
+async def index_file(
+    request: FileIndexRequest,
+    http_request: Request,
+):
+    """
+    Index a file for RAG.
+
+    Extracts content, chunks it, and stores embeddings in Qdrant.
+    """
+    return await index_payload(request.path, est_abandonnee=http_request.is_disconnected)
 
 
 @router.get("/{file_id}", response_model=FileResponse)
@@ -259,8 +320,10 @@ async def get_file_content(
         raise HTTPException(status_code=404, detail="File no longer exists on disk")
 
     # Utiliser extract_text() (déjà importé) pour supporter PDF, DOCX, XLSX, etc.
+    # Hors boucle d'événements (finding F3 de la revue du 27/07) : relire un gros
+    # PDF gelait l'application au même titre que l'indexation.
     try:
-        content = extract_text(file_path)
+        content = await extract_text_async(file_path)
         # extract_text() retourne None pour les formats non supportés ou fichiers vides
         if content is None:
             content = ""
@@ -320,11 +383,17 @@ async def upload_file(
     therese_dir = Path(settings.data_dir) / "projects" / project_id / "files"
     therese_dir.mkdir(parents=True, exist_ok=True)
 
-    # Sauvegarder le fichier
+    # Sauvegarder le fichier (copie disque hors boucle d'événements - finding F3
+    # de la revue du 27/07 : une pièce jointe de projet volumineuse gelait
+    # l'application exactement comme l'indexation du chat).
     dest_path = therese_dir / file.filename
-    try:
+
+    def _copier_sur_disque() -> None:
         with dest_path.open("wb") as f:
             shutil.copyfileobj(file.file, f)
+
+    try:
+        await run_in_threadpool(_copier_sur_disque)
     except Exception as e:
         logger.error(f"Erreur sauvegarde fichier : {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde du fichier")
@@ -360,10 +429,10 @@ async def upload_file(
         session.add(file_meta)
         await session.flush()
 
-    # Extraire et indexer le contenu
-    text_content = extract_text(dest_path)
+    # Extraire et indexer le contenu (hors boucle d'événements - finding F3)
+    text_content = await extract_text_async(dest_path)
     if text_content:
-        chunks = list(chunk_text(text_content, chunk_size=1000, overlap=200))
+        chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
         qdrant = get_qdrant_service()
         items = []
         for i, chunk in enumerate(chunks):

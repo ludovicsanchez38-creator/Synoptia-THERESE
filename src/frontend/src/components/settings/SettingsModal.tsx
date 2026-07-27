@@ -510,6 +510,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       // (deux modales indépendantes) : rafraîchir le garde-fou P0-PROD-2 pour
       // qu'il reflète immédiatement le profil qu'on vient de compléter.
       void useBillingProfileStore.getState().refresh();
+      // Revue Soso 27/07 (F6) : la coque ne lit le profil qu'au montage. Sans
+      // ce signal, ses initiales et sa salutation gardaient l'ancien nom
+      // jusqu'au redémarrage de l'application.
+      window.dispatchEvent(new CustomEvent('therese:profile-updated'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {

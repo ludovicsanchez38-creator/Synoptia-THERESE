@@ -307,5 +307,36 @@ describe('DocumentsList', () => {
         expect(generateOutline).toHaveBeenCalledWith('doc-neuf');
       });
     });
+
+    // Revue Soso 27/07 (F5) : openDocument n'était pas attendu et isLoading est
+    // partagé - un GET rapide rendait le bouton « Générer la trame » cliquable
+    // pendant que le modèle travaillait, d'où deux générations et deux jeux de
+    // sections possibles pour le même document.
+    it('n’enchaîne la trame qu’après l’ouverture du document', async () => {
+      const ordre: string[] = [];
+      const openDocument = vi.fn().mockImplementation(async () => {
+        await new Promise((r) => setTimeout(r, 10));
+        ordre.push('open');
+      });
+      const generateOutline = vi.fn().mockImplementation(async () => {
+        ordre.push('outline');
+      });
+      useDocumentStore.setState({
+        documents: [],
+        openDocument,
+        generateOutline,
+        createDocument: vi.fn().mockResolvedValue(makeDocument({ id: 'doc-neuf', sections_total: 0 })),
+      } as never);
+      mockListProjects.mockResolvedValue([]);
+
+      render(<DocumentsList />);
+      fireEvent.click(screen.getAllByRole('button', { name: /Nouveau document/i })[0]);
+      const dialog = await screen.findByRole('dialog', { name: /Nouveau document/i });
+      fireEvent.change(within(dialog).getByLabelText(/Titre/i), { target: { value: 'Plan de test' } });
+      fireEvent.click(within(dialog).getByRole('button', { name: /^Créer/i }));
+
+      await waitFor(() => expect(generateOutline).toHaveBeenCalledTimes(1));
+      expect(ordre).toEqual(['open', 'outline']);
+    });
   });
 });
