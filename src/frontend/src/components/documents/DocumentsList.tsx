@@ -76,6 +76,11 @@ interface DocumentCardProps {
 
 function DocumentCard({ document, onOpen }: DocumentCardProps) {
   const isTermine = document.status === 'termine';
+  // BUG-154 : « En cours » désignait l'état de rédaction, pas un traitement.
+  // Le testeur a attendu 40 minutes une génération jamais lancée. L'étiquette
+  // dit désormais où en est le document, et un document sans trame le montre.
+  const sansTrame = !isTermine && document.sections_total === 0;
+  const etiquette = isTermine ? 'Terminé' : sansTrame ? 'Sans trame' : 'Rédaction';
 
   return (
     <button
@@ -90,10 +95,12 @@ function DocumentCard({ document, onOpen }: DocumentCardProps) {
           className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-[6px] border ${
             isTermine
               ? 'text-success border-success/30 bg-success/10'
-              : 'text-warning border-warning/30 bg-warning/10'
+              : sansTrame
+                ? 'text-text-muted border-border bg-surface'
+                : 'text-warning border-warning/30 bg-warning/10'
           }`}
         >
-          {isTermine ? 'Terminé' : 'En cours'}
+          {etiquette}
         </span>
       </div>
       {document.brief && <p className="text-xs text-text-muted truncate mt-1">{document.brief}</p>}
@@ -114,6 +121,7 @@ export function DocumentsList() {
   const error = useDocumentStore((s) => s.error);
   const loadDocuments = useDocumentStore((s) => s.loadDocuments);
   const openDocument = useDocumentStore((s) => s.openDocument);
+  const generateOutline = useDocumentStore((s) => s.generateOutline);
   const createModalRequested = useDocumentStore((s) => s.createModalRequested);
   const clearCreateModalRequest = useDocumentStore((s) => s.clearCreateModalRequest);
 
@@ -166,6 +174,18 @@ export function DocumentsList() {
   const handleBackToList = useCallback(() => {
     setWorkspaceOpenId(null);
   }, []);
+
+  // BUG-154 : le document créé restait dans la liste, sans trame et sans que
+  // rien ne le dise. Demander « un plan de test » doit produire un plan :
+  // on ouvre l'atelier et on enchaîne la génération de la trame, dont l'état
+  // (et l'échec éventuel) est visible dans l'atelier.
+  const handleCreated = useCallback(
+    (id: string) => {
+      handleOpen(id);
+      void generateOutline(id);
+    },
+    [handleOpen, generateOutline]
+  );
 
   if (workspaceOpenId) {
     return <DocumentWorkspace documentId={workspaceOpenId} onBack={handleBackToList} />;
@@ -227,9 +247,13 @@ export function DocumentsList() {
 
       {/* Après création, le document créé apparaît en tête de liste
           (documentStore.createDocument le préfixe déjà) - pas de rechargement
-          nécessaire. L'ouverture de l'atelier reste un geste explicite (clic
-          sur la carte). */}
-      <DocumentCreateModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+          nécessaire. BUG-154 : l'atelier s'ouvre et la trame est enchaînée,
+          au lieu de laisser un document vide au milieu de la liste. */}
+      <DocumentCreateModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={handleCreated}
+      />
     </div>
   );
 }
