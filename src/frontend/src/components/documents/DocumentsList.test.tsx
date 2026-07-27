@@ -27,6 +27,7 @@ interface MockDocumentState {
   loadDocuments: ReturnType<typeof vi.fn>;
   openDocument: ReturnType<typeof vi.fn>;
   createDocument: ReturnType<typeof vi.fn>;
+  generateOutline: ReturnType<typeof vi.fn>;
   clearError: ReturnType<typeof vi.fn>;
   clearCreateModalRequest: ReturnType<typeof vi.fn>;
 }
@@ -40,6 +41,7 @@ vi.mock('../../stores/documentStore', () => {
     loadDocuments: vi.fn(),
     openDocument: vi.fn(),
     createDocument: vi.fn(),
+    generateOutline: vi.fn().mockResolvedValue(undefined),
     clearError: vi.fn(),
     clearCreateModalRequest: vi.fn(() => {
       state.createModalRequested = false;
@@ -253,5 +255,57 @@ describe('DocumentsList', () => {
     expect(within(dialog).queryByRole('combobox')).not.toBeInTheDocument();
 
     consoleSpy.mockRestore();
+  });
+
+  // BUG-154 (27/07/2026) - Le badge « En cours » désignait l'état de rédaction
+  // du document, pas un traitement : le testeur a attendu 40 minutes une
+  // génération qui n'avait jamais été lancée. Et après création, le document
+  // restait sans trame, sans que rien ne l'indique.
+  describe('BUG-154 - lisibilité de l’état et enchaînement de la trame', () => {
+    it('un document sans trame l’annonce au lieu d’afficher « En cours »', () => {
+      useDocumentStore.setState({
+        documents: [makeDocument({ id: 'doc-vide', title: 'Plan de test', sections_total: 0, sections_validees: 0 })],
+      });
+
+      render(<DocumentsList />);
+
+      const carte = screen.getByTestId('document-card');
+      expect(within(carte).getByText('Sans trame')).toBeInTheDocument();
+      expect(within(carte).queryByText('En cours')).toBeNull();
+    });
+
+    it('un document déjà structuré est en rédaction, pas « en cours » de traitement', () => {
+      useDocumentStore.setState({
+        documents: [makeDocument({ id: 'doc-2', sections_total: 4, sections_validees: 1 })],
+      });
+
+      render(<DocumentsList />);
+
+      const carte = screen.getByTestId('document-card');
+      expect(within(carte).getByText('Rédaction')).toBeInTheDocument();
+    });
+
+    it('après création, le document s’ouvre et la trame est lancée', async () => {
+      const generateOutline = vi.fn().mockResolvedValue(undefined);
+      useDocumentStore.setState({
+        documents: [],
+        generateOutline,
+        createDocument: vi.fn().mockResolvedValue(makeDocument({ id: 'doc-neuf', sections_total: 0 })),
+      } as never);
+      mockListProjects.mockResolvedValue([]);
+
+      render(<DocumentsList />);
+      fireEvent.click(screen.getAllByRole('button', { name: /Nouveau document/i })[0]);
+      const dialog = await screen.findByRole('dialog', { name: /Nouveau document/i });
+      fireEvent.change(within(dialog).getByLabelText(/Titre/i), { target: { value: 'Plan de test' } });
+      fireEvent.click(within(dialog).getByRole('button', { name: /^Créer/i }));
+
+      await waitFor(() => {
+        expect(useDocumentStore.getState().openDocument).toHaveBeenCalledWith('doc-neuf');
+      });
+      await waitFor(() => {
+        expect(generateOutline).toHaveBeenCalledWith('doc-neuf');
+      });
+    });
   });
 });
