@@ -731,10 +731,20 @@ export function ConversationCanvasPrototype() {
 
   useEffect(() => {
     let active = true;
-    getProfile()
-      .then((value) => { if (active) { setProfile(value); setProfileState('loaded'); } })
-      .catch(() => { if (active) { setProfile(null); setProfileState('error'); } });
-    return () => { active = false; };
+    const charger = () => {
+      getProfile()
+        .then((value) => { if (active) { setProfile(value); setProfileState('loaded'); } })
+        .catch(() => { if (active) { setProfile(null); setProfileState('error'); } });
+    };
+    charger();
+    // Revue Soso 27/07 (F6) : le profil n'était lu qu'au montage. Après un
+    // enregistrement dans les Paramètres, les initiales, le nom d'espace et la
+    // salutation restaient sur l'ancienne valeur jusqu'au redémarrage.
+    window.addEventListener('therese:profile-updated', charger);
+    return () => {
+      active = false;
+      window.removeEventListener('therese:profile-updated', charger);
+    };
   }, []);
 
   useEffect(() => {

@@ -210,6 +210,34 @@ describe('documentStore', () => {
       expect(state.currentDocument?.sections).toHaveLength(2);
       expect(state.currentDocument?.sections_total).toBe(2);
     });
+
+    // Revue Soso 27/07 (F5) : la liste gardait sections_total: 0, donc la carte
+    // du document affichait « Sans trame » alors que la trame existait en base.
+    it('met aussi à jour l’entrée correspondante de la liste', async () => {
+      useDocumentStore.setState({
+        documents: [makeDocument({ id: 'd1', sections_total: 0, sections_validees: 0 })],
+        currentDocument: makeDetail({ id: 'd1', sections: [] }),
+      });
+      const sections = [makeSection({ id: 's1', order: 10 }), makeSection({ id: 's2', order: 20 })];
+      vi.mocked(generateOutline).mockResolvedValueOnce(sections);
+
+      await useDocumentStore.getState().generateOutline('d1');
+
+      expect(useDocumentStore.getState().documents[0].sections_total).toBe(2);
+    });
+
+    it('n’écrase pas la liste quand la génération échoue', async () => {
+      useDocumentStore.setState({
+        documents: [makeDocument({ id: 'd1', sections_total: 3 })],
+        currentDocument: makeDetail({ id: 'd1', sections: [] }),
+      });
+      vi.mocked(generateOutline).mockRejectedValueOnce(new Error('modèle indisponible'));
+
+      await useDocumentStore.getState().generateOutline('d1');
+
+      expect(useDocumentStore.getState().documents[0].sections_total).toBe(3);
+      expect(useDocumentStore.getState().error).toContain('modèle indisponible');
+    });
   });
 
   describe('updateSection', () => {

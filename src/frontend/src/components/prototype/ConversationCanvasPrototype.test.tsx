@@ -282,5 +282,52 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
       expect(profil).toHaveAttribute('aria-label', 'Chargement du profil…');
       expect(profil).toBeDisabled();
     });
+
+    it('affiche les initiales une fois le profil chargé', async () => {
+      const { getProfile } = await import('../../services/api/config');
+      vi.mocked(getProfile).mockResolvedValueOnce({ nickname: 'Ludo', display_name: 'Ludovic' } as never);
+
+      render(<ConversationCanvasPrototype />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('LU');
+      });
+      expect(screen.getByTestId('shell-profile-button')).toHaveAttribute('aria-label', 'Ouvrir le profil');
+    });
+
+    it('signale un profil indisponible au lieu de rester muet', async () => {
+      const { getProfile } = await import('../../services/api/config');
+      vi.mocked(getProfile).mockRejectedValueOnce(new Error('backend injoignable'));
+
+      render(<ConversationCanvasPrototype />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('shell-profile-button')).toHaveAttribute(
+          'aria-label',
+          'Profil indisponible - ouvrir le profil',
+        );
+      });
+    });
+
+    // Revue Soso 27/07 (F6) : le profil n'était chargé qu'au montage. Modifier
+    // son nom dans les Paramètres laissait les initiales et la salutation de la
+    // coque sur l'ancienne valeur jusqu'au redémarrage.
+    it('recharge le profil quand il vient d’être enregistré', async () => {
+      const { getProfile } = await import('../../services/api/config');
+      vi.mocked(getProfile)
+        .mockResolvedValueOnce({ nickname: 'Ludo', display_name: 'Ludovic' } as never)
+        .mockResolvedValueOnce({ nickname: 'Perrine', display_name: 'Perrine' } as never);
+
+      render(<ConversationCanvasPrototype />);
+      await waitFor(() => expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('LU'));
+
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent('therese:profile-updated'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('PE');
+      });
+    });
   });
 });

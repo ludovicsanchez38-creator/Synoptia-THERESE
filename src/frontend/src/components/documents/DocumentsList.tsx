@@ -26,7 +26,7 @@
  * avant l'attache du listener serait perdu, un state Zustand déjà posé est lu
  * correctement au premier rendu.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileText, Loader2, Plus } from 'lucide-react';
 import { useDocumentStore } from '../../stores/documentStore';
 import type { DocumentResponse } from '../../services/api/documents';
@@ -179,12 +179,21 @@ export function DocumentsList() {
   // rien ne le dise. Demander « un plan de test » doit produire un plan :
   // on ouvre l'atelier et on enchaîne la génération de la trame, dont l'état
   // (et l'échec éventuel) est visible dans l'atelier.
+  //
+  // Revue Soso 27/07 (F5) : l'ouverture doit être ATTENDUE. Lancée en
+  // parallèle, elle remettait `isLoading` à faux pendant que le modèle
+  // travaillait encore (le drapeau est partagé par les deux opérations), ce qui
+  // réactivait « Générer la trame » et permettait une seconde génération.
+  const generationLanceeRef = useRef<Set<string>>(new Set());
   const handleCreated = useCallback(
-    (id: string) => {
-      handleOpen(id);
-      void generateOutline(id);
+    async (id: string) => {
+      if (generationLanceeRef.current.has(id)) return;
+      generationLanceeRef.current.add(id);
+      setWorkspaceOpenId(id);
+      await openDocument(id);
+      await generateOutline(id);
     },
-    [handleOpen, generateOutline]
+    [openDocument, generateOutline]
   );
 
   if (workspaceOpenId) {

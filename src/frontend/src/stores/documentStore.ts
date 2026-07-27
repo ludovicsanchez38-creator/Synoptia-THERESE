@@ -238,8 +238,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const sections = await apiGenerateOutline(documentId);
+      // Revue Soso 27/07 (F5) : seul currentDocument était mis à jour. De retour
+      // à la liste, la carte gardait sections_total: 0 et s'annonçait « Sans
+      // trame » alors que la trame venait d'être écrite en base.
       set((s) => ({
         isLoading: false,
+        documents: s.documents.map((d) =>
+          d.id === documentId ? { ...d, sections_total: sections.length } : d,
+        ),
         currentDocument:
           s.currentDocument && s.currentDocument.id === documentId
             ? { ...s.currentDocument, sections, sections_total: sections.length }
