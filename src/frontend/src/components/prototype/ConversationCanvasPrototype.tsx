@@ -1471,7 +1471,10 @@ export function ConversationCanvasPrototype() {
                           }}
                           className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-medium text-text-muted hover:bg-bg hover:text-text"
                         >
-                          <Plus className="h-4 w-4" />
+                          {/* Triage 26/07 : dans un chat, le « + » annonce une
+                              pièce jointe. L'associer aux capacités mélangeait
+                              deux gestes sans rapport. */}
+                          <Sparkles className="h-4 w-4" />
                           Capacités
                         </button>
                       </div>

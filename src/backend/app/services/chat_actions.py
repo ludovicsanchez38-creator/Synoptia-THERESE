@@ -94,6 +94,46 @@ _VARIABLE_VERBS = {
 }
 
 
+def _suggestion_syntaxe(verbe: str, reste: str) -> str:
+    """Propose la commande corrigée au lieu de rappeler la grammaire.
+
+    Triage 25/07/2026 (Dr_logic) : « syntaxe de création de variable peu
+    intuitif ». Le nom écrit entre guillemets, accentué ou en plusieurs mots
+    ne recevait qu'un rappel abstrait de la forme attendue.
+    """
+    valeur: str | None = None
+    guillemets = re.search(r'"([^"]*)"|«\s*([^»]*?)\s*»', reste)
+    if guillemets is not None:
+        valeur = guillemets.group(1) if guillemets.group(1) is not None else guillemets.group(2)
+        # Le nom est ce qui précède la première valeur citée.
+        brut = reste[: guillemets.start()]
+    else:
+        brut = reste
+    est_liste = brut.strip().lower().endswith("liste")
+    if est_liste:
+        brut = brut.strip()[: -len("liste")]
+
+    nom = _normalize(brut).strip().strip('"«»').strip()
+    nom = re.sub(r"[^a-z0-9_\s-]", "", nom)
+    nom = re.sub(r"[\s-]+", "_", nom).strip("_")[:32]
+
+    if not nom:
+        return (
+            "Il manque le nom de la variable. Exemple : "
+            f'{{action: variable {verbe} priorite "haute"}}'
+        )
+    if est_liste:
+        propose = f"{{action: variable {verbe} {nom} liste}}"
+    elif valeur is not None:
+        propose = f'{{action: variable {verbe} {nom} "{valeur}"}}'
+    else:
+        propose = f'{{action: variable {verbe} {nom} "ta valeur"}}'
+    return (
+        "Le nom de la variable s'écrit sans guillemets, sans accent et sans "
+        f"espace (minuscules, chiffres et _). Essaie : {propose}"
+    )
+
+
 def _variable_erreur(body: str, message: str) -> "ParsedChatAction":
     return ParsedChatAction(
         kind="variable", raw=body, var_op="erreur", var_message=message
@@ -122,11 +162,7 @@ def _parse_variable_body(body: str) -> "ParsedChatAction | None":
         )
     arg = _VAR_ARG.match(cmd.group("reste").strip())
     if arg is None:
-        return _variable_erreur(
-            body,
-            "Argument invalide : nom en minuscules/chiffres/_ (32 c. max), "
-            'valeur entre guillemets sans accolades ni retour ligne.',
-        )
+        return _variable_erreur(body, _suggestion_syntaxe(verbe, cmd.group("reste").strip()))
     nom = arg.group("nom").lower()
     est_liste = arg.group("liste") is not None
     valeur = arg.group("val_d") if arg.group("val_d") is not None else arg.group("val_f")

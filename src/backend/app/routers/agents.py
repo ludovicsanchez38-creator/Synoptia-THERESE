@@ -42,6 +42,23 @@ from sqlmodel import func, select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def repo_error_message(source_path: str) -> str:
+    """Explique l'absence de dépôt Git à quelqu'un qui n'est pas développeur.
+
+    Triage 26/07/2026 : un testeur avait pointé une archive ZIP de GitHub,
+    décompressée. Elle contient bien un `.gitignore`, mais jamais l'historique.
+    L'ancien message (« n'est pas un depot Git (.git absent) ») lui a fait
+    croire qu'un fichier manquait à son dossier.
+    """
+    return (
+        f"Le dossier « {source_path} » n'est pas un dépôt Git : le dossier .git "
+        "est absent. Une archive ZIP téléchargée depuis GitHub ne contient pas "
+        "l'historique du projet, même si elle contient un fichier .gitignore. "
+        "Récupère le projet avec un clone, puis indique ce dossier : "
+        f"git clone <adresse du dépôt> \"{source_path}\""
+    )
 _running_agent_tasks: dict[str, asyncio.Task[Any]] = {}
 _PROFILE_DISABLED_MUTATION_TOOLS = {"write_file", "run_command"}
 _MAX_OPENCLAW_AGENTS = 3
@@ -895,7 +912,7 @@ async def get_status(
             current_branch = await git.current_branch()
             working_tree_clean = await git.ensure_clean()
         else:
-            repo_error = f"Le dossier '{source_path}' existe mais n'est pas un depot Git (.git absent)"
+            repo_error = repo_error_message(source_path)
     elif source_path and not git_available:
         repo_error = "Git n'est pas installe ou introuvable dans le PATH"
     elif not source_path:
