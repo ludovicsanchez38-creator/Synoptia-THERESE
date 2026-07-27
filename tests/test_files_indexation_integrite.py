@@ -113,6 +113,48 @@ class TestN1IntegriteDeLaReindexation:
         )
 
 
+class TestEchecDEcritureVectorielle:
+    @pytest.mark.asyncio
+    async def test_un_echec_apres_suppression_est_consigne_comme_index_vide(
+        self, db_session, fichier, monkeypatch
+    ):
+        """La base ne doit pas annoncer des fragments qui n'existent plus.
+
+        La suppression des anciens vecteurs précède forcément l'écriture des
+        nouveaux. Si celle-ci échoue, l'index est vide : le dire, plutôt que de
+        laisser l'ancien compteur promettre un contenu introuvable.
+        """
+        from app.models.database import get_session_context
+        from app.models.entities import FileMetadata
+        from app.routers import files as files_router
+        from sqlmodel import select
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+
+        await files_router.index_payload(path=str(fichier))
+
+        class QdrantQuiCasse(FauxQdrant):
+            async def async_add_memories(self, items):
+                raise RuntimeError("Qdrant injoignable")
+
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: QdrantQuiCasse())
+
+        with pytest.raises(RuntimeError, match="Qdrant injoignable"):
+            await files_router.index_payload(path=str(fichier))
+
+        async with get_session_context() as session:
+            ligne = (
+                await session.execute(
+                    select(FileMetadata).where(FileMetadata.path == str(fichier.resolve()))
+                )
+            ).scalar_one()
+            assert ligne.chunk_count == 0, (
+                "la base promet des fragments alors que l'index vectoriel est vide"
+            )
+
+
 class TestF1AbandonPendantLAttente:
     @pytest.mark.asyncio
     async def test_l_abandon_est_reconsulte_apres_le_semaphore(self, db_session, fichier, monkeypatch):
