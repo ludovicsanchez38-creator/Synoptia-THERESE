@@ -731,10 +731,19 @@ export function ConversationCanvasPrototype() {
 
   useEffect(() => {
     let active = true;
+    // Contre-vérification N4 : plusieurs chargements peuvent se chevaucher
+    // (montage + enregistrements successifs). Sans jeton, une réponse ancienne
+    // écrase une plus récente et réaffiche l'ancien profil.
+    let jeton = 0;
     const charger = () => {
+      const courant = ++jeton;
       getProfile()
-        .then((value) => { if (active) { setProfile(value); setProfileState('loaded'); } })
-        .catch(() => { if (active) { setProfile(null); setProfileState('error'); } });
+        .then((value) => {
+          if (active && courant === jeton) { setProfile(value); setProfileState('loaded'); }
+        })
+        .catch(() => {
+          if (active && courant === jeton) { setProfile(null); setProfileState('error'); }
+        });
     };
     charger();
     // Revue Soso 27/07 (F6) : le profil n'était lu qu'au montage. Après un

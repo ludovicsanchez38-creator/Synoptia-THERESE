@@ -190,8 +190,15 @@ export function DocumentsList() {
       if (generationLanceeRef.current.has(id)) return;
       generationLanceeRef.current.add(id);
       setWorkspaceOpenId(id);
-      await openDocument(id);
-      await generateOutline(id);
+      try {
+        await openDocument(id);
+        await generateOutline(id);
+      } finally {
+        // La garde ne sert qu'à empêcher DEUX générations pour la même création
+        // (contre-vérification N3 : sans retrait, l'ensemble grossissait et une
+        // régénération volontaire plus tard aurait été ignorée).
+        generationLanceeRef.current.delete(id);
+      }
     },
     [openDocument, generateOutline]
   );

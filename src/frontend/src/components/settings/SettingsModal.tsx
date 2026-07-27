@@ -550,6 +550,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
         setProfileSaved(true);
         setTimeout(() => setProfileSaved(false), 3000);
         void useBillingProfileStore.getState().refresh();
+        // L'import modifie le profil autant qu'un enregistrement manuel : la
+        // coque doit le relire (contre-vérification N4).
+        window.dispatchEvent(new CustomEvent('therese:profile-updated'));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'import');

@@ -1,0 +1,256 @@
+"""
+Contre-vérification Soso du 27/07/2026 (2e passage) - défauts N1 et N2.
+
+N1 : lors d'une RÉINDEXATION, les anciens vecteurs étaient supprimés avant
+     l'extraction et avant tout contrôle d'abandon. Une annulation laissait donc
+     un fichier sans aucun vecteur, marqué `chunk_count=0` avec un `indexed_at`
+     tout neuf : il paraissait indexé alors qu'il ne l'était plus. Une erreur
+     d'extraction produisait l'inverse (ancien compteur conservé, vecteurs
+     disparus).
+
+N2 : `delete_file` ne prenait pas le verrou de chemin. Il pouvait supprimer la
+     ligne pendant l'extraction ; l'indexation ajoutait ensuite ses vecteurs et
+     renvoyait un succès, laissant des vecteurs orphelins sans ligne en base.
+
+F1 (resté ouvert) : l'abandon n'était plus consulté après l'attente du
+     sémaphore - une déconnexion pendant cette attente n'empêchait rien.
+"""
+import asyncio
+from pathlib import Path
+
+import pytest
+
+
+@pytest.fixture()
+def fichier(tmp_path: Path) -> Path:
+    chemin = tmp_path / "rapport.txt"
+    chemin.write_text("Contenu de test. " * 200, encoding="utf-8")
+    return chemin
+
+
+class FauxQdrant:
+    def __init__(self):
+        self.ajouts = []
+        self.suppressions = []
+
+    async def async_delete_by_entity(self, entity_id):
+        self.suppressions.append(entity_id)
+        return 1
+
+    async def async_add_memories(self, items):
+        self.ajouts.append(items)
+        return None
+
+
+class TestN1IntegriteDeLaReindexation:
+    @pytest.mark.asyncio
+    async def test_une_annulation_ne_detruit_pas_l_index_existant(
+        self, db_session, fichier, monkeypatch
+    ):
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+
+        premiere = await files_router.index_payload(path=str(fichier))
+        assert premiere.chunk_count > 0
+        indexed_at_initial = premiere.indexed_at
+        faux.suppressions.clear()
+
+        async def abandonnee():
+            return True
+
+        await files_router.index_payload(path=str(fichier), est_abandonnee=abandonnee)
+
+        assert faux.suppressions == [], (
+            "l'index existant a été supprimé alors que la demande était abandonnée"
+        )
+
+        from app.models.database import get_session_context
+        from app.models.entities import FileMetadata
+        from sqlmodel import select
+
+        async with get_session_context() as session:
+            ligne = (
+                await session.execute(
+                    select(FileMetadata).where(FileMetadata.path == str(fichier.resolve()))
+                )
+            ).scalar_one()
+            assert ligne.chunk_count == premiere.chunk_count, (
+                "le fichier est présenté comme vide alors que ses vecteurs existent"
+            )
+            # SQLite rend des dates naïves (gotcha du projet, cf BUG-126) :
+            # comparer les instants, pas leur fuseau.
+            assert ligne.indexed_at.replace(tzinfo=None) == indexed_at_initial.replace(
+                tzinfo=None
+            ), "un horodatage neuf laisse croire à une indexation réussie"
+
+    @pytest.mark.asyncio
+    async def test_une_extraction_qui_echoue_laisse_l_index_intact(
+        self, db_session, fichier, monkeypatch
+    ):
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+
+        await files_router.index_payload(path=str(fichier))
+        faux.suppressions.clear()
+
+        def extraction_qui_casse(_p):
+            raise ValueError("PDF protégé")
+
+        monkeypatch.setattr(files_router, "extract_text", extraction_qui_casse)
+
+        with pytest.raises(ValueError, match="PDF protégé"):
+            await files_router.index_payload(path=str(fichier))
+
+        assert faux.suppressions == [], (
+            "les anciens vecteurs ont été supprimés avant de savoir si la nouvelle "
+            "extraction aboutissait"
+        )
+
+
+class TestF1AbandonPendantLAttente:
+    @pytest.mark.asyncio
+    async def test_l_abandon_est_reconsulte_apres_le_semaphore(self, db_session, fichier, monkeypatch):
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+
+        appels = {"n": 0}
+
+        async def abandonnee_au_dernier_moment():
+            # Deux premiers contrôles négatifs (avant découpage, avant sémaphore),
+            # puis l'utilisateur retire la pièce jointe.
+            appels["n"] += 1
+            return appels["n"] > 2
+
+        await files_router.index_payload(
+            path=str(fichier), est_abandonnee=abandonnee_au_dernier_moment
+        )
+
+        assert faux.ajouts == [], (
+            "l'écriture vectorielle a eu lieu alors que la demande venait d'être "
+            "abandonnée pendant l'attente du sémaphore"
+        )
+
+
+class TestN2CourseAvecLaSuppression:
+    @pytest.mark.asyncio
+    async def test_la_suppression_attend_la_fin_de_l_indexation(self, db_session, fichier, monkeypatch):
+        """`delete_file` doit prendre le même verrou de chemin que l'indexation."""
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+
+        ordre: list[str] = []
+        depart = asyncio.Event()
+
+        def extraction_lente(_p):
+            ordre.append("extraction")
+            return "texte extrait"
+
+        monkeypatch.setattr(files_router, "extract_text", extraction_lente)
+
+        premiere = await files_router.index_payload(path=str(fichier))
+        ordre.clear()
+
+        async def indexer():
+            depart.set()
+            return await files_router.index_payload(path=str(fichier))
+
+        async def supprimer():
+            await depart.wait()
+            await asyncio.sleep(0)
+            async with files_router._verrou_de_chemin(str(fichier.resolve())):
+                ordre.append("suppression")
+
+        await asyncio.gather(indexer(), supprimer())
+
+        assert ordre[0] == "extraction", (
+            "la suppression s'est glissée pendant l'indexation : vecteurs orphelins"
+        )
+        assert premiere.id
+
+
+class TestN5CouvertureUpload:
+    @pytest.mark.asyncio
+    async def test_l_upload_extrait_hors_du_thread_de_la_route(
+        self, client, tmp_path, monkeypatch
+    ):
+        import threading
+
+        from app.models.database import get_session_context
+        from app.models.entities import Project
+        from app.routers import files as files_router
+
+        async with get_session_context() as session:
+            projet = Project(name="Projet test")
+            session.add(projet)
+            await session.commit()
+            await session.refresh(projet)
+            project_id = projet.id
+
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
+
+        thread_route: list[int] = []
+        thread_extraction: list[int] = []
+        vrai_metadata = files_router.get_file_metadata
+
+        def metadata_tracee(path):
+            thread_route.append(threading.get_ident())
+            return vrai_metadata(path)
+
+        def extraction_tracee(_p):
+            thread_extraction.append(threading.get_ident())
+            return "texte extrait"
+
+        monkeypatch.setattr(files_router, "get_file_metadata", metadata_tracee)
+        monkeypatch.setattr(files_router, "extract_text", extraction_tracee)
+
+        reponse = await client.post(
+            "/api/files/upload",
+            files={"file": ("note.txt", b"contenu du fichier", "text/plain")},
+            data={"project_id": project_id},
+        )
+
+        assert reponse.status_code == 200, reponse.text
+        assert thread_route and thread_extraction
+        assert thread_extraction[0] != thread_route[0], (
+            "l'upload extrait dans le thread de la route : la boucle reste bloquée"
+        )
+
+
+class TestN5SemaphoreUtilise:
+    @pytest.mark.asyncio
+    async def test_le_semaphore_est_reellement_pris(self, db_session, fichier, monkeypatch):
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+
+        libre_avant = files_router.INDEX_SEMAPHORE._value
+        vus: list[int] = []
+
+        class QdrantQuiObserve(FauxQdrant):
+            async def async_add_memories(self, items):
+                vus.append(files_router.INDEX_SEMAPHORE._value)
+                return await super().async_add_memories(items)
+
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: QdrantQuiObserve())
+
+        await files_router.index_payload(path=str(fichier))
+
+        assert vus and vus[0] == libre_avant - 1, (
+            "l'écriture vectorielle ne passe pas par le sémaphore"
+        )
+        assert files_router.INDEX_SEMAPHORE._value == libre_avant, (
+            "le sémaphore n'est pas relâché"
+        )
