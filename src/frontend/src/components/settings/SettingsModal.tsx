@@ -69,6 +69,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const visibleTabs = ALL_TABS.filter(
     (tab) => !tab.contributeurOnly || isContributeur || tab.id === activeTab,
   );
+  // BUG-159 : nommer ce que le mode standard met de côté (le testeur cherchait
+  // le chemin du dépôt des agents et croyait la rubrique supprimée).
+  const hiddenTabLabels = ALL_TABS.filter((tab) => !visibleTabs.includes(tab)).map((tab) => tab.label);
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
   // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
@@ -715,7 +718,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             exit="exit"
             transition={{ duration: 0.2 }}
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={onClose}
+            /* BUG-156 : plus de fermeture au clic sur le fond. Un clic à côté
+               faisait perdre la saisie en cours (clés API, chemins) et l'onglet
+               ouvert. La sortie passe par « Fermer » ou Échap. */
           />
 
           {/* Modal */}
@@ -764,6 +769,15 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                       <span className="text-xs text-text-muted leading-tight">Fonctions avancées</span>
                     </div>
                   </label>
+                  {/* BUG-159 : en mode standard, les rubriques avancées
+                      disparaissaient sans un mot. Le testeur, à la recherche du
+                      chemin du dépôt des agents, a cru qu'elles n'existaient
+                      plus. On les nomme au lieu de les escamoter. */}
+                  {hiddenTabLabels.length > 0 && (
+                    <p data-testid="settings-hidden-tabs" className="mt-2 text-xs leading-tight text-text-muted">
+                      Masquées ici : {hiddenTabLabels.join(', ')}.
+                    </p>
+                  )}
                 </div>
                 {visibleTabs.map((tab, index) => {
                   const Icon = tab.icon;

@@ -248,4 +248,39 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(activityHarness.cancelAtelier).not.toHaveBeenCalled();
     expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
   });
+
+  // BUG-157 / BUG-159 (27/07/2026) - L'engrenage affiché à la place des
+  // initiales était l'icône de secours du bouton Profil : le testeur l'a pris
+  // pour un accès aux Paramètres, qui n'existait nulle part en permanence.
+  describe('accès aux Paramètres et état du profil', () => {
+    it('propose un bouton Paramètres permanent qui ouvre les Paramètres', () => {
+      render(<ConversationCanvasPrototype />);
+
+      const navigation = screen.getByLabelText('Navigation principale');
+      const bouton = within(navigation).getByRole('button', { name: 'Paramètres' });
+      fireEvent.click(bouton);
+
+      expect(usePanelStore.getState().showSettings).toBe(true);
+    });
+
+    it('n’utilise jamais l’icône des Paramètres comme repli du bouton Profil', () => {
+      render(<ConversationCanvasPrototype />);
+
+      const navigation = screen.getByLabelText('Navigation principale');
+      const profil = within(navigation).getByTestId('shell-profile-button');
+      const parametres = within(navigation).getByRole('button', { name: 'Paramètres' });
+
+      expect(profil).not.toBe(parametres);
+      expect(profil.innerHTML).not.toBe(parametres.innerHTML);
+    });
+
+    it('annonce le chargement du profil au lieu de faire croire à un profil vide', () => {
+      // getProfile est mocké par une promesse jamais résolue : état de chargement.
+      render(<ConversationCanvasPrototype />);
+
+      const profil = screen.getByTestId('shell-profile-button');
+      expect(profil).toHaveAttribute('aria-label', 'Chargement du profil…');
+      expect(profil).toBeDisabled();
+    });
+  });
 });

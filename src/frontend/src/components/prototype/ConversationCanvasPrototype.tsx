@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import {
+  AlertCircle,
   ArrowUp,
   Bot,
   Briefcase,
@@ -19,6 +20,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  User,
   Users,
   X,
 } from 'lucide-react';
@@ -674,6 +676,10 @@ export function ConversationCanvasPrototype() {
   const [composerValue, setComposerValue] = useState('');
   const [composerVoiceError, setComposerVoiceError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  // BUG-157 : `profile` seul ne distingue pas « chargement », « échec » et
+  // « profil sans nom ». L'interface affichait donc un faux état normal (et
+  // l'icône des Paramètres en repli du bouton Profil).
+  const [profileState, setProfileState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
   const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
@@ -726,8 +732,8 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     let active = true;
     getProfile()
-      .then((value) => { if (active) setProfile(value); })
-      .catch(() => { if (active) setProfile(null); });
+      .then((value) => { if (active) { setProfile(value); setProfileState('loaded'); } })
+      .catch(() => { if (active) { setProfile(null); setProfileState('error'); } });
     return () => { active = false; };
   }, []);
 
@@ -1122,9 +1128,37 @@ export function ConversationCanvasPrototype() {
             <IconButton label="Rechercher" onClick={() => openConversationDrawer('search')}><Search className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
+            {/* BUG-159 : accès permanent aux Paramètres, au-dessus de l'aide
+                (demande Dr_logic) - ils n'étaient joignables que par la palette
+                ou par le bouton Profil, dont la fonction n'était pas lisible. */}
             <div className="mt-auto flex flex-col items-center gap-1.5">
+              <IconButton label="Paramètres" onClick={() => openSettings()}><Settings className="h-[18px] w-[18px]" /></IconButton>
               <IconButton label="Aide" onClick={() => openChat("/aide")}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
-              <button type="button" onClick={() => openSettings('profile')} aria-label="Ouvrir le profil" className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)]" title="Ouvrir le profil">{displayName ? displayName.slice(0, 2).toLocaleUpperCase('fr-FR') : <Settings className="h-4 w-4" />}</button>
+              <button
+                type="button"
+                data-testid="shell-profile-button"
+                onClick={() => openSettings('profile')}
+                disabled={profileState === 'loading'}
+                aria-label={
+                  profileState === 'loading'
+                    ? 'Chargement du profil…'
+                    : profileState === 'error'
+                      ? 'Profil indisponible - ouvrir le profil'
+                      : 'Ouvrir le profil'
+                }
+                title={profileState === 'loading' ? 'Chargement du profil…' : 'Ouvrir le profil'}
+                className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)] disabled:opacity-70"
+              >
+                {profileState === 'loading' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : profileState === 'error' ? (
+                  <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                ) : displayName ? (
+                  displayName.slice(0, 2).toLocaleUpperCase('fr-FR')
+                ) : (
+                  <User className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
             </div>
           </nav>
 
