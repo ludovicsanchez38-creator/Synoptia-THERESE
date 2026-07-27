@@ -19,10 +19,30 @@ from app.services.qdrant import get_qdrant_service
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# BUG-155 (27/07/2026) : extraction et découpage sont des traitements CPU/disque
+# synchrones. Appelés directement depuis une route `async`, ils bloquaient la
+# boucle d'événements : pendant l'indexation d'un gros document, plus aucune
+# requête n'était servie (chat, emails, agenda) et l'application semblait figée.
+# On les déporte dans le pool de threads.
+
+
+async def extract_text_async(file_path: Path) -> str:
+    """Extrait le texte d'un fichier sans bloquer la boucle d'événements."""
+    return await run_in_threadpool(extract_text, file_path)
+
+
+async def chunk_text_async(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
+    """Découpe le texte en fragments sans bloquer la boucle d'événements."""
+    return await run_in_threadpool(
+        lambda: list(chunk_text(text, chunk_size=chunk_size, overlap=overlap))
+    )
 
 
 @router.get("/", response_model=list[FileResponse])
@@ -110,12 +130,12 @@ async def index_file(
         session.add(file_meta)
         await session.flush()  # Get the ID
 
-    # Extract text content
-    text_content = extract_text(file_path)
+    # Extract text content (hors boucle d'événements - BUG-155)
+    text_content = await extract_text_async(file_path)
 
     if text_content:
-        # Chunk the content
-        chunks = list(chunk_text(text_content, chunk_size=1000, overlap=200))
+        # Chunk the content (hors boucle d'événements - BUG-155)
+        chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
 
         # Store embeddings in Qdrant
         qdrant = get_qdrant_service()

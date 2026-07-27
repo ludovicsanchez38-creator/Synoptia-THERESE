@@ -28,11 +28,14 @@ export async function listFiles(
   return request<FileMetadata[]>(`/api/files/?limit=${limit}&offset=${offset}`);
 }
 
-export async function indexFile(path: string): Promise<FileMetadata> {
+export async function indexFile(path: string, signal?: AbortSignal): Promise<FileMetadata> {
   return request<FileMetadata>('/api/files/index', {
     method: 'POST',
     body: JSON.stringify({ path }),
     timeoutMs: null, // indexation (embeddings) : long sur les gros documents
+    // BUG-155 : sans signal, retirer la pièce jointe ne coupait rien et
+    // l'utilisateur n'avait aucun moyen d'interrompre un gros document.
+    signal,
   });
 }
 
