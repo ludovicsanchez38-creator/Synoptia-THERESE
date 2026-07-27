@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings } from 'lucide-react';
+import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings, Loader2 } from 'lucide-react';
 import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -95,6 +95,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const [inputRect, setInputRect] = useState<DOMRect | null>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const attachedPathsRef = useRef(new Set<string>());
+  // Reflet de la liste courante : permet à removeFile de lire le fichier retiré
+  // sans effet de bord dans l'updater de setState (double appel en StrictMode).
+  const attachedFilesRef = useRef<AttachedFile[]>([]);
+  attachedFilesRef.current = attachedFiles;
   // Chantier 4 Variables V1 : aperçu de résolution {nom} (debounced) et
   // confirmation par double-envoi quand des variables sont inconnues.
   const [variablesPreview, setVariablesPreview] = useState<VariablesPreview | null>(null);
@@ -189,16 +193,45 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   );
 
   // File drop handling (with deduplication)
+  // BUG-155 : une indexation en cours doit pouvoir être interrompue. Un
+  // contrôleur par chemin, annulé au retrait de la pièce jointe et au
+  // démontage : sans lui, un gros document continuait de tourner côté backend
+  // et le seul recours de l'utilisateur était de fermer THÉRÈSE.
+  const indexControllersRef = useRef<Map<string, AbortController>>(new Map());
+
+  const cancelIndexation = useCallback((path: string) => {
+    const controller = indexControllersRef.current.get(path);
+    if (controller) {
+      controller.abort();
+      indexControllersRef.current.delete(path);
+    }
+  }, []);
+
+  useEffect(() => {
+    const controllers = indexControllersRef.current;
+    return () => {
+      for (const controller of controllers.values()) controller.abort();
+      controllers.clear();
+    };
+  }, []);
+
   const indexAttachment = useCallback(async (path: string) => {
+    const controller = new AbortController();
+    indexControllersRef.current.get(path)?.abort();
+    indexControllersRef.current.set(path, controller);
     setAttachedFiles((current) => current.map((file) => (
       file.path === path ? { ...file, indexStatus: 'indexing', indexError: undefined } : file
     )));
     try {
-      await indexFile(path);
+      await indexFile(path, controller.signal);
+      if (controller.signal.aborted) return;
       setAttachedFiles((current) => current.map((file) => (
         file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
       )));
     } catch (reason) {
+      // Un abandon volontaire n'est pas un échec : la pièce jointe a été
+      // retirée (ou le composant démonté), il n'y a rien à signaler.
+      if (controller.signal.aborted || (reason as Error)?.name === 'AbortError') return;
       setAttachedFiles((current) => current.map((file) => (
         file.path === path
           ? {
@@ -208,6 +241,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             }
           : file
       )));
+    } finally {
+      if (indexControllersRef.current.get(path) === controller) {
+        indexControllersRef.current.delete(path);
+      }
     }
   }, []);
 
@@ -249,12 +286,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
   // Remove attached file
   const removeFile = useCallback((index: number) => {
-    setAttachedFiles((current) => {
-      const removed = current[index];
-      if (removed) attachedPathsRef.current.delete(removed.path);
-      return current.filter((_, currentIndex) => currentIndex !== index);
-    });
-  }, []);
+    const removed = attachedFilesRef.current[index];
+    if (removed) {
+      attachedPathsRef.current.delete(removed.path);
+      cancelIndexation(removed.path); // BUG-155 : couper le traitement en cours
+    }
+    setAttachedFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  }, [cancelIndexation]);
 
   // Handle browser file input change (fallback when Tauri dialog unavailable)
   const handleBrowserFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -995,10 +1033,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 onRemove={() => removeFile(index)}
                 className="border-0 bg-transparent"
               />
+              {/* BUG-158 : un badge statique passait pour un bouton. L'état actif
+                  s'anime, l'état terminé ne s'anime pas, et la cause d'un échec
+                  est lisible à l'écran (elle n'existait qu'en sr-only). */}
               <span
+                data-testid={`index-status-${file.path}`}
                 role={file.indexStatus === 'error' ? 'alert' : 'status'}
                 aria-live="polite"
-                className={`rounded-[6px] px-2 py-1 text-xs font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-xs font-semibold ${
                   file.indexStatus === 'ready'
                     ? 'bg-[var(--color-success-tint)] text-success'
                     : file.indexStatus === 'error'
@@ -1006,7 +1048,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                       : 'bg-[var(--color-info-tint)] text-info'
                 }`}
               >
-                {file.indexStatus === 'ready' ? 'Prêt' : file.indexStatus === 'error' ? 'Échec' : 'Indexation'}
+                {file.indexStatus === 'indexing' && (
+                  <Loader2 data-testid="index-spinner" className="h-3 w-3 animate-spin" aria-hidden="true" />
+                )}
+                {file.indexStatus === 'ready' ? 'Prêt' : file.indexStatus === 'error' ? 'Échec' : 'Indexation en cours'}
               </span>
               {file.indexStatus === 'error' && (
                 <button
@@ -1018,7 +1063,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                   Réessayer
                 </button>
               )}
-              {file.indexError && <span className="sr-only">{file.indexError}</span>}
+              {file.indexStatus === 'error' && file.indexError && (
+                <span className="w-full px-1 text-xs text-error">
+                  {file.indexError} Ce fichier ne sera pas utilisé pour répondre.
+                </span>
+              )}
             </div>
           ))}
         </div>

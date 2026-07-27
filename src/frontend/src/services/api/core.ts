@@ -184,7 +184,12 @@ export async function request<T>(
         ...options.headers,
       },
     });
-  } catch (_e: any) {
+  } catch (e: any) {
+    // BUG-155 : une annulation volontaire (AbortController de l'appelant) ou un
+    // délai dépassé n'est pas une panne réseau. La masquer derrière « Impossible
+    // de contacter le serveur » empêchait l'appelant de distinguer un abandon
+    // assumé d'un vrai incident, et affichait une fausse erreur à l'écran.
+    if (e?.name === 'AbortError' || e?.name === 'TimeoutError') throw e;
     // Erreur réseau (Load failed / Failed to fetch)
     throw new ApiError(0, 'NetworkError', 'Impossible de contacter le serveur');
   }
