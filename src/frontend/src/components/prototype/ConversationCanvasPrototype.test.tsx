@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../stores/chatStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { usePanelStore } from '../../stores/panelStore';
+import { useNavigationStore } from '../../stores/navigationStore';
+import { runAction } from '../../lib/actionRegistry';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 
 const voiceHarness = vi.hoisted(() => ({
@@ -148,6 +150,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     });
     useAccessibilityStore.setState({ theme: 'light', highContrast: false });
     usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
+    useNavigationStore.setState({ activeView: 'chat' });
   });
 
   it('ajoute la dictée classique au composeur de la coque', async () => {
@@ -354,6 +357,50 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
       });
 
       expect(screen.getByTestId('shell-profile-button')).toHaveTextContent('PE');
+    });
+  });
+
+  // J0a (30/07/2026) - Navigation canonique.
+  // La coque pilotait ses vues par un état local sans observer
+  // `navigationStore`, alors que `HomeView` y est montée et que ses composants
+  // (actions rapides, conversations récentes, panneaux du jour) naviguent tous
+  // par ce store, comme le registre d'actions commun. Résultat en 0.41.3 :
+  // ces clics changeaient un état que personne n'affichait.
+  describe('navigation canonique', () => {
+    it('ouvre la vue demandée par le registre d’actions', async () => {
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        runAction('invoices.open');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'invoices');
+      });
+    });
+
+    it('suit une navigation posée directement dans le store', async () => {
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        useNavigationStore.getState().setView('crm');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+      });
+    });
+
+    it('reflète dans le store une vue ouverte depuis la coque', async () => {
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        screen.getByLabelText('Espaces de travail').click();
+      });
+
+      await waitFor(() => {
+        expect(useNavigationStore.getState().activeView).toBe('projects');
+      });
     });
   });
 });

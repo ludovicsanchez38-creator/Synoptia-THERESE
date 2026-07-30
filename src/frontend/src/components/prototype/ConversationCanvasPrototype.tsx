@@ -90,7 +90,7 @@ import { usePanelStore } from '../../stores/panelStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
-import type { AppView } from '../../stores/navigationStore';
+import { useNavigationStore, type AppView } from '../../stores/navigationStore';
 import { PanelContainer } from '../chat/PanelContainer';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
@@ -821,7 +821,40 @@ export function ConversationCanvasPrototype() {
     setSelectedCapability(null);
     setComposerValue('');
     setEmbeddedView(view);
+    // J0a : `navigationStore` est la source de navigation canonique. La coque
+    // pilotait ses vues par un état local que le store ignorait, si bien que
+    // les composants communs (accueil, registre d'actions, commandes) posaient
+    // une vue que personne n'affichait.
+    if (useNavigationStore.getState().activeView !== view) {
+      useNavigationStore.getState().setView(view);
+    }
   };
+  // J0a : l'autre sens. Toute navigation posée dans le store - accueil
+  // (QuickActions, TodayPanels, RecentConversations), registre d'actions,
+  // commandes déterministes - doit devenir visible ici. Sans cet abonnement,
+  // ces gestes changeaient un état que la coque n'observait pas.
+  const viewDemandee = useNavigationStore((state) => state.activeView);
+  const derniereVueRef = useRef<AppView | null>(null);
+  useEffect(() => {
+    // Au montage, ne rien forcer : la coque a son propre écran d'accueil et
+    // n'ouvre le chat que sur un geste. Seuls les CHANGEMENTS de vue comptent.
+    if (derniereVueRef.current === null) {
+      derniereVueRef.current = viewDemandee;
+      return;
+    }
+    if (derniereVueRef.current === viewDemandee) return;
+    derniereVueRef.current = viewDemandee;
+    if (viewDemandee === 'chat') {
+      if (!chatOpen) openChat();
+      return;
+    }
+    if (embeddedView === viewDemandee) return;
+    openEmbeddedView(viewDemandee);
+    // openEmbeddedView et openChat sont recréés à chaque rendu : les inclure
+    // relancerait l'effet en boucle. Seule la vue demandée doit le déclencher.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewDemandee]);
+
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;
     setEmbeddedView(null);
@@ -1092,6 +1125,9 @@ export function ConversationCanvasPrototype() {
       data-testid="conversation-canvas-prototype"
       data-theme={theme}
       data-high-contrast={highContrast ? 'true' : undefined}
+      /* J0a : la vue courante de la coque, lisible sans monter les panneaux
+         embarqués (chargés en lazy). Sert aux tests et à la recette. */
+      data-embedded-view={embeddedView ?? (chatOpen ? 'chat' : 'accueil')}
     >
       <div className="flex h-full flex-col">
         <header data-dialog-allow onMouseDown={startWindowDrag} className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 select-none sm:px-4">
