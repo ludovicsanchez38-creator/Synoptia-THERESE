@@ -334,9 +334,24 @@ async def _perimetre_de_conversation(
             "ne sera injecté (échec fermé)"
         )
         return "project", _PERIMETRE_INDETERMINE
-    if conversation is None or not conversation.project_id:
+    if conversation is None:
         return None, None
-    return "project", conversation.project_id
+
+    politique = (conversation.memory_scope or "global").lower()
+    if politique == "all":
+        # Choix explicite et affiché de l'utilisateur : aucune cloison.
+        return None, None
+    if conversation.project_id:
+        # La politique est DÉRIVÉE du rattachement : poser un projet suffit à
+        # cloisonner. Exiger en plus que `memory_scope` soit passé à `project`
+        # créerait deux champs à synchroniser, et un rattachement sans effet
+        # visible au premier oubli.
+        return "project", conversation.project_id
+    # MOINDRE PRIVILÈGE (défaut) : documents généraux uniquement. Une
+    # conversation qui n'a rien demandé ne pioche pas dans les dossiers clients.
+    # `include_global` du filtre rend déjà les documents globaux ; passer
+    # `scope="global"` suffit à exclure ceux qui portent un projet.
+    return "global", None
 
 
 async def _get_memory_context(
@@ -2055,7 +2070,16 @@ async def _execute_tools_and_continue(
             try:
                 if session is None:
                     raise RuntimeError("Database session not available for memory tools")
-                tool_result_str = await execute_memory_tool(tc.name, tc.arguments, session)
+                # 0.43 : les outils mémoire respectent la cloison de la conversation.
+                # Sans ce périmètre, `read_contact` rendait coordonnées et notes
+                # d'un contact d'un autre projet.
+                perimetre, perimetre_id = await _perimetre_de_conversation(
+                    conversation_id, session
+                )
+                tool_result_str = await execute_memory_tool(
+                    tc.name, tc.arguments, session,
+                    scope=perimetre, scope_id=perimetre_id,
+                )
                 execution_time = (time.time() - start_time) * 1000
 
                 class MemoryToolResult:
@@ -2356,6 +2380,7 @@ async def list_conversations(
             created_at=conv.created_at,
             updated_at=conv.updated_at,
             project_id=conv.project_id,
+            memory_scope=conv.memory_scope,
         )
         for conv, msg_count in rows
     ]
@@ -2384,6 +2409,7 @@ async def create_conversation(
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
         project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
@@ -2415,6 +2441,7 @@ async def get_conversation(
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
         project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
@@ -2458,6 +2485,7 @@ async def rename_conversation(
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
         project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
@@ -2492,7 +2520,14 @@ async def rattacher_conversation_a_un_projet(
         if projet is None:
             raise HTTPException(status_code=404, detail="Projet introuvable")
 
+    politique = (request.memory_scope or "global").lower()
+    if politique not in {"global", "project", "all"}:
+        raise HTTPException(status_code=422, detail="Politique documentaire inconnue")
+
     conversation.project_id = request.project_id or None
+    # Un projet rattaché implique la politique `project` : les deux champs ne
+    # doivent jamais raconter deux histoires différentes.
+    conversation.memory_scope = "project" if conversation.project_id else politique
     conversation.updated_at = datetime.now(UTC)
     session.add(conversation)
     await session.commit()
@@ -2509,6 +2544,7 @@ async def rattacher_conversation_a_un_projet(
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
         project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 

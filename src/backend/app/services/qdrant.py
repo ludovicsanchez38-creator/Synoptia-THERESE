@@ -325,6 +325,42 @@ class QdrantService:
             for hit in results
         ]
 
+    def points_sans_perimetre(
+        self, limite: int = 10000
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Les points dont le payload ne porte aucun `scope` (indexés avant 0.42).
+
+        Utilisé par le reclassement de démarrage : ces points sont acceptés par
+        les recherches cloisonnées (branche `IsEmptyCondition`), donc un
+        document de projet y remonterait dans un autre projet tant qu'il n'est
+        pas classé.
+        """
+        points = self.client.scroll(
+            collection_name=settings.qdrant_collection,
+            scroll_filter=Filter(
+                must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))]
+            ),
+            limit=limite,
+            with_payload=True,
+        )[0]
+        return [(str(p.id), dict(p.payload or {})) for p in points]
+
+    def definir_perimetre(
+        self, point_ids: list[str], scope: str, scope_id: str | None
+    ) -> None:
+        """Écrit le périmètre sur des points EXISTANTS, sans toucher aux vecteurs.
+
+        `set_payload` ne réencode rien : le reclassement d'une base entière ne
+        coûte aucun calcul d'embedding et ne supprime aucun point.
+        """
+        if not point_ids:
+            return
+        self.client.set_payload(
+            collection_name=settings.qdrant_collection,
+            payload={"scope": scope, "scope_id": scope_id},
+            points=list(point_ids),
+        )
+
     def delete_by_entity(self, entity_id: str) -> int:
         """
         Delete all memories for an entity.

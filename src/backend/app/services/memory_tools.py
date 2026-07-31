@@ -14,7 +14,7 @@ from typing import Any
 
 from app.models.entities import Contact, Project
 from app.services.qdrant import get_qdrant_service
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -412,6 +412,8 @@ def _close_matches(folded_query: str, contacts: list[Contact]) -> list[str]:
 async def execute_read_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
 ) -> str:
     """Execute the read_contact tool : retourne la fiche complète + interactions.
 
@@ -430,7 +432,20 @@ async def execute_read_contact(
     # BUG-146 : recherche insensible aux ACCENTS (« jerome » doit trouver
     # « Jérôme ») - la comparaison lower() seule ne suffisait pas.
     q = _fold(query)
-    result = await session.execute(select(Contact))
+    # 0.43 : cloisonnement. Sans ce filtre, un contact rattaché au projet A —
+    # coordonnées et notes comprises — était lisible depuis une conversation du
+    # projet B. Les contacts GÉNÉRAUX restent visibles partout, comme les
+    # documents globaux.
+    requete = select(Contact)
+    if scope == "project" and scope_id:
+        requete = requete.where(
+            or_(
+                Contact.scope == "global",
+                Contact.scope.is_(None),
+                (Contact.scope == "project") & (Contact.scope_id == scope_id),
+            )
+        )
+    result = await session.execute(requete)
     contacts = result.scalars().all()
     matches = [
         c
@@ -521,6 +536,8 @@ async def execute_memory_tool(
     tool_name: str,
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
 ) -> str:
     """
     Route memory tool execution to the correct handler.
@@ -533,7 +550,9 @@ async def execute_memory_tool(
     elif tool_name == "create_project":
         return await execute_create_project(arguments, session)
     elif tool_name == "read_contact":
-        return await execute_read_contact(arguments, session)
+        return await execute_read_contact(
+            arguments, session, scope=scope, scope_id=scope_id
+        )
     else:
         return json.dumps({"error": f"Outil inconnu: {tool_name}"}, ensure_ascii=False)
 

@@ -198,11 +198,35 @@ async def lifespan(app: FastAPI):
     # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
     skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"
 
+    # 0.43 : reclasser les payloads vectoriels indexés avant que le périmètre
+    # documentaire existe. Sans ce ménage, un document du projet A indexé en
+    # 0.41 est traité comme global et remonte dans une conversation du projet B.
+    # Après `init_qdrant`, puisque cela lit la collection.
+    async def _reclasser_perimetres_bg() -> None:
+        try:
+            from app.models.database import get_session_context
+            from app.services.perimetre_backfill import (
+                reclasser_payloads_sans_perimetre,
+            )
+
+            async with get_session_context() as session:
+                await reclasser_payloads_sans_perimetre(session)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            # Au pire les anciens points restent traités comme globaux :
+            # l'état d'avant ce correctif, jamais un blocage du démarrage.
+            logger.warning(f"Reclassement du périmètre documentaire ignoré : {e}")
+
     import asyncio
 
     if not skip_services:
         await init_qdrant()
         logger.info("Qdrant vector store initialized")
+
+        # Reclassement des payloads sans périmètre, en tâche de fond : il peut
+        # parcourir une grande collection et ne doit pas retarder /health.
+        asyncio.create_task(_reclasser_perimetres_bg())
 
         await init_skills()
         logger.info("Skills system initialized")

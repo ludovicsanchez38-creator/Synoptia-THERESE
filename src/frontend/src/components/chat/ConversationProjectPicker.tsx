@@ -8,10 +8,15 @@ interface ProjetAffichable {
   name: string;
 }
 
+/** Valeur du sélecteur pour « aucune cloison » — distincte de la chaîne vide,
+ *  qui vaut « documents généraux uniquement ». */
+const TOUS_LES_PROJETS = '__tous__';
+
 interface ConversationProjectPickerProps {
   conversationId: string;
   projectId: string | null;
-  onProjectChange?: (projectId: string | null) => void;
+  memoryScope?: string;
+  onProjectChange?: (projectId: string | null, memoryScope: string) => void;
 }
 
 /**
@@ -28,20 +33,23 @@ interface ConversationProjectPickerProps {
 export function ConversationProjectPicker({
   conversationId,
   projectId,
+  memoryScope = 'global',
   onProjectChange,
 }: ConversationProjectPickerProps) {
   const [projets, setProjets] = useState<ProjetAffichable[]>([]);
-  const [selection, setSelection] = useState<string>(projectId ?? '');
+  const valeurInitiale =
+    projectId ?? (memoryScope === 'all' ? TOUS_LES_PROJETS : '');
+  const [selection, setSelection] = useState<string>(valeurInitiale);
   const [enCours, setEnCours] = useState(false);
 
   useEffect(() => {
-    setSelection(projectId ?? '');
-  }, [projectId]);
+    setSelection(projectId ?? (memoryScope === 'all' ? TOUS_LES_PROJETS : ''));
+  }, [projectId, memoryScope]);
 
   useEffect(() => {
     let vivant = true;
-    // Le backend peut être injoignable : le sélecteur reste affiché avec la
-    // seule option « toute la mémoire » plutôt que de faire tomber l'en-tête.
+    // Le backend peut être injoignable : le sélecteur reste affiché avec ses
+    // options fixes plutôt que de faire tomber l'en-tête du chat.
     Promise.resolve(listProjects())
       .then((liste) => {
         if (vivant && Array.isArray(liste)) {
@@ -58,13 +66,15 @@ export function ConversationProjectPicker({
 
   const surChangement = useCallback(
     async (valeur: string) => {
-      const cible = valeur || null;
+      const transversal = valeur === TOUS_LES_PROJETS;
+      const cible = transversal || !valeur ? null : valeur;
+      const politique = transversal ? 'all' : cible ? 'project' : 'global';
       const precedent = selection;
       setSelection(valeur);
       setEnCours(true);
       try {
-        await setConversationProject(conversationId, cible);
-        onProjectChange?.(cible);
+        await setConversationProject(conversationId, cible, politique);
+        onProjectChange?.(cible, politique);
       } catch {
         // Rétablir l'affichage : laisser une sélection que le serveur n'a pas
         // enregistrée ferait croire à un cloisonnement inexistant.
@@ -87,12 +97,16 @@ export function ConversationProjectPicker({
         onChange={(e) => void surChangement(e.target.value)}
         className="min-w-0 max-w-[11rem] truncate rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text disabled:opacity-60"
       >
-        <option value="">Toute la mémoire</option>
+        {/* Libellés honnêtes : ils annoncent ce que la conversation CONSULTE.
+            « Toute la mémoire » par défaut aurait menti — le défaut est
+            désormais le moindre privilège. */}
+        <option value="">Documents généraux</option>
         {projets.map((projet) => (
           <option key={projet.id} value={projet.id}>
             {projet.name}
           </option>
         ))}
+        <option value={TOUS_LES_PROJETS}>Tous les projets</option>
       </select>
     </label>
   );

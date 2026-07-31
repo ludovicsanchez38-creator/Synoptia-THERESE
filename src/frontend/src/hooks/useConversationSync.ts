@@ -77,6 +77,7 @@ export function formatConversationFromResponse(conv: ConversationResponse) {
     messageCount: conv.message_count,
     synced: true,
     projectId: conv.project_id ?? null,
+    memoryScope: conv.memory_scope ?? 'global',
   };
 }
 

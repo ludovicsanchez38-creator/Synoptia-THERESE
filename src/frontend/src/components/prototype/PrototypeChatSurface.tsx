@@ -56,8 +56,9 @@ export function PrototypeChatSurface({
           <ConversationProjectPicker
             conversationId={conversation.id}
             projectId={conversation.projectId ?? null}
-            onProjectChange={(projectId) =>
-              setConversationProjectId(conversation.id, projectId)
+            memoryScope={conversation.memoryScope ?? 'global'}
+            onProjectChange={(projectId, memoryScope) =>
+              setConversationProjectId(conversation.id, projectId, memoryScope)
             }
           />
         )}
