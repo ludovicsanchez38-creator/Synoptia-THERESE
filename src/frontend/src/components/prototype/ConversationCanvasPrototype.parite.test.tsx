@@ -138,16 +138,35 @@ describe('Gate de parité par source d’action', () => {
     usePersonalisationStore.setState({ skipDashboard: false });
   });
 
-  it('couvre toutes les actions de navigation du registre', () => {
-    // Garde-fou du gate : toute action visant une vue connue DOIT être dans la
-    // liste testée. Un seuil numérique ne détectait pas une action ajoutée hors
-    // convention de nommage.
-    const attendues = APP_ACTIONS
-      .filter((a) => (VUES_CONNUES as readonly string[]).some((v) => a.id.startsWith(`${v}.`)))
+  it('couvre toutes les actions d’ouverture du registre', () => {
+    // Ce test était TAUTOLOGIQUE (relevé par la revue Soso) : la liste attendue
+    // et `ACTIONS_DE_VUE` dérivaient toutes deux de `VUES_CONNUES`. Ajouter une
+    // action `reports.open` sans toucher à cette liste la faisait disparaître
+    // des DEUX côtés — le gate restait vert alors que la coque ne la servait
+    // pas. Exactement le trou que J0a a mis au jour.
+    //
+    // On part donc du registre ENTIER. Toute action d'ouverture doit être soit
+    // couverte par le gate, soit exemptée NOMMÉMENT ci-dessous.
+    const PANNEAUX_HORS_GATE = [
+      // Ces actions n'ouvrent pas une vue embarquée mais un panneau ou une
+      // modale par-dessus. Leur ouverture est vérifiée ailleurs.
+      'actions.open',
+      'board.open',
+      'guided.open',
+      'settings.open',
+      'shortcuts.open',
+      // Trouvée par CE test dès sa réécriture : l'ancienne version, filtrée sur
+      // `VUES_CONNUES` des deux côtés, ne la voyait pas du tout.
+      'prompt-library.open',
+    ];
+
+    const toutesLesOuvertures = APP_ACTIONS
       .filter((a) => a.id.endsWith('.open') || a.id.endsWith('.search'))
       .map((a) => a.id);
-    expect(ACTIONS_DE_VUE.sort()).toEqual(attendues.sort());
-    expect(ACTIONS_DE_VUE.length).toBeGreaterThanOrEqual(9);
+
+    const aCouvrir = toutesLesOuvertures.filter((id) => !PANNEAUX_HORS_GATE.includes(id));
+
+    expect(ACTIONS_DE_VUE.slice().sort()).toEqual(aCouvrir.slice().sort());
   });
 
   it.each(ACTIONS_DE_VUE)('%s ouvre une vue visible dans la coque', async (actionId) => {
@@ -273,20 +292,38 @@ describe('Gate de parité par source d’action', () => {
     });
 
     it('branche Échap sur la pile unifiée', async () => {
-      // Le test précédent cherchait le mot « Escape » dans le fichier : il
-      // passait sans rien prouver. On vérifie le comportement réel.
-      const { resolveEscape } = await import('../../lib/resolveEscape');
-      const espion = vi.fn();
+      // Deux versions creuses avant celle-ci. La première cherchait le mot
+      // « Escape » dans le fichier source. La seconde vérifiait que
+      // `resolveEscape` est bien une fonction et créait un espion jamais
+      // utilisé — ce qui ne prouve rien non plus (relevé par Soso).
+      //
+      // Ce qui compte : la coque doit consommer Échap DANS L'ORDRE de la pile
+      // unifiée. Un handler poussé sur la pile partagée est le plus récent :
+      // c'est lui qui doit répondre en premier, avant les panneaux de la coque.
+      const { pushEscapeHandler } = await import('../../lib/escapeStack');
+
+      const handlerDeLaPile = vi.fn(() => true);
       usePanelStore.setState({ showSettings: true });
 
       render(<ConversationCanvasPrototype />);
+      const retirer = pushEscapeHandler(handlerDeLaPile);
+
       await act(async () => {
         fireEvent.keyDown(window, { key: 'Escape' });
       });
 
+      expect(handlerDeLaPile).toHaveBeenCalled();
+      // Il a consommé la touche : les Réglages ne doivent PAS s'être fermés.
+      expect(usePanelStore.getState().showSettings).toBe(true);
+
+      retirer();
+
+      // Une fois la pile vidée, la coque reprend la main sur ses propres
+      // panneaux.
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'Escape' });
+      });
       expect(usePanelStore.getState().showSettings).toBe(false);
-      expect(typeof resolveEscape).toBe('function');
-      expect(espion).not.toHaveBeenCalled();
     });
 
     it('n’écoute l’insertion de prompt qu’une seule fois', async () => {
@@ -309,6 +346,83 @@ describe('Gate de parité par source d’action', () => {
         .getState()
         .notifications.filter((n) => n.title === 'Réponse en cours');
       expect(refus).toHaveLength(1);
+    });
+
+    it('signale la perte de connexion en dehors du chat', async () => {
+      // Finding MINEUR n°10 : `ConnectionStatus` n'était monté que dans la
+      // surface de chat (`PrototypeChatSurface`). L'ancien bandeau couvrait
+      // toute l'application. Depuis le retrait du classic, un utilisateur qui
+      // travaille dans CRM, Fichiers ou Factures ne voit plus rien quand le
+      // backend tombe : ses actions échouent sans explication.
+      useStatusStore.setState({ connectionState: 'disconnected' });
+
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => { runAction('crm.open'); });
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype'))
+          .toHaveAttribute('data-embedded-view', 'crm');
+      });
+
+      expect(screen.getByTestId('etat-connexion-coque')).toBeTruthy();
+    });
+
+    it('ne rejoue pas un lien profond à chaque rechargement', async () => {
+      // Finding MINEUR n°9 de la revue Soso : les paramètres n'étaient pas
+      // retirés après consommation. Un lien `?action=settings.open` rouvrait
+      // donc les Réglages à CHAQUE rechargement de la page — impossible de s'en
+      // débarrasser sans éditer l'URL à la main.
+      window.history.replaceState(
+        {}, '', '/?interface=conversation-canvas&view=crm&panel=board&action=settings.open'
+      );
+
+      render(<ConversationCanvasPrototype />);
+
+      await waitFor(() => {
+        expect(window.location.search).not.toContain('view=');
+      });
+      expect(window.location.search).not.toContain('panel=');
+      expect(window.location.search).not.toContain('action=');
+      // Le paramètre qui identifie la coque, lui, doit rester.
+      expect(window.location.search).toContain('interface=conversation-canvas');
+    });
+
+    it('rouvre le chat quand un résultat arrive après sa fermeture', async () => {
+      // Finding MAJEUR n°7 de la revue Soso. Fermer le chat ne touchait que
+      // l'état local `chatOpen` ; le store de navigation restait sur `chat`.
+      // Un `setView('chat')` ultérieur devenait donc un no-op.
+      //
+      // Pour l'utilisateur : il lance une Action longue, ferme le chat, et le
+      // résultat est ajouté à une conversation qui ne se rouvre pas. Le travail
+      // paraît perdu jusqu'à une réouverture manuelle.
+      // Le `beforeEach` laisse le store sur `chat` : partir de l'accueil pour
+      // que l'ouverture soit un vrai changement de vue.
+      useNavigationStore.setState({ activeView: 'home', history: [] });
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => { useNavigationStore.getState().setView('chat'); });
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype'))
+          .toHaveAttribute('data-embedded-view', 'chat');
+      });
+
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'Escape' });
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype'))
+          .not.toHaveAttribute('data-embedded-view', 'chat');
+      });
+
+      // Ce que fait `actionsStore` à la fin d'une Action.
+      await act(async () => {
+        useNavigationStore.getState().setView('chat');
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype'))
+          .toHaveAttribute('data-embedded-view', 'chat');
+      });
     });
   });
 });

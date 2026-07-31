@@ -175,6 +175,25 @@ async def lifespan(app: FastAPI):
             raise
         logger.warning(f"Migration auto ignorée : {e}")
 
+    # J1a : reprendre les traitements laissés « en cours » par une exécution
+    # précédente. Sans ce ménage, un arrêt brutal laisse une tâche affichée
+    # comme active pour toujours ; côté Atelier, elle bloque même toute
+    # nouvelle mission (`agents.py:199`) sans pouvoir être annulée
+    # (409, `agents.py:546`). Se fait après les migrations et avant les
+    # services externes : cela ne touche que la base.
+    try:
+        from app.models.database import get_session_context
+        from app.services.task_registry import recuperer_taches_orphelines
+
+        async with get_session_context() as session:
+            reprises = await recuperer_taches_orphelines(session)
+        if reprises:
+            logger.info(f"Traitements interrompus repris : {reprises}")
+    except Exception as e:
+        # Un ménage de démarrage ne doit jamais empêcher l'application de
+        # se lancer : au pire les tâches restent affichées comme actives.
+        logger.warning(f"Reprise des traitements orphelins ignorée : {e}")
+
     # En mode test (THERESE_SKIP_SERVICES=1), sauter les services externes
     # qui bloquent les tests (Qdrant, embeddings, MCP, skills)
     skip_services = os.environ.get("THERESE_SKIP_SERVICES") == "1"

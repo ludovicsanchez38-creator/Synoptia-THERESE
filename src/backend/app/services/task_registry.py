@@ -20,6 +20,7 @@ Ces mécaniques ne sont PAS interchangeables : on ne les remplace pas, on les
 enveloppe derrière un adaptateur commun.
 """
 import asyncio
+import contextlib
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
@@ -55,7 +56,18 @@ class AdaptateurAnnulation(Protocol):
 
 
 class AnnulationParTacheAsyncio:
-    """Atelier : `asyncio.Task.cancel()` coupe vraiment (`agents.py:229`)."""
+    """Atelier : `asyncio.Task.cancel()` (`agents.py:229`).
+
+    `cancel()` pose une DEMANDE, il ne garantit pas l'arrêt : la coroutine peut
+    différer sa fermeture, ou attraper `CancelledError` et poursuivre. Retourner
+    `True` sans attendre reviendrait à afficher « annulé » pendant que le
+    traitement consomme encore — précisément ce que la distinction
+    `cancel_requested` / `cancelled` doit empêcher (revue Soso, finding 6).
+    """
+
+    #: Au-delà, on considère que la tâche ne s'arrêtera pas tout de suite et on
+    #: rend la main : l'appelant laissera l'état sur `cancel_requested`.
+    DELAI_DE_GRACE_S = 0.5
 
     def __init__(self, tache: "asyncio.Task[object]") -> None:
         self._tache = tache
@@ -64,7 +76,13 @@ class AnnulationParTacheAsyncio:
         if self._tache.done():
             return True
         self._tache.cancel()
-        return True
+        # Laisser la tâche se refermer, sans bloquer l'interface : on ne
+        # confirme l'arrêt que s'il a réellement eu lieu.
+        with contextlib.suppress(asyncio.CancelledError, TimeoutError, Exception):
+            await asyncio.wait_for(
+                asyncio.shield(self._tache), timeout=self.DELAI_DE_GRACE_S
+            )
+        return self._tache.done()
 
 
 class AnnulationCooperative:
@@ -112,7 +130,17 @@ _adaptateurs: dict[str, AdaptateurAnnulation] = {}
 
 
 def inscrire(task_id: str, adaptateur: AdaptateurAnnulation) -> None:
+    """Inscrit un traitement vivant, et prévoit son retrait.
+
+    Finding 8 de la revue : rien ne retirait l'entrée à la fin du travail.
+    `est_vivante` restait vrai pour toujours et une annulation portant le même
+    identifiant croyait avoir un traitement à couper. Quand l'adaptateur
+    s'appuie sur une `asyncio.Task`, on s'accroche à sa fin pour nettoyer.
+    """
     _adaptateurs[task_id] = adaptateur
+    tache = getattr(adaptateur, "_tache", None)
+    if isinstance(tache, asyncio.Task):
+        tache.add_done_callback(lambda _t: retirer(task_id))
 
 
 def retirer(task_id: str) -> None:

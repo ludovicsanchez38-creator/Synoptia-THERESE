@@ -221,6 +221,18 @@ def parse_action_message(text: str) -> ParsedChatAction | None:
     habituel, strictement inchangé). Une enveloppe action reconnue répond
     TOUJOURS localement, même malformée (jamais le LLM)."""
     text = text.strip()
+
+    # J4 (31/07/2026) : le bouton Aide de la coque envoie littéralement `/aide`,
+    # qui n'est pas une enveloppe `{action: ...}` — la demande partait donc au
+    # modèle, qui improvisait une réponse sur les capacités de l'application au
+    # lieu de servir l'aide dérivée du code. Le menu des commandes présente le
+    # vocabulaire en `/` : c'est ce que les gens tapent.
+    #
+    # Strictement la commande seule : « /aide moi à rédiger ce courrier » reste
+    # une demande adressée au modèle.
+    if _normalize(text) == "/aide":
+        return ParsedChatAction(kind="help", raw="aide")
+
     body = _extract_action_body(text)
     if body is None:
         return None

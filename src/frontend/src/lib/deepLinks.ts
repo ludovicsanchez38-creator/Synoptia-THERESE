@@ -77,6 +77,30 @@ export function resolveSettingsTab(search: string): SettingsTab | null {
   return valeur && ONGLETS_REGLAGES.has(valeur) ? valeur : null;
 }
 
+/**
+ * Retire de l'URL les paramètres de lien profond déjà consommés.
+ *
+ * Sans ce nettoyage, un lien `?action=settings.open` rouvre les Réglages à
+ * CHAQUE rechargement : le paramètre reste dans la barre d'adresse et l'effet
+ * de montage le rejoue indéfiniment. L'utilisateur ne peut s'en défaire qu'en
+ * éditant l'URL à la main (revue Soso, finding 9).
+ *
+ * `interface`, qui identifie la coque, n'est pas un lien profond : il reste.
+ */
+export function nettoyerLiensProfondsConsommes(): void {
+  try {
+    const url = new URL(window.location.href);
+    const consommes = ['view', 'panel', 'action', 'settings_tab', 'handoff', 'prompt'];
+    const avant = url.search;
+    consommes.forEach((cle) => url.searchParams.delete(cle));
+    if (url.search !== avant) {
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+  } catch {
+    // Une URL exotique ne doit pas empêcher l'application de démarrer.
+  }
+}
+
 /** Lit le prompt transmis et le consomme (usage unique). */
 export function consumeHandoffPrompt(search: string): string | null {
   if (new URLSearchParams(search).get('handoff') !== 'prompt') return null;

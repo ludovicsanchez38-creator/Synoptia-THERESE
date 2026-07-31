@@ -1162,6 +1162,13 @@ async def _stream_response(
         allow_file_commands=allow_file_commands,
         detection_message=detection_message,
     )
+    # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
+    # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
+    # fermée, réseau coupé). Starlette referme alors ce générateur, et fermer
+    # le producteur pendant que son `__anext__` tourne encore lève
+    # `RuntimeError: aclose(): asynchronous generator is already running`.
+    prochain: asyncio.Future[str] | None = None
+    surveillance: asyncio.Future[None] | None = None
     try:
         while True:
             prochain = asyncio.ensure_future(producteur.__anext__())
@@ -1193,10 +1200,37 @@ async def _stream_response(
                 return
             yield chunk
     finally:
-        # Ferme le producteur : sans cela, le générateur reste suspendu et son
-        # travail (appel fournisseur, exécution d'outils) n'est jamais interrompu.
-        await producteur.aclose()
-        _unregister_generation(conversation_id)
+        # Ordre imposé par asyncio :
+        #
+        # 1. neutraliser les deux tâches encore en vol. Si le client est parti
+        #    pendant l'attente, `prochain` exécute toujours le producteur ;
+        # 2. seulement ensuite fermer le producteur — `aclose()` REFUSE de
+        #    fermer un générateur en cours d'exécution et lèverait un
+        #    `RuntimeError` ;
+        # 3. et quoi qu'il arrive, retirer l'entrée du registre. Elle y restait
+        #    quand `aclose()` levait : l'identifiant paraissait éternellement en
+        #    cours de génération et faussait les annulations suivantes.
+        try:
+            for tache in (prochain, surveillance):
+                if tache is not None and not tache.done():
+                    tache.cancel()
+                    # `CancelledError` n'hérite pas d'`Exception` : les deux
+                    # sont nécessaires. Une erreur du producteur pendant sa
+                    # fermeture ne doit pas empêcher le nettoyage du registre.
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await tache
+            with contextlib.suppress(Exception):
+                await producteur.aclose()
+        finally:
+            # Finding 4 : `finish_stream` n'était atteint qu'au bout du chemin
+            # nominal. Une annulation ou une déconnexion laissait le flux
+            # éternellement « actif » dans Réglages > Performances, et les
+            # statistiques ignoraient les flux arrêtés. L'appel est idempotent
+            # (`pop` sur le registre) : le doublon avec le chemin nominal est
+            # sans effet.
+            with contextlib.suppress(Exception):
+                get_performance_monitor().finish_stream(conversation_id)
+            _unregister_generation(conversation_id)
 
 
 async def _attendre_annulation(conversation_id: str, intervalle_s: float = 0.05) -> None:
@@ -1566,13 +1600,12 @@ async def _do_stream_response(
         model=llm_service.config.model,
         provider=llm_service.config.provider.value,
     )
-    session.add(assistant_message)
-    await session.commit()
-
-    # Finish performance tracking (US-PERF-01)
-    perf_monitor.finish_stream(conversation_id)
-
     # Track token usage and costs (US-ESC-02, US-ESC-04)
+    #
+    # Contre-vérification Soso (finding 3) : ce suivi précède DÉLIBÉRÉMENT la
+    # garde d'annulation. Les tokens ont réellement été consommés chez le
+    # fournisseur, que l'utilisateur ait annulé ou non — les escamoter
+    # fausserait le coût affiché dans Réglages.
     token_tracker = get_token_tracker()
 
     # Usage réel accumulé sur tous les tours d'outils (dette 14/06/2026), sinon
@@ -1591,6 +1624,27 @@ async def _do_stream_response(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
+
+    # Finding 3 de la revue Soso : le drapeau n'était consulté qu'entre deux
+    # morceaux, jamais avant les effets PERSISTANTS. Un `__anext__()` pouvait
+    # committer la réponse — ou déclencher l'auto-exécution d'un skill, qui
+    # ÉCRIT UN FICHIER sur le disque — alors que l'utilisateur venait de cliquer
+    # sur Arrêter. Il retrouvait ensuite une réponse qu'il croyait annulée, ou
+    # un fichier orphelin sans carte pour l'ouvrir.
+    #
+    # Le sondage d'annulation a un pas de 50 ms : la course est réelle. La garde
+    # est donc reposée ICI, juste avant le premier effet durable.
+    if _is_cancelled(conversation_id):
+        logger.info(
+            "Annulation demandée : ni la réponse ni le fichier de skill ne sont produits"
+        )
+        return
+
+    session.add(assistant_message)
+    await session.commit()
+
+    # Finish performance tracking (US-PERF-01)
+    perf_monitor.finish_stream(conversation_id)
 
     # Detect uncertainty in response (US-ESC-01)
     uncertainty = detect_uncertainty(full_content)
