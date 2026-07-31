@@ -2,12 +2,12 @@
  * THÉRÈSE v2 - Panel Store (US-016)
  *
  * Store Zustand pour la gestion centralisée des panneaux latéraux et modaux.
- * Remplace les 20+ useState de ChatLayout.tsx.
+ * Remplace les 20+ useState de l'ancienne coque.
  */
 
 import { create } from 'zustand';
 import * as api from '../services/api';
-import type { ClassicSettingsTab } from '../lib/classicNavigation';
+import type { SettingsTab } from '../lib/deepLinks';
 
 // ============================================================
 // Types
@@ -36,7 +36,7 @@ interface PanelState {
   showCommandPalette: boolean;
   showShortcuts: boolean;
   showSettings: boolean;
-  requestedSettingsTab: ClassicSettingsTab | null;
+  requestedSettingsTab: SettingsTab | null;
   showPromptLibrary: boolean;
   showBoardPanel: boolean;
   showContactModal: boolean;
@@ -59,7 +59,7 @@ interface PanelState {
   closeCommandPalette: () => void;
   openShortcuts: () => void;
   closeShortcuts: () => void;
-  openSettings: (tab?: ClassicSettingsTab) => void;
+  openSettings: (tab?: SettingsTab) => void;
   closeSettings: () => void;
   openPromptLibrary: () => void;
   closePromptLibrary: () => void;
