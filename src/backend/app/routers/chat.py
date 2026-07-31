@@ -5,6 +5,7 @@ Endpoints for chat and conversation management.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import re
@@ -1143,23 +1144,65 @@ async def _stream_response(
     # Register generation for cancellation tracking (US-ERR-04)
     _register_generation(conversation_id)
 
+    # J1b (31/07/2026) : l'annulation ne doit pas attendre le prochain chunk.
+    #
+    # L'ancienne boucle ne consultait le drapeau qu'APRÈS avoir reçu un morceau.
+    # Or c'est précisément quand le fournisseur est lent ou bloqué que
+    # l'utilisateur veut arrêter : la boucle restait suspendue sur le `__anext__`
+    # et le producteur continuait de consommer des tokens.
+    #
+    # On met donc la production et la surveillance en concurrence, et on ferme
+    # explicitement le générateur pour propager l'interruption au producteur.
+    producteur = _do_stream_response(
+        conversation_id, user_message, session, history,
+        skill_id=skill_id, file_paths=file_paths,
+        disable_tools=disable_tools,
+        preamble=preamble, actions_context=actions_context,
+        pending_confirmations=pending_confirmations,
+        allow_file_commands=allow_file_commands,
+        detection_message=detection_message,
+    )
     try:
-        async for chunk in _do_stream_response(
-            conversation_id, user_message, session, history,
-            skill_id=skill_id, file_paths=file_paths,
-            disable_tools=disable_tools,
-            preamble=preamble, actions_context=actions_context,
-            pending_confirmations=pending_confirmations,
-            allow_file_commands=allow_file_commands,
-            detection_message=detection_message,
-        ):
-            # Check for cancellation
+        while True:
+            prochain = asyncio.ensure_future(producteur.__anext__())
+            surveillance = asyncio.ensure_future(_attendre_annulation(conversation_id))
+            termines, _ = await asyncio.wait(
+                {prochain, surveillance}, return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if surveillance in termines and not prochain.done():
+                # Annuler l'attente du prochain morceau ET la laisser se
+                # terminer : `aclose()` refuse de fermer un générateur encore
+                # en cours d'exécution.
+                prochain.cancel()
+                with contextlib.suppress(asyncio.CancelledError, StopAsyncIteration):
+                    await prochain
+                yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+                return
+
+            surveillance.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await surveillance
+            try:
+                chunk = prochain.result()
+            except StopAsyncIteration:
+                return
+
             if _is_cancelled(conversation_id):
                 yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
             yield chunk
     finally:
+        # Ferme le producteur : sans cela, le générateur reste suspendu et son
+        # travail (appel fournisseur, exécution d'outils) n'est jamais interrompu.
+        await producteur.aclose()
         _unregister_generation(conversation_id)
+
+
+async def _attendre_annulation(conversation_id: str, intervalle_s: float = 0.05) -> None:
+    """Se résout dès que l'annulation est demandée pour cette conversation."""
+    while not _is_cancelled(conversation_id):
+        await asyncio.sleep(intervalle_s)
 
 
 async def _do_stream_response(
