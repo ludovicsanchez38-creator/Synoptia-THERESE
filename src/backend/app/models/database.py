@@ -143,6 +143,18 @@ def apply_adhoc_migrations(db_path) -> None:
             logger.info(
                 "Migration auto : colonne 'project_id' ajoutée à la table conversations"
             )
+        if conv_columns and "memory_scope" not in conv_columns:
+            # Politique documentaire (0.43). Les conversations EXISTANTES
+            # basculent au moindre privilège : c'est un changement de
+            # comportement assumé, annoncé dans les notes de version.
+            conn.execute(
+                "ALTER TABLE conversations ADD COLUMN memory_scope TEXT "
+                "NOT NULL DEFAULT 'global'"
+            )
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'memory_scope' ajoutée à conversations"
+            )
         if conv_columns:
             # `Field(index=True)` ne pose l'index que via `create_all()`, donc
             # jamais sur une base existante (relevé en revue : la colonne était

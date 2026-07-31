@@ -100,16 +100,18 @@ class Conversation(SQLModel, table=True):
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     title: str | None = None
     summary: str | None = None
-    # 0.43 : rattachement facultatif à un projet. Il commande le CLOISONNEMENT
-    # du contexte documentaire : une conversation rattachée ne voit que les
-    # documents de son projet et les documents globaux. Sans lui, un document
-    # du projet A pouvait être injecté dans une conversation parlant du
-    # projet B, sans que rien ne l'indique à l'écran.
-    #
-    # Facultatif à dessein : une conversation libre continue de voir toute la
-    # mémoire. Cloisonner par défaut amputerait ceux qui n'utilisent pas les
-    # projets.
+    # 0.43 : projet de rattachement. Utilisé quand `memory_scope == "project"`.
+    # Sans lui, un document du projet A pouvait être injecté dans une
+    # conversation parlant du projet B, sans rien à l'écran pour le dire.
     project_id: str | None = Field(default=None, index=True)
+    # Politique documentaire de la conversation (0.43, révisée après revue) :
+    #   `global`  - documents généraux uniquement (DÉFAUT, moindre privilège) ;
+    #   `project` - documents du projet rattaché + documents généraux ;
+    #   `all`     - toute la mémoire, choix explicite et affiché.
+    #
+    # Le défaut suit la règle que la fonction annonce : une conversation qui
+    # n'a rien demandé ne pioche pas dans les dossiers clients.
+    memory_scope: str = Field(default="global")
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
 

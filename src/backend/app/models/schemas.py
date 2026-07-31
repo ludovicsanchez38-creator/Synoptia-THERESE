@@ -338,12 +338,20 @@ class ConversationResponse(BaseModel):
     # à l'utilisateur quels documents cette conversation consultera — une
     # cloison invisible serait pire que pas de cloison du tout.
     project_id: str | None = None
+    #: `global` (défaut) | `project` | `all`.
+    memory_scope: str = "global"
 
 
 class ConversationProjectUpdate(BaseModel):
-    """Rattachement d'une conversation à un projet (`None` = la détacher)."""
+    """Politique documentaire d'une conversation.
+
+    - `project_id` renseigné : cloisonné sur ce projet ;
+    - `memory_scope="all"` : aucune cloison, choix explicite de l'utilisateur ;
+    - sinon : documents généraux uniquement (moindre privilège).
+    """
 
     project_id: str | None = None
+    memory_scope: str = "global"
 
 
 class MessageResponse(BaseModel):

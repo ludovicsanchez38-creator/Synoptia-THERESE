@@ -86,6 +86,7 @@ describe('formatConversationFromResponse (0.43)', () => {
       created_at: '2026-07-31T10:00:00Z',
       updated_at: '2026-07-31T10:00:00Z',
       project_id: 'projet-a',
+      memory_scope: 'project',
     });
     expect(out.projectId).toBe('projet-a');
   });
@@ -99,6 +100,7 @@ describe('formatConversationFromResponse (0.43)', () => {
       created_at: '2026-07-31T10:00:00Z',
       updated_at: '2026-07-31T10:00:00Z',
       project_id: null,
+      memory_scope: 'global',
     });
     expect(out.projectId).toBeNull();
     expect(out.title).toBe('Nouvelle conversation');

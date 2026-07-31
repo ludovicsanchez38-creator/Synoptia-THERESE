@@ -29,11 +29,14 @@ describe('ConversationProjectPicker', () => {
       { id: 'projet-b', name: 'Client Beta' },
     ]);
     apiMocks.setConversationProject.mockImplementation(
-      async (_id: string, projectId: string | null) => ({ project_id: projectId })
+      async (_id: string, projectId: string | null, memoryScope: string) => ({
+        project_id: projectId,
+        memory_scope: memoryScope,
+      })
     );
   });
 
-  it('annonce que la conversation consulte toute la mémoire quand elle est libre', async () => {
+  it('annonce des documents généraux quand rien n’est rattaché', async () => {
     render(<ConversationProjectPicker conversationId="conv-1" projectId={null} />);
 
     await waitFor(() => {
@@ -68,12 +71,16 @@ describe('ConversationProjectPicker', () => {
     fireEvent.change(select, { target: { value: 'projet-a' } });
 
     await waitFor(() => {
-      expect(apiMocks.setConversationProject).toHaveBeenCalledWith('conv-1', 'projet-a');
+      expect(apiMocks.setConversationProject).toHaveBeenCalledWith(
+        'conv-1', 'projet-a', 'project'
+      );
     });
-    await waitFor(() => expect(surChangement).toHaveBeenCalledWith('projet-a'));
+    await waitFor(() =>
+      expect(surChangement).toHaveBeenCalledWith('projet-a', 'project')
+    );
   });
 
-  it('détache la conversation quand on revient à toute la mémoire', async () => {
+  it('revient aux documents généraux — le défaut de moindre privilège', async () => {
     render(<ConversationProjectPicker conversationId="conv-1" projectId="projet-a" />);
 
     await waitFor(() => expect(screen.getByRole('combobox')).toBeTruthy());
@@ -81,7 +88,47 @@ describe('ConversationProjectPicker', () => {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: '' } });
 
     await waitFor(() => {
-      expect(apiMocks.setConversationProject).toHaveBeenCalledWith('conv-1', null);
+      expect(apiMocks.setConversationProject).toHaveBeenCalledWith(
+        'conv-1', null, 'global'
+      );
+    });
+  });
+
+  it('permet le mode transversal explicite « tous les projets »', async () => {
+    // Le moindre privilège ne doit pas supprimer l'usage transversal : il le
+    // rend explicite. Sans cette option, un utilisateur qui compare deux
+    // dossiers n'aurait plus aucun moyen de le faire.
+    render(<ConversationProjectPicker conversationId="conv-1" projectId={null} />);
+
+    await waitFor(() => expect(screen.getByRole('combobox')).toBeTruthy());
+    const select = screen.getByRole('combobox') as HTMLSelectElement;
+    const transversal = [...select.options].find(
+      (o) => o.textContent === 'Tous les projets'
+    );
+    expect(transversal).toBeTruthy();
+
+    const { fireEvent } = await import('@testing-library/react');
+    fireEvent.change(select, { target: { value: transversal!.value } });
+
+    await waitFor(() => {
+      expect(apiMocks.setConversationProject).toHaveBeenCalledWith(
+        'conv-1', null, 'all'
+      );
+    });
+  });
+
+  it('affiche le mode transversal quand il est déjà actif', async () => {
+    render(
+      <ConversationProjectPicker
+        conversationId="conv-1"
+        projectId={null}
+        memoryScope="all"
+      />
+    );
+
+    await waitFor(() => {
+      const select = screen.getByRole('combobox') as HTMLSelectElement;
+      expect(select.selectedOptions[0]?.textContent).toBe('Tous les projets');
     });
   });
 

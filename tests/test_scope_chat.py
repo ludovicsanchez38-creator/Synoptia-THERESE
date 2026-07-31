@@ -74,10 +74,21 @@ class TestLeContexteDuChatEstCloisonne:
         assert appels[0].get("scope_id") == "projet-a"
 
     @pytest.mark.asyncio
-    async def test_une_conversation_libre_voit_toute_la_memoire(
+    async def test_une_conversation_libre_ne_voit_que_les_documents_generaux(
         self, db_session, monkeypatch
     ):
-        """Garde-fou : ne pas amputer la mémoire de ceux qui n'utilisent pas les projets."""
+        """MOINDRE PRIVILÈGE — décision révisée après la revue.
+
+        La première version laissait une conversation libre voir TOUS les
+        projets. Défendable si le périmètre n'était qu'une préférence de
+        pertinence ; intenable dès lors qu'on le présente comme une protection
+        entre clients. Le défaut doit suivre la règle qu'il annonce.
+
+        Ce que l'utilisateur perd : rien s'il n'utilise pas les projets — ses
+        documents sont globaux. S'il en utilise, une conversation libre cesse
+        de piocher dans les dossiers clients, ce qui est précisément le but.
+        Le mode « tous les projets » reste accessible, explicitement.
+        """
         from app.models.entities import Conversation
         from app.routers import chat as chat_router
 
@@ -99,9 +110,44 @@ class TestLeContexteDuChatEstCloisonne:
         )
 
         assert appels, "aucune recherche mémoire lancée"
-        assert appels[0].get("scope") is None, (
-            "une conversation sans projet ne doit pas être cloisonnée : "
-            "l'utilisateur perdrait l'accès à ses propres documents"
+        assert appels[0].get("scope") == "global", (
+            "une conversation libre pioche encore dans les dossiers clients : "
+            "le défaut ne respecte pas la règle qu'il annonce"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_mode_tous_les_projets_reste_possible_explicitement(
+        self, db_session, monkeypatch
+    ):
+        """Le moindre privilège ne doit pas supprimer l'usage transversal.
+
+        Chercher dans toute la mémoire reste légitime — cela devient un choix
+        assumé, affiché, au lieu d'être le comportement par défaut silencieux.
+        """
+        from app.models.entities import Conversation
+        from app.routers import chat as chat_router
+
+        conversation = Conversation(
+            id="conv-transverse", title="Revue générale", memory_scope="all"
+        )
+        db_session.add(conversation)
+        await db_session.commit()
+
+        appels: list[dict] = []
+
+        async def faux_search(**kwargs):
+            appels.append(kwargs)
+            return []
+
+        faux_qdrant = type("Faux", (), {"async_search": staticmethod(faux_search)})()
+        monkeypatch.setattr(chat_router, "get_qdrant_service", lambda: faux_qdrant)
+
+        await chat_router._get_memory_context(
+            "compare les dossiers", conversation_id="conv-transverse", session=db_session
+        )
+
+        assert appels and appels[0].get("scope") is None, (
+            "le mode transversal explicite doit lever la cloison"
         )
 
     @pytest.mark.asyncio
