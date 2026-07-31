@@ -32,6 +32,7 @@ import {
   type CapabilityItem,
 } from './CapabilityCenter';
 import { CharacterPortrait } from './DecisionMissionPrototype';
+import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { WindowControls } from '../window/WindowControls';
 import { isMacPlatform } from '../../lib/platform';
 import { startWindowDrag } from '../../lib/windowChrome';
@@ -90,7 +91,14 @@ import { usePanelStore } from '../../stores/panelStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
-import type { AppView } from '../../stores/navigationStore';
+import { useNavigationStore, type AppView } from '../../stores/navigationStore';
+import { consumeHandoffPrompt, resolveDeepLinkAction, resolveDeepLinkPanel, resolveDeepLinkView, resolveSettingsTab, nettoyerLiensProfondsConsommes } from '../../lib/deepLinks';
+import { usePanelStore as usePanelStoreDirect } from '../../stores/panelStore';
+import { useAtelierStore as useAtelierStoreDirect } from '../../stores/atelierStore';
+import { useActionsStore as useActionsStoreDirect } from '../../stores/actionsStore';
+import { runTopEscapeHandler } from '../../lib/escapeStack';
+import { useContactsStore as useContactsStoreDirect } from '../../stores/contactsStore';
+import { usePersonalisationStore } from '../../stores/personalisationStore';
 import { PanelContainer } from '../chat/PanelContainer';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
@@ -589,6 +597,27 @@ function CommandPalette({
   );
 }
 
+
+/**
+ * Overlays de la pile unifiée, dans l'ordre de `resolveEscape` mais SANS son
+ * retour de vue final : la coque enchaîne ensuite sur ses propres surfaces.
+ * Retourne vrai si Échap a été consommé ici.
+ */
+function consommeEchapUnifie(): boolean {
+  if (runTopEscapeHandler()) return true;
+  const ps = usePanelStoreDirect.getState();
+  if (ps.showSaveCommand) { ps.closeSaveCommand(); return true; }
+  if (ps.showContactModal) { ps.closeContactModal(); return true; }
+  if (ps.showProjectModal) { ps.closeProjectModal(); return true; }
+  if (ps.showBoardPanel) { ps.closeBoardPanel(); return true; }
+  if (ps.showShortcuts) { ps.closeShortcuts(); return true; }
+  if (ps.showSettings) { ps.closeSettings(); return true; }
+  if (ps.showPromptLibrary) { ps.closePromptLibrary(); return true; }
+  if (useAtelierStoreDirect.getState().isOpen) { useAtelierStoreDirect.getState().closePanel(); return true; }
+  if (useActionsStoreDirect.getState().isPanelOpen) { useActionsStoreDirect.getState().closePanel(); return true; }
+  return false;
+}
+
 export function ConversationCanvasPrototype() {
   const theme = useAccessibilityStore((state) => state.theme);
   const highContrast = useAccessibilityStore((state) => state.highContrast);
@@ -770,28 +799,19 @@ export function ConversationCanvasPrototype() {
       .catch(() => setUserSlashCommands([]));
   }, []);
 
-  useEffect(() => {
-    const onInsertPrompt = (event: Event) => {
-      const prompt = (event as CustomEvent<string>).detail;
-      if (typeof prompt !== 'string' || !prompt.trim()) return;
-      if (blockStreamingNavigation()) return;
-      setChatInitialPrompt(prompt.trim());
-      setEmbeddedView(null);
-      setCanvasOpen(false);
-      setCalculatorOpen(false);
-      setDeliverablesOpen(false);
-      setImagesOpen(false);
-      setFollowUpsOpen(false);
-      setVoiceOpen(false);
-      setChatOpen(true);
-    };
-    window.addEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
-    return () => window.removeEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
-  }, [blockStreamingNavigation]);
+  // J0 (31/07) : l'écouteur `therese:insert-prompt` qui vivait ici a été
+  // supprimé — il faisait doublon avec celui déclaré plus bas. Les deux
+  // consultaient la garde de streaming, qui NOTIFIE quand elle refuse : un
+  // seul geste produisait deux bandeaux « Réponse en cours ». Celui qui reste
+  // délègue à `openChat`, qui pose en plus la vue canonique et remet à zéro le
+  // composeur — ce que cette version ne faisait pas.
 
   const openChat = (prompt?: string) => {
     if (blockStreamingNavigation()) return;
     setChatInitialPrompt(prompt?.trim() || null);
+    if (useNavigationStore.getState().activeView !== 'chat') {
+      useNavigationStore.getState().setView('chat');
+    }
     setEmbeddedView(null);
     setCanvasOpen(false);
     setCalculatorOpen(false);
@@ -821,11 +841,134 @@ export function ConversationCanvasPrototype() {
     setSelectedCapability(null);
     setComposerValue('');
     setEmbeddedView(view);
+    // J0a : `navigationStore` est la source de navigation canonique. La coque
+    // pilotait ses vues par un état local que le store ignorait, si bien que
+    // les composants communs (accueil, registre d'actions, commandes) posaient
+    // une vue que personne n'affichait.
+    if (useNavigationStore.getState().activeView !== view) {
+      useNavigationStore.getState().setView(view);
+    }
   };
+  // J0a : l'autre sens. Toute navigation posée dans le store - accueil
+  // (QuickActions, TodayPanels, RecentConversations), registre d'actions,
+  // commandes déterministes - doit devenir visible ici. Sans cet abonnement,
+  // ces gestes changeaient un état que la coque n'observait pas.
+  const viewDemandee = useNavigationStore((state) => state.activeView);
+  const derniereVueRef = useRef<AppView | null>(null);
+  useEffect(() => {
+    // Au montage, ne rien forcer : la coque a son propre écran d'accueil et
+    // n'ouvre le chat que sur un geste. Seuls les CHANGEMENTS de vue comptent.
+    if (derniereVueRef.current === null) {
+      derniereVueRef.current = viewDemandee;
+      return;
+    }
+    if (derniereVueRef.current === viewDemandee) return;
+    // La référence n'avance QUE si la navigation aboutit. Refusée pendant un
+    // flux, la demande resterait sinon perdue : `activeView` n'ayant pas
+    // changé, aucun rattrapage n'aurait lieu à la fin du flux. D'où `isStreaming`
+    // en dépendance : la demande en attente est rejouée dès que le flux finit.
+    if (isStreaming) return;
+    derniereVueRef.current = viewDemandee;
+    if (viewDemandee === 'chat') {
+      if (!chatOpen) openChat();
+      return;
+    }
+    if (embeddedView === viewDemandee) return;
+    openEmbeddedView(viewDemandee);
+    // openEmbeddedView et openChat sont recréés à chaque rendu : les inclure
+    // relancerait l'effet en boucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewDemandee, isStreaming]);
+
+  // J0b : reprises de l'ancienne coque, qui les portait seule.
+  //
+  // 1. Le pont de recette `window.__therese` (appel bas niveau des actions et
+  //    lecture des stores) : c'est l'outil de diagnostic des testeurs.
+  // 2. L'insertion d'un prompt venu d'ailleurs (⌘K « Produire un document »,
+  //    bibliothèque de prompts).
+  // 3. Les liens profonds `?view=` / `?settings_tab=` et le prompt transmis.
+  useEffect(() => {
+    const surPromptInsere = (evenement: Event) => {
+      const texte = (evenement as CustomEvent<string>).detail;
+      // Garde reprise de l'écouteur fusionné : un prompt vide ne doit pas
+      // ouvrir le chat (`openChat` accepte `null` et l'ouvrirait quand même).
+      if (typeof texte !== 'string' || !texte.trim()) return;
+      openChat(texte);
+    };
+    window.addEventListener('therese:insert-prompt', surPromptInsere as EventListener);
+    (window as unknown as { __therese?: unknown }).__therese = {
+      runAction,
+      getActions,
+      stores: {
+        navigation: useNavigationStore,
+        panel: usePanelStore,
+        chat: useChatStore,
+        atelier: useAtelierStore,
+        actions: useActionsStoreDirect,
+        contacts: useContactsStoreDirect,
+      },
+    };
+    return () => window.removeEventListener('therese:insert-prompt', surPromptInsere as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // F3 : la préférence « ignorer l'accueil » n'avait plus aucun effet depuis
+    // le retrait du classic. On l'honore ici sans appeler `initializeView`, qui
+    // poserait la vue 'home' et écraserait l'accueil conversationnel natif de
+    // la coque (ce dernier REMPLACE l'ancien tableau de bord).
+    const ignorerAccueil = usePersonalisationStore.getState().skipDashboard ?? false;
+    const recherche = window.location.search;
+    const vueDemandee = resolveDeepLinkView(recherche);
+    const ongletReglages = resolveSettingsTab(recherche);
+    const promptTransmis = consumeHandoffPrompt(recherche);
+    if (promptTransmis) {
+      openChat(promptTransmis);
+    } else if (vueDemandee === 'chat') {
+      openChat();
+    } else if (vueDemandee) {
+      openEmbeddedView(vueDemandee);
+    }
+    // F5 : ces deux paramètres étaient lus mais jamais appliqués - un lien
+    // profond vers le Board ou les Actions n'ouvrait rien.
+    const panneau = resolveDeepLinkPanel(recherche);
+    if (panneau === 'board') toggleBoardPanel();
+    else if (panneau === 'atelier') openAtelierPanel();
+    const actionDemandee = resolveDeepLinkAction(recherche);
+    if (actionDemandee) runAction(actionDemandee);
+    if (ongletReglages) openSettings(ongletReglages);
+    if (ignorerAccueil && !promptTransmis && !vueDemandee && !panneau && !actionDemandee) {
+      openChat();
+    }
+    // Finding 9 : sans ce nettoyage, les paramètres restent dans l'URL et sont
+    // rejoués à chaque rechargement — un lien vers les Réglages devenait
+    // collant.
+    nettoyerLiensProfondsConsommes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;
     setEmbeddedView(null);
+    // Remédiation NO-GO J0 : sans retour dans le store, `activeView` restait
+    // sur la vue fermée. Rejouer la même action devenait un no-op
+    // (`setView` ignore une valeur identique) et la vue ne se rouvrait plus.
+    if (useNavigationStore.getState().activeView === embeddedView) {
+      useNavigationStore.getState().goBack();
+    }
   }, [embeddedView]);
+  const fermerLeChat = useCallback(() => {
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    // Finding 7 : fermer le chat ne touchait que l'état local. Le store restait
+    // sur `chat`, si bien qu'un `setView('chat')` ultérieur — celui qu'émet
+    // `actionsStore` à la fin d'une Action — devenait un no-op. Le résultat
+    // était ajouté à la conversation sans jamais la rouvrir : du travail qui
+    // paraît perdu. Même patron que `collapseEmbeddedView`.
+    if (useNavigationStore.getState().activeView === 'chat') {
+      useNavigationStore.getState().goBack();
+    }
+  }, []);
   const collapseToolPanel = useCallback((tool: RightPanelTool) => {
     if (tool === 'calculator') setCalculatorOpen(false);
     else if (tool === 'deliverables') setDeliverablesOpen(false);
@@ -869,14 +1012,18 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // Remédiation NO-GO J0 : la cascade locale ignorait les modales gérées
+        // par la pile unifiée (Réglages, contact, projet, bibliothèque, Actions,
+        // Atelier). Échap fermait alors le chat DERRIÈRE la modale, ou ne
+        // faisait rien. Ces overlays passent en premier.
+        if (consommeEchapUnifie()) return;
         if (commandOpen) closeCommandPalette();
         else if (capabilityCenterOpen) closeCapabilityCenter();
         else if (trustCenterOpen) closeTrustCenter();
         else if (drawerOpen) closeConversationDrawer();
         else if (chatOpen) {
           if (blockStreamingNavigation()) return;
-          setChatOpen(false);
-          setChatInitialPrompt(null);
+          fermerLeChat();
         } else if (embeddedView) collapseEmbeddedView();
         else if (calculatorOpen) collapseToolPanel('calculator');
         else if (deliverablesOpen) collapseToolPanel('deliverables');
@@ -893,8 +1040,7 @@ export function ConversationCanvasPrototype() {
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
     setScenario(next);
-    setChatOpen(false);
-    setChatInitialPrompt(null);
+    fermerLeChat();
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
@@ -918,8 +1064,7 @@ export function ConversationCanvasPrototype() {
     setCapabilityCenterOpen(false);
     setCommandOpen(false);
     setSelectedCapability(capability);
-    setChatOpen(false);
-    setChatInitialPrompt(null);
+    fermerLeChat();
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
@@ -1092,6 +1237,9 @@ export function ConversationCanvasPrototype() {
       data-testid="conversation-canvas-prototype"
       data-theme={theme}
       data-high-contrast={highContrast ? 'true' : undefined}
+      /* J0a : la vue courante de la coque, lisible sans monter les panneaux
+         embarqués (chargés en lazy). Sert aux tests et à la recette. */
+      data-embedded-view={embeddedView ?? (chatOpen ? 'chat' : 'accueil')}
     >
       <div className="flex h-full flex-col">
         <header data-dialog-allow onMouseDown={startWindowDrag} className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 select-none sm:px-4">
@@ -1103,6 +1251,13 @@ export function ConversationCanvasPrototype() {
               </span>
               <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
               <span className="hidden rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted lg:inline-flex">Interface unifiée</span>
+            </div>
+            {/* Finding 10 : l'état de connexion ne vivait que dans la surface
+                de chat. Un utilisateur dans CRM, Fichiers ou Factures ne voyait
+                plus rien quand le backend tombait — ses actions échouaient sans
+                explication. Ici, il couvre toutes les vues. */}
+            <div data-testid="etat-connexion-coque" className="shrink-0">
+              <ConnectionStatus />
             </div>
           </div>
 
@@ -1196,8 +1351,7 @@ export function ConversationCanvasPrototype() {
                 }}
                 onClose={() => {
                   if (blockStreamingNavigation()) return;
-                  setChatOpen(false);
-                  setChatInitialPrompt(null);
+                  fermerLeChat();
                 }}
               />
             ) : embeddedView ? (

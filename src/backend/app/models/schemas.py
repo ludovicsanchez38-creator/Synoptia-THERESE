@@ -374,6 +374,11 @@ class FileResponse(BaseModel):
     chunk_count: int
     indexed_at: datetime | None
     created_at: datetime
+    # J2 : le rattachement d'un document doit être lisible par l'interface.
+    # Sans lui, l'utilisateur ne peut pas savoir ce que la machine consultera
+    # dans quelle conversation.
+    scope: str = "global"
+    scope_id: str | None = None
 
 
 # ============================================================

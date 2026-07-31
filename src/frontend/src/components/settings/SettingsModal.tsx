@@ -24,12 +24,12 @@ import { Z_LAYER } from '../../styles/z-layers';
 import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
-import { resolveClassicSettingsTab, type ClassicSettingsTab } from '../../lib/classicNavigation';
+import { resolveSettingsTab, type SettingsTab } from '../../lib/deepLinks';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  requestedTab?: ClassicSettingsTab | null;
+  requestedTab?: SettingsTab | null;
 }
 
 type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
@@ -56,7 +56,7 @@ async function loadSetting<T>(label: string, request: Promise<T>, fallback: T) {
 
 export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
-    () => requestedTab ?? resolveClassicSettingsTab(window.location.search) ?? 'profile',
+    () => requestedTab ?? resolveSettingsTab(window.location.search) ?? 'profile',
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);

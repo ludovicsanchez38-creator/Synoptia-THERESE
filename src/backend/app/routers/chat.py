@@ -5,6 +5,7 @@ Endpoints for chat and conversation management.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import re
@@ -1143,23 +1144,99 @@ async def _stream_response(
     # Register generation for cancellation tracking (US-ERR-04)
     _register_generation(conversation_id)
 
+    # J1b (31/07/2026) : l'annulation ne doit pas attendre le prochain chunk.
+    #
+    # L'ancienne boucle ne consultait le drapeau qu'APRÈS avoir reçu un morceau.
+    # Or c'est précisément quand le fournisseur est lent ou bloqué que
+    # l'utilisateur veut arrêter : la boucle restait suspendue sur le `__anext__`
+    # et le producteur continuait de consommer des tokens.
+    #
+    # On met donc la production et la surveillance en concurrence, et on ferme
+    # explicitement le générateur pour propager l'interruption au producteur.
+    producteur = _do_stream_response(
+        conversation_id, user_message, session, history,
+        skill_id=skill_id, file_paths=file_paths,
+        disable_tools=disable_tools,
+        preamble=preamble, actions_context=actions_context,
+        pending_confirmations=pending_confirmations,
+        allow_file_commands=allow_file_commands,
+        detection_message=detection_message,
+    )
+    # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
+    # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
+    # fermée, réseau coupé). Starlette referme alors ce générateur, et fermer
+    # le producteur pendant que son `__anext__` tourne encore lève
+    # `RuntimeError: aclose(): asynchronous generator is already running`.
+    prochain: asyncio.Future[str] | None = None
+    surveillance: asyncio.Future[None] | None = None
     try:
-        async for chunk in _do_stream_response(
-            conversation_id, user_message, session, history,
-            skill_id=skill_id, file_paths=file_paths,
-            disable_tools=disable_tools,
-            preamble=preamble, actions_context=actions_context,
-            pending_confirmations=pending_confirmations,
-            allow_file_commands=allow_file_commands,
-            detection_message=detection_message,
-        ):
-            # Check for cancellation
+        while True:
+            prochain = asyncio.ensure_future(producteur.__anext__())
+            surveillance = asyncio.ensure_future(_attendre_annulation(conversation_id))
+            termines, _ = await asyncio.wait(
+                {prochain, surveillance}, return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if surveillance in termines and not prochain.done():
+                # Annuler l'attente du prochain morceau ET la laisser se
+                # terminer : `aclose()` refuse de fermer un générateur encore
+                # en cours d'exécution.
+                prochain.cancel()
+                with contextlib.suppress(asyncio.CancelledError, StopAsyncIteration):
+                    await prochain
+                yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+                return
+
+            surveillance.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await surveillance
+            try:
+                chunk = prochain.result()
+            except StopAsyncIteration:
+                return
+
             if _is_cancelled(conversation_id):
                 yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
             yield chunk
     finally:
-        _unregister_generation(conversation_id)
+        # Ordre imposé par asyncio :
+        #
+        # 1. neutraliser les deux tâches encore en vol. Si le client est parti
+        #    pendant l'attente, `prochain` exécute toujours le producteur ;
+        # 2. seulement ensuite fermer le producteur — `aclose()` REFUSE de
+        #    fermer un générateur en cours d'exécution et lèverait un
+        #    `RuntimeError` ;
+        # 3. et quoi qu'il arrive, retirer l'entrée du registre. Elle y restait
+        #    quand `aclose()` levait : l'identifiant paraissait éternellement en
+        #    cours de génération et faussait les annulations suivantes.
+        try:
+            for tache in (prochain, surveillance):
+                if tache is not None and not tache.done():
+                    tache.cancel()
+                    # `CancelledError` n'hérite pas d'`Exception` : les deux
+                    # sont nécessaires. Une erreur du producteur pendant sa
+                    # fermeture ne doit pas empêcher le nettoyage du registre.
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await tache
+            with contextlib.suppress(Exception):
+                await producteur.aclose()
+        finally:
+            # Finding 4 : `finish_stream` n'était atteint qu'au bout du chemin
+            # nominal. Une annulation ou une déconnexion laissait le flux
+            # éternellement « actif » dans Réglages > Performances, et les
+            # statistiques ignoraient les flux arrêtés. L'appel est idempotent
+            # (`pop` sur le registre) : le doublon avec le chemin nominal est
+            # sans effet.
+            with contextlib.suppress(Exception):
+                get_performance_monitor().finish_stream(conversation_id)
+            _unregister_generation(conversation_id)
+
+
+async def _attendre_annulation(conversation_id: str, intervalle_s: float = 0.05) -> None:
+    """Se résout dès que l'annulation est demandée pour cette conversation."""
+    while not _is_cancelled(conversation_id):
+        await asyncio.sleep(intervalle_s)
 
 
 async def _do_stream_response(
@@ -1523,13 +1600,12 @@ async def _do_stream_response(
         model=llm_service.config.model,
         provider=llm_service.config.provider.value,
     )
-    session.add(assistant_message)
-    await session.commit()
-
-    # Finish performance tracking (US-PERF-01)
-    perf_monitor.finish_stream(conversation_id)
-
     # Track token usage and costs (US-ESC-02, US-ESC-04)
+    #
+    # Contre-vérification Soso (finding 3) : ce suivi précède DÉLIBÉRÉMENT la
+    # garde d'annulation. Les tokens ont réellement été consommés chez le
+    # fournisseur, que l'utilisateur ait annulé ou non — les escamoter
+    # fausserait le coût affiché dans Réglages.
     token_tracker = get_token_tracker()
 
     # Usage réel accumulé sur tous les tours d'outils (dette 14/06/2026), sinon
@@ -1548,6 +1624,27 @@ async def _do_stream_response(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
+
+    # Finding 3 de la revue Soso : le drapeau n'était consulté qu'entre deux
+    # morceaux, jamais avant les effets PERSISTANTS. Un `__anext__()` pouvait
+    # committer la réponse — ou déclencher l'auto-exécution d'un skill, qui
+    # ÉCRIT UN FICHIER sur le disque — alors que l'utilisateur venait de cliquer
+    # sur Arrêter. Il retrouvait ensuite une réponse qu'il croyait annulée, ou
+    # un fichier orphelin sans carte pour l'ouvrir.
+    #
+    # Le sondage d'annulation a un pas de 50 ms : la course est réelle. La garde
+    # est donc reposée ICI, juste avant le premier effet durable.
+    if _is_cancelled(conversation_id):
+        logger.info(
+            "Annulation demandée : ni la réponse ni le fichier de skill ne sont produits"
+        )
+        return
+
+    session.add(assistant_message)
+    await session.commit()
+
+    # Finish performance tracking (US-PERF-01)
+    perf_monitor.finish_stream(conversation_id)
 
     # Detect uncertainty in response (US-ESC-01)
     uncertainty = detect_uncertainty(full_content)
@@ -1777,6 +1874,20 @@ async def _execute_tools_and_continue(
     sensitive_pending = False
 
     for tc in allowed_calls:
+        # Finding 3, troisième passe de revue : la boucle d'outils ignorait
+        # complètement l'annulation. Elle émet d'abord un statut, puis exécute
+        # — et ces outils ne sont pas anodins : ils créent des contacts et des
+        # projets (commit SQLite et Qdrant), écrivent des documents sur le
+        # disque, ou appellent un outil MCP arbitraire. L'utilisateur cliquait
+        # sur Arrêter, recevait bien « cancelled », et retrouvait quand même un
+        # fichier ou une entité créés après coup.
+        #
+        # La garde est en TÊTE de boucle : un seul endroit couvre tous les
+        # chemins d'exécution (web, navigateur, mémoire, workspace, MCP).
+        if _is_cancelled(conversation_id):
+            logger.info("Annulation demandée : les outils restants ne sont pas exécutés")
+            return
+
         # US-002 : les outils sensibles (envoi de mail) ne s'exécutent jamais
         # automatiquement sur décision du LLM. On met l'action en attente et on
         # demande validation à l'utilisateur ; l'exécution réelle a lieu via

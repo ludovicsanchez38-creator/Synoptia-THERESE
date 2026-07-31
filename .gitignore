@@ -99,3 +99,7 @@ scratchpad/
 # Rapports Playwright (artefacts de CI, pas du code - revue 0.40)
 playwright-report/
 test-results/
+
+# Cache mypy : 344 Mo de fichiers générés, jamais à versionner.
+# Ajouté le 31/07/2026 après un `git add -A` qui en a commité 7574.
+.mypy_cache/
