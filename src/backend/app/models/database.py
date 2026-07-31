@@ -623,6 +623,7 @@ async def init_db() -> None:
     from app.models import (
         entities,  # noqa: F401
         entities_agents,  # noqa: F401 - Agent system tables
+        processing,  # noqa: F401 - Traitements longs (J1a)
     )
     from app.services import audit  # noqa: F401 - ActivityLog model
 
