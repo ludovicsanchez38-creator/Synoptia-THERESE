@@ -123,34 +123,61 @@ class TestBackfillDuPerimetre:
 
 
     @pytest.mark.asyncio
-    async def test_les_souvenirs_non_documentaires_sont_laisses_intacts(
+    async def test_les_contacts_et_projets_sont_reclasses_aussi(
         self, db_session, monkeypatch
     ):
-        """RÉGRESSION ÉVITÉE, trouvée en revue.
+        """DÉCISION ÉTENDUE en revue de clôture.
 
-        La collection ne contient pas que des documents : les contacts, les
-        projets et le profil y ont aussi leurs embeddings, et aucune ligne dans
-        `FileMetadata`. Une première version du backfill les marquait donc tous
-        inclassables — ils disparaissaient des modes `global` et `project`,
-        c'est-à-dire de l'usage courant. Le cloisonnement des contacts se fait
-        en SQL, pas par ce périmètre vectoriel.
+        Une version précédente ne reclassait que les documents et laissait
+        contacts et projets sans périmètre — donc acceptés par la branche
+        « payload sans périmètre » de toute recherche cloisonnée. Leur
+        embedding faisait ainsi remonter un contact du client A dans une
+        conversation du client B : la cloison SQL de `read_contact` était
+        contournée par le RAG.
+
+        Chaque type lit son rattachement dans SA table.
         """
+        from app.models.entities import Contact, Project
         from app.services import perimetre_backfill
 
+        db_session.add(
+            Contact(id="ct-a", first_name="Amélie", scope="project", scope_id="projet-a")
+        )
+        db_session.add(Project(id="pj-a", name="Chantier A", scope="global"))
+        await db_session.commit()
+
         faux = FauxQdrant({
-            "c1": {"entity_id": "contact-1", "type": "contact"},
-            "pr1": {"entity_id": "projet-1", "type": "project"},
+            "c1": {"entity_id": "ct-a", "type": "contact"},
+            "pr1": {"entity_id": "pj-a", "type": "project"},
         })
         monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
 
         reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
 
+        assert reclasses == 2
+        assert faux.points["c1"]["scope"] == "project"
+        assert faux.points["c1"]["scope_id"] == "projet-a"
+        assert faux.points["pr1"]["scope"] == "global"
+
+    @pytest.mark.asyncio
+    async def test_un_type_non_gere_est_laisse_intact(self, db_session, monkeypatch):
+        """Ne jamais marquer inclassable un type qu'on ne sait pas classer.
+
+        Le profil utilisateur — et tout type ajouté plus tard — n'a pas de table
+        de rattachement. Le marquer le ferait disparaître de la mémoire
+        courante : c'est la régression corrigée en revue.
+        """
+        from app.services import perimetre_backfill
+
+        faux = FauxQdrant({"p1": {"entity_id": "profil", "type": "profile"}})
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
         assert reclasses == 0
-        assert "scope" not in faux.points["c1"], (
-            "l'embedding d'un contact a été classé par le backfill documentaire : "
-            "il disparaîtrait de la mémoire courante"
+        assert "scope" not in faux.points["p1"], (
+            "un type non géré a été classé : il disparaîtrait de la mémoire"
         )
-        assert "scope" not in faux.points["pr1"]
 
     @pytest.mark.asyncio
     async def test_le_backfill_est_idempotent(self, db_session, monkeypatch):

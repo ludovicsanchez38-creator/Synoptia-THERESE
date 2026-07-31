@@ -158,14 +158,21 @@ def _cloison_contacts(
     globaux. `scope` NULL en base (contacts d'avant E3-05) est traité comme
     général : ne pas le faire masquerait des contacts existants.
     """
+    generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
     if scope == "project" and scope_id:
         return requete.where(
             or_(
-                Contact.scope == "global",
-                Contact.scope.is_(None),
+                generaux,
                 (Contact.scope == "project") & (Contact.scope_id == scope_id),
             )
         )
+    if scope == "global":
+        # Le mode global est le DÉFAUT : le laisser sans filtre revenait à
+        # n'avoir cloisonné personne. Une conversation libre ne voit que les
+        # contacts généraux, comme elle ne voit que les documents généraux.
+        return requete.where(generaux)
+    # `scope is None` : appel hors conversation (scripts, tests, chemins
+    # historiques). Pas de cloison, comportement d'avant la 0.43.
     return requete
 
 
@@ -257,6 +264,11 @@ async def execute_create_contact(
             role=arguments.get("role"),
             notes=arguments.get("notes"),
             last_interaction=datetime.now(UTC),
+            # 0.43 : un contact créé DEPUIS une conversation de projet
+            # appartient à ce projet. Sans cela il naissait global, donc
+            # visible partout — la cloison n'aurait tenu que sur l'existant.
+            scope="project" if (scope == "project" and scope_id) else "global",
+            scope_id=scope_id if (scope == "project" and scope_id) else None,
         )
         session.add(contact)
         await session.flush()
@@ -284,6 +296,10 @@ async def execute_create_contact(
                     "name": contact.display_name,
                     "company": contact.company,
                     "email": contact.email,
+                    # Même périmètre que la ligne SQL : sinon le RAG contourne
+                    # la cloison de `read_contact`.
+                    "scope": contact.scope or "global",
+                    "scope_id": contact.scope_id,
                 },
             )
         except Exception as e:
@@ -365,6 +381,8 @@ async def execute_create_project(
                     "name": project.name,
                     "status": project.status,
                     "budget": project.budget,
+                    "scope": project.scope or "global",
+                    "scope_id": project.scope_id,
                 },
             )
         except Exception as e:

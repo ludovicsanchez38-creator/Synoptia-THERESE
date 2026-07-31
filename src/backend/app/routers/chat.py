@@ -175,7 +175,9 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
 async def _get_file_context(
     file_path: str,
     session: AsyncSession,
-    command: str = "fichier"
+    command: str = "fichier",
+    scope: str = "global",
+    scope_id: str | None = None,
 ) -> tuple[str | None, str | None]:
     """
     Get file content for context injection.
@@ -225,6 +227,11 @@ async def _get_file_context(
                 extension=metadata["extension"],
                 size=metadata["size"],
                 mime_type=metadata["mime_type"],
+                # 0.43 : une pièce jointe déposée DANS une conversation de
+                # projet appartient à ce projet. Sans cela elle naissait
+                # globale, donc consultable depuis tous les autres dossiers.
+                scope=scope,
+                scope_id=scope_id,
             )
             session.add(file_meta)
             # 3e passe de revue : la session gardait le verrou d'écriture SQLite
@@ -256,6 +263,8 @@ async def _get_file_context(
                         "path": str(path),
                         "chunk_index": i,
                         "total_chunks": len(chunks),
+                        "scope": file_meta.scope or "global",
+                        "scope_id": file_meta.scope_id,
                     },
                 })
 
@@ -1103,6 +1112,15 @@ async def send_message(
         llm_user_message, conversation_id=conversation.id, session=session
     )
 
+    # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
+    # indexe : un document déposé dans un dossier client lui appartient.
+    _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
+        conversation.id, session
+    )
+    perimetre_fichiers = _perimetre_conv if _perimetre_conv == "project" else "global"
+    perimetre_fichiers_id = _perimetre_conv_id if _perimetre_conv == "project" else None
+
+
     # Check for file commands and add file context (0e : parité stream,
     # jamais sur un texte dérivé - le prompt produire n'est pas scanné)
     file_commands = (
@@ -1110,7 +1128,9 @@ async def send_message(
     )
     file_contexts = []
     for cmd, path in file_commands:
-        file_ctx, error = await _get_file_context(path, session, cmd)
+        file_ctx, error = await _get_file_context(
+            path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
+        )
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
@@ -1119,7 +1139,10 @@ async def send_message(
     # BUG-044 : Traiter les fichiers joints (drag & drop)
     if request.file_paths:
         for fp in request.file_paths:
-            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            file_ctx, error = await _get_file_context(
+                fp, session, "analyse",
+                scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            )
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:
@@ -1401,6 +1424,15 @@ async def _do_stream_response(
         user_message, conversation_id=conversation_id, session=session
     )
 
+    # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
+    # indexe : un document déposé dans un dossier client lui appartient.
+    _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
+        conversation_id, session
+    )
+    perimetre_fichiers = _perimetre_conv if _perimetre_conv == "project" else "global"
+    perimetre_fichiers_id = _perimetre_conv_id if _perimetre_conv == "project" else None
+
+
     # Check for file commands and add file context.
     # Tranche 0e Variables V4 (finding Codex 2 VÉRIFIÉ) : jamais de
     # redétection sur un texte dérivé (prompt produire) - le flag vient du
@@ -1410,7 +1442,9 @@ async def _do_stream_response(
     file_errors = []
 
     for cmd, path in file_commands:
-        file_ctx, error = await _get_file_context(path, session, cmd)
+        file_ctx, error = await _get_file_context(
+            path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
+        )
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
@@ -1420,7 +1454,10 @@ async def _do_stream_response(
     # BUG-044 : Traiter les fichiers joints (drag & drop) via file_paths
     if file_paths:
         for fp in file_paths:
-            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            file_ctx, error = await _get_file_context(
+                fp, session, "analyse",
+                scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            )
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:

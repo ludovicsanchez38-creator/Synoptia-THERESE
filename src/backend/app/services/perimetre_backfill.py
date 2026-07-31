@@ -22,7 +22,7 @@ détruit.
 """
 import logging
 
-from app.models.entities import FileMetadata
+from app.models.entities import Contact, FileMetadata, Project
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -56,49 +56,49 @@ async def reclasser_payloads_sans_perimetre(session: AsyncSession) -> int:
 
     # Regrouper par document : un fichier a plusieurs fragments, une seule
     # écriture de payload suffit pour tous.
-    par_entite: dict[str, list[str]] = {}
-    ignores_hors_documents = 0
+    # Chaque type de souvenir sait où lire son rattachement. Un type absent de
+    # cette table est laissé INTACT : le marquer inclassable le ferait
+    # disparaître de la mémoire courante (régression corrigée en revue).
+    tables = {"file": FileMetadata, "contact": Contact, "project": Project}
+
+    par_type: dict[str, dict[str, list[str]]] = {}
+    ignores = 0
     for point_id, payload in orphelins:
-        # RÉGRESSION ÉVITÉE (revue) : ne toucher QUE les documents. La
-        # collection contient aussi les embeddings de contacts, de projets et
-        # du profil, qui n'ont aucune ligne dans `FileMetadata`. Les traiter
-        # ici les aurait tous marqués inclassables — donc fait disparaître des
-        # modes `global` et `project` toute la mémoire sémantique non
-        # documentaire. Les contacts sont cloisonnés en SQL, pas par ce
-        # périmètre vectoriel.
-        if payload.get("type") != "file":
-            ignores_hors_documents += 1
+        type_memoire = str(payload.get("type") or "")
+        if type_memoire not in tables:
+            ignores += 1
             continue
         entity_id = payload.get("entity_id")
         if entity_id:
-            par_entite.setdefault(str(entity_id), []).append(point_id)
+            par_type.setdefault(type_memoire, {}).setdefault(
+                str(entity_id), []
+            ).append(point_id)
 
-    if ignores_hors_documents:
-        logger.debug(
-            "Reclassement : %d points non documentaires laissés intacts",
-            ignores_hors_documents,
-        )
+    if ignores:
+        logger.debug("Reclassement : %d points d'un type non géré laissés intacts", ignores)
 
-    if not par_entite:
+    if not par_type:
         return 0
 
-    resultat = await session.execute(
-        select(FileMetadata).where(FileMetadata.id.in_(tuple(par_entite)))
-    )
-    connus = {ligne.id: ligne for ligne in resultat.scalars().all()}
-
     reclasses = 0
-    for entity_id, point_ids in par_entite.items():
-        ligne = connus.get(entity_id)
-        if ligne is None:
-            scope, scope_id = SCOPE_INCLASSABLE, None
-        else:
-            scope, scope_id = (ligne.scope or "global"), ligne.scope_id
-        try:
-            qdrant.definir_perimetre(point_ids, scope, scope_id)
-            reclasses += len(point_ids)
-        except Exception as e:
-            logger.warning("Reclassement impossible pour %s : %s", entity_id, e)
+    for type_memoire, par_entite in par_type.items():
+        modele = tables[type_memoire]
+        resultat = await session.execute(
+            select(modele).where(modele.id.in_(tuple(par_entite)))
+        )
+        connus = {ligne.id: ligne for ligne in resultat.scalars().all()}
+
+        for entity_id, point_ids in par_entite.items():
+            ligne = connus.get(entity_id)
+            if ligne is None:
+                scope, scope_id = SCOPE_INCLASSABLE, None
+            else:
+                scope, scope_id = (ligne.scope or "global"), ligne.scope_id
+            try:
+                qdrant.definir_perimetre(point_ids, scope, scope_id)
+                reclasses += len(point_ids)
+            except Exception as e:
+                logger.warning("Reclassement impossible pour %s : %s", entity_id, e)
 
     if reclasses:
         logger.info("Périmètre reclassé sur %d fragments documentaires", reclasses)
