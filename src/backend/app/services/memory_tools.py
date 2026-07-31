@@ -58,10 +58,6 @@ CREATE_CONTACT_TOOL = {
                     "type": "string",
                     "description": "Numero de telephone du contact (optionnel)",
                 },
-                "role": {
-                    "type": "string",
-                    "description": "Role ou poste du contact (optionnel)",
-                },
                 "notes": {
                     "type": "string",
                     "description": "Notes supplementaires sur le contact (optionnel)",
@@ -342,6 +338,9 @@ async def execute_create_contact(
 async def execute_create_project(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Execute the create_project tool.
@@ -374,6 +373,11 @@ async def execute_create_project(
             description=arguments.get("description"),
             status=arguments.get("status", "active"),
             budget=arguments.get("budget"),
+            # 0.43 : même règle que les contacts. Un projet créé DEPUIS une
+            # conversation de dossier appartient à ce dossier ; sans cela il
+            # naissait global, donc son embedding remontait partout.
+            scope="project" if (scope == "project" and scope_id) else "global",
+            scope_id=scope_id if (scope == "project" and scope_id) else None,
         )
         session.add(project)
         await session.flush()
@@ -615,7 +619,10 @@ async def execute_memory_tool(
             conversation_id=conversation_id,
         )
     elif tool_name == "create_project":
-        return await execute_create_project(arguments, session)
+        return await execute_create_project(
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
     elif tool_name == "read_contact":
         return await execute_read_contact(
             arguments, session, scope=scope, scope_id=scope_id,

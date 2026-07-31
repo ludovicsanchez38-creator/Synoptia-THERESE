@@ -7,7 +7,7 @@ respectait pas l'intention. On les execute desormais directement en CRUD,
 sans appel LLM ni boucle d'outils, avec deduplication cote memory_tools.
 
 Syntaxe :
-  /contact Prenom Nom [email=... tel=... societe=... role=...]
+  /contact Prenom Nom [email=... tel=... societe=...]
   /projet Nom du projet [budget=1000 statut=active desc=...]
   /rdv Titre [date=2026-06-03T14:00]
 
@@ -96,7 +96,6 @@ _KEY_ALIASES = {
     "email": "email", "mail": "email",
     "tel": "phone", "telephone": "phone", "téléphone": "phone", "phone": "phone",
     "societe": "company", "société": "company", "company": "company", "entreprise": "company",
-    "role": "role", "rôle": "role", "poste": "role",
     "budget": "budget",
     "statut": "status", "status": "status",
     "desc": "description", "description": "description",
@@ -180,7 +179,13 @@ async def _do_contact(
     return f"Contact **{name}** créé en mémoire."
 
 
-async def _do_projet(rest: str, session: AsyncSession) -> str:
+async def _do_projet(
+    rest: str,
+    session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
+) -> str:
     positional, kw = _split_positional_and_kwargs(rest)
     name = positional.strip()
     if not name:
@@ -199,7 +204,12 @@ async def _do_projet(rest: str, session: AsyncSession) -> str:
         "status": kw.get("status", "active"),
         "budget": budget,
     }
-    result = json.loads(await execute_create_project(args, session))
+    result = json.loads(
+        await execute_create_project(
+            args, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
+    )
     if result.get("error"):
         return f"Impossible de créer le projet : {result['error']}"
     pname = result.get("name", "projet")
@@ -270,7 +280,12 @@ async def execute_slash_command_outcome(
             )
         )
     if command == "projet":
-        return SlashCommandOutcome(await _do_projet(rest, session))
+        return SlashCommandOutcome(
+            await _do_projet(
+                rest, session, scope=scope, scope_id=scope_id,
+                conversation_id=conversation_id,
+            )
+        )
     if command == "rdv":
         return await _prepare_rdv(rest, session)
     return SlashCommandOutcome(f"Commande inconnue : /{command}")

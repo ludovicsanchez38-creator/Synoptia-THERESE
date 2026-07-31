@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import { localDateKey } from '../../lib/civilDate';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
 import { useGuardedAction } from '../../hooks/useGuardedAction';
@@ -79,13 +80,19 @@ export function EventForm() {
     } else {
       // New event: default to today
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      const timeStr = now.toTimeString().slice(0, 5);
-      setStartDate(todayStr);
-      setStartTime(timeStr);
-      setEndDate(todayStr);
-      const endTime = new Date(now.getTime() + 60 * 60 * 1000);
-      setEndTime(endTime.toTimeString().slice(0, 5));
+      const fin = new Date(now.getTime() + 60 * 60 * 1000);
+      // La date de FIN se déduit de l'instant de fin, pas de la date du jour :
+      // à 23 h 30, début + 1 h tombe le LENDEMAIN. Figer la date de fin sur
+      // aujourd'hui rendait la fin antérieure au début, et la validation
+      // refusait toute création entre 23 h et minuit.
+      //
+      // `localDateKey` plutôt que `toISOString()` : ce dernier rend la date
+      // UTC alors que l'heure affichée est locale — un décalage d'un jour en
+      // UTC+ (dates civiles, BUG-144).
+      setStartDate(localDateKey(now));
+      setStartTime(now.toTimeString().slice(0, 5));
+      setEndDate(localDateKey(fin));
+      setEndTime(fin.toTimeString().slice(0, 5));
     }
   }, [isEditing, event]);
 
