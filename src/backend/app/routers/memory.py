@@ -10,7 +10,7 @@ import time
 from typing import Literal
 
 from app.models.database import get_session
-from app.models.entities import Contact, FileMetadata, Project
+from app.models.entities import Contact, Conversation, FileMetadata, Project
 from app.models.schemas import (
     ContactCreate,
     ContactResponse,
@@ -967,6 +967,24 @@ async def delete_project(
         cascade_deleted["files"] = len(files)
 
     project_name = project.name
+
+    # 0.43 : détacher les conversations rattachées à ce projet.
+    # `Conversation.project_id` n'est pas une clé étrangère : sans ce ménage,
+    # elles resteraient cloisonnées sur un identifiant supprimé. Le backend
+    # continuerait de filtrer dessus — donc plus aucun document — pendant que
+    # le sélecteur, ne trouvant plus le projet dans la liste, afficherait
+    # « Toute la mémoire ». L'écran mentirait sur la cloison réelle.
+    conversations_liees = (
+        await session.execute(
+            select(Conversation).where(Conversation.project_id == project_id)
+        )
+    ).scalars().all()
+    for conversation in conversations_liees:
+        conversation.project_id = None
+        session.add(conversation)
+    if conversations_liees:
+        cascade_deleted["conversations_detachees"] = len(conversations_liees)
+
     await session.delete(project)
     await session.commit()
 

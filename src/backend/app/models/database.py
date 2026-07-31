@@ -143,6 +143,16 @@ def apply_adhoc_migrations(db_path) -> None:
             logger.info(
                 "Migration auto : colonne 'project_id' ajoutée à la table conversations"
             )
+        if conv_columns:
+            # `Field(index=True)` ne pose l'index que via `create_all()`, donc
+            # jamais sur une base existante (relevé en revue : la colonne était
+            # bien ajoutée, l'index non). Sans lui, le filtrage par projet fait
+            # un balayage complet de la table.
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_conversations_project_id "
+                "ON conversations (project_id)"
+            )
+            conn.commit()
         # 0.40 : historique Board reconstructible (sources + usage de synthèse)
         cursor = conn.execute("PRAGMA table_info(board_decisions)")
         board_columns = {row[1] for row in cursor.fetchall()}
