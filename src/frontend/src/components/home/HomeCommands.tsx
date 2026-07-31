@@ -71,6 +71,15 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
     fetchCommands();
   }, [fetchCommands]);
 
+  // J0 (31/07) : rendre la main au démontage. Ce composant n'est monté que tant
+  // que la conversation est VIDE ; dès qu'un message y apparaît, ou que
+  // l'utilisateur change de conversation, il disparaît. Sans ce nettoyage, un
+  // panneau guidé ouvert à ce moment-là laissait la coque persuadée qu'il
+  // l'était encore, et le composeur restait masqué pour de bon.
+  useEffect(() => {
+    return () => onGuidedPanelChange?.(false);
+  }, [onGuidedPanelChange]);
+
   // (KO Syn 2.2) La bibliothèque de prompts est désormais montée globalement
   // (PanelContainer + panelStore) pour être accessible depuis ⌘K partout.
   // Le bouton « home » ci-dessous garde son ouverture locale.

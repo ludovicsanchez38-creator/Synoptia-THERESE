@@ -12,13 +12,17 @@
  * Ce fichier verrouille le contrat. Toute action de navigation ajoutée au
  * registre sans être servie par la coque fera échouer la suite.
  */
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from '../../stores/chatStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
+import { usePersonalisationStore } from '../../stores/personalisationStore';
+import { useStatusStore } from '../../stores/statusStore';
+import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { APP_ACTIONS, runAction } from '../../lib/actionRegistry';
+import { runNavigationAction } from '../../lib/clientActions';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 
 const voiceHarness = vi.hoisted(() => ({ toggleRecording: vi.fn() }));
@@ -92,25 +96,57 @@ vi.mock('./usePrototypeAtelierData', () => ({
   }),
 }));
 
-/** Les actions du registre qui demandent une VUE (les autres ouvrent des panneaux). */
+/**
+ * Toutes les actions du registre qui demandent une VUE, quel que soit leur
+ * groupe. La sélection précédente ne retenait que `group === 'Navigation'` et
+ * ratait donc `memory.open` et `memory.search` (groupe Mémoire) : le gate
+ * prétendait couvrir la parité sans les voir (finding 6 de la revue).
+ *
+ * Les vues connues font foi, pas une convention de nommage : une action
+ * ajoutée hors convention sera signalée par le test de complétude.
+ */
+const VUES_CONNUES = [
+  'home', 'memory', 'crm', 'email', 'calendar', 'tasks', 'invoices', 'files', 'projects', 'documents',
+] as const;
+
 const ACTIONS_DE_VUE = APP_ACTIONS
-  .filter((a) => a.group === 'Navigation' && a.id.endsWith('.open'))
-  .map((a) => a.id)
-  // `board.open` est dans le groupe Navigation mais ouvre un panneau, pas une vue.
-  .filter((id) => id !== 'board.open');
+  .filter((a) => {
+    const cible = a.id.replace(/\.(open|search)$/, '');
+    return (a.id.endsWith('.open') || a.id.endsWith('.search'))
+      && (VUES_CONNUES as readonly string[]).includes(cible);
+  })
+  .map((a) => a.id);
 
 describe('Gate de parité par source d’action', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.history.replaceState({}, '', '/?interface=conversation-canvas');
     useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
-    usePanelStore.setState({ showSettings: false, requestedSettingsTab: null });
-    useNavigationStore.setState({ activeView: 'chat' });
+    usePanelStore.setState({
+      showSettings: false, requestedSettingsTab: null, showSaveCommand: false,
+      showContactModal: false, showProjectModal: false, showBoardPanel: false,
+      showShortcuts: false, showPromptLibrary: false, showCommandPalette: false,
+      showConversationSidebar: false,
+    });
+    // Réinitialisation exhaustive : ces stores sont des singletons de module et
+    // survivent d'un fichier de test à l'autre. `skipDashboard` en particulier
+    // ferait ouvrir le chat au montage et fausserait tout le gate.
+    // La pile Échap est un singleton de module : un handler laissé par un autre
+    // fichier de test consommerait la touche avant la pile unifiée.
+    _clearEscapeHandlers();
+    useNavigationStore.setState({ activeView: 'chat', history: [] });
+    usePersonalisationStore.setState({ skipDashboard: false });
   });
 
   it('couvre toutes les actions de navigation du registre', () => {
-    // Garde-fou du gate lui-même : si le registre gagne une entrée, ce test
-    // rappelle qu'elle doit être servie par la coque.
+    // Garde-fou du gate : toute action visant une vue connue DOIT être dans la
+    // liste testée. Un seuil numérique ne détectait pas une action ajoutée hors
+    // convention de nommage.
+    const attendues = APP_ACTIONS
+      .filter((a) => (VUES_CONNUES as readonly string[]).some((v) => a.id.startsWith(`${v}.`)))
+      .filter((a) => a.id.endsWith('.open') || a.id.endsWith('.search'))
+      .map((a) => a.id);
+    expect(ACTIONS_DE_VUE.sort()).toEqual(attendues.sort());
     expect(ACTIONS_DE_VUE.length).toBeGreaterThanOrEqual(9);
   });
 
@@ -121,7 +157,7 @@ describe('Gate de parité par source d’action', () => {
       runAction(actionId);
     });
 
-    const vueAttendue = actionId.replace('.open', '');
+    const vueAttendue = actionId.replace(/\.(open|search)$/, '');
     await waitFor(() => {
       expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute(
         'data-embedded-view',
@@ -168,6 +204,111 @@ describe('Gate de parité par source d’action', () => {
       await waitFor(() => {
         expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'chat');
       });
+    });
+  });
+
+  // Remédiation du NO-GO Soso sur J0 (31/07) : trois défauts critiques.
+    it('la commande déterministe {action: ouvrir ...} aboutit aussi', async () => {
+    // Le gate n'éprouvait que `runAction`. Les commandes déterministes du chat
+    // passent par un autre chemin : elles doivent aboutir de la même façon.
+    render(<ConversationCanvasPrototype />);
+
+    await act(async () => {
+      runNavigationAction('crm.open');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+    });
+  });
+
+  it('le raccourci clavier aboutit aussi', async () => {
+    render(<ConversationCanvasPrototype />);
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'e', ctrlKey: true, metaKey: true });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'email');
+    });
+  });
+
+  describe('navigation réellement unique', () => {
+    it('rouvrir une vue après l’avoir fermée fonctionne encore', async () => {
+      // Défaut : fermer ne posait que l'état local. Le store restait sur la vue,
+      // donc rejouer la même action devenait un no-op (setView ignore l'identique)
+      // et la vue ne se rouvrait jamais.
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => { runAction('crm.open'); });
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+      });
+
+      await act(async () => { screen.getByLabelText('Revenir à la conversation unifiée').click(); });
+      await act(async () => { runAction('crm.open'); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+      });
+    });
+
+    it('une navigation refusée pendant un flux n’est pas perdue', async () => {
+      // Défaut : l'effet avançait sa référence AVANT que la navigation soit
+      // refusée pour cause de streaming. La demande disparaissait sans retour.
+      useChatStore.setState({ isStreaming: true });
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => { runAction('crm.open'); });
+      // Refusée : le flux tourne.
+      expect(screen.getByTestId('conversation-canvas-prototype')).not.toHaveAttribute('data-embedded-view', 'crm');
+
+      await act(async () => { useChatStore.setState({ isStreaming: false }); });
+      await act(async () => { runAction('crm.open'); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+      });
+    });
+
+    it('branche Échap sur la pile unifiée', async () => {
+      // Le test précédent cherchait le mot « Escape » dans le fichier : il
+      // passait sans rien prouver. On vérifie le comportement réel.
+      const { resolveEscape } = await import('../../lib/resolveEscape');
+      const espion = vi.fn();
+      usePanelStore.setState({ showSettings: true });
+
+      render(<ConversationCanvasPrototype />);
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'Escape' });
+      });
+
+      expect(usePanelStore.getState().showSettings).toBe(false);
+      expect(typeof resolveEscape).toBe('function');
+      expect(espion).not.toHaveBeenCalled();
+    });
+
+    it('n’écoute l’insertion de prompt qu’une seule fois', async () => {
+      // Finding 7 du NO-GO Soso : la coque enregistrait DEUX écouteurs de
+      // `therese:insert-prompt`. Les deux consultent la garde de streaming, et
+      // celle-ci notifie l'utilisateur quand elle refuse — d'où deux bandeaux
+      // « Réponse en cours » identiques pour un seul geste.
+      useChatStore.setState({ isStreaming: true });
+      useStatusStore.setState({ notifications: [] });
+
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        window.dispatchEvent(
+          new CustomEvent('therese:insert-prompt', { detail: 'Prépare la relance' })
+        );
+      });
+
+      const refus = useStatusStore
+        .getState()
+        .notifications.filter((n) => n.title === 'Réponse en cours');
+      expect(refus).toHaveLength(1);
     });
   });
 });
