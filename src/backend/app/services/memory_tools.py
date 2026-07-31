@@ -150,7 +150,10 @@ async def _find_existing_project(session: AsyncSession, name: str) -> Project | 
 
 
 def _cloison_contacts(
-    requete: Any, scope: str | None, scope_id: str | None
+    requete: Any,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None = None,
 ) -> Any:
     """Restreint une requête contacts au périmètre de la conversation.
 
@@ -159,6 +162,16 @@ def _cloison_contacts(
     général : ne pas le faire masquerait des contacts existants.
     """
     generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
+    # RÉGRESSION ÉVITÉE (revue de clôture) : l'interface crée les contacts
+    # suggérés avec `scope="conversation"` (`EntitySuggestion.tsx`). Sans cette
+    # branche, un contact tout juste enregistré depuis la conversation en cours
+    # devenait introuvable dans cette même conversation — la fonction cassait
+    # sous prétexte de la protéger.
+    if conversation_id:
+        generaux = or_(
+            generaux,
+            (Contact.scope == "conversation") & (Contact.scope_id == conversation_id),
+        )
     if scope == "project" and scope_id:
         return requete.where(
             or_(
@@ -169,7 +182,7 @@ def _cloison_contacts(
     if scope == "global":
         # Le mode global est le DÉFAUT : le laisser sans filtre revenait à
         # n'avoir cloisonné personne. Une conversation libre ne voit que les
-        # contacts généraux, comme elle ne voit que les documents généraux.
+        # contacts généraux et ceux de sa propre conversation.
         return requete.where(generaux)
     # `scope is None` : appel hors conversation (scripts, tests, chemins
     # historiques). Pas de cloison, comportement d'avant la 0.43.
@@ -183,6 +196,7 @@ async def _find_existing_contact(
     email: str | None,
     scope: str | None = None,
     scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> Contact | None:
     """Retourne un contact existant (par email, sinon par prenom+nom).
 
@@ -196,6 +210,7 @@ async def _find_existing_contact(
                 select(Contact).where(func.lower(Contact.email) == email.lower()),
                 scope,
                 scope_id,
+                conversation_id,
             )
         )
         match = result.scalars().first()
@@ -206,7 +221,9 @@ async def _find_existing_contact(
     ln = last_name.strip().lower()
     if not fn and not ln:
         return None
-    result = await session.execute(_cloison_contacts(select(Contact), scope, scope_id))
+    result = await session.execute(
+        _cloison_contacts(select(Contact), scope, scope_id, conversation_id)
+    )
     for c in result.scalars().all():
         if (c.first_name or "").strip().lower() == fn and (c.last_name or "").strip().lower() == ln:
             return c
@@ -222,6 +239,7 @@ async def execute_create_contact(
     session: AsyncSession,
     scope: str | None = None,
     scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Execute the create_contact tool.
@@ -243,7 +261,8 @@ async def execute_create_contact(
     # Deduplication : si un contact equivalent existe deja, on le reutilise
     # plutot que de creer un doublon (regression "creation en masse").
     existing = await _find_existing_contact(
-        session, first_name, last_name, email, scope=scope, scope_id=scope_id
+        session, first_name, last_name, email,
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id,
     )
     if existing is not None:
         return json.dumps({
@@ -261,7 +280,6 @@ async def execute_create_contact(
             company=company,
             email=email,
             phone=arguments.get("phone"),
-            role=arguments.get("role"),
             notes=arguments.get("notes"),
             last_interaction=datetime.now(UTC),
             # 0.43 : un contact créé DEPUIS une conversation de projet
@@ -279,8 +297,6 @@ async def execute_create_contact(
             text_parts = [f"Contact: {contact.display_name}"]
             if contact.company:
                 text_parts.append(f"Entreprise: {contact.company}")
-            if contact.role:
-                text_parts.append(f"Role: {contact.role}")
             if contact.email:
                 text_parts.append(f"Email: {contact.email}")
             if contact.phone:
@@ -467,6 +483,7 @@ async def execute_read_contact(
     session: AsyncSession,
     scope: str | None = None,
     scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """Execute the read_contact tool : retourne la fiche complète + interactions.
 
@@ -489,7 +506,9 @@ async def execute_read_contact(
     # coordonnées et notes comprises — était lisible depuis une conversation du
     # projet B. Les contacts GÉNÉRAUX restent visibles partout, comme les
     # documents globaux.
-    result = await session.execute(_cloison_contacts(select(Contact), scope, scope_id))
+    result = await session.execute(
+        _cloison_contacts(select(Contact), scope, scope_id, conversation_id)
+    )
     contacts = list(result.scalars().all())
     matches = [
         c
@@ -582,6 +601,7 @@ async def execute_memory_tool(
     session: AsyncSession,
     scope: str | None = None,
     scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Route memory tool execution to the correct handler.
@@ -591,13 +611,15 @@ async def execute_memory_tool(
     """
     if tool_name == "create_contact":
         return await execute_create_contact(
-            arguments, session, scope=scope, scope_id=scope_id
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
         )
     elif tool_name == "create_project":
         return await execute_create_project(arguments, session)
     elif tool_name == "read_contact":
         return await execute_read_contact(
-            arguments, session, scope=scope, scope_id=scope_id
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
         )
     else:
         return json.dumps({"error": f"Outil inconnu: {tool_name}"}, ensure_ascii=False)
