@@ -17,7 +17,9 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    IsEmptyCondition,
     MatchValue,
+    PayloadField,
     PointStruct,
     VectorParams,
 )
@@ -264,7 +266,10 @@ class QdrantService:
 
         # Filter by scope (E3-05)
         if scope:
-            scope_conditions = [
+            # Annotée : la liste mêle `Filter`, `FieldCondition` et
+            # `IsEmptyCondition`. Sans ce type, mypy l'infère en `list[Filter]`
+            # dès le premier élément et refuse les suivants.
+            scope_conditions: list[Filter | FieldCondition | IsEmptyCondition] = [
                 Filter(
                     must=[
                         FieldCondition(key="scope", match=MatchValue(value=scope)),
@@ -275,6 +280,16 @@ class QdrantService:
             if include_global:
                 scope_conditions.append(
                     FieldCondition(key="scope", match=MatchValue(value="global"))
+                )
+                # J2 (31/07/2026) : le périmètre n'a été écrit dans le payload
+                # qu'à partir de cette version. Tout ce qui a été indexé avant
+                # n'a AUCUNE clé `scope`, et ne répond donc ni à `project` ni à
+                # `global`. Sans cette branche, poser une cloison ferait
+                # disparaître d'un coup toute la mémoire documentaire
+                # existante — un document absent est plus grave qu'un document
+                # trop visible, et le plan interdit la réindexation silencieuse.
+                scope_conditions.append(
+                    IsEmptyCondition(is_empty=PayloadField(key="scope"))
                 )
             conditions.append(Filter(should=scope_conditions))
 

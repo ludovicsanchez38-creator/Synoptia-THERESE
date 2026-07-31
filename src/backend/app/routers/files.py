@@ -105,6 +105,8 @@ async def list_files(
             chunk_count=f.chunk_count,
             indexed_at=f.indexed_at,
             created_at=f.created_at,
+            scope=f.scope,
+            scope_id=f.scope_id,
         )
         for f in files
     ]
@@ -127,9 +129,53 @@ async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: dateti
         await session.commit()
 
 
+def construire_items_indexation(
+    *,
+    chunks: list[str],
+    file_id: str,
+    file_name: str,
+    chemin: str,
+    scope: str,
+    scope_id: str | None,
+) -> list[dict[str, Any]]:
+    """Construit les items Qdrant d'un document. UN SEUL endroit.
+
+    Contre-vérification Soso : `index_payload` écrivait bien le périmètre, mais
+    `upload_file` — le chemin réel d'une pièce jointe de projet — construisait
+    ses items séparément, avec un `project_id` ad hoc et sans `scope`. Le filtre
+    de recherche traitait alors ces documents comme GLOBAUX (branche
+    `IsEmptyCondition` prévue pour les documents antérieurs) : un fichier versé
+    dans le projet A pouvait ressortir dans une recherche du projet B.
+
+    Deux constructeurs pour un même payload, c'est une divergence garantie.
+    """
+    return [
+        {
+            "text": fragment,
+            "memory_type": "file",
+            "entity_id": file_id,
+            "metadata": {
+                "name": file_name,
+                "path": chemin,
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                # Sans ces deux clés, le filtre par périmètre ne peut rien
+                # retrouver : le champ n'existe pas côté vectoriel.
+                "scope": scope,
+                "scope_id": scope_id,
+                # Conservé pour les lecteurs existants de cette clé.
+                **({"project_id": scope_id} if scope == "project" else {}),
+            },
+        }
+        for i, fragment in enumerate(chunks)
+    ]
+
+
 async def index_payload(
     path: str,
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
+    scope: str = "global",
+    scope_id: str | None = None,
 ) -> FileResponse:
     """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
@@ -147,6 +193,12 @@ async def index_payload(
     - `est_abandonnee` permet de renoncer avant l'étape la plus coûteuse quand
       plus personne n'attend la réponse. L'extraction déjà lancée, elle, va à
       son terme : un thread ne s'interrompt pas.
+
+    J2 (31/07/2026) : `scope` et `scope_id` sont écrits DANS LE PAYLOAD, pas
+    seulement en base. Le filtrage par périmètre existait des deux côtés mais
+    n'était branché ni à l'écriture ni à la lecture — le contexte du chat
+    cherchait donc sans aucune cloison, et un document de projet pouvait
+    ressortir dans une conversation étrangère.
     """
     # Validation securite du chemin + type de fichier (SEC-002/003)
     try:
@@ -174,6 +226,12 @@ async def index_payload(
                 existing.size = metadata["size"]
                 existing.mime_type = metadata["mime_type"]
                 existing.updated_at = datetime.now(UTC)
+                # Une réindexation SANS périmètre explicite ne doit pas
+                # déclasser un document déjà rattaché à un projet : on ne
+                # rétrograde jamais vers `global` par omission.
+                if scope != "global" or scope_id is not None:
+                    existing.scope = scope
+                    existing.scope_id = scope_id
                 file_meta = existing
                 reindexation = True
                 # Mémorisés pour ne rien détruire si le nouveau traitement
@@ -187,6 +245,8 @@ async def index_payload(
                     extension=metadata["extension"],
                     size=metadata["size"],
                     mime_type=metadata["mime_type"],
+                    scope=scope,
+                    scope_id=scope_id,
                 )
                 session.add(file_meta)
                 reindexation = False
@@ -198,6 +258,10 @@ async def index_payload(
             file_name = file_meta.name
             created_at = file_meta.created_at
             extension = file_meta.extension
+            # Le périmètre EFFECTIF, relu après commit : en réindexation sans
+            # périmètre explicite, c'est celui déjà enregistré qui fait foi.
+            perimetre = file_meta.scope
+            perimetre_id = file_meta.scope_id
 
         # 2. Travail lourd, hors transaction et hors boucle d'événements.
         #
@@ -213,20 +277,14 @@ async def index_payload(
 
         if text_content and not (est_abandonnee and await est_abandonnee()):
             chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
-            items = [
-                {
-                    "text": chunk,
-                    "memory_type": "file",
-                    "entity_id": file_id,
-                    "metadata": {
-                        "name": file_name,
-                        "path": str(file_path),
-                        "chunk_index": i,
-                        "total_chunks": len(chunks),
-                    },
-                }
-                for i, chunk in enumerate(chunks)
-            ]
+            items = construire_items_indexation(
+                chunks=chunks,
+                file_id=file_id,
+                file_name=file_name,
+                chemin=str(file_path),
+                scope=perimetre,
+                scope_id=perimetre_id,
+            )
             if items and not (est_abandonnee and await est_abandonnee()):
                 async with INDEX_SEMAPHORE:
                     # L'attente du sémaphore peut durer : re-consulter l'abandon
@@ -271,6 +329,8 @@ async def index_payload(
         chunk_count=chunk_count,
         indexed_at=indexed_at,
         created_at=created_at,
+        scope=perimetre,
+        scope_id=perimetre_id,
     )
 
 
@@ -311,6 +371,8 @@ async def get_file(
         chunk_count=file_meta.chunk_count,
         indexed_at=file_meta.indexed_at,
         created_at=file_meta.created_at,
+        scope=file_meta.scope,
+        scope_id=file_meta.scope_id,
     )
 
 
@@ -483,20 +545,17 @@ async def upload_file(
     if text_content:
         chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
         qdrant = get_qdrant_service()
-        items = []
-        for i, chunk in enumerate(chunks):
-            items.append({
-                "text": chunk,
-                "memory_type": "file",
-                "entity_id": file_meta.id,
-                "metadata": {
-                    "name": file_meta.name,
-                    "path": str(dest_path),
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
-                    "project_id": project_id,
-                },
-            })
+        # Contre-vérification Soso : ce chemin construisait son propre payload,
+        # sans `scope`. Le document était alors pris pour un document global et
+        # pouvait ressortir dans un autre projet.
+        items = construire_items_indexation(
+            chunks=chunks,
+            file_id=file_meta.id,
+            file_name=file_meta.name,
+            chemin=str(dest_path),
+            scope="project",
+            scope_id=project_id,
+        )
         if items:
             await qdrant.async_add_memories(items)
             logger.info(f"Indexé {len(chunks)} chunks pour {file_meta.name} (projet {project_id})")
@@ -518,4 +577,6 @@ async def upload_file(
         chunk_count=file_meta.chunk_count,
         indexed_at=file_meta.indexed_at,
         created_at=file_meta.created_at,
+        scope=file_meta.scope,
+        scope_id=file_meta.scope_id,
     )

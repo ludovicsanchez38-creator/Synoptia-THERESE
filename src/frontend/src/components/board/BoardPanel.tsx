@@ -116,7 +116,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
   // Check Ollama availability
   const checkOllama = useCallback(() => {
-    fetch('http://localhost:11434/api/tags')
+    // `Promise.resolve` + try/catch : le sondage d'Ollama ne doit jamais faire
+    // planter le montage du Board. Le `.catch()` final ne rattrape que le rejet
+    // ASYNCHRONE ; un `fetch` absent, instrumenté ou levant de façon synchrone
+    // jetterait une TypeError non capturée depuis l'effet de montage.
+    try {
+      Promise.resolve(fetch('http://localhost:11434/api/tags'))
       .then((res) => res.json())
       .then((data) => {
         if (data.models?.length > 0) {
@@ -134,7 +139,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
           setOllamaAvailable(false);
         }
       })
-      .catch(() => setOllamaAvailable(false));
+        .catch(() => setOllamaAvailable(false));
+    } catch {
+      setOllamaAvailable(false);
+    }
   }, []);
 
   useEffect(() => {
