@@ -50,6 +50,7 @@ export {
   type ConversationResponse,
   type MessageResponse,
   type DeepResearchRequest,
+  cancelGeneration,
 } from './chat';
 
 // Memory - Contacts and projects

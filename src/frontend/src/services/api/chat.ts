@@ -348,3 +348,17 @@ export async function confirmTool(
     body: JSON.stringify({ confirmation_id: confirmationId, approved }),
   });
 }
+
+/**
+ * Demande au serveur d'arrêter la génération en cours (J1b, 31/07/2026).
+ *
+ * La route existait depuis longtemps mais aucun code d'interface ne l'appelait :
+ * le bouton Arrêter se contentait d'un `abort()` local. La réponse s'arrêtait à
+ * l'écran pendant que le serveur continuait de produire et de consommer des
+ * tokens.
+ */
+export async function cancelGeneration(conversationId: string): Promise<void> {
+  await request<unknown>(`/api/chat/cancel/${encodeURIComponent(conversationId)}`, {
+    method: 'POST',
+  });
+}

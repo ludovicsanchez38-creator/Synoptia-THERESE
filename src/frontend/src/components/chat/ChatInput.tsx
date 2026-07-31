@@ -25,7 +25,7 @@ import {
 } from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
-import { streamMessage, streamDeepResearch, indexFile, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
+import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
@@ -836,6 +836,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // Interrompre le streaming en cours
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
+    // J1b : prévenir le serveur, sinon il continue de produire (et de
+    // consommer des tokens) alors que la réponse s'est arrêtée à l'écran.
+    // L'arrêt local reste effectif même si cet appel échoue.
+    const conversationId = useChatStore.getState().currentConversationId;
+    if (conversationId) {
+      void cancelGeneration(conversationId).catch(() => {
+        // Le serveur peut être injoignable : ne pas bloquer l'interface.
+      });
+    }
   }, []);
 
   // Handle slash command selection
