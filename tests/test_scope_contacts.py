@@ -329,3 +329,115 @@ class TestLesPiecesJointesPortentLePerimetre:
             f"pièces jointes indexées sans périmètre aux lignes {defauts} : "
             "elles seront consultables depuis tous les autres projets"
         )
+
+
+class TestLesCheminsSlashEtInline:
+    """Blocant de la revue : `/contact` et `[contact: ...]` créaient en global.
+
+    Le scénario reproduit par la revue : depuis une conversation du projet A,
+    `/contact Alice tel=0601020304` crée un contact GLOBAL ; depuis le projet B,
+    `read_contact("Alice")` rend son téléphone. La cloison ne servait à rien
+    pour tout ce qui était saisi par commande.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_contact_cree_par_slash_reste_dans_son_projet(self, db_session):
+        import json
+
+        from app.services.memory_tools import execute_memory_tool
+        from app.services.slash_commands import execute_slash_command_outcome
+
+        # Projet A : création par commande.
+        await execute_slash_command_outcome(
+            "contact", "Alice Secret tel=0601020304", db_session,
+            scope="project", scope_id="projet-a", conversation_id="conv-a",
+        )
+
+        # Projet B : lecture.
+        depuis_b = await execute_memory_tool(
+            "read_contact", {"query": "Alice"}, db_session,
+            scope="project", scope_id="projet-b", conversation_id="conv-b",
+        )
+        assert "0601020304" not in depuis_b, (
+            "le contact créé par /contact depuis le projet A est lisible "
+            "depuis le projet B"
+        )
+
+        # Projet A : il doit rester lisible, sinon la commande serait inutile.
+        depuis_a = await execute_memory_tool(
+            "read_contact", {"query": "Alice"}, db_session,
+            scope="project", scope_id="projet-a", conversation_id="conv-a",
+        )
+        assert "0601020304" in depuis_a, (
+            "le contact n'est plus lisible depuis le projet qui l'a créé"
+        )
+        del json
+
+    def test_les_appelants_du_chat_transmettent_le_perimetre(self):
+        """Même vérification de câblage que pour le contexte documentaire."""
+        import ast
+        import pathlib
+
+        chemin = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "src" / "backend" / "app" / "routers" / "chat.py"
+        )
+        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+
+        appels = [
+            n
+            for n in ast.walk(arbre)
+            if isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Name)
+            and n.func.id == "execute_slash_command_outcome"
+        ]
+        assert appels, "aucun appel trouvé : le test ne prouverait rien"
+
+        defauts = [
+            n.lineno
+            for n in appels
+            if not {"scope", "scope_id"} <= {kw.arg for kw in n.keywords}
+        ]
+        assert not defauts, (
+            f"commandes exécutées sans périmètre aux lignes {defauts} : les "
+            "entités créées seront visibles depuis tous les projets"
+        )
+
+
+class TestLeContactDeLaConversationResteVisible:
+    @pytest.mark.asyncio
+    async def test_un_contact_de_la_conversation_courante_est_lisible(self, db_session):
+        """RÉGRESSION ÉVITÉE, trouvée en revue.
+
+        L'interface enregistre les contacts suggérés avec
+        `scope="conversation"`. Une première version du filtre les excluait :
+        un contact tout juste validé devenait introuvable dans la conversation
+        même qui venait de le créer. La cloison cassait l'usage qu'elle devait
+        protéger.
+        """
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Contact(
+                id="c-conv", first_name="Hugo", last_name="Suggéré",
+                phone="0655555555", scope="conversation", scope_id="conv-42",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "read_contact", {"query": "Hugo"}, db_session,
+            scope="global", conversation_id="conv-42",
+        )
+        assert "0655555555" in resultat, (
+            "le contact enregistré depuis cette conversation y est introuvable"
+        )
+
+        ailleurs = await execute_memory_tool(
+            "read_contact", {"query": "Hugo"}, db_session,
+            scope="global", conversation_id="conv-99",
+        )
+        assert "0655555555" not in ailleurs, (
+            "un contact de conversation fuit vers les autres conversations"
+        )

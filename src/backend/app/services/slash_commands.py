@@ -145,7 +145,13 @@ def _split_positional_and_kwargs(rest: str) -> tuple[str, dict[str, str]]:
     return positional, kwargs
 
 
-async def _do_contact(rest: str, session: AsyncSession) -> str:
+async def _do_contact(
+    rest: str,
+    session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
+) -> str:
     positional, kw = _split_positional_and_kwargs(rest)
     tokens = positional.split()
     first_name = tokens[0] if tokens else ""
@@ -159,9 +165,13 @@ async def _do_contact(rest: str, session: AsyncSession) -> str:
         "email": kw.get("email"),
         "phone": kw.get("phone"),
         "company": kw.get("company"),
-        "role": kw.get("role"),
     }
-    result = json.loads(await execute_create_contact(args, session))
+    result = json.loads(
+        await execute_create_contact(
+            args, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
+    )
     if result.get("error"):
         return f"Impossible de créer le contact : {result['error']}"
     name = result.get("display_name", "contact")
@@ -242,10 +252,23 @@ async def execute_slash_command_outcome(
     command: str,
     rest: str,
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> SlashCommandOutcome:
-    """Exécute une commande sûre ou prépare une mutation à confirmer."""
+    """Exécute une commande sûre ou prépare une mutation à confirmer.
+
+    0.43 : `/contact` crée une entité. Sans le périmètre de la conversation,
+    elle naissait GLOBALE — donc lisible depuis tous les dossiers clients, y
+    compris quand la commande était lancée depuis une conversation de projet.
+    """
     if command == "contact":
-        return SlashCommandOutcome(await _do_contact(rest, session))
+        return SlashCommandOutcome(
+            await _do_contact(
+                rest, session, scope=scope, scope_id=scope_id,
+                conversation_id=conversation_id,
+            )
+        )
     if command == "projet":
         return SlashCommandOutcome(await _do_projet(rest, session))
     if command == "rdv":

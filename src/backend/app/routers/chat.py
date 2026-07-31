@@ -850,8 +850,16 @@ async def send_message(
     parsed_cmd = None if produce_prompt is not None else parse_slash_command(request.message)
     if parsed_cmd is not None:
         cmd_name, cmd_rest = parsed_cmd
+        # Périmètre de la conversation : une entité créée par une commande
+        # (`/contact`) ou une directive inline (`[contact: ...]`) appartient au
+        # dossier depuis lequel on l'a saisie, pas à tout l'espace.
+        _perim_cmd, _perim_cmd_id = await _perimetre_de_conversation(
+            conversation.id, session
+        )
         command_outcome = await execute_slash_command_outcome(
-            cmd_name, cmd_rest, session
+            cmd_name, cmd_rest, session,
+            scope=_perim_cmd, scope_id=_perim_cmd_id,
+            conversation_id=conversation.id,
         )
         confirmation = command_outcome.content
         user_message.extra_data = json.dumps({"deterministic": True})
@@ -925,8 +933,15 @@ async def send_message(
     else:
         cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if inline_cmds:
+        _perim_inline, _perim_inline_id = await _perimetre_de_conversation(
+            conversation.id, session
+        )
         command_outcomes = [
-            await execute_slash_command_outcome(name, rest, session)
+            await execute_slash_command_outcome(
+                name, rest, session,
+                scope=_perim_inline, scope_id=_perim_inline_id,
+                conversation_id=conversation.id,
+            )
             for name, rest in inline_cmds
         ]
         confirmations = [outcome.content for outcome in command_outcomes]
@@ -2121,6 +2136,7 @@ async def _execute_tools_and_continue(
                 tool_result_str = await execute_memory_tool(
                     tc.name, tc.arguments, session,
                     scope=perimetre, scope_id=perimetre_id,
+                    conversation_id=conversation_id,
                 )
                 execution_time = (time.time() - start_time) * 1000
 
