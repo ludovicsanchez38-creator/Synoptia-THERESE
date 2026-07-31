@@ -394,6 +394,9 @@ async def _get_memory_context(
             score_threshold=0.35,  # Lower threshold for broader context
             scope=scope,
             scope_id=scope_id,
+            # Les souvenirs rattachés à CETTE conversation y restent
+            # consultables, comme côté SQL.
+            conversation_id=conversation_id,
         )
 
         # Format results into context string

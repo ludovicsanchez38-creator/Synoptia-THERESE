@@ -237,6 +237,7 @@ class QdrantService:
         scope: str | None = None,
         scope_id: str | None = None,
         include_global: bool = True,
+        conversation_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Search for similar memories with scope filtering (E3-05).
@@ -282,6 +283,24 @@ class QdrantService:
                     ]
                 )
             ]
+            if conversation_id:
+                # Symétrie avec la cloison SQL des contacts : un souvenir
+                # rattaché à CETTE conversation (contact suggéré et validé par
+                # l'utilisateur) doit y être retrouvable. Sans cette branche, il
+                # était invisible du RAG y compris dans la conversation qui
+                # venait de le créer.
+                scope_conditions.append(
+                    Filter(
+                        must=[
+                            FieldCondition(
+                                key="scope", match=MatchValue(value="conversation")
+                            ),
+                            FieldCondition(
+                                key="scope_id", match=MatchValue(value=conversation_id)
+                            ),
+                        ]
+                    )
+                )
             if include_global:
                 scope_conditions.append(
                     FieldCondition(key="scope", match=MatchValue(value="global"))
@@ -491,11 +510,12 @@ class QdrantService:
         scope: str | None = None,
         scope_id: str | None = None,
         include_global: bool = True,
+        conversation_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """Async wrapper for search."""
         return await asyncio.to_thread(
             self.search, query, memory_types, limit, score_threshold,
-            scope, scope_id, include_global
+            scope, scope_id, include_global, conversation_id
         )
 
     async def async_delete_by_entity(self, entity_id: str) -> int:

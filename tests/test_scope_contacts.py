@@ -441,3 +441,99 @@ class TestLeContactDeLaConversationResteVisible:
         assert "0655555555" not in ailleurs, (
             "un contact de conversation fuit vers les autres conversations"
         )
+
+
+class TestLesProjetsAussi:
+    """Dernier blocant : même classe de fuite, trois portes d'entrée.
+
+    `/projet`, `[projet: …]` et l'outil LLM `create_project` créaient tous le
+    projet en GLOBAL, quelle que soit la conversation. Son embedding remontait
+    donc dans tous les dossiers.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_projet_cree_par_slash_appartient_a_son_dossier(self, db_session):
+        import json
+
+        from app.models.entities import Project
+        from app.services.slash_commands import execute_slash_command_outcome
+        from sqlmodel import select
+
+        await execute_slash_command_outcome(
+            "projet", "Chantier confidentiel", db_session,
+            scope="project", scope_id="projet-a", conversation_id="conv-a",
+        )
+
+        cree = (
+            await db_session.execute(
+                select(Project).where(Project.name == "Chantier confidentiel")
+            )
+        ).scalar_one()
+
+        assert cree.scope == "project", (
+            "le projet naît global : son embedding remontera dans tous les dossiers"
+        )
+        assert cree.scope_id == "projet-a"
+        del json
+
+    @pytest.mark.asyncio
+    async def test_l_outil_llm_scope_aussi_le_projet(self, db_session):
+        import json
+
+        from app.models.entities import Project
+        from app.services.memory_tools import execute_memory_tool
+        from sqlmodel import select
+
+        resultat = await execute_memory_tool(
+            "create_project", {"name": "Dossier B"}, db_session,
+            scope="project", scope_id="projet-b", conversation_id="conv-b",
+        )
+        assert not json.loads(resultat).get("error"), resultat
+
+        cree = (
+            await db_session.execute(select(Project).where(Project.name == "Dossier B"))
+        ).scalar_one()
+        assert cree.scope == "project" and cree.scope_id == "projet-b"
+
+
+class TestLeRagRetrouveLesSouvenirsDeSaConversation:
+    def test_le_filtre_accepte_le_perimetre_de_conversation(self):
+        """Régression relevée en revue : un contact validé depuis la
+        conversation était invisible du RAG dans cette même conversation.
+
+        La cloison SQL l'acceptait déjà ; le filtre vectoriel, non.
+        """
+        from unittest.mock import MagicMock
+
+        from app.services import qdrant as module
+
+        module.embed_text = lambda _t: [0.0] * 768
+        service = module.QdrantService.__new__(module.QdrantService)
+        faux_client = MagicMock()
+        faux_client.query_points.return_value = MagicMock(points=[])
+        service._client = faux_client
+        service._initialized = True
+
+        service.search(
+            query="x", scope="global", scope_id=None, conversation_id="conv-42"
+        )
+
+        filtre = faux_client.query_points.call_args.kwargs["query_filter"].model_dump(
+            exclude_none=True
+        )
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        valeurs = {
+            (cond.get("key"), (cond.get("match") or {}).get("value"))
+            for branche in branches
+            for cond in branche.get("must", [branche])
+            if cond.get("key")
+        }
+        assert ("scope", "conversation") in valeurs and (
+            "scope_id",
+            "conv-42",
+        ) in valeurs, (
+            "le RAG ignore les souvenirs de la conversation courante : un "
+            "contact tout juste validé y reste introuvable"
+        )
