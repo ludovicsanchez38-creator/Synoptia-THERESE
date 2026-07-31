@@ -51,6 +51,7 @@ export {
   type MessageResponse,
   type DeepResearchRequest,
   cancelGeneration,
+  setConversationProject,
 } from './chat';
 
 // Memory - Contacts and projects

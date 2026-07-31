@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageSquare, PanelRightClose } from 'lucide-react';
 import { MessageList } from '../chat/MessageList';
+import { ConversationProjectPicker } from '../chat/ConversationProjectPicker';
 import { ChatInput } from '../chat/ChatInput';
 import { ConversationMemoryChip } from '../chat/ConversationMemoryChip';
 import { useChatStore } from '../../stores/chatStore';
@@ -29,6 +30,7 @@ export function PrototypeChatSurface({
   const currentConversationId = useChatStore((state) => state.currentConversationId);
   const conversation = conversations.find((item) => item.id === currentConversationId) ?? null;
   const openSaveCommand = usePanelStore((state) => state.openSaveCommand);
+  const setConversationProjectId = useChatStore((state) => state.setConversationProjectId);
 
   const consumed = () => {
     setGuidedPrompt(undefined);
@@ -46,6 +48,19 @@ export function PrototypeChatSurface({
           <h2 className="truncate text-sm font-semibold text-text">{conversation?.title || 'Nouvelle conversation'}</h2>
           <p className="text-xs text-text-muted">Conversation réelle, historique et fichiers conservés</p>
         </div>
+        {/* 0.43 : le rattachement à un projet commande le cloisonnement du
+            contexte documentaire. Il est ici, à côté du titre, parce qu'une
+            cloison invisible serait pire que pas de cloison : l'utilisateur
+            verrait le contexte changer sans savoir pourquoi. */}
+        {conversation && (
+          <ConversationProjectPicker
+            conversationId={conversation.id}
+            projectId={conversation.projectId ?? null}
+            onProjectChange={(projectId) =>
+              setConversationProjectId(conversation.id, projectId)
+            }
+          />
+        )}
         <button type="button" onClick={onClose} aria-label="Fermer la conversation" className="grid h-8 w-8 place-items-center rounded-[9px] border border-border bg-surface text-text-muted hover:text-text">
           <PanelRightClose className="h-4 w-4" />
         </button>

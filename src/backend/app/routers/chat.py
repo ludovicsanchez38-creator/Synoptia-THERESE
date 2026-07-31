@@ -19,6 +19,7 @@ from app.models.schemas import (
     ChatRequest,
     ChatResponse,
     ConversationCreate,
+    ConversationProjectUpdate,
     ConversationResponse,
     MessageResponse,
     StreamChunk,
@@ -299,19 +300,55 @@ Chemin: {path}
 # ============================================================
 
 
-async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
+async def _perimetre_de_conversation(
+    conversation_id: str | None, session: AsyncSession | None
+) -> tuple[str | None, str | None]:
+    """Le périmètre documentaire d'une conversation : (scope, scope_id).
+
+    `(None, None)` = aucune cloison, la mémoire entière est consultable. C'est
+    le cas d'une conversation libre, et celui de tous les appels qui ne
+    connaissent pas leur conversation.
+    """
+    if not conversation_id or session is None:
+        return None, None
+    try:
+        conversation = await session.get(Conversation, conversation_id)
+    except Exception:
+        # Lire un rattachement ne doit jamais empêcher de répondre : au pire on
+        # retombe sur le comportement non cloisonné d'avant la 0.43.
+        logger.warning("Périmètre de conversation illisible, recherche non cloisonnée")
+        return None, None
+    if conversation is None or not conversation.project_id:
+        return None, None
+    return "project", conversation.project_id
+
+
+async def _get_memory_context(
+    user_message: str,
+    limit: int = 8,
+    conversation_id: str | None = None,
+    session: AsyncSession | None = None,
+) -> str | None:
     """
     Search memory for context relevant to the user's message.
+
+    0.43 : la recherche est CLOISONNÉE quand la conversation est rattachée à un
+    projet. Jusque-là elle balayait toute la mémoire, si bien qu'un document du
+    projet A pouvait être injecté dans une conversation parlant du projet B —
+    sans trace à l'écran, ni pour l'utilisateur ni pour le modèle.
 
     Returns formatted context string or None if no relevant memories found.
     """
     context_parts: list[str] = []
     try:
+        scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
         qdrant = get_qdrant_service()
         results = await qdrant.async_search(
             query=user_message,
             limit=limit,
             score_threshold=0.35,  # Lower threshold for broader context
+            scope=scope,
+            scope_id=scope_id,
         )
 
         # Format results into context string
@@ -1026,7 +1063,9 @@ async def send_message(
 
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
-    memory_context = await _get_memory_context(llm_user_message)
+    memory_context = await _get_memory_context(
+        llm_user_message, conversation_id=conversation.id, session=session
+    )
 
     # Check for file commands and add file context (0e : parité stream,
     # jamais sur un texte dérivé - le prompt produire n'est pas scanné)
@@ -1322,7 +1361,9 @@ async def _do_stream_response(
     messages.append(LLMMessage(role="user", content=user_message))
 
     # Get relevant memory context for the user's message
-    memory_context = await _get_memory_context(user_message)
+    memory_context = await _get_memory_context(
+        user_message, conversation_id=conversation_id, session=session
+    )
 
     # Check for file commands and add file context.
     # Tranche 0e Variables V4 (finding Codex 2 VÉRIFIÉ) : jamais de
@@ -2298,6 +2339,7 @@ async def list_conversations(
             message_count=msg_count,
             created_at=conv.created_at,
             updated_at=conv.updated_at,
+            project_id=conv.project_id,
         )
         for conv, msg_count in rows
     ]
@@ -2325,6 +2367,7 @@ async def create_conversation(
         message_count=0,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
     )
 
 
@@ -2355,6 +2398,7 @@ async def get_conversation(
         message_count=message_count,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
     )
 
 
@@ -2397,6 +2441,58 @@ async def rename_conversation(
         message_count=count_result.scalar() or 0,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
+    )
+
+
+@router.patch(
+    "/conversations/{conversation_id}/project", response_model=ConversationResponse
+)
+async def rattacher_conversation_a_un_projet(
+    conversation_id: str,
+    request: ConversationProjectUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> ConversationResponse:
+    """Rattache une conversation à un projet, ou l'en détache (`project_id: null`).
+
+    Ce rattachement commande le CLOISONNEMENT du contexte documentaire : une
+    conversation rattachée ne consulte plus que les documents de son projet et
+    les documents globaux. Sans cette route, `Conversation.project_id` resterait
+    toujours nul et la cloison ne s'appliquerait jamais.
+    """
+    from datetime import UTC, datetime
+
+    result = await session.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    if request.project_id:
+        # Rattacher à un projet inexistant cloisonnerait sur du vide : la
+        # conversation ne verrait plus aucun document, sans explication.
+        projet = await session.get(Project, request.project_id)
+        if projet is None:
+            raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    conversation.project_id = request.project_id or None
+    conversation.updated_at = datetime.now(UTC)
+    session.add(conversation)
+    await session.commit()
+    await session.refresh(conversation)
+
+    count_result = await session.execute(
+        select(func.count()).select_from(Message).where(Message.conversation_id == conversation.id)
+    )
+    return ConversationResponse(
+        id=conversation.id,
+        title=conversation.title,
+        summary=conversation.summary,
+        message_count=count_result.scalar() or 0,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
     )
 
 

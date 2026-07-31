@@ -4,7 +4,7 @@
  * brut sans bouton de téléchargement.
  */
 import { describe, expect, it } from 'vitest';
-import { formatMessageFromResponse } from './useConversationSync';
+import { formatMessageFromResponse, formatConversationFromResponse } from './useConversationSync';
 import type { MessageResponse } from '../services/api';
 
 function makeResponse(over: Partial<MessageResponse> = {}): MessageResponse {
@@ -69,5 +69,38 @@ describe('formatMessageFromResponse - restauration skillFile (BUG-130)', () => {
     expect(out.role).toBe('assistant');
     expect(out.content).toBe('coucou');
     expect(out.timestamp).toBeInstanceOf(Date);
+  });
+});
+
+describe('formatConversationFromResponse (0.43)', () => {
+  it('restaure le rattachement à un projet', () => {
+    // Sans ce mapping, l'en-tête du chat afficherait « Toute la mémoire » alors
+    // que le backend cloisonne réellement sur un projet : l'utilisateur croirait
+    // consulter toute sa mémoire pendant qu'une partie lui est masquée. Un
+    // affichage qui ment sur la cloison est pire que pas de cloison.
+    const out = formatConversationFromResponse({
+      id: 'c1',
+      title: 'Client A',
+      summary: null,
+      message_count: 3,
+      created_at: '2026-07-31T10:00:00Z',
+      updated_at: '2026-07-31T10:00:00Z',
+      project_id: 'projet-a',
+    });
+    expect(out.projectId).toBe('projet-a');
+  });
+
+  it('une conversation libre n’a pas de rattachement', () => {
+    const out = formatConversationFromResponse({
+      id: 'c2',
+      title: null,
+      summary: null,
+      message_count: 0,
+      created_at: '2026-07-31T10:00:00Z',
+      updated_at: '2026-07-31T10:00:00Z',
+      project_id: null,
+    });
+    expect(out.projectId).toBeNull();
+    expect(out.title).toBe('Nouvelle conversation');
   });
 });

@@ -334,6 +334,16 @@ class ConversationResponse(BaseModel):
     message_count: int = 0
     created_at: datetime
     updated_at: datetime
+    # 0.43 : rattachement à un projet. Exposé pour que l'interface puisse dire
+    # à l'utilisateur quels documents cette conversation consultera — une
+    # cloison invisible serait pire que pas de cloison du tout.
+    project_id: str | None = None
+
+
+class ConversationProjectUpdate(BaseModel):
+    """Rattachement d'une conversation à un projet (`None` = la détacher)."""
+
+    project_id: str | None = None
 
 
 class MessageResponse(BaseModel):
