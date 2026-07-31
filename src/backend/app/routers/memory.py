@@ -981,6 +981,9 @@ async def delete_project(
     ).scalars().all()
     for conversation in conversations_liees:
         conversation.project_id = None
+        # Sans cette remise à zéro, la ligne resterait sur `project` sans
+        # projet : un état que rien ne peut plus décrire à l'écran.
+        conversation.memory_scope = "global"
         session.add(conversation)
     if conversations_liees:
         cascade_deleted["conversations_detachees"] = len(conversations_liees)

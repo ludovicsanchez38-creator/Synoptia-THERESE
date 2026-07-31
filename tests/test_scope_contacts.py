@@ -149,12 +149,59 @@ class TestLeChatTransmetLePerimetreAuxOutils:
         ]
         assert appels, "aucun appel trouvé : le test ne prouverait rien"
 
-        sans_perimetre = [
-            n.lineno
-            for n in appels
-            if not {"scope", "scope_id"} <= {kw.arg for kw in n.keywords}
-        ]
-        assert not sans_perimetre, (
-            f"appels sans périmètre aux lignes {sans_perimetre} : les contacts "
-            "d'un autre projet restent lisibles depuis cette conversation"
+        # Vérifier la présence des mots-clés NE SUFFIT PAS : `scope=None` en dur
+        # les satisferait sans rien cloisonner (relevé en revue).
+        defauts: list[str] = []
+        for n in appels:
+            passes = {kw.arg: kw.value for kw in n.keywords}
+            for requis in ("scope", "scope_id"):
+                valeur = passes.get(requis)
+                if valeur is None:
+                    defauts.append(f"ligne {n.lineno} : `{requis}` absent")
+                elif isinstance(valeur, ast.Constant) and valeur.value is None:
+                    defauts.append(f"ligne {n.lineno} : `{requis}=None` en dur")
+
+        assert not defauts, (
+            "les contacts d'un autre projet restent lisibles — " + " ; ".join(defauts)
+        )
+
+
+class TestLaCreationNeDivulguePasUnHomonyme:
+    @pytest.mark.asyncio
+    async def test_creer_un_contact_ne_revele_pas_celui_d_un_autre_projet(
+        self, db_session
+    ):
+        """Finding de la revue : la déduplication ignorait le périmètre.
+
+        Depuis le projet B, créer « Alice Durand » alors qu'elle n'existe que
+        dans le projet A renvoyait son nom ET son identifiant avec
+        `already_existed: true` — donc son existence — puis empêchait la
+        création du contact propre à B.
+        """
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Contact(
+                id="secret-a", first_name="Alice", last_name="Durand",
+                scope="project", scope_id="projet-a",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "create_contact",
+            {"first_name": "Alice", "last_name": "Durand"},
+            db_session,
+            scope="project",
+            scope_id="projet-b",
+        )
+
+        assert "secret-a" not in resultat, (
+            "l'identifiant d'un contact d'un autre projet est divulgué"
+        )
+        donnees = json.loads(resultat)
+        assert not donnees.get("already_existed"), (
+            "la création est refusée à cause d'un homonyme invisible pour "
+            "l'utilisateur : il ne peut plus créer son propre contact"
         )

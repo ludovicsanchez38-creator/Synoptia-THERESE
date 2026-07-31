@@ -57,10 +57,27 @@ async def reclasser_payloads_sans_perimetre(session: AsyncSession) -> int:
     # Regrouper par document : un fichier a plusieurs fragments, une seule
     # écriture de payload suffit pour tous.
     par_entite: dict[str, list[str]] = {}
+    ignores_hors_documents = 0
     for point_id, payload in orphelins:
+        # RÉGRESSION ÉVITÉE (revue) : ne toucher QUE les documents. La
+        # collection contient aussi les embeddings de contacts, de projets et
+        # du profil, qui n'ont aucune ligne dans `FileMetadata`. Les traiter
+        # ici les aurait tous marqués inclassables — donc fait disparaître des
+        # modes `global` et `project` toute la mémoire sémantique non
+        # documentaire. Les contacts sont cloisonnés en SQL, pas par ce
+        # périmètre vectoriel.
+        if payload.get("type") != "file":
+            ignores_hors_documents += 1
+            continue
         entity_id = payload.get("entity_id")
         if entity_id:
             par_entite.setdefault(str(entity_id), []).append(point_id)
+
+    if ignores_hors_documents:
+        logger.debug(
+            "Reclassement : %d points non documentaires laissés intacts",
+            ignores_hors_documents,
+        )
 
     if not par_entite:
         return 0

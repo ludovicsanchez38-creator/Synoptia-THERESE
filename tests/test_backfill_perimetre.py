@@ -65,7 +65,10 @@ class TestBackfillDuPerimetre:
         db_session.add(fichier)
         await db_session.commit()
 
-        faux = FauxQdrant({"p1": {"entity_id": "fic-a"}, "p2": {"entity_id": "fic-a"}})
+        faux = FauxQdrant({
+            "p1": {"entity_id": "fic-a", "type": "file"},
+            "p2": {"entity_id": "fic-a", "type": "file"},
+        })
         monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
 
         reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
@@ -88,7 +91,7 @@ class TestBackfillDuPerimetre:
         )
         await db_session.commit()
 
-        faux = FauxQdrant({"p1": {"entity_id": "fic-g"}})
+        faux = FauxQdrant({"p1": {"entity_id": "fic-g", "type": "file"}})
         monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
 
         await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
@@ -107,7 +110,7 @@ class TestBackfillDuPerimetre:
         """
         from app.services import perimetre_backfill
 
-        faux = FauxQdrant({"p1": {"entity_id": "fichier-disparu"}})
+        faux = FauxQdrant({"p1": {"entity_id": "fichier-disparu", "type": "file"}})
         monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
 
         await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
@@ -117,6 +120,37 @@ class TestBackfillDuPerimetre:
             "dans tous les projets"
         )
         assert faux.suppressions == []
+
+
+    @pytest.mark.asyncio
+    async def test_les_souvenirs_non_documentaires_sont_laisses_intacts(
+        self, db_session, monkeypatch
+    ):
+        """RÉGRESSION ÉVITÉE, trouvée en revue.
+
+        La collection ne contient pas que des documents : les contacts, les
+        projets et le profil y ont aussi leurs embeddings, et aucune ligne dans
+        `FileMetadata`. Une première version du backfill les marquait donc tous
+        inclassables — ils disparaissaient des modes `global` et `project`,
+        c'est-à-dire de l'usage courant. Le cloisonnement des contacts se fait
+        en SQL, pas par ce périmètre vectoriel.
+        """
+        from app.services import perimetre_backfill
+
+        faux = FauxQdrant({
+            "c1": {"entity_id": "contact-1", "type": "contact"},
+            "pr1": {"entity_id": "projet-1", "type": "project"},
+        })
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert reclasses == 0
+        assert "scope" not in faux.points["c1"], (
+            "l'embedding d'un contact a été classé par le backfill documentaire : "
+            "il disparaîtrait de la mémoire courante"
+        )
+        assert "scope" not in faux.points["pr1"]
 
     @pytest.mark.asyncio
     async def test_le_backfill_est_idempotent(self, db_session, monkeypatch):
@@ -132,7 +166,7 @@ class TestBackfillDuPerimetre:
         )
         await db_session.commit()
 
-        faux = FauxQdrant({"p1": {"entity_id": "fic-a"}})
+        faux = FauxQdrant({"p1": {"entity_id": "fic-a", "type": "file"}})
         monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
 
         premier = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)

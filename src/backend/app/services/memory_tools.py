@@ -149,16 +149,47 @@ async def _find_existing_project(session: AsyncSession, name: str) -> Project | 
     return result.scalars().first()
 
 
+def _cloison_contacts(
+    requete: Any, scope: str | None, scope_id: str | None
+) -> Any:
+    """Restreint une requête contacts au périmètre de la conversation.
+
+    Les contacts GÉNÉRAUX restent visibles partout, comme les documents
+    globaux. `scope` NULL en base (contacts d'avant E3-05) est traité comme
+    général : ne pas le faire masquerait des contacts existants.
+    """
+    if scope == "project" and scope_id:
+        return requete.where(
+            or_(
+                Contact.scope == "global",
+                Contact.scope.is_(None),
+                (Contact.scope == "project") & (Contact.scope_id == scope_id),
+            )
+        )
+    return requete
+
+
 async def _find_existing_contact(
     session: AsyncSession,
     first_name: str,
     last_name: str,
     email: str | None,
+    scope: str | None = None,
+    scope_id: str | None = None,
 ) -> Contact | None:
-    """Retourne un contact existant (par email, sinon par prenom+nom)."""
+    """Retourne un contact existant (par email, sinon par prenom+nom).
+
+    Cloisonné (revue 0.43) : sans périmètre, créer un contact depuis le projet B
+    renvoyait le nom ET l'identifiant d'un homonyme du projet A — donc son
+    existence — puis empêchait la création du contact propre à B.
+    """
     if email:
         result = await session.execute(
-            select(Contact).where(func.lower(Contact.email) == email.lower())
+            _cloison_contacts(
+                select(Contact).where(func.lower(Contact.email) == email.lower()),
+                scope,
+                scope_id,
+            )
         )
         match = result.scalars().first()
         if match is not None:
@@ -168,7 +199,7 @@ async def _find_existing_contact(
     ln = last_name.strip().lower()
     if not fn and not ln:
         return None
-    result = await session.execute(select(Contact))
+    result = await session.execute(_cloison_contacts(select(Contact), scope, scope_id))
     for c in result.scalars().all():
         if (c.first_name or "").strip().lower() == fn and (c.last_name or "").strip().lower() == ln:
             return c
@@ -182,6 +213,8 @@ async def _find_existing_contact(
 async def execute_create_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
 ) -> str:
     """
     Execute the create_contact tool.
@@ -202,7 +235,9 @@ async def execute_create_contact(
 
     # Deduplication : si un contact equivalent existe deja, on le reutilise
     # plutot que de creer un doublon (regression "creation en masse").
-    existing = await _find_existing_contact(session, first_name, last_name, email)
+    existing = await _find_existing_contact(
+        session, first_name, last_name, email, scope=scope, scope_id=scope_id
+    )
     if existing is not None:
         return json.dumps({
             "success": True,
@@ -436,17 +471,8 @@ async def execute_read_contact(
     # coordonnées et notes comprises — était lisible depuis une conversation du
     # projet B. Les contacts GÉNÉRAUX restent visibles partout, comme les
     # documents globaux.
-    requete = select(Contact)
-    if scope == "project" and scope_id:
-        requete = requete.where(
-            or_(
-                Contact.scope == "global",
-                Contact.scope.is_(None),
-                (Contact.scope == "project") & (Contact.scope_id == scope_id),
-            )
-        )
-    result = await session.execute(requete)
-    contacts = result.scalars().all()
+    result = await session.execute(_cloison_contacts(select(Contact), scope, scope_id))
+    contacts = list(result.scalars().all())
     matches = [
         c
         for c in contacts
@@ -546,7 +572,9 @@ async def execute_memory_tool(
         JSON string result for the LLM.
     """
     if tool_name == "create_contact":
-        return await execute_create_contact(arguments, session)
+        return await execute_create_contact(
+            arguments, session, scope=scope, scope_id=scope_id
+        )
     elif tool_name == "create_project":
         return await execute_create_project(arguments, session)
     elif tool_name == "read_contact":
