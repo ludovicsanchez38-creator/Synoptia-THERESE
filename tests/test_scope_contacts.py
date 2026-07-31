@@ -205,3 +205,33 @@ class TestLaCreationNeDivulguePasUnHomonyme:
             "la création est refusée à cause d'un homonyme invisible pour "
             "l'utilisateur : il ne peut plus créer son propre contact"
         )
+
+
+class TestLeBridgeMCPNEstPasUnePorteDerobee:
+    """Le bridge MCP expose des routes GLOBALES (`list_contacts`,
+    `get_contact`, `search_memory`). C'est légitime : il sert les sessions
+    d'agent de l'Atelier, qui travaillent sur tout l'espace de l'utilisateur et
+    n'ont pas de conversation cloisonnée.
+
+    Cela deviendrait un contournement le jour où ces outils seraient exposés au
+    CHAT, présenté comme cloisonné : le modèle pourrait alors lire les contacts
+    de tous les projets en passant par le bridge. Ce test verrouille la
+    séparation pour qu'un tel branchement ne passe pas inaperçu.
+    """
+
+    def test_le_bridge_reste_reserve_aux_sessions_d_agent(self):
+        import pathlib
+
+        racine = pathlib.Path(__file__).resolve().parents[1] / "src" / "backend" / "app"
+        porteurs = [
+            chemin
+            for chemin in racine.rglob("*.py")
+            if "therese-bridge" in chemin.read_text(encoding="utf-8")
+        ]
+        noms = sorted(c.name for c in porteurs)
+
+        assert noms == ["agents.py"], (
+            "le bridge MCP est référencé hors du lancement de session d'agent "
+            f"({noms}) : s'il est exposé au chat, le cloisonnement des contacts "
+            "est contournable. Cloisonner ces outils avant de les brancher."
+        )

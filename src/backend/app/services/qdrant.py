@@ -281,15 +281,29 @@ class QdrantService:
                 scope_conditions.append(
                     FieldCondition(key="scope", match=MatchValue(value="global"))
                 )
-                # J2 (31/07/2026) : le périmètre n'a été écrit dans le payload
-                # qu'à partir de cette version. Tout ce qui a été indexé avant
-                # n'a AUCUNE clé `scope`, et ne répond donc ni à `project` ni à
-                # `global`. Sans cette branche, poser une cloison ferait
-                # disparaître d'un coup toute la mémoire documentaire
-                # existante — un document absent est plus grave qu'un document
-                # trop visible, et le plan interdit la réindexation silencieuse.
+                # Payloads SANS périmètre. Deux populations très différentes
+                # s'y trouvent, et la nuance compte :
+                #
+                # - les souvenirs NON documentaires (contacts, projets, profil)
+                #   n'ont jamais porté de périmètre et n'en porteront pas : ce
+                #   n'est pas leur mécanisme de cloisonnement (le leur est en
+                #   SQL). Ils doivent rester visibles, sinon la mémoire courante
+                #   s'ampute ;
+                # - les DOCUMENTS indexés avant la 0.42 en sont dépourvus par
+                #   accident d'historique. Les accepter ici ferait remonter un
+                #   document du client A chez le client B — la fuite même que ce
+                #   chantier ferme. Ils sont reclassés au démarrage
+                #   (`perimetre_backfill`) ; en attendant, on les EXCLUT.
+                #
+                # C'est aussi ce qui rend le reclassement en tâche de fond
+                # inoffensif : pendant qu'il tourne, on est fermé, jamais ouvert.
                 scope_conditions.append(
-                    IsEmptyCondition(is_empty=PayloadField(key="scope"))
+                    Filter(
+                        must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))],
+                        must_not=[
+                            FieldCondition(key="type", match=MatchValue(value="file"))
+                        ],
+                    )
                 )
             conditions.append(Filter(should=scope_conditions))
 

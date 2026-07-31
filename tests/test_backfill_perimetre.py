@@ -207,3 +207,66 @@ class TestLeFiltreNAcceptePlusLInclassable:
         from app.services.perimetre_backfill import SCOPE_INCLASSABLE
 
         assert ("scope", SCOPE_INCLASSABLE) not in valeurs
+
+
+class TestLaBrancheLegacyEstRestreinte:
+    """Pendant le reclassement, on doit être fermé — jamais ouvert.
+
+    Le reclassement tourne en tâche de fond au démarrage. Tant qu'il n'a pas
+    fini, des documents legacy restent sans périmètre. Si le filtre les
+    acceptait, un document du client A remonterait chez le client B pendant
+    toute la durée du reclassement.
+
+    Mais la même branche protège les souvenirs NON documentaires (contacts,
+    projets, profil), qui n'ont jamais porté de périmètre et n'en porteront
+    pas : leur cloisonnement est en SQL. Les exclure amputerait la mémoire
+    courante. La branche doit donc distinguer les deux.
+    """
+
+    @staticmethod
+    def _filtre_emis():
+        from unittest.mock import MagicMock
+
+        from app.services import qdrant as module
+
+        module.embed_text = lambda _t: [0.0] * 768
+        service = module.QdrantService.__new__(module.QdrantService)
+        faux_client = MagicMock()
+        faux_client.query_points.return_value = MagicMock(points=[])
+        service._client = faux_client
+        service._initialized = True
+        service.search(query="x", scope="project", scope_id="projet-b")
+        return faux_client.query_points.call_args.kwargs["query_filter"].model_dump(
+            exclude_none=True
+        )
+
+    def test_les_documents_sans_perimetre_sont_exclus(self):
+        filtre = self._filtre_emis()
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        branche_vide = [
+            b
+            for b in branches
+            if any("is_empty" in cond for cond in b.get("must", []))
+        ]
+        assert branche_vide, "la branche des payloads sans périmètre a disparu"
+        exclusions = branche_vide[0].get("must_not", [])
+        assert any(
+            cond.get("key") == "type"
+            and (cond.get("match") or {}).get("value") == "file"
+            for cond in exclusions
+        ), (
+            "les documents sans périmètre sont encore acceptés : pendant le "
+            "reclassement, un document d'un autre client peut remonter"
+        )
+
+    def test_les_souvenirs_non_documentaires_restent_acceptes(self):
+        """Sans cette branche, contacts et projets disparaîtraient du contexte."""
+        filtre = self._filtre_emis()
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        assert any(
+            any("is_empty" in cond for cond in b.get("must", [])) for b in branches
+        ), "les souvenirs sans périmètre ne sont plus consultables du tout"
