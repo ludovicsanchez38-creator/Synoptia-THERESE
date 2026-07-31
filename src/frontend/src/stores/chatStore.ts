@@ -60,6 +60,9 @@ export interface Conversation {
   updatedAt: Date;
   messageCount?: number;
   synced?: boolean;
+  /** Projet de rattachement (0.43). Commande le cloisonnement du contexte
+   *  documentaire : `null`/absent = toute la mémoire est consultable. */
+  projectId?: string | null;
   ephemeral?: boolean; // Conversations éphémères ne sont pas persistées
 }
 
@@ -90,6 +93,7 @@ interface ChatStore {
 
   // Rename
   renameConversation: (id: string, title: string) => void;
+  setConversationProjectId: (id: string, projectId: string | null) => void;
 
   // Sync actions
   setConversations: (conversations: Conversation[]) => void;
@@ -332,6 +336,17 @@ export const useChatStore = create<ChatStore>()(
         set((state) => ({
           conversations: state.conversations.map((c) =>
             c.id === id ? { ...c, title, updatedAt: new Date() } : c
+          ),
+        }));
+      },
+
+      // 0.43 : le rattachement à un projet commande le cloisonnement du
+      // contexte documentaire. Le store le porte pour que l'en-tête l'affiche
+      // sans recharger la conversation.
+      setConversationProjectId: (id, projectId) => {
+        set((state) => ({
+          conversations: state.conversations.map((c) =>
+            c.id === id ? { ...c, projectId } : c
           ),
         }));
       },

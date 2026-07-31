@@ -129,6 +129,20 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("ALTER TABLE messages ADD COLUMN extra_data TEXT")
             conn.commit()
             logger.info("Migration auto : colonne 'extra_data' ajoutée à la table messages")
+        # 0.43 : rattachement d'une conversation à un projet, qui commande le
+        # cloisonnement du contexte documentaire. Les testeurs ont déjà une base
+        # 0.42 : `create_all()` crée les tables manquantes mais n'ajoute AUCUNE
+        # colonne, et aucun `alembic upgrade head` ne tourne au démarrage
+        # packagé. Sans cette migration, toute lecture de conversation
+        # échouerait après mise à jour.
+        cursor = conn.execute("PRAGMA table_info(conversations)")
+        conv_columns = {row[1] for row in cursor.fetchall()}
+        if conv_columns and "project_id" not in conv_columns:
+            conn.execute("ALTER TABLE conversations ADD COLUMN project_id TEXT")
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'project_id' ajoutée à la table conversations"
+            )
         # 0.40 : historique Board reconstructible (sources + usage de synthèse)
         cursor = conn.execute("PRAGMA table_info(board_decisions)")
         board_columns = {row[1] for row in cursor.fetchall()}
