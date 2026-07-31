@@ -335,15 +335,25 @@ class QdrantService:
         document de projet y remonterait dans un autre projet tant qu'il n'est
         pas classé.
         """
-        points = self.client.scroll(
-            collection_name=settings.qdrant_collection,
-            scroll_filter=Filter(
-                must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))]
-            ),
-            limit=limite,
-            with_payload=True,
-        )[0]
-        return [(str(p.id), dict(p.payload or {})) for p in points]
+        # Pagination COMPLÈTE (revue) : `scroll` rend au plus `limite` points
+        # par appel. Une seule passe laissait le reste de la collection non
+        # classé — donc encore traité comme global — au-delà du premier lot.
+        collectes: list[tuple[str, dict[str, Any]]] = []
+        offset = None
+        while True:
+            lot, offset = self.client.scroll(
+                collection_name=settings.qdrant_collection,
+                scroll_filter=Filter(
+                    must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))]
+                ),
+                limit=limite,
+                offset=offset,
+                with_payload=True,
+            )
+            collectes.extend((str(p.id), dict(p.payload or {})) for p in lot)
+            if offset is None or not lot:
+                break
+        return collectes
 
     def definir_perimetre(
         self, point_ids: list[str], scope: str, scope_id: str | None

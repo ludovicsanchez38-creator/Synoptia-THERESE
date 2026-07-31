@@ -338,15 +338,20 @@ async def _perimetre_de_conversation(
         return None, None
 
     politique = (conversation.memory_scope or "global").lower()
-    if politique == "all":
-        # Choix explicite et affiché de l'utilisateur : aucune cloison.
-        return None, None
+    # ORDRE VOLONTAIRE (revue) : le rattachement est testé AVANT la politique.
+    # Une ligne incohérente — `project_id` posé et `memory_scope='all'` — aurait
+    # sinon ouvert toute la mémoire, contrairement à ce que le sélecteur affiche.
+    # Aucune contrainte de base ne garantit l'invariant : c'est le résolveur qui
+    # le tient, et il tranche toujours dans le sens le plus fermé.
     if conversation.project_id:
         # La politique est DÉRIVÉE du rattachement : poser un projet suffit à
         # cloisonner. Exiger en plus que `memory_scope` soit passé à `project`
         # créerait deux champs à synchroniser, et un rattachement sans effet
         # visible au premier oubli.
         return "project", conversation.project_id
+    if politique == "all":
+        # Choix explicite et affiché, et seulement hors rattachement.
+        return None, None
     # MOINDRE PRIVILÈGE (défaut) : documents généraux uniquement. Une
     # conversation qui n'a rien demandé ne pioche pas dans les dossiers clients.
     # `include_global` du filtre rend déjà les documents globaux ; passer

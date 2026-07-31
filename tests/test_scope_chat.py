@@ -392,6 +392,43 @@ class TestMigrationDesBasesExistantes:
             "conversations échouerait après mise à jour"
         )
 
+
+    def test_le_defaut_est_applique_aux_conversations_existantes(self, tmp_path):
+        """La migration doit poser `global` sur les lignes DÉJÀ présentes.
+
+        Sans `NOT NULL DEFAULT`, les conversations d'avant la 0.43 auraient un
+        `memory_scope` nul : le résolveur retomberait sur le défaut en Python,
+        mais rien ne le garantirait en base.
+        """
+        import sqlite3
+
+        from app.models.database import apply_adhoc_migrations
+
+        chemin = tmp_path / "therese.db"
+        with sqlite3.connect(chemin) as conn:
+            conn.execute(
+                "CREATE TABLE conversations ("
+                "id TEXT PRIMARY KEY, title TEXT, summary TEXT, "
+                "created_at TEXT, updated_at TEXT)"
+            )
+            conn.execute("INSERT INTO conversations (id, title) VALUES ('ancienne', 'X')")
+            conn.commit()
+
+        apply_adhoc_migrations(chemin)
+
+        with sqlite3.connect(chemin) as conn:
+            valeur = conn.execute(
+                "SELECT memory_scope FROM conversations WHERE id='ancienne'"
+            ).fetchone()[0]
+            colonnes = {
+                row[1]: row[3] for row in conn.execute("PRAGMA table_info(conversations)")
+            }
+
+        assert valeur == "global", (
+            "une conversation existante n'a pas basculé au moindre privilège"
+        )
+        assert colonnes.get("memory_scope") == 1, "`memory_scope` devrait être NOT NULL"
+
     def test_la_migration_est_idempotente(self, tmp_path):
         """Elle tourne à chaque démarrage : deux passages ne doivent pas lever."""
         import sqlite3
