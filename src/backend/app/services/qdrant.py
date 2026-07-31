@@ -266,7 +266,10 @@ class QdrantService:
 
         # Filter by scope (E3-05)
         if scope:
-            scope_conditions = [
+            # Annotée : la liste mêle `Filter`, `FieldCondition` et
+            # `IsEmptyCondition`. Sans ce type, mypy l'infère en `list[Filter]`
+            # dès le premier élément et refuse les suivants.
+            scope_conditions: list[Filter | FieldCondition | IsEmptyCondition] = [
                 Filter(
                     must=[
                         FieldCondition(key="scope", match=MatchValue(value=scope)),

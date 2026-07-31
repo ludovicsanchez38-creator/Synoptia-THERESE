@@ -32,6 +32,7 @@ import {
   type CapabilityItem,
 } from './CapabilityCenter';
 import { CharacterPortrait } from './DecisionMissionPrototype';
+import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { WindowControls } from '../window/WindowControls';
 import { isMacPlatform } from '../../lib/platform';
 import { startWindowDrag } from '../../lib/windowChrome';
@@ -91,7 +92,7 @@ import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useNavigationStore, type AppView } from '../../stores/navigationStore';
-import { consumeHandoffPrompt, resolveDeepLinkAction, resolveDeepLinkPanel, resolveDeepLinkView, resolveSettingsTab } from '../../lib/deepLinks';
+import { consumeHandoffPrompt, resolveDeepLinkAction, resolveDeepLinkPanel, resolveDeepLinkView, resolveSettingsTab, nettoyerLiensProfondsConsommes } from '../../lib/deepLinks';
 import { usePanelStore as usePanelStoreDirect } from '../../stores/panelStore';
 import { useAtelierStore as useAtelierStoreDirect } from '../../stores/atelierStore';
 import { useActionsStore as useActionsStoreDirect } from '../../stores/actionsStore';
@@ -939,6 +940,10 @@ export function ConversationCanvasPrototype() {
     if (ignorerAccueil && !promptTransmis && !vueDemandee && !panneau && !actionDemandee) {
       openChat();
     }
+    // Finding 9 : sans ce nettoyage, les paramètres restent dans l'URL et sont
+    // rejoués à chaque rechargement — un lien vers les Réglages devenait
+    // collant.
+    nettoyerLiensProfondsConsommes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -952,6 +957,18 @@ export function ConversationCanvasPrototype() {
       useNavigationStore.getState().goBack();
     }
   }, [embeddedView]);
+  const fermerLeChat = useCallback(() => {
+    setChatOpen(false);
+    setChatInitialPrompt(null);
+    // Finding 7 : fermer le chat ne touchait que l'état local. Le store restait
+    // sur `chat`, si bien qu'un `setView('chat')` ultérieur — celui qu'émet
+    // `actionsStore` à la fin d'une Action — devenait un no-op. Le résultat
+    // était ajouté à la conversation sans jamais la rouvrir : du travail qui
+    // paraît perdu. Même patron que `collapseEmbeddedView`.
+    if (useNavigationStore.getState().activeView === 'chat') {
+      useNavigationStore.getState().goBack();
+    }
+  }, []);
   const collapseToolPanel = useCallback((tool: RightPanelTool) => {
     if (tool === 'calculator') setCalculatorOpen(false);
     else if (tool === 'deliverables') setDeliverablesOpen(false);
@@ -1006,8 +1023,7 @@ export function ConversationCanvasPrototype() {
         else if (drawerOpen) closeConversationDrawer();
         else if (chatOpen) {
           if (blockStreamingNavigation()) return;
-          setChatOpen(false);
-          setChatInitialPrompt(null);
+          fermerLeChat();
         } else if (embeddedView) collapseEmbeddedView();
         else if (calculatorOpen) collapseToolPanel('calculator');
         else if (deliverablesOpen) collapseToolPanel('deliverables');
@@ -1024,8 +1040,7 @@ export function ConversationCanvasPrototype() {
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
     setScenario(next);
-    setChatOpen(false);
-    setChatInitialPrompt(null);
+    fermerLeChat();
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
@@ -1049,8 +1064,7 @@ export function ConversationCanvasPrototype() {
     setCapabilityCenterOpen(false);
     setCommandOpen(false);
     setSelectedCapability(capability);
-    setChatOpen(false);
-    setChatInitialPrompt(null);
+    fermerLeChat();
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
@@ -1238,6 +1252,13 @@ export function ConversationCanvasPrototype() {
               <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
               <span className="hidden rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted lg:inline-flex">Interface unifiée</span>
             </div>
+            {/* Finding 10 : l'état de connexion ne vivait que dans la surface
+                de chat. Un utilisateur dans CRM, Fichiers ou Factures ne voyait
+                plus rien quand le backend tombait — ses actions échouaient sans
+                explication. Ici, il couvre toutes les vues. */}
+            <div data-testid="etat-connexion-coque" className="shrink-0">
+              <ConnectionStatus />
+            </div>
           </div>
 
           <div className="hidden items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
@@ -1330,8 +1351,7 @@ export function ConversationCanvasPrototype() {
                 }}
                 onClose={() => {
                   if (blockStreamingNavigation()) return;
-                  setChatOpen(false);
-                  setChatInitialPrompt(null);
+                  fermerLeChat();
                 }}
               />
             ) : embeddedView ? (

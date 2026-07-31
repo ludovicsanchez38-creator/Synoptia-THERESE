@@ -129,6 +129,48 @@ async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: dateti
         await session.commit()
 
 
+def construire_items_indexation(
+    *,
+    chunks: list[str],
+    file_id: str,
+    file_name: str,
+    chemin: str,
+    scope: str,
+    scope_id: str | None,
+) -> list[dict[str, Any]]:
+    """Construit les items Qdrant d'un document. UN SEUL endroit.
+
+    Contre-vérification Soso : `index_payload` écrivait bien le périmètre, mais
+    `upload_file` — le chemin réel d'une pièce jointe de projet — construisait
+    ses items séparément, avec un `project_id` ad hoc et sans `scope`. Le filtre
+    de recherche traitait alors ces documents comme GLOBAUX (branche
+    `IsEmptyCondition` prévue pour les documents antérieurs) : un fichier versé
+    dans le projet A pouvait ressortir dans une recherche du projet B.
+
+    Deux constructeurs pour un même payload, c'est une divergence garantie.
+    """
+    return [
+        {
+            "text": fragment,
+            "memory_type": "file",
+            "entity_id": file_id,
+            "metadata": {
+                "name": file_name,
+                "path": chemin,
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                # Sans ces deux clés, le filtre par périmètre ne peut rien
+                # retrouver : le champ n'existe pas côté vectoriel.
+                "scope": scope,
+                "scope_id": scope_id,
+                # Conservé pour les lecteurs existants de cette clé.
+                **({"project_id": scope_id} if scope == "project" else {}),
+            },
+        }
+        for i, fragment in enumerate(chunks)
+    ]
+
+
 async def index_payload(
     path: str,
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
@@ -235,25 +277,14 @@ async def index_payload(
 
         if text_content and not (est_abandonnee and await est_abandonnee()):
             chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
-            items = [
-                {
-                    "text": chunk,
-                    "memory_type": "file",
-                    "entity_id": file_id,
-                    "metadata": {
-                        "name": file_name,
-                        "path": str(file_path),
-                        "chunk_index": i,
-                        "total_chunks": len(chunks),
-                        # J2 : sans ces deux clés dans le payload, le filtre par
-                        # périmètre de `QdrantService.search` ne peut rien
-                        # retrouver — le champ n'existe pas côté vectoriel.
-                        "scope": perimetre,
-                        "scope_id": perimetre_id,
-                    },
-                }
-                for i, chunk in enumerate(chunks)
-            ]
+            items = construire_items_indexation(
+                chunks=chunks,
+                file_id=file_id,
+                file_name=file_name,
+                chemin=str(file_path),
+                scope=perimetre,
+                scope_id=perimetre_id,
+            )
             if items and not (est_abandonnee and await est_abandonnee()):
                 async with INDEX_SEMAPHORE:
                     # L'attente du sémaphore peut durer : re-consulter l'abandon
@@ -514,20 +545,17 @@ async def upload_file(
     if text_content:
         chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
         qdrant = get_qdrant_service()
-        items = []
-        for i, chunk in enumerate(chunks):
-            items.append({
-                "text": chunk,
-                "memory_type": "file",
-                "entity_id": file_meta.id,
-                "metadata": {
-                    "name": file_meta.name,
-                    "path": str(dest_path),
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
-                    "project_id": project_id,
-                },
-            })
+        # Contre-vérification Soso : ce chemin construisait son propre payload,
+        # sans `scope`. Le document était alors pris pour un document global et
+        # pouvait ressortir dans un autre projet.
+        items = construire_items_indexation(
+            chunks=chunks,
+            file_id=file_meta.id,
+            file_name=file_meta.name,
+            chemin=str(dest_path),
+            scope="project",
+            scope_id=project_id,
+        )
         if items:
             await qdrant.async_add_memories(items)
             logger.info(f"Indexé {len(chunks)} chunks pour {file_meta.name} (projet {project_id})")

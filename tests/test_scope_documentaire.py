@@ -110,6 +110,44 @@ class TestLePerimetreEstEcritDansLePayload:
             )
 
     @pytest.mark.asyncio
+    async def test_le_vrai_upload_de_projet_ecrit_aussi_le_perimetre(
+        self, db_session, fichier, monkeypatch
+    ):
+        """Contre-vérification Soso : `index_payload` n'est PAS le chemin réel.
+
+        Les tests ci-dessus appellent `index_payload` directement. Or l'upload
+        d'une pièce jointe de projet (`POST /files/upload`) construit ses items
+        Qdrant lui-même, avec un `project_id` ad hoc et sans `scope`.
+
+        Le défaut est pire que l'absence de filtre : la branche
+        `IsEmptyCondition` ajoutée pour préserver les documents legacy traite un
+        payload sans `scope` comme GLOBAL. Un document tout juste versé dans le
+        projet A remonterait donc dans une recherche du projet B — la fuite que
+        ce chantier est censé fermer.
+        """
+        from app.routers import files as files_router
+
+        faux = FauxQdrant()
+        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+
+        items = files_router.construire_items_indexation(
+            chunks=["un fragment"],
+            file_id="fic-1",
+            file_name="compte-rendu.txt",
+            chemin=str(fichier),
+            scope="project",
+            scope_id="projet-alpha",
+        )
+
+        assert items, "aucun item construit"
+        for item in items:
+            assert item["metadata"].get("scope") == "project", (
+                "le périmètre manque : le document sera pris pour un document "
+                "global et ressortira dans les autres projets"
+            )
+            assert item["metadata"].get("scope_id") == "projet-alpha"
+
+    @pytest.mark.asyncio
     async def test_le_perimetre_est_aussi_enregistre_en_base(
         self, db_session, fichier, monkeypatch
     ):

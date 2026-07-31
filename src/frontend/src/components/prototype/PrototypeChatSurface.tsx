@@ -3,7 +3,6 @@ import { MessageSquare, PanelRightClose } from 'lucide-react';
 import { MessageList } from '../chat/MessageList';
 import { ChatInput } from '../chat/ChatInput';
 import { ConversationMemoryChip } from '../chat/ConversationMemoryChip';
-import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { useChatStore } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
@@ -47,7 +46,6 @@ export function PrototypeChatSurface({
           <h2 className="truncate text-sm font-semibold text-text">{conversation?.title || 'Nouvelle conversation'}</h2>
           <p className="text-xs text-text-muted">Conversation réelle, historique et fichiers conservés</p>
         </div>
-        <ConnectionStatus />
         <button type="button" onClick={onClose} aria-label="Fermer la conversation" className="grid h-8 w-8 place-items-center rounded-[9px] border border-border bg-surface text-text-muted hover:text-text">
           <PanelRightClose className="h-4 w-4" />
         </button>
