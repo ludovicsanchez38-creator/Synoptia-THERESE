@@ -148,6 +148,89 @@ class TestAnnulationCoupeLeProducteur:
         )
 
     @pytest.mark.asyncio
+    async def test_aucun_outil_ne_s_execute_apres_la_demande_d_arret(self, monkeypatch):
+        """Finding 3, troisième passe : la boucle d'OUTILS ignorait l'annulation.
+
+        Les gardes posées jusque-là protégeaient l'enregistrement du message et
+        l'auto-exécution finale du skill. Mais `_execute_tools_and_continue`
+        émet d'abord un statut « Exécution des outils », puis exécute les outils
+        SANS consulter l'annulation.
+
+        Ces outils ne sont pas anodins : ils créent des contacts et des projets
+        (commit SQLite et Qdrant), écrivent des documents sur le disque, ou
+        appellent un outil MCP arbitraire.
+
+        Conséquence : l'utilisateur clique sur Arrêter, reçoit bien l'événement
+        `cancelled`, et retrouve quand même un fichier ou un contact créé après
+        coup, sans rien à l'écran pour l'expliquer.
+        """
+        from app.routers import chat as chat_router
+        from app.services.llm import ToolCall
+
+        executes: list[str] = []
+
+        async def faux_web_search(arguments):
+            executes.append("web_search")
+            return "résultat"
+
+        monkeypatch.setattr(chat_router, "execute_web_search", faux_web_search)
+
+        conversation_id = "conv-outils"
+        chat_router._register_generation(conversation_id)
+
+        appels = [ToolCall(id="1", name="web_search", arguments={"query": "test"})]
+
+        def lancer():
+            return chat_router._execute_tools_and_continue(
+                llm_service=None,
+                mcp_service=None,
+                context=[],
+                assistant_content="",
+                tool_calls=appels,
+                tools=[],
+                conversation_id=conversation_id,
+                remaining_iterations=3,
+                session=None,
+                usage_totals={"input_tokens": 0, "output_tokens": 0, "estimated": True},
+                tool_outcomes=[],
+            )
+
+        flux = lancer()
+        # 1. On consomme le statut « Exécution des outils ».
+        premier = await flux.__anext__()
+        assert "status" in premier
+
+        # 2. L'utilisateur clique sur Arrêter pendant ce temps.
+        chat_router._cancel_generation(conversation_id)
+
+        # 3. Le flux reprend. Les services LLM sont à None : la continuation
+        # lèvera. Peu importe — ce qu'on mesure, c'est si les OUTILS ont tourné.
+        with contextlib.suppress(StopAsyncIteration, Exception):
+            async for _ in flux:
+                pass
+
+        assert executes == [], (
+            f"outils exécutés APRÈS la demande d'arrêt : {executes}. "
+            "L'utilisateur retrouve un fichier ou une entité créés alors qu'il "
+            "avait annulé, sans rien à l'écran pour l'expliquer"
+        )
+
+        # Garde-fou du test lui-même : SANS annulation, l'outil DOIT tourner.
+        # Sans cette vérification, un `executes` vide pour une autre raison
+        # (mauvais nom monkeypatché, chemin non emprunté) rendrait le test creux
+        # — piège rencontré en écrivant cette série.
+        chat_router._active_generations.pop(conversation_id, None)
+        chat_router._register_generation(conversation_id)
+        flux_temoin = lancer()
+        with contextlib.suppress(StopAsyncIteration, Exception):
+            async for _ in flux_temoin:
+                pass
+        assert executes == ["web_search"], (
+            "le test ne prouve rien : l'outil ne s'exécute pas non plus dans le "
+            f"cas nominal (executes={executes})"
+        )
+
+    @pytest.mark.asyncio
     async def test_les_metriques_sont_finalisees_meme_sur_annulation(self, monkeypatch):
         """Finding MAJEUR n°4 de la revue Soso.
 

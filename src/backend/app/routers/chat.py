@@ -1874,6 +1874,20 @@ async def _execute_tools_and_continue(
     sensitive_pending = False
 
     for tc in allowed_calls:
+        # Finding 3, troisième passe de revue : la boucle d'outils ignorait
+        # complètement l'annulation. Elle émet d'abord un statut, puis exécute
+        # — et ces outils ne sont pas anodins : ils créent des contacts et des
+        # projets (commit SQLite et Qdrant), écrivent des documents sur le
+        # disque, ou appellent un outil MCP arbitraire. L'utilisateur cliquait
+        # sur Arrêter, recevait bien « cancelled », et retrouvait quand même un
+        # fichier ou une entité créés après coup.
+        #
+        # La garde est en TÊTE de boucle : un seul endroit couvre tous les
+        # chemins d'exécution (web, navigateur, mémoire, workspace, MCP).
+        if _is_cancelled(conversation_id):
+            logger.info("Annulation demandée : les outils restants ne sont pas exécutés")
+            return
+
         # US-002 : les outils sensibles (envoi de mail) ne s'exécutent jamais
         # automatiquement sur décision du LLM. On met l'action en attente et on
         # demande validation à l'utilisateur ; l'exécution réelle a lieu via
