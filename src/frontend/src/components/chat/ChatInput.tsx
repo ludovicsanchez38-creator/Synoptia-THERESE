@@ -841,9 +841,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // L'arrêt local reste effectif même si cet appel échoue.
     const conversationId = useChatStore.getState().currentConversationId;
     if (conversationId) {
-      void cancelGeneration(conversationId).catch(() => {
-        // Le serveur peut être injoignable : ne pas bloquer l'interface.
-      });
+      // `Promise.resolve` + try/catch : l'appel peut échouer de façon
+      // ASYNCHRONE (serveur injoignable) comme SYNCHRONE (module d'API
+      // indisponible, retour non-promesse). Dans les deux cas l'abort local a
+      // déjà eu lieu — le geste de l'utilisateur ne doit jamais lever.
+      try {
+        void Promise.resolve(cancelGeneration(conversationId)).catch(() => {});
+      } catch {
+        // Rien de plus à faire : la réponse est déjà arrêtée à l'écran.
+      }
     }
   }, []);
 

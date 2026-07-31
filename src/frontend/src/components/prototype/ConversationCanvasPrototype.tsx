@@ -91,7 +91,13 @@ import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useNavigationStore, type AppView } from '../../stores/navigationStore';
-import { consumeHandoffPrompt, resolveDeepLinkView, resolveSettingsTab } from '../../lib/deepLinks';
+import { consumeHandoffPrompt, resolveDeepLinkAction, resolveDeepLinkPanel, resolveDeepLinkView, resolveSettingsTab } from '../../lib/deepLinks';
+import { usePanelStore as usePanelStoreDirect } from '../../stores/panelStore';
+import { useAtelierStore as useAtelierStoreDirect } from '../../stores/atelierStore';
+import { useActionsStore as useActionsStoreDirect } from '../../stores/actionsStore';
+import { runTopEscapeHandler } from '../../lib/escapeStack';
+import { useContactsStore as useContactsStoreDirect } from '../../stores/contactsStore';
+import { usePersonalisationStore } from '../../stores/personalisationStore';
 import { PanelContainer } from '../chat/PanelContainer';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
@@ -590,6 +596,27 @@ function CommandPalette({
   );
 }
 
+
+/**
+ * Overlays de la pile unifiée, dans l'ordre de `resolveEscape` mais SANS son
+ * retour de vue final : la coque enchaîne ensuite sur ses propres surfaces.
+ * Retourne vrai si Échap a été consommé ici.
+ */
+function consommeEchapUnifie(): boolean {
+  if (runTopEscapeHandler()) return true;
+  const ps = usePanelStoreDirect.getState();
+  if (ps.showSaveCommand) { ps.closeSaveCommand(); return true; }
+  if (ps.showContactModal) { ps.closeContactModal(); return true; }
+  if (ps.showProjectModal) { ps.closeProjectModal(); return true; }
+  if (ps.showBoardPanel) { ps.closeBoardPanel(); return true; }
+  if (ps.showShortcuts) { ps.closeShortcuts(); return true; }
+  if (ps.showSettings) { ps.closeSettings(); return true; }
+  if (ps.showPromptLibrary) { ps.closePromptLibrary(); return true; }
+  if (useAtelierStoreDirect.getState().isOpen) { useAtelierStoreDirect.getState().closePanel(); return true; }
+  if (useActionsStoreDirect.getState().isPanelOpen) { useActionsStoreDirect.getState().closePanel(); return true; }
+  return false;
+}
+
 export function ConversationCanvasPrototype() {
   const theme = useAccessibilityStore((state) => state.theme);
   const highContrast = useAccessibilityStore((state) => state.highContrast);
@@ -771,28 +798,19 @@ export function ConversationCanvasPrototype() {
       .catch(() => setUserSlashCommands([]));
   }, []);
 
-  useEffect(() => {
-    const onInsertPrompt = (event: Event) => {
-      const prompt = (event as CustomEvent<string>).detail;
-      if (typeof prompt !== 'string' || !prompt.trim()) return;
-      if (blockStreamingNavigation()) return;
-      setChatInitialPrompt(prompt.trim());
-      setEmbeddedView(null);
-      setCanvasOpen(false);
-      setCalculatorOpen(false);
-      setDeliverablesOpen(false);
-      setImagesOpen(false);
-      setFollowUpsOpen(false);
-      setVoiceOpen(false);
-      setChatOpen(true);
-    };
-    window.addEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
-    return () => window.removeEventListener('therese:insert-prompt', onInsertPrompt as EventListener);
-  }, [blockStreamingNavigation]);
+  // J0 (31/07) : l'écouteur `therese:insert-prompt` qui vivait ici a été
+  // supprimé — il faisait doublon avec celui déclaré plus bas. Les deux
+  // consultaient la garde de streaming, qui NOTIFIE quand elle refuse : un
+  // seul geste produisait deux bandeaux « Réponse en cours ». Celui qui reste
+  // délègue à `openChat`, qui pose en plus la vue canonique et remet à zéro le
+  // composeur — ce que cette version ne faisait pas.
 
   const openChat = (prompt?: string) => {
     if (blockStreamingNavigation()) return;
     setChatInitialPrompt(prompt?.trim() || null);
+    if (useNavigationStore.getState().activeView !== 'chat') {
+      useNavigationStore.getState().setView('chat');
+    }
     setEmbeddedView(null);
     setCanvasOpen(false);
     setCalculatorOpen(false);
@@ -844,6 +862,11 @@ export function ConversationCanvasPrototype() {
       return;
     }
     if (derniereVueRef.current === viewDemandee) return;
+    // La référence n'avance QUE si la navigation aboutit. Refusée pendant un
+    // flux, la demande resterait sinon perdue : `activeView` n'ayant pas
+    // changé, aucun rattrapage n'aurait lieu à la fin du flux. D'où `isStreaming`
+    // en dépendance : la demande en attente est rejouée dès que le flux finit.
+    if (isStreaming) return;
     derniereVueRef.current = viewDemandee;
     if (viewDemandee === 'chat') {
       if (!chatOpen) openChat();
@@ -852,9 +875,9 @@ export function ConversationCanvasPrototype() {
     if (embeddedView === viewDemandee) return;
     openEmbeddedView(viewDemandee);
     // openEmbeddedView et openChat sont recréés à chaque rendu : les inclure
-    // relancerait l'effet en boucle. Seule la vue demandée doit le déclencher.
+    // relancerait l'effet en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewDemandee]);
+  }, [viewDemandee, isStreaming]);
 
   // J0b : reprises de l'ancienne coque, qui les portait seule.
   //
@@ -866,7 +889,9 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const surPromptInsere = (evenement: Event) => {
       const texte = (evenement as CustomEvent<string>).detail;
-      if (typeof texte !== 'string') return;
+      // Garde reprise de l'écouteur fusionné : un prompt vide ne doit pas
+      // ouvrir le chat (`openChat` accepte `null` et l'ouvrirait quand même).
+      if (typeof texte !== 'string' || !texte.trim()) return;
       openChat(texte);
     };
     window.addEventListener('therese:insert-prompt', surPromptInsere as EventListener);
@@ -878,6 +903,8 @@ export function ConversationCanvasPrototype() {
         panel: usePanelStore,
         chat: useChatStore,
         atelier: useAtelierStore,
+        actions: useActionsStoreDirect,
+        contacts: useContactsStoreDirect,
       },
     };
     return () => window.removeEventListener('therese:insert-prompt', surPromptInsere as EventListener);
@@ -885,22 +912,45 @@ export function ConversationCanvasPrototype() {
   }, []);
 
   useEffect(() => {
+    // F3 : la préférence « ignorer l'accueil » n'avait plus aucun effet depuis
+    // le retrait du classic. On l'honore ici sans appeler `initializeView`, qui
+    // poserait la vue 'home' et écraserait l'accueil conversationnel natif de
+    // la coque (ce dernier REMPLACE l'ancien tableau de bord).
+    const ignorerAccueil = usePersonalisationStore.getState().skipDashboard ?? false;
     const recherche = window.location.search;
     const vueDemandee = resolveDeepLinkView(recherche);
     const ongletReglages = resolveSettingsTab(recherche);
     const promptTransmis = consumeHandoffPrompt(recherche);
     if (promptTransmis) {
       openChat(promptTransmis);
-    } else if (vueDemandee && vueDemandee !== 'chat') {
+    } else if (vueDemandee === 'chat') {
+      openChat();
+    } else if (vueDemandee) {
       openEmbeddedView(vueDemandee);
     }
+    // F5 : ces deux paramètres étaient lus mais jamais appliqués - un lien
+    // profond vers le Board ou les Actions n'ouvrait rien.
+    const panneau = resolveDeepLinkPanel(recherche);
+    if (panneau === 'board') toggleBoardPanel();
+    else if (panneau === 'atelier') openAtelierPanel();
+    const actionDemandee = resolveDeepLinkAction(recherche);
+    if (actionDemandee) runAction(actionDemandee);
     if (ongletReglages) openSettings(ongletReglages);
+    if (ignorerAccueil && !promptTransmis && !vueDemandee && !panneau && !actionDemandee) {
+      openChat();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;
     setEmbeddedView(null);
+    // Remédiation NO-GO J0 : sans retour dans le store, `activeView` restait
+    // sur la vue fermée. Rejouer la même action devenait un no-op
+    // (`setView` ignore une valeur identique) et la vue ne se rouvrait plus.
+    if (useNavigationStore.getState().activeView === embeddedView) {
+      useNavigationStore.getState().goBack();
+    }
   }, [embeddedView]);
   const collapseToolPanel = useCallback((tool: RightPanelTool) => {
     if (tool === 'calculator') setCalculatorOpen(false);
@@ -945,6 +995,11 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // Remédiation NO-GO J0 : la cascade locale ignorait les modales gérées
+        // par la pile unifiée (Réglages, contact, projet, bibliothèque, Actions,
+        // Atelier). Échap fermait alors le chat DERRIÈRE la modale, ou ne
+        // faisait rien. Ces overlays passent en premier.
+        if (consommeEchapUnifie()) return;
         if (commandOpen) closeCommandPalette();
         else if (capabilityCenterOpen) closeCapabilityCenter();
         else if (trustCenterOpen) closeTrustCenter();

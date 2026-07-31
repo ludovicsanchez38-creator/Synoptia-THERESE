@@ -74,4 +74,40 @@ describe('ChatInput - arrêt de la génération', () => {
     // sinon l'interface resterait bloquée en « réponse en cours ».
     expect(apiMocks.cancelGeneration).toHaveBeenCalled();
   });
+
+  it('n’échoue pas si l’appel d’annulation lève de façon synchrone', async () => {
+    // Cas réel rencontré au run complet de la suite : dès qu'un test monte
+    // ChatInput en mockant `services/api` sans définir `cancelGeneration`,
+    // l'appel rend `undefined` et le `.catch` explose en TypeError NON
+    // CAPTURÉE. Vitest impute alors l'erreur au fichier en cours d'exécution
+    // et fait échouer des tests étrangers (« false positive tests »).
+    //
+    // Au-delà du bruit de test, c'est un vrai défaut : le bouton Arrêter ne
+    // doit jamais propager d'exception. L'abort local a déjà eu lieu, prévenir
+    // le serveur est un bonus qui ne peut pas casser le geste de l'utilisateur.
+    apiMocks.cancelGeneration.mockImplementation(() => {
+      throw new Error('module d’API indisponible');
+    });
+    render(<ChatInput />);
+
+    // `.click()` de jsdom NE propage PAS l'exception à l'appelant : React la
+    // relance hors de la pile, où jsdom l'émet en `error` sur window. Un
+    // `expect(...).not.toThrow()` autour du clic passerait donc même avec le
+    // code cassé — il faut écouter là où l'erreur atterrit vraiment.
+    const erreurs: unknown[] = [];
+    const capter = (evenement: ErrorEvent) => {
+      erreurs.push(evenement.error ?? evenement.message);
+      evenement.preventDefault();
+    };
+    window.addEventListener('error', capter);
+    try {
+      await act(async () => {
+        screen.getByLabelText('Arrêter la réponse').click();
+      });
+    } finally {
+      window.removeEventListener('error', capter);
+    }
+
+    expect(erreurs).toEqual([]);
+  });
 });
