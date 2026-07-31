@@ -91,6 +91,7 @@ import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { useAtelierStore } from '../../stores/atelierStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { useNavigationStore, type AppView } from '../../stores/navigationStore';
+import { consumeHandoffPrompt, resolveDeepLinkView, resolveSettingsTab } from '../../lib/deepLinks';
 import { PanelContainer } from '../chat/PanelContainer';
 import { listUserCommands, type UserCommand } from '../../services/api/commands';
 import type { SlashCommand } from '../chat/SlashCommandsMenu';
@@ -854,6 +855,48 @@ export function ConversationCanvasPrototype() {
     // relancerait l'effet en boucle. Seule la vue demandée doit le déclencher.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDemandee]);
+
+  // J0b : reprises de l'ancienne coque, qui les portait seule.
+  //
+  // 1. Le pont de recette `window.__therese` (appel bas niveau des actions et
+  //    lecture des stores) : c'est l'outil de diagnostic des testeurs.
+  // 2. L'insertion d'un prompt venu d'ailleurs (⌘K « Produire un document »,
+  //    bibliothèque de prompts).
+  // 3. Les liens profonds `?view=` / `?settings_tab=` et le prompt transmis.
+  useEffect(() => {
+    const surPromptInsere = (evenement: Event) => {
+      const texte = (evenement as CustomEvent<string>).detail;
+      if (typeof texte !== 'string') return;
+      openChat(texte);
+    };
+    window.addEventListener('therese:insert-prompt', surPromptInsere as EventListener);
+    (window as unknown as { __therese?: unknown }).__therese = {
+      runAction,
+      getActions,
+      stores: {
+        navigation: useNavigationStore,
+        panel: usePanelStore,
+        chat: useChatStore,
+        atelier: useAtelierStore,
+      },
+    };
+    return () => window.removeEventListener('therese:insert-prompt', surPromptInsere as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const recherche = window.location.search;
+    const vueDemandee = resolveDeepLinkView(recherche);
+    const ongletReglages = resolveSettingsTab(recherche);
+    const promptTransmis = consumeHandoffPrompt(recherche);
+    if (promptTransmis) {
+      openChat(promptTransmis);
+    } else if (vueDemandee && vueDemandee !== 'chat') {
+      openEmbeddedView(vueDemandee);
+    }
+    if (ongletReglages) openSettings(ongletReglages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;

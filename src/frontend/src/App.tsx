@@ -1,9 +1,7 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { MotionConfig } from 'framer-motion';
-import { ChatLayout } from './components/chat/ChatLayout';
 import { CommonToolConfirmationLayer } from './components/app/CommonToolConfirmationLayer';
 import { PrototypeExternalActionConfirmationProvider } from './components/app/ExternalActionConfirmation';
-import { NewInterfaceIntro } from './components/app/NewInterfaceIntro';
 import { ActionPanel } from './components/actions';
 import { Notifications } from './components/ui/Notifications';
 import { UpdateBanner } from './components/ui/UpdateBanner';
@@ -14,7 +12,6 @@ import { useFontSize, useAccessibilityStore } from './stores/accessibilityStore'
 import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility';
 import * as api from './services/api';
 import { Z_LAYER } from './styles/z-layers';
-import { getInterfaceMode } from './lib/interfaceMode';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
@@ -31,7 +28,6 @@ const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 // Factures/CRM/Mémoire sont des vues/panneaux de la fenêtre principale (content-swap).
 
 function ApplicationBootstrap() {
-  const interfaceMode = getInterfaceMode();
   const [backendReady, setBackendReady] = useState(!IS_TAURI_PRODUCTION);
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -170,7 +166,6 @@ function ApplicationBootstrap() {
       <div
         className="relative h-screen w-screen bg-bg text-text overflow-hidden"
         data-testid="app-main"
-        data-interface-mode={interfaceMode}
         data-theme={theme}
         data-high-contrast={highContrast ? 'true' : undefined}
       >
@@ -183,15 +178,11 @@ function ApplicationBootstrap() {
         >
           Aller au contenu principal
         </a>
-        {interfaceMode === 'conversation-canvas' ? (
-          <Suspense fallback={<div className="h-screen w-screen bg-bg" />}>
-            <PrototypeExternalActionConfirmationProvider>
-              <ConversationCanvasPrototype />
-            </PrototypeExternalActionConfirmationProvider>
-          </Suspense>
-        ) : (
-          <ChatLayout />
-        )}
+        <Suspense fallback={<div className="h-screen w-screen bg-bg" />}>
+          <PrototypeExternalActionConfirmationProvider>
+            <ConversationCanvasPrototype />
+          </PrototypeExternalActionConfirmationProvider>
+        </Suspense>
 
         {/* Le suivi des actions appartient à la coquille commune. Une action
             lancée depuis l’interface unifiée reste donc visible sans bascule. */}
@@ -207,7 +198,6 @@ function ApplicationBootstrap() {
             onComplete={handleOnboardingComplete}
           />
         </Suspense>
-        {!showOnboarding && interfaceMode === 'conversation-canvas' && <NewInterfaceIntro />}
       </div>
       </MotionConfig>
     </GlobalErrorBoundary>

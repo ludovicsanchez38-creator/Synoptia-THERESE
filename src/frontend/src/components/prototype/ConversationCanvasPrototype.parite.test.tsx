@@ -129,4 +129,45 @@ describe('Gate de parité par source d’action', () => {
       );
     });
   });
+
+  // J0b : ce que seule l'ancienne coque portait et qui ne doit pas disparaître
+  // avec elle (relevé par le challenge du plan).
+  describe('reprises de l’ancienne coque', () => {
+    it('expose le pont de recette window.__therese', async () => {
+      render(<ConversationCanvasPrototype />);
+
+      await waitFor(() => {
+        const pont = (window as unknown as { __therese?: { runAction?: unknown; stores?: unknown } }).__therese;
+        expect(pont).toBeDefined();
+        expect(typeof pont?.runAction).toBe('function');
+        expect(pont?.stores).toBeDefined();
+      });
+    });
+
+    it('ouvre la vue demandée par un lien profond ?view=', async () => {
+      window.history.replaceState({}, '', '/?interface=conversation-canvas&view=crm');
+
+      render(<ConversationCanvasPrototype />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
+      });
+    });
+
+    it('insère un prompt reçu par événement et bascule sur le chat', async () => {
+      // Le test précédent pose ?view=crm : sans remise à zéro, le lien profond
+      // de CE rendu ouvrirait CRM. Isolation explicite.
+      window.history.replaceState({}, '', '/?interface=conversation-canvas');
+
+      render(<ConversationCanvasPrototype />);
+
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: 'Prépare la relance' }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'chat');
+      });
+    });
+  });
 });

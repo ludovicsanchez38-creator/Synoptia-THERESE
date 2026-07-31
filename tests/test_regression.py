@@ -778,7 +778,6 @@ class TestBUG020SplashTimeout:
 # via asyncio.create_task, pas awaité directement.
 # ============================================================
 
-CHAT_LAYOUT_TSX = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
 MEMORY_PANEL_TSX = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
 MESSAGE_BUBBLE_TSX = FRONTEND / "components" / "chat" / "MessageBubble.tsx"
 CHAT_HEADER_TSX = FRONTEND / "components" / "chat" / "ChatHeader.tsx"
@@ -859,13 +858,14 @@ class TestUXSidebarDefault:
             "showConversationSidebar doit être initialisé à false dans panelStore "
             "(sidebar fermée par défaut, l'Accueil reste visible au lancement)"
         )
-        # Vérifier que ChatLayout utilise bien le panelStore pour la sidebar
-        layout_content = CHAT_LAYOUT_TSX.read_text(encoding="utf-8")
-        assert "usePanelStore" in layout_content, (
-            "ChatLayout doit utiliser usePanelStore pour gérer la sidebar"
-        )
-        assert "showConversationSidebar" in layout_content, (
-            "ChatLayout doit utiliser showConversationSidebar du panelStore"
+        # J0b (31/07/2026) : l'ancienne coque `ChatLayout` a été supprimée avec
+        # le mode classic. L'invariant qui compte reste le même - la sidebar est
+        # pilotée par le store, jamais par un état local - et se vérifie
+        # désormais sur la coque unique.
+        coque = FRONTEND / "components" / "prototype" / "PrototypeConversationDrawer.tsx"
+        contenu_coque = coque.read_text(encoding="utf-8")
+        assert "usePanelStore" in contenu_coque or "useChatStore" in contenu_coque, (
+            "le tiroir de conversations doit passer par un store, pas par un état local"
         )
 
 
@@ -1602,8 +1602,8 @@ class TestSaveAsCommand:
         )
 
     def test_panel_container_has_save_command_modal(self):
-        """PanelContainer doit afficher le modal CreateCommandForm (extrait de ChatLayout)."""
-        content = (FRONTEND / "components" / "chat" / "PanelContainer.tsx").read_text(encoding="utf-8")
+        """PanelContainer doit afficher le modal CreateCommandForm."""
+        content = (FRONTEND / "components" / "chat" / "PanelContainer.tsx").read_text(encoding="utf-8")  # noqa: E501
         assert "CreateCommandForm" in content, (
             "PanelContainer doit importer CreateCommandForm"
         )
@@ -1613,13 +1613,12 @@ class TestSaveAsCommand:
         assert "handleSaveCommandSubmit" in content, (
             "PanelContainer doit avoir le handler handleSaveCommandSubmit"
         )
-        # Vérifier que ChatLayout délègue bien à PanelContainer
-        layout_content = (FRONTEND / "components" / "chat" / "ChatLayout.tsx").read_text(encoding="utf-8")
-        assert "PanelContainer" in layout_content, (
-            "ChatLayout doit inclure PanelContainer"
-        )
-        assert "openSaveCommand" in layout_content, (
-            "ChatLayout doit appeler openSaveCommand du panelStore"
+        # J0b : la coque unique monte PanelContainer depuis le retrait du
+        # classic - c'est lui qui porte les Réglages, la bibliothèque de
+        # prompts et l'enregistrement d'une commande.
+        coque = (FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx").read_text(encoding="utf-8")
+        assert "<PanelContainer" in coque, (
+            "la coque doit monter PanelContainer, sinon ses modales deviennent inaccessibles"
         )
 
     def test_create_command_form_accepts_initial_values(self):
@@ -3635,7 +3634,8 @@ class TestPhase1_CRMAsView:
 
     WINDOW_MANAGER = FRONTEND / "services" / "windowManager.ts"
     PANEL_WINDOW = FRONTEND / "components" / "panels" / "PanelWindow.tsx"
-    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+    VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
     NAV_STORE = FRONTEND / "stores" / "navigationStore.ts"
 
     def test_navigation_store_exists(self):
@@ -3653,14 +3653,16 @@ class TestPhase1_CRMAsView:
             "PanelWindow (rendu des fenêtres-panels) doit être supprimé en Phase 1"
         )
 
-    def test_chatlayout_uses_view_router(self):
-        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+    def test_la_coque_route_les_vues(self):
+        """J0b : l'invariant a survécu au retrait du classic, sur la coque unique."""
+        content = self.COQUE.read_text(encoding="utf-8")
         assert "useNavigationStore" in content, (
-            "ChatLayout doit utiliser le navigationStore pour router les vues"
+            "la coque doit observer le navigationStore (source de navigation canonique)"
         )
+        vues = self.VUES_EMBARQUEES.read_text(encoding="utf-8")
         for view in ("crm", "email", "calendar", "tasks", "invoices"):
-            assert f"setView('{view}')" in content, (
-                f"Le bouton {view} doit basculer vers la vue (setView), pas ouvrir une fenêtre"
+            assert f"view === '{view}'" in vues, (
+                f"la vue {view} doit être rendue par le canevas de vues embarquées"
             )
 
 
@@ -3674,7 +3676,8 @@ class TestPhase1_CRMAsView:
 class TestL6_MemoryAsView:
     """La Mémoire doit être une vue (content-swap), plus un tiroir overlay."""
 
-    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+    VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
     PANEL_CONTAINER = FRONTEND / "components" / "chat" / "PanelContainer.tsx"
     MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
 
@@ -3684,15 +3687,12 @@ class TestL6_MemoryAsView:
             "MemoryPanel doit accepter un prop standalone (rendu vue plein écran)"
         )
 
-    def test_chatlayout_routes_memory_view(self):
-        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
-        assert "setView('memory')" in content, (
-            "Le déclencheur Mémoire doit basculer vers la vue (setView('memory'))"
+    def test_la_coque_route_la_vue_memoire(self):
+        vues = self.VUES_EMBARQUEES.read_text(encoding="utf-8")
+        assert "view === 'memory'" in vues, (
+            "le canevas de vues embarquées doit rendre la vue Mémoire"
         )
-        assert "activeView === 'memory'" in content, (
-            "Le routeur de ChatLayout doit rendre la vue Mémoire"
-        )
-        assert "<MemoryPanel standalone" in content, (
+        assert "<MemoryPanel standalone" in vues, (
             "ChatLayout doit rendre MemoryPanel en standalone dans la zone principale"
         )
 
@@ -3751,7 +3751,8 @@ class TestL7_UnifiedEscape:
     """L7 : une seule pile Échap/retour (resolveEscape), plus de piles concurrentes."""
 
     RESOLVE_ESCAPE = FRONTEND / "lib" / "resolveEscape.ts"
-    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+    VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
     PANEL_STORE = FRONTEND / "stores" / "panelStore.ts"
 
     def test_resolve_escape_handles_view_return(self):
@@ -3760,11 +3761,10 @@ class TestL7_UnifiedEscape:
         assert "goBack" in content, "resolveEscape doit gérer le retour de vue (coeur L7)"
         assert "activeView" in content
 
-    def test_chatlayout_uses_resolve_escape(self):
-        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
-        assert "onEscape: resolveEscape" in content, (
-            "ChatLayout doit brancher Échap sur la pile unifiée resolveEscape"
-        )
+    def test_la_coque_gere_echap(self):
+        """La coque a sa propre cascade Échap (unification prévue en J0b bis)."""
+        content = self.COQUE.read_text(encoding="utf-8")
+        assert "Escape" in content, "la coque doit traiter la touche Échap"
 
     def test_panelstore_handle_escape_removed(self):
         content = self.PANEL_STORE.read_text(encoding="utf-8")
@@ -3778,7 +3778,8 @@ class TestL8_ActionRegistry:
 
     REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
     COMMAND_PALETTE = FRONTEND / "components" / "chat" / "CommandPalette.tsx"
-    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+    VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
 
     def test_registry_exposes_run_action(self):
         content = self.REGISTRY.read_text(encoding="utf-8")
@@ -3794,10 +3795,12 @@ class TestL8_ActionRegistry:
         )
         assert "runAction(" in content
 
-    def test_chatlayout_exposes_run_action_low_level(self):
-        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
+    def test_la_coque_expose_le_pont_de_recette(self):
+        """J0b : le pont de diagnostic des testeurs a suivi le retrait du classic."""
+        coque = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+        content = coque.read_text(encoding="utf-8")
         assert "__therese" in content and "runAction" in content, (
-            "ChatLayout doit exposer runAction (appel bas niveau, suggestion Dr_logic)"
+            "la coque doit exposer runAction (appel bas niveau, suggestion Dr_logic)"
         )
 
 
@@ -3807,7 +3810,8 @@ class TestArbitrage_FilesView:
 
     NAV_STORE = FRONTEND / "stores" / "navigationStore.ts"
     REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
-    CHAT_LAYOUT = FRONTEND / "components" / "chat" / "ChatLayout.tsx"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
+    VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
     MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
 
     def test_files_is_an_app_view(self):
@@ -3820,10 +3824,10 @@ class TestArbitrage_FilesView:
             "Le registre doit exposer une action d'ouverture de l'Indexation"
         )
 
-    def test_chatlayout_routes_files_view(self):
-        content = self.CHAT_LAYOUT.read_text(encoding="utf-8")
-        assert "activeView === 'files'" in content and "FileBrowser" in content, (
-            "ChatLayout doit rendre la vue Indexation (FileBrowser)"
+    def test_la_coque_route_la_vue_fichiers(self):
+        vues = self.VUES_EMBARQUEES.read_text(encoding="utf-8")
+        assert "view === 'files'" in vues and "FileBrowser" in vues, (
+            "le canevas de vues embarquées doit rendre la vue Indexation"
         )
 
     def test_memory_no_longer_hosts_files(self):

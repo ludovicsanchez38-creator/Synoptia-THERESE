@@ -40,13 +40,13 @@ import {
 } from 'lucide-react';
 import { CharacterPortrait } from './DecisionMissionPrototype';
 import type { AppView } from '../../stores/navigationStore';
-import type { ClassicAction, ClassicSettingsTab } from '../../lib/classicNavigation';
+import type { DeepLinkAction, SettingsTab } from '../../lib/deepLinks';
 
 export type CapabilityGroupId = 'organize' | 'business' | 'create' | 'decide' | 'automate' | 'control';
 export type PrototypeScenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 export type CapabilityDestination =
   | { kind: 'view'; view: AppView }
-  | { kind: 'action'; action: ClassicAction; settingsTab?: ClassicSettingsTab }
+  | { kind: 'action'; action: DeepLinkAction; settingsTab?: SettingsTab }
   | { kind: 'prompt' }
   | { kind: 'calculator' }
   | { kind: 'deliverables' }
