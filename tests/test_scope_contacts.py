@@ -235,3 +235,97 @@ class TestLeBridgeMCPNEstPasUnePorteDerobee:
             f"({noms}) : s'il est exposé au chat, le cloisonnement des contacts "
             "est contournable. Cloisonner ces outils avant de les brancher."
         )
+
+
+class TestLesFuitesResiduellesSontFermees:
+    """Blocants de la revue de clôture."""
+
+    @pytest.mark.asyncio
+    async def test_le_mode_global_ne_voit_pas_les_contacts_de_projet(self, db_session):
+        """Le mode global est le DÉFAUT : sans filtre, personne n'était cloisonné.
+
+        `_cloison_contacts` ne filtrait que `scope == "project"`. Une
+        conversation libre — le cas courant — lisait donc tous les contacts,
+        projets compris.
+        """
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Contact(
+                id="c-proj", first_name="Fabien", last_name="Client",
+                phone="0644444444", scope="project", scope_id="projet-a",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "read_contact", {"query": "Fabien"}, db_session, scope="global"
+        )
+
+        assert "0644444444" not in resultat, (
+            "une conversation libre lit les contacts d'un dossier client"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_contact_cree_depuis_un_projet_lui_appartient(self, db_session):
+        """Sinon la cloison ne tiendrait que sur l'existant."""
+        import json
+
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+        from sqlmodel import select
+
+        resultat = await execute_memory_tool(
+            "create_contact",
+            {"first_name": "Gaby", "last_name": "Nouvelle"},
+            db_session,
+            scope="project",
+            scope_id="projet-a",
+        )
+        contact_id = json.loads(resultat)["contact_id"]
+
+        cree = (
+            await db_session.execute(select(Contact).where(Contact.id == contact_id))
+        ).scalar_one()
+
+        assert cree.scope == "project", (
+            "le contact naît global : il sera visible depuis tous les dossiers"
+        )
+        assert cree.scope_id == "projet-a"
+
+
+class TestLesPiecesJointesPortentLePerimetre:
+    def test_le_chat_transmet_le_perimetre_a_l_indexation(self):
+        """Une pièce jointe déposée dans un dossier client lui appartient.
+
+        Sans périmètre, elle naissait globale : consultable depuis tous les
+        autres dossiers dès l'instant où elle était jointe.
+        """
+        import ast
+        import pathlib
+
+        chemin = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "src" / "backend" / "app" / "routers" / "chat.py"
+        )
+        arbre = ast.parse(chemin.read_text(encoding="utf-8"))
+
+        appels = [
+            n
+            for n in ast.walk(arbre)
+            if isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Name)
+            and n.func.id == "_get_file_context"
+        ]
+        assert appels, "aucun appel trouvé : le test ne prouverait rien"
+
+        defauts = [
+            n.lineno
+            for n in appels
+            if not {"scope", "scope_id"} <= {kw.arg for kw in n.keywords}
+        ]
+        assert not defauts, (
+            f"pièces jointes indexées sans périmètre aux lignes {defauts} : "
+            "elles seront consultables depuis tous les autres projets"
+        )

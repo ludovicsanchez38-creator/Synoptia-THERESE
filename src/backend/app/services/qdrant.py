@@ -26,6 +26,11 @@ from qdrant_client.models import (
 
 logger = logging.getLogger(__name__)
 
+#: Types de souvenirs dont le périmètre est écrit dans le payload et reclassé
+#: au démarrage. Un payload de ces types sans périmètre est un vestige : il est
+#: exclu des recherches cloisonnées jusqu'à son reclassement.
+TYPES_RECLASSES = ("file", "contact", "project")
+
 
 class QdrantService:
     """Service for Qdrant vector database operations."""
@@ -281,27 +286,25 @@ class QdrantService:
                 scope_conditions.append(
                     FieldCondition(key="scope", match=MatchValue(value="global"))
                 )
-                # Payloads SANS périmètre. Deux populations très différentes
-                # s'y trouvent, et la nuance compte :
+                # Payloads SANS périmètre.
                 #
-                # - les souvenirs NON documentaires (contacts, projets, profil)
-                #   n'ont jamais porté de périmètre et n'en porteront pas : ce
-                #   n'est pas leur mécanisme de cloisonnement (le leur est en
-                #   SQL). Ils doivent rester visibles, sinon la mémoire courante
-                #   s'ampute ;
-                # - les DOCUMENTS indexés avant la 0.42 en sont dépourvus par
-                #   accident d'historique. Les accepter ici ferait remonter un
-                #   document du client A chez le client B — la fuite même que ce
-                #   chantier ferme. Ils sont reclassés au démarrage
-                #   (`perimetre_backfill`) ; en attendant, on les EXCLUT.
+                # Documents, contacts et projets EN PORTENT un depuis la 0.43,
+                # et les anciens sont reclassés au démarrage
+                # (`perimetre_backfill`). Un payload de ces types encore
+                # dépourvu de périmètre n'est donc pas classé : l'accepter
+                # ferait remonter un contact ou un document du client A chez le
+                # client B — la fuite même que ce chantier ferme.
                 #
-                # C'est aussi ce qui rend le reclassement en tâche de fond
-                # inoffensif : pendant qu'il tourne, on est fermé, jamais ouvert.
+                # C'est ce qui rend le reclassement en tâche de fond
+                # inoffensif : pendant qu'il tourne, on est fermé, jamais
+                # ouvert. Les autres souvenirs (profil, types futurs) restent
+                # visibles plutôt que de disparaître sans prévenir.
                 scope_conditions.append(
                     Filter(
                         must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))],
                         must_not=[
-                            FieldCondition(key="type", match=MatchValue(value="file"))
+                            FieldCondition(key="type", match=MatchValue(value=t))
+                            for t in TYPES_RECLASSES
                         ],
                     )
                 )

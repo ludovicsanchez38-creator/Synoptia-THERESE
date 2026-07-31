@@ -95,6 +95,12 @@ async def _embed_contact(contact: Contact) -> None:
                 "name": contact.display_name,
                 "company": contact.company,
                 "email": contact.email,
+                # 0.43 : sans périmètre dans le payload, l'embedding d'un
+                # contact de projet remontait dans le contexte de TOUTES les
+                # conversations — la cloison SQL de `read_contact` était
+                # contournée par le RAG.
+                "scope": contact.scope or "global",
+                "scope_id": contact.scope_id,
             },
         )
         logger.debug(f"Embedded contact {contact.id}")
@@ -118,6 +124,8 @@ async def _embed_project(project: Project) -> None:
                 "name": project.name,
                 "status": project.status,
                 "budget": project.budget,
+                "scope": project.scope or "global",
+                "scope_id": project.scope_id,
             },
         )
         logger.debug(f"Embedded project {project.id}")
