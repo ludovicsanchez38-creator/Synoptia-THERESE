@@ -123,6 +123,48 @@ class TestLeContexteDuChatEstCloisonne:
         assert appels and appels[0].get("scope") is None
 
 
+class TestLaFrontiereEchoueFermee:
+    @pytest.mark.asyncio
+    async def test_un_rattachement_illisible_ne_rouvre_pas_la_memoire(
+        self, db_session, monkeypatch
+    ):
+        """Finding MAJEUR de la revue : la cloison s'élargissait sur incident.
+
+        La première version retombait sur une recherche globale dès que la
+        lecture du rattachement échouait. Une simple erreur SQLite transitoire
+        transformait donc une conversation cloisonnée en conversation ouverte,
+        sans que rien ne le signale — le contexte d'un autre client pouvait
+        être injecté.
+
+        Une frontière de confidentialité doit échouer FERMÉE.
+        """
+        from app.routers import chat as chat_router
+
+        appels: list[dict] = []
+
+        async def faux_search(**kwargs):
+            appels.append(kwargs)
+            return []
+
+        faux_qdrant = type("Faux", (), {"async_search": staticmethod(faux_search)})()
+        monkeypatch.setattr(chat_router, "get_qdrant_service", lambda: faux_qdrant)
+
+        class SessionQuiCasse:
+            async def get(self, *_args, **_kwargs):
+                raise RuntimeError("base momentanément indisponible")
+
+        await chat_router._get_memory_context(
+            "question", conversation_id="conv-x", session=SessionQuiCasse()
+        )
+
+        assert appels, "aucune recherche lancée"
+        assert appels[0].get("scope") is not None, (
+            "la recherche est repartie en mode global sur incident : une "
+            "conversation cloisonnée peut recevoir le contexte d'un autre client"
+        )
+        assert appels[0].get("scope_id") == chat_router._PERIMETRE_INDETERMINE
+
+
 class TestLeCablageReelDuChat:
     def test_tous_les_appels_du_chat_transmettent_la_conversation(self):
         """Le paramètre ne sert à rien si personne ne le passe.
@@ -156,15 +198,26 @@ class TestLeCablageReelDuChat:
 
         assert appels, "aucun appel trouvé : le test ne prouverait rien"
 
-        sans_perimetre = [
-            noeud.lineno
-            for noeud in appels
-            if "conversation_id" not in {kw.arg for kw in noeud.keywords}
-        ]
-        assert not sans_perimetre, (
-            f"appels sans périmètre aux lignes {sans_perimetre} : la recherche "
-            "mémoire y reste non cloisonnée, un document d'un autre projet peut "
-            "être injecté"
+        # Les DEUX arguments sont nécessaires : sans `session`,
+        # `_perimetre_de_conversation` rend `(None, None)` et la cloison ne
+        # s'applique pas. La première version de ce test n'exigeait que
+        # `conversation_id` — elle restait verte avec un câblage cassé (relevé
+        # en revue). On vérifie aussi que les valeurs ne sont pas des littéraux
+        # `None`, qui satisferaient la présence du mot-clé sans rien cloisonner.
+        defauts: list[str] = []
+        for noeud in appels:
+            passes = {kw.arg: kw.value for kw in noeud.keywords}
+            for requis in ("conversation_id", "session"):
+                valeur = passes.get(requis)
+                if valeur is None:
+                    defauts.append(f"ligne {noeud.lineno} : `{requis}` absent")
+                elif isinstance(valeur, ast.Constant) and valeur.value is None:
+                    defauts.append(f"ligne {noeud.lineno} : `{requis}=None` en dur")
+
+        assert not defauts, (
+            "la recherche mémoire n'est pas cloisonnée — "
+            + " ; ".join(defauts)
+            + ". Un document d'un autre projet peut être injecté."
         )
 
 
@@ -223,6 +276,39 @@ class TestRattacherUneConversation:
         assert reponse.status_code == 404, reponse.text
 
 
+class TestSuppressionDUnProjet:
+    def test_supprimer_un_projet_detache_ses_conversations(self, client):
+        """Finding de la revue : `project_id` n'est pas une clé étrangère.
+
+        Sans ce ménage, la conversation reste cloisonnée sur un identifiant
+        supprimé : le backend continue de filtrer dessus — donc plus aucun
+        document — pendant que le sélecteur, ne trouvant plus le projet dans la
+        liste, affiche « Toute la mémoire ». L'écran mentirait sur la cloison.
+        """
+        projet = client.post(
+            "/api/memory/projects", json={"name": "Projet éphémère", "status": "active"}
+        )
+        project_id = projet.json()["id"]
+
+        conversation = client.post("/api/chat/conversations", json={"title": "Suivi"})
+        conversation_id = conversation.json()["id"]
+        client.patch(
+            f"/api/chat/conversations/{conversation_id}/project",
+            json={"project_id": project_id},
+        )
+
+        suppression = client.delete(f"/api/memory/projects/{project_id}")
+        assert suppression.status_code == 200, suppression.text
+
+        relue = client.get(f"/api/chat/conversations/{conversation_id}")
+        assert relue.status_code == 200
+        assert relue.json()["project_id"] is None, (
+            "la conversation reste rattachée à un projet supprimé : elle ne "
+            "verra plus aucun document, alors que l'interface annoncera "
+            "« Toute la mémoire »"
+        )
+
+
 class TestMigrationDesBasesExistantes:
     def test_la_colonne_est_ajoutee_a_une_base_deja_installee(self, tmp_path):
         """Le piège documenté : `create_all()` n'ajoute AUCUNE colonne.
@@ -249,6 +335,12 @@ class TestMigrationDesBasesExistantes:
 
         with sqlite3.connect(chemin) as conn:
             colonnes = {row[1] for row in conn.execute("PRAGMA table_info(conversations)")}
+            index = {row[1] for row in conn.execute("PRAGMA index_list(conversations)")}
+        assert "ix_conversations_project_id" in index, (
+            "l'index manque sur une base existante : `Field(index=True)` ne "
+            "s'applique qu'à `create_all()`, jamais à un ALTER TABLE. Le "
+            "filtrage par projet balaierait toute la table."
+        )
         assert "project_id" in colonnes, (
             "la colonne manque sur une base existante : la lecture des "
             "conversations échouerait après mise à jour"

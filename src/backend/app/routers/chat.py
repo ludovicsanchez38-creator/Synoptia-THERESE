@@ -300,6 +300,12 @@ Chemin: {path}
 # ============================================================
 
 
+# Périmètre sentinelle : ne correspond à AUCUN document. Sert quand le
+# rattachement d'une conversation est illisible — mieux vaut répondre sans
+# contexte documentaire qu'avec le contexte d'un autre client (échec fermé).
+_PERIMETRE_INDETERMINE = "__perimetre_indetermine__"
+
+
 async def _perimetre_de_conversation(
     conversation_id: str | None, session: AsyncSession | None
 ) -> tuple[str | None, str | None]:
@@ -314,10 +320,20 @@ async def _perimetre_de_conversation(
     try:
         conversation = await session.get(Conversation, conversation_id)
     except Exception:
-        # Lire un rattachement ne doit jamais empêcher de répondre : au pire on
-        # retombe sur le comportement non cloisonné d'avant la 0.43.
-        logger.warning("Périmètre de conversation illisible, recherche non cloisonnée")
-        return None, None
+        # ÉCHEC FERMÉ (revue 0.43). La version précédente retombait sur une
+        # recherche globale : une simple erreur SQLite transitoire transformait
+        # alors une conversation cloisonnée en conversation ouverte, sans que
+        # rien ne le signale. Une frontière de confidentialité qui s'élargit en
+        # silence sur incident n'en est pas une.
+        #
+        # `_PERIMETRE_INDETERMINE` ne correspond à aucun document : la
+        # conversation répond sans contexte documentaire plutôt qu'avec le
+        # contexte d'un autre client.
+        logger.warning(
+            "Périmètre de conversation illisible : aucun contexte documentaire "
+            "ne sera injecté (échec fermé)"
+        )
+        return "project", _PERIMETRE_INDETERMINE
     if conversation is None or not conversation.project_id:
         return None, None
     return "project", conversation.project_id
