@@ -271,7 +271,39 @@ class QdrantService:
             )
 
         # Filter by scope (E3-05)
-        if scope:
+        if scope == "all":
+            # Transversal explicite : tous les dossiers et les souvenirs
+            # généraux, plus ceux de LA conversation courante — jamais ceux
+            # d'une autre conversation. Ne poser AUCUN filtre (le comportement
+            # précédent) laissait remonter les contacts enregistrés dans
+            # n'importe quelle conversation, alors que le sélecteur annonce
+            # « Tous les projets ».
+            transversal: list[Filter | FieldCondition | IsEmptyCondition] = [
+                FieldCondition(key="scope", match=MatchValue(value="global")),
+                FieldCondition(key="scope", match=MatchValue(value="project")),
+                Filter(
+                    must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))],
+                    must_not=[
+                        FieldCondition(key="type", match=MatchValue(value=t))
+                        for t in TYPES_RECLASSES
+                    ],
+                ),
+            ]
+            if conversation_id:
+                transversal.append(
+                    Filter(
+                        must=[
+                            FieldCondition(
+                                key="scope", match=MatchValue(value="conversation")
+                            ),
+                            FieldCondition(
+                                key="scope_id", match=MatchValue(value=conversation_id)
+                            ),
+                        ]
+                    )
+                )
+            conditions.append(Filter(should=transversal))
+        elif scope:
             # Annotée : la liste mêle `Filter`, `FieldCondition` et
             # `IsEmptyCondition`. Sans ce type, mypy l'infère en `list[Filter]`
             # dès le premier élément et refuse les suivants.
