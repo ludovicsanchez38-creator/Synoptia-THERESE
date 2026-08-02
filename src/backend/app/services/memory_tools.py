@@ -134,13 +134,58 @@ MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL, READ_CONTACT_TOOL]
 # Deduplication helpers (anti creation en masse)
 # ============================================================
 
-async def _find_existing_project(session: AsyncSession, name: str) -> Project | None:
+def _cloison_projets(
+    requete: Any,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None = None,
+) -> Any:
+    """Restreint une requête projets au périmètre — symétrique des contacts.
+
+    Oubli relevé en revue : la déduplication cherchait le nom dans TOUTE la
+    table. Créer « Chantier confidentiel » depuis le dossier B renvoyait donc
+    l'identifiant de celui du dossier A avec `already_existed`, révélant son
+    existence, et refusait la création du projet propre à B.
+    """
+    generaux = or_(Project.scope == "global", Project.scope.is_(None))
+    if conversation_id:
+        generaux = or_(
+            generaux,
+            (Project.scope == "conversation") & (Project.scope_id == conversation_id),
+        )
+    if scope == "project" and scope_id:
+        return requete.where(
+            or_(generaux, (Project.scope == "project") & (Project.scope_id == scope_id))
+        )
+    if scope == "global":
+        return requete.where(generaux)
+    if scope == "all":
+        # Transversal explicite : tous les projets et les documents généraux,
+        # MAIS pas les souvenirs privés d'autres conversations.
+        return requete.where(
+            or_(generaux, Project.scope == "project")
+        )
+    return requete
+
+
+async def _find_existing_project(
+    session: AsyncSession,
+    name: str,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
+) -> Project | None:
     """Retourne un projet existant de meme nom (insensible casse/espaces)."""
     norm = name.strip().lower()
     if not norm:
         return None
     result = await session.execute(
-        select(Project).where(func.lower(func.trim(Project.name)) == norm)
+        _cloison_projets(
+            select(Project).where(func.lower(func.trim(Project.name)) == norm),
+            scope,
+            scope_id,
+            conversation_id,
+        )
     )
     return result.scalars().first()
 
@@ -180,6 +225,13 @@ def _cloison_contacts(
         # n'avoir cloisonné personne. Une conversation libre ne voit que les
         # contacts généraux et ceux de sa propre conversation.
         return requete.where(generaux)
+    if scope == "all":
+        # « Tous les projets » : le libellé engage. Il donne accès aux
+        # dossiers, PAS aux souvenirs privés des autres conversations — un
+        # contact enregistré dans une conversation y reste (revue de clôture :
+        # ce mode rendait coordonnées et notes de n'importe quelle
+        # conversation).
+        return requete.where(or_(generaux, Contact.scope == "project"))
     # `scope is None` : appel hors conversation (scripts, tests, chemins
     # historiques). Pas de cloison, comportement d'avant la 0.43.
     return requete
@@ -357,7 +409,9 @@ async def execute_create_project(
 
     # Deduplication : reutilise un projet de meme nom au lieu de creer un doublon
     # (regression "creation en masse" via les commandes / interpretees par le LLM).
-    existing = await _find_existing_project(session, name)
+    existing = await _find_existing_project(
+        session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+    )
     if existing is not None:
         return json.dumps({
             "success": True,

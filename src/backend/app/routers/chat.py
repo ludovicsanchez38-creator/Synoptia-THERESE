@@ -359,8 +359,12 @@ async def _perimetre_de_conversation(
         # visible au premier oubli.
         return "project", conversation.project_id
     if politique == "all":
-        # Choix explicite et affiché, et seulement hors rattachement.
-        return None, None
+        # « Tous les projets », choix explicite et affiché. Il ouvre les
+        # DOSSIERS, pas les souvenirs privés des autres conversations : rendre
+        # `(None, None)` retirait toute cloison et laissait remonter les
+        # contacts enregistrés dans n'importe quelle conversation (revue de
+        # clôture). Le libellé engage — il doit dire vrai.
+        return "all", None
     # MOINDRE PRIVILÈGE (défaut) : documents généraux uniquement. Une
     # conversation qui n'a rien demandé ne pioche pas dans les dossiers clients.
     # `include_global` du filtre rend déjà les documents globaux ; passer

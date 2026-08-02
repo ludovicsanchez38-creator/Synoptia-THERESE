@@ -537,3 +537,140 @@ class TestLeRagRetrouveLesSouvenirsDeSaConversation:
             "le RAG ignore les souvenirs de la conversation courante : un "
             "contact tout juste validé y reste introuvable"
         )
+
+
+class TestLeModeTransversalNOuvrePasLesAutresConversations:
+    """BLOQUANT de la revue de clôture : « Tous les projets » ouvrait tout.
+
+    Le mode transversal rendait `(None, None)`, donc AUCUN filtre : les
+    contacts enregistrés dans n'importe quelle conversation remontaient, avec
+    coordonnées et notes. Le sélecteur annonce « Tous les projets » — il doit
+    ouvrir les dossiers, pas la vie privée des autres conversations.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_contact_d_une_autre_conversation_reste_prive(self, db_session):
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Contact(
+                id="c-priv", first_name="Hugo", last_name="Privé",
+                phone="0655555555", notes="secret conv A",
+                scope="conversation", scope_id="conv-a",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "read_contact", {"query": "Hugo"}, db_session,
+            scope="all", conversation_id="conv-x",
+        )
+
+        assert "0655555555" not in resultat, (
+            "« Tous les projets » divulgue un contact d'une autre conversation"
+        )
+        assert "secret conv A" not in resultat
+
+    @pytest.mark.asyncio
+    async def test_le_mode_transversal_voit_bien_tous_les_projets(self, db_session):
+        """Garde-fou : le mode doit tenir sa promesse."""
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Contact(
+                id="c-p1", first_name="Iris", last_name="Dossier",
+                phone="0666666666", scope="project", scope_id="projet-z",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "read_contact", {"query": "Iris"}, db_session,
+            scope="all", conversation_id="conv-x",
+        )
+        assert "0666666666" in resultat, (
+            "le mode transversal ne voit pas les dossiers : il ment aussi"
+        )
+
+    def test_le_filtre_vectoriel_cloisonne_aussi_le_mode_transversal(self):
+        from unittest.mock import MagicMock
+
+        from app.services import qdrant as module
+
+        module.embed_text = lambda _t: [0.0] * 768
+        service = module.QdrantService.__new__(module.QdrantService)
+        faux = MagicMock()
+        faux.query_points.return_value = MagicMock(points=[])
+        service._client = faux
+        service._initialized = True
+
+        service.search(query="x", scope="all", conversation_id="conv-x")
+
+        filtre = faux.query_points.call_args.kwargs["query_filter"]
+        assert filtre is not None, (
+            "le mode transversal ne pose aucun filtre : les souvenirs de "
+            "toutes les conversations remontent"
+        )
+        rendu = filtre.model_dump(exclude_none=True)
+        assert "conv-x" in str(rendu), "la conversation courante devrait rester lisible"
+
+
+class TestLaDeduplicationDesProjetsEstCloisonnee:
+    @pytest.mark.asyncio
+    async def test_creer_un_projet_homonyme_ne_revele_pas_celui_d_un_autre(
+        self, db_session
+    ):
+        """Même fuite que pour les contacts, oubliée sur les projets.
+
+        Depuis le dossier B, créer « Chantier confidentiel » renvoyait
+        l'identifiant de celui du dossier A avec `already_existed: true` — donc
+        son existence — et refusait la création du projet propre à B.
+        """
+        import json
+
+        from app.models.entities import Project
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Project(
+                id="secret-a", name="Chantier confidentiel",
+                scope="project", scope_id="projet-a",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "create_project", {"name": "Chantier confidentiel"}, db_session,
+            scope="project", scope_id="projet-b", conversation_id="conv-b",
+        )
+
+        assert "secret-a" not in resultat, (
+            "l'identifiant du projet d'un autre dossier est divulgué"
+        )
+        assert not json.loads(resultat).get("already_existed"), (
+            "la création est refusée à cause d'un homonyme invisible"
+        )
+
+    @pytest.mark.asyncio
+    async def test_la_directive_inline_projet_porte_aussi_le_perimetre(
+        self, db_session
+    ):
+        """Troisième porte, annoncée mais jamais testée (relevé en revue)."""
+        from app.models.entities import Project
+        from app.services.slash_commands import execute_slash_command_outcome
+        from sqlmodel import select
+
+        # `[projet: ...]` passe par le même exécuteur que la commande slash.
+        await execute_slash_command_outcome(
+            "projet", "Dossier inline", db_session,
+            scope="project", scope_id="projet-inline", conversation_id="conv-i",
+        )
+
+        cree = (
+            await db_session.execute(
+                select(Project).where(Project.name == "Dossier inline")
+            )
+        ).scalar_one()
+        assert cree.scope == "project" and cree.scope_id == "projet-inline"

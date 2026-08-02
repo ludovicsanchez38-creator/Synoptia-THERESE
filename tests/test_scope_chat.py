@@ -121,8 +121,13 @@ class TestLeContexteDuChatEstCloisonne:
     ):
         """Le moindre privilège ne doit pas supprimer l'usage transversal.
 
-        Chercher dans toute la mémoire reste légitime — cela devient un choix
+        Chercher dans tous les DOSSIERS reste légitime — cela devient un choix
         assumé, affiché, au lieu d'être le comportement par défaut silencieux.
+
+        Révisé en revue de clôture : ce mode ne rend plus `(None, None)`, qui
+        retirait toute cloison et laissait remonter les souvenirs privés des
+        AUTRES conversations. Il demande explicitement le périmètre `all`, que
+        le filtre traduit en « tous les dossiers + généraux + MA conversation ».
         """
         from app.models.entities import Conversation
         from app.routers import chat as chat_router
@@ -146,8 +151,8 @@ class TestLeContexteDuChatEstCloisonne:
             "compare les dossiers", conversation_id="conv-transverse", session=db_session
         )
 
-        assert appels and appels[0].get("scope") is None, (
-            "le mode transversal explicite doit lever la cloison"
+        assert appels and appels[0].get("scope") == "all", (
+            "le mode transversal doit être demandé EXPLICITEMENT au filtre"
         )
 
     @pytest.mark.asyncio
