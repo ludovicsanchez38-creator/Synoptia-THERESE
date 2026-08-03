@@ -134,6 +134,29 @@ MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL, READ_CONTACT_TOOL]
 # Deduplication helpers (anti creation en masse)
 # ============================================================
 
+def _perimetre_de_creation(
+    scope: str | None, scope_id: str | None, conversation_id: str | None
+) -> tuple[str, str | None]:
+    """Où ranger une entité créée depuis le chat.
+
+    Revue de clôture : tout ce qui n'était pas `project` devenait `global`,
+    donc PUBLIÉ PARTOUT. Depuis une conversation « Tous les projets », créer un
+    contact le rendait visible dans tous les dossiers et toutes les
+    conversations, sans que personne ne l'ait demandé.
+
+    Une création sans dossier explicite reste donc dans SA conversation —
+    même règle que les contacts suggérés par l'interface
+    (`EntitySuggestion.tsx`). L'utilisateur peut toujours la promouvoir
+    ensuite ; l'inverse n'est pas rattrapable.
+    """
+    if scope == "project" and scope_id:
+        return "project", scope_id
+    if conversation_id:
+        return "conversation", conversation_id
+    # Aucun contexte connu (scripts, appels historiques) : comportement d'avant.
+    return "global", None
+
+
 def _cloison_projets(
     requete: Any,
     scope: str | None,
@@ -322,6 +345,7 @@ async def execute_create_contact(
         }, ensure_ascii=False)
 
     try:
+        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
         contact = Contact(
             first_name=first_name or None,
             last_name=last_name or None,
@@ -330,11 +354,10 @@ async def execute_create_contact(
             phone=arguments.get("phone"),
             notes=arguments.get("notes"),
             last_interaction=datetime.now(UTC),
-            # 0.43 : un contact créé DEPUIS une conversation de projet
-            # appartient à ce projet. Sans cela il naissait global, donc
-            # visible partout — la cloison n'aurait tenu que sur l'existant.
-            scope="project" if (scope == "project" and scope_id) else "global",
-            scope_id=scope_id if (scope == "project" and scope_id) else None,
+            # Une entité créée depuis le chat appartient à son dossier, ou à
+            # défaut à SA conversation — jamais publiée partout par défaut.
+            scope=_perimetre_creation[0],
+            scope_id=_perimetre_creation[1],
         )
         session.add(contact)
         await session.flush()
@@ -422,16 +445,15 @@ async def execute_create_project(
         }, ensure_ascii=False)
 
     try:
+        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
         project = Project(
             name=name,
             description=arguments.get("description"),
             status=arguments.get("status", "active"),
             budget=arguments.get("budget"),
-            # 0.43 : même règle que les contacts. Un projet créé DEPUIS une
-            # conversation de dossier appartient à ce dossier ; sans cela il
-            # naissait global, donc son embedding remontait partout.
-            scope="project" if (scope == "project" and scope_id) else "global",
-            scope_id=scope_id if (scope == "project" and scope_id) else None,
+            # Même règle que les contacts.
+            scope=_perimetre_creation[0],
+            scope_id=_perimetre_creation[1],
         )
         session.add(project)
         await session.flush()
