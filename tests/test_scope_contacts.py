@@ -614,7 +614,30 @@ class TestLeModeTransversalNOuvrePasLesAutresConversations:
             "toutes les conversations remontent"
         )
         rendu = filtre.model_dump(exclude_none=True)
-        assert "conv-x" in str(rendu), "la conversation courante devrait rester lisible"
+        branches = next(
+            (c["should"] for c in rendu.get("must", []) if "should" in c), []
+        )
+        valeurs = {
+            (cond.get("key"), (cond.get("match") or {}).get("value"))
+            for branche in branches
+            for cond in branche.get("must", [branche])
+            if cond.get("key")
+        }
+
+        # Ce qu'il DOIT admettre : tous les dossiers, les souvenirs généraux,
+        # et la conversation courante.
+        assert ("scope", "project") in valeurs, "les dossiers devraient rester visibles"
+        assert ("scope", "global") in valeurs
+        assert ("scope_id", "conv-x") in valeurs
+
+        # Ce qu'il ne doit PAS admettre : une conversation quelconque. La
+        # branche `conversation` n'existe qu'appariée à l'identifiant courant.
+        conversations_admises = {
+            v for (k, v) in valeurs if k == "scope_id" and v and v.startswith("conv-")
+        }
+        assert conversations_admises == {"conv-x"}, (
+            f"d'autres conversations sont admises : {conversations_admises}"
+        )
 
 
 class TestLaDeduplicationDesProjetsEstCloisonnee:
@@ -649,8 +672,23 @@ class TestLaDeduplicationDesProjetsEstCloisonnee:
         assert "secret-a" not in resultat, (
             "l'identifiant du projet d'un autre dossier est divulgué"
         )
-        assert not json.loads(resultat).get("already_existed"), (
+        donnees = json.loads(resultat)
+        assert not donnees.get("already_existed"), (
             "la création est refusée à cause d'un homonyme invisible"
+        )
+        assert not donnees.get("error"), donnees
+
+        # La seconde ligne doit RÉELLEMENT exister : sans elle, on aurait juste
+        # remplacé une divulgation par un échec silencieux.
+        from sqlmodel import select
+
+        homonymes = (
+            await db_session.execute(
+                select(Project).where(Project.name == "Chantier confidentiel")
+            )
+        ).scalars().all()
+        assert len(homonymes) == 2, (
+            f"le projet propre au dossier B n'a pas été créé ({len(homonymes)} ligne(s))"
         )
 
     @pytest.mark.asyncio
@@ -674,3 +712,86 @@ class TestLaDeduplicationDesProjetsEstCloisonnee:
             )
         ).scalar_one()
         assert cree.scope == "project" and cree.scope_id == "projet-inline"
+
+
+class TestUneCreationNEstJamaisPublieeSansLeVouloir:
+    """DERNIER BLOQUANT de la revue : promotion silencieuse `all` → `global`.
+
+    Tout ce qui n'était pas `project` était rangé en `global`, donc PUBLIÉ
+    PARTOUT. Depuis une conversation « Tous les projets », créer un contact le
+    rendait visible dans tous les dossiers et toutes les conversations, sans
+    aucun choix explicite de publication.
+
+    Une création sans dossier reste dans SA conversation. L'utilisateur peut la
+    promouvoir ensuite ; l'inverse ne se rattrape pas.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_contact_cree_en_mode_transversal_reste_dans_sa_conversation(
+        self, db_session
+    ):
+        from app.models.entities import Contact
+        from app.services.memory_tools import execute_memory_tool
+        from sqlmodel import select
+
+        resultat = await execute_memory_tool(
+            "create_contact",
+            {"first_name": "Léa", "last_name": "Secret", "phone": "0612345678"},
+            db_session,
+            scope="all",
+            conversation_id="conv-a",
+        )
+        contact_id = json.loads(resultat)["contact_id"]
+
+        cree = (
+            await db_session.execute(select(Contact).where(Contact.id == contact_id))
+        ).scalar_one()
+        assert cree.scope == "conversation" and cree.scope_id == "conv-a", (
+            f"contact publié en {cree.scope} : il devient visible partout"
+        )
+
+        # Et concrètement : introuvable depuis une autre conversation.
+        ailleurs = await execute_memory_tool(
+            "read_contact", {"query": "Léa"}, db_session,
+            scope="global", conversation_id="conv-b",
+        )
+        assert "0612345678" not in ailleurs, (
+            "le contact créé en mode transversal fuit vers une autre conversation"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_projet_cree_en_mode_transversal_reste_dans_sa_conversation(
+        self, db_session
+    ):
+        from app.models.entities import Project
+        from app.services.memory_tools import execute_memory_tool
+        from sqlmodel import select
+
+        await execute_memory_tool(
+            "create_project", {"name": "Dossier transversal"}, db_session,
+            scope="all", conversation_id="conv-a",
+        )
+
+        cree = (
+            await db_session.execute(
+                select(Project).where(Project.name == "Dossier transversal")
+            )
+        ).scalar_one()
+        assert cree.scope == "conversation" and cree.scope_id == "conv-a"
+
+    def test_les_pieces_jointes_suivent_la_meme_regle(self):
+        """Le chat ne doit pas publier une pièce jointe faute de dossier."""
+        import pathlib
+
+        chemin = (
+            pathlib.Path(__file__).resolve().parents[1]
+            / "src" / "backend" / "app" / "routers" / "chat.py"
+        )
+        source = chemin.read_text(encoding="utf-8")
+        assert 'perimetre_fichiers, perimetre_fichiers_id = "conversation"' in source, (
+            "une pièce jointe sans dossier redevient globale : elle sera "
+            "consultable depuis tous les autres projets"
+        )
+        assert 'else "global"' not in source.split("perimetre_fichiers")[1][:200], (
+            "le repli global sur les pièces jointes est toujours là"
+        )

@@ -1139,8 +1139,14 @@ async def send_message(
     _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
         conversation.id, session
     )
-    perimetre_fichiers = _perimetre_conv if _perimetre_conv == "project" else "global"
-    perimetre_fichiers_id = _perimetre_conv_id if _perimetre_conv == "project" else None
+    # Même règle que les contacts et les projets : une pièce jointe sans dossier
+    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # consultable depuis tous les dossiers — y compris déposée depuis une
+    # conversation « Tous les projets » (revue de clôture).
+    if _perimetre_conv == "project" and _perimetre_conv_id:
+        perimetre_fichiers, perimetre_fichiers_id = "project", _perimetre_conv_id
+    else:
+        perimetre_fichiers, perimetre_fichiers_id = "conversation", conversation.id
 
 
     # Check for file commands and add file context (0e : parité stream,
@@ -1451,8 +1457,14 @@ async def _do_stream_response(
     _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
         conversation_id, session
     )
-    perimetre_fichiers = _perimetre_conv if _perimetre_conv == "project" else "global"
-    perimetre_fichiers_id = _perimetre_conv_id if _perimetre_conv == "project" else None
+    # Même règle que les contacts et les projets : une pièce jointe sans dossier
+    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # consultable depuis tous les dossiers — y compris déposée depuis une
+    # conversation « Tous les projets » (revue de clôture).
+    if _perimetre_conv == "project" and _perimetre_conv_id:
+        perimetre_fichiers, perimetre_fichiers_id = "project", _perimetre_conv_id
+    else:
+        perimetre_fichiers, perimetre_fichiers_id = "conversation", conversation_id
 
 
     # Check for file commands and add file context.
