@@ -59,6 +59,28 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
  * Hook to sync conversations from backend on app startup.
  * Loads conversation list and optionally restores last active conversation.
  */
+/**
+ * Traduit une conversation du backend vers le format local.
+ *
+ * Extrait du hook (0.43) pour être testable : le mapping perdait `project_id`,
+ * si bien que l'en-tête du chat annonçait « Toute la mémoire » alors que le
+ * backend cloisonnait réellement sur un projet. Un affichage qui ment sur la
+ * cloison est pire que pas de cloison du tout.
+ */
+export function formatConversationFromResponse(conv: ConversationResponse) {
+  return {
+    id: conv.id,
+    title: conv.title || 'Nouvelle conversation',
+    messages: [] as Message[], // Messages loaded on demand
+    createdAt: new Date(conv.created_at),
+    updatedAt: new Date(conv.updated_at),
+    messageCount: conv.message_count,
+    synced: true,
+    projectId: conv.project_id ?? null,
+    memoryScope: conv.memory_scope ?? 'global',
+  };
+}
+
 export function useConversationSync() {
   const { setConversations, setConversationMessages, currentConversationId, conversations } = useChatStore();
   const initialSyncDone = useRef(false);
@@ -70,15 +92,7 @@ export function useConversationSync() {
       const backendConversations = await listConversations(50, 0);
 
       // Convert backend format to local format
-      const syncedConversations = backendConversations.map((conv: ConversationResponse) => ({
-        id: conv.id,
-        title: conv.title || 'Nouvelle conversation',
-        messages: [], // Messages loaded on demand
-        createdAt: new Date(conv.created_at),
-        updatedAt: new Date(conv.updated_at),
-        messageCount: conv.message_count,
-        synced: true,
-      }));
+      const syncedConversations = backendConversations.map(formatConversationFromResponse);
 
       // Get current local conversations (from Zustand state)
       const localConversations = useChatStore.getState().conversations;

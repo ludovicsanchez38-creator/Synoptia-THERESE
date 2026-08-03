@@ -1,0 +1,299 @@
+"""
+0.43 - Reclasser les documents indexés avant que le périmètre existe.
+
+Le filtre de recherche accepte trois branches : le projet demandé, `global`, et
+les payloads SANS clé `scope`. Cette troisième branche a été ajoutée en 0.42
+pour ne pas faire disparaître d'un coup toute la mémoire documentaire
+existante.
+
+Elle a un effet de bord que la revue a mis au jour : un document du projet A
+indexé AVANT la 0.42 n'a pas de `scope` dans son payload. Il est donc traité
+comme global — et remonte dans une conversation du projet B. La cloison ne le
+couvre pas.
+
+La base, elle, sait : `FileMetadata.scope` / `scope_id` sont renseignés depuis
+longtemps. Le payload vectoriel est le seul à l'ignorer. Il suffit donc de le
+reclasser depuis la base, sans toucher aux embeddings — donc sans réencoder
+quoi que ce soit, et sans jamais rien supprimer.
+
+Ce qui reste inclassable (un point vectoriel sans ligne en base) est marqué
+explicitement plutôt que promu global : un document dont on ignore le
+rattachement ne doit pas devenir visible partout.
+"""
+import pytest
+
+
+class FauxQdrant:
+    """Un Qdrant en mémoire, réduit à ce que le backfill utilise."""
+
+    def __init__(self, points: dict[str, dict]):
+        # points : id -> payload
+        self.points = points
+        self.payloads_ecrits: list[tuple[list[str], dict]] = []
+        self.suppressions: list[str] = []
+
+    def points_sans_perimetre(self) -> list[tuple[str, dict]]:
+        return [(pid, p) for pid, p in self.points.items() if "scope" not in p]
+
+    def definir_perimetre(self, point_ids: list[str], scope: str, scope_id: str | None):
+        self.payloads_ecrits.append((point_ids, {"scope": scope, "scope_id": scope_id}))
+        for pid in point_ids:
+            self.points[pid]["scope"] = scope
+            self.points[pid]["scope_id"] = scope_id
+
+    def delete_by_entity(self, entity_id: str) -> int:
+        self.suppressions.append(entity_id)
+        return 0
+
+
+class TestBackfillDuPerimetre:
+    @pytest.mark.asyncio
+    async def test_un_document_de_projet_est_reclasse(self, db_session, monkeypatch):
+        """Le cas de la fuite : legacy + projet en base = payload à reclasser."""
+        from app.models.entities import FileMetadata
+        from app.services import perimetre_backfill
+
+        fichier = FileMetadata(
+            id="fic-a",
+            path="/tmp/rapport-a.txt",
+            name="rapport-a.txt",
+            extension=".txt",
+            size=10,
+            scope="project",
+            scope_id="projet-a",
+        )
+        db_session.add(fichier)
+        await db_session.commit()
+
+        faux = FauxQdrant({
+            "p1": {"entity_id": "fic-a", "type": "file"},
+            "p2": {"entity_id": "fic-a", "type": "file"},
+        })
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert reclasses == 2, "les deux fragments du document devaient être reclassés"
+        assert faux.points["p1"]["scope"] == "project"
+        assert faux.points["p1"]["scope_id"] == "projet-a"
+        assert faux.suppressions == [], "aucun vecteur ne doit être supprimé"
+
+    @pytest.mark.asyncio
+    async def test_un_document_global_est_marque_global(self, db_session, monkeypatch):
+        from app.models.entities import FileMetadata
+        from app.services import perimetre_backfill
+
+        db_session.add(
+            FileMetadata(
+                id="fic-g", path="/tmp/notes.txt", name="notes.txt",
+                extension=".txt", size=10, scope="global", scope_id=None,
+            )
+        )
+        await db_session.commit()
+
+        faux = FauxQdrant({"p1": {"entity_id": "fic-g", "type": "file"}})
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert faux.points["p1"]["scope"] == "global"
+
+    @pytest.mark.asyncio
+    async def test_un_point_orphelin_n_est_pas_promu_global(
+        self, db_session, monkeypatch
+    ):
+        """Un point sans ligne en base : on ignore son rattachement.
+
+        Le promouvoir global le rendrait visible dans TOUS les projets. On le
+        marque inclassable, ce qui l'exclut des recherches cloisonnées sans
+        jamais le supprimer.
+        """
+        from app.services import perimetre_backfill
+
+        faux = FauxQdrant({"p1": {"entity_id": "fichier-disparu", "type": "file"}})
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert faux.points["p1"]["scope"] == perimetre_backfill.SCOPE_INCLASSABLE, (
+            "un document au rattachement inconnu ne doit pas devenir visible "
+            "dans tous les projets"
+        )
+        assert faux.suppressions == []
+
+
+    @pytest.mark.asyncio
+    async def test_les_contacts_et_projets_sont_reclasses_aussi(
+        self, db_session, monkeypatch
+    ):
+        """DÉCISION ÉTENDUE en revue de clôture.
+
+        Une version précédente ne reclassait que les documents et laissait
+        contacts et projets sans périmètre — donc acceptés par la branche
+        « payload sans périmètre » de toute recherche cloisonnée. Leur
+        embedding faisait ainsi remonter un contact du client A dans une
+        conversation du client B : la cloison SQL de `read_contact` était
+        contournée par le RAG.
+
+        Chaque type lit son rattachement dans SA table.
+        """
+        from app.models.entities import Contact, Project
+        from app.services import perimetre_backfill
+
+        db_session.add(
+            Contact(id="ct-a", first_name="Amélie", scope="project", scope_id="projet-a")
+        )
+        db_session.add(Project(id="pj-a", name="Chantier A", scope="global"))
+        await db_session.commit()
+
+        faux = FauxQdrant({
+            "c1": {"entity_id": "ct-a", "type": "contact"},
+            "pr1": {"entity_id": "pj-a", "type": "project"},
+        })
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert reclasses == 2
+        assert faux.points["c1"]["scope"] == "project"
+        assert faux.points["c1"]["scope_id"] == "projet-a"
+        assert faux.points["pr1"]["scope"] == "global"
+
+    @pytest.mark.asyncio
+    async def test_un_type_non_gere_est_laisse_intact(self, db_session, monkeypatch):
+        """Ne jamais marquer inclassable un type qu'on ne sait pas classer.
+
+        Le profil utilisateur — et tout type ajouté plus tard — n'a pas de table
+        de rattachement. Le marquer le ferait disparaître de la mémoire
+        courante : c'est la régression corrigée en revue.
+        """
+        from app.services import perimetre_backfill
+
+        faux = FauxQdrant({"p1": {"entity_id": "profil", "type": "profile"}})
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        reclasses = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert reclasses == 0
+        assert "scope" not in faux.points["p1"], (
+            "un type non géré a été classé : il disparaîtrait de la mémoire"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_backfill_est_idempotent(self, db_session, monkeypatch):
+        """Il tourne au démarrage : un second passage ne doit rien réécrire."""
+        from app.models.entities import FileMetadata
+        from app.services import perimetre_backfill
+
+        db_session.add(
+            FileMetadata(
+                id="fic-a", path="/tmp/a.txt", name="a.txt",
+                extension=".txt", size=10, scope="project", scope_id="projet-a",
+            )
+        )
+        await db_session.commit()
+
+        faux = FauxQdrant({"p1": {"entity_id": "fic-a", "type": "file"}})
+        monkeypatch.setattr(perimetre_backfill, "get_qdrant_service", lambda: faux)
+
+        premier = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+        second = await perimetre_backfill.reclasser_payloads_sans_perimetre(db_session)
+
+        assert premier == 1
+        assert second == 0, "le second passage réécrit des payloads déjà classés"
+
+
+class TestLeFiltreNAcceptePlusLInclassable:
+    def test_un_payload_inclassable_est_exclu_des_recherches_de_projet(self):
+        """Sinon le backfill n'aurait rien changé pour ces points."""
+        from unittest.mock import MagicMock
+
+        from app.services import qdrant as module
+
+        module.embed_text = lambda _t: [0.0] * 768
+        service = module.QdrantService.__new__(module.QdrantService)
+        faux_client = MagicMock()
+        faux_client.query_points.return_value = MagicMock(points=[])
+        service._client = faux_client
+        service._initialized = True
+
+        service.search(query="x", scope="project", scope_id="projet-b")
+
+        filtre = faux_client.query_points.call_args.kwargs["query_filter"].model_dump(
+            exclude_none=True
+        )
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        valeurs = {
+            (cond.get("key"), (cond.get("match") or {}).get("value"))
+            for branche in branches
+            for cond in branche.get("must", [branche])
+            if cond.get("key")
+        }
+        from app.services.perimetre_backfill import SCOPE_INCLASSABLE
+
+        assert ("scope", SCOPE_INCLASSABLE) not in valeurs
+
+
+class TestLaBrancheLegacyEstRestreinte:
+    """Pendant le reclassement, on doit être fermé — jamais ouvert.
+
+    Le reclassement tourne en tâche de fond au démarrage. Tant qu'il n'a pas
+    fini, des documents legacy restent sans périmètre. Si le filtre les
+    acceptait, un document du client A remonterait chez le client B pendant
+    toute la durée du reclassement.
+
+    Mais la même branche protège les souvenirs NON documentaires (contacts,
+    projets, profil), qui n'ont jamais porté de périmètre et n'en porteront
+    pas : leur cloisonnement est en SQL. Les exclure amputerait la mémoire
+    courante. La branche doit donc distinguer les deux.
+    """
+
+    @staticmethod
+    def _filtre_emis():
+        from unittest.mock import MagicMock
+
+        from app.services import qdrant as module
+
+        module.embed_text = lambda _t: [0.0] * 768
+        service = module.QdrantService.__new__(module.QdrantService)
+        faux_client = MagicMock()
+        faux_client.query_points.return_value = MagicMock(points=[])
+        service._client = faux_client
+        service._initialized = True
+        service.search(query="x", scope="project", scope_id="projet-b")
+        return faux_client.query_points.call_args.kwargs["query_filter"].model_dump(
+            exclude_none=True
+        )
+
+    def test_les_documents_sans_perimetre_sont_exclus(self):
+        filtre = self._filtre_emis()
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        branche_vide = [
+            b
+            for b in branches
+            if any("is_empty" in cond for cond in b.get("must", []))
+        ]
+        assert branche_vide, "la branche des payloads sans périmètre a disparu"
+        exclusions = branche_vide[0].get("must_not", [])
+        assert any(
+            cond.get("key") == "type"
+            and (cond.get("match") or {}).get("value") == "file"
+            for cond in exclusions
+        ), (
+            "les documents sans périmètre sont encore acceptés : pendant le "
+            "reclassement, un document d'un autre client peut remonter"
+        )
+
+    def test_les_souvenirs_non_documentaires_restent_acceptes(self):
+        """Sans cette branche, contacts et projets disparaîtraient du contexte."""
+        filtre = self._filtre_emis()
+        branches = next(
+            (c["should"] for c in filtre.get("must", []) if "should" in c), []
+        )
+        assert any(
+            any("is_empty" in cond for cond in b.get("must", [])) for b in branches
+        ), "les souvenirs sans périmètre ne sont plus consultables du tout"

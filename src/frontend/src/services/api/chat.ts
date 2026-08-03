@@ -109,6 +109,12 @@ export interface ConversationResponse {
   message_count: number;
   created_at: string;
   updated_at: string;
+  /** Projet auquel la conversation est rattachée (si `memory_scope` vaut
+   *  `project`). */
+  project_id: string | null;
+  /** Politique documentaire : `global` (défaut, documents généraux
+   *  uniquement), `project`, ou `all` (aucune cloison, choix explicite). */
+  memory_scope: string;
 }
 
 export interface MessageResponse {
@@ -274,6 +280,25 @@ export async function renameConversation(id: string, title: string): Promise<Con
   return request<ConversationResponse>(`/api/chat/conversations/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ title }),
+  });
+}
+
+/**
+ * Rattache une conversation à un projet, ou l'en détache (`null`).
+ *
+ * Ce rattachement commande le CLOISONNEMENT du contexte documentaire : une
+ * conversation rattachée ne consulte plus que les documents de son projet et
+ * les documents globaux. Sans lui, un document du projet A pouvait être injecté
+ * dans une conversation parlant du projet B, sans rien à l'écran pour le dire.
+ */
+export async function setConversationProject(
+  id: string,
+  projectId: string | null,
+  memoryScope: string = 'global'
+): Promise<ConversationResponse> {
+  return request<ConversationResponse>(`/api/chat/conversations/${id}/project`, {
+    method: 'PATCH',
+    body: JSON.stringify({ project_id: projectId, memory_scope: memoryScope }),
   });
 }
 

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
 import type { CalendarEvent } from '../../services/api';
 import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 import { useCalendarStore } from '../../stores/calendarStore';
@@ -156,5 +156,40 @@ describe('EventForm - toute la journée (BUG-144)', () => {
 
     expect(await screen.findByText(/date de fin/)).toBeInTheDocument();
     expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
+  });
+});
+
+describe('EventForm - horaires par défaut à cheval sur minuit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createEventMock.mockResolvedValue({ ...existingEvent, id: 'event-created' });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('propose une fin au lendemain quand on crée un événement à 23 h', async () => {
+    // Bug révélé au passage de minuit : la date de fin était figée sur
+    // AUJOURD'HUI alors que l'heure de fin (début + 1 h) basculait au
+    // lendemain. Entre 23 h et minuit, le formulaire refusait donc toute
+    // création avec « la fin doit être après le début » — un utilisateur du
+    // soir ne pouvait plus créer de rendez-vous.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 15, 23, 30, 0));
+
+    seedCalendar();
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EventForm />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+
+    const dates = screen.getAllByDisplayValue(/^\d{4}-\d{2}-\d{2}$/);
+    const debut = (dates[0] as HTMLInputElement).value;
+    const fin = (dates[dates.length - 1] as HTMLInputElement).value;
+
+    expect(debut).toBe('2026-07-15');
+    expect(fin).toBe('2026-07-16');
   });
 });

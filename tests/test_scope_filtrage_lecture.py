@@ -56,14 +56,37 @@ def _branches_de_perimetre(filtre: dict) -> list[dict]:
 
 
 class TestUnPayloadSansPerimetreResteVisible:
-    def test_la_recherche_cloisonnee_accepte_les_documents_sans_perimetre(self, service):
+    def test_la_branche_sans_perimetre_existe_toujours(self, service):
+        """DÉCISION RÉVISÉE en 0.43 — lire attentivement.
+
+        La 0.42 acceptait tout payload sans `scope` pour ne pas faire
+        disparaître la mémoire existante. La revue a montré l'effet de bord : un
+        DOCUMENT du client A indexé avant la 0.42 remontait ainsi chez le client
+        B, c'est-à-dire la fuite même que ce chantier ferme.
+
+        La branche subsiste, mais restreinte aux souvenirs NON documentaires
+        (contacts, projets, profil), qui n'ont jamais porté de périmètre et dont
+        le cloisonnement se fait en SQL. Les documents legacy en sont exclus et
+        sont reclassés au démarrage (`perimetre_backfill`) — donc rendus, avec
+        leur vrai rattachement, au lieu d'être visibles partout.
+        """
         service.search(query="rapport", scope="project", scope_id="projet-alpha")
 
         branches = _branches_de_perimetre(_filtre_emis(service))
-        assert any("is_empty" in branche for branche in branches), (
-            "le filtre ne prévoit aucune branche pour les payloads sans clé "
-            "`scope` : tous les documents indexés avant cette version "
-            "deviendraient invisibles dès qu'une recherche est cloisonnée"
+        sans_perimetre = [b for b in branches if "is_empty" in repr(b)]
+        assert sans_perimetre, (
+            "plus aucune branche pour les payloads sans périmètre : contacts et "
+            "projets disparaîtraient du contexte des conversations cloisonnées"
+        )
+        assert any(
+            cond.get("key") == "type"
+            and (cond.get("match") or {}).get("value") == "file"
+            for branche in sans_perimetre
+            for cond in branche.get("must_not", [])
+        ), (
+            "les documents sans périmètre sont encore acceptés : un document du "
+            "client A remonterait chez le client B tant que le reclassement "
+            "n'a pas tourné"
         )
 
     def test_le_perimetre_demande_est_bien_transmis(self, service):
