@@ -26,6 +26,11 @@ from qdrant_client.models import (
 
 logger = logging.getLogger(__name__)
 
+#: Types de souvenirs dont le périmètre est écrit dans le payload et reclassé
+#: au démarrage. Un payload de ces types sans périmètre est un vestige : il est
+#: exclu des recherches cloisonnées jusqu'à son reclassement.
+TYPES_RECLASSES = ("file", "contact", "project")
+
 
 class QdrantService:
     """Service for Qdrant vector database operations."""
@@ -232,6 +237,7 @@ class QdrantService:
         scope: str | None = None,
         scope_id: str | None = None,
         include_global: bool = True,
+        conversation_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """
         Search for similar memories with scope filtering (E3-05).
@@ -265,7 +271,39 @@ class QdrantService:
             )
 
         # Filter by scope (E3-05)
-        if scope:
+        if scope == "all":
+            # Transversal explicite : tous les dossiers et les souvenirs
+            # généraux, plus ceux de LA conversation courante — jamais ceux
+            # d'une autre conversation. Ne poser AUCUN filtre (le comportement
+            # précédent) laissait remonter les contacts enregistrés dans
+            # n'importe quelle conversation, alors que le sélecteur annonce
+            # « Tous les projets ».
+            transversal: list[Filter | FieldCondition | IsEmptyCondition] = [
+                FieldCondition(key="scope", match=MatchValue(value="global")),
+                FieldCondition(key="scope", match=MatchValue(value="project")),
+                Filter(
+                    must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))],
+                    must_not=[
+                        FieldCondition(key="type", match=MatchValue(value=t))
+                        for t in TYPES_RECLASSES
+                    ],
+                ),
+            ]
+            if conversation_id:
+                transversal.append(
+                    Filter(
+                        must=[
+                            FieldCondition(
+                                key="scope", match=MatchValue(value="conversation")
+                            ),
+                            FieldCondition(
+                                key="scope_id", match=MatchValue(value=conversation_id)
+                            ),
+                        ]
+                    )
+                )
+            conditions.append(Filter(should=transversal))
+        elif scope:
             # Annotée : la liste mêle `Filter`, `FieldCondition` et
             # `IsEmptyCondition`. Sans ce type, mypy l'infère en `list[Filter]`
             # dès le premier élément et refuse les suivants.
@@ -277,19 +315,49 @@ class QdrantService:
                     ]
                 )
             ]
+            if conversation_id:
+                # Symétrie avec la cloison SQL des contacts : un souvenir
+                # rattaché à CETTE conversation (contact suggéré et validé par
+                # l'utilisateur) doit y être retrouvable. Sans cette branche, il
+                # était invisible du RAG y compris dans la conversation qui
+                # venait de le créer.
+                scope_conditions.append(
+                    Filter(
+                        must=[
+                            FieldCondition(
+                                key="scope", match=MatchValue(value="conversation")
+                            ),
+                            FieldCondition(
+                                key="scope_id", match=MatchValue(value=conversation_id)
+                            ),
+                        ]
+                    )
+                )
             if include_global:
                 scope_conditions.append(
                     FieldCondition(key="scope", match=MatchValue(value="global"))
                 )
-                # J2 (31/07/2026) : le périmètre n'a été écrit dans le payload
-                # qu'à partir de cette version. Tout ce qui a été indexé avant
-                # n'a AUCUNE clé `scope`, et ne répond donc ni à `project` ni à
-                # `global`. Sans cette branche, poser une cloison ferait
-                # disparaître d'un coup toute la mémoire documentaire
-                # existante — un document absent est plus grave qu'un document
-                # trop visible, et le plan interdit la réindexation silencieuse.
+                # Payloads SANS périmètre.
+                #
+                # Documents, contacts et projets EN PORTENT un depuis la 0.43,
+                # et les anciens sont reclassés au démarrage
+                # (`perimetre_backfill`). Un payload de ces types encore
+                # dépourvu de périmètre n'est donc pas classé : l'accepter
+                # ferait remonter un contact ou un document du client A chez le
+                # client B — la fuite même que ce chantier ferme.
+                #
+                # C'est ce qui rend le reclassement en tâche de fond
+                # inoffensif : pendant qu'il tourne, on est fermé, jamais
+                # ouvert. Les autres souvenirs (profil, types futurs) restent
+                # visibles plutôt que de disparaître sans prévenir.
                 scope_conditions.append(
-                    IsEmptyCondition(is_empty=PayloadField(key="scope"))
+                    Filter(
+                        must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))],
+                        must_not=[
+                            FieldCondition(key="type", match=MatchValue(value=t))
+                            for t in TYPES_RECLASSES
+                        ],
+                    )
                 )
             conditions.append(Filter(should=scope_conditions))
 
@@ -324,6 +392,52 @@ class QdrantService:
             }
             for hit in results
         ]
+
+    def points_sans_perimetre(
+        self, limite: int = 10000
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Les points dont le payload ne porte aucun `scope` (indexés avant 0.42).
+
+        Utilisé par le reclassement de démarrage : ces points sont acceptés par
+        les recherches cloisonnées (branche `IsEmptyCondition`), donc un
+        document de projet y remonterait dans un autre projet tant qu'il n'est
+        pas classé.
+        """
+        # Pagination COMPLÈTE (revue) : `scroll` rend au plus `limite` points
+        # par appel. Une seule passe laissait le reste de la collection non
+        # classé — donc encore traité comme global — au-delà du premier lot.
+        collectes: list[tuple[str, dict[str, Any]]] = []
+        offset = None
+        while True:
+            lot, offset = self.client.scroll(
+                collection_name=settings.qdrant_collection,
+                scroll_filter=Filter(
+                    must=[IsEmptyCondition(is_empty=PayloadField(key="scope"))]
+                ),
+                limit=limite,
+                offset=offset,
+                with_payload=True,
+            )
+            collectes.extend((str(p.id), dict(p.payload or {})) for p in lot)
+            if offset is None or not lot:
+                break
+        return collectes
+
+    def definir_perimetre(
+        self, point_ids: list[str], scope: str, scope_id: str | None
+    ) -> None:
+        """Écrit le périmètre sur des points EXISTANTS, sans toucher aux vecteurs.
+
+        `set_payload` ne réencode rien : le reclassement d'une base entière ne
+        coûte aucun calcul d'embedding et ne supprime aucun point.
+        """
+        if not point_ids:
+            return
+        self.client.set_payload(
+            collection_name=settings.qdrant_collection,
+            payload={"scope": scope, "scope_id": scope_id},
+            points=list(point_ids),
+        )
 
     def delete_by_entity(self, entity_id: str) -> int:
         """
@@ -428,11 +542,12 @@ class QdrantService:
         scope: str | None = None,
         scope_id: str | None = None,
         include_global: bool = True,
+        conversation_id: str | None = None,
     ) -> list[dict[str, Any]]:
         """Async wrapper for search."""
         return await asyncio.to_thread(
             self.search, query, memory_types, limit, score_threshold,
-            scope, scope_id, include_global
+            scope, scope_id, include_global, conversation_id
         )
 
     async def async_delete_by_entity(self, entity_id: str) -> int:

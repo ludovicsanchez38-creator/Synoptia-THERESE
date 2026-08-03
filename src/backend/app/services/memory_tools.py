@@ -14,7 +14,7 @@ from typing import Any
 
 from app.models.entities import Contact, Project
 from app.services.qdrant import get_qdrant_service
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -57,10 +57,6 @@ CREATE_CONTACT_TOOL = {
                 "phone": {
                     "type": "string",
                     "description": "Numero de telephone du contact (optionnel)",
-                },
-                "role": {
-                    "type": "string",
-                    "description": "Role ou poste du contact (optionnel)",
                 },
                 "notes": {
                     "type": "string",
@@ -138,15 +134,130 @@ MEMORY_TOOLS = [CREATE_CONTACT_TOOL, CREATE_PROJECT_TOOL, READ_CONTACT_TOOL]
 # Deduplication helpers (anti creation en masse)
 # ============================================================
 
-async def _find_existing_project(session: AsyncSession, name: str) -> Project | None:
+def _perimetre_de_creation(
+    scope: str | None, scope_id: str | None, conversation_id: str | None
+) -> tuple[str, str | None]:
+    """Où ranger une entité créée depuis le chat.
+
+    Revue de clôture : tout ce qui n'était pas `project` devenait `global`,
+    donc PUBLIÉ PARTOUT. Depuis une conversation « Tous les projets », créer un
+    contact le rendait visible dans tous les dossiers et toutes les
+    conversations, sans que personne ne l'ait demandé.
+
+    Une création sans dossier explicite reste donc dans SA conversation —
+    même règle que les contacts suggérés par l'interface
+    (`EntitySuggestion.tsx`). L'utilisateur peut toujours la promouvoir
+    ensuite ; l'inverse n'est pas rattrapable.
+    """
+    if scope == "project" and scope_id:
+        return "project", scope_id
+    if conversation_id:
+        return "conversation", conversation_id
+    # Aucun contexte connu (scripts, appels historiques) : comportement d'avant.
+    return "global", None
+
+
+def _cloison_projets(
+    requete: Any,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None = None,
+) -> Any:
+    """Restreint une requête projets au périmètre — symétrique des contacts.
+
+    Oubli relevé en revue : la déduplication cherchait le nom dans TOUTE la
+    table. Créer « Chantier confidentiel » depuis le dossier B renvoyait donc
+    l'identifiant de celui du dossier A avec `already_existed`, révélant son
+    existence, et refusait la création du projet propre à B.
+    """
+    generaux = or_(Project.scope == "global", Project.scope.is_(None))
+    if conversation_id:
+        generaux = or_(
+            generaux,
+            (Project.scope == "conversation") & (Project.scope_id == conversation_id),
+        )
+    if scope == "project" and scope_id:
+        return requete.where(
+            or_(generaux, (Project.scope == "project") & (Project.scope_id == scope_id))
+        )
+    if scope == "global":
+        return requete.where(generaux)
+    if scope == "all":
+        # Transversal explicite : tous les projets et les documents généraux,
+        # MAIS pas les souvenirs privés d'autres conversations.
+        return requete.where(
+            or_(generaux, Project.scope == "project")
+        )
+    return requete
+
+
+async def _find_existing_project(
+    session: AsyncSession,
+    name: str,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
+) -> Project | None:
     """Retourne un projet existant de meme nom (insensible casse/espaces)."""
     norm = name.strip().lower()
     if not norm:
         return None
     result = await session.execute(
-        select(Project).where(func.lower(func.trim(Project.name)) == norm)
+        _cloison_projets(
+            select(Project).where(func.lower(func.trim(Project.name)) == norm),
+            scope,
+            scope_id,
+            conversation_id,
+        )
     )
     return result.scalars().first()
+
+
+def _cloison_contacts(
+    requete: Any,
+    scope: str | None,
+    scope_id: str | None,
+    conversation_id: str | None = None,
+) -> Any:
+    """Restreint une requête contacts au périmètre de la conversation.
+
+    Les contacts GÉNÉRAUX restent visibles partout, comme les documents
+    globaux. `scope` NULL en base (contacts d'avant E3-05) est traité comme
+    général : ne pas le faire masquerait des contacts existants.
+    """
+    generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
+    # RÉGRESSION ÉVITÉE (revue de clôture) : l'interface crée les contacts
+    # suggérés avec `scope="conversation"` (`EntitySuggestion.tsx`). Sans cette
+    # branche, un contact tout juste enregistré depuis la conversation en cours
+    # devenait introuvable dans cette même conversation — la fonction cassait
+    # sous prétexte de la protéger.
+    if conversation_id:
+        generaux = or_(
+            generaux,
+            (Contact.scope == "conversation") & (Contact.scope_id == conversation_id),
+        )
+    if scope == "project" and scope_id:
+        return requete.where(
+            or_(
+                generaux,
+                (Contact.scope == "project") & (Contact.scope_id == scope_id),
+            )
+        )
+    if scope == "global":
+        # Le mode global est le DÉFAUT : le laisser sans filtre revenait à
+        # n'avoir cloisonné personne. Une conversation libre ne voit que les
+        # contacts généraux et ceux de sa propre conversation.
+        return requete.where(generaux)
+    if scope == "all":
+        # « Tous les projets » : le libellé engage. Il donne accès aux
+        # dossiers, PAS aux souvenirs privés des autres conversations — un
+        # contact enregistré dans une conversation y reste (revue de clôture :
+        # ce mode rendait coordonnées et notes de n'importe quelle
+        # conversation).
+        return requete.where(or_(generaux, Contact.scope == "project"))
+    # `scope is None` : appel hors conversation (scripts, tests, chemins
+    # historiques). Pas de cloison, comportement d'avant la 0.43.
+    return requete
 
 
 async def _find_existing_contact(
@@ -154,11 +265,24 @@ async def _find_existing_contact(
     first_name: str,
     last_name: str,
     email: str | None,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> Contact | None:
-    """Retourne un contact existant (par email, sinon par prenom+nom)."""
+    """Retourne un contact existant (par email, sinon par prenom+nom).
+
+    Cloisonné (revue 0.43) : sans périmètre, créer un contact depuis le projet B
+    renvoyait le nom ET l'identifiant d'un homonyme du projet A — donc son
+    existence — puis empêchait la création du contact propre à B.
+    """
     if email:
         result = await session.execute(
-            select(Contact).where(func.lower(Contact.email) == email.lower())
+            _cloison_contacts(
+                select(Contact).where(func.lower(Contact.email) == email.lower()),
+                scope,
+                scope_id,
+                conversation_id,
+            )
         )
         match = result.scalars().first()
         if match is not None:
@@ -168,7 +292,9 @@ async def _find_existing_contact(
     ln = last_name.strip().lower()
     if not fn and not ln:
         return None
-    result = await session.execute(select(Contact))
+    result = await session.execute(
+        _cloison_contacts(select(Contact), scope, scope_id, conversation_id)
+    )
     for c in result.scalars().all():
         if (c.first_name or "").strip().lower() == fn and (c.last_name or "").strip().lower() == ln:
             return c
@@ -182,6 +308,9 @@ async def _find_existing_contact(
 async def execute_create_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Execute the create_contact tool.
@@ -202,7 +331,10 @@ async def execute_create_contact(
 
     # Deduplication : si un contact equivalent existe deja, on le reutilise
     # plutot que de creer un doublon (regression "creation en masse").
-    existing = await _find_existing_contact(session, first_name, last_name, email)
+    existing = await _find_existing_contact(
+        session, first_name, last_name, email,
+        scope=scope, scope_id=scope_id, conversation_id=conversation_id,
+    )
     if existing is not None:
         return json.dumps({
             "success": True,
@@ -213,15 +345,19 @@ async def execute_create_contact(
         }, ensure_ascii=False)
 
     try:
+        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
         contact = Contact(
             first_name=first_name or None,
             last_name=last_name or None,
             company=company,
             email=email,
             phone=arguments.get("phone"),
-            role=arguments.get("role"),
             notes=arguments.get("notes"),
             last_interaction=datetime.now(UTC),
+            # Une entité créée depuis le chat appartient à son dossier, ou à
+            # défaut à SA conversation — jamais publiée partout par défaut.
+            scope=_perimetre_creation[0],
+            scope_id=_perimetre_creation[1],
         )
         session.add(contact)
         await session.flush()
@@ -232,8 +368,6 @@ async def execute_create_contact(
             text_parts = [f"Contact: {contact.display_name}"]
             if contact.company:
                 text_parts.append(f"Entreprise: {contact.company}")
-            if contact.role:
-                text_parts.append(f"Role: {contact.role}")
             if contact.email:
                 text_parts.append(f"Email: {contact.email}")
             if contact.phone:
@@ -249,6 +383,10 @@ async def execute_create_contact(
                     "name": contact.display_name,
                     "company": contact.company,
                     "email": contact.email,
+                    # Même périmètre que la ligne SQL : sinon le RAG contourne
+                    # la cloison de `read_contact`.
+                    "scope": contact.scope or "global",
+                    "scope_id": contact.scope_id,
                 },
             )
         except Exception as e:
@@ -275,6 +413,9 @@ async def execute_create_contact(
 async def execute_create_project(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Execute the create_project tool.
@@ -291,7 +432,9 @@ async def execute_create_project(
 
     # Deduplication : reutilise un projet de meme nom au lieu de creer un doublon
     # (regression "creation en masse" via les commandes / interpretees par le LLM).
-    existing = await _find_existing_project(session, name)
+    existing = await _find_existing_project(
+        session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+    )
     if existing is not None:
         return json.dumps({
             "success": True,
@@ -302,11 +445,15 @@ async def execute_create_project(
         }, ensure_ascii=False)
 
     try:
+        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
         project = Project(
             name=name,
             description=arguments.get("description"),
             status=arguments.get("status", "active"),
             budget=arguments.get("budget"),
+            # Même règle que les contacts.
+            scope=_perimetre_creation[0],
+            scope_id=_perimetre_creation[1],
         )
         session.add(project)
         await session.flush()
@@ -330,6 +477,8 @@ async def execute_create_project(
                     "name": project.name,
                     "status": project.status,
                     "budget": project.budget,
+                    "scope": project.scope or "global",
+                    "scope_id": project.scope_id,
                 },
             )
         except Exception as e:
@@ -412,6 +561,9 @@ def _close_matches(folded_query: str, contacts: list[Contact]) -> list[str]:
 async def execute_read_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """Execute the read_contact tool : retourne la fiche complète + interactions.
 
@@ -430,8 +582,14 @@ async def execute_read_contact(
     # BUG-146 : recherche insensible aux ACCENTS (« jerome » doit trouver
     # « Jérôme ») - la comparaison lower() seule ne suffisait pas.
     q = _fold(query)
-    result = await session.execute(select(Contact))
-    contacts = result.scalars().all()
+    # 0.43 : cloisonnement. Sans ce filtre, un contact rattaché au projet A —
+    # coordonnées et notes comprises — était lisible depuis une conversation du
+    # projet B. Les contacts GÉNÉRAUX restent visibles partout, comme les
+    # documents globaux.
+    result = await session.execute(
+        _cloison_contacts(select(Contact), scope, scope_id, conversation_id)
+    )
+    contacts = list(result.scalars().all())
     matches = [
         c
         for c in contacts
@@ -521,6 +679,9 @@ async def execute_memory_tool(
     tool_name: str,
     arguments: dict[str, Any],
     session: AsyncSession,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> str:
     """
     Route memory tool execution to the correct handler.
@@ -529,11 +690,20 @@ async def execute_memory_tool(
         JSON string result for the LLM.
     """
     if tool_name == "create_contact":
-        return await execute_create_contact(arguments, session)
+        return await execute_create_contact(
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
     elif tool_name == "create_project":
-        return await execute_create_project(arguments, session)
+        return await execute_create_project(
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
     elif tool_name == "read_contact":
-        return await execute_read_contact(arguments, session)
+        return await execute_read_contact(
+            arguments, session, scope=scope, scope_id=scope_id,
+            conversation_id=conversation_id,
+        )
     else:
         return json.dumps({"error": f"Outil inconnu: {tool_name}"}, ensure_ascii=False)
 

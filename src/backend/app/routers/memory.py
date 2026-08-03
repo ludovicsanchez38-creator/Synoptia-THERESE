@@ -10,7 +10,7 @@ import time
 from typing import Literal
 
 from app.models.database import get_session
-from app.models.entities import Contact, FileMetadata, Project
+from app.models.entities import Contact, Conversation, FileMetadata, Project
 from app.models.schemas import (
     ContactCreate,
     ContactResponse,
@@ -95,6 +95,12 @@ async def _embed_contact(contact: Contact) -> None:
                 "name": contact.display_name,
                 "company": contact.company,
                 "email": contact.email,
+                # 0.43 : sans périmètre dans le payload, l'embedding d'un
+                # contact de projet remontait dans le contexte de TOUTES les
+                # conversations — la cloison SQL de `read_contact` était
+                # contournée par le RAG.
+                "scope": contact.scope or "global",
+                "scope_id": contact.scope_id,
             },
         )
         logger.debug(f"Embedded contact {contact.id}")
@@ -118,6 +124,8 @@ async def _embed_project(project: Project) -> None:
                 "name": project.name,
                 "status": project.status,
                 "budget": project.budget,
+                "scope": project.scope or "global",
+                "scope_id": project.scope_id,
             },
         )
         logger.debug(f"Embedded project {project.id}")
@@ -967,6 +975,27 @@ async def delete_project(
         cascade_deleted["files"] = len(files)
 
     project_name = project.name
+
+    # 0.43 : détacher les conversations rattachées à ce projet.
+    # `Conversation.project_id` n'est pas une clé étrangère : sans ce ménage,
+    # elles resteraient cloisonnées sur un identifiant supprimé. Le backend
+    # continuerait de filtrer dessus — donc plus aucun document — pendant que
+    # le sélecteur, ne trouvant plus le projet dans la liste, afficherait
+    # « Toute la mémoire ». L'écran mentirait sur la cloison réelle.
+    conversations_liees = (
+        await session.execute(
+            select(Conversation).where(Conversation.project_id == project_id)
+        )
+    ).scalars().all()
+    for conversation in conversations_liees:
+        conversation.project_id = None
+        # Sans cette remise à zéro, la ligne resterait sur `project` sans
+        # projet : un état que rien ne peut plus décrire à l'écran.
+        conversation.memory_scope = "global"
+        session.add(conversation)
+    if conversations_liees:
+        cascade_deleted["conversations_detachees"] = len(conversations_liees)
+
     await session.delete(project)
     await session.commit()
 

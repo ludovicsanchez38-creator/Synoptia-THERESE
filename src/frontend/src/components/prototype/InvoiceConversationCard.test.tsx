@@ -117,7 +117,13 @@ describe('InvoiceWorkspaceCanvas', () => {
 
     resolveCreation?.({ ...invoice, subtotal_ht: 490, total_tax: 98, total_ttc: 588 });
     expect(await screen.findByTestId('devis-draft-saved')).toHaveTextContent('Aucun PDF n’a été généré et aucun email n’a été envoyé');
-    fireEvent.change(screen.getByLabelText('Échéance du devis'), { target: { value: '2026-09-01' } });
+    // La valeur doit DIFFÉRER de celle déjà affichée, sinon `change` ne change
+    // rien et l'état « non enregistré » n'apparaît pas. Une date en dur
+    // finissait par coïncider avec l'échéance par défaut (J+30) : le test
+    // devenait rouge un jour précis, sans rapport avec un défaut du produit.
+    const echeance = screen.getByLabelText('Échéance du devis') as HTMLInputElement;
+    const autreDate = echeance.value === '2027-01-15' ? '2027-02-20' : '2027-01-15';
+    fireEvent.change(echeance, { target: { value: autreDate } });
     expect(screen.queryByTestId('devis-draft-saved')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Modifications non enregistrées');
   });

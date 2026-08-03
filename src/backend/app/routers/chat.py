@@ -19,6 +19,7 @@ from app.models.schemas import (
     ChatRequest,
     ChatResponse,
     ConversationCreate,
+    ConversationProjectUpdate,
     ConversationResponse,
     MessageResponse,
     StreamChunk,
@@ -174,7 +175,9 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
 async def _get_file_context(
     file_path: str,
     session: AsyncSession,
-    command: str = "fichier"
+    command: str = "fichier",
+    scope: str = "global",
+    scope_id: str | None = None,
 ) -> tuple[str | None, str | None]:
     """
     Get file content for context injection.
@@ -224,6 +227,11 @@ async def _get_file_context(
                 extension=metadata["extension"],
                 size=metadata["size"],
                 mime_type=metadata["mime_type"],
+                # 0.43 : une pièce jointe déposée DANS une conversation de
+                # projet appartient à ce projet. Sans cela elle naissait
+                # globale, donc consultable depuis tous les autres dossiers.
+                scope=scope,
+                scope_id=scope_id,
             )
             session.add(file_meta)
             # 3e passe de revue : la session gardait le verrou d'écriture SQLite
@@ -255,6 +263,8 @@ async def _get_file_context(
                         "path": str(path),
                         "chunk_index": i,
                         "total_chunks": len(chunks),
+                        "scope": file_meta.scope or "global",
+                        "scope_id": file_meta.scope_id,
                     },
                 })
 
@@ -299,19 +309,98 @@ Chemin: {path}
 # ============================================================
 
 
-async def _get_memory_context(user_message: str, limit: int = 8) -> str | None:
+# Périmètre sentinelle : ne correspond à AUCUN document. Sert quand le
+# rattachement d'une conversation est illisible — mieux vaut répondre sans
+# contexte documentaire qu'avec le contexte d'un autre client (échec fermé).
+_PERIMETRE_INDETERMINE = "__perimetre_indetermine__"
+
+
+async def _perimetre_de_conversation(
+    conversation_id: str | None, session: AsyncSession | None
+) -> tuple[str | None, str | None]:
+    """Le périmètre documentaire d'une conversation : (scope, scope_id).
+
+    `(None, None)` = aucune cloison, la mémoire entière est consultable. C'est
+    le cas d'une conversation libre, et celui de tous les appels qui ne
+    connaissent pas leur conversation.
+    """
+    if not conversation_id or session is None:
+        return None, None
+    try:
+        conversation = await session.get(Conversation, conversation_id)
+    except Exception:
+        # ÉCHEC FERMÉ (revue 0.43). La version précédente retombait sur une
+        # recherche globale : une simple erreur SQLite transitoire transformait
+        # alors une conversation cloisonnée en conversation ouverte, sans que
+        # rien ne le signale. Une frontière de confidentialité qui s'élargit en
+        # silence sur incident n'en est pas une.
+        #
+        # `_PERIMETRE_INDETERMINE` ne correspond à aucun document : la
+        # conversation répond sans contexte documentaire plutôt qu'avec le
+        # contexte d'un autre client.
+        logger.warning(
+            "Périmètre de conversation illisible : aucun contexte documentaire "
+            "ne sera injecté (échec fermé)"
+        )
+        return "project", _PERIMETRE_INDETERMINE
+    if conversation is None:
+        return None, None
+
+    politique = (conversation.memory_scope or "global").lower()
+    # ORDRE VOLONTAIRE (revue) : le rattachement est testé AVANT la politique.
+    # Une ligne incohérente — `project_id` posé et `memory_scope='all'` — aurait
+    # sinon ouvert toute la mémoire, contrairement à ce que le sélecteur affiche.
+    # Aucune contrainte de base ne garantit l'invariant : c'est le résolveur qui
+    # le tient, et il tranche toujours dans le sens le plus fermé.
+    if conversation.project_id:
+        # La politique est DÉRIVÉE du rattachement : poser un projet suffit à
+        # cloisonner. Exiger en plus que `memory_scope` soit passé à `project`
+        # créerait deux champs à synchroniser, et un rattachement sans effet
+        # visible au premier oubli.
+        return "project", conversation.project_id
+    if politique == "all":
+        # « Tous les projets », choix explicite et affiché. Il ouvre les
+        # DOSSIERS, pas les souvenirs privés des autres conversations : rendre
+        # `(None, None)` retirait toute cloison et laissait remonter les
+        # contacts enregistrés dans n'importe quelle conversation (revue de
+        # clôture). Le libellé engage — il doit dire vrai.
+        return "all", None
+    # MOINDRE PRIVILÈGE (défaut) : documents généraux uniquement. Une
+    # conversation qui n'a rien demandé ne pioche pas dans les dossiers clients.
+    # `include_global` du filtre rend déjà les documents globaux ; passer
+    # `scope="global"` suffit à exclure ceux qui portent un projet.
+    return "global", None
+
+
+async def _get_memory_context(
+    user_message: str,
+    limit: int = 8,
+    conversation_id: str | None = None,
+    session: AsyncSession | None = None,
+) -> str | None:
     """
     Search memory for context relevant to the user's message.
+
+    0.43 : la recherche est CLOISONNÉE quand la conversation est rattachée à un
+    projet. Jusque-là elle balayait toute la mémoire, si bien qu'un document du
+    projet A pouvait être injecté dans une conversation parlant du projet B —
+    sans trace à l'écran, ni pour l'utilisateur ni pour le modèle.
 
     Returns formatted context string or None if no relevant memories found.
     """
     context_parts: list[str] = []
     try:
+        scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
         qdrant = get_qdrant_service()
         results = await qdrant.async_search(
             query=user_message,
             limit=limit,
             score_threshold=0.35,  # Lower threshold for broader context
+            scope=scope,
+            scope_id=scope_id,
+            # Les souvenirs rattachés à CETTE conversation y restent
+            # consultables, comme côté SQL.
+            conversation_id=conversation_id,
         )
 
         # Format results into context string
@@ -768,8 +857,16 @@ async def send_message(
     parsed_cmd = None if produce_prompt is not None else parse_slash_command(request.message)
     if parsed_cmd is not None:
         cmd_name, cmd_rest = parsed_cmd
+        # Périmètre de la conversation : une entité créée par une commande
+        # (`/contact`) ou une directive inline (`[contact: ...]`) appartient au
+        # dossier depuis lequel on l'a saisie, pas à tout l'espace.
+        _perim_cmd, _perim_cmd_id = await _perimetre_de_conversation(
+            conversation.id, session
+        )
         command_outcome = await execute_slash_command_outcome(
-            cmd_name, cmd_rest, session
+            cmd_name, cmd_rest, session,
+            scope=_perim_cmd, scope_id=_perim_cmd_id,
+            conversation_id=conversation.id,
         )
         confirmation = command_outcome.content
         user_message.extra_data = json.dumps({"deterministic": True})
@@ -843,8 +940,15 @@ async def send_message(
     else:
         cleaned_message, inline_cmds = parse_inline_commands(request.message)
     if inline_cmds:
+        _perim_inline, _perim_inline_id = await _perimetre_de_conversation(
+            conversation.id, session
+        )
         command_outcomes = [
-            await execute_slash_command_outcome(name, rest, session)
+            await execute_slash_command_outcome(
+                name, rest, session,
+                scope=_perim_inline, scope_id=_perim_inline_id,
+                conversation_id=conversation.id,
+            )
             for name, rest in inline_cmds
         ]
         confirmations = [outcome.content for outcome in command_outcomes]
@@ -1026,7 +1130,24 @@ async def send_message(
 
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
-    memory_context = await _get_memory_context(llm_user_message)
+    memory_context = await _get_memory_context(
+        llm_user_message, conversation_id=conversation.id, session=session
+    )
+
+    # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
+    # indexe : un document déposé dans un dossier client lui appartient.
+    _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
+        conversation.id, session
+    )
+    # Même règle que les contacts et les projets : une pièce jointe sans dossier
+    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # consultable depuis tous les dossiers — y compris déposée depuis une
+    # conversation « Tous les projets » (revue de clôture).
+    if _perimetre_conv == "project" and _perimetre_conv_id:
+        perimetre_fichiers, perimetre_fichiers_id = "project", _perimetre_conv_id
+    else:
+        perimetre_fichiers, perimetre_fichiers_id = "conversation", conversation.id
+
 
     # Check for file commands and add file context (0e : parité stream,
     # jamais sur un texte dérivé - le prompt produire n'est pas scanné)
@@ -1035,7 +1156,9 @@ async def send_message(
     )
     file_contexts = []
     for cmd, path in file_commands:
-        file_ctx, error = await _get_file_context(path, session, cmd)
+        file_ctx, error = await _get_file_context(
+            path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
+        )
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
@@ -1044,7 +1167,10 @@ async def send_message(
     # BUG-044 : Traiter les fichiers joints (drag & drop)
     if request.file_paths:
         for fp in request.file_paths:
-            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            file_ctx, error = await _get_file_context(
+                fp, session, "analyse",
+                scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            )
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:
@@ -1322,7 +1448,24 @@ async def _do_stream_response(
     messages.append(LLMMessage(role="user", content=user_message))
 
     # Get relevant memory context for the user's message
-    memory_context = await _get_memory_context(user_message)
+    memory_context = await _get_memory_context(
+        user_message, conversation_id=conversation_id, session=session
+    )
+
+    # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
+    # indexe : un document déposé dans un dossier client lui appartient.
+    _perimetre_conv, _perimetre_conv_id = await _perimetre_de_conversation(
+        conversation_id, session
+    )
+    # Même règle que les contacts et les projets : une pièce jointe sans dossier
+    # explicite reste dans SA conversation. Elle devenait `global` — donc
+    # consultable depuis tous les dossiers — y compris déposée depuis une
+    # conversation « Tous les projets » (revue de clôture).
+    if _perimetre_conv == "project" and _perimetre_conv_id:
+        perimetre_fichiers, perimetre_fichiers_id = "project", _perimetre_conv_id
+    else:
+        perimetre_fichiers, perimetre_fichiers_id = "conversation", conversation_id
+
 
     # Check for file commands and add file context.
     # Tranche 0e Variables V4 (finding Codex 2 VÉRIFIÉ) : jamais de
@@ -1333,7 +1476,9 @@ async def _do_stream_response(
     file_errors = []
 
     for cmd, path in file_commands:
-        file_ctx, error = await _get_file_context(path, session, cmd)
+        file_ctx, error = await _get_file_context(
+            path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
+        )
         if file_ctx:
             file_contexts.append(file_ctx)
         elif error:
@@ -1343,7 +1488,10 @@ async def _do_stream_response(
     # BUG-044 : Traiter les fichiers joints (drag & drop) via file_paths
     if file_paths:
         for fp in file_paths:
-            file_ctx, error = await _get_file_context(fp, session, "analyse")
+            file_ctx, error = await _get_file_context(
+                fp, session, "analyse",
+                scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            )
             if file_ctx:
                 file_contexts.append(file_ctx)
             elif error:
@@ -1998,7 +2146,17 @@ async def _execute_tools_and_continue(
             try:
                 if session is None:
                     raise RuntimeError("Database session not available for memory tools")
-                tool_result_str = await execute_memory_tool(tc.name, tc.arguments, session)
+                # 0.43 : les outils mémoire respectent la cloison de la conversation.
+                # Sans ce périmètre, `read_contact` rendait coordonnées et notes
+                # d'un contact d'un autre projet.
+                perimetre, perimetre_id = await _perimetre_de_conversation(
+                    conversation_id, session
+                )
+                tool_result_str = await execute_memory_tool(
+                    tc.name, tc.arguments, session,
+                    scope=perimetre, scope_id=perimetre_id,
+                    conversation_id=conversation_id,
+                )
                 execution_time = (time.time() - start_time) * 1000
 
                 class MemoryToolResult:
@@ -2298,6 +2456,8 @@ async def list_conversations(
             message_count=msg_count,
             created_at=conv.created_at,
             updated_at=conv.updated_at,
+            project_id=conv.project_id,
+            memory_scope=conv.memory_scope,
         )
         for conv, msg_count in rows
     ]
@@ -2325,6 +2485,8 @@ async def create_conversation(
         message_count=0,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
@@ -2355,6 +2517,8 @@ async def get_conversation(
         message_count=message_count,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
@@ -2397,6 +2561,67 @@ async def rename_conversation(
         message_count=count_result.scalar() or 0,
         created_at=conversation.created_at,
         updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
+    )
+
+
+@router.patch(
+    "/conversations/{conversation_id}/project", response_model=ConversationResponse
+)
+async def rattacher_conversation_a_un_projet(
+    conversation_id: str,
+    request: ConversationProjectUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> ConversationResponse:
+    """Rattache une conversation à un projet, ou l'en détache (`project_id: null`).
+
+    Ce rattachement commande le CLOISONNEMENT du contexte documentaire : une
+    conversation rattachée ne consulte plus que les documents de son projet et
+    les documents globaux. Sans cette route, `Conversation.project_id` resterait
+    toujours nul et la cloison ne s'appliquerait jamais.
+    """
+    from datetime import UTC, datetime
+
+    result = await session.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    if request.project_id:
+        # Rattacher à un projet inexistant cloisonnerait sur du vide : la
+        # conversation ne verrait plus aucun document, sans explication.
+        projet = await session.get(Project, request.project_id)
+        if projet is None:
+            raise HTTPException(status_code=404, detail="Projet introuvable")
+
+    politique = (request.memory_scope or "global").lower()
+    if politique not in {"global", "project", "all"}:
+        raise HTTPException(status_code=422, detail="Politique documentaire inconnue")
+
+    conversation.project_id = request.project_id or None
+    # Un projet rattaché implique la politique `project` : les deux champs ne
+    # doivent jamais raconter deux histoires différentes.
+    conversation.memory_scope = "project" if conversation.project_id else politique
+    conversation.updated_at = datetime.now(UTC)
+    session.add(conversation)
+    await session.commit()
+    await session.refresh(conversation)
+
+    count_result = await session.execute(
+        select(func.count()).select_from(Message).where(Message.conversation_id == conversation.id)
+    )
+    return ConversationResponse(
+        id=conversation.id,
+        title=conversation.title,
+        summary=conversation.summary,
+        message_count=count_result.scalar() or 0,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+        project_id=conversation.project_id,
+        memory_scope=conversation.memory_scope,
     )
 
 
