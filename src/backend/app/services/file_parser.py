@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 Mo
 MAX_PDF_PAGES = 100
+# Inventaire des capacités du 13/08/2026 : le PDF était plafonné à 100 pages et
+# le CSV à 500 lignes, chacun avec une mention de troncature. Le tableur, lui,
+# parcourait TOUTES les feuilles et TOUTES les lignes sans borne — un classeur
+# de plusieurs dizaines de milliers de lignes produisait un texte énorme, lent
+# à découper et coûteux à envoyer, sans que rien ne le signale.
+MAX_XLSX_LIGNES = 2000
 
 
 # Supported extensions
@@ -253,13 +259,33 @@ def _extract_xlsx(file_path: Path) -> str:
 
     wb = load_workbook(file_path, read_only=True, data_only=True)
     output: list[str] = []
+    lignes_lues = 0
+    lignes_ignorees = 0
+
     for sheet in wb.sheetnames:
         ws = wb[sheet]
         output.append(f"## Feuille : {sheet}\n")
         for row in ws.iter_rows(values_only=True):
+            if lignes_lues >= MAX_XLSX_LIGNES:
+                lignes_ignorees += 1
+                continue
             cells = [str(c) if c is not None else "" for c in row]
             output.append(" | ".join(cells))
+            lignes_lues += 1
     wb.close()
+
+    if lignes_ignorees:
+        # Annoncé dans le texte lui-même, comme pour le PDF et le CSV : le
+        # modèle doit pouvoir dire à l'utilisateur qu'il n'a pas tout vu.
+        output.append(
+            f"\n[Tableur tronqué : {lignes_lues} lignes transmises sur "
+            f"{lignes_lues + lignes_ignorees}. Les suivantes n'ont pas été lues.]"
+        )
+        logger.info(
+            "XLSX tronqué : %d lignes transmises, %d ignorées",
+            lignes_lues, lignes_ignorees,
+        )
+
     return "\n".join(output)
 
 

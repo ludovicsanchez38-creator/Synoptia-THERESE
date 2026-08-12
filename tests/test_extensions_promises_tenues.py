@@ -132,3 +132,61 @@ class TestToutesLesVuesSontAtteignablesDepuisLeChat:
             f"vues sans cible de navigation : {sorted(manquantes)} — elles "
             "seront absentes de /aide et de {action: ouvrir …}"
         )
+
+
+class TestLesTroncaturesSontAnnoncees:
+    """Un tableur volumineux était lu en entier, sans borne ni signalement.
+
+    Le PDF est plafonné à 100 pages et le CSV à 500 lignes, chacun avec une
+    mention de troncature dans le texte transmis. Le tableur parcourait toutes
+    les feuilles et toutes les lignes : un classeur de plusieurs dizaines de
+    milliers de lignes produisait un texte énorme, lent à découper et coûteux à
+    envoyer au modèle, sans que rien ne l'annonce.
+    """
+
+    def test_un_gros_tableur_est_borne_et_le_dit(self, tmp_path):
+        pytest = __import__("pytest")
+        try:
+            from openpyxl import Workbook
+        except ImportError:  # pragma: no cover
+            pytest.skip("openpyxl absent")
+
+        from app.services.file_parser import MAX_XLSX_LIGNES, extract_text
+
+        classeur = Workbook()
+        feuille = classeur.active
+        for numero in range(MAX_XLSX_LIGNES + 250):
+            feuille.append([f"ligne-{numero}", numero])
+        chemin = tmp_path / "gros-tableur.xlsx"
+        classeur.save(chemin)
+
+        texte = extract_text(chemin)
+
+        assert "tronqué" in texte.lower(), (
+            "le tableur est coupé sans que rien ne le dise : le modèle "
+            "présentera une lecture partielle comme complète"
+        )
+        assert "ligne-0" in texte, "le début du tableur doit être transmis"
+        assert f"ligne-{MAX_XLSX_LIGNES + 200}" not in texte
+
+    def test_un_petit_tableur_passe_entier_et_sans_mention(self, tmp_path):
+        """Verrou : ne pas alarmer sur un fichier lu intégralement."""
+        pytest = __import__("pytest")
+        try:
+            from openpyxl import Workbook
+        except ImportError:  # pragma: no cover
+            pytest.skip("openpyxl absent")
+
+        from app.services.file_parser import extract_text
+
+        classeur = Workbook()
+        feuille = classeur.active
+        feuille.append(["Client", "Montant"])
+        feuille.append(["Dupont", 1200])
+        chemin = tmp_path / "petit-tableur.xlsx"
+        classeur.save(chemin)
+
+        texte = extract_text(chemin)
+
+        assert "Dupont" in texte
+        assert "tronqué" not in texte.lower()
