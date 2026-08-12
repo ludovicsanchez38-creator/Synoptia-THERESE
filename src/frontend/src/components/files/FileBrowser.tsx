@@ -33,6 +33,7 @@ import { cn, isTauri } from '../../lib/utils';
 import { indexFile, getWorkingDirectory, type FileMetadata } from '../../services/api';
 import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
 import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
+import { estIndexable } from '../../lib/formatsIndexables';
 
 export interface FileEntry {
   name: string;
@@ -92,18 +93,12 @@ function formatSize(bytes?: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 }
 
-// Check if file is indexable
-function isIndexable(extension?: string): boolean {
-  if (!extension) return false;
-  const indexableExtensions = [
-    '.txt', '.md', '.json', '.csv', '.tsv',
-    '.py', '.js', '.ts', '.tsx', '.jsx', '.html', '.css', '.scss',
-    '.yaml', '.yml', '.toml', '.xml', '.sql',
-    '.pdf', '.doc', '.docx',
-    '.sh', '.bash', '.zsh',
-  ];
-  return indexableExtensions.includes(extension.toLowerCase());
-}
+// Revue du 13/08/2026 : cette liste avait divergé de celle du serveur. Elle
+// cachait des formats parfaitement lisibles (.pptx, .xlsx, .cfg, .tex…) et
+// proposait encore .doc, que le serveur refuse — l'utilisateur cliquait, et
+// l'indexation échouait. Une seule liste désormais, confrontée au backend par
+// un test.
+const isIndexable = estIndexable;
 
 export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowserProps) {
   const [currentPath, setCurrentPath] = useState<string>('');

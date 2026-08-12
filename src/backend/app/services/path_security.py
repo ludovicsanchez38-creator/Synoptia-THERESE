@@ -113,7 +113,9 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
 # Extensions de fichiers autorisees pour l'indexation (SEC-002/003)
 INDEXABLE_EXTENSIONS = {
     # Documents texte
-    ".txt", ".md", ".rst", ".csv", ".tsv", ".log",
+    # `.markdown` était lisible par le parseur mais refusé à l'entrée : la
+    # divergence inverse, trouvée par le test qui confronte les deux listes.
+    ".txt", ".md", ".markdown", ".rst", ".csv", ".tsv", ".log",
     # Code source
     ".py", ".js", ".ts", ".jsx", ".tsx", ".html", ".css", ".scss",
     ".java", ".c", ".cpp", ".h", ".hpp", ".rs", ".go", ".rb", ".php",
