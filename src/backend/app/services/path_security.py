@@ -119,7 +119,7 @@ INDEXABLE_EXTENSIONS = {
     ".java", ".c", ".cpp", ".h", ".hpp", ".rs", ".go", ".rb", ".php",
     ".swift", ".kt", ".scala", ".r", ".sql", ".sh", ".bash", ".zsh",
     # Documents
-    ".pdf", ".docx", ".doc", ".xlsx", ".pptx",
+    ".pdf", ".docx", ".xlsx", ".pptx",
     # Inventaire du 13/08/2026 : .xls, .ppt, .odt, .ods, .odp et .rtf étaient
     # acceptés alors qu'aucun chemin du parseur ne sait les ouvrir. Le fichier
     # était indexé à vide, sans le moindre signalement. Un refus net à l'entrée
