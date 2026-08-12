@@ -111,6 +111,19 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const cals = await api.listCalendars(currentAccountId || undefined);
       setCalendars(cals);
 
+      // BUG-162 : désarmer la bannière « Connexion Google expirée » quand la
+      // situation redevient normale. Elle n'était écrite que dans les `catch`,
+      // donc une erreur passagère (jeton rafraîchi entre-temps, réseau, dérive
+      // d'horloge) restait affichée jusqu'au redémarrage de l'application, en
+      // demandant à l'utilisateur de reconnecter un compte parfaitement valide.
+      //
+      // Le garde-fou compte : seul un calendrier GOOGLE réellement rendu prouve
+      // que le jeton fonctionne. Un succès sur un calendrier local n'apprend
+      // rien sur Google et ne doit pas éteindre une vraie expiration.
+      if (cals.some((cal) => cal.provider === 'google')) {
+        setNeedsReauth(false);
+      }
+
       // Auto-select : calendrier primaire, sinon le PREMIER disponible.
       // BUG-120 : un calendrier local (repli hors Google) n'est pas marqué
       // "primary" ; sans ce fallback, rien n'était sélectionné et la création
@@ -159,6 +172,12 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       });
 
       setEvents(evts);
+
+      // BUG-162 : même désarmement que dans loadCalendars, sur le chemin le
+      // plus fréquent (changer de mois recharge les événements).
+      if (currentCal?.provider === 'google') {
+        setNeedsReauth(false);
+      }
     } catch (err: any) {
       console.error('Failed to load events:', err);
       const msg = err?.message || '';

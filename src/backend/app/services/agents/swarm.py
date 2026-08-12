@@ -166,7 +166,20 @@ class SwarmOrchestrator:
         branch_name = f"agent/{task_id[:8]}-{_slugify(spec_content[:50])}"
 
         # Préparer git
-        if not await self.git.is_repo():
+        depot = await self.git.is_repo()
+        if depot is None:
+            # BUG-163 : ne pas transformer un git muet en verdict sur le dépôt.
+            yield AgentStreamChunk(
+                type="error",
+                agent="zezette",
+                content=(
+                    "Git n'a pas répondu : impossible de vérifier le dépôt. "
+                    "Réessaie dans un instant."
+                ),
+                task_id=task_id,
+            )
+            return
+        if not depot:
             yield AgentStreamChunk(
                 type="error",
                 agent="zezette",

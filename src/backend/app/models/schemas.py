@@ -378,6 +378,18 @@ class FileIndexRequest(BaseModel):
     """Request to index a file."""
 
     path: str
+    # BUG-165 : le composeur du chat indexe la pièce jointe dès l'attachement,
+    # avant l'envoi. Sans cette information, le fichier naissait GLOBAL et
+    # restait lisible depuis tous les autres dossiers clients — le
+    # cloisonnement livré en 0.43 ne s'appliquait donc jamais aux pièces
+    # jointes, alors qu'elles sont le cas le plus courant.
+    conversation_id: str | None = None
+    # Revue Soso, passe 2 : le caractère provisoire doit être DEMANDÉ, jamais
+    # déduit de l'absence de conversation. L'explorateur indexe lui aussi sans
+    # conversation, et son périmètre est parfaitement voulu : le déduire
+    # rendait ses documents confiscables par la première conversation de projet
+    # qui les joignait — exactement le défaut qu'on cherchait à fermer.
+    perimetre_provisoire: bool = False
 
 
 class FileResponse(BaseModel):

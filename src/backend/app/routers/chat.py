@@ -216,6 +216,48 @@ async def _get_file_context(
         )
         existing = result.scalar_one_or_none()
 
+        # BUG-165 : rattrapage du périmètre d'un fichier DÉJÀ indexé.
+        #
+        # Le composeur indexe la pièce jointe dès l'attachement, donc `existing`
+        # est presque toujours trouvé ici et tout le bloc `if not existing:`
+        # ci-dessous — celui qui pose le périmètre — restait du code mort. Une
+        # pièce jointe déposée dans la conversation d'un client demeurait ainsi
+        # globale, lisible depuis tous les autres dossiers.
+        #
+        # Le rattrapage ne remonte JAMAIS un fichier : il ne touche qu'un
+        # document encore global, et seulement quand la conversation porte un
+        # périmètre. Un document indexé volontairement pour tous les dossiers
+        # depuis l'explorateur garde donc sa portée, et un document déjà
+        # rattaché à un projet ne peut pas être capté par un autre.
+        # Revue Soso : le rattrapage ne touche QUE les périmètres provisoires,
+        # ceux posés par défaut lors du pré-index parce que la conversation
+        # n'existait pas encore. Un document rendu général depuis l'explorateur,
+        # ou déjà rattaché à un projet, n'est jamais capté ni confisqué.
+        if existing and scope and scope != "global" and existing.scope_provisoire:
+            # L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
+            # périmètre que la recherche n'appliquait pas encore : en cas
+            # d'échec, la base affirmait « ce document appartient au projet »
+            # pendant que ses fragments restaient visibles partout. Ici, un
+            # échec laisse le document là où il était — visible dans le
+            # périmètre général, ce qui est le statu quo, jamais une fuite
+            # nouvelle.
+            try:
+                await run_in_threadpool(
+                    get_qdrant_service().definir_perimetre_entite,
+                    existing.id, scope, scope_id,
+                )
+            except Exception:
+                logger.warning(
+                    "Périmètre non appliqué à l'index pour %s : le document "
+                    "reste dans son périmètre actuel plutôt que d'être annoncé "
+                    "cloisonné sans l'être", path.name, exc_info=True,
+                )
+            else:
+                existing.scope = scope
+                existing.scope_id = scope_id
+                existing.scope_provisoire = False
+                await session.commit()
+
         # Index if not already done
         if not existing:
             from datetime import UTC, datetime
@@ -315,6 +357,141 @@ Chemin: {path}
 _PERIMETRE_INDETERMINE = "__perimetre_indetermine__"
 
 
+# ============================================================
+# BUG-160 : une pièce jointe appartient à la conversation
+# ============================================================
+#
+# Le contenu d'un fichier joint entre dans le prompt système, qui est
+# reconstruit à chaque requête et jamais conservé. Le composeur vide ensuite sa
+# liste, et le message enregistré ne mentionne aucun fichier : dès le tour
+# suivant, THÉRÈSE n'a plus rien, et répond très correctement qu'elle ne
+# dispose d'aucun outil pour lire le document. L'interface, elle, affiche
+# « [Fichiers joints: ...] » sous le message, donc l'utilisateur croit le
+# contraire.
+#
+# On rejoue donc les pièces jointes des derniers tours. Deux bornes, parce que
+# ce contenu repart chez le fournisseur à CHAQUE message : un nombre de tours
+# limité, et un plafond de caractères. `trim_to_fit` ne rogne que les messages
+# et jamais le prompt système — un bloc de fichiers qui enfle sacrifierait donc
+# l'historique de la conversation en silence.
+TOURS_AVEC_PIECES_JOINTES = 3
+PLAFOND_PIECES_JOINTES_REJOUEES = 4
+
+# Revue Soso : un plafond en NOMBRE de fichiers ne borne rien. Chaque pièce
+# jointe peut peser 15 000 caractères, donc quatre fichiers rejoués plus ceux du
+# tour courant dépassaient largement la fenêtre utile — et cette fenêtre est
+# parfois bien plus étroite qu'annoncé : le service raisonne sur 32 000 tokens
+# quand Ollama en applique 8 192.
+#
+# Ce plafond porte sur le bloc ENTIER (fichiers du tour + fichiers rejoués). Une
+# fois atteint, on cesse d'ajouter : mieux vaut un document de moins qu'un
+# historique de conversation sacrifié en silence par `trim_to_fit`, qui ne rogne
+# que les messages et jamais le prompt système.
+PLAFOND_CARACTERES_FICHIERS = 40000
+
+BLOC_PIECES_JOINTES = """
+## Les fichiers joints à cette conversation
+Les pièces jointes te sont fournies plus haut, dans le contexte, sous forme de
+blocs délimités par `--- FICHIER: nom ---`. Elles restent disponibles pendant
+toute la conversation, tu n'as aucun outil à appeler pour les consulter.
+N'affirme JAMAIS que tu n'as pas accès à un fichier qui figure dans ce contexte.
+Si un bloc porte la mention « contenu tronqué » ou « extrait », tu n'en as reçu
+qu'une partie : dis-le clairement à l'utilisateur au lieu de présenter ta
+lecture comme complète, et indique-lui que le document dépasse ce que tu peux
+recevoir d'un coup."""
+
+
+def _memoriser_pieces_jointes(message: Message, chemins: list[str] | None) -> None:
+    """Consigne les pièces jointes d'un tour sur le message qui les portait."""
+    if not chemins:
+        return
+    from pathlib import Path as _Path
+
+    donnees = json.loads(message.extra_data) if message.extra_data else {}
+    donnees["attachments"] = [
+        {"path": chemin, "name": _Path(chemin).name} for chemin in chemins
+    ]
+    message.extra_data = json.dumps(donnees)
+
+
+async def _pieces_jointes_recentes(
+    conversation_id: str | None,
+    session: AsyncSession | None,
+    deja_fournis: list[str],
+) -> list[str]:
+    """Les pièces jointes des derniers tours, à rejouer dans le contexte.
+
+    Un fichier absent du disque est ignoré sans bruit : il vit hors de THÉRÈSE
+    et peut avoir été déplacé ou supprimé entre deux messages.
+    """
+    if not conversation_id or session is None:
+        return []
+
+    from pathlib import Path as _Path
+
+    try:
+        resultat = await session.execute(
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .where(Message.role == "user")
+            .order_by(Message.created_at.desc())  # type: ignore[union-attr]
+            .limit(TOURS_AVEC_PIECES_JOINTES)
+        )
+        messages = list(resultat.scalars().all())
+    except Exception:
+        logger.warning("Pièces jointes des tours précédents illisibles", exc_info=True)
+        return []
+
+    connus = set(deja_fournis)
+    rejoues: list[str] = []
+    for message in messages:
+        if not message.extra_data:
+            continue
+        try:
+            donnees = json.loads(message.extra_data)
+        except (ValueError, TypeError):
+            continue
+        for piece in donnees.get("attachments", []) or []:
+            chemin = piece.get("path")
+            if not chemin or chemin in connus:
+                continue
+            if not _Path(chemin).is_file():
+                logger.info(
+                    "Pièce jointe %s introuvable sur le disque, non rejouée", chemin
+                )
+                connus.add(chemin)
+                continue
+            connus.add(chemin)
+            rejoues.append(chemin)
+            if len(rejoues) >= PLAFOND_PIECES_JOINTES_REJOUEES:
+                return rejoues
+    return rejoues
+
+
+def borner_bloc_fichiers(contextes: list[str]) -> tuple[list[str], int]:
+    """Coupe le bloc des fichiers au plafond global, sans jamais couper un bloc.
+
+    Renvoie les contextes retenus et le nombre de documents écartés, pour que
+    l'utilisateur puisse être averti plutôt que de croire que tout a été lu.
+    Le premier document est toujours retenu, même s'il dépasse à lui seul : le
+    couper en deux ferait plus de dégâts que de l'admettre entier.
+    """
+    retenus: list[str] = []
+    total = 0
+    ecartes = 0
+    for contexte in contextes:
+        if retenus and total + len(contexte) > PLAFOND_CARACTERES_FICHIERS:
+            # Revue Soso, passe 2 : `continue` et non `break`. Un premier gros
+            # document ne doit pas faire tomber tous les suivants : un document
+            # court qui tient encore garde toutes ses chances, et l'ordre
+            # d'arrivée — tour courant d'abord — reste respecté.
+            ecartes += 1
+            continue
+        retenus.append(contexte)
+        total += len(contexte)
+    return retenus, ecartes
+
+
 async def _perimetre_de_conversation(
     conversation_id: str | None, session: AsyncSession | None
 ) -> tuple[str | None, str | None]:
@@ -370,6 +547,42 @@ async def _perimetre_de_conversation(
     # `include_global` du filtre rend déjà les documents globaux ; passer
     # `scope="global"` suffit à exclure ceux qui portent un projet.
     return "global", None
+
+
+async def perimetre_de_piece_jointe(
+    conversation_id: str | None, session: AsyncSession | None
+) -> tuple[str, str | None, bool]:
+    """Le périmètre d'un DOCUMENT joint, distinct de celui d'une RECHERCHE.
+
+    Revue Soso : `_perimetre_de_conversation` sert à chercher, et peut rendre
+    `all` — un périmètre de lecture transversal. L'écrire sur un document le
+    rendait introuvable : le filtre `all` relit `global`, `project` et la
+    conversation courante, jamais `all` lui-même. Un fichier ainsi classé
+    disparaissait donc de partout une fois la fenêtre de rejeu passée.
+
+    Un document n'a que deux appartenances possibles : le projet de la
+    conversation, ou la conversation elle-même. Jamais « tous les projets »,
+    qui décrit ce qu'on a le droit de lire, pas ce qu'on possède.
+
+    Le troisième élément dit si la conversation EXISTE réellement en base. Un
+    identifiant encore local — le composeur en fabrique un avant que le backend
+    n'ait créé la conversation — donnerait sinon un périmètre définitif
+    rattaché à une conversation qui n'existera jamais sous cet identifiant : le
+    document y resterait prisonnier, sans que rien ne puisse le rectifier.
+    """
+    conversation = None
+    if conversation_id and session is not None:
+        try:
+            conversation = await session.get(Conversation, conversation_id)
+        except Exception:
+            logger.warning("Conversation illisible pour le périmètre documentaire")
+
+    scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
+    if scope == "project" and scope_id:
+        return "project", scope_id, conversation is not None
+    if conversation_id:
+        return "conversation", conversation_id, conversation is not None
+    return "global", None, False
 
 
 async def _get_memory_context(
@@ -712,6 +925,10 @@ async def send_message(
         role="user",
         content=request.message,
     )
+    # BUG-160 : consigner les pièces jointes du tour. Sans cela, le message
+    # part en base sans aucune mention du fichier et la conversation perd le
+    # document dès le message suivant.
+    _memoriser_pieces_jointes(user_message, request.file_paths)
     session.add(user_message)
     await session.commit()
 
@@ -1176,8 +1393,32 @@ async def send_message(
             elif error:
                 logger.warning(f"Attached file error: {error}")
 
+    # BUG-160 : même rappel que sur le chemin streaming.
+    for fp in await _pieces_jointes_recentes(
+        conversation.id, session, deja_fournis=list(request.file_paths or [])
+    ):
+        file_ctx, error = await _get_file_context(
+            fp, session, "analyse",
+            scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+        )
+        if file_ctx:
+            file_contexts.append(file_ctx)
+        elif error:
+            logger.info("Pièce jointe d'un tour précédent non rejouée : %s", error)
+
     # Combine memory and file contexts
     if file_contexts:
+        # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
+        # 15 000 caractères chacun évincent l'historique de la conversation
+        # sans que rien ne le signale.
+        file_contexts, ecartes = borner_bloc_fichiers(file_contexts)
+        if ecartes:
+            logger.info("%d document(s) écarté(s) du contexte : plafond atteint", ecartes)
+            file_contexts.append(
+                f"[{ecartes} autre(s) document(s) de cette conversation n'ont pas pu "
+                "être transmis : le volume total dépasse ce que le modèle peut "
+                "recevoir. Dis-le à l'utilisateur s'il pose une question qui en dépend.]"
+            )
         file_context_str = "\n\n".join(file_contexts)
         if memory_context:
             memory_context = f"{memory_context}\n\n{file_context_str}"
@@ -1498,6 +1739,22 @@ async def _do_stream_response(
                 file_errors.append(error)
                 logger.warning(f"Attached file error: {error}")
 
+    # BUG-160 : rejouer les pièces jointes des tours précédents. Le composeur
+    # vide sa liste après l'envoi, donc sans ce rappel la conversation perd le
+    # document dès le message suivant et THÉRÈSE répond, à juste titre, qu'elle
+    # n'a aucun moyen de le lire.
+    for fp in await _pieces_jointes_recentes(
+        conversation_id, session, deja_fournis=list(file_paths or [])
+    ):
+        file_ctx, error = await _get_file_context(
+            fp, session, "analyse",
+            scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+        )
+        if file_ctx:
+            file_contexts.append(file_ctx)
+        elif error:
+            logger.info("Pièce jointe d'un tour précédent non rejouée : %s", error)
+
     # Send file processing status if we had file commands or attached files
     if file_commands or file_paths:
         status_msg = f"Traitement de {len(file_commands) + len(file_paths or [])} fichier(s)..."
@@ -1515,6 +1772,17 @@ async def _do_stream_response(
 
     # Combine memory and file contexts
     if file_contexts:
+        # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
+        # 15 000 caractères chacun évincent l'historique de la conversation
+        # sans que rien ne le signale.
+        file_contexts, ecartes = borner_bloc_fichiers(file_contexts)
+        if ecartes:
+            logger.info("%d document(s) écarté(s) du contexte : plafond atteint", ecartes)
+            file_contexts.append(
+                f"[{ecartes} autre(s) document(s) de cette conversation n'ont pas pu "
+                "être transmis : le volume total dépasse ce que le modèle peut "
+                "recevoir. Dis-le à l'utilisateur s'il pose une question qui en dépend.]"
+            )
         file_context_str = "\n\n".join(file_contexts)
         if memory_context:
             memory_context = f"{memory_context}\n\n{file_context_str}"
@@ -1601,6 +1869,14 @@ async def _do_stream_response(
         if mcp_tools:
             capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
         context.system_prompt += capabilities
+
+    # BUG-160 : le modèle n'a aucun outil qui lise un fichier local, et la
+    # consigne « ne dis jamais que tu ne peux pas SI un outil le permet »
+    # l'autorise donc, a contrario, à répondre « je ne peux pas ». Sa réponse
+    # était techniquement juste et parfaitement désorientante. On lui dit donc
+    # où sont les pièces jointes, et quoi répondre quand il n'en a qu'un extrait.
+    if file_contexts:
+        context.system_prompt += BLOC_PIECES_JOINTES
 
     full_content = ""
     # Confirmations des directives inline [action: ...] : émises en tête de

@@ -30,7 +30,12 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
-import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
+import {
+  CLOUD_CONSENT_REVOKED_EVENT,
+  grantCloudConsent,
+  hasCloudConsent,
+  type CloudPurpose,
+} from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
@@ -47,6 +52,9 @@ interface ChatInputProps {
 
 interface PendingCloudConsent {
   action: 'message' | 'deep-research';
+  // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
+  // les messages ne vaut pas pour l'envoi de documents.
+  purpose: CloudPurpose;
   provider: LLMProvider;
   providerLabel: string;
   dataCategories: string[];
@@ -163,6 +171,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     loadLLMConfig();
   }, [loadLLMConfig]);
 
+  // Revue Soso : le cache de session est nécessaire (le stockage local peut
+  // être indisponible), mais il doit céder devant une révocation faite dans les
+  // réglages pendant que le chat reste ouvert.
+  useEffect(() => {
+    const oublier = () => { cloudConsentGrantedRef.current = null; };
+    window.addEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
+    return () => window.removeEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
+  }, []);
+
   // Écouter les changements de config LLM depuis Settings
   useEffect(() => {
     window.addEventListener('therese:llm-config-changed', loadLLMConfig);
@@ -223,7 +240,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       file.path === path ? { ...file, indexStatus: 'indexing', indexError: undefined } : file
     )));
     try {
-      await indexFile(path, controller.signal);
+      // BUG-165 : la conversation courante détermine le périmètre du document.
+      //
+      // Revue Soso, passe 2 : n'envoyer l'identifiant QUE si la conversation
+      // existe côté backend. Un identifiant encore local rattacherait le
+      // document à une conversation qui n'existera jamais sous ce nom, et il y
+      // resterait prisonnier. Dans ce cas on demande explicitement un périmètre
+      // provisoire, que l'envoi rectifiera.
+      const conversation = currentConversation();
+      const idSynchronise = conversation?.synced ? currentConversationId : undefined;
+      await indexFile(
+        path,
+        controller.signal,
+        idSynchronise ?? undefined,
+        !idSynchronise,
+      );
       if (controller.signal.aborted) return;
       setAttachedFiles((current) => current.map((file) => (
         file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
@@ -246,7 +277,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         indexControllersRef.current.delete(path);
       }
     }
-  }, []);
+  }, [currentConversationId, currentConversation]);
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
     const newFiles = files.filter((file) => {
@@ -451,20 +482,39 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       return;
     }
 
+    // Revue Soso : envoyer un DOCUMENT est une finalité distincte d'envoyer un
+    // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
+    // été informé que ses documents partent, ni qu'ils repartent à chaque
+    // message depuis qu'ils sont rejoués (BUG-160).
+    // Revue Soso, passe 2 : la finalité ne peut pas dépendre du seul composeur.
+    // Au tour suivant il est vide, alors que le backend rejoue les documents de
+    // la conversation. Un accord donné sous Ollama puis un passage au cloud
+    // enverrait le document sans que rien ne l'annonce.
+    const conversationPorteDesDocuments = Boolean(
+      currentConversation()?.messages.some((m) => m.hasAttachments),
+    );
+    const finaliteCloud: CloudPurpose =
+      attachedFiles.length > 0 || conversationPorteDesDocuments ? 'documents' : 'llm';
     if (
       currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== currentProvider
-      && !hasCloudConsent('llm', currentProvider)
+      && cloudConsentGrantedRef.current !== `${finaliteCloud}:${currentProvider}`
+      && !hasCloudConsent(finaliteCloud, currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'message',
+        purpose: finaliteCloud,
         provider: currentProvider,
         providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
         dataCategories: [
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
-          ...(attachedFiles.length > 0 ? ['fichiers joints sélectionnés'] : []),
+          ...(attachedFiles.length > 0
+            ? [
+                'contenu intégral des documents joints',
+                'ces documents sont renvoyés à chaque message de la conversation',
+              ]
+            : []),
         ],
       });
       return;
@@ -722,11 +772,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     if (
       currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== currentProvider
+      && cloudConsentGrantedRef.current !== `llm:${currentProvider}`
       && !hasCloudConsent('llm', currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'deep-research',
+        purpose: 'llm',
         provider: currentProvider,
         providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
         dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
@@ -812,8 +863,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setPendingCloudConsent(null);
       return;
     }
-    grantCloudConsent('llm', pendingCloudConsent.provider, pendingCloudConsent.dataCategories);
-    cloudConsentGrantedRef.current = pendingCloudConsent.provider;
+    grantCloudConsent(
+      pendingCloudConsent.purpose,
+      pendingCloudConsent.provider,
+      pendingCloudConsent.dataCategories,
+    );
+    cloudConsentGrantedRef.current =
+      `${pendingCloudConsent.purpose}:${pendingCloudConsent.provider}`;
     const action = pendingCloudConsent.action;
     setPendingCloudConsent(null);
     window.setTimeout(() => {
