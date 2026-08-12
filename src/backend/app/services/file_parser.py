@@ -16,8 +16,18 @@ MAX_PDF_PAGES = 100
 
 
 # Supported extensions
-TEXT_EXTENSIONS = {".txt", ".md", ".markdown", ".rst", ".log"}
+#
+# Inventaire des capacités du 13/08/2026 : six extensions étaient acceptées à
+# l'indexation sans figurer ici. Le contrôle d'entrée les laissait passer, le
+# parseur ne savait pas quoi en faire, et l'indexation « réussissait » sur un
+# contenu vide sans que rien ne le signale. Ce sont pourtant des fichiers texte,
+# que lire ne demande aucune bibliothèque — seulement de les déclarer.
+TEXT_EXTENSIONS = {
+    ".txt", ".md", ".markdown", ".rst", ".log",
+    ".cfg", ".conf", ".ini", ".org", ".tex",
+}
 CODE_EXTENSIONS = {
+    ".scala",
     ".py",
     ".js",
     ".ts",
@@ -52,6 +62,7 @@ CODE_EXTENSIONS = {
     ".vim",
     ".el",
 }
+PRESENTATION_EXTENSIONS = {".pptx"}
 CSV_EXTENSIONS = {".csv", ".tsv"}
 
 
@@ -96,6 +107,10 @@ def extract_text(file_path: Path) -> str | None:
         # Excel spreadsheets
         if ext == ".xlsx":
             return _extract_xlsx(file_path)
+
+        # Présentations
+        if ext in PRESENTATION_EXTENSIONS:
+            return _extract_pptx(file_path)
 
         # Unsupported
         logger.warning(f"Unsupported file type: {ext}")
@@ -192,6 +207,40 @@ def _extract_docx(file_path: Path) -> str:
             text_parts.append(para.text)
 
     return "\n\n".join(text_parts)
+
+
+def _extract_pptx(file_path: Path) -> str:
+    """Extrait le texte d'une présentation, diapositive par diapositive.
+
+    `python-pptx` est déjà une dépendance du projet (génération de documents) :
+    accepter un .pptx à l'indexation sans jamais l'extraire n'avait donc aucune
+    raison technique. Les notes du présentateur sont incluses, elles portent
+    souvent l'essentiel du propos.
+    """
+    from pptx import Presentation
+
+    presentation = Presentation(str(file_path))
+    morceaux: list[str] = []
+
+    for numero, diapositive in enumerate(presentation.slides, start=1):
+        lignes = [
+            forme.text_frame.text.strip()
+            for forme in diapositive.shapes
+            if forme.has_text_frame and forme.text_frame.text.strip()
+        ]
+        notes = ""
+        if diapositive.has_notes_slide:
+            notes = diapositive.notes_slide.notes_text_frame.text.strip()
+        if not lignes and not notes:
+            continue
+        bloc = f"--- Diapositive {numero} ---"
+        if lignes:
+            bloc += "\n" + "\n".join(lignes)
+        if notes:
+            bloc += f"\n[Notes] {notes}"
+        morceaux.append(bloc)
+
+    return "\n\n".join(morceaux)
 
 
 def _extract_xlsx(file_path: Path) -> str:
