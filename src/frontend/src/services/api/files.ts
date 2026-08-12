@@ -28,10 +28,19 @@ export async function listFiles(
   return request<FileMetadata[]>(`/api/files/?limit=${limit}&offset=${offset}`);
 }
 
-export async function indexFile(path: string, signal?: AbortSignal): Promise<FileMetadata> {
+export async function indexFile(
+  path: string,
+  signal?: AbortSignal,
+  // BUG-165 : sans la conversation d'origine, une pièce jointe naît GLOBALE et
+  // reste lisible depuis tous les autres dossiers clients. Le backend en dérive
+  // le périmètre ; le client ne le dicte pas.
+  conversationId?: string,
+): Promise<FileMetadata> {
   return request<FileMetadata>('/api/files/index', {
     method: 'POST',
-    body: JSON.stringify({ path }),
+    body: JSON.stringify(
+      conversationId ? { path, conversation_id: conversationId } : { path },
+    ),
     timeoutMs: null, // indexation (embeddings) : long sur les gros documents
     // BUG-155 : sans signal, retirer la pièce jointe ne coupait rien et
     // l'utilisateur n'avait aucun moyen d'interrompre un gros document.
