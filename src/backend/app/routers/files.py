@@ -559,6 +559,10 @@ async def upload_file(
         existing.mime_type = metadata["mime_type"]
         existing.scope = "project"
         existing.scope_id = project_id
+        # Déposer un fichier DANS un projet est un geste explicite : le
+        # périmètre qui en résulte est voulu, et aucun attachement ultérieur ne
+        # doit pouvoir le rectifier.
+        existing.scope_provisoire = False
         existing.updated_at = datetime.now(UTC)
         file_meta = existing
     else:
