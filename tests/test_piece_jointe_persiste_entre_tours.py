@@ -210,3 +210,40 @@ class TestLeBlocDesFichiersEstReellementBorne:
 
         assert retenus == petits
         assert ecartes == 0
+
+
+class TestUneCommandeDeterministeNePerdPasLesPiecesJointes:
+    """Passe 3 de la revue : `extra_data` était intégralement remplacé.
+
+    Un message qui déclenche une action déterministe voyait ses pièces jointes
+    effacées de la base juste après y avoir été consignées. Le composeur ayant
+    déjà vidé sa liste, le document restait global et la conversation perdait
+    le chemin qui aurait permis de le rejouer, donc de rectifier son périmètre.
+    """
+
+    def test_le_marquage_deterministe_preserve_les_pieces_jointes(self, tmp_path):
+        from app.models.entities import Message
+        from app.routers import chat as chat_router
+
+        fichier = tmp_path / "devis.txt"
+        fichier.write_text("contenu", encoding="utf-8")
+
+        message = Message(conversation_id="c", role="user", content="{action: aide}")
+        chat_router._memoriser_pieces_jointes(message, [str(fichier)])
+        chat_router._marquer_deterministe(message)
+
+        donnees = json.loads(message.extra_data or "{}")
+        assert donnees.get("deterministic") is True
+        assert [p["path"] for p in donnees.get("attachments", [])] == [str(fichier)], (
+            "les pièces jointes ont été effacées par le marquage déterministe : "
+            "le document reste global et la conversation en perd la trace"
+        )
+
+    def test_le_marquage_fonctionne_sans_piece_jointe(self):
+        from app.models.entities import Message
+        from app.routers import chat as chat_router
+
+        message = Message(conversation_id="c", role="user", content="{action: aide}")
+        chat_router._marquer_deterministe(message)
+
+        assert json.loads(message.extra_data or "{}") == {"deterministic": True}

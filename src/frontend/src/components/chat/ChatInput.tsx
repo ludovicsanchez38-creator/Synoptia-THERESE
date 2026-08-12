@@ -509,7 +509,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
-          ...(attachedFiles.length > 0
+          ...(attachedFiles.length > 0 || conversationPorteDesDocuments
             ? [
                 'contenu intégral des documents joints',
                 'ces documents sont renvoyés à chaque message de la conversation',
@@ -536,7 +536,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     }
 
     // Add user message
-    addMessage({ role: 'user', content: messageContent });
+    // Revue Soso, passe 3 : le message ajouté localement doit porter le drapeau,
+    // sinon changer de fournisseur en cours de conversation ne redemande pas le
+    // consentement documentaire — le backend rejoue pourtant bien le document.
+    // Le drapeau n'était posé qu'au rechargement depuis le backend, or la
+    // synchronisation préserve les messages locaux et ne recharge pas une
+    // conversation déjà remplie.
+    addMessage({
+      role: 'user',
+      content: messageContent,
+      ...(sentFiles.length > 0 ? { hasAttachments: true } : {}),
+    });
     // Suggestion Dr_logic 20/07 : l'ENVOI ramène toujours en bas de la
     // conversation (le scroll manuel reste respecté PENDANT la réponse).
     window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));

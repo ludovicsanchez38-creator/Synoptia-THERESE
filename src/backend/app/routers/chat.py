@@ -414,6 +414,25 @@ def _memoriser_pieces_jointes(message: Message, chemins: list[str] | None) -> No
     message.extra_data = json.dumps(donnees)
 
 
+def _marquer_deterministe(message: Message) -> None:
+    """Marque un message comme déterministe SANS effacer ses autres données.
+
+    Revue Soso, passe 3 : `extra_data` était intégralement remplacé par
+    `{"deterministic": true}`. Les pièces jointes qu'on venait d'y consigner
+    disparaissaient donc, et comme le composeur avait déjà vidé sa liste, le
+    document restait global sans qu'aucun tour suivant ne puisse le retrouver
+    ni rectifier son périmètre. Une réattache manuelle était le seul recours.
+    """
+    donnees = {}
+    if message.extra_data:
+        try:
+            donnees = json.loads(message.extra_data)
+        except (ValueError, TypeError):
+            donnees = {}
+    donnees["deterministic"] = True
+    message.extra_data = json.dumps(donnees)
+
+
 async def _pieces_jointes_recentes(
     conversation_id: str | None,
     session: AsyncSession | None,
@@ -1014,7 +1033,7 @@ async def send_message(
                 f"Action inconnue : « {parsed_action.raw} ». "
                 "Actions disponibles :\n" + available_actions_text()
             )
-        user_message.extra_data = json.dumps({"deterministic": True})
+        _marquer_deterministe(user_message)
         assistant_message = Message(
             conversation_id=conversation.id,
             role="assistant",
@@ -1090,7 +1109,7 @@ async def send_message(
             conversation_id=conversation.id,
         )
         confirmation = command_outcome.content
-        user_message.extra_data = json.dumps({"deterministic": True})
+        _marquer_deterministe(user_message)
         assistant_message = Message(
             conversation_id=conversation.id,
             role="assistant",
@@ -1186,7 +1205,7 @@ async def send_message(
 
         if not cleaned_message:
             # Message composé uniquement de directives : réponse déterministe pure
-            user_message.extra_data = json.dumps({"deterministic": True})
+            _marquer_deterministe(user_message)
             assistant_message = Message(
                 conversation_id=conversation.id,
                 role="assistant",
@@ -1270,7 +1289,7 @@ async def send_message(
                 content=borne_message,
                 model="action-deterministe",
             )
-            user_message.extra_data = json.dumps({"deterministic": True})
+            _marquer_deterministe(user_message)
             session.add(assistant_message)
             await session.commit()
             if request.stream:
