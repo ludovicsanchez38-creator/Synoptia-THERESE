@@ -90,7 +90,7 @@ describe('la fiche des raccourcis dit la vérité', () => {
       // hook, mais la coque ne fournissait jamais `onOpenFile`. Le raccourci
       // était donc mort en situation réelle, et la première version de ce test
       // le laissait passer. Une branche sans callback ne prouve rien.
-      const rappel = rappelInvoque(touche);
+      const rappel = touche ? rappelInvoque(touche) : null;
       if (rappel) {
         expect(
           sourceDeLaCoque.includes(rappel),
