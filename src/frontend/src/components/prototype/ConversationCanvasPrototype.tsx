@@ -1307,7 +1307,22 @@ export function ConversationCanvasPrototype() {
                 ou par le bouton Profil, dont la fonction n'était pas lisible. */}
             <div className="mt-auto flex flex-col items-center gap-1.5">
               <IconButton label="Paramètres" onClick={() => openSettings()}><Settings className="h-[18px] w-[18px]" /></IconButton>
-              <IconButton label="Aide" onClick={() => openChat("/aide")}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
+              {/* Inventaire des capacités du 13/08/2026, deux défauts corrigés
+                  d'un même geste.
+
+                  Ce bouton écrivait « /aide » dans le composeur SANS l'envoyer.
+                  L'utilisateur voyait du texte apparaître dans une zone de
+                  saisie, et « /aide » déclenche par ailleurs le menu de
+                  complétion : il fallait deviner qu'il restait à presser Entrée.
+
+                  Et le centre des Capacités — le seul catalogue de ce que
+                  THÉRÈSE sait faire — n'était atteignable que depuis le
+                  composeur de l'accueil, donc invisible dès qu'une conversation
+                  était ouverte. Un testeur qui commence par « Nouvelle
+                  conversation » ne le voyait jamais.
+
+                  Le bouton d'aide ouvre donc ce catalogue, depuis n'importe où. */}
+              <IconButton label="Aide" onClick={() => setCapabilityCenterOpen(true)}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
               <button
                 type="button"
                 data-testid="shell-profile-button"
