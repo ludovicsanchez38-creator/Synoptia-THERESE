@@ -60,6 +60,12 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+# BUG-162 : un jeton Google vit 3600 s. Deux minutes d'avance couvrent le trajet
+# réseau et une dérive d'horloge raisonnable, sans provoquer de rafraîchissement
+# à chaque appel.
+_MARGE_RAFRAICHISSEMENT = timedelta(seconds=120)
+
+
 router = APIRouter()
 
 
@@ -156,8 +162,13 @@ async def ensure_valid_access_token(
         else account.access_token
     )
 
-    # Check if token expired
-    if account.token_expiry and _utcnow() >= account.token_expiry:
+    # BUG-162 : marge d'anticipation. La condition était `>= expiry`, soit une
+    # marge nulle : un jeton encore « valide » d'une poignée de secondes partait
+    # tel quel et pouvait être refusé par Google le temps du trajet réseau, ou
+    # à la moindre dérive d'horloge de la machine. Le 401 qui s'ensuivait était
+    # traduit à l'écran en « reconnecte ton compte », alors que le compte était
+    # sain — d'où une erreur qui disparaissait d'elle-même au lancement suivant.
+    if account.token_expiry and _utcnow() >= account.token_expiry - _MARGE_RAFRAICHISSEMENT:
         logger.info(f"Access token expired for {account.email}, refreshing...")
         refresh_token = (
             decrypt_value(account.refresh_token)
