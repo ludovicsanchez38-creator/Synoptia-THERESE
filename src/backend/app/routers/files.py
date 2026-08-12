@@ -112,8 +112,18 @@ async def list_files(
     ]
 
 
-async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: datetime) -> None:
-    """Enregistre l'issue de l'indexation dans une transaction courte."""
+async def _consigner_resultat(
+    file_id: str,
+    chunk_count: int,
+    indexed_at: datetime,
+    figer_perimetre: bool = False,
+) -> None:
+    """Enregistre l'issue de l'indexation dans une transaction courte.
+
+    `figer_perimetre` n'est honoré qu'ICI, après l'écriture réelle des
+    fragments : tant qu'ils n'existent pas, le document reste rectifiable
+    plutôt que de figer un cloisonnement que la recherche n'applique pas.
+    """
     async with get_session_context() as session:
         a_jour = await session.get(FileMetadata, file_id)
         if a_jour is None:
@@ -126,6 +136,8 @@ async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: dateti
             )
         a_jour.chunk_count = chunk_count
         a_jour.indexed_at = indexed_at
+        if figer_perimetre:
+            a_jour.scope_provisoire = False
         await session.commit()
 
 
@@ -239,7 +251,15 @@ async def index_payload(
                 if existing.scope_provisoire:
                     existing.scope = scope
                     existing.scope_id = scope_id
-                    existing.scope_provisoire = perimetre_provisoire
+                    # Revue Soso, passe 2 : NE PAS éteindre le drapeau ici. Ce
+                    # commit précède l'écriture des fragments ; un abandon
+                    # entre les deux laissait la base annoncer un périmètre que
+                    # l'index n'appliquait pas, et le document devenait
+                    # définitif donc irrattrapable. Le drapeau ne s'éteint
+                    # qu'une fois les fragments réellement écrits.
+                    _perimetre_a_figer = not perimetre_provisoire
+                else:
+                    _perimetre_a_figer = False
                 file_meta = existing
                 reindexation = True
                 # Mémorisés pour ne rien détruire si le nouveau traitement
@@ -255,8 +275,11 @@ async def index_payload(
                     mime_type=metadata["mime_type"],
                     scope=scope,
                     scope_id=scope_id,
-                    scope_provisoire=perimetre_provisoire,
+                    # Idem à la naissance : provisoire jusqu'à ce que les
+                    # fragments existent réellement.
+                    scope_provisoire=True,
                 )
+                _perimetre_a_figer = not perimetre_provisoire
                 session.add(file_meta)
                 reindexation = False
                 chunk_count_existant = 0
@@ -326,7 +349,9 @@ async def index_payload(
         # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
         # demande a été abandonnée : l'état précédent reste la vérité.
         if ecriture_faite:
-            await _consigner_resultat(file_id, chunk_count, indexed_at)
+            await _consigner_resultat(
+                file_id, chunk_count, indexed_at, figer_perimetre=_perimetre_a_figer
+            )
 
     return FileResponse(
         id=file_id,
@@ -360,17 +385,22 @@ async def index_file(
     ce qui est le bon défaut pour l'explorateur de fichiers.
     """
     scope, scope_id = "global", None
-    perimetre_provisoire = True
+    # Le provisoire est demandé explicitement par l'appelant (le composeur du
+    # chat quand sa conversation n'existe pas encore côté backend). L'absence de
+    # conversation ne suffit pas : l'explorateur est dans ce cas et son
+    # périmètre est voulu.
+    perimetre_provisoire = request.perimetre_provisoire
     if request.conversation_id:
         from app.routers.chat import perimetre_de_piece_jointe
 
         async with get_session_context() as session:
-            scope, scope_id = await perimetre_de_piece_jointe(
+            scope, scope_id, conversation_connue = await perimetre_de_piece_jointe(
                 request.conversation_id, session
             )
-        # La conversation est connue : ce périmètre est VOULU, il ne sera pas
-        # rectifié plus tard.
-        perimetre_provisoire = False
+        # Une conversation RÉELLEMENT connue donne un périmètre voulu. Un
+        # identifiant encore local (conversation pas synchronisée) ne doit pas
+        # figer un périmètre orphelin : il reste rectifiable à l'envoi.
+        perimetre_provisoire = not conversation_connue
 
     return await index_payload(
         request.path,

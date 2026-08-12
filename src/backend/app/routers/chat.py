@@ -478,12 +478,18 @@ def borner_bloc_fichiers(contextes: list[str]) -> tuple[list[str], int]:
     """
     retenus: list[str] = []
     total = 0
+    ecartes = 0
     for contexte in contextes:
         if retenus and total + len(contexte) > PLAFOND_CARACTERES_FICHIERS:
-            break
+            # Revue Soso, passe 2 : `continue` et non `break`. Un premier gros
+            # document ne doit pas faire tomber tous les suivants : un document
+            # court qui tient encore garde toutes ses chances, et l'ordre
+            # d'arrivée — tour courant d'abord — reste respecté.
+            ecartes += 1
+            continue
         retenus.append(contexte)
         total += len(contexte)
-    return retenus, len(contextes) - len(retenus)
+    return retenus, ecartes
 
 
 async def _perimetre_de_conversation(
@@ -545,7 +551,7 @@ async def _perimetre_de_conversation(
 
 async def perimetre_de_piece_jointe(
     conversation_id: str | None, session: AsyncSession | None
-) -> tuple[str, str | None]:
+) -> tuple[str, str | None, bool]:
     """Le périmètre d'un DOCUMENT joint, distinct de celui d'une RECHERCHE.
 
     Revue Soso : `_perimetre_de_conversation` sert à chercher, et peut rendre
@@ -557,13 +563,26 @@ async def perimetre_de_piece_jointe(
     Un document n'a que deux appartenances possibles : le projet de la
     conversation, ou la conversation elle-même. Jamais « tous les projets »,
     qui décrit ce qu'on a le droit de lire, pas ce qu'on possède.
+
+    Le troisième élément dit si la conversation EXISTE réellement en base. Un
+    identifiant encore local — le composeur en fabrique un avant que le backend
+    n'ait créé la conversation — donnerait sinon un périmètre définitif
+    rattaché à une conversation qui n'existera jamais sous cet identifiant : le
+    document y resterait prisonnier, sans que rien ne puisse le rectifier.
     """
+    conversation = None
+    if conversation_id and session is not None:
+        try:
+            conversation = await session.get(Conversation, conversation_id)
+        except Exception:
+            logger.warning("Conversation illisible pour le périmètre documentaire")
+
     scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
     if scope == "project" and scope_id:
-        return "project", scope_id
+        return "project", scope_id, conversation is not None
     if conversation_id:
-        return "conversation", conversation_id
-    return "global", None
+        return "conversation", conversation_id, conversation is not None
+    return "global", None, False
 
 
 async def _get_memory_context(

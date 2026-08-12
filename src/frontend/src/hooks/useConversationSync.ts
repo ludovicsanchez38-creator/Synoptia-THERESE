@@ -29,6 +29,10 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   // BUG-136 : nouveau format {skill_files: [...]} (liste), lecture du legacy
   // {skill_file: {...}} conservée pour les messages persistés avant le fix.
   let skillFiles: NonNullable<Message['skillFiles']> = [];
+  // Revue Soso : le frontend doit savoir qu'un message portait des pièces
+  // jointes. Sans cela, une conversation rechargée ignore que le backend va
+  // rejouer ces documents, et le consentement demandé ne mentionne rien.
+  let hasAttachments = false;
   if (msg.extra_data) {
     try {
       const parsed = JSON.parse(msg.extra_data);
@@ -38,6 +42,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
         } else if (parsed.skill_file) {
           skillFiles = [parsed.skill_file as NonNullable<Message['skillFile']>];
         }
+        hasAttachments = Array.isArray(parsed.attachments) && parsed.attachments.length > 0;
       }
     } catch {
       // extra_data non-JSON ou corrompu : on ignore, le message reste affichable.
@@ -47,6 +52,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
     id: msg.id,
     role: msg.role as 'user' | 'assistant' | 'system',
     content: msg.content,
+    hasAttachments,
     timestamp: new Date(msg.created_at),
     ...(msg.provider ? { provider: msg.provider } : {}),
     ...(skillFiles.length > 0
