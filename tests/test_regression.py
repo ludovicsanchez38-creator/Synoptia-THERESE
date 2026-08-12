@@ -2746,69 +2746,44 @@ class TestBUGNEW_GoogleRefreshTokenRotation:
 
 
 class TestBUG032_ExcelFileFilter:
-    """Le filtre Documents du dialog Tauri doit etre aligné sur extract_text() (audit v0.2.12)."""
+    """Les formats proposés à l'utilisateur doivent être ceux qu'on sait lire.
 
-    CHAT_INPUT_TSX = Path("src/frontend/src/components/chat/ChatInput.tsx")
-    FILE_PARSER_PY = Path("src/backend/app/services/file_parser.py")
+    RÉÉCRIT le 13/08/2026. Les tests précédents cherchaient des chaînes dans le
+    source de `ChatInput.tsx`. Ils ont deux défauts que ce chantier a mis en
+    évidence.
 
-    def test_xlsx_in_filter(self):
-        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "'xlsx'" in content, "Le filtre Documents doit inclure 'xlsx'"
+    D'abord ils ne tenaient que par la forme du code : la liste de formats est
+    désormais partagée (`lib/formatsIndexables.ts`) et consommée par
+    l'explorateur ET le sélecteur du chat, donc plus aucune extension n'est
+    écrite en dur dans ce fichier — les tests cassaient sans qu'aucun
+    comportement n'ait changé.
 
-    def test_dead_extensions_removed(self):
-        """Les extensions non supportées par extract_text() ne doivent PAS etre dans le filtre."""
-        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        dead_extensions = ["'xls'", "'ods'", "'pptx'", "'ppt'", "'odt'"]
-        for ext in dead_extensions:
-            assert ext not in content, (
-                f"Le filtre Documents contient {ext} mais extract_text() ne le supporte pas"
-            )
+    Ensuite et surtout, ils ne surveillaient QU'UNE surface. `test_doc_removed`
+    documentait depuis longtemps que python-docx ne lit pas le binaire `.doc`,
+    et vérifiait son absence du seul filtre du chat : pendant ce temps `.doc`
+    restait dans la liste blanche d'indexation ET dans le branchement du
+    parseur, où il était indexé à vide. Un test qui grep une surface laisse le
+    défaut vivre ailleurs.
 
-    def test_doc_removed(self):
-        """python-docx ne lit PAS le format binaire .doc - retiré du filtre."""
-        import re
-        content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        matches = re.findall(r"'doc'", content)
-        assert len(matches) == 0, (
-            "Le filtre contient 'doc' mais python-docx ne lit pas le format binaire .doc"
-        )
+    Le comportement est maintenant vérifié là où il vit :
 
-    def test_filter_only_supported_extensions(self):
-        """Le filtre Documents ne doit contenir QUE des extensions supportées par extract_text()."""
-        import re
+    - `tests/test_extensions_promises_tenues.py` — aucune extension acceptée
+      par le contrôle d'entrée n'est illisible par le parseur ;
+    - `src/frontend/src/lib/formatsIndexables.test.ts` — la liste de l'interface
+      et celle du serveur ne peuvent plus diverger, dans un sens ni dans l'autre.
+    """
 
-        tsx_content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        doc_filter_match = re.search(
-            r"name:\s*'Documents'.*?extensions:\s*\[([^\]]+)\]",
-            tsx_content,
-            re.DOTALL,
-        )
-        assert doc_filter_match, "Filtre Documents introuvable dans ChatInput.tsx"
-        filter_exts = set(re.findall(r"'(\w+)'", doc_filter_match.group(1)))
+    def test_le_format_excel_est_lisible(self):
+        """Objet historique du BUG-032 : .xlsx doit rester extractible."""
+        from app.services.path_security import INDEXABLE_EXTENSIONS
 
-        parser_content = self.FILE_PARSER_PY.read_text(encoding="utf-8")
-        tree = ast.parse(parser_content)
-        supported_exts: set[str] = set()
+        assert ".xlsx" in INDEXABLE_EXTENSIONS
 
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and target.id in (
-                        "TEXT_EXTENSIONS", "CODE_EXTENSIONS", "CSV_EXTENSIONS",
-                    ):
-                        if isinstance(node.value, ast.Set):
-                            for elt in node.value.elts:
-                                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
-                                    supported_exts.add(elt.value.lstrip("."))
+    def test_le_binaire_doc_reste_refuse(self):
+        """python-docx ne lit que l'OOXML : accepter .doc l'indexerait à vide."""
+        from app.services.path_security import INDEXABLE_EXTENSIONS
 
-        # Extensions traitées dans les branches if de extract_text()
-        # .pdf, .docx, .xlsx (pas .doc car python-docx ne supporte pas le format binaire)
-        supported_exts.update({"pdf", "docx", "xlsx"})
-
-        unsupported = filter_exts - supported_exts
-        assert not unsupported, (
-            f"Le filtre Documents contient des extensions non supportées par extract_text() : {unsupported}"
-        )
+        assert ".doc" not in INDEXABLE_EXTENSIONS
 
 
 class TestBUGNEW_FilesExtractText:
