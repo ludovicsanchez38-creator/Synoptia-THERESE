@@ -216,6 +216,43 @@ async def _get_file_context(
         )
         existing = result.scalar_one_or_none()
 
+        # BUG-165 : rattrapage du périmètre d'un fichier DÉJÀ indexé.
+        #
+        # Le composeur indexe la pièce jointe dès l'attachement, donc `existing`
+        # est presque toujours trouvé ici et tout le bloc `if not existing:`
+        # ci-dessous — celui qui pose le périmètre — restait du code mort. Une
+        # pièce jointe déposée dans la conversation d'un client demeurait ainsi
+        # globale, lisible depuis tous les autres dossiers.
+        #
+        # Le rattrapage ne remonte JAMAIS un fichier : il ne touche qu'un
+        # document encore global, et seulement quand la conversation porte un
+        # périmètre. Un document indexé volontairement pour tous les dossiers
+        # depuis l'explorateur garde donc sa portée, et un document déjà
+        # rattaché à un projet ne peut pas être capté par un autre.
+        if (
+            existing
+            and scope
+            and scope != "global"
+            and (existing.scope or "global") == "global"
+        ):
+            existing.scope = scope
+            existing.scope_id = scope_id
+            await session.commit()
+            try:
+                await run_in_threadpool(
+                    get_qdrant_service().definir_perimetre_entite,
+                    existing.id, scope, scope_id,
+                )
+            except Exception:
+                # Le périmètre en base est déjà rectifié ; l'index sera remis en
+                # cohérence à la prochaine réindexation. On journalise plutôt que
+                # de faire échouer l'envoi du message pour autant.
+                logger.warning(
+                    "Périmètre non propagé à l'index pour %s : les fragments "
+                    "restent visibles hors du projet jusqu'à réindexation",
+                    path.name, exc_info=True,
+                )
+
         # Index if not already done
         if not existing:
             from datetime import UTC, datetime

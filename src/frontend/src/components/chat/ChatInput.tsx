@@ -223,7 +223,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       file.path === path ? { ...file, indexStatus: 'indexing', indexError: undefined } : file
     )));
     try {
-      await indexFile(path, controller.signal);
+      // BUG-165 : la conversation courante détermine le périmètre du document.
+      // Elle peut être absente sur un chat tout neuf ; `_get_file_context`
+      // rattrape alors le périmètre au moment de l'envoi.
+      await indexFile(path, controller.signal, currentConversationId ?? undefined);
       if (controller.signal.aborted) return;
       setAttachedFiles((current) => current.map((file) => (
         file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
@@ -246,7 +249,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         indexControllersRef.current.delete(path);
       }
     }
-  }, []);
+  }, [currentConversationId]);
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
     const newFiles = files.filter((file) => {

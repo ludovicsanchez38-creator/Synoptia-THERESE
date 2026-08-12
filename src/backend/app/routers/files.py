@@ -343,8 +343,30 @@ async def index_file(
     Index a file for RAG.
 
     Extracts content, chunks it, and stores embeddings in Qdrant.
+
+    BUG-165 : quand l'appel vient du composeur du chat, il porte la
+    conversation d'origine. Le périmètre en est DÉRIVÉ, jamais dicté par le
+    client : c'est le même résolveur que celui du contexte du chat, donc les
+    deux ne peuvent pas diverger. Sans conversation, le fichier reste global,
+    ce qui est le bon défaut pour l'explorateur de fichiers.
     """
-    return await index_payload(request.path, est_abandonnee=http_request.is_disconnected)
+    scope, scope_id = "global", None
+    if request.conversation_id:
+        from app.routers.chat import _perimetre_de_conversation
+
+        async with get_session_context() as session:
+            perimetre, perimetre_id = await _perimetre_de_conversation(
+                request.conversation_id, session
+            )
+        if perimetre is not None:
+            scope, scope_id = perimetre, perimetre_id
+
+    return await index_payload(
+        request.path,
+        est_abandonnee=http_request.is_disconnected,
+        scope=scope,
+        scope_id=scope_id,
+    )
 
 
 @router.get("/{file_id}", response_model=FileResponse)

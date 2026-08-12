@@ -439,6 +439,38 @@ class QdrantService:
             points=list(point_ids),
         )
 
+    def definir_perimetre_entite(
+        self, entity_id: str, scope: str, scope_id: str | None
+    ) -> int:
+        """Reclasse tous les fragments d'un document, sans réencoder ni supprimer.
+
+        BUG-165 : reclasser la ligne `FileMetadata` ne suffit pas. La recherche
+        filtre sur le payload Qdrant, pas sur la base relationnelle — un
+        document dont seule la métadonnée aurait changé continuerait de
+        ressortir dans les conversations des autres projets.
+
+        Renvoie le nombre de fragments reclassés.
+        """
+        points = self.client.scroll(
+            collection_name=settings.qdrant_collection,
+            scroll_filter=Filter(
+                must=[FieldCondition(key="entity_id", match=MatchValue(value=entity_id))]
+            ),
+            limit=10000,
+            with_payload=False,
+            with_vectors=False,
+        )[0]
+        if not points:
+            return 0
+
+        point_ids = [str(p.id) for p in points]
+        self.definir_perimetre(point_ids, scope, scope_id)
+        logger.info(
+            "Périmètre du document %s porté à %s/%s sur %d fragments",
+            entity_id, scope, scope_id, len(point_ids),
+        )
+        return len(point_ids)
+
     def delete_by_entity(self, entity_id: str) -> int:
         """
         Delete all memories for an entity.

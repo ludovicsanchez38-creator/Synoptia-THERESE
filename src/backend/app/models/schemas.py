@@ -378,6 +378,12 @@ class FileIndexRequest(BaseModel):
     """Request to index a file."""
 
     path: str
+    # BUG-165 : le composeur du chat indexe la pièce jointe dès l'attachement,
+    # avant l'envoi. Sans cette information, le fichier naissait GLOBAL et
+    # restait lisible depuis tous les autres dossiers clients — le
+    # cloisonnement livré en 0.43 ne s'appliquait donc jamais aux pièces
+    # jointes, alors qu'elles sont le cas le plus courant.
+    conversation_id: str | None = None
 
 
 class FileResponse(BaseModel):
