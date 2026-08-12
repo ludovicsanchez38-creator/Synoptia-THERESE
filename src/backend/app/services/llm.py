@@ -260,6 +260,22 @@ class LLMService:
     # lot S). Sans eux, le chat invente l'hébergement (constat C2 : "en France",
     # "en UE", "RAM", faux lien OpenAI) et fabrique des références de droit
     # (constat C6 : faux articles 227-22 CP, L121-1, L441-6, NDA bidon).
+    # BUG-164 : THÉRÈSE répondait parfois en anglais. Le prompt était rédigé en
+    # français, mais rien n'imposait la langue de sortie : « assistante souveraine
+    # française » qualifie le produit, pas la réponse. Or un prompt en français
+    # n'est qu'une préférence statistique — le modèle imite la langue dominante
+    # de sa fenêtre, et cette fenêtre contient les pièces jointes, THERESE.md, la
+    # mémoire et les résultats d'outils. Un seul document anglophone suffit à
+    # faire basculer, et l'historique verrouille ensuite le basculement.
+    _MARQUEUR_LANGUE = "## Langue de tes réponses"
+
+    LANGUE_BLOCK = f"""{_MARQUEUR_LANGUE}
+Réponds TOUJOURS en français, quelle que soit la langue du contexte qui t'est
+fourni. Un document, un courriel, un résultat de recherche ou un extrait de code
+rédigé en anglais ne change RIEN à la langue de ta réponse : tu cites la source
+dans sa langue si nécessaire, et tu rédiges en français autour. Seule une
+demande explicite de l'utilisateur peut te faire répondre dans une autre langue."""
+
     SOVEREIGNTY_BLOCK = """## Souveraineté et hébergement des données (factuel, non négociable)
 - Le STOCKAGE de tes données est 100 % local et hors-ligne, dans le dossier `~/.therese/` sur la machine de l'utilisateur (base SQLite locale + index vectoriel Qdrant + sauvegardes).
 - IMPORTANT (honnêteté sécurité) : la base SQLite n'est PAS chiffrée au repos. Ne prétends JAMAIS qu'elle est « chiffrée », « AES-256 » ou équivalent : ce serait faux. Sa confidentialité repose sur la machine de l'utilisateur (session, chiffrement disque type FileVault/BitLocker). Seuls certains secrets sensibles (clés API, mots de passe de messagerie) sont chiffrés au niveau du champ via Fernet (AES-128-CBC + HMAC), la clé étant gardée dans le trousseau du système quand il est disponible (sinon dans un fichier local à accès restreint).
@@ -638,6 +654,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         )
         return self.config
 
+    @staticmethod
+    def _avec_consigne_de_langue(system_prompt: str | None) -> str:
+        """Pose la consigne de langue EN TÊTE du prompt, une seule fois.
+
+        En tête, parce que plusieurs chemins terminent le leur par une consigne
+        de format forte : une instruction de langue ajoutée après entrerait en
+        concurrence avec elles, alors que placée avant elle cadre tout ce qui
+        suit.
+
+        Idempotent, parce que la continuation après outils repasse par le même
+        chemin à chaque tour : sans garde, une conversation un peu longue
+        finirait avec la consigne empilée dix fois.
+        """
+        if system_prompt and LLMService._MARQUEUR_LANGUE in system_prompt:
+            return system_prompt
+        return f"{LLMService.LANGUE_BLOCK}\n\n{system_prompt or ''}".rstrip()
+
     def prepare_context(
         self,
         messages: list[Message],
@@ -723,6 +756,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         error_detail = ""
 
         try:
+            # BUG-164 : AVANT la conversion, et non après. `to_openai_format`
+            # place le prompt système DANS les messages, et les providers
+            # OpenAI-compatible ignorent le paramètre `system_prompt` qu'on leur
+            # passe — poser la consigne après la conversion ne toucherait donc
+            # aucun d'entre eux, c'est-à-dire la majorité. La mutation est sans
+            # risque : `_avec_consigne_de_langue` est idempotente.
+            context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
+
             # Convert context to provider format
             if self.config.provider == LLMProvider.ANTHROPIC:
                 system_prompt, messages = context.to_anthropic_format()
@@ -782,6 +823,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         await self._ensure_provider()
+
+        # BUG-164 : la continuation après outils est le tour où les résultats
+        # anglophones (recherche web, MCP) entrent dans le contexte. C'est donc
+        # le moment où la consigne compte le plus.
+        context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
 
         if self.config.provider == LLMProvider.ANTHROPIC:
             system_prompt, messages = context.to_anthropic_format()
