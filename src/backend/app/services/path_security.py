@@ -113,18 +113,24 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
 # Extensions de fichiers autorisees pour l'indexation (SEC-002/003)
 INDEXABLE_EXTENSIONS = {
     # Documents texte
-    ".txt", ".md", ".rst", ".csv", ".tsv", ".log",
+    # `.markdown` était lisible par le parseur mais refusé à l'entrée : la
+    # divergence inverse, trouvée par le test qui confronte les deux listes.
+    ".txt", ".md", ".markdown", ".rst", ".csv", ".tsv", ".log",
     # Code source
     ".py", ".js", ".ts", ".jsx", ".tsx", ".html", ".css", ".scss",
     ".java", ".c", ".cpp", ".h", ".hpp", ".rs", ".go", ".rb", ".php",
     ".swift", ".kt", ".scala", ".r", ".sql", ".sh", ".bash", ".zsh",
     # Documents
-    ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt",
-    ".odt", ".ods", ".odp",
+    ".pdf", ".docx", ".xlsx", ".pptx",
+    # Inventaire du 13/08/2026 : .xls, .ppt, .odt, .ods, .odp et .rtf étaient
+    # acceptés alors qu'aucun chemin du parseur ne sait les ouvrir. Le fichier
+    # était indexé à vide, sans le moindre signalement. Un refus net à l'entrée
+    # vaut mieux qu'un succès mensonger : l'utilisateur peut convertir son
+    # document et réessayer, ce qu'un silence ne lui permettait pas.
     # Donnees structurees
     ".json", ".yaml", ".yml", ".toml", ".xml", ".ini", ".cfg", ".conf",
-    # Autres
-    ".rtf", ".tex", ".org",
+    # Autres formats texte
+    ".tex", ".org",
 }
 
 

@@ -53,6 +53,14 @@ NAVIGATION_TARGETS: dict[str, tuple[str, str]] = {
     "facturation": ("invoices.open", "la Facturation"),
     "factures": ("invoices.open", "la Facturation"),
     "projets": ("projects.open", "les Projets"),
+    # Inventaire du 13/08/2026 : cette entrée manquait. La vue qui porte
+    # l'indexation et la recherche documentaire était donc inatteignable par
+    # `{action: ouvrir …}` ET absente de la réponse de `/aide`, la seule aide
+    # dérivée du code. Trois libellés, parce qu'un utilisateur dit rarement
+    # « fichiers » quand il cherche ses documents indexés.
+    "fichiers": ("files.open", "les Fichiers"),
+    "documents indexes": ("files.open", "les Fichiers"),
+    "explorateur": ("files.open", "les Fichiers"),
     "parametres": ("settings.open", "les Paramètres"),
 }
 

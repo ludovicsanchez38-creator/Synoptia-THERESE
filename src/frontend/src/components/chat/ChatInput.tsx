@@ -30,6 +30,7 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
+import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
   CLOUD_CONSENT_REVOKED_EVENT,
   grantCloudConsent,
@@ -347,19 +348,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     try {
       const selected = await open({
         multiple: true,
+        // Revue du 13/08/2026 : ces filtres étaient une TROISIÈME liste, encore
+        // différente de celle du serveur et de celle de l'explorateur. Le
+        // filtre « Images » était le plus trompeur : aucune image n'est
+        // indexable, la pré-indexation échouait donc sans que la cause soit
+        // affichée. « Tous les fichiers » reste, pour ne pas empêcher un
+        // essai — le refus, lui, sera clair.
         filters: [
-          {
-            name: 'Documents',
-            extensions: ['txt', 'md', 'pdf', 'docx', 'xlsx', 'json', 'csv'],
-          },
-          {
-            name: 'Code',
-            extensions: ['py', 'js', 'ts', 'tsx', 'jsx', 'html', 'css'],
-          },
-          {
-            name: 'Images',
-            extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
-          },
+          ...FILTRES_SELECTEUR.map((f) => ({ name: f.name, extensions: [...f.extensions] })),
           {
             name: 'Tous les fichiers',
             extensions: ['*'],
@@ -1380,7 +1376,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         type="file"
         multiple
         className="hidden"
-        accept=".txt,.md,.pdf,.docx,.xlsx,.json,.csv,.py,.js,.ts,.tsx,.jsx,.html,.css,.png,.jpg,.jpeg,.gif,.webp"
+        accept={ACCEPT_FICHIERS}
         onChange={handleBrowserFileChange}
       />
 

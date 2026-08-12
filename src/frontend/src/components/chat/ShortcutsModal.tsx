@@ -13,14 +13,17 @@ interface ShortcutGroup {
   shortcuts: { keys: string; description: string }[];
 }
 
-const SHORTCUT_GROUPS: ShortcutGroup[] = [
+/** Exporté pour que le test de véracité puisse confronter chaque raccourci
+ *  annoncé au gestionnaire de clavier. Une fiche d'aide qui ment est pire que
+ *  pas de fiche : l'utilisateur essaie, rien ne se passe, il conclut que
+ *  l'application est cassée. */
+export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Chat',
     shortcuts: [
       { keys: '↵', description: 'Envoyer le message' },
       { keys: '⇧ + ↵', description: 'Nouvelle ligne' },
       { keys: '⌘ + N', description: 'Nouvelle conversation' },
-      { keys: '⌘ + ⌫', description: 'Effacer la conversation' },
     ],
   },
   {
@@ -30,6 +33,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: '⌘ + /', description: 'Raccourcis clavier' },
       { keys: '⌘ + B', description: 'Sidebar conversations' },
       { keys: '⌘ + M', description: 'Panneau mémoire' },
+      { keys: '⌘ + ,', description: 'Paramètres' },
       { keys: 'Échap', description: 'Fermer le panneau actif' },
     ],
   },
@@ -49,16 +53,13 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { keys: '⌘ + ⇧ + A', description: 'Atelier (agents IA)' },
       { keys: '⌘ + ⇧ + K', description: 'Katia - nouvelle tache' },
       { keys: '⌘ + ⇧ + C', description: 'Calendrier (Google Calendar)' },
-      { keys: '⌘ + ⇧ + P', description: 'Nouveau projet' },
       { keys: '⌘ + ⇧ + F', description: 'Rechercher en mémoire' },
+      { keys: '⌘ + ⇧ + D', description: 'Mode démonstration' },
     ],
   },
   {
     title: 'Fichiers',
     shortcuts: [
-      { keys: '⌘ + O', description: 'Ouvrir un fichier' },
-      { keys: '⌘ + ⇧ + O', description: 'Ouvrir un dossier' },
-      { keys: '⌘ + S', description: 'Sauvegarder' },
     ],
   },
 ];

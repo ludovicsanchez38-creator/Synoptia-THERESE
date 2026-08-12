@@ -13,11 +13,27 @@ logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 Mo
 MAX_PDF_PAGES = 100
+# Inventaire des capacités du 13/08/2026 : le PDF était plafonné à 100 pages et
+# le CSV à 500 lignes, chacun avec une mention de troncature. Le tableur, lui,
+# parcourait TOUTES les feuilles et TOUTES les lignes sans borne — un classeur
+# de plusieurs dizaines de milliers de lignes produisait un texte énorme, lent
+# à découper et coûteux à envoyer, sans que rien ne le signale.
+MAX_XLSX_LIGNES = 2000
 
 
 # Supported extensions
-TEXT_EXTENSIONS = {".txt", ".md", ".markdown", ".rst", ".log"}
+#
+# Inventaire des capacités du 13/08/2026 : six extensions étaient acceptées à
+# l'indexation sans figurer ici. Le contrôle d'entrée les laissait passer, le
+# parseur ne savait pas quoi en faire, et l'indexation « réussissait » sur un
+# contenu vide sans que rien ne le signale. Ce sont pourtant des fichiers texte,
+# que lire ne demande aucune bibliothèque — seulement de les déclarer.
+TEXT_EXTENSIONS = {
+    ".txt", ".md", ".markdown", ".rst", ".log",
+    ".cfg", ".conf", ".ini", ".org", ".tex",
+}
 CODE_EXTENSIONS = {
+    ".scala",
     ".py",
     ".js",
     ".ts",
@@ -52,6 +68,7 @@ CODE_EXTENSIONS = {
     ".vim",
     ".el",
 }
+PRESENTATION_EXTENSIONS = {".pptx"}
 CSV_EXTENSIONS = {".csv", ".tsv"}
 
 
@@ -90,12 +107,22 @@ def extract_text(file_path: Path) -> str | None:
             return _extract_pdf(file_path)
 
         # Word documents
-        if ext in {".docx", ".doc"}:
+        #
+        # Contre-vérification de la revue : `.doc` était routé ici alors que
+        # python-docx ne lit QUE l'OOXML. Le vieux format binaire levait donc
+        # une exception, avalée plus bas, et le fichier était indexé à vide.
+        # C'était la quatorzième extension illisible, celle que l'inventaire
+        # avait manquée.
+        if ext == ".docx":
             return _extract_docx(file_path)
 
         # Excel spreadsheets
         if ext == ".xlsx":
             return _extract_xlsx(file_path)
+
+        # Présentations
+        if ext in PRESENTATION_EXTENSIONS:
+            return _extract_pptx(file_path)
 
         # Unsupported
         logger.warning(f"Unsupported file type: {ext}")
@@ -194,6 +221,40 @@ def _extract_docx(file_path: Path) -> str:
     return "\n\n".join(text_parts)
 
 
+def _extract_pptx(file_path: Path) -> str:
+    """Extrait le texte d'une présentation, diapositive par diapositive.
+
+    `python-pptx` est déjà une dépendance du projet (génération de documents) :
+    accepter un .pptx à l'indexation sans jamais l'extraire n'avait donc aucune
+    raison technique. Les notes du présentateur sont incluses, elles portent
+    souvent l'essentiel du propos.
+    """
+    from pptx import Presentation
+
+    presentation = Presentation(str(file_path))
+    morceaux: list[str] = []
+
+    for numero, diapositive in enumerate(presentation.slides, start=1):
+        lignes = [
+            forme.text_frame.text.strip()
+            for forme in diapositive.shapes
+            if forme.has_text_frame and forme.text_frame.text.strip()
+        ]
+        notes = ""
+        if diapositive.has_notes_slide:
+            notes = diapositive.notes_slide.notes_text_frame.text.strip()
+        if not lignes and not notes:
+            continue
+        bloc = f"--- Diapositive {numero} ---"
+        if lignes:
+            bloc += "\n" + "\n".join(lignes)
+        if notes:
+            bloc += f"\n[Notes] {notes}"
+        morceaux.append(bloc)
+
+    return "\n\n".join(morceaux)
+
+
 def _extract_xlsx(file_path: Path) -> str:
     """Extrait le contenu d'un fichier Excel en format texte tabulaire."""
     try:
@@ -204,13 +265,33 @@ def _extract_xlsx(file_path: Path) -> str:
 
     wb = load_workbook(file_path, read_only=True, data_only=True)
     output: list[str] = []
+    lignes_lues = 0
+    lignes_ignorees = 0
+
     for sheet in wb.sheetnames:
         ws = wb[sheet]
         output.append(f"## Feuille : {sheet}\n")
         for row in ws.iter_rows(values_only=True):
+            if lignes_lues >= MAX_XLSX_LIGNES:
+                lignes_ignorees += 1
+                continue
             cells = [str(c) if c is not None else "" for c in row]
             output.append(" | ".join(cells))
+            lignes_lues += 1
     wb.close()
+
+    if lignes_ignorees:
+        # Annoncé dans le texte lui-même, comme pour le PDF et le CSV : le
+        # modèle doit pouvoir dire à l'utilisateur qu'il n'a pas tout vu.
+        output.append(
+            f"\n[Tableur tronqué : {lignes_lues} lignes transmises sur "
+            f"{lignes_lues + lignes_ignorees}. Les suivantes n'ont pas été lues.]"
+        )
+        logger.info(
+            "XLSX tronqué : %d lignes transmises, %d ignorées",
+            lignes_lues, lignes_ignorees,
+        )
+
     return "\n".join(output)
 
 
