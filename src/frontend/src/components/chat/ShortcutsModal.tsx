@@ -60,7 +60,6 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Fichiers',
     shortcuts: [
-      { keys: '⌘ + O', description: 'Ouvrir un fichier' },
     ],
   },
 ];

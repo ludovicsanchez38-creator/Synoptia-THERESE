@@ -26,6 +26,12 @@ const sourceDuHook = readFileSync(
   resolve(ici, '../../hooks/useKeyboardShortcuts.ts'),
   'utf-8',
 );
+/** La coque est le SEUL point de montage du hook : un raccourci n'existe
+ *  réellement que si elle fournit le callback correspondant. */
+const sourceDeLaCoque = readFileSync(
+  resolve(ici, '../prototype/ConversationCanvasPrototype.tsx'),
+  'utf-8',
+);
 
 /** Touches gérées ailleurs que dans le hook (composeur, navigateur). */
 const HORS_HOOK = new Set(['↵', '⇧ + ↵']);
@@ -37,6 +43,21 @@ function toucheDe(raccourci: string): string | null {
   if (dernier === ',') return ',';
   if (dernier === '/') return '/';
   if (/^[A-Z]$/.test(dernier)) return dernier.toLowerCase();
+  return null;
+}
+
+/** Nom du callback invoqué par la branche qui traite cette touche, s'il y en a
+ *  un. Le hook n'est qu'une offre de créneaux : c'est la coque qui les remplit. */
+function rappelInvoque(touche: string): string | null {
+  const lignes = sourceDuHook.split('\n');
+  const debut = lignes.findIndex(
+    (l) => l.includes(`=== '${touche}'`) || l.includes(`key === '${touche}'`),
+  );
+  if (debut === -1) return null;
+  for (const ligne of lignes.slice(debut, debut + 8)) {
+    const trouve = ligne.match(/handlers\.(on[A-Za-z]+)\?\./);
+    if (trouve) return trouve[1];
+  }
   return null;
 }
 
@@ -64,6 +85,19 @@ describe('la fiche des raccourcis dit la vérité', () => {
         `« ${description} » (${keys}) est annoncé à l'utilisateur mais aucun ` +
           `gestionnaire ne traite cette touche : il essaiera, rien ne se passera`,
       ).toBe(true);
+
+      // Contre-vérification de la revue : ⌘O avait bien une branche dans le
+      // hook, mais la coque ne fournissait jamais `onOpenFile`. Le raccourci
+      // était donc mort en situation réelle, et la première version de ce test
+      // le laissait passer. Une branche sans callback ne prouve rien.
+      const rappel = rappelInvoque(touche);
+      if (rappel) {
+        expect(
+          sourceDeLaCoque.includes(rappel),
+          `« ${description} » (${keys}) a bien une branche dans le hook, mais ` +
+            `la coque ne fournit jamais « ${rappel} » : le raccourci est mort`,
+        ).toBe(true);
+      }
     },
   );
 

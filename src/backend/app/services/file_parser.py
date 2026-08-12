@@ -107,7 +107,13 @@ def extract_text(file_path: Path) -> str | None:
             return _extract_pdf(file_path)
 
         # Word documents
-        if ext in {".docx", ".doc"}:
+        #
+        # Contre-vérification de la revue : `.doc` était routé ici alors que
+        # python-docx ne lit QUE l'OOXML. Le vieux format binaire levait donc
+        # une exception, avalée plus bas, et le fichier était indexé à vide.
+        # C'était la quatorzième extension illisible, celle que l'inventaire
+        # avait manquée.
+        if ext == ".docx":
             return _extract_docx(file_path)
 
         # Excel spreadsheets
