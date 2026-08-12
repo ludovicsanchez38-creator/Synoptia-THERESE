@@ -30,7 +30,7 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
-import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
+import { grantCloudConsent, hasCloudConsent, type CloudPurpose } from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
@@ -47,6 +47,9 @@ interface ChatInputProps {
 
 interface PendingCloudConsent {
   action: 'message' | 'deep-research';
+  // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
+  // les messages ne vaut pas pour l'envoi de documents.
+  purpose: CloudPurpose;
   provider: LLMProvider;
   providerLabel: string;
   dataCategories: string[];
@@ -454,26 +457,30 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       return;
     }
 
+    // Revue Soso : envoyer un DOCUMENT est une finalité distincte d'envoyer un
+    // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
+    // été informé que ses documents partent, ni qu'ils repartent à chaque
+    // message depuis qu'ils sont rejoués (BUG-160).
+    const finaliteCloud: CloudPurpose = attachedFiles.length > 0 ? 'documents' : 'llm';
     if (
       currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== currentProvider
-      && !hasCloudConsent('llm', currentProvider)
+      && cloudConsentGrantedRef.current !== `${finaliteCloud}:${currentProvider}`
+      && !hasCloudConsent(finaliteCloud, currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'message',
+        purpose: finaliteCloud,
         provider: currentProvider,
         providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
         dataCategories: [
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
-          // BUG-160 : le libellé disait « fichiers joints sélectionnés », ce qui
-          // laissait entendre un envoi unique. Depuis que les pièces jointes
-          // sont rejouées aux tours suivants pour que la conversation garde son
-          // document, elles repartent à chaque message. Le consentement doit le
-          // dire : il porte sur la conversation, pas sur ce seul envoi.
           ...(attachedFiles.length > 0
-            ? ['fichiers joints, renvoyés à chaque message de cette conversation']
+            ? [
+                'contenu intégral des documents joints',
+                'ces documents sont renvoyés à chaque message de la conversation',
+              ]
             : []),
         ],
       });
@@ -732,11 +739,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     if (
       currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== currentProvider
+      && cloudConsentGrantedRef.current !== `llm:${currentProvider}`
       && !hasCloudConsent('llm', currentProvider)
     ) {
       setPendingCloudConsent({
         action: 'deep-research',
+        purpose: 'llm',
         provider: currentProvider,
         providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
         dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
@@ -822,8 +830,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setPendingCloudConsent(null);
       return;
     }
-    grantCloudConsent('llm', pendingCloudConsent.provider, pendingCloudConsent.dataCategories);
-    cloudConsentGrantedRef.current = pendingCloudConsent.provider;
+    grantCloudConsent(
+      pendingCloudConsent.purpose,
+      pendingCloudConsent.provider,
+      pendingCloudConsent.dataCategories,
+    );
+    cloudConsentGrantedRef.current =
+      `${pendingCloudConsent.purpose}:${pendingCloudConsent.provider}`;
     const action = pendingCloudConsent.action;
     setPendingCloudConsent(null);
     window.setTimeout(() => {

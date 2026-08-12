@@ -229,29 +229,34 @@ async def _get_file_context(
         # périmètre. Un document indexé volontairement pour tous les dossiers
         # depuis l'explorateur garde donc sa portée, et un document déjà
         # rattaché à un projet ne peut pas être capté par un autre.
-        if (
-            existing
-            and scope
-            and scope != "global"
-            and (existing.scope or "global") == "global"
-        ):
-            existing.scope = scope
-            existing.scope_id = scope_id
-            await session.commit()
+        # Revue Soso : le rattrapage ne touche QUE les périmètres provisoires,
+        # ceux posés par défaut lors du pré-index parce que la conversation
+        # n'existait pas encore. Un document rendu général depuis l'explorateur,
+        # ou déjà rattaché à un projet, n'est jamais capté ni confisqué.
+        if existing and scope and scope != "global" and existing.scope_provisoire:
+            # L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
+            # périmètre que la recherche n'appliquait pas encore : en cas
+            # d'échec, la base affirmait « ce document appartient au projet »
+            # pendant que ses fragments restaient visibles partout. Ici, un
+            # échec laisse le document là où il était — visible dans le
+            # périmètre général, ce qui est le statu quo, jamais une fuite
+            # nouvelle.
             try:
                 await run_in_threadpool(
                     get_qdrant_service().definir_perimetre_entite,
                     existing.id, scope, scope_id,
                 )
             except Exception:
-                # Le périmètre en base est déjà rectifié ; l'index sera remis en
-                # cohérence à la prochaine réindexation. On journalise plutôt que
-                # de faire échouer l'envoi du message pour autant.
                 logger.warning(
-                    "Périmètre non propagé à l'index pour %s : les fragments "
-                    "restent visibles hors du projet jusqu'à réindexation",
-                    path.name, exc_info=True,
+                    "Périmètre non appliqué à l'index pour %s : le document "
+                    "reste dans son périmètre actuel plutôt que d'être annoncé "
+                    "cloisonné sans l'être", path.name, exc_info=True,
                 )
+            else:
+                existing.scope = scope
+                existing.scope_id = scope_id
+                existing.scope_provisoire = False
+                await session.commit()
 
         # Index if not already done
         if not existing:
@@ -372,6 +377,18 @@ _PERIMETRE_INDETERMINE = "__perimetre_indetermine__"
 TOURS_AVEC_PIECES_JOINTES = 3
 PLAFOND_PIECES_JOINTES_REJOUEES = 4
 
+# Revue Soso : un plafond en NOMBRE de fichiers ne borne rien. Chaque pièce
+# jointe peut peser 15 000 caractères, donc quatre fichiers rejoués plus ceux du
+# tour courant dépassaient largement la fenêtre utile — et cette fenêtre est
+# parfois bien plus étroite qu'annoncé : le service raisonne sur 32 000 tokens
+# quand Ollama en applique 8 192.
+#
+# Ce plafond porte sur le bloc ENTIER (fichiers du tour + fichiers rejoués). Une
+# fois atteint, on cesse d'ajouter : mieux vaut un document de moins qu'un
+# historique de conversation sacrifié en silence par `trim_to_fit`, qui ne rogne
+# que les messages et jamais le prompt système.
+PLAFOND_CARACTERES_FICHIERS = 40000
+
 BLOC_PIECES_JOINTES = """
 ## Les fichiers joints à cette conversation
 Les pièces jointes te sont fournies plus haut, dans le contexte, sous forme de
@@ -451,6 +468,24 @@ async def _pieces_jointes_recentes(
     return rejoues
 
 
+def borner_bloc_fichiers(contextes: list[str]) -> tuple[list[str], int]:
+    """Coupe le bloc des fichiers au plafond global, sans jamais couper un bloc.
+
+    Renvoie les contextes retenus et le nombre de documents écartés, pour que
+    l'utilisateur puisse être averti plutôt que de croire que tout a été lu.
+    Le premier document est toujours retenu, même s'il dépasse à lui seul : le
+    couper en deux ferait plus de dégâts que de l'admettre entier.
+    """
+    retenus: list[str] = []
+    total = 0
+    for contexte in contextes:
+        if retenus and total + len(contexte) > PLAFOND_CARACTERES_FICHIERS:
+            break
+        retenus.append(contexte)
+        total += len(contexte)
+    return retenus, len(contextes) - len(retenus)
+
+
 async def _perimetre_de_conversation(
     conversation_id: str | None, session: AsyncSession | None
 ) -> tuple[str | None, str | None]:
@@ -505,6 +540,29 @@ async def _perimetre_de_conversation(
     # conversation qui n'a rien demandé ne pioche pas dans les dossiers clients.
     # `include_global` du filtre rend déjà les documents globaux ; passer
     # `scope="global"` suffit à exclure ceux qui portent un projet.
+    return "global", None
+
+
+async def perimetre_de_piece_jointe(
+    conversation_id: str | None, session: AsyncSession | None
+) -> tuple[str, str | None]:
+    """Le périmètre d'un DOCUMENT joint, distinct de celui d'une RECHERCHE.
+
+    Revue Soso : `_perimetre_de_conversation` sert à chercher, et peut rendre
+    `all` — un périmètre de lecture transversal. L'écrire sur un document le
+    rendait introuvable : le filtre `all` relit `global`, `project` et la
+    conversation courante, jamais `all` lui-même. Un fichier ainsi classé
+    disparaissait donc de partout une fois la fenêtre de rejeu passée.
+
+    Un document n'a que deux appartenances possibles : le projet de la
+    conversation, ou la conversation elle-même. Jamais « tous les projets »,
+    qui décrit ce qu'on a le droit de lire, pas ce qu'on possède.
+    """
+    scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
+    if scope == "project" and scope_id:
+        return "project", scope_id
+    if conversation_id:
+        return "conversation", conversation_id
     return "global", None
 
 
@@ -1331,6 +1389,17 @@ async def send_message(
 
     # Combine memory and file contexts
     if file_contexts:
+        # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
+        # 15 000 caractères chacun évincent l'historique de la conversation
+        # sans que rien ne le signale.
+        file_contexts, ecartes = borner_bloc_fichiers(file_contexts)
+        if ecartes:
+            logger.info("%d document(s) écarté(s) du contexte : plafond atteint", ecartes)
+            file_contexts.append(
+                f"[{ecartes} autre(s) document(s) de cette conversation n'ont pas pu "
+                "être transmis : le volume total dépasse ce que le modèle peut "
+                "recevoir. Dis-le à l'utilisateur s'il pose une question qui en dépend.]"
+            )
         file_context_str = "\n\n".join(file_contexts)
         if memory_context:
             memory_context = f"{memory_context}\n\n{file_context_str}"
@@ -1684,6 +1753,17 @@ async def _do_stream_response(
 
     # Combine memory and file contexts
     if file_contexts:
+        # Revue Soso : borner le bloc ENTIER, sinon quatre documents rejoués à
+        # 15 000 caractères chacun évincent l'historique de la conversation
+        # sans que rien ne le signale.
+        file_contexts, ecartes = borner_bloc_fichiers(file_contexts)
+        if ecartes:
+            logger.info("%d document(s) écarté(s) du contexte : plafond atteint", ecartes)
+            file_contexts.append(
+                f"[{ecartes} autre(s) document(s) de cette conversation n'ont pas pu "
+                "être transmis : le volume total dépasse ce que le modèle peut "
+                "recevoir. Dis-le à l'utilisateur s'il pose une question qui en dépend.]"
+            )
         file_context_str = "\n\n".join(file_contexts)
         if memory_context:
             memory_context = f"{memory_context}\n\n{file_context_str}"

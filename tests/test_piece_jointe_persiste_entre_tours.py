@@ -172,3 +172,41 @@ class TestLeModeleSaitCeQuIlARecu:
             "le modèle n'est pas averti qu'il peut ne recevoir qu'un extrait, "
             "il présentera donc une lecture partielle comme complète"
         )
+
+
+class TestLeBlocDesFichiersEstReellementBorne:
+    """Finding de la revue Soso : mon commentaire annonçait un plafond de
+    caractères, le code ne comptait que des fichiers. Quatre documents rejoués
+    à 15 000 caractères chacun, plus ceux du tour courant, évinçaient
+    l'historique de la conversation — d'autant plus vite qu'Ollama applique
+    8 192 tokens là où le service en suppose 32 000.
+    """
+
+    def test_le_plafond_porte_sur_le_volume_pas_sur_le_nombre(self):
+        from app.routers.chat import PLAFOND_CARACTERES_FICHIERS, borner_bloc_fichiers
+
+        gros = "x" * (PLAFOND_CARACTERES_FICHIERS // 2 + 1)
+        retenus, ecartes = borner_bloc_fichiers([gros, gros, gros])
+
+        assert len(retenus) == 1
+        assert ecartes == 2
+        assert sum(len(bloc) for bloc in retenus) <= PLAFOND_CARACTERES_FICHIERS
+
+    def test_un_seul_document_hors_norme_passe_quand_meme(self):
+        """Le couper en deux ferait plus de dégâts que de l'admettre entier."""
+        from app.routers.chat import PLAFOND_CARACTERES_FICHIERS, borner_bloc_fichiers
+
+        enorme = "x" * (PLAFOND_CARACTERES_FICHIERS * 3)
+        retenus, ecartes = borner_bloc_fichiers([enorme])
+
+        assert retenus == [enorme]
+        assert ecartes == 0
+
+    def test_rien_n_est_ecarte_sous_le_plafond(self):
+        from app.routers.chat import borner_bloc_fichiers
+
+        petits = ["a" * 100, "b" * 100, "c" * 100]
+        retenus, ecartes = borner_bloc_fichiers(petits)
+
+        assert retenus == petits
+        assert ecartes == 0

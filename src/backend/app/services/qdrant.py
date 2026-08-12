@@ -451,25 +451,37 @@ class QdrantService:
 
         Renvoie le nombre de fragments reclassés.
         """
-        points = self.client.scroll(
-            collection_name=settings.qdrant_collection,
-            scroll_filter=Filter(
-                must=[FieldCondition(key="entity_id", match=MatchValue(value=entity_id))]
-            ),
-            limit=10000,
-            with_payload=False,
-            with_vectors=False,
-        )[0]
-        if not points:
-            return 0
-
-        point_ids = [str(p.id) for p in points]
-        self.definir_perimetre(point_ids, scope, scope_id)
-        logger.info(
-            "Périmètre du document %s porté à %s/%s sur %d fragments",
-            entity_id, scope, scope_id, len(point_ids),
+        # Revue Soso : un seul lot laissait des fragments en arrière. Un fichier
+        # texte de 50 Mio — taille admise — produit environ 65 000 fragments ;
+        # le reste serait resté visible hors du projet, sans que rien ne le
+        # signale. On pagine donc jusqu'à épuisement.
+        filtre = Filter(
+            must=[FieldCondition(key="entity_id", match=MatchValue(value=entity_id))]
         )
-        return len(point_ids)
+        total = 0
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=settings.qdrant_collection,
+                scroll_filter=filtre,
+                limit=1000,
+                offset=offset,
+                with_payload=False,
+                with_vectors=False,
+            )
+            if not points:
+                break
+            self.definir_perimetre([str(p.id) for p in points], scope, scope_id)
+            total += len(points)
+            if offset is None:
+                break
+
+        if total:
+            logger.info(
+                "Périmètre du document %s porté à %s/%s sur %d fragments",
+                entity_id, scope, scope_id, total,
+            )
+        return total
 
     def delete_by_entity(self, entity_id: str) -> int:
         """
