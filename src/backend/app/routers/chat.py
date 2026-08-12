@@ -434,7 +434,11 @@ async def _pieces_jointes_recentes(
             select(Message)
             .where(Message.conversation_id == conversation_id)
             .where(Message.role == "user")
-            .order_by(Message.created_at.desc())  # type: ignore[union-attr]
+            # Clé secondaire indispensable : deux messages enregistrés dans la
+            # même seconde se réordonneraient au hasard en SQLite, et la
+            # sélection des pièces jointes à rejouer varierait d'un appel à
+            # l'autre (garde `test_order_by_not_single_key`).
+            .order_by(Message.created_at.desc(), Message.id.desc())
             .limit(TOURS_AVEC_PIECES_JOINTES)
         )
         messages = list(resultat.scalars().all())
