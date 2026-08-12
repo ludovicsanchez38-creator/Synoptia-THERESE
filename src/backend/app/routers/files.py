@@ -112,8 +112,18 @@ async def list_files(
     ]
 
 
-async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: datetime) -> None:
-    """Enregistre l'issue de l'indexation dans une transaction courte."""
+async def _consigner_resultat(
+    file_id: str,
+    chunk_count: int,
+    indexed_at: datetime,
+    figer_perimetre: bool = False,
+) -> None:
+    """Enregistre l'issue de l'indexation dans une transaction courte.
+
+    `figer_perimetre` n'est honoré qu'ICI, après l'écriture réelle des
+    fragments : tant qu'ils n'existent pas, le document reste rectifiable
+    plutôt que de figer un cloisonnement que la recherche n'applique pas.
+    """
     async with get_session_context() as session:
         a_jour = await session.get(FileMetadata, file_id)
         if a_jour is None:
@@ -126,6 +136,8 @@ async def _consigner_resultat(file_id: str, chunk_count: int, indexed_at: dateti
             )
         a_jour.chunk_count = chunk_count
         a_jour.indexed_at = indexed_at
+        if figer_perimetre:
+            a_jour.scope_provisoire = False
         await session.commit()
 
 
@@ -176,6 +188,7 @@ async def index_payload(
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
     scope: str = "global",
     scope_id: str | None = None,
+    perimetre_provisoire: bool = False,
 ) -> FileResponse:
     """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
@@ -226,12 +239,27 @@ async def index_payload(
                 existing.size = metadata["size"]
                 existing.mime_type = metadata["mime_type"]
                 existing.updated_at = datetime.now(UTC)
-                # Une réindexation SANS périmètre explicite ne doit pas
-                # déclasser un document déjà rattaché à un projet : on ne
-                # rétrograde jamais vers `global` par omission.
-                if scope != "global" or scope_id is not None:
+                # Revue Soso, finding critique : la condition précédente
+                # laissait un document du projet A devenir propriété du projet B
+                # au simple fait d'être joint à une conversation de B, et
+                # confisquait un document que l'utilisateur avait délibérément
+                # rendu général.
+                #
+                # Règle : un périmètre VOULU ne se réécrit jamais tout seul.
+                # Seul un périmètre provisoire — posé par défaut parce que la
+                # conversation n'était pas encore connue — peut être rectifié.
+                if existing.scope_provisoire:
                     existing.scope = scope
                     existing.scope_id = scope_id
+                    # Revue Soso, passe 2 : NE PAS éteindre le drapeau ici. Ce
+                    # commit précède l'écriture des fragments ; un abandon
+                    # entre les deux laissait la base annoncer un périmètre que
+                    # l'index n'appliquait pas, et le document devenait
+                    # définitif donc irrattrapable. Le drapeau ne s'éteint
+                    # qu'une fois les fragments réellement écrits.
+                    _perimetre_a_figer = not perimetre_provisoire
+                else:
+                    _perimetre_a_figer = False
                 file_meta = existing
                 reindexation = True
                 # Mémorisés pour ne rien détruire si le nouveau traitement
@@ -247,7 +275,11 @@ async def index_payload(
                     mime_type=metadata["mime_type"],
                     scope=scope,
                     scope_id=scope_id,
+                    # Idem à la naissance : provisoire jusqu'à ce que les
+                    # fragments existent réellement.
+                    scope_provisoire=True,
                 )
+                _perimetre_a_figer = not perimetre_provisoire
                 session.add(file_meta)
                 reindexation = False
                 chunk_count_existant = 0
@@ -317,7 +349,9 @@ async def index_payload(
         # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
         # demande a été abandonnée : l'état précédent reste la vérité.
         if ecriture_faite:
-            await _consigner_resultat(file_id, chunk_count, indexed_at)
+            await _consigner_resultat(
+                file_id, chunk_count, indexed_at, figer_perimetre=_perimetre_a_figer
+            )
 
     return FileResponse(
         id=file_id,
@@ -343,8 +377,38 @@ async def index_file(
     Index a file for RAG.
 
     Extracts content, chunks it, and stores embeddings in Qdrant.
+
+    BUG-165 : quand l'appel vient du composeur du chat, il porte la
+    conversation d'origine. Le périmètre en est DÉRIVÉ, jamais dicté par le
+    client : c'est le même résolveur que celui du contexte du chat, donc les
+    deux ne peuvent pas diverger. Sans conversation, le fichier reste global,
+    ce qui est le bon défaut pour l'explorateur de fichiers.
     """
-    return await index_payload(request.path, est_abandonnee=http_request.is_disconnected)
+    scope, scope_id = "global", None
+    # Le provisoire est demandé explicitement par l'appelant (le composeur du
+    # chat quand sa conversation n'existe pas encore côté backend). L'absence de
+    # conversation ne suffit pas : l'explorateur est dans ce cas et son
+    # périmètre est voulu.
+    perimetre_provisoire = request.perimetre_provisoire
+    if request.conversation_id:
+        from app.routers.chat import perimetre_de_piece_jointe
+
+        async with get_session_context() as session:
+            scope, scope_id, conversation_connue = await perimetre_de_piece_jointe(
+                request.conversation_id, session
+            )
+        # Une conversation RÉELLEMENT connue donne un périmètre voulu. Un
+        # identifiant encore local (conversation pas synchronisée) ne doit pas
+        # figer un périmètre orphelin : il reste rectifiable à l'envoi.
+        perimetre_provisoire = not conversation_connue
+
+    return await index_payload(
+        request.path,
+        est_abandonnee=http_request.is_disconnected,
+        scope=scope,
+        scope_id=scope_id,
+        perimetre_provisoire=perimetre_provisoire,
+    )
 
 
 @router.get("/{file_id}", response_model=FileResponse)
@@ -525,6 +589,10 @@ async def upload_file(
         existing.mime_type = metadata["mime_type"]
         existing.scope = "project"
         existing.scope_id = project_id
+        # Déposer un fichier DANS un projet est un geste explicite : le
+        # périmètre qui en résulte est voulu, et aucun attachement ultérieur ne
+        # doit pouvoir le rectifier.
+        existing.scope_provisoire = False
         existing.updated_at = datetime.now(UTC)
         file_meta = existing
     else:

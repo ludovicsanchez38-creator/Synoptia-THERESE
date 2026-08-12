@@ -73,10 +73,24 @@ class GitService:
                 await _stop_process(proc)
             return 1, "", "Timeout"
 
-    async def is_repo(self) -> bool:
-        """Vérifie si le chemin est un dépôt git."""
-        code, _, _ = await self._run("rev-parse", "--is-inside-work-tree")
-        return code == 0
+    async def is_repo(self) -> bool | None:
+        """Vérifie si le chemin est un dépôt git. `None` = contrôle non concluant.
+
+        BUG-163 : `return code == 0` écrasait tous les modes d'échec en `False`.
+        Un git qui ne répond pas produisait donc le même verdict qu'un dossier
+        réellement dépourvu de `.git`, et l'interface envoyait le testeur
+        recloner un dépôt parfaitement sain.
+
+        Le tri-état est étroit à dessein : seule l'impossibilité d'obtenir une
+        réponse de git devient `None`. Un code de sortie git légitime reste un
+        constat, faute de quoi on masquerait les vrais dépôts manquants.
+        """
+        code, _, stderr = await self._run("rev-parse", "--is-inside-work-tree")
+        if code == 0:
+            return True
+        if stderr == "Timeout":
+            return None
+        return False
 
     async def init(self) -> bool:
         """Initialise un nouveau dépôt git."""

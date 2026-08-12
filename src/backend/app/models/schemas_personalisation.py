@@ -49,12 +49,25 @@ class PromptTemplateResponse(BaseModel):
 
 
 class LLMBehaviorSettings(BaseModel):
-    """LLM behavior configuration (US-PERS-04)."""
+    """LLM behavior configuration (US-PERS-04).
+
+    BUG-164 : `language` a été retiré. Il était stocké par les routes
+    `/api/personalisation/llm-behavior`, lu par AUCUN code, et affiché par
+    AUCUN écran. Un réglage qu'on enregistre sans jamais le consulter fait
+    croire au prochain développeur que la langue est déjà configurable, et à
+    qui explore l'API qu'il peut la régler. La langue est désormais imposée
+    dans le prompt système, sur les deux points de passage vers un modèle
+    (`LLMService.LANGUE_BLOCK`).
+
+    Les cinq champs restants sont dans le même état — stockés, jamais lus,
+    sans écran. Ils sont conservés faute d'avoir été instruits : les retirer
+    demande de décider s'il faut les brancher ou les supprimer, ce qui dépasse
+    un correctif de bug.
+    """
 
     custom_system_prompt: str = ""
     use_custom_system_prompt: bool = False
     response_style: str = "detailed"  # concise, detailed, creative
-    language: str = "french"  # french, english, auto
     include_memory_context: bool = True
     max_history_messages: int = 50
 

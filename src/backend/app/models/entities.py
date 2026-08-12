@@ -161,6 +161,17 @@ class FileMetadata(SQLModel, table=True):
     # Scope fields (E3-05) - for files linked to specific entities
     scope: str = Field(default="global")  # global, project, conversation, contact
     scope_id: str | None = None  # ID of the linked entity
+    # BUG-165, revue Soso : provenance du périmètre. `True` = posé par défaut
+    # lors du pré-index du composeur, alors que la conversation n'existait pas
+    # encore côté backend — il pourra donc être rectifié à l'envoi. `False` =
+    # périmètre voulu (explorateur, ou conversation déjà connue), qu'AUCUN
+    # attachement ne doit modifier.
+    #
+    # Sans cette distinction, rectifier le périmètre d'un fichier « global »
+    # revenait à confisquer un document que l'utilisateur avait délibérément
+    # rendu général, et rien n'empêchait une conversation du projet B de capter
+    # un document du projet A.
+    scope_provisoire: bool = Field(default=False)
     indexed_at: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

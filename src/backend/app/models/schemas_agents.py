@@ -124,7 +124,11 @@ class AgentStatusResponse(BaseModel):
     """Statut du système d'agents."""
 
     git_available: bool = False
-    repo_detected: bool = False
+    # BUG-163 : `None` = le contrôle n'a pas pu aboutir, à distinguer de
+    # `False` qui affirme l'absence de dépôt. Sans ce tri-état, le backend
+    # était structurellement incapable de dire « je ne sais pas », et
+    # l'interface présentait un git muet comme un dépôt manquant.
+    repo_detected: bool | None = False
     repo_path: str | None = None
     repo_error: str | None = None
     current_branch: str | None = None

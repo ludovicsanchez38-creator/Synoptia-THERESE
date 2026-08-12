@@ -46,6 +46,10 @@ export interface Message {
   uncertainty?: MessageUncertainty;
   imageId?: string;
   skillFile?: MessageSkillFile;
+  // Revue Soso : ce message portait-il des pièces jointes ? Le backend les
+  // rejoue aux tours suivants, donc le consentement cloud doit en tenir compte
+  // même quand le composeur est vide.
+  hasAttachments?: boolean;
   // BUG-136 : plusieurs fichiers peuvent naître dans un même tour (outil
   // generate_document appelé N fois) - skillFile reste le premier (compat).
   skillFiles?: MessageSkillFile[];

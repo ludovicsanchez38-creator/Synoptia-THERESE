@@ -165,6 +165,21 @@ def apply_adhoc_migrations(db_path) -> None:
                 "ON conversations (project_id)"
             )
             conn.commit()
+        # BUG-165 : provenance du périmètre d'un document. Les bases existantes
+        # n'ont que des périmètres VOULUS (posés par l'explorateur ou par la
+        # 0.43) : le défaut 0 est donc le bon, et aucun document déjà indexé ne
+        # pourra être rectifié par un simple attachement.
+        cursor = conn.execute("PRAGMA table_info(files)")
+        file_columns = {row[1] for row in cursor.fetchall()}
+        if file_columns and "scope_provisoire" not in file_columns:
+            conn.execute(
+                "ALTER TABLE files ADD COLUMN scope_provisoire BOOLEAN "
+                "NOT NULL DEFAULT 0"
+            )
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'scope_provisoire' ajoutée à la table files"
+            )
         # 0.40 : historique Board reconstructible (sources + usage de synthèse)
         cursor = conn.execute("PRAGMA table_info(board_decisions)")
         board_columns = {row[1] for row in cursor.fetchall()}
