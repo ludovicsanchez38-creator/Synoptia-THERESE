@@ -183,7 +183,17 @@ async def agent_request(
                 detail="Le chemin demandé ne correspond pas au dépôt autorisé dans les réglages.",
             )
     git = GitService(resolved_source)
-    if not resolved_source.exists() or not await git.is_repo():
+    if not resolved_source.exists():
+        raise HTTPException(status_code=400, detail="Le dossier autorisé n'est pas un dépôt Git valide.")
+    depot = await git.is_repo()
+    if depot is None:
+        # BUG-163 : on refuse toujours de lancer une mission sur un dépôt non
+        # vérifié, mais on ne prétend plus savoir pourquoi.
+        raise HTTPException(
+            status_code=503,
+            detail="Git n'a pas répondu : impossible de vérifier le dépôt. Réessaie dans un instant.",
+        )
+    if not depot:
         raise HTTPException(status_code=400, detail="Le dossier autorisé n'est pas un dépôt Git valide.")
     current_branch = await git.current_branch()
     if current_branch != "main":
@@ -912,6 +922,15 @@ async def get_status(
         if repo_detected:
             current_branch = await git.current_branch()
             working_tree_clean = await git.ensure_clean()
+        elif repo_detected is None:
+            # BUG-163 : git n'a pas répondu. On ne sait rien, donc on n'affirme
+            # rien. La version précédente servait ici le message qui prescrit un
+            # reclonage, et envoyait le testeur réparer un dépôt intact.
+            repo_error = (
+                "La vérification du dépôt n'a pas abouti : Git n'a pas répondu "
+                "dans le temps imparti. Ton dépôt n'est pas forcément en cause. "
+                "Réessaie dans un instant."
+            )
         else:
             repo_error = repo_error_message(source_path)
     elif source_path and not git_available:
