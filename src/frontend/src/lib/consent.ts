@@ -10,7 +10,20 @@
 export const CLOUD_CONSENT_KEY = 'therese-cloud-consent';
 export const CLOUD_CONSENT_VERSION = '2';
 
-export type CloudPurpose = 'llm' | 'voice' | 'images';
+/**
+ * `documents` (0.43.1, revue Soso) : envoyer le contenu d'un document au
+ * fournisseur est une finalité DISTINCTE d'une conversation, pour deux raisons.
+ *
+ * Le contenu n'a rien à voir : un devis client, un contrat, un dossier médical
+ * ne sont pas ce que l'utilisateur avait en tête en acceptant que ses messages
+ * partent. Et depuis que les pièces jointes sont rejouées pour rester
+ * disponibles dans la conversation, le document repart à CHAQUE message, ce
+ * qu'un accord donné pour « le chat » ne laissait pas prévoir.
+ *
+ * Sans cette finalité, quiconque avait déjà accepté le chat n'aurait jamais vu
+ * la moindre information sur ce point.
+ */
+export type CloudPurpose = 'llm' | 'voice' | 'images' | 'documents';
 
 export interface CloudGrant {
   purpose: CloudPurpose;

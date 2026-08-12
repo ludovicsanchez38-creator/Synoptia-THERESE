@@ -42,7 +42,10 @@ class TestUnePieceJointeNaitDansLePerimetreDeSaConversation:
 
         perimetres: list[tuple[str, str | None]] = []
 
-        async def faux_index_payload(path, est_abandonnee=None, scope="global", scope_id=None):
+        async def faux_index_payload(
+            path, est_abandonnee=None, scope="global", scope_id=None,
+            perimetre_provisoire=False,
+        ):
             perimetres.append((scope, scope_id))
             return None
 
@@ -78,7 +81,10 @@ class TestUnePieceJointeNaitDansLePerimetreDeSaConversation:
 
         perimetres: list[tuple[str, str | None]] = []
 
-        async def faux_index_payload(path, est_abandonnee=None, scope="global", scope_id=None):
+        async def faux_index_payload(
+            path, est_abandonnee=None, scope="global", scope_id=None,
+            perimetre_provisoire=False,
+        ):
             perimetres.append((scope, scope_id))
             return None
 
@@ -123,6 +129,9 @@ class TestUnFichierDejaIndexeEstReclasseALEnvoi:
                 mime_type="text/plain",
                 scope="global",
                 scope_id=None,
+                # Tel que le composeur le pose quand la conversation n'existe
+                # pas encore côté backend : périmètre par défaut, rectifiable.
+                scope_provisoire=True,
             )
         )
         await db_session.commit()
@@ -155,3 +164,123 @@ def _requete_factice():
         return False
 
     return type("RequeteFactice", (), {"is_disconnected": staticmethod(jamais_deconnecte)})()
+
+
+class TestUnPerimetreVouluNEstJamaisReecrit:
+    """Findings critiques de la revue Soso sur le premier correctif.
+
+    Le rattrapage rectifiait tout fichier « global ». Deux dégâts possibles :
+    confisquer un document que l'utilisateur avait délibérément rendu général
+    depuis l'explorateur, et laisser une conversation du projet B capter un
+    document du projet A.
+
+    D'où la provenance : seul un périmètre PROVISOIRE — posé par défaut parce
+    que la conversation n'était pas encore connue — peut être rectifié.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_document_volontairement_general_n_est_pas_confisque(
+        self, db_session, tmp_path
+    ):
+        from app.models.entities import Conversation, FileMetadata
+        from app.routers import chat as chat_router
+
+        db_session.add(Conversation(id="conv-c", title="Client C", project_id="projet-c"))
+
+        fichier = tmp_path / "modele-de-devis.txt"
+        fichier.write_text("Modèle réutilisable pour tous les dossiers", encoding="utf-8")
+
+        db_session.add(
+            FileMetadata(
+                path=str(fichier), name=fichier.name, extension=".txt",
+                size=fichier.stat().st_size, mime_type="text/plain",
+                scope="global", scope_id=None,
+                scope_provisoire=False,  # indexé depuis l'explorateur : voulu
+            )
+        )
+        await db_session.commit()
+
+        await chat_router._get_file_context(
+            str(fichier), db_session, command="fichier",
+            scope="project", scope_id="projet-c",
+        )
+
+        from sqlmodel import select
+
+        meta = (
+            await db_session.execute(
+                select(FileMetadata).where(FileMetadata.path == str(fichier))
+            )
+        ).scalar_one()
+        assert meta.scope == "global", (
+            "un document rendu général par l'utilisateur a été confisqué par "
+            "la première conversation de projet qui l'a joint"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_document_d_un_projet_n_est_pas_capte_par_un_autre(
+        self, db_session, tmp_path
+    ):
+        from app.models.entities import Conversation, FileMetadata
+        from app.routers import chat as chat_router
+
+        db_session.add(Conversation(id="conv-d", title="Client D", project_id="projet-d"))
+
+        fichier = tmp_path / "contrat-client-a.txt"
+        fichier.write_text("Contrat du client A", encoding="utf-8")
+
+        db_session.add(
+            FileMetadata(
+                path=str(fichier), name=fichier.name, extension=".txt",
+                size=fichier.stat().st_size, mime_type="text/plain",
+                scope="project", scope_id="projet-a", scope_provisoire=False,
+            )
+        )
+        await db_session.commit()
+
+        await chat_router._get_file_context(
+            str(fichier), db_session, command="fichier",
+            scope="project", scope_id="projet-d",
+        )
+
+        from sqlmodel import select
+
+        meta = (
+            await db_session.execute(
+                select(FileMetadata).where(FileMetadata.path == str(fichier))
+            )
+        ).scalar_one()
+        assert meta.scope_id == "projet-a", (
+            "le document du projet A est devenu propriété du projet D : "
+            "joindre un fichier ne doit jamais le déplacer d'un dossier client "
+            "vers un autre"
+        )
+
+
+class TestUnDocumentNEstJamaisClasseHorsDePortee:
+    @pytest.mark.asyncio
+    async def test_une_conversation_tous_les_projets_ne_classe_pas_en_all(
+        self, db_session
+    ):
+        """`all` décrit ce qu'on peut LIRE, jamais ce qu'on possède.
+
+        Écrit sur un document, il le rendait introuvable : le filtre `all`
+        relit `global`, `project` et la conversation courante, jamais `all`.
+        """
+        from app.models.entities import Conversation
+        from app.routers import chat as chat_router
+
+        db_session.add(
+            Conversation(id="conv-tous", title="Transversal", memory_scope="all")
+        )
+        await db_session.commit()
+
+        scope, scope_id = await chat_router.perimetre_de_piece_jointe(
+            "conv-tous", db_session
+        )
+
+        assert scope != "all", (
+            "le document serait classé dans un périmètre que la recherche "
+            "ne relit jamais : il disparaîtrait de partout"
+        )
+        assert (scope, scope_id) == ("conversation", "conv-tous")

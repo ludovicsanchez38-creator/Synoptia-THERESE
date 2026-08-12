@@ -176,6 +176,7 @@ async def index_payload(
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
     scope: str = "global",
     scope_id: str | None = None,
+    perimetre_provisoire: bool = False,
 ) -> FileResponse:
     """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
@@ -226,12 +227,19 @@ async def index_payload(
                 existing.size = metadata["size"]
                 existing.mime_type = metadata["mime_type"]
                 existing.updated_at = datetime.now(UTC)
-                # Une réindexation SANS périmètre explicite ne doit pas
-                # déclasser un document déjà rattaché à un projet : on ne
-                # rétrograde jamais vers `global` par omission.
-                if scope != "global" or scope_id is not None:
+                # Revue Soso, finding critique : la condition précédente
+                # laissait un document du projet A devenir propriété du projet B
+                # au simple fait d'être joint à une conversation de B, et
+                # confisquait un document que l'utilisateur avait délibérément
+                # rendu général.
+                #
+                # Règle : un périmètre VOULU ne se réécrit jamais tout seul.
+                # Seul un périmètre provisoire — posé par défaut parce que la
+                # conversation n'était pas encore connue — peut être rectifié.
+                if existing.scope_provisoire:
                     existing.scope = scope
                     existing.scope_id = scope_id
+                    existing.scope_provisoire = perimetre_provisoire
                 file_meta = existing
                 reindexation = True
                 # Mémorisés pour ne rien détruire si le nouveau traitement
@@ -247,6 +255,7 @@ async def index_payload(
                     mime_type=metadata["mime_type"],
                     scope=scope,
                     scope_id=scope_id,
+                    scope_provisoire=perimetre_provisoire,
                 )
                 session.add(file_meta)
                 reindexation = False
@@ -351,21 +360,24 @@ async def index_file(
     ce qui est le bon défaut pour l'explorateur de fichiers.
     """
     scope, scope_id = "global", None
+    perimetre_provisoire = True
     if request.conversation_id:
-        from app.routers.chat import _perimetre_de_conversation
+        from app.routers.chat import perimetre_de_piece_jointe
 
         async with get_session_context() as session:
-            perimetre, perimetre_id = await _perimetre_de_conversation(
+            scope, scope_id = await perimetre_de_piece_jointe(
                 request.conversation_id, session
             )
-        if perimetre is not None:
-            scope, scope_id = perimetre, perimetre_id
+        # La conversation est connue : ce périmètre est VOULU, il ne sera pas
+        # rectifié plus tard.
+        perimetre_provisoire = False
 
     return await index_payload(
         request.path,
         est_abandonnee=http_request.is_disconnected,
         scope=scope,
         scope_id=scope_id,
+        perimetre_provisoire=perimetre_provisoire,
     )
 
 
