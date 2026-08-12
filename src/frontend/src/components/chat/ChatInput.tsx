@@ -467,7 +467,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
-          ...(attachedFiles.length > 0 ? ['fichiers joints sélectionnés'] : []),
+          // BUG-160 : le libellé disait « fichiers joints sélectionnés », ce qui
+          // laissait entendre un envoi unique. Depuis que les pièces jointes
+          // sont rejouées aux tours suivants pour que la conversation garde son
+          // document, elles repartent à chaque message. Le consentement doit le
+          // dire : il porte sur la conversation, pas sur ce seul envoi.
+          ...(attachedFiles.length > 0
+            ? ['fichiers joints, renvoyés à chaque message de cette conversation']
+            : []),
         ],
       });
       return;
