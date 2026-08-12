@@ -14,6 +14,7 @@ import {
   Wand2,
   Presentation,
   FileSpreadsheet,
+  HelpCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -194,6 +195,17 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Créer un rendez-vous : Titre (date=2026-06-03T14:00)',
     icon: <Calendar className="w-4 h-4" />,
     prefix: '/rdv ',
+  },
+  // Inventaire des capacités du 13/08/2026 : la commande existait côté serveur
+  // (répondue localement, sans IA) mais ne figurait pas ici. Un utilisateur qui
+  // tape « / » pour découvrir ce qui existe ne pouvait donc pas trouver l'aide,
+  // qui est précisément ce qu'il cherche à ce moment-là.
+  {
+    id: 'aide',
+    name: 'aide',
+    description: 'Ce que THÉRÈSE sait faire et comment y accéder (sans IA)',
+    icon: <HelpCircle className="w-4 h-4" />,
+    prefix: '/aide',
   },
 ];
 
