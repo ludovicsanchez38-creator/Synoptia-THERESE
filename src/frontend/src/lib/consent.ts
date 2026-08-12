@@ -87,10 +87,20 @@ export function hasCloudConsent(purpose: CloudPurpose, provider?: string): boole
   return Object.values(store.grants).some((g) => g.purpose === purpose);
 }
 
+/** Événement émis à chaque révocation, pour que les écrans ouverts en tiennent
+ *  compte immédiatement. Revue Soso : le composeur mémorise l'accord donné dans
+ *  la session (indispensable si le stockage local est indisponible) ; sans ce
+ *  signal, révoquer depuis les réglages sans fermer le chat laissait cet accord
+ *  actif jusqu'au prochain démontage du composant. */
+export const CLOUD_CONSENT_REVOKED_EVENT = 'therese:cloud-consent-revoked';
+
 export function revokeCloudConsent(purpose: CloudPurpose, provider: string): void {
   const store = loadStore();
   delete store.grants[grantKey(purpose, provider)];
   saveStore(store);
+  window.dispatchEvent(
+    new CustomEvent(CLOUD_CONSENT_REVOKED_EVENT, { detail: { purpose, provider } }),
+  );
 }
 
 export function listCloudConsents(): CloudGrant[] {

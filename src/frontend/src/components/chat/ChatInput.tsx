@@ -30,7 +30,12 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
-import { grantCloudConsent, hasCloudConsent, type CloudPurpose } from '../../lib/consent';
+import {
+  CLOUD_CONSENT_REVOKED_EVENT,
+  grantCloudConsent,
+  hasCloudConsent,
+  type CloudPurpose,
+} from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
@@ -166,6 +171,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     loadLLMConfig();
   }, [loadLLMConfig]);
 
+  // Revue Soso : le cache de session est nécessaire (le stockage local peut
+  // être indisponible), mais il doit céder devant une révocation faite dans les
+  // réglages pendant que le chat reste ouvert.
+  useEffect(() => {
+    const oublier = () => { cloudConsentGrantedRef.current = null; };
+    window.addEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
+    return () => window.removeEventListener(CLOUD_CONSENT_REVOKED_EVENT, oublier);
+  }, []);
+
   // Écouter les changements de config LLM depuis Settings
   useEffect(() => {
     window.addEventListener('therese:llm-config-changed', loadLLMConfig);
@@ -227,9 +241,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     )));
     try {
       // BUG-165 : la conversation courante détermine le périmètre du document.
-      // Elle peut être absente sur un chat tout neuf ; `_get_file_context`
-      // rattrape alors le périmètre au moment de l'envoi.
-      await indexFile(path, controller.signal, currentConversationId ?? undefined);
+      //
+      // Revue Soso, passe 2 : n'envoyer l'identifiant QUE si la conversation
+      // existe côté backend. Un identifiant encore local rattacherait le
+      // document à une conversation qui n'existera jamais sous ce nom, et il y
+      // resterait prisonnier. Dans ce cas on demande explicitement un périmètre
+      // provisoire, que l'envoi rectifiera.
+      const conversation = currentConversation();
+      const idSynchronise = conversation?.synced ? currentConversationId : undefined;
+      await indexFile(
+        path,
+        controller.signal,
+        idSynchronise ?? undefined,
+        !idSynchronise,
+      );
       if (controller.signal.aborted) return;
       setAttachedFiles((current) => current.map((file) => (
         file.path === path ? { ...file, indexStatus: 'ready', indexError: undefined } : file
@@ -252,7 +277,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         indexControllersRef.current.delete(path);
       }
     }
-  }, [currentConversationId]);
+  }, [currentConversationId, currentConversation]);
 
   const handleFilesDropped = useCallback(async (files: DroppedFile[]) => {
     const newFiles = files.filter((file) => {
@@ -461,7 +486,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
     // été informé que ses documents partent, ni qu'ils repartent à chaque
     // message depuis qu'ils sont rejoués (BUG-160).
-    const finaliteCloud: CloudPurpose = attachedFiles.length > 0 ? 'documents' : 'llm';
+    // Revue Soso, passe 2 : la finalité ne peut pas dépendre du seul composeur.
+    // Au tour suivant il est vide, alors que le backend rejoue les documents de
+    // la conversation. Un accord donné sous Ollama puis un passage au cloud
+    // enverrait le document sans que rien ne l'annonce.
+    const conversationPorteDesDocuments = Boolean(
+      currentConversation()?.messages.some((m) => m.hasAttachments),
+    );
+    const finaliteCloud: CloudPurpose =
+      attachedFiles.length > 0 || conversationPorteDesDocuments ? 'documents' : 'llm';
     if (
       currentProvider && currentProvider !== 'ollama'
       && cloudConsentGrantedRef.current !== `${finaliteCloud}:${currentProvider}`

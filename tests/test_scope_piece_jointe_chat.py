@@ -275,7 +275,7 @@ class TestUnDocumentNEstJamaisClasseHorsDePortee:
         )
         await db_session.commit()
 
-        scope, scope_id = await chat_router.perimetre_de_piece_jointe(
+        scope, scope_id, _connue = await chat_router.perimetre_de_piece_jointe(
             "conv-tous", db_session
         )
 
@@ -284,3 +284,89 @@ class TestUnDocumentNEstJamaisClasseHorsDePortee:
             "ne relit jamais : il disparaîtrait de partout"
         )
         assert (scope, scope_id) == ("conversation", "conv-tous")
+
+
+class TestLaProvenanceNEstJamaisDeduite:
+    """Passe 2 de la revue : deux erreurs franches de la première remédiation."""
+
+    @pytest.mark.asyncio
+    async def test_l_explorateur_ne_marque_pas_ses_documents_provisoires(
+        self, db_session, monkeypatch, tmp_path
+    ):
+        """L'explorateur indexe SANS conversation, et son périmètre est voulu.
+
+        Déduire le provisoire de l'absence de conversation rendait ses
+        documents confiscables par la première conversation de projet qui les
+        joignait — exactement le défaut qu'on cherchait à fermer.
+        """
+        from app.routers import files as files_router
+
+        fichier = tmp_path / "modele.txt"
+        fichier.write_text("Modèle général", encoding="utf-8")
+
+        appels: list[bool] = []
+
+        async def faux_index_payload(
+            path, est_abandonnee=None, scope="global", scope_id=None,
+            perimetre_provisoire=False,
+        ):
+            appels.append(perimetre_provisoire)
+            return None
+
+        monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
+
+        await files_router.index_file(
+            files_router.FileIndexRequest(path=str(fichier)), _requete_factice()
+        )
+
+        assert appels == [False], (
+            "un document indexé depuis l'explorateur est marqué provisoire : "
+            "la première conversation de projet qui le joindra le confisquera"
+        )
+
+    @pytest.mark.asyncio
+    async def test_une_conversation_inconnue_ne_fige_pas_le_perimetre(
+        self, db_session, monkeypatch, tmp_path
+    ):
+        """Le composeur fabrique un identifiant avant que le backend n'existe.
+
+        Figer un périmètre sur cet identifiant rattachait le document à une
+        conversation qui n'existerait jamais sous ce nom : il y restait
+        prisonnier, sans que rien ne puisse le rectifier.
+        """
+        from app.routers import files as files_router
+
+        fichier = tmp_path / "note.txt"
+        fichier.write_text("Contenu", encoding="utf-8")
+
+        appels: list[bool] = []
+
+        async def faux_index_payload(
+            path, est_abandonnee=None, scope="global", scope_id=None,
+            perimetre_provisoire=False,
+        ):
+            appels.append(perimetre_provisoire)
+            return None
+
+        monkeypatch.setattr(files_router, "index_payload", faux_index_payload)
+
+        await files_router.index_file(
+            files_router.FileIndexRequest(
+                path=str(fichier), conversation_id="conv-locale-jamais-creee"
+            ),
+            _requete_factice(),
+        )
+
+        assert appels == [True], (
+            "le périmètre est figé sur une conversation qui n'existe pas : "
+            "le document y restera prisonnier"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_resolveur_signale_une_conversation_inconnue(self, db_session):
+        from app.routers import chat as chat_router
+
+        _, _, connue = await chat_router.perimetre_de_piece_jointe(
+            "identifiant-inexistant", db_session
+        )
+        assert connue is False
