@@ -267,7 +267,16 @@ export function AgentsTab() {
           <StatusRow label="Git" ok={status?.git_available} />
           <StatusRow label="Dépôt détecté" ok={status?.repo_detected} />
           {status?.repo_error && !status?.repo_detected && (
-            <div className="mt-1 ml-1 text-xs text-error">
+            // BUG-163 : un contrôle qui n'a pas abouti n'est pas une erreur de
+            // l'utilisateur. Le rouge est réservé aux constats ; l'inconnu
+            // reste neutre, pour ne pas alarmer sur un dépôt peut-être intact.
+            <div
+              className={
+                status.repo_detected === null
+                  ? 'mt-1 ml-1 text-xs text-text-muted'
+                  : 'mt-1 ml-1 text-xs text-error'
+              }
+            >
               {status.repo_error}
             </div>
           )}
@@ -375,11 +384,15 @@ export function AgentsTab() {
   );
 }
 
-function StatusRow({ label, ok }: { label: string; ok?: boolean }) {
+function StatusRow({ label, ok }: { label: string; ok?: boolean | null }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-text-muted">{label}</span>
-      {ok === undefined ? (
+      {/* BUG-163 : `ok == null` couvre undefined ET null. Le backend renvoie
+          désormais `null` quand le contrôle n'a pas abouti ; un test strict sur
+          undefined aurait laissé cet état tomber dans la branche « faux » et
+          affiché une croix rouge pour un dépôt dont on ne sait rien. */}
+      {ok == null ? (
         <AlertCircle size={14} className="text-text-muted" aria-label="Indisponible" />
       ) : ok ? (
         <CheckCircle size={14} className="text-success" />

@@ -119,7 +119,9 @@ export interface AgentConfigResponse {
 
 export interface AgentStatusResponse {
   git_available: boolean;
-  repo_detected: boolean;
+  // BUG-163 : `null` = contrôle non concluant, distinct de `false` qui affirme
+  // l'absence de dépôt.
+  repo_detected: boolean | null;
   repo_path?: string;
   repo_error?: string;
   current_branch?: string;
