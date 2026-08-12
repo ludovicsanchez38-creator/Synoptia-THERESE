@@ -911,7 +911,13 @@ async def get_status(
 
     git_available = shutil.which("git") is not None
     source_path = _get_source_path()
-    repo_detected = False
+    # BUG-163, contre-vérification : `False` affirmait l'absence de dépôt
+    # AVANT même que le contrôle ait tourné. Quand git est introuvable ou
+    # qu'aucun chemin n'est résolu, le bloc de vérification n'est pas exécuté
+    # et la réponse partait quand même avec « dépôt absent » — deux croix
+    # rouges pour un seul fait établi. C'est ce chemin, et non le timeout git,
+    # qui est réellement atteignable depuis cet écran.
+    repo_detected: bool | None = None
     current_branch = None
     repo_error = None
     working_tree_clean = None
@@ -934,9 +940,23 @@ async def get_status(
         else:
             repo_error = repo_error_message(source_path)
     elif source_path and not git_available:
-        repo_error = "Git n'est pas installe ou introuvable dans le PATH"
+        # `git_available` est mesuré sur le PATH hérité au démarrage du backend.
+        # Un testeur qui installe Git pendant que THÉRÈSE tourne garde un
+        # environnement périmé jusqu'à la fermeture, et retrouve un statut sain
+        # au lancement suivant : c'est l'explication la plus probable d'une
+        # erreur « disparue toute seule ». Le message le dit désormais.
+        repo_error = (
+            "Git est introuvable dans le PATH de l'application. Le dépôt n'a "
+            "donc pas pu être vérifié. Si tu viens d'installer Git, redémarre "
+            "THÉRÈSE pour qu'elle prenne en compte le nouvel environnement."
+        )
     elif not source_path:
-        repo_error = "Aucun chemin de code source configure"
+        repo_error = (
+            "Aucun chemin de code source n'a pu être résolu, le dépôt n'a donc "
+            "pas été vérifié. Renseigne le dossier du code dans les réglages, "
+            "ou réessaie si le dossier est sur un disque externe ou un espace "
+            "synchronisé qui n'était pas encore disponible."
+        )
 
 
     # Compter les tâches actives
