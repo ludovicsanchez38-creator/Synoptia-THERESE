@@ -58,6 +58,63 @@ class TestUnGitMuetNAffirmeRien:
         assert await git.is_repo() is False
 
 
+class TestUnControleJamaisLanceNEstPasUnConstat:
+    """Le cas réellement atteignable, trouvé en contre-vérifiant le diagnostic.
+
+    La première analyse imputait le bug au timeout de git. Vérification faite,
+    ce chemin est hors d'atteinte depuis cet écran : le délai HTTP du frontend
+    (30 s, posé avant l'envoi) expire toujours avant celui de git (30 s, posé à
+    l'arrivée de la requête, plus l'arrêt du processus et une requête SQL). Le
+    testeur aurait vu un bandeau « indisponible », pas la croix rouge.
+
+    Le vrai producteur est en amont : `repo_detected` était initialisé à `False`
+    et renvoyé tel quel quand le bloc de vérification n'était pas exécuté du
+    tout. L'écran peignait donc « dépôt absent » pour un contrôle jamais lancé.
+
+    Et cela colle au symptôme « disparu au redémarrage » sans aucune
+    coïncidence de minutage : `git_available` est mesuré sur le PATH hérité au
+    démarrage du backend. Installer Git pendant que THÉRÈSE tourne laisse un
+    environnement périmé jusqu'à la fermeture.
+    """
+
+    @pytest.mark.asyncio
+    async def test_git_introuvable_ne_signifie_pas_depot_absent(
+        self, client, tmp_path, monkeypatch
+    ):
+        import shutil
+
+        from app.routers import agents as agents_router
+
+        depot = tmp_path / "THERESE"
+        (depot / ".git").mkdir(parents=True)
+
+        monkeypatch.setattr(agents_router, "_get_source_path", lambda *a, **k: str(depot))
+        monkeypatch.setattr(shutil, "which", lambda _nom: None)
+
+        corps = client.get("/api/agents/status").json()
+
+        assert corps.get("repo_detected") is not False, (
+            "le dépôt est rapporté absent alors que la vérification n'a même "
+            "pas été lancée : git étant introuvable, on ne sait rien du dépôt"
+        )
+        assert "git clone" not in (corps.get("repo_error") or "").lower()
+
+    @pytest.mark.asyncio
+    async def test_aucun_chemin_resolu_ne_signifie_pas_depot_absent(
+        self, client, monkeypatch
+    ):
+        from app.routers import agents as agents_router
+
+        monkeypatch.setattr(agents_router, "_get_source_path", lambda *a, **k: None)
+
+        corps = client.get("/api/agents/status").json()
+
+        assert corps.get("repo_detected") is not False, (
+            "sans chemin résolu, aucun contrôle n'a eu lieu : le statut ne peut "
+            "pas conclure à l'absence de dépôt"
+        )
+
+
 class TestLeStatutNeProposePasDeReclonerUnDepotSain:
     @pytest.mark.asyncio
     async def test_un_controle_empeche_ne_prescrit_pas_de_git_clone(
