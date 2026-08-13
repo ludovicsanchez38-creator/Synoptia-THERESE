@@ -1,8 +1,9 @@
-# Manifeste de capacités — design (13/08/2026)
+# Manifeste de capacités — design V2 (13/08/2026)
 
-> Chantier 0.44, fondation A. À faire challenger AVANT la première ligne de code.
-> Matière : inventaire multi-agents du 13/08 (178 capacités, 70 divergences relevées
-> sur cinq surfaces, plus une passe de complétude).
+> Chantier 0.44, fondation A. **V2 après NO-GO de la revue de design.**
+> Ce que le NO-GO a changé est récapitulé en fin de document.
+> Matière : inventaire multi-agents du 13/08 (178 capacités, 63 divergences
+> confirmées sur cinq surfaces, plus une passe de complétude).
 
 ## Le problème, tel que l'inventaire l'établit
 
@@ -10,150 +11,210 @@ Un testeur dit ne pas savoir configurer un serveur MCP ni créer une commande. L
 deux existent. Le défaut n'est pas l'absence de fonctions, c'est qu'elles sont
 introuvables — et que rien, dans le code, ne fait autorité sur ce qui existe.
 
-Trois constats structurels, tous ancrés :
+**Sept consommateurs** déclarent aujourd'hui « ce que l'app sait faire », tous
+tenus à la main, aucun dérivé d'un autre : le registre d'actions frontend (qui se
+présente lui-même comme « la source de vérité UNIQUE »), les commandes codées en
+dur du menu `/`, le registre de commandes backend, la fiche des raccourcis, le
+centre des Capacités, la table des actions backend, et la palette active de la
+coque. La liste des vues, elle, est redéclarée à **sept endroits**.
 
-**Cinq registres concurrents** déclarent « ce que l'app sait faire », tous tenus à
-la main, aucun dérivé d'un autre : le registre d'actions frontend (qui se présente
-lui-même comme « la source de vérité UNIQUE »), les 21 commandes codées en dur du
-menu `/`, le registre de commandes backend, la fiche des raccourcis, et le centre
-des Capacités. La liste des vues, elle, est redéclarée à **sept endroits**.
+Ils divergent déjà : `files` manque à la table du backend, donc la vue qui porte
+l'indexation et le RAG est absente de `{action: ouvrir …}` **et** de `/aide`.
 
-**Ils divergent déjà.** `files` manque à la table du backend : la vue qui porte
-l'indexation et le RAG est absente de `{action: ouvrir …}` **et** de la réponse de
-`/aide`. Quatre raccourcis sont annoncés sans exister ; deux raccourcis réels ne
-sont annoncés nulle part.
+## L'erreur de la V1, et la règle qui en découle
 
-**La porte d'entrée du catalogue existant est invisible.** Le bouton « Capacités »
-vit dans le composeur de l'accueil : il disparaît dès qu'une conversation ou une
-vue est ouverte. Le rail permanent, lui, ne compte qu'une seule vue métier, sous un
-nom qui n'est pas le sien.
+La V1 voulait que le manifeste **remplace** les registres. C'est intenable, pour
+deux raisons établies dans le code.
 
-## Ce que le manifeste EST, et ce qu'il n'est pas
+**Les relations sont plusieurs-à-plusieurs.** La capacité « produire un document
+Office » correspond à une action guidée, trois actions `produire`, et trois skills.
+« Contacts et mémoire » couvre une vue, une recherche, une création, une commande
+`/contact` et un scénario. À l'inverse, `settings.open` sert plusieurs capacités.
+Un identifiant unique par capacité écraserait ces liens.
 
-**Il est déclaré, pas scrapé.** Un scanner ne peut pas décider qu'une route est une
-capacité, ni qu'une intention comme « Brief du jour » en est une. Il ne peut pas
-davantage écrire un nom lisible ni un cas de test. Le manifeste est donc écrit à la
-main, typé, et versionné avec le code.
+**Une partie du vocabulaire n'existe qu'à l'exécution.** Les commandes créées par
+l'utilisateur, les skills découverts au démarrage, les outils installés sous
+`~/.therese/tools` et les serveurs MCP branchés ne peuvent pas figurer dans un
+fichier statique.
 
-**Il est la source, pas une copie.** Les menus, l'aide, la fiche de commandes, le
-centre des Capacités et la table des actions du backend en sont **dérivés**. Un
-registre qui subsisterait en parallèle recommencerait à diverger.
+> **Règle du design V2 : une source de vérité ne veut pas dire un seul fichier
+> pour tous les faits. Chaque FAIT a une autorité unique.** Le texte produit
+> appartient au manifeste ; l'exécution appartient aux registres ; la
+> disponibilité appartient à une évaluation à l'exécution ; les commandes
+> utilisateur appartiennent à leur propre stockage.
 
-**Le scanner devient un rapport de dérive**, pas une source : il vérifie que toute
-surface enregistrée porte un identifiant du manifeste, et signale les orphelins.
+Le manifeste ne remplace donc rien : **il relie**.
 
-## Le contrat d'une entrée
+## Le modèle : trois objets, pas un
 
 ```ts
+/** Ce que l'utilisateur cherche à FAIRE. Vocabulaire produit, stable. */
 interface Capacite {
-  id: string;                    // stable, jamais renommé — c'est la clé de tout
-  nom: string;                   // lisible par un non-technicien, tel qu'affiché
-  quoi: string;                  // une phrase, du point de vue de l'utilisateur
-  famille: Famille;              // regroupement affiché (Quotidien, Documents, …)
-
-  acces: Acces[];                // TOUS les chemins, pas seulement le principal
-  prerequis: Prerequis[];        // ce qu'il faut avoir configuré avant
+  id: CapabilityId;              // stable, jamais réutilisé après retrait
+  famille: Famille;
+  textes: TextesLocalises;       // fr-FR aujourd'hui ; jamais un identifiant
+  maturite: 'complete' | 'partielle';
+  audience: 'tous' | 'contributeur';
+  entrees: EntrypointId[];       // les chemins ; l'accès principal est explicite
+  exigences: RequirementId[];    // évaluées à l'exécution, pas documentaires
   limites?: string[];            // troncatures, plafonds, formats non lus
-
-  etat: 'disponible' | 'partielle' | 'sans_interface' | 'contributeur';
-  cas_de_test?: CasDeTest;       // ce que le testeur déroule, et ce qu'il doit voir
+  cycle: { introduite: string; remplacee_par?: CapabilityId };
 }
 
-type Acces =
-  | { type: 'rail'; libelle: string }
-  | { type: 'palette'; terme: string }
-  | { type: 'raccourci'; touches: string }
-  | { type: 'commande'; slash: string }
-  | { type: 'action'; expression: string }   // {action: ouvrir …}
-  | { type: 'dans_vue'; vue: string; ou: string };  // bouton à l'intérieur d'une vue
+/** Un CHEMIN vers une capacité. Porte une référence typée au code réel. */
+interface PointEntree {
+  id: EntrypointId;
+  capacites: CapabilityId[];     // un point d'entrée peut servir plusieurs capacités
+  type: 'vue' | 'action' | 'commande' | 'raccourci' | 'scenario'
+      | 'lien_profond' | 'ui_contextuelle' | 'outil' | 'api';
+  binding: Binding;              // PAS une chaîne opaque
+  principal?: boolean;
+}
+
+/** Le lien vérifiable avec l'existant. C'est lui qui rend le gate possible. */
+type Binding =
+  | { registre: 'action'; actionId: string }        // actionRegistry
+  | { registre: 'vue'; view: AppView }
+  | { registre: 'commande'; commandId: string }     // command_registry backend
+  | { registre: 'raccourci'; actionId: string }     // via une action, jamais un callback nu
+  | { registre: 'scenario'; scenarioId: string }
+  | { registre: 'lien_profond'; parametre: string }
+  | { registre: 'ui'; composant: string; testid: string }  // ancrage vérifiable
+  | { registre: 'externe'; note: string };          // assumé non vérifiable
 ```
 
-Quatre décisions portent ce contrat.
+Cinq décisions portent ce modèle.
 
-**`acces` est une liste, pas un champ.** L'inventaire montre qu'une même capacité
-s'atteint par le rail, la palette, un raccourci, une commande et une action, avec
-des libellés différents à chaque fois. Un champ unique forcerait à choisir, et
-c'est ce choix arbitraire qui produit les divergences actuelles.
+**Le `binding` référence un identifiant existant**, il ne le remplace pas.
+`memory.open`, `/contact`, `AppView.memory` gardent leur nom dans leur espace. Le
+manifeste établit le crosswalk.
 
-**`etat: 'sans_interface'` est un état de première classe.** L'inventaire a trouvé
-des fonctions au backend complet et au client API écrit, sans aucun consommateur :
-étiquettes email, priorité manuelle, statistiques de boîte, rattachement d'un
-message à un contact, installation d'outils sur mesure. Les taire reviendrait à
-maintenir la fiction ; les annoncer comme disponibles serait mentir. On les
-déclare, on dit qu'elles n'ont pas d'écran, et le rapport de dérive les compte.
+**Un raccourci passe obligatoirement par une action.** C'est ce qui rend la règle
+de gate tenable : aujourd'hui, un raccourci n'existe que si la coque passe un
+callback optionnel au hook, ce qui est invérifiable statiquement — et c'est
+précisément ainsi que quatre raccourcis fictifs ont pu être annoncés. En le faisant
+pointer sur un `actionId`, on peut tester mécaniquement que la cible existe.
 
-**`limites` est obligatoire dès qu'il en existe une.** PDF plafonné à 100 pages,
-CSV à 500 lignes, XLSX sans plafond, pièce jointe rejouée sur 3 tours et 4 fichiers,
-13 extensions acceptées mais illisibles. Aucune n'est annoncée aujourd'hui.
+**L'accès principal est un champ**, pas « le premier de la liste ». Sinon l'ordre
+du tableau devient un contrat caché.
 
-**`cas_de_test` est écrit pour un humain, pas pour pytest.** C'est la demande
-explicite du testeur : « présenter des cas de test pour permettre le test et en
-même temps l'apprentissage ». Un test unitaire ne remplit pas cet office.
+**Les textes sont localisés dès le départ.** `nom` et `quoi` en français ne
+doivent jamais devenir des identifiants fonctionnels — sinon toute traduction
+casse le catalogue.
 
-## Ce qui en est dérivé, et dans quel ordre
+**Le cycle de vie est explicite** et les identifiants retirés sont réservés à vie.
+Un `id` réutilisé ferait réapparaître une capacité morte dans un catalogue publié.
 
-| Consommateur | Ce qu'il prend | Remplace |
+## La frontière statique / dynamique
+
+Trois couches, et un agrégateur qui les fusionne avec une politique écrite.
+
+| Couche | Autorité sur | Exemples |
 |---|---|---|
-| Centre des Capacités | tout, groupé par famille | sa liste écrite à la main |
-| Réponse de `/aide` | nom, quoi, premier accès | sa table de onze destinations |
-| Menu `/` | les accès de type `commande` | ses 21 entrées codées en dur |
-| Fiche des raccourcis | les accès de type `raccourci` | sa liste de 21, dont 4 fictifs |
-| Table des actions backend | les accès de type `action` | sa table sans `files` |
-| Rail de navigation | les capacités marquées `epingle` | ses sept boutons figés |
+| **Manifeste statique** | le vocabulaire produit et les capacités natives | vues, actions de navigation, familles, textes |
+| **Registres exécutables** | ce qui s'exécute | `actionRegistry`, `command_registry`, hook clavier |
+| **Contributions à l'exécution** | ce qui n'existe qu'installé | commandes utilisateur, skills, outils, serveurs MCP |
 
-**Ordre d'adoption imposé par le risque** : d'abord les consommateurs en lecture
-seule (Capacités, `/aide`, fiche des raccourcis), qui ne peuvent rien casser. La
-table des actions backend et le menu `/` ensuite, car ils exécutent. Le rail en
-dernier, c'est le plus visible.
+Une contribution à l'exécution porte un `parentCapabilityId` : un serveur MCP
+branché s'affiche **sous** la capacité « Connecteurs », pas comme une capacité
+autonome. Un skill se rattache à la capacité métier qu'il sert. Un skill ne devient
+une capacité à part entière que s'il porte un résultat utilisateur durable et
+distinct.
 
-## Où il vit
+**Politique de collision, écrite plutôt que subie** : aujourd'hui le menu `/`
+fusionne trois sources et donne silencieusement priorité au statique en cas de
+collision d'identifiant. Le design retient l'inverse pour la disponibilité — une
+commande réellement servie l'emporte sur une déclaration statique — et conserve la
+provenance, affichée dans le rapport de dérive.
 
-**Côté frontend**, en TypeScript : `src/frontend/src/lib/capacites/`. Motif : cinq
-des six consommateurs sont frontend, le typage y est vérifié par `tsc`, et le rail
-comme la palette ne peuvent pas attendre un appel réseau pour s'afficher.
+## Le fichier canonique
 
-Le backend en a besoin pour deux choses seulement : la réponse de `/aide` et la
-table des actions. Il les obtient par un **fichier généré** (`capacites.json`),
-produit par un script et vérifié en CI — pas par un appel HTTP, qui ferait dépendre
-une réponse de chat de la disponibilité du frontend.
+**Un seul fichier JSON, source neutre**, validé par schéma, importé par TypeScript
+et embarqué par PyInstaller. Pas de génération TypeScript vers JSON.
 
-## Le gate anti-dérive
+Motif décisif, vérifié dans le pipeline de release : le sidecar PyInstaller est
+construit **avant** que Node ne soit installé et que le frontend ne soit bâti. Un
+générateur accroché au build frontend produirait un fichier que le sidecar ne
+verrait jamais.
 
-Un test qui échoue si :
+Emplacement : `src/backend/app/data/capacites.json` — `backend.spec` embarque déjà
+tout `app/data`, et le sidecar bascule correctement sous `_MEIPASS`. Le backend le
+lit par un chemin relatif au module, jamais depuis le bundle frontend ni le
+répertoire courant de Tauri.
 
-1. deux capacités portent le même `id` ;
-2. un `id` référencé par une surface n'existe pas dans le manifeste ;
-3. une vue déclarée dans `AppView` n'a aucune capacité qui la cible ;
-4. un accès de type `raccourci` n'a pas de gestionnaire correspondant — c'est ce
-   qui a laissé passer les quatre raccourcis fictifs ;
-5. un accès de type `commande` ne correspond à aucune commande servie ;
-6. `capacites.json` diverge du manifeste TypeScript.
+Le fichier porte une **version de schéma** et une **empreinte de contenu**,
+comparées au démarrage. Un frontend et un sidecar issus de deux générations
+différentes doivent le dire, pas diverger en silence.
 
-Le point 4 est le plus important : c'est le seul qui teste une promesse faite à
-l'utilisateur contre le code qui doit la tenir.
+## Les gates, réécrits pour être tenables
+
+La V1 posait six règles dont trois étaient des vœux. Version tenable :
+
+| Règle | Comment |
+|---|---|
+| Aucun `id` dupliqué, aucun `id` retiré réutilisé | lecture du fichier |
+| Tout `binding` pointe une cible qui existe | les registres sont des structures énumérables |
+| Tout raccourci cible une action existante | contrepartie directe du modèle |
+| Aucune collision de combinaison de touches | normalisation puis comparaison |
+| Toute vue de `AppView` est couverte | après passage d'`AppView` en constante dont le type dérive |
+| JSON conforme au schéma, empreinte cohérente | validation + comparaison au démarrage |
+| Chaque combinaison produit un effet réel | **test d'intégration** : monter la coque, envoyer la combinaison, observer |
+
+Le dernier point est le seul qui teste une promesse faite à l'utilisateur contre le
+code qui doit la tenir. Il coûte plus cher, il est le plus utile.
+
+## L'ordre d'adoption
+
+La V1 disait « les consommateurs en lecture seule d'abord ». C'est faux : le centre
+des Capacités déclenche des scénarios, des vues et des prompts, et `/aide` écrit un
+message persistant. Rien n'est en lecture seule.
+
+1. **Schéma, espaces de noms et crosswalk**, sans migrer aucun consommateur.
+2. **Génération et packaging**, avec empreinte vérifiée des deux côtés.
+3. **Mode fantôme** : l'ancien et le nouveau calculent chacun leur sortie, un test
+   compare. Aucun changement visible. C'est ce qui prouve la frontière
+   statique/dynamique avant d'y toucher.
+4. **Pilote : les vues et les actions de navigation**, le sous-ensemble le mieux
+   délimité — et celui qui porte la divergence `files`.
+5. Centre des Capacités et palette, avec tests de destination.
+6. Menu `/` et table des actions backend.
+7. Le rail en dernier.
 
 ## Ce qu'on ne fait pas dans ce jalon
 
 **On ne corrige pas les divergences en même temps qu'on les déclare.** Le manifeste
-doit d'abord dire la vérité, y compris désagréable. Corriger et déclarer dans le
-même lot rendrait impossible de savoir ce qui est décrit et ce qui est réparé — et
-c'est exactement le mélange qui a produit deux NO-GO sur le lot précédent.
+doit d'abord dire la vérité, y compris désagréable. Mélanger description et
+réparation rendrait impossible de savoir ce qui est décrit et ce qui est réparé —
+c'est exactement ce mélange qui a produit deux NO-GO sur le lot précédent.
 
-Les divergences deviennent une liste de correctifs, traitée dans un jalon suivant,
-par ordre de gêne pour le testeur.
+**Les promesses documentaires restent dehors.** Ce que le guide ou la landing
+annoncent sans que le code le tienne ne va pas dans le manifeste : un registre de
+promesses séparé, comparé au catalogue réel par un gate. Une promesse absente ne
+doit jamais pouvoir remonter dans le rail, `/aide` ou le menu `/`.
 
-**On ne touche pas au rail** avant que les consommateurs en lecture seule ne soient
-livrés et vérifiés.
+**`sans_interface` disparaît du catalogue utilisateur.** Les fonctions sans écran
+(étiquettes email, priorité manuelle, statistiques, rattachement d'un message à un
+contact) restent visibles du mode contributeur et du rapport de dérive. Et une
+fonction atteignable par la conversation n'est pas « sans interface » : son point
+d'entrée est de type `outil`.
 
-## Questions ouvertes, à trancher avant de coder
+## Ce que le NO-GO a changé
 
-1. **Le centre des Capacités connaît un état `pending` avec un motif.** Faut-il le
-   fusionner avec `etat: 'partielle'`, ou garder deux notions ?
-2. **`sans_interface` doit-il être visible par l'utilisateur final**, ou réservé au
-   mode contributeur et au rapport de dérive ? Annoncer une capacité inatteignable
-   peut frustrer plus qu'informer.
-3. **Les 19 presets MCP et les 19 skills** : une capacité chacun (76 entrées, illisible)
-   ou une capacité « connecteurs » avec une liste dérivée du registre ?
-4. **Le manifeste doit-il porter les capacités absentes mais promises ailleurs**
-   (guide utilisateur, landing) ? Elles n'existent pas dans le code, mais l'écart
-   est précisément ce qui trompe les testeurs.
+| V1 | V2 |
+|---|---|
+| Le manifeste remplace les registres | il les **relie**, par un crosswalk plusieurs-à-plusieurs |
+| Un objet `Capacite` avec un champ `acces` en chaînes | trois objets : `Capacite`, `PointEntree`, `Binding` typé |
+| Le dynamique n'était pas traité | trois couches explicites + politique de collision écrite |
+| `capacites.json` généré depuis le TypeScript | **fichier canonique neutre**, embarqué des deux côtés, empreinte comparée |
+| Raccourci décrit par une chaîne de touches | raccourci **routé par une action**, donc vérifiable |
+| Six règles de gate, dont trois invérifiables | sept règles tenables, dont une en test d'intégration |
+| « Lecture seule d'abord » | **mode fantôme** d'abord ; rien n'est en lecture seule |
+| Accès principal implicite (le premier) | champ explicite |
+| Textes en français dans le modèle | textes localisés, jamais des identifiants |
+| Pas de cycle de vie | `introduite` / `remplacee_par`, identifiants réservés à vie |
+| `pending` et `partielle` confondus | deux axes : `maturite` (fonctionnelle) et disponibilité (à l'exécution) |
+
+Deux inexactitudes de la V1 corrigées au passage : la table des consommateurs
+comptait quatre surfaces frontend et deux backend, pas cinq sur six ; et la palette
+active de la coque constitue un septième consommateur, oublié. Les presets MCP et
+les skills font 38 entrées, pas 76.
