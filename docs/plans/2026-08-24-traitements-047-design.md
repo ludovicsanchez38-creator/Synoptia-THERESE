@@ -1,8 +1,8 @@
 # Traitements longs, complément (0.47) - Board, actions, indexation, fencing
 
-> **Design V2 du 24/08/2026 (nuit)** - V1 challengée par Soso (10 findings,
-> « à reprendre » : plusieurs constats de la V1 étaient factuellement faux).
-> Tout est intégré ; corrections en fin de document. À re-challenger.
+> **Design V2.1 du 24/08/2026 (nuit)** - V1 challengée (10 findings), V2
+> contre-challengée (VIABLE, 5 corrections intégrées ci-dessous). Le code
+> peut démarrer.
 
 ## Le socle qui fait foi
 
@@ -59,8 +59,10 @@ try (contexte local, callbacks) qui peuvent le tuer en laissant tout
   callbacks compris) : correspondance COMPLETED→done, ERROR→failed,
   CANCELLED→cancelled - plus aucun chemin qui laisse TaskState ET
   ProcessingTask `running` ;
-- enrôlement : un ProcessingTask type `action` par run, adaptateur
-  `AnnulationCooperative(poser_drapeau=_cancel_event.set)`, progression =
+- enrôlement : un ProcessingTask type `action` par run ; l'adaptateur
+  canonique appelle une PRIMITIVE UNIQUE `demander_arret_action(task_id)`
+  qui pose l'évènement ET `TaskStatus.CANCEL_REQUESTED` (V2.1 : un simple
+  event.set laissait le panneau Actions afficher running) ; progression =
   étapes via `handle.progresser(step=label, progress=(i+1)/n)` ;
 - frontend Actions : `cancel_requested` ajouté à l'union TS, libellés,
   couleurs, états ACTIFS (le polling continue, le spinner devient « arrêt
@@ -83,10 +85,13 @@ done de cancelled.
   traitement. Test : un apply project.sync avec plusieurs indexations =
   exactement UN ProcessingTask ;
 - **issue d'abandon explicite** : le cœur lève `IndexationAbandonnee` au
-  point exact où l'abandon est observé (au lieu du FileResponse normal) -
-  seule façon honnête de poser `cancelled` sans course. Les appelants
-  existants qui passaient `est_abandonnee` (chat trombone fallback,
-  project.sync via revalidation) traitent l'exception ;
+  point exact où l'abandon est observé (au lieu du FileResponse normal).
+  Branchements PRÉCIS (V2.1 - seul `/files/index` passait est_abandonnee
+  jusqu'ici) : `/index` et `/upload` → traitement `cancelled` ; le fallback
+  chat CESSE d'absorber aveuglément et laisse remonter l'abandon (la
+  génération porte l'état) ; project.sync → l'exception INTERROMPT l'apply
+  sans marquer l'opération `echec` (elle reste `a_faire`, l'apply constate
+  l'annulation - chemin cancelled existant) ;
 - adaptateur runtime : évènement local + `TravailNonInterruptible(event.set)`
   (l'extraction threadée va au bout - arrêt différé assumé), callback
   combiné `await request.is_disconnected() OR event.is_set()` ;
@@ -105,16 +110,22 @@ les mutateurs locaux immédiats réels sont `create_contact`,
 `create_project`, `generate_document` (calendrier = geste confirmé séparé,
 HORS périmètre ; email/web/MCP = externes).
 
-- **`ContexteExecution`** explicite : `generation_id` + token d'annulation
-  (callable), construit par le chat au lancement de la génération, passé au
-  dispatcher puis aux handlers - AUCUN service n'importe `routers.chat` ;
+- **`ContexteExecution`** explicite : `generation_id` + token d'annulation,
+  construit par le chat au lancement de la génération, passé au dispatcher
+  puis aux handlers - AUCUN service n'importe `routers.chat`. V2.1 : le
+  contexte REMPLACE le drapeau partagé comme AUTORITÉ - un unique token par
+  génération alimente le wrapper du flux, l'adaptateur canonique, le
+  fallback d'indexation et les outils ; `_active_generations` devient une
+  simple table conversation→token courant (compat lecture), jamais une
+  seconde mécanique ;
 - **registre déclaratif des outils** : chaque outil du dispatcher est classé
   `read_only | local_mutation | external_mutation` - test de complétude sur
   le registre (un outil non classé = rouge) ;
 - les trois mutateurs locaux appellent le fence JUSTE AVANT leur premier
-  effet durable (Qdrant compris : contact/projet écrivent Qdrant PUIS
-  SQLite) : annulation observée = résultat d'outil « interrompu avant
-  écriture », zéro effet ;
+  effet durable - et pour contact/projet, AVANT `session.add()`/`flush()`
+  (V2.1 : un « interrompu » après un add laisserait une écriture pendante
+  commitée plus tard par la session du chat), Qdrant compris : annulation
+  observée = résultat « interrompu avant écriture », zéro effet ;
 - **tests COMPORTEMENTAUX avec barrières** : lancer l'outil, annuler avant
   le premier effet durable, relâcher, vérifier SQLite + Qdrant + disque -
   l'inspection statique ne prouve rien (generate_document écrit via le
@@ -125,8 +136,8 @@ HORS périmètre ; email/web/MCP = externes).
 
 ## 5. Divers
 
-- index sur `ProcessingTask.entity_id` (la résolution historique Atelier +
-  actions devient un chemin normal) - modèle + migration ad-hoc, patron 0.45.
+- index sur `ProcessingTask.entity_id` : RETIRÉ du MVP (V2.1 - attendre une
+  preuve de lenteur).
 
 ## Retirés du MVP (challenge)
 
