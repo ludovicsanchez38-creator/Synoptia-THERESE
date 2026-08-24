@@ -48,6 +48,10 @@ export function ResponseGeneratorModal({
   const [draft, setDraft] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  // BUG-171. L'erreur était écrite DANS le champ brouillon : le texte de la
+  // panne se retrouvait à la place de la réponse, et l'utilisateur devait
+  // fermer puis rouvrir la fenêtre pour réessayer. Elle a désormais sa place.
+  const [erreur, setErreur] = useState<string | null>(null);
 
   // US-013 : piège de focus + Échap. onClose vient du parent sous forme de fléchée
   // recréée à chaque rendu : on le stabilise (ref) pour ne pas réarmer le piège
@@ -62,13 +66,22 @@ export function ResponseGeneratorModal({
 
   const generateResponse = async () => {
     setIsGenerating(true);
+    setErreur(null);
     try {
       const response = await api.generateEmailResponse(messageId, accountId, tone, length);
       setDraft(response.draft);
       setHasGenerated(true);
     } catch (error) {
-      console.error('Failed to generate response:', error);
-      setDraft('❌ Erreur lors de la génération. Réessaie.');
+      // Le backend renvoie une cause déjà traduite et nettoyée : clé refusée,
+      // modèle sans outils, délai dépassé, fournisseur injoignable. On
+      // l'affiche telle quelle plutôt que de la remplacer par un message
+      // unique qui n'apprend rien.
+      const cause = (error as { message?: string } | null)?.message?.trim();
+      setErreur(
+        cause && cause.length > 10
+          ? cause
+          : "La rédaction assistée n'a pas abouti. Réessaie, ou vérifie ton modèle dans Réglages, rubrique IA.",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -214,6 +227,25 @@ export function ResponseGeneratorModal({
                   </div>
                 </div>
               </div>
+
+              {/* BUG-171 : la cause de l'échec, à sa place — et un bouton
+                  pour réessayer sans fermer la fenêtre. */}
+              {erreur && (
+                <div
+                  className="mb-4 flex items-start gap-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] px-3 py-3"
+                  role="alert"
+                >
+                  <span className="flex-1 text-sm text-error">{erreur}</span>
+                  <button
+                    type="button"
+                    onClick={() => void generateResponse()}
+                    disabled={isGenerating}
+                    className="shrink-0 text-xs font-semibold text-text underline underline-offset-2 disabled:opacity-50"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
 
               {/* Draft */}
               <div className="mb-6">
