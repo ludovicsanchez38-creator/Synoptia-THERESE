@@ -182,3 +182,96 @@ class TestLaGenerationEstUnTraitement:
         generation = await _generation_de(conversation)
         assert generation is not None
         assert generation.state == EtatTache.CANCELLED
+
+
+class TestLAnnulationGagneeAvantLeDemarrage:
+    """Passe 2 de revue : AnnuleAvantDemarrage était avalée comme une panne
+    de suivi - le producteur travaillait pendant que la ligne disait
+    cancelled. Le contrat : ne RIEN produire."""
+
+    @pytest.mark.asyncio
+    async def test_le_chat_ne_produit_rien(self, client, monkeypatch):
+        from app.routers import chat as chat_router
+        from app.services import traitements
+
+        appels = {"produit": False}
+
+        def evenements():
+            appels["produit"] = True
+            yield _fin()
+
+        monkeypatch.setattr(
+            chat_router, "get_llm_service", lambda: _faux_service(evenements),
+        )
+
+        class HandleAnnule:
+            id = "gen-annulee"
+
+            async def demarrer(self):
+                raise traitements.AnnuleAvantDemarrage("annulée avant démarrage")
+
+            async def lier_adaptateur(self, _a):
+                raise AssertionError("jamais atteint")
+
+            async def terminer(self, *_a, **_k):
+                raise AssertionError("déjà terminale")
+
+        async def creer_annulee(**_k):
+            return HandleAnnule()
+
+        monkeypatch.setattr(traitements, "creer_traitement", creer_annulee)
+
+        reponse = await client.post(
+            "/api/chat/send", json={"message": "Salut", "stream": True},
+        )
+
+        assert reponse.status_code == 200
+        assert '"cancelled"' in reponse.text
+        assert '"type": "text"' not in reponse.text
+        assert appels["produit"] is False, (
+            "le fournisseur ne doit JAMAIS être appelé pour une génération "
+            "annulée avant son démarrage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_echec_de_liaison_termine_failed_pas_running(
+        self, client, monkeypatch
+    ):
+        """L'échec de lier_adaptateur APRÈS demarrer laissait un running
+        fantôme : la ligne doit finir failed, et le chat répondre quand même."""
+        from app.routers import chat as chat_router
+        from app.services import traitements
+
+        monkeypatch.setattr(
+            chat_router, "get_llm_service",
+            lambda: _faux_service(lambda: [_texte("Réponse "), _fin()]),
+        )
+
+        terminaisons: list[tuple] = []
+
+        class HandleBancal:
+            id = "gen-bancale"
+
+            async def demarrer(self):
+                return None
+
+            async def lier_adaptateur(self, _a):
+                raise RuntimeError("registre en panne")
+
+            async def terminer(self, etat, error=None):
+                terminaisons.append((etat, error))
+
+        async def creer_bancale(**_k):
+            return HandleBancal()
+
+        monkeypatch.setattr(traitements, "creer_traitement", creer_bancale)
+
+        reponse = await client.post(
+            "/api/chat/send", json={"message": "Salut", "stream": True},
+        )
+
+        assert reponse.status_code == 200
+        assert '"type": "text"' in reponse.text, "le chat répond quand même"
+        assert terminaisons and terminaisons[0][0] == EtatTache.FAILED, (
+            "la ligne créée doit être terminée failed, jamais abandonnée running"
+        )

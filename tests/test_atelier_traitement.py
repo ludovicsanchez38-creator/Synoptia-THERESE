@@ -169,3 +169,115 @@ class TestLaMissionEstUnTraitement:
         assert agent_task.status == "cancelled", (
             "les deux cycles de vie doivent dire la même chose"
         )
+
+
+class TestLInitialisationEstCouverte:
+    """Passe 2 de revue : l'annulation gagnée avant le démarrage lançait
+    quand même la mission, et un échec de liaison laissait un running
+    fantôme."""
+
+    @pytest.mark.asyncio
+    async def test_une_mission_annulee_avant_demarrage_ne_tourne_pas(
+        self, client, tmp_path: Path, monkeypatch
+    ):
+        from app.services import traitements
+
+        repo = tmp_path / "repo-annule"
+        repo.mkdir()
+        orchestrateur_lance = {"oui": False}
+
+        class SwarmSentinelle:
+            def __init__(self, _source_path: str):
+                pass
+
+            async def process_request(self, _message: str, task_id: str):
+                orchestrateur_lance["oui"] = True
+                yield AgentStreamChunk(
+                    type="done", content="", task_id=task_id, phase="review",
+                )
+
+        class HandleAnnule:
+            id = "mission-annulee"
+
+            async def demarrer(self):
+                raise traitements.AnnuleAvantDemarrage("annulée")
+
+            async def lier_adaptateur(self, _a):
+                raise AssertionError("jamais atteint")
+
+            async def terminer(self, *_a, **_k):
+                return None
+
+        async def creer_annulee(**_k):
+            return HandleAnnule()
+
+        monkeypatch.setattr(traitements, "creer_traitement", creer_annulee)
+
+        with (
+            patch("app.routers.agents._get_source_path", return_value=str(repo)),
+            patch("app.routers.agents.GitService", return_value=_git_factice()),
+            patch("app.routers.agents.SwarmOrchestrator", SwarmSentinelle),
+        ):
+            try:
+                await client.post(
+                    "/api/agents/request", json={"message": "Mission annulée tôt"},
+                )
+            except BaseException:
+                pass  # le CancelledError peut traverser le client de test
+
+        assert orchestrateur_lance["oui"] is False, (
+            "l'orchestrateur ne doit JAMAIS tourner pour une mission annulée "
+            "avant son démarrage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_echec_de_liaison_termine_failed(
+        self, client, tmp_path: Path, monkeypatch
+    ):
+        from app.models.processing import EtatTache as Etat
+        from app.services import traitements
+
+        repo = tmp_path / "repo-bancal"
+        repo.mkdir()
+        terminaisons: list[tuple] = []
+
+        class SwarmOk:
+            def __init__(self, _source_path: str):
+                pass
+
+            async def process_request(self, _message: str, task_id: str):
+                yield AgentStreamChunk(
+                    type="done", content="Fini", task_id=task_id, phase="review",
+                )
+
+        class HandleBancal:
+            id = "mission-bancale"
+
+            async def demarrer(self):
+                return None
+
+            async def lier_adaptateur(self, _a):
+                raise RuntimeError("registre en panne")
+
+            async def terminer(self, etat, error=None):
+                terminaisons.append((etat, error))
+
+        async def creer_bancale(**_k):
+            return HandleBancal()
+
+        monkeypatch.setattr(traitements, "creer_traitement", creer_bancale)
+
+        with (
+            patch("app.routers.agents._get_source_path", return_value=str(repo)),
+            patch("app.routers.agents.GitService", return_value=_git_factice()),
+            patch("app.routers.agents.SwarmOrchestrator", SwarmOk),
+        ):
+            reponse = await client.post(
+                "/api/agents/request", json={"message": "Mission bancale"},
+            )
+
+        assert reponse.status_code == 200
+        assert terminaisons and terminaisons[0][0] == Etat.FAILED, (
+            "l'echec de liaison doit terminer la ligne failed, jamais "
+            "l'abandonner running"
+        )

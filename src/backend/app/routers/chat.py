@@ -945,21 +945,35 @@ async def deep_research_endpoint(
                 label=f"Recherche : {request.question[:70]}",
                 conversation_id=conversation.id,
             )
-            await recherche.demarrer()
-            await recherche.lier_adaptateur(
-                _registre.AnnulationCooperative(
-                    poser_drapeau=lambda: arret_demande.__setitem__("drapeau", True)
+            try:
+                await recherche.demarrer()
+                await recherche.lier_adaptateur(
+                    _registre.AnnulationCooperative(
+                        poser_drapeau=lambda: arret_demande.__setitem__("drapeau", True)
+                    )
                 )
-            )
-            yield (
-                "data: "
-                + json.dumps({
-                    "type": "generation",
-                    "generation_id": recherche.id,
-                    "conversation_id": conversation.id,
-                })
-                + "\n\n"
-            )
+            except _traitements.AnnuleAvantDemarrage:
+                # L'annulation a gagné avant le démarrage : ne rien chercher.
+                yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+                return
+            except Exception:
+                logger.warning("Suivi deep-research en panne", exc_info=True)
+                with contextlib.suppress(Exception):
+                    await recherche.terminer(
+                        EtatTacheTraitement.FAILED,
+                        error="suivi en panne à l'initialisation",
+                    )
+                recherche = None
+            else:
+                yield (
+                    "data: "
+                    + json.dumps({
+                        "type": "generation",
+                        "generation_id": recherche.id,
+                        "conversation_id": conversation.id,
+                    })
+                    + "\n\n"
+                )
         except Exception:
             logger.warning("Suivi deep-research indisponible", exc_info=True)
             recherche = None
@@ -1693,24 +1707,45 @@ async def _stream_response(
     from app.services import traitements as _traitements
 
     generation = None
+    annulee_avant_demarrage = False
     try:
         generation = await _traitements.creer_traitement(
             type="chat",
             label=(user_message or "Message")[:80],
             conversation_id=conversation_id,
         )
-        await generation.demarrer()
-        await generation.lier_adaptateur(
-            _registre.AnnulationCooperative(
-                poser_drapeau=lambda: _cancel_generation(conversation_id)
+        try:
+            await generation.demarrer()
+            await generation.lier_adaptateur(
+                _registre.AnnulationCooperative(
+                    poser_drapeau=lambda: _cancel_generation(conversation_id)
+                )
             )
-        )
+        except _traitements.AnnuleAvantDemarrage:
+            # Passe 2 de revue : l'annulation a GAGNÉ la course avant le
+            # démarrage - la ligne dit cancelled, produire quand même serait
+            # exactement le mensonge que ce chantier corrige.
+            annulee_avant_demarrage = True
+        except Exception:
+            # Échec APRÈS la création : terminer la ligne (failed) plutôt que
+            # d'abandonner un running fantôme, puis répondre sans suivi.
+            logger.warning("Suivi de génération en panne", exc_info=True)
+            with contextlib.suppress(Exception):
+                await generation.terminer(
+                    EtatTacheTraitement.FAILED,
+                    error="suivi en panne à l'initialisation",
+                )
+            generation = None
     except Exception:
         # Le suivi ne tue JAMAIS le chat : sans base (tests unitaires du
         # wrapper, hoquet au démarrage), on répond quand même - le drapeau
         # historique reste le filet d'annulation.
         logger.warning("Suivi de génération indisponible", exc_info=True)
         generation = None
+
+    if annulee_avant_demarrage:
+        yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+        return
     # L'entrée du registre appartient à CETTE génération (revue F6).
     _register_generation(
         conversation_id, generation.id if generation is not None else None

@@ -5,6 +5,7 @@ Endpoints pour le système d'agents IA embarqués (Atelier).
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 from datetime import UTC, datetime
@@ -249,17 +250,33 @@ async def agent_request(
         from app.services import task_registry, traitements
 
         handle = None
+        annulee_avant_demarrage = False
         try:
             handle = await traitements.creer_traitement(
                 type="atelier",
                 label=f"Atelier : {request.message[:80]}",
                 entity_id=task.id,
             )
-            await handle.demarrer()
-            if current_async_task is not None:
-                await handle.lier_adaptateur(
-                    task_registry.AnnulationParTacheAsyncio(current_async_task)
-                )
+            try:
+                await handle.demarrer()
+                if current_async_task is not None:
+                    await handle.lier_adaptateur(
+                        task_registry.AnnulationParTacheAsyncio(current_async_task)
+                    )
+            except traitements.AnnuleAvantDemarrage:
+                # L'annulation a gagné la course avant le démarrage : la
+                # mission ne doit PAS tourner (passe 2 de revue).
+                annulee_avant_demarrage = True
+            except Exception:
+                # Échec après la création : terminer failed plutôt que de
+                # laisser un running fantôme (passe 2 de revue).
+                logger.warning("Suivi de mission en panne", exc_info=True)
+                with contextlib.suppress(Exception):
+                    await handle.terminer(
+                        EtatTacheTraitement.FAILED,
+                        error="suivi en panne à l'initialisation",
+                    )
+                handle = None
         except Exception:
             logger.warning("Suivi de mission indisponible", exc_info=True)
             handle = None
@@ -280,6 +297,8 @@ async def agent_request(
         commit_hash = None
 
         try:
+            if annulee_avant_demarrage:
+                raise asyncio.CancelledError()
             async for chunk in orchestrator.process_request(request.message, task.id):
                 events.append(chunk.model_dump(mode="json", exclude_none=True))
                 if chunk.phase:
