@@ -7,7 +7,6 @@ servi par le backend, routage des agents par identifiant de modèle.
 """
 
 import pytest
-
 from app.services.providers.base import LLMConfig, LLMProvider
 from app.services.providers.qwen import QwenProvider
 
