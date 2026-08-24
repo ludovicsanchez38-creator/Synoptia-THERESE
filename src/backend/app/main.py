@@ -5,7 +5,7 @@ L'assistante souveraine des entrepreneurs français.
 """
 # NOTE: slowapi est requis pour le rate limiting (SEC-015)
 # Installation : uv add slowapi
-
+import asyncio
 import logging
 import os
 import secrets
@@ -231,7 +231,6 @@ async def lifespan(app: FastAPI):
             # l'état d'avant ce correctif, jamais un blocage du démarrage.
             logger.warning(f"Reclassement du périmètre documentaire ignoré : {e}")
 
-    import asyncio
 
     if not skip_services:
         await init_qdrant()
