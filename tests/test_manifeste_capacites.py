@@ -436,3 +436,72 @@ class TestUnManifesteInvalideNeCassePasLAide:
             "l'aide doit retomber sur la forme brute, dégradée mais jamais absente"
         )
         assert module.acces_principal("x") is None
+
+    @pytest.mark.asyncio
+    async def test_la_route_http_repond_degradee_jamais_500(
+        self, tmp_path, monkeypatch, client
+    ):
+        """Troisième passe de revue : « sans 500 » se prouve sur la route HTTP,
+        pas seulement sur la fonction."""
+        import json as json_module
+
+        from app.services import capacites as module
+
+        invalide = tmp_path / "invalide.json"
+        invalide.write_text(
+            json_module.dumps({
+                "schema": 1,
+                "capacites": [{"id": "x", "entrees": [], "textes": None}],
+                "points_entree": [{"id": "p", "capacites": None,
+                                   "binding": {"registre": "vue", "view": "email"}}],
+            }),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", invalide)
+        module.charger_manifeste.cache_clear()
+
+        reponse = await client.get("/api/config/capacites")
+
+        assert reponse.status_code == 200
+        corps = reponse.json()
+        assert corps["empreinte"] == "absent"
+        assert corps["nombre_capacites"] == 0
+
+    def test_des_capacites_null_sur_un_point_sont_refusees_sans_planter(self):
+        """Régression de la remédiation précédente, attrapée en troisième
+        passe : « capacites »: null était itéré sans garde, et le TypeError
+        traversait le chargement - la validation détruisait le fail-open
+        qu'elle devait garantir."""
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["points_entree"] = [
+            {"id": "p", "capacites": None,
+             "binding": {"registre": "vue", "view": "email"}}
+        ]
+
+        assert not _structure_valide(manifeste)
+
+    def test_un_validateur_qui_plante_vaut_un_manifeste_invalide(
+        self, tmp_path, monkeypatch
+    ):
+        """Ceinture : même si un futur bug du validateur lève une exception,
+        le chargement doit rendre le manifeste vide, jamais propager."""
+        import json as json_module
+
+        from app.services import capacites as module
+
+        fichier = tmp_path / "manifeste.json"
+        fichier.write_text(
+            json_module.dumps({"schema": 1, "capacites": [], "points_entree": []}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", fichier)
+
+        def validateur_casse(_):
+            raise RuntimeError("bug du validateur")
+
+        monkeypatch.setattr(module, "_structure_valide", validateur_casse)
+        module.charger_manifeste.cache_clear()
+
+        assert module.charger_manifeste() == module._MANIFESTE_VIDE
