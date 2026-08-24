@@ -48,6 +48,19 @@ function ApplicationBootstrap() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // 0.44 : contrôle de génération du manifeste de capacités. Le bundle
+  // frontend et le binaire sidecar embarquent chacun leur exemplaire du même
+  // fichier canonique ; s'ils ont été packagés à des moments différents, l'aide
+  // et le catalogue mentiraient sur ce que le backend sait faire. Le contrôle
+  // signale (console), il ne bloque jamais le démarrage.
+  useEffect(() => {
+    void (async () => {
+      const { verifierGeneration } = await import('./lib/capacites/generation');
+      const { API_BASE } = await import('./services/api/core');
+      await verifierGeneration(API_BASE);
+    })();
+  }, []);
+
   // US-012 : Detecter la preference systeme reduced-motion au premier lancement
   // et synchroniser avec le store. Ecoute aussi les changements en temps reel.
   useEffect(() => {

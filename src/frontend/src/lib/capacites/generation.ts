@@ -1,0 +1,73 @@
+/**
+ * Contrôle de génération du manifeste (0.44).
+ *
+ * Le manifeste vit en deux exemplaires : celui du bundle frontend et celui du
+ * binaire sidecar. Rien ne garantit qu'un frontend et un sidecar packagés à
+ * des moments différents en portent la même version — et une divergence
+ * silencieuse ferait mentir l'aide, la palette ou le catalogue sur ce que le
+ * backend sait réellement faire.
+ *
+ * Le contrôle : les deux côtés calculent une empreinte SHA-256 du JSON
+ * CANONIQUE (clés triées, sans espaces — le bundler retransforme le fichier,
+ * seuls les contenus sont comparables), et le frontend compare au démarrage.
+ * Une divergence est signalée, jamais bloquante : un catalogue légèrement
+ * décalé vaut mieux qu'une application qui refuse de démarrer.
+ */
+import donnees from '../../../../backend/app/data/capacites.json';
+
+/** Sérialisation canonique : mêmes octets des deux côtés, quel que soit
+ *  l'ordre des clés imposé par le parseur ou le bundler. */
+export function serialisationCanonique(valeur: unknown): string {
+  if (Array.isArray(valeur)) {
+    return `[${valeur.map(serialisationCanonique).join(',')}]`;
+  }
+  if (valeur !== null && typeof valeur === 'object') {
+    const entrees = Object.entries(valeur as Record<string, unknown>)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([cle, v]) => `${JSON.stringify(cle)}:${serialisationCanonique(v)}`);
+    return `{${entrees.join(',')}}`;
+  }
+  return JSON.stringify(valeur);
+}
+
+export async function empreinteLocale(): Promise<string> {
+  const octets = new TextEncoder().encode(serialisationCanonique(donnees));
+  const condensat = await crypto.subtle.digest('SHA-256', octets);
+  return Array.from(new Uint8Array(condensat))
+    .map((o) => o.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export interface VerdictGeneration {
+  coherent: boolean;
+  locale: string;
+  distante: string;
+}
+
+/**
+ * Compare le manifeste du bundle à celui du sidecar. À appeler au démarrage.
+ * Toute erreur (backend pas encore prêt, route absente) rend un verdict
+ * cohérent par défaut : ce contrôle signale, il ne bloque jamais.
+ */
+export async function verifierGeneration(
+  apiBase: string,
+): Promise<VerdictGeneration> {
+  const locale = await empreinteLocale();
+  try {
+    const reponse = await fetch(`${apiBase}/api/config/capacites`);
+    if (!reponse.ok) return { coherent: true, locale, distante: 'inconnue' };
+    const corps = (await reponse.json()) as { empreinte?: string };
+    const distante = corps.empreinte ?? 'inconnue';
+    const coherent = distante === 'inconnue' || distante === locale;
+    if (!coherent) {
+      console.warn(
+        '[capacités] Le manifeste du frontend et celui du sidecar divergent : '
+        + 'les deux ont probablement été packagés à des moments différents. '
+        + `Frontend ${locale.slice(0, 12)}…, sidecar ${distante.slice(0, 12)}…`,
+      );
+    }
+    return { coherent, locale, distante };
+  } catch {
+    return { coherent: true, locale, distante: 'inconnue' };
+  }
+}

@@ -1118,6 +1118,23 @@ async def _available_models_for(provider_value: str) -> list[str]:
     return available_models
 
 
+@router.get("/capacites")
+async def get_capacites_manifeste() -> dict:
+    """Schéma et empreinte du manifeste de capacités (0.44).
+
+    La moitié backend du contrôle de génération : le frontend embarque le même
+    fichier canonique dans son bundle et compare au démarrage. Une divergence
+    signale un frontend et un sidecar packagés à des moments différents.
+    """
+    from app.services.capacites import capacites, charger_manifeste, empreinte_manifeste
+
+    return {
+        "schema": charger_manifeste().get("schema", 0),
+        "empreinte": empreinte_manifeste(),
+        "nombre_capacites": len(capacites()),
+    }
+
+
 @router.get("/llm", response_model=LLMConfigResponse)
 async def get_llm_config(session: AsyncSession = Depends(get_session)):
     """Get current LLM configuration."""

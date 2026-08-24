@@ -177,3 +177,130 @@ class TestLeContratEstRespecteParLesDonnees:
 def test_chaque_capacite_porte_les_champs_obligatoires(champ):
     for capacite in _charger()["capacites"]:
         assert champ in capacite, f"« {capacite.get('id')} » sans champ {champ}"
+
+
+class TestLAideEstDeriveeDuManifeste:
+    """Premier consommateur visible du manifeste (0.44).
+
+    La réponse de `/aide` énumérait des expressions brutes — `{action: ouvrir
+    memoire}` — sans jamais dire ce qu'on ouvre ni à quoi ça sert. Un nouvel
+    utilisateur y lisait une liste d'identifiants, pas une aide.
+
+    Le manifeste porte précisément ce qui manquait : le nom lisible et la
+    description de chaque capacité. L'aide les affiche désormais, DÉRIVÉS du
+    manifeste — la table des cibles reste l'autorité sur ce qui s'exécute, le
+    manifeste devient l'autorité sur ce qui se dit. Ajouter une capacité au
+    manifeste enrichit l'aide sans toucher une seconde liste.
+    """
+
+    def test_chaque_destination_porte_son_nom_lisible(self):
+        from app.services.capacites import capacites, texte
+        from app.services.chat_actions import available_actions_text
+
+        aide = available_actions_text()
+
+        for capacite in capacites():
+            a_une_vue = any(
+                p["binding"]["registre"] == "vue"
+                for p in _points_de(capacite)
+            )
+            if not a_une_vue:
+                continue
+            nom = texte(capacite, "nom")
+            assert nom in aide, (
+                f"l'aide ne nomme pas « {nom} » : l'utilisateur voit une "
+                "expression brute sans savoir ce qu'elle ouvre"
+            )
+
+    def test_aucune_destination_existante_n_est_perdue(self):
+        """Le verrou de migration : dériver ne doit rien faire disparaître."""
+        from app.services.chat_actions import NAVIGATION_TARGETS, available_actions_text
+
+        aide = available_actions_text()
+
+        # Une cible par action (les alias comme « factures/facturation »
+        # partagent la même action : une seule doit apparaître, comme avant).
+        actions_affichees = set()
+        for cible, (action_id, _) in NAVIGATION_TARGETS.items():
+            if f"ouvrir {cible}" in aide:
+                actions_affichees.add(action_id)
+
+        toutes_les_actions = {a for a, _ in NAVIGATION_TARGETS.values()}
+        perdues = toutes_les_actions - actions_affichees
+        assert perdues == set(), (
+            f"les destinations {perdues} ont disparu de l'aide à la migration"
+        )
+
+    def test_les_productions_et_variables_restent_annoncees(self):
+        """L'aide ne se réduit pas à la navigation : le reste survit."""
+        from app.services.chat_actions import available_actions_text
+
+        aide = available_actions_text()
+
+        assert "produire" in aide
+        assert "variable" in aide
+
+
+def _points_de(capacite):
+    from app.services.capacites import points_entree
+
+    ids = set(capacite.get("entrees", []))
+    return [p for p in points_entree() if p["id"] in ids]
+
+
+class TestLEmpreinteDetecteLesGenerationsDivergentes:
+    """Le manifeste vit en deux exemplaires : bundle frontend et binaire sidecar.
+
+    Ils viennent du même fichier canonique, mais rien ne garantit qu'un
+    frontend et un sidecar packagés à des moments différents en portent la
+    même version. Le design V2 l'exige : « un frontend et un sidecar issus de
+    deux générations différentes doivent le dire, pas diverger en silence ».
+
+    L'empreinte rend la divergence détectable : le frontend interroge le
+    backend au démarrage et compare avec la sienne.
+    """
+
+    def test_l_empreinte_derive_du_contenu(self, tmp_path, monkeypatch):
+        from app.services import capacites as module
+
+        fichier = tmp_path / "capacites.json"
+        fichier.write_text('{"schema": 1, "capacites": []}', encoding="utf-8")
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", fichier)
+
+        premiere = module.empreinte_manifeste()
+        fichier.write_text('{"schema": 1, "capacites": [{"id": "x"}]}', encoding="utf-8")
+        seconde = module.empreinte_manifeste()
+
+        assert premiere != seconde, (
+            "l'empreinte ne change pas quand le contenu change : elle ne "
+            "détecterait jamais une divergence de génération"
+        )
+        assert len(premiere) >= 16, "empreinte trop courte pour être fiable"
+
+    def test_un_manifeste_illisible_a_une_empreinte_dite(self, tmp_path, monkeypatch):
+        """Fail-open cohérent avec le chargement : signaler, pas planter."""
+        from app.services import capacites as module
+
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", tmp_path / "absent.json")
+
+        assert module.empreinte_manifeste() == "absent"
+
+        casse = tmp_path / "casse.json"
+        casse.write_text("{pas du json", encoding="utf-8")
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", casse)
+
+        assert module.empreinte_manifeste() == "absent", (
+            "un manifeste illisible doit produire une empreinte sentinelle "
+            "explicite, pas une exception au démarrage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_backend_expose_schema_et_empreinte(self, client):
+        """C'est la moitié backend du contrôle ; le frontend compare."""
+        reponse = await client.get("/api/config/capacites")
+
+        assert reponse.status_code == 200
+        corps = reponse.json()
+        assert corps["schema"] >= 1
+        assert len(corps["empreinte"]) >= 16
+        assert corps["nombre_capacites"] > 0
