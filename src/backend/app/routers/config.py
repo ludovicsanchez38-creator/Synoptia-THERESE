@@ -1006,6 +1006,45 @@ async def _available_models_for(provider_value: str) -> list[str]:
             "grok-4.20-0309-reasoning",      # Raisonnement long
             "grok-4.20-0309-non-reasoning",  # Réponse directe
         ]
+    elif provider_value == "glm":
+        # Z.ai, plateforme internationale. Relevé sur docs.z.ai le 24/08/2026.
+        available_models = [
+            "glm-5.3",         # Ingénierie logicielle et agents (recommandé)
+            "glm-5.2",         # Génération précédente, tâches longues
+            "glm-5.1",
+            "glm-5",
+            "glm-5-turbo",     # Optimisé pour les agents
+            "glm-4.7",         # Ancienne génération, bon en code
+            "glm-4.7-flashx",  # Léger et rapide
+            "glm-4.7-flash",   # Léger, gratuit
+        ]
+    elif provider_value == "kimi":
+        # Moonshot AI. kimi-k3 offre un million de jetons de contexte.
+        available_models = [
+            "kimi-k3",                    # Le plus capable (recommandé)
+            "kimi-k2.7-code",             # Spécialiste du code
+            "kimi-k2.7-code-highspeed",   # Même chose, accéléré
+            "kimi-k2.6",                  # Génération précédente, multimodal
+            "kimi-k2.5",                  # Économique
+        ]
+    elif provider_value == "qwen":
+        # Alibaba Model Studio. L'adresse contient l'identifiant d'espace de
+        # travail du compte : elle doit être renseignée dans les réglages.
+        available_models = [
+            "qwen3.8-max",        # Vaisseau amiral (recommandé)
+            "qwen3.7-plus",       # Équilibré, très grand contexte
+            "qwen3.7-flash",      # Rapide et économique
+            "qwen3-coder-plus",   # Spécialiste du code et des agents
+        ]
+    elif provider_value == "minimax":
+        # La casse compte : l'API refuse les minuscules.
+        available_models = [
+            "MiniMax-M3",              # Le plus récent (recommandé)
+            "MiniMax-M2.7",            # Génération précédente
+            "MiniMax-M2.7-highspeed",  # Même modèle, accéléré
+            "MiniMax-M2.5",
+            "MiniMax-M2.5-highspeed",
+        ]
     elif provider_value == "deepseek":
         # `deepseek-chat` et `deepseek-reasoner` ont DISPARU de l'API : absents
         # de la page des tarifs comme du guide de démarrage au 24/08/2026.
@@ -1155,6 +1194,10 @@ async def set_llm_config(
         LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
         LLMProvider.PERPLEXITY: ("PERPLEXITY_API_KEY", "perplexity_api_key"),
         LLMProvider.DEEPSEEK: ("DEEPSEEK_API_KEY", "deepseek_api_key"),
+        LLMProvider.GLM: ("GLM_API_KEY", "glm_api_key"),
+        LLMProvider.KIMI: ("KIMI_API_KEY", "kimi_api_key"),
+        LLMProvider.QWEN: ("QWEN_API_KEY", "qwen_api_key"),
+        LLMProvider.MINIMAX: ("MINIMAX_API_KEY", "minimax_api_key"),
         LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
     }
 
