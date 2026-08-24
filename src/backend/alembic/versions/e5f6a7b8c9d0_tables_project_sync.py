@@ -20,6 +20,13 @@ def _absente(nom: str) -> bool:
     return nom not in sa.inspect(op.get_bind()).get_table_names()
 
 
+def _index_absent(nom: str) -> bool:
+    lignes = op.get_bind().execute(sa.text(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name=:nom"
+    ), {"nom": nom}).fetchall()
+    return not lignes
+
+
 def upgrade() -> None:
     if _absente("project_sync_roots"):
         op.create_table(
@@ -36,11 +43,7 @@ def upgrade() -> None:
             "ix_project_sync_roots_project_id", "project_sync_roots",
             ["project_id"], unique=True,
         )
-        op.create_index(
-            "uq_sync_root_racine_active", "project_sync_roots",
-            ["racine"], unique=True,
-            sqlite_where=sa.text("detachee = 0"),
-        )
+
     if _absente("project_sync_entries"):
         op.create_table(
             "project_sync_entries",
@@ -101,6 +104,18 @@ def upgrade() -> None:
         op.create_index("ix_sync_operations_etat", "sync_operations", ["etat"])
         op.create_index(
             "ix_sync_operations_plan_etat", "sync_operations", ["plan_id", "etat"]
+        )
+
+    # Passe 3 de revue : l'index partiel vivait dans le guard « table
+    # absente » - une base déjà estampillée ne le recevait jamais. Garde
+    # idempotente PROPRE : il se crée même sur des tables existantes.
+    if not _absente("project_sync_roots") and _index_absent(
+        "uq_sync_root_racine_active"
+    ):
+        op.create_index(
+            "uq_sync_root_racine_active", "project_sync_roots",
+            ["racine"], unique=True,
+            sqlite_where=sa.text("detachee = 0"),
         )
 
 

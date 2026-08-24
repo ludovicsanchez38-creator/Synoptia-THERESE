@@ -221,6 +221,23 @@ class TestRGPD:
         assert await get_variable(db_session, "a_purger") is None
 
 
+
+
+def _creer_tables_sync_depuis_modeles(db_path):
+    import app.models.entities_sync  # noqa: F401
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine, tables=[
+        SQLModel.metadata.tables[t]
+        for t in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        )
+    ])
+    engine.dispose()
+
 class TestMigration:
     """Finding 8 VÉRIFIÉ : le ré-estampillage US-015 aurait sauté la
     migration variables. La preuve de schéma exige désormais AUSSI la table."""
@@ -250,26 +267,11 @@ class TestMigration:
         conn.execute("INSERT INTO alembic_version VALUES ('ancienne_tete')")
         if with_variables:
             conn.execute("CREATE TABLE variables (id TEXT PRIMARY KEY)")
-        # 0.45 : la preuve de schéma exige les tables project.sync avec
-        # leurs COLONNES réelles (passe 2 de revue).
-        for table, colonnes in {
-            "project_sync_roots":
-                "project_id TEXT, racine TEXT, volume_id INTEGER, "
-                "generation INTEGER, detachee INTEGER",
-            "project_sync_entries":
-                "project_id TEXT, chemin TEXT, file_id TEXT, taille INTEGER, "
-                "mtime_ns INTEGER, sha256 TEXT, generation_racine INTEGER",
-            "sync_plans":
-                "project_id TEXT, generation_racine INTEGER, etat TEXT, "
-                "nb_indexer INTEGER, nb_retirer INTEGER",
-            "sync_operations":
-                "plan_id TEXT, type TEXT, chemin TEXT, etat TEXT, "
-                "file_id_prevu TEXT, attempt_count INTEGER",
-        }.items():
-            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY, {colonnes})")
-
         conn.commit()
         conn.close()
+        # 0.45 (passe 3) : la preuve exige TOUTES les colonnes des modèles -
+        # les tables sync se créent depuis les modèles, jamais à la main.
+        _creer_tables_sync_depuis_modeles(db)
         return db
 
     def test_adhoc_cree_la_table_variables(self, tmp_path):

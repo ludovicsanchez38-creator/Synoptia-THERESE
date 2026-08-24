@@ -93,3 +93,25 @@ class TestLeContratDesColonnes:
 
         colonnes = set(ProjectSyncRoot.model_fields.keys())
         assert {"project_id", "racine", "volume_id", "generation"} <= colonnes
+
+class TestLIndexPartielSurBaseExistante:
+    @pytest.mark.asyncio
+    async def test_le_demarrage_recree_l_index_manquant(self, client):
+        """Passe 3 de revue : ni create_all ni une révision déjà estampillée
+        ne touchent une table existante - l'invariant « une racine active =
+        un projet » se pose par migration ad-hoc à CHAQUE démarrage."""
+        from app.models.database import get_sync_connection, init_db
+        from sqlalchemy import text
+
+        with get_sync_connection() as conn:
+            conn.execute(text("DROP INDEX IF EXISTS uq_sync_root_racine_active"))
+            conn.commit()
+
+        await init_db()
+
+        with get_sync_connection() as conn:
+            restants = conn.execute(text(
+                "SELECT name FROM sqlite_master WHERE type='index' "
+                "AND name='uq_sync_root_racine_active'"
+            )).fetchall()
+        assert restants, "l'index partiel doit renaître au démarrage"

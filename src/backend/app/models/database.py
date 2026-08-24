@@ -402,36 +402,26 @@ def ensure_alembic_stamp(db_path) -> None:
                     # 0.45 : la preuve couvre les tables project.sync - sans
                     # elles, ré-estampiller ferait sauter la migration
                     # e5f6a7b8c9d0 sur une vraie base 0.44 (revue jalon, B4).
-                    # Passe 2 de revue : quatre tables au bon NOM mais au
-                    # mauvais schéma passaient la preuve - vérifier les
-                    # colonnes réellement apportées par la révision.
+                    # Passes 2-3 de revue : la preuve dérive du MODÈLE -
+                    # toutes les colonnes, sans liste manuelle qui prend du
+                    # retard. Une table au bon nom mais au schéma incomplet
+                    # ne sera jamais estampillée head.
                     def _colonnes(table: str) -> set[str]:
                         return {
                             row[1]
                             for row in conn.execute(f"PRAGMA table_info({table})")
                         }
 
-                    COLONNES_SYNC_ATTENDUES = {
-                        "project_sync_roots": {
-                            "project_id", "racine", "volume_id",
-                            "generation", "detachee",
-                        },
-                        "project_sync_entries": {
-                            "project_id", "chemin", "file_id", "taille",
-                            "mtime_ns", "sha256", "generation_racine",
-                        },
-                        "sync_plans": {
-                            "project_id", "generation_racine", "etat",
-                            "nb_indexer", "nb_retirer",
-                        },
-                        "sync_operations": {
-                            "plan_id", "type", "chemin", "etat",
-                            "file_id_prevu", "attempt_count",
-                        },
-                    }
+                    from app.models import entities_sync as _sync  # noqa: F401
+                    from sqlmodel import SQLModel as _SQLModel
+
                     has_sync_tables = all(
-                        attendues <= _colonnes(table)
-                        for table, attendues in COLONNES_SYNC_ATTENDUES.items()
+                        set(_SQLModel.metadata.tables[table].columns.keys())
+                        <= _colonnes(table)
+                        for table in (
+                            "project_sync_roots", "project_sync_entries",
+                            "sync_plans", "sync_operations",
+                        )
                     )
                     if (
                         "validite_jours" in inv_cols
@@ -718,6 +708,17 @@ async def init_db() -> None:
 
     # Auto-migration : ajouter les colonnes manquantes aux tables existantes
     ensure_invoice_legacy_columns(settings.db_path)
+
+    # 0.45 (passe 3 de revue) : create_all n'ajoute pas d'index à une table
+    # existante, et une base déjà estampillée ne rejouera jamais la révision.
+    # L'invariant « une racine active = un projet » se pose donc ICI,
+    # idempotent, à chaque démarrage.
+    with sync_engine.connect() as conn:
+        conn.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_sync_root_racine_active "
+            "ON project_sync_roots(racine) WHERE detachee = 0"
+        )
+        conn.commit()
 
     with sync_engine.connect() as conn:
         alter_statements = [

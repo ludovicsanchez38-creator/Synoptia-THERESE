@@ -53,6 +53,25 @@ def _make_legacy_db(db_path: Path) -> None:
         conn.commit()
 
 
+
+
+def _creer_tables_sync_reelles(db_path: Path) -> None:
+    """Les tables sync au VRAI schéma, dérivées des modèles - la preuve
+    d'ensure_alembic_stamp exige désormais toutes leurs colonnes."""
+    import app.models.entities_sync  # noqa: F401
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine, tables=[
+        SQLModel.metadata.tables[t]
+        for t in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        )
+    ])
+    engine.dispose()
+
 def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -> None:
     """Construit une DB ancienne dont les patches ad-hoc simulent le schéma head."""
     board_columns = [
@@ -82,27 +101,10 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
             + ", ".join(f"{column} TEXT" for column in atelier_columns)
             + ")"
         )
-        # 0.45 : au vrai démarrage, create_all a déjà créé les tables sync -
-        # la preuve exige leurs COLONNES réelles (passe 2 : des tables au bon
-        # nom mais au mauvais schéma passaient la preuve).
-        for table, colonnes in {
-            "project_sync_roots":
-                "project_id TEXT, racine TEXT, volume_id INTEGER, "
-                "generation INTEGER, detachee INTEGER",
-            "project_sync_entries":
-                "project_id TEXT, chemin TEXT, file_id TEXT, taille INTEGER, "
-                "mtime_ns INTEGER, sha256 TEXT, generation_racine INTEGER",
-            "sync_plans":
-                "project_id TEXT, generation_racine INTEGER, etat TEXT, "
-                "nb_indexer INTEGER, nb_retirer INTEGER",
-            "sync_operations":
-                "plan_id TEXT, type TEXT, chemin TEXT, etat TEXT, "
-                "file_id_prevu TEXT, attempt_count INTEGER",
-        }.items():
-            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY, {colonnes})")
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
+    _creer_tables_sync_reelles(db_path)
 
 
 def test_constante_epinglee_suit_la_vraie_tete():
