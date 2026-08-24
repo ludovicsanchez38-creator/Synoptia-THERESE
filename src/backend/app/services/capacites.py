@@ -42,6 +42,32 @@ def charger_manifeste() -> dict[str, Any]:
         return {"schema": 0, "capacites": [], "points_entree": [], "identifiants_reserves": []}
 
 
+def empreinte_manifeste() -> str:
+    """Empreinte du fichier canonique, pour détecter une divergence de génération.
+
+    Le manifeste vit en deux exemplaires : bundle frontend et binaire sidecar.
+    Rien ne garantit qu'un frontend et un sidecar packagés à des moments
+    différents portent la même version. Le frontend compare cette empreinte à
+    la sienne au démarrage : deux générations différentes doivent le dire, pas
+    diverger en silence.
+
+    Sur le JSON CANONIQUE (clés triées, sans espaces), pas sur les octets
+    bruts : le bundler du frontend retransforme le fichier, seuls les contenus
+    sont comparables entre les deux mondes. Sentinelle « absent » si illisible —
+    le contrôle signale, il ne fait jamais planter le démarrage.
+    """
+    import hashlib
+
+    try:
+        contenu = json.loads(CHEMIN_MANIFESTE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return "absent"
+    canonique = json.dumps(
+        contenu, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    )
+    return hashlib.sha256(canonique.encode("utf-8")).hexdigest()
+
+
 def capacites() -> list[dict[str, Any]]:
     return charger_manifeste().get("capacites", [])
 
