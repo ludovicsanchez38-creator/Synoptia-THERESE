@@ -13,6 +13,7 @@ import sys
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any
 
 # Patterns de secrets a masquer dans les logs.
 #
@@ -135,7 +136,7 @@ class ReadableFormatter(logging.Formatter):
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    def formatException(self, ei) -> str:  # noqa: N802 (nom impose par la stdlib)
+    def formatException(self, ei: Any) -> str:  # noqa: N802 (nom stdlib)
         """Masque les secrets dans la trace, comme pour le format JSON.
 
         C'est cette sortie-la que les testeurs copient : le sidecar ecrit sur la
