@@ -17,6 +17,7 @@ from qdrant_client.models import (
     Distance,
     FieldCondition,
     Filter,
+    FilterSelector,
     IsEmptyCondition,
     MatchValue,
     PayloadField,
@@ -493,26 +494,25 @@ class QdrantService:
         Returns:
             Number of deleted points
         """
-        # First search for matching points
-        results = self.client.scroll(
-            collection_name=settings.qdrant_collection,
-            scroll_filter=Filter(
-                must=[FieldCondition(key="entity_id", match=MatchValue(value=entity_id))]
-            ),
-            limit=1000,
-        )[0]
-
-        if not results:
+        # 0.45 : suppression par FILTRE serveur, plus par liste d'ids issue
+        # d'un scroll plafonné à 1000 - un document de plus de 1000 fragments
+        # gardait des vecteurs orphelins, toujours servis par la recherche.
+        filtre = Filter(
+            must=[FieldCondition(key="entity_id", match=MatchValue(value=entity_id))]
+        )
+        nombre = self.client.count(
+            collection_name=settings.qdrant_collection, count_filter=filtre
+        ).count
+        if not nombre:
             return 0
 
-        point_ids = [str(r.id) for r in results]
         self.client.delete(
             collection_name=settings.qdrant_collection,
-            points_selector=point_ids,
+            points_selector=FilterSelector(filter=filtre),
         )
 
-        logger.info(f"Deleted {len(point_ids)} memories for entity {entity_id}")
-        return len(point_ids)
+        logger.info(f"Deleted {nombre} memories for entity {entity_id}")
+        return nombre
 
     def delete_by_scope(self, scope: str, scope_id: str) -> int:
         """
@@ -525,28 +525,25 @@ class QdrantService:
         Returns:
             Number of deleted points
         """
-        results = self.client.scroll(
-            collection_name=settings.qdrant_collection,
-            scroll_filter=Filter(
-                must=[
-                    FieldCondition(key="scope", match=MatchValue(value=scope)),
-                    FieldCondition(key="scope_id", match=MatchValue(value=scope_id)),
-                ]
-            ),
-            limit=1000,
-        )[0]
-
-        if not results:
+        filtre = Filter(
+            must=[
+                FieldCondition(key="scope", match=MatchValue(value=scope)),
+                FieldCondition(key="scope_id", match=MatchValue(value=scope_id)),
+            ]
+        )
+        nombre = self.client.count(
+            collection_name=settings.qdrant_collection, count_filter=filtre
+        ).count
+        if not nombre:
             return 0
 
-        point_ids = [str(r.id) for r in results]
         self.client.delete(
             collection_name=settings.qdrant_collection,
-            points_selector=point_ids,
+            points_selector=FilterSelector(filter=filtre),
         )
 
-        logger.info(f"Deleted {len(point_ids)} memories for scope {scope}:{scope_id}")
-        return len(point_ids)
+        logger.info(f"Deleted {nombre} points for scope {scope}/{scope_id}")
+        return nombre
 
     def get_stats(self) -> dict[str, Any]:
         """Get collection statistics."""
