@@ -35,6 +35,7 @@ from app.services.entity_extractor import (
     get_entity_extractor,
 )
 from app.services.file_parser import chunk_text, extract_text, get_file_metadata
+from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
     LLMService,
@@ -400,6 +401,11 @@ Chemin: {path}
 
         return context, None
 
+    except IndexationAbandonnee:
+        # 0.47 : l'utilisateur a retiré sa demande - la déguiser en
+        # « Erreur lors de la lecture » mentait deux fois (au journal et
+        # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
+        raise
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
         return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"

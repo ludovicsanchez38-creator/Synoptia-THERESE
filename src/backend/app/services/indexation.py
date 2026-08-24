@@ -28,6 +28,12 @@ from starlette.concurrency import run_in_threadpool
 logger = logging.getLogger(__name__)
 
 
+class IndexationAbandonnee(Exception):
+    """La demande a été retirée (déconnexion ou arrêt au panneau) : le cœur
+    s'arrête AVANT toute écriture et le dit - plus de retour silencieux qui
+    laissait chaque surface inventer sa propre interprétation (0.47)."""
+
+
 class ContenuModifieDepuisLePlan(Exception):
     """Le fichier ne correspond plus à l'empreinte attendue : rien n'est écrit.
 
@@ -222,6 +228,7 @@ async def remplacer_puis_indexer(
     chemin: str,
     deposer: Callable[[], Awaitable[None]],
     *,
+    est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
     scope: str = "global",
     scope_id: str | None = None,
     perimetre_provisoire: bool = False,
@@ -236,7 +243,7 @@ async def remplacer_puis_indexer(
     async with _verrou_de_chemin(chemin):
         await deposer()
         return await _indexer_sous_verrou(
-            Path(chemin), None, scope, scope_id, perimetre_provisoire
+            Path(chemin), est_abandonnee, scope, scope_id, perimetre_provisoire
         )
 
 
@@ -409,12 +416,24 @@ async def _indexer_apres_verifications(
     # échec laissait alors un fichier sans aucun vecteur, présenté comme
     # indexé. La suppression n'a lieu qu'une fois le nouveau contenu prêt
     # et l'écriture décidée : jusque-là, l'index existant reste valide.
+    async def _verifier_abandon() -> None:
+        # 0.47 : l'abandon n'est plus silencieux. L'ancien contrat (rendre
+        # l'etat precedent comme si de rien n'etait) forcait chaque surface
+        # a deviner - et project.sync marquait FAIT une operation jamais
+        # ecrite. L'index existant, lui, reste intact : on leve AVANT toute
+        # ecriture.
+        if est_abandonnee and await est_abandonnee():
+            raise IndexationAbandonnee(
+                f"Indexation de {file_path.name} abandonnée avant écriture"
+            )
+
     text_content = await extract_text_async(source_extraction)
+    await _verifier_abandon()
     chunk_count = chunk_count_existant
     indexed_at = indexed_at_existant
     ecriture_faite = False
 
-    if text_content and not (est_abandonnee and await est_abandonnee()):
+    if text_content:
         chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
         items = construire_items_indexation(
             chunks=chunks,
@@ -424,28 +443,29 @@ async def _indexer_apres_verifications(
             scope=perimetre,
             scope_id=perimetre_id,
         )
-        if items and not (est_abandonnee and await est_abandonnee()):
+        await _verifier_abandon()
+        if items:
             async with INDEX_SEMAPHORE:
                 # L'attente du sémaphore peut durer : re-consulter l'abandon
                 # juste avant d'écrire (finding F1 resté ouvert).
-                if not (est_abandonnee and await est_abandonnee()):
-                    if reindexation:
-                        await get_qdrant_service().async_delete_by_entity(file_id)
-                    try:
-                        await get_qdrant_service().async_add_memories(items)
-                    except Exception:
-                        # Les anciens fragments viennent d'être retirés :
-                        # l'index est vide. Le consigner avant de propager,
-                        # sinon la base promettrait un contenu introuvable.
-                        await _consigner_resultat(file_id, 0, datetime.now(UTC))
-                        raise
-                    logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
-                    chunk_count = len(chunks)
-                    indexed_at = datetime.now(UTC)
-                    ecriture_faite = True
-    elif not text_content and not (est_abandonnee and await est_abandonnee()):
-        # 3e passe de revue : ce chemin détruisait l'index sans consulter
-        # l'abandon. Une demande retirée ne doit rien effacer.
+                await _verifier_abandon()
+                if reindexation:
+                    await get_qdrant_service().async_delete_by_entity(file_id)
+                try:
+                    await get_qdrant_service().async_add_memories(items)
+                except Exception:
+                    # Les anciens fragments viennent d'être retirés :
+                    # l'index est vide. Le consigner avant de propager,
+                    # sinon la base promettrait un contenu introuvable.
+                    await _consigner_resultat(file_id, 0, datetime.now(UTC))
+                    raise
+                logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
+                chunk_count = len(chunks)
+                indexed_at = datetime.now(UTC)
+                ecriture_faite = True
+    else:
+        # Contenu vide : l'abandon a déjà été consulté après l'extraction
+        # (une demande retirée n'efface rien - 3e passe de revue 0.45).
         logger.warning(f"No text extracted from {file_path}")
         if reindexation:
             await get_qdrant_service().async_delete_by_entity(file_id)

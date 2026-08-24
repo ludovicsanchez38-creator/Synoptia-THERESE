@@ -96,10 +96,13 @@ class TestF1AnnulationEtConcurrence:
         async def toujours_abandonnee():
             return True
 
-        await files_router.index_payload(
-            path=str(fichier),
-            est_abandonnee=toujours_abandonnee,
-        )
+        # 0.47 : l'abandon se dit (IndexationAbandonnee) au lieu de rendre
+        # l'ancien état comme si de rien n'était.
+        with pytest.raises(indexation.IndexationAbandonnee):
+            await files_router.index_payload(
+                path=str(fichier),
+                est_abandonnee=toujours_abandonnee,
+            )
 
         assert faux_qdrant.ajouts == [], (
             "les embeddings ont été calculés alors que la demande était abandonnée"

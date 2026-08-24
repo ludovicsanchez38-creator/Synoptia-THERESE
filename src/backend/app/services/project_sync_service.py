@@ -19,7 +19,7 @@ Design V2.1 challengé deux fois. Les règles qui structurent ce module :
 """
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -367,12 +367,18 @@ async def _appliquer_sous_verrou(
     )
 
     interrompu = False
+    # 0.47 : l'arrêt coupe aussi l'opération EN VOL, plus seulement entre
+    # deux opérations - le cœur d'indexation consulte ce drapeau à ses
+    # points d'abandon et lève IndexationAbandonnee avant toute écriture.
+    arret = asyncio.Event()
+
+    async def _abandonnee() -> bool:
+        return arret.is_set()
+
     try:
         await handle.demarrer()
-        # Adaptateur coopératif : l'état durable cancel_requested EST le
-        # drapeau, consulté entre deux opérations - le point d'arrêt sûr.
         await handle.lier_adaptateur(
-            task_registry.AnnulationCooperative(poser_drapeau=lambda: None)
+            task_registry.AnnulationCooperative(poser_drapeau=arret.set)
         )
         operations = [
             o for o in await lire_operations(plan_id)
@@ -382,14 +388,21 @@ async def _appliquer_sous_verrou(
         faites = 0
         echecs = 0
         for operation in operations:
-            if await handle.annulation_demandee():
+            if arret.is_set() or await handle.annulation_demandee():
                 # Ce qui est fait reste fait ; le reste attend un nouvel
                 # apply. Le producteur pose cancelled APRÈS sa sortie réelle.
                 interrompu = True
                 break
             try:
-                await _executer_operation(project_id, root, operation)
+                await _executer_operation(
+                    project_id, root, operation, est_abandonnee=_abandonnee
+                )
                 faites += 1
+            except indexation.IndexationAbandonnee:
+                # L'utilisateur a demandé l'arrêt pendant CETTE opération :
+                # rien n'a été écrit, elle reste à_faire - pas un échec.
+                interrompu = True
+                break
             except Exception as e:  # l'échec d'une opération n'arrête pas le plan
                 echecs += 1
                 await _consigner_operation(
@@ -439,7 +452,10 @@ async def _appliquer_sous_verrou(
 
 
 async def _executer_operation(
-    project_id: str, root: ProjectSyncRoot, operation: SyncOperation
+    project_id: str,
+    root: ProjectSyncRoot,
+    operation: SyncOperation,
+    est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
 ) -> None:
     if operation.type == TypeOperation.RETIRER:
         # B2 (revue jalon) : revalider le DISQUE - un fichier revenu entre le
@@ -468,6 +484,7 @@ async def _executer_operation(
     try:
         reponse = await indexation.index_payload(
             operation.chemin,
+            est_abandonnee=est_abandonnee,
             scope="project",
             scope_id=project_id,
             sha256_attendu=operation.empreinte_prevue,

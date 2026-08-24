@@ -4,16 +4,20 @@ THÉRÈSE v2 - Files Router
 Endpoints for file management and indexing.
 """
 
+import asyncio
 import logging
 import os
 import shutil
 from pathlib import Path
+from typing import Awaitable, Callable
 
 from app.config import settings
 from app.models.database import get_session, get_session_context
 from app.models.entities import FileMetadata
+from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas import FileIndexRequest, FileResponse
 from app.services.indexation import (
+    IndexationAbandonnee,
     extract_text_async,
     index_payload,
     remplacer_puis_indexer,
@@ -61,6 +65,103 @@ async def list_files(
     ]
 
 
+async def _executer_avec_suivi(
+    *,
+    label: str,
+    entity_id: str,
+    project_id: str | None,
+    est_deconnecte: Callable[[], Awaitable[bool]] | None,
+    executer: Callable[[Callable[[], Awaitable[bool]]], Awaitable[FileResponse]],
+) -> FileResponse:
+    """Enveloppe de surface (0.47) : l'indexation est un ProcessingTask.
+
+    Le cœur n'enrôle JAMAIS (project.sync et le chat l'appellent aussi) :
+    seules les surfaces `/index` et `/upload` passent ici. Fail-open sur le
+    suivi - une panne de la table ne doit pas empêcher d'indexer.
+    """
+    from app.services import task_registry, traitements
+
+    handle: "traitements.TraitementHandle | None" = None
+    try:
+        handle = await traitements.creer_traitement(
+            type="indexation",
+            label=label,
+            entity_id=entity_id,
+            project_id=project_id,
+        )
+    except Exception:
+        logger.warning(
+            "Suivi indisponible pour l'indexation de %s", label, exc_info=True
+        )
+
+    arret = asyncio.Event()
+
+    async def _abandonnee() -> bool:
+        # L'arrêt au panneau OU la déconnexion du client : mêmes points
+        # d'abandon dans le cœur.
+        if arret.is_set():
+            return True
+        return bool(est_deconnecte and await est_deconnecte())
+
+    try:
+        if handle is not None:
+            await handle.demarrer()
+            # L'extraction déjà lancée va à son terme (un thread ne
+            # s'interrompt pas) : on note la demande, les étapes suivantes
+            # la consultent.
+            await handle.lier_adaptateur(
+                task_registry.TravailNonInterruptible(arret.set)
+            )
+        reponse = await executer(_abandonnee)
+    except traitements.AnnuleAvantDemarrage:
+        # demander_arret a déjà posé CANCELLED durable.
+        raise IndexationAbandonnee(
+            f"Indexation de {label} annulée avant démarrage"
+        )
+    except IndexationAbandonnee:
+        if handle is not None:
+            await handle.terminer(EtatTacheTraitement.CANCELLED)
+        raise
+    except HTTPException as e:
+        if handle is not None:
+            await handle.terminer(
+                EtatTacheTraitement.FAILED, error=str(e.detail)[:200]
+            )
+        raise
+    except Exception as e:
+        if handle is not None:
+            await handle.terminer(EtatTacheTraitement.FAILED, error=str(e)[:200])
+        raise
+    if handle is not None:
+        await handle.progresser(progress=1.0)
+        await handle.terminer(EtatTacheTraitement.DONE)
+    return reponse
+
+
+async def indexer_avec_suivi(
+    path: str,
+    *,
+    est_deconnecte: Callable[[], Awaitable[bool]] | None = None,
+    scope: str = "global",
+    scope_id: str | None = None,
+    perimetre_provisoire: bool = False,
+) -> FileResponse:
+    """Le chemin du bouton Indexer et du trombone, avec suivi au panneau."""
+    return await _executer_avec_suivi(
+        label=Path(path).name,
+        entity_id=path,
+        project_id=scope_id if scope == "project" else None,
+        est_deconnecte=est_deconnecte,
+        executer=lambda abandonnee: index_payload(
+            path,
+            est_abandonnee=abandonnee,
+            scope=scope,
+            scope_id=scope_id,
+            perimetre_provisoire=perimetre_provisoire,
+        ),
+    )
+
+
 @router.post("/index", response_model=FileResponse)
 async def index_file(
     request: FileIndexRequest,
@@ -95,13 +196,16 @@ async def index_file(
         # figer un périmètre orphelin : il reste rectifiable à l'envoi.
         perimetre_provisoire = not conversation_connue
 
-    return await index_payload(
-        request.path,
-        est_abandonnee=http_request.is_disconnected,
-        scope=scope,
-        scope_id=scope_id,
-        perimetre_provisoire=perimetre_provisoire,
-    )
+    try:
+        return await indexer_avec_suivi(
+            request.path,
+            est_deconnecte=http_request.is_disconnected,
+            scope=scope,
+            scope_id=scope_id,
+            perimetre_provisoire=perimetre_provisoire,
+        )
+    except IndexationAbandonnee as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.get("/{file_id}", response_model=FileResponse)
@@ -284,6 +388,17 @@ async def upload_file(
                 status_code=500, detail="Erreur lors de la sauvegarde du fichier"
             )
 
-    return await remplacer_puis_indexer(
-        str(dest_path), _deposer, scope="project", scope_id=project_id,
-    )
+    try:
+        return await _executer_avec_suivi(
+            label=dest_path.name,
+            entity_id=str(dest_path),
+            project_id=project_id,
+            est_deconnecte=None,
+            executer=lambda abandonnee: remplacer_puis_indexer(
+                str(dest_path), _deposer,
+                est_abandonnee=abandonnee,
+                scope="project", scope_id=project_id,
+            ),
+        )
+    except IndexationAbandonnee as e:
+        raise HTTPException(status_code=409, detail=str(e))

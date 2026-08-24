@@ -62,7 +62,11 @@ class TestN1IntegriteDeLaReindexation:
         async def abandonnee():
             return True
 
-        await files_router.index_payload(path=str(fichier), est_abandonnee=abandonnee)
+        # 0.47 : l'abandon n'est plus un retour silencieux, il se DIT.
+        with pytest.raises(indexation.IndexationAbandonnee):
+            await files_router.index_payload(
+                path=str(fichier), est_abandonnee=abandonnee
+            )
 
         assert faux.suppressions == [], (
             "l'index existant a été supprimé alors que la demande était abandonnée"
@@ -176,9 +180,10 @@ class TestF1AbandonPendantLAttente:
             appels["n"] += 1
             return appels["n"] > 2
 
-        await files_router.index_payload(
-            path=str(fichier), est_abandonnee=abandonnee_au_dernier_moment
-        )
+        with pytest.raises(indexation.IndexationAbandonnee):
+            await files_router.index_payload(
+                path=str(fichier), est_abandonnee=abandonnee_au_dernier_moment
+            )
 
         assert faux.ajouts == [], (
             "l'écriture vectorielle a eu lieu alors que la demande venait d'être "
