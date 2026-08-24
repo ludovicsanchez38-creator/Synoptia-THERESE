@@ -30,6 +30,12 @@ class LLMProvider(str, Enum):
     PERPLEXITY = "perplexity"
     DEEPSEEK = "deepseek"
     INFOMANIAK = "infomaniak"
+    # Ajoutés le 24/08/2026. Tous compatibles OpenAI, confirmé en documentation
+    # officielle : ils héritent donc de la boucle d'outils sans la réécrire.
+    GLM = "glm"
+    KIMI = "kimi"
+    QWEN = "qwen"
+    MINIMAX = "minimax"
 
 
 @dataclass

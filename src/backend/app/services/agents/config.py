@@ -17,36 +17,62 @@ _BUILTIN_AGENTS_DIR = Path(__file__).parent.parent.parent / "agents"
 
 # Modèles disponibles pour les agents (flagship de chaque provider)
 AVAILABLE_MODELS = [
+    # Relevé dans la documentation officielle de chaque fournisseur le
+    # 24/08/2026. L'Atelier fait travailler des agents qui écrivent du code et
+    # ouvrent des branches : seuls des modèles capables d'appeler des outils ont
+    # leur place ici. Un modèle sans outils y produirait du texte, jamais un
+    # commit.
     # Anthropic
-    {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic", "recommended": True},
+    {"id": "claude-opus-5", "name": "Claude Opus 5", "provider": "anthropic", "recommended": True},
+    {"id": "claude-fable-5", "name": "Claude Fable 5", "provider": "anthropic"},
+    {"id": "claude-sonnet-5", "name": "Claude Sonnet 5", "provider": "anthropic"},
     {"id": "claude-opus-4-8", "name": "Claude Opus 4.8", "provider": "anthropic"},
+    {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "anthropic"},
     {"id": "claude-haiku-4-5-20251001", "name": "Claude Haiku 4.5", "provider": "anthropic"},
-    # OpenAI
+    # OpenAI. gpt-5.3-codex est écarté : sa fiche indique qu'il refuse
+    # `v1/chat/completions`, le point d'appel utilisé ici.
+    {"id": "gpt-5.6-sol", "name": "GPT-5.6 Sol", "provider": "openai"},
+    {"id": "gpt-5.6-terra", "name": "GPT-5.6 Terra", "provider": "openai"},
+    {"id": "gpt-5.6-luna", "name": "GPT-5.6 Luna", "provider": "openai"},
     {"id": "gpt-5.5", "name": "GPT-5.5", "provider": "openai"},
-    {"id": "gpt-5.4", "name": "GPT-5.4", "provider": "openai"},
-    {"id": "gpt-5.3-codex", "name": "GPT-5.3 Codex", "provider": "openai"},
     # Google
-    {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro", "provider": "gemini"},
+    {"id": "gemini-3.7-flash", "name": "Gemini 3.7 Flash", "provider": "gemini"},
+    {"id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro (préversion)", "provider": "gemini"},
     {"id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "provider": "gemini"},
-    {"id": "gemini-3.1-flash-lite", "name": "Gemini 3.1 Flash Lite", "provider": "gemini"},
     # xAI
+    {"id": "grok-4.6", "name": "Grok 4.6", "provider": "grok"},
+    {"id": "grok-4.5", "name": "Grok 4.5", "provider": "grok"},
     {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},
-    {"id": "grok-4.20-0309-reasoning", "name": "Grok 4.20 Reasoning", "provider": "grok"},
     # Mistral
+    {"id": "mistral-medium-latest", "name": "Mistral Medium 3.5", "provider": "mistral"},
     {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
-    {"id": "mistral-small-latest", "name": "Mistral Small", "provider": "mistral"},
-    # OpenRouter (fallback statique - le sélecteur principal fetch dynamiquement)
-    {"id": "anthropic/claude-sonnet-4-6", "name": "Claude Sonnet 4.6 (OR)", "provider": "openrouter"},
-    {"id": "anthropic/claude-opus-4-8", "name": "Claude Opus 4.8 (OR)", "provider": "openrouter"},
-    {"id": "openai/gpt-5.5", "name": "GPT-5.5 (OR)", "provider": "openrouter"},
-    {"id": "google/gemini-3.5-flash", "name": "Gemini 3.5 Flash (OR)", "provider": "openrouter"},
-    {"id": "meta-llama/llama-4-maverick", "name": "Llama 4 Maverick (OR)", "provider": "openrouter"},
+    {"id": "codestral-2508", "name": "Codestral", "provider": "mistral"},
+    # OpenRouter (repli statique : le sélecteur principal interroge l'API)
+    {"id": "anthropic/claude-opus-5", "name": "Claude Opus 5 (OR)", "provider": "openrouter"},
+    {"id": "anthropic/claude-sonnet-5", "name": "Claude Sonnet 5 (OR)", "provider": "openrouter"},
+    {"id": "openai/gpt-5.6-sol", "name": "GPT-5.6 Sol (OR)", "provider": "openrouter"},
+    {"id": "google/gemini-3.7-flash", "name": "Gemini 3.7 Flash (OR)", "provider": "openrouter"},
     # DeepSeek
     {"id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "provider": "deepseek"},
     {"id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "provider": "deepseek"},
-    # Local (Ollama)
-    {"id": "qwen3:32b", "name": "Qwen 3 32B (local)", "provider": "ollama"},
-    {"id": "mistral-nemo:12b", "name": "Mistral Nemo 12B (local)", "provider": "ollama"},
+    # Z.ai (GLM)
+    {"id": "glm-5.3", "name": "GLM-5.3", "provider": "glm"},
+    {"id": "glm-5.2", "name": "GLM-5.2", "provider": "glm"},
+    # Moonshot (Kimi) - un million de jetons de contexte sur K3
+    {"id": "kimi-k3", "name": "Kimi K3", "provider": "kimi"},
+    {"id": "kimi-k2.7-code", "name": "Kimi K2.7 Code", "provider": "kimi"},
+    # Alibaba (Qwen) - l'adresse contient l'espace de travail du compte
+    {"id": "qwen3.8-max", "name": "Qwen3.8-Max", "provider": "qwen"},
+    {"id": "qwen3-coder-plus", "name": "Qwen3-Coder-Plus", "provider": "qwen"},
+    # MiniMax - la casse des identifiants compte
+    {"id": "MiniMax-M3", "name": "MiniMax M3", "provider": "minimax"},
+    # Local (Ollama) - tous porteurs de l'étiquette « tools » d'Ollama, avec la
+    # taille du téléchargement, parce que nos testeurs ont des machines modestes.
+    {"id": "qwen3.5:9b", "name": "Qwen3.5 9B (local, 6,6 Go)", "provider": "ollama"},
+    {"id": "qwen3-coder:30b", "name": "Qwen3-Coder 30B (local, 19 Go)", "provider": "ollama"},
+    {"id": "ministral-3:8b", "name": "Ministral 3 8B (local, 6 Go)", "provider": "ollama"},
+    {"id": "devstral:24b", "name": "Devstral 24B (local, 14 Go)", "provider": "ollama"},
+    {"id": "gpt-oss:20b", "name": "GPT-OSS 20B (local, 14 Go)", "provider": "ollama"},
 ]
 
 

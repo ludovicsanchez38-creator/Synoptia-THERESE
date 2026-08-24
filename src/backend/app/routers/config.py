@@ -941,43 +941,116 @@ async def _available_models_for(provider_value: str) -> list[str]:
     (le selecteur frontend tombait a 1 seul modele apres changement).
     """
     available_models: list[str] = []
+    # Listes relevées dans la documentation officielle de chaque fournisseur le
+    # 24/08/2026, puis contre-vérifiées. Le PREMIER de chaque liste est celui
+    # que l'interface pré-sélectionne : l'ordre EST la recommandation.
+    #
+    # Les identifiants Anthropic sans date sont des instantanés figés, pas des
+    # pointeurs perpétuels : une nouvelle version sortira sous un nouveau nom et
+    # cette liste devra être reprise à la main.
+    #
+    # Trois échéances à surveiller : claude-sonnet-4-5 sort de support le
+    # 29/09/2026, claude-haiku-4-5 le 15/10/2026, claude-opus-4-5 le 24/11/2026.
     if provider_value == "anthropic":
-        # Claude 4.x series (juin 2026)
         available_models = [
-            "claude-opus-4-8",               # Flagship (lancé 28/05/2026)
-            "claude-sonnet-4-6",             # Équilibré, défaut recommandé
-            "claude-haiku-4-5-20251001",     # Rapide & économique
+            "claude-opus-5",                 # Le plus polyvalent (recommandé)
+            "claude-fable-5",                # Puissance maximale, plus lent
+            "claude-sonnet-5",               # Équilibre vitesse/intelligence
+            "claude-haiku-4-5-20251001",     # Le plus rapide
+            "claude-opus-4-8",               # Génération précédente
+            "claude-opus-4-7",
+            "claude-opus-4-6",
+            "claude-sonnet-4-6",
         ]
     elif provider_value == "openai":
-        # GPT-5.x series (juin 2026)
+        # gpt-5.3-codex est volontairement absent : sa fiche indique qu'il
+        # refuse `v1/chat/completions`, le seul point d'appel que nous
+        # utilisons. Le proposer garantirait un échec à chaque requête.
         available_models = [
-            "gpt-5.5",           # Flagship
-            "gpt-5.4",           # Équilibré
-            "gpt-5.4-mini",      # Rapide & économique
-            "gpt-5.3-codex",     # Spécialiste code
-            "gpt-5.5-pro",       # Raisonnement avancé
+            "gpt-5.6-sol",       # Le plus capable (recommandé)
+            "gpt-5.6-terra",     # Équilibre intelligence/coût
+            "gpt-5.6-luna",      # Le plus économique de la génération
+            "gpt-5.5",           # Génération précédente
+            "gpt-5.5-pro",       # Réflexion longue
+            "gpt-5.4-mini",      # Petit, rapide, bon marché
         ]
     elif provider_value == "gemini":
-        # Gemini 3.x series (juin 2026)
+        # Aucun Gemini Pro en version stable sur la génération 3 : le seul Pro
+        # récent reste en avant-première, vérifié deux fois.
         available_models = [
-            "gemini-3.1-pro-preview",     # Flagship, haute capacité
-            "gemini-3.5-flash",           # Rapide & puissant (recommandé)
-            "gemini-3.1-flash-lite",      # Ultra-rapide, économique
+            "gemini-3.7-flash",           # Le plus récent (recommandé)
+            "gemini-3.1-pro-preview",     # Le seul Pro récent
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-3.5-flash-lite",      # Le plus économique
+            "gemini-2.5-pro",             # Ancienne génération
+            "gemini-2.5-flash",
         ]
     elif provider_value == "mistral":
-        # Mistral latest (alias evergreen)
+        # Ne JAMAIS utiliser les formes `mistral-medium-3-5-26-04` : ce sont des
+        # adresses de pages de documentation, pas des identifiants d'API.
         available_models = [
-            "mistral-large-latest",   # Top-tier
-            "codestral-latest",       # Coding specialist
-            "devstral-small-latest",  # Dev tasks
-            "mistral-small-latest",   # Fast & efficient
+            "mistral-medium-latest",  # Vaisseau amiral (recommandé)
+            "mistral-large-latest",   # Grand modèle, pointeur à jour
+            "mistral-large-2512",     # Version figée, Apache 2.0
+            "mistral-small-2603",     # Petit modèle
+            "codestral-2508",         # Spécialiste du code
+            "ministral-8b-2512",      # Léger
+            "ministral-3b-2512",      # Le plus petit
         ]
     elif provider_value == "grok":
-        # Grok 4.x series (juin 2026)
         available_models = [
-            "grok-4.3",                      # Flagship (recommandé)
-            "grok-4.20-0309-reasoning",      # Raisonnement
-            "grok-4.20-0309-non-reasoning",  # Équilibré
+            "grok-4.6",                      # Le plus intelligent (recommandé)
+            "grok-4.5",                      # Génération précédente
+            "grok-4.3",                      # Économique, très grand contexte
+            "grok-4.20-0309-reasoning",      # Raisonnement long
+            "grok-4.20-0309-non-reasoning",  # Réponse directe
+        ]
+    elif provider_value == "glm":
+        # Z.ai, plateforme internationale. Relevé sur docs.z.ai le 24/08/2026.
+        available_models = [
+            "glm-5.3",         # Ingénierie logicielle et agents (recommandé)
+            "glm-5.2",         # Génération précédente, tâches longues
+            "glm-5.1",
+            "glm-5",
+            "glm-5-turbo",     # Optimisé pour les agents
+            "glm-4.7",         # Ancienne génération, bon en code
+            "glm-4.7-flashx",  # Léger et rapide
+            "glm-4.7-flash",   # Léger, gratuit
+        ]
+    elif provider_value == "kimi":
+        # Moonshot AI. kimi-k3 offre un million de jetons de contexte.
+        available_models = [
+            "kimi-k3",                    # Le plus capable (recommandé)
+            "kimi-k2.7-code",             # Spécialiste du code
+            "kimi-k2.7-code-highspeed",   # Même chose, accéléré
+            "kimi-k2.6",                  # Génération précédente, multimodal
+            "kimi-k2.5",                  # Économique
+        ]
+    elif provider_value == "qwen":
+        # Alibaba Model Studio. L'adresse contient l'identifiant d'espace de
+        # travail du compte : elle doit être renseignée dans les réglages.
+        available_models = [
+            "qwen3.8-max",        # Vaisseau amiral (recommandé)
+            "qwen3.7-plus",       # Équilibré, très grand contexte
+            "qwen3.7-flash",      # Rapide et économique
+            "qwen3-coder-plus",   # Spécialiste du code et des agents
+        ]
+    elif provider_value == "minimax":
+        # La casse compte : l'API refuse les minuscules.
+        available_models = [
+            "MiniMax-M3",              # Le plus récent (recommandé)
+            "MiniMax-M2.7",            # Génération précédente
+            "MiniMax-M2.7-highspeed",  # Même modèle, accéléré
+            "MiniMax-M2.5",
+            "MiniMax-M2.5-highspeed",
+        ]
+    elif provider_value == "deepseek":
+        # `deepseek-chat` et `deepseek-reasoner` ont DISPARU de l'API : absents
+        # de la page des tarifs comme du guide de démarrage au 24/08/2026.
+        available_models = [
+            "deepseek-v4-pro",     # Modèle complet, mode réflexion (recommandé)
+            "deepseek-v4-flash",   # Rapide et bon marché
         ]
     elif provider_value == "openrouter":
         # OpenRouter : fetch dynamique des modèles disponibles
@@ -1023,10 +1096,21 @@ async def _available_models_for(provider_value: str) -> list[str]:
             client = await get_http_client()
             resp = await client.get(f"{settings.ollama_base_url}/api/tags", timeout=5.0)
             if resp.status_code == 200:
+                from app.services.ollama_capabilites import gere_les_outils
+
                 data = resp.json()
+                # BUG-169 : un modèle incapable d'appeler des outils ne peut ni
+                # créer un contact, ni poser un rendez-vous, ni produire un
+                # document. Le proposer, c'est promettre ce qu'il ne fera pas —
+                # un testeur a attendu 3 min 26 s avant une réponse dégradée.
+                # Il reste visible plus bas, désactivé et motivé, plutôt que
+                # masqué : disparaître sans explication est le défaut qu'on
+                # corrige partout ailleurs dans cette version.
                 available_models = [
                     m.get("name", "") for m in data.get("models", [])
-                    if m.get("name") and _categorize_ollama_model(m["name"]) == "chat"
+                    if m.get("name")
+                    and _categorize_ollama_model(m["name"]) == "chat"
+                    and gere_les_outils(m["name"])
                 ]
         except Exception:
             # Ollama non disponible - liste vide, pas d'erreur
@@ -1110,6 +1194,10 @@ async def set_llm_config(
         LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
         LLMProvider.PERPLEXITY: ("PERPLEXITY_API_KEY", "perplexity_api_key"),
         LLMProvider.DEEPSEEK: ("DEEPSEEK_API_KEY", "deepseek_api_key"),
+        LLMProvider.GLM: ("GLM_API_KEY", "glm_api_key"),
+        LLMProvider.KIMI: ("KIMI_API_KEY", "kimi_api_key"),
+        LLMProvider.QWEN: ("QWEN_API_KEY", "qwen_api_key"),
+        LLMProvider.MINIMAX: ("MINIMAX_API_KEY", "minimax_api_key"),
         LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
     }
 
@@ -1281,9 +1369,13 @@ async def get_ollama_status():
                 error=f"Ollama returned status {response.status_code}",
             )
 
+        from app.services.ollama_capabilites import gere_les_outils, motif_d_exclusion
+
         data = response.json()
         models = [
             OllamaModelInfo(
+                gere_les_outils=gere_les_outils(m.get("name", "")),
+                motif_indisponible=motif_d_exclusion(m.get("name", "")),
                 name=m.get("name", ""),
                 size=m.get("size"),
                 modified_at=m.get("modified_at"),
