@@ -237,3 +237,79 @@ class TestLAdresseInvalideEstRefusee:
         )
         assert resp.status_code == 200
         assert resp.json()["base_url"] is None
+
+
+class TestLaValidationCouvreTousLesLecteurs:
+    """Seconde passe de revue : la validation ne protégeait que POST /llm.
+    Le lecteur partagé rendait la valeur brute - un « http:// » stocké
+    atteignait les agents et le service reconstruit au démarrage."""
+
+    def test_le_service_agent_ignore_une_adresse_stockee_invalide(self, monkeypatch):
+        import app.services.llm as llm_module
+        from app.services.agents import runtime
+
+        monkeypatch.setenv("QWEN_API_KEY", "cle-de-test")
+        monkeypatch.setattr(
+            llm_module, "_get_preference_value",
+            lambda cle: "http://" if cle == "qwen_base_url" else None,
+        )
+
+        service = runtime._get_llm_for_model("qwen3.8-max")
+
+        assert service is not None
+        assert service.config.base_url is None, (
+            "une adresse invalide arrivée par n'importe quel chemin d'écriture "
+            "ne doit jamais atteindre un fournisseur - url_effective() en "
+            "ferait http:/chat/completions"
+        )
+
+    def test_le_demarrage_ignore_une_adresse_stockee_invalide(self, monkeypatch):
+        import app.services.llm as llm_module
+
+        monkeypatch.setattr(
+            llm_module, "_get_preference_value",
+            lambda cle: "http://" if cle.endswith("_base_url") else None,
+        )
+
+        assert llm_module._base_url_configuree("qwen") is None
+
+    def test_une_adresse_valide_passe_le_lecteur(self, monkeypatch):
+        import app.services.llm as llm_module
+
+        monkeypatch.setattr(
+            llm_module, "_get_preference_value",
+            lambda cle: ADRESSE_ESPACE if cle.endswith("_base_url") else None,
+        )
+
+        assert llm_module._base_url_configuree("qwen") == ADRESSE_ESPACE
+
+
+class TestLaCarteDesClesNeDemultipliePasLesRequetes:
+    """Seconde passe de revue : la carte ajoutait 14 vérifications aux 11
+    existantes (25 déchiffrements par GET /api/config/, 7 clés vérifiées deux
+    fois). La lecture est désormais GROUPÉE : une seule requête SQL."""
+
+    @pytest.mark.asyncio
+    async def test_get_config_ne_verifie_plus_cle_par_cle(self, client, monkeypatch):
+        from app.routers import config as module
+
+        appels: list[str] = []
+        originale = module._check_key_decryptable
+
+        async def espionne(session, pref_key):
+            appels.append(pref_key)
+            return await originale(session, pref_key)
+
+        monkeypatch.setattr(module, "_check_key_decryptable", espionne)
+
+        resp = await client.get("/api/config/")
+
+        assert resp.status_code == 200
+        assert len(appels) == 0, (
+            f"{len(appels)} vérifications unitaires ({appels[:5]}...) : la "
+            "lecture doit être groupée en une requête, pas une par clé"
+        )
+        # et la carte reste juste
+        assert set(resp.json()["api_keys"].keys()) >= {
+            "anthropic", "glm", "kimi", "qwen", "minimax", "perplexity",
+        }
