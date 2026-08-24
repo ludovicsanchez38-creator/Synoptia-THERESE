@@ -303,7 +303,10 @@ def available_actions_text() -> str:
             if not entree:
                 continue
             binding = entree.get("binding", {})
-            if binding.get("registre") in ("action", "raccourci"):
+            # `.get` et non `[...]` : la validation du manifeste garantit la
+            # présence d'actionId, mais l'aide ne doit pas dépendre de cette
+            # garantie pour survivre.
+            if binding.get("registre") in ("action", "raccourci") and binding.get("actionId"):
                 descriptions.setdefault(
                     binding["actionId"],
                     (texte(capacite, "nom"), texte(capacite, "quoi")),
@@ -315,9 +318,14 @@ def available_actions_text() -> str:
 
     lignes = []
     for action_id, cible in sorted(seen.items(), key=lambda item: item[1]):
-        nom, quoi = descriptions.get(action_id, ("", ""))
+        nom, _quoi = descriptions.get(action_id, ("", ""))
+        # Le NOM seul, pas la description : cette réponse part aussi sur chaque
+        # action inconnue, et la version avec descriptions triplait sa longueur
+        # (621 -> 1898 caractères, mesuré en revue). Le nom suffit à savoir ce
+        # qu'on ouvre ; la description appartient au catalogue, pas à une
+        # réponse d'erreur.
         if nom:
-            lignes.append(f"- {{action: ouvrir {cible}}} — {nom} : {quoi}")
+            lignes.append(f"- {{action: ouvrir {cible}}} — {nom}")
         else:
             lignes.append(f"- {{action: ouvrir {cible}}}")
     lignes += [

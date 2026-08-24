@@ -60,8 +60,11 @@ function ApplicationBootstrap() {
       // Attendre le port RÉEL du sidecar avant de lire API_BASE : en mode
       // packagé le port est dynamique, et un contrôle parti sur le port par
       // défaut serait toujours « cohérent » — donc ne contrôlerait rien.
-      // initApiBase est un singleton : l'appel est gratuit si déjà fait.
+      // Attendre AUSSI le jeton de session : la route n'est pas exemptée, et
+      // un fetch sans jeton prenait un 401 traduit en « cohérent » — même
+      // défaut sous une autre forme. Les deux inits sont des singletons.
       await core.initApiBase();
+      await core.initializeAuth();
       await verifierGeneration(core.API_BASE);
     })();
   }, []);
