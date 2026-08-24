@@ -53,6 +53,25 @@ def _make_legacy_db(db_path: Path) -> None:
         conn.commit()
 
 
+
+
+def _creer_tables_sync_reelles(db_path: Path) -> None:
+    """Les tables sync au VRAI schéma, dérivées des modèles - la preuve
+    d'ensure_alembic_stamp exige désormais toutes leurs colonnes."""
+    import app.models.entities_sync  # noqa: F401
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine, tables=[
+        SQLModel.metadata.tables[t]
+        for t in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        )
+    ])
+    engine.dispose()
+
 def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -> None:
     """Construit une DB ancienne dont les patches ad-hoc simulent le schéma head."""
     board_columns = [
@@ -85,6 +104,7 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
+    _creer_tables_sync_reelles(db_path)
 
 
 def test_constante_epinglee_suit_la_vraie_tete():
@@ -229,3 +249,48 @@ def test_make_db_migrate_sur_db_chiffree(tmp_path):
     result = _run_upgrade_head(data_dir)
     assert result.returncode == 0, result.stderr[-800:]
     assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
+def test_une_base_044_n_est_pas_reestampillee_sans_les_tables_sync(tmp_path):
+    """B4 (revue jalon) : la preuve de schéma doit exiger les tables sync.
+
+    Sans cela, une base 0.44 suivie par Alembic était ré-estampillée à la
+    tête e5f6a7b8c9d0 AVANT `upgrade head` - la migration des quatre tables
+    était sautée pour toujours."""
+    db = tmp_path / "base-044.db"
+    _make_patched_tracked_db(db)
+    with sqlite3.connect(str(db)) as conn:
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"DROP TABLE {table}")
+        conn.execute("UPDATE alembic_version SET version_num = 'd9e0f1a2b3c4'")
+        conn.commit()
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "d9e0f1a2b3c4", (
+        "ré-estampiller sans les tables sync ferait sauter leur migration"
+    )
+
+def test_des_tables_sync_malformees_ne_passent_pas_la_preuve(tmp_path):
+    """Passe 2 de revue : quatre tables au bon NOM mais réduites à `id`
+    étaient estampillées head - la preuve vérifie les colonnes réelles."""
+    db = tmp_path / "malformee.db"
+    _make_patched_tracked_db(db)
+    with sqlite3.connect(str(db)) as conn:
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"DROP TABLE {table}")
+            conn.execute(f"CREATE TABLE {table} (id VARCHAR PRIMARY KEY)")
+        conn.execute("UPDATE alembic_version SET version_num = 'd9e0f1a2b3c4'")
+        conn.commit()
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "d9e0f1a2b3c4", (
+        "un schéma sync inutilisable ne doit jamais être estampillé head"
+    )

@@ -221,6 +221,23 @@ class TestRGPD:
         assert await get_variable(db_session, "a_purger") is None
 
 
+
+
+def _creer_tables_sync_depuis_modeles(db_path):
+    import app.models.entities_sync  # noqa: F401
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine, tables=[
+        SQLModel.metadata.tables[t]
+        for t in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        )
+    ])
+    engine.dispose()
+
 class TestMigration:
     """Finding 8 VÉRIFIÉ : le ré-estampillage US-015 aurait sauté la
     migration variables. La preuve de schéma exige désormais AUSSI la table."""
@@ -252,6 +269,9 @@ class TestMigration:
             conn.execute("CREATE TABLE variables (id TEXT PRIMARY KEY)")
         conn.commit()
         conn.close()
+        # 0.45 (passe 3) : la preuve exige TOUTES les colonnes des modèles -
+        # les tables sync se créent depuis les modèles, jamais à la main.
+        _creer_tables_sync_depuis_modeles(db)
         return db
 
     def test_adhoc_cree_la_table_variables(self, tmp_path):

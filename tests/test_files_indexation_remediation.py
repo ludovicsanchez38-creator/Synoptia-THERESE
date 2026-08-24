@@ -47,7 +47,7 @@ class TestF2VerrouEcriture:
         """Une écriture concurrente ne doit pas attendre la fin de l'indexation."""
         from app.models.database import get_session_context
         from app.models.entities import FileMetadata
-        from app.routers import files as files_router
+        from app.services import indexation
         from sqlmodel import select
 
         visible_pendant_extraction: list[bool] = []
@@ -65,8 +65,8 @@ class TestF2VerrouEcriture:
             asyncio.run(observer())
             return "texte extrait"
 
-        monkeypatch.setattr(files_router, "extract_text", extraction_qui_observe)
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
+        monkeypatch.setattr(indexation, "extract_text", extraction_qui_observe)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: FauxQdrant())
 
         reponse = await client.post("/api/files/index", json={"path": str(fichier)})
 
@@ -87,10 +87,11 @@ class TestF1AnnulationEtConcurrence:
         abandonnée dès qu'on constate que personne n'attend plus la réponse.
         """
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux_qdrant = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux_qdrant)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux_qdrant)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         async def toujours_abandonnee():
             return True
@@ -107,10 +108,11 @@ class TestF1AnnulationEtConcurrence:
     @pytest.mark.asyncio
     async def test_sans_abandon_les_embeddings_sont_bien_calcules(self, fichier, monkeypatch):
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux_qdrant = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux_qdrant)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux_qdrant)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         await files_router.index_payload(path=str(fichier))
 
@@ -120,6 +122,7 @@ class TestF1AnnulationEtConcurrence:
     async def test_deux_indexations_du_meme_fichier_sont_serialisees(self, fichier, monkeypatch):
         """La contrainte `path UNIQUE` ne doit jamais être atteinte en course."""
         from app.routers import files as files_router
+        from app.services import indexation
 
         en_cours = 0
         max_simultane = 0
@@ -135,8 +138,8 @@ class TestF1AnnulationEtConcurrence:
                 en_cours -= 1
             return "texte extrait"
 
-        monkeypatch.setattr(files_router, "extract_text", extraction_lente)
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
+        monkeypatch.setattr(indexation, "extract_text", extraction_lente)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: FauxQdrant())
 
         resultats = await asyncio.gather(
             files_router.index_payload(path=str(fichier)),
@@ -154,17 +157,17 @@ class TestF1AnnulationEtConcurrence:
 class TestF3AutresRoutesBloquantes:
     @pytest.mark.asyncio
     async def test_lecture_de_contenu_hors_thread_de_la_route(self, client, fichier, monkeypatch):
-        from app.routers import files as files_router
+        from app.services import indexation
 
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: FauxQdrant())
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
         creation = await client.post("/api/files/index", json={"path": str(fichier)})
         assert creation.status_code == 200, creation.text
         file_id = creation.json()["id"]
 
         thread_route: list[int] = []
         thread_extraction: list[int] = []
-        vrai_metadata = files_router.get_file_metadata
+        vrai_metadata = indexation.get_file_metadata
 
         def metadata_tracee(path):
             thread_route.append(threading.get_ident())
@@ -174,8 +177,8 @@ class TestF3AutresRoutesBloquantes:
             thread_extraction.append(threading.get_ident())
             return "contenu du fichier"
 
-        monkeypatch.setattr(files_router, "get_file_metadata", metadata_tracee)
-        monkeypatch.setattr(files_router, "extract_text", extraction_tracee)
+        monkeypatch.setattr(indexation, "get_file_metadata", metadata_tracee)
+        monkeypatch.setattr(indexation, "extract_text", extraction_tracee)
 
         reponse = await client.get(f"/api/files/{file_id}/content")
 
@@ -188,10 +191,10 @@ class TestF3AutresRoutesBloquantes:
 
 class TestF4Regulation:
     def test_un_semaphore_borne_les_indexations_simultanees(self):
-        from app.routers import files as files_router
+        from app.services import indexation
 
-        assert isinstance(files_router.INDEX_SEMAPHORE, asyncio.Semaphore)
-        assert files_router.MAX_INDEXATIONS_SIMULTANEES >= 1
-        assert files_router.MAX_INDEXATIONS_SIMULTANEES <= 4, (
+        assert isinstance(indexation.INDEX_SEMAPHORE, asyncio.Semaphore)
+        assert indexation.MAX_INDEXATIONS_SIMULTANEES >= 1
+        assert indexation.MAX_INDEXATIONS_SIMULTANEES <= 4, (
             "une limite trop haute laisse plusieurs encodages saturer la machine"
         )

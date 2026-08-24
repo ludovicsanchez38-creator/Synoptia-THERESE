@@ -5,7 +5,7 @@ L'assistante souveraine des entrepreneurs français.
 """
 # NOTE: slowapi est requis pour le rate limiting (SEC-015)
 # Installation : uv add slowapi
-
+import asyncio
 import logging
 import os
 import secrets
@@ -218,11 +218,28 @@ async def lifespan(app: FastAPI):
             # l'état d'avant ce correctif, jamais un blocage du démarrage.
             logger.warning(f"Reclassement du périmètre documentaire ignoré : {e}")
 
-    import asyncio
 
     if not skip_services:
         await init_qdrant()
         logger.info("Qdrant vector store initialized")
+
+        # project.sync (0.45, B6) : marquer `interrupted` ne relance RIEN -
+        # les plans restés `en_cours` sont repris par un récupérateur dédié,
+        # APRÈS l'initialisation de Qdrant (un apply écrit des vecteurs),
+        # en tâche de fond référencée.
+        try:
+            from app.services.project_sync_service import (
+                _applies_en_cours,
+                reprendre_applies_orphelins,
+            )
+
+            reprise_sync = asyncio.get_running_loop().create_task(
+                reprendre_applies_orphelins()
+            )
+            _applies_en_cours.add(reprise_sync)
+            reprise_sync.add_done_callback(_applies_en_cours.discard)
+        except Exception as e:
+            logger.warning(f"Reprise project.sync ignorée : {e}")
 
         # Reclassement des payloads sans périmètre, en tâche de fond : il peut
         # parcourir une grande collection et ne doit pas retarder /health.
@@ -350,6 +367,36 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
+
+    # project.sync (0.45, B6) : arrêter les applies AVANT de fermer Qdrant et
+    # SQLite. L'at-least-once rend l'annulation sûre : l'opération en cours
+    # reste `a_faire`, le plan reste `en_cours`, la reprise du prochain
+    # démarrage termine le travail.
+    try:
+        from app.services.project_sync_service import _applies_en_cours
+
+        vivantes = [t for t in _applies_en_cours if not t.done()]
+        for tache in vivantes:
+            tache.cancel()
+        if vivantes:
+            # Une tâche annulée se termine à son prochain point d'attente ;
+            # seul un hachage en cours dans un thread peut la retenir. On
+            # attend jusqu'à 15 s, puis on le DIT : les opérations restées
+            # ouvertes sont couvertes par l'at-least-once (le plan reste
+            # en_cours, la reprise du prochain démarrage termine) - mais un
+            # pending ignoré en silence n'est pas un arrêt coopératif
+            # (passe 2 de revue).
+            _, pending = await asyncio.wait(vivantes, timeout=15)
+            if pending:
+                logger.error(
+                    "%d apply(s) project.sync non terminés au shutdown - "
+                    "la reprise du prochain démarrage terminera leur plan",
+                    len(pending),
+                )
+            else:
+                logger.info(f"Applies project.sync arrêtés : {len(vivantes)}")
+    except Exception as e:
+        logger.warning(f"Arrêt des applies project.sync : {e}")
 
     if oauth_cleanup_task is not None:
         oauth_cleanup_task.cancel()
@@ -728,6 +775,9 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # Include routers
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
+from app.routers.project_sync import router as project_sync_router  # noqa: E402
+
+app.include_router(project_sync_router, prefix="/api/projects", tags=["ProjectSync"])
 app.include_router(files_router, prefix="/api/files", tags=["Files"])
 app.include_router(config_router, prefix="/api/config", tags=["Config"])
 app.include_router(skills_router, prefix="/api/skills", tags=["Skills"])

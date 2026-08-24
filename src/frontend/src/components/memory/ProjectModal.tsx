@@ -6,6 +6,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { ProjectSyncSection } from './ProjectSyncSection';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -374,6 +375,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
+
+              {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
+              {isEditing && project && (
+                <ProjectSyncSection projectId={project.id} />
+              )}
 
               {/* Fichiers du projet (visible uniquement en édition) */}
               {isEditing && project && (

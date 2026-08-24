@@ -48,10 +48,11 @@ class TestN1IntegriteDeLaReindexation:
         self, db_session, fichier, monkeypatch
     ):
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         premiere = await files_router.index_payload(path=str(fichier))
         assert premiere.chunk_count > 0
@@ -91,10 +92,11 @@ class TestN1IntegriteDeLaReindexation:
         self, db_session, fichier, monkeypatch
     ):
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         await files_router.index_payload(path=str(fichier))
         faux.suppressions.clear()
@@ -102,7 +104,7 @@ class TestN1IntegriteDeLaReindexation:
         def extraction_qui_casse(_p):
             raise ValueError("PDF protégé")
 
-        monkeypatch.setattr(files_router, "extract_text", extraction_qui_casse)
+        monkeypatch.setattr(indexation, "extract_text", extraction_qui_casse)
 
         with pytest.raises(ValueError, match="PDF protégé"):
             await files_router.index_payload(path=str(fichier))
@@ -127,11 +129,12 @@ class TestEchecDEcritureVectorielle:
         from app.models.database import get_session_context
         from app.models.entities import FileMetadata
         from app.routers import files as files_router
+        from app.services import indexation
         from sqlmodel import select
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         await files_router.index_payload(path=str(fichier))
 
@@ -139,7 +142,7 @@ class TestEchecDEcritureVectorielle:
             async def async_add_memories(self, items):
                 raise RuntimeError("Qdrant injoignable")
 
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: QdrantQuiCasse())
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: QdrantQuiCasse())
 
         with pytest.raises(RuntimeError, match="Qdrant injoignable"):
             await files_router.index_payload(path=str(fichier))
@@ -159,10 +162,11 @@ class TestF1AbandonPendantLAttente:
     @pytest.mark.asyncio
     async def test_l_abandon_est_reconsulte_apres_le_semaphore(self, db_session, fichier, monkeypatch):
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         appels = {"n": 0}
 
@@ -190,10 +194,11 @@ class TestN2CourseAvecLaSuppression:
         """`delete_file` (la vraie route) doit prendre le verrou de chemin."""
         from app.models.database import get_session_context
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         premiere = await files_router.index_payload(path=str(fichier))
         file_id = premiere.id
@@ -205,7 +210,7 @@ class TestN2CourseAvecLaSuppression:
             ordre.append("indexation")
             return "nouveau texte"
 
-        monkeypatch.setattr(files_router, "extract_text", extraction_qui_signale)
+        monkeypatch.setattr(indexation, "extract_text", extraction_qui_signale)
 
         async def indexer():
             indexation_demarree.set()
@@ -241,7 +246,7 @@ class TestN5CouvertureUpload:
 
         from app.models.database import get_session_context
         from app.models.entities import Project
-        from app.routers import files as files_router
+        from app.services import indexation
 
         async with get_session_context() as session:
             projet = Project(name="Projet test")
@@ -250,11 +255,11 @@ class TestN5CouvertureUpload:
             await session.refresh(projet)
             project_id = projet.id
 
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: FauxQdrant())
 
         thread_route: list[int] = []
         thread_extraction: list[int] = []
-        vrai_metadata = files_router.get_file_metadata
+        vrai_metadata = indexation.get_file_metadata
 
         def metadata_tracee(path):
             thread_route.append(threading.get_ident())
@@ -264,8 +269,8 @@ class TestN5CouvertureUpload:
             thread_extraction.append(threading.get_ident())
             return "texte extrait"
 
-        monkeypatch.setattr(files_router, "get_file_metadata", metadata_tracee)
-        monkeypatch.setattr(files_router, "extract_text", extraction_tracee)
+        monkeypatch.setattr(indexation, "get_file_metadata", metadata_tracee)
+        monkeypatch.setattr(indexation, "extract_text", extraction_tracee)
 
         reponse = await client.post(
             "/api/files/upload",
@@ -284,26 +289,27 @@ class TestN5SemaphoreUtilise:
     @pytest.mark.asyncio
     async def test_le_semaphore_est_reellement_pris(self, db_session, fichier, monkeypatch):
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
-        libre_avant = files_router.INDEX_SEMAPHORE._value
+        libre_avant = indexation.INDEX_SEMAPHORE._value
         vus: list[int] = []
 
         class QdrantQuiObserve(FauxQdrant):
             async def async_add_memories(self, items):
-                vus.append(files_router.INDEX_SEMAPHORE._value)
+                vus.append(indexation.INDEX_SEMAPHORE._value)
                 return await super().async_add_memories(items)
 
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: QdrantQuiObserve())
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: QdrantQuiObserve())
 
         await files_router.index_payload(path=str(fichier))
 
         assert vus and vus[0] == libre_avant - 1, (
             "l'écriture vectorielle ne passe pas par le sémaphore"
         )
-        assert files_router.INDEX_SEMAPHORE._value == libre_avant, (
+        assert indexation.INDEX_SEMAPHORE._value == libre_avant, (
             "le sémaphore n'est pas relâché"
         )

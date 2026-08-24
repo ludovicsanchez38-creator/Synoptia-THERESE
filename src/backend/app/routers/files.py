@@ -4,22 +4,20 @@ THÉRÈSE v2 - Files Router
 Endpoints for file management and indexing.
 """
 
-import asyncio
 import logging
+import os
 import shutil
-from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from app.config import settings
 from app.models.database import get_session, get_session_context
 from app.models.entities import FileMetadata
 from app.models.schemas import FileIndexRequest, FileResponse
-from app.services.file_parser import chunk_text, extract_text, get_file_metadata
-from app.services.path_security import validate_indexable_file
-from app.services.qdrant import get_qdrant_service
+from app.services.indexation import (
+    extract_text_async,
+    index_payload,
+    remplacer_puis_indexer,
+)
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -28,55 +26,6 @@ from starlette.concurrency import run_in_threadpool
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-# BUG-155 (27/07/2026) : extraction et découpage sont des traitements CPU/disque
-# synchrones. Appelés directement depuis une route `async`, ils bloquaient la
-# boucle d'événements : pendant l'indexation d'un gros document, plus aucune
-# requête n'était servie (chat, emails, agenda) et l'application semblait figée.
-# On les déporte dans le pool de threads.
-
-
-# Un dépôt massif lançait autant d'encodages simultanés que de fichiers
-# (revue du 27/07, finding F4). Deux à la fois suffisent sur une machine de
-# bureau et laissent de la place au reste de l'application.
-MAX_INDEXATIONS_SIMULTANEES = 2
-INDEX_SEMAPHORE = asyncio.Semaphore(MAX_INDEXATIONS_SIMULTANEES)
-
-# `FileMetadata.path` est UNIQUE : deux demandes sur le même fichier en même
-# temps levaient une contrainte d'intégrité (finding F1).
-# Chaque entrée porte son verrou et le nombre de demandes qui s'y rattachent :
-# purger sur `locked()` seul supprimerait le verrou alors qu'un appel attend
-# encore, et le suivant en créerait un second pour le même chemin.
-_verrous_par_chemin: dict[str, list[Any]] = {}
-
-
-@asynccontextmanager
-async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
-    entree = _verrous_par_chemin.get(chemin)
-    if entree is None:
-        entree = [asyncio.Lock(), 0]
-        _verrous_par_chemin[chemin] = entree
-    entree[1] += 1
-    try:
-        async with entree[0]:
-            yield
-    finally:
-        entree[1] -= 1
-        if entree[1] == 0 and _verrous_par_chemin.get(chemin) is entree:
-            _verrous_par_chemin.pop(chemin, None)
-
-
-async def extract_text_async(file_path: Path) -> str:
-    """Extrait le texte d'un fichier sans bloquer la boucle d'événements."""
-    return await run_in_threadpool(extract_text, file_path)
-
-
-async def chunk_text_async(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
-    """Découpe le texte en fragments sans bloquer la boucle d'événements."""
-    return await run_in_threadpool(
-        lambda: list(chunk_text(text, chunk_size=chunk_size, overlap=overlap))
-    )
 
 
 @router.get("/", response_model=list[FileResponse])
@@ -110,262 +59,6 @@ async def list_files(
         )
         for f in files
     ]
-
-
-async def _consigner_resultat(
-    file_id: str,
-    chunk_count: int,
-    indexed_at: datetime,
-    figer_perimetre: bool = False,
-) -> None:
-    """Enregistre l'issue de l'indexation dans une transaction courte.
-
-    `figer_perimetre` n'est honoré qu'ICI, après l'écriture réelle des
-    fragments : tant qu'ils n'existent pas, le document reste rectifiable
-    plutôt que de figer un cloisonnement que la recherche n'applique pas.
-    """
-    async with get_session_context() as session:
-        a_jour = await session.get(FileMetadata, file_id)
-        if a_jour is None:
-            # N2 : le fichier a été supprimé pendant le traitement. Ne pas
-            # laisser de vecteurs orphelins ni annoncer un succès.
-            await get_qdrant_service().async_delete_by_entity(file_id)
-            raise HTTPException(
-                status_code=409,
-                detail="Le fichier a été supprimé pendant son indexation.",
-            )
-        a_jour.chunk_count = chunk_count
-        a_jour.indexed_at = indexed_at
-        if figer_perimetre:
-            a_jour.scope_provisoire = False
-        await session.commit()
-
-
-def construire_items_indexation(
-    *,
-    chunks: list[str],
-    file_id: str,
-    file_name: str,
-    chemin: str,
-    scope: str,
-    scope_id: str | None,
-) -> list[dict[str, Any]]:
-    """Construit les items Qdrant d'un document. UN SEUL endroit.
-
-    Contre-vérification Soso : `index_payload` écrivait bien le périmètre, mais
-    `upload_file` — le chemin réel d'une pièce jointe de projet — construisait
-    ses items séparément, avec un `project_id` ad hoc et sans `scope`. Le filtre
-    de recherche traitait alors ces documents comme GLOBAUX (branche
-    `IsEmptyCondition` prévue pour les documents antérieurs) : un fichier versé
-    dans le projet A pouvait ressortir dans une recherche du projet B.
-
-    Deux constructeurs pour un même payload, c'est une divergence garantie.
-    """
-    return [
-        {
-            "text": fragment,
-            "memory_type": "file",
-            "entity_id": file_id,
-            "metadata": {
-                "name": file_name,
-                "path": chemin,
-                "chunk_index": i,
-                "total_chunks": len(chunks),
-                # Sans ces deux clés, le filtre par périmètre ne peut rien
-                # retrouver : le champ n'existe pas côté vectoriel.
-                "scope": scope,
-                "scope_id": scope_id,
-                # Conservé pour les lecteurs existants de cette clé.
-                **({"project_id": scope_id} if scope == "project" else {}),
-            },
-        }
-        for i, fragment in enumerate(chunks)
-    ]
-
-
-async def index_payload(
-    path: str,
-    est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
-    scope: str = "global",
-    scope_id: str | None = None,
-    perimetre_provisoire: bool = False,
-) -> FileResponse:
-    """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
-
-    Remédiation de la revue du 27/07/2026 (findings F1, F2 et F4) :
-
-    - La métadonnée est écrite et **committée** avant le travail lourd. Elle
-      restait auparavant dans une transaction ouverte pendant l'extraction et
-      les embeddings ; SQLite n'ayant qu'un seul écrivain (busy_timeout de 5 s),
-      une écriture concurrente - l'enregistrement d'un message de chat, par
-      exemple - pouvait échouer pendant l'indexation d'un gros document.
-    - Un verrou par chemin sérialise deux demandes portant sur le même fichier
-      (`FileMetadata.path` est UNIQUE : la course levait une contrainte).
-    - Un sémaphore borne les encodages simultanés : un dépôt massif lançait
-      autant d'encodages que de fichiers.
-    - `est_abandonnee` permet de renoncer avant l'étape la plus coûteuse quand
-      plus personne n'attend la réponse. L'extraction déjà lancée, elle, va à
-      son terme : un thread ne s'interrompt pas.
-
-    J2 (31/07/2026) : `scope` et `scope_id` sont écrits DANS LE PAYLOAD, pas
-    seulement en base. Le filtrage par périmètre existait des deux côtés mais
-    n'était branché ni à l'écriture ni à la lecture — le contexte du chat
-    cherchait donc sans aucune cloison, et un document de projet pouvait
-    ressortir dans une conversation étrangère.
-    """
-    # Validation securite du chemin + type de fichier (SEC-002/003)
-    try:
-        file_path = validate_indexable_file(path)
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    if not file_path.is_file():
-        raise HTTPException(status_code=400, detail="Path is not a file")
-
-    metadata = get_file_metadata(file_path)
-
-    async with _verrou_de_chemin(str(file_path)):
-        # 1. Transaction COURTE : enregistrer le fichier, puis rendre la main.
-        async with get_session_context() as session:
-            result = await session.execute(
-                select(FileMetadata).where(FileMetadata.path == str(file_path))
-            )
-            existing = result.scalar_one_or_none()
-            if existing:
-                existing.size = metadata["size"]
-                existing.mime_type = metadata["mime_type"]
-                existing.updated_at = datetime.now(UTC)
-                # Revue Soso, finding critique : la condition précédente
-                # laissait un document du projet A devenir propriété du projet B
-                # au simple fait d'être joint à une conversation de B, et
-                # confisquait un document que l'utilisateur avait délibérément
-                # rendu général.
-                #
-                # Règle : un périmètre VOULU ne se réécrit jamais tout seul.
-                # Seul un périmètre provisoire — posé par défaut parce que la
-                # conversation n'était pas encore connue — peut être rectifié.
-                if existing.scope_provisoire:
-                    existing.scope = scope
-                    existing.scope_id = scope_id
-                    # Revue Soso, passe 2 : NE PAS éteindre le drapeau ici. Ce
-                    # commit précède l'écriture des fragments ; un abandon
-                    # entre les deux laissait la base annoncer un périmètre que
-                    # l'index n'appliquait pas, et le document devenait
-                    # définitif donc irrattrapable. Le drapeau ne s'éteint
-                    # qu'une fois les fragments réellement écrits.
-                    _perimetre_a_figer = not perimetre_provisoire
-                else:
-                    _perimetre_a_figer = False
-                file_meta = existing
-                reindexation = True
-                # Mémorisés pour ne rien détruire si le nouveau traitement
-                # n'aboutit pas (N1).
-                chunk_count_existant = existing.chunk_count or 0
-                indexed_at_existant = existing.indexed_at
-            else:
-                file_meta = FileMetadata(
-                    path=str(file_path),
-                    name=metadata["name"],
-                    extension=metadata["extension"],
-                    size=metadata["size"],
-                    mime_type=metadata["mime_type"],
-                    scope=scope,
-                    scope_id=scope_id,
-                    # Idem à la naissance : provisoire jusqu'à ce que les
-                    # fragments existent réellement.
-                    scope_provisoire=True,
-                )
-                _perimetre_a_figer = not perimetre_provisoire
-                session.add(file_meta)
-                reindexation = False
-                chunk_count_existant = 0
-                indexed_at_existant = None
-            await session.commit()
-            await session.refresh(file_meta)
-            file_id = file_meta.id
-            file_name = file_meta.name
-            created_at = file_meta.created_at
-            extension = file_meta.extension
-            # Le périmètre EFFECTIF, relu après commit : en réindexation sans
-            # périmètre explicite, c'est celui déjà enregistré qui fait foi.
-            perimetre = file_meta.scope
-            perimetre_id = file_meta.scope_id
-
-        # 2. Travail lourd, hors transaction et hors boucle d'événements.
-        #
-        # Contre-vérification du 27/07 (N1) : les anciens vecteurs étaient
-        # supprimés AVANT l'extraction. Une annulation ou une extraction en
-        # échec laissait alors un fichier sans aucun vecteur, présenté comme
-        # indexé. La suppression n'a lieu qu'une fois le nouveau contenu prêt
-        # et l'écriture décidée : jusque-là, l'index existant reste valide.
-        text_content = await extract_text_async(file_path)
-        chunk_count = chunk_count_existant
-        indexed_at = indexed_at_existant
-        ecriture_faite = False
-
-        if text_content and not (est_abandonnee and await est_abandonnee()):
-            chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
-            items = construire_items_indexation(
-                chunks=chunks,
-                file_id=file_id,
-                file_name=file_name,
-                chemin=str(file_path),
-                scope=perimetre,
-                scope_id=perimetre_id,
-            )
-            if items and not (est_abandonnee and await est_abandonnee()):
-                async with INDEX_SEMAPHORE:
-                    # L'attente du sémaphore peut durer : re-consulter l'abandon
-                    # juste avant d'écrire (finding F1 resté ouvert).
-                    if not (est_abandonnee and await est_abandonnee()):
-                        if reindexation:
-                            await get_qdrant_service().async_delete_by_entity(file_id)
-                        try:
-                            await get_qdrant_service().async_add_memories(items)
-                        except Exception:
-                            # Les anciens fragments viennent d'être retirés :
-                            # l'index est vide. Le consigner avant de propager,
-                            # sinon la base promettrait un contenu introuvable.
-                            await _consigner_resultat(file_id, 0, datetime.now(UTC))
-                            raise
-                        logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
-                        chunk_count = len(chunks)
-                        indexed_at = datetime.now(UTC)
-                        ecriture_faite = True
-        elif not text_content and not (est_abandonnee and await est_abandonnee()):
-            # 3e passe de revue : ce chemin détruisait l'index sans consulter
-            # l'abandon. Une demande retirée ne doit rien effacer.
-            logger.warning(f"No text extracted from {file_path}")
-            if reindexation:
-                await get_qdrant_service().async_delete_by_entity(file_id)
-            chunk_count = 0
-            indexed_at = datetime.now(UTC)
-            ecriture_faite = True
-
-        # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
-        # demande a été abandonnée : l'état précédent reste la vérité.
-        if ecriture_faite:
-            await _consigner_resultat(
-                file_id, chunk_count, indexed_at, figer_perimetre=_perimetre_a_figer
-            )
-
-    return FileResponse(
-        id=file_id,
-        path=str(file_path),
-        name=file_name,
-        extension=extension,
-        size=metadata["size"],
-        mime_type=metadata["mime_type"],
-        chunk_count=chunk_count,
-        indexed_at=indexed_at,
-        created_at=created_at,
-        scope=perimetre,
-        scope_id=perimetre_id,
-    )
 
 
 @router.post("/index", response_model=FileResponse)
@@ -454,20 +147,22 @@ async def delete_file(
     if not file_meta:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Contre-vérification du 27/07 (N2) : sans ce verrou, la suppression pouvait
-    # s'intercaler pendant une indexation du même fichier - la ligne disparaissait
-    # et l'indexation écrivait ensuite ses vecteurs, restés orphelins.
-    async with _verrou_de_chemin(file_meta.path):
-        # Remove embeddings from Qdrant
-        try:
-            qdrant = get_qdrant_service()
-            deleted_count = await qdrant.async_delete_by_entity(file_id)
-            logger.info(f"Deleted {deleted_count} embeddings for file {file_id}")
-        except Exception as e:
-            logger.warning(f"Failed to delete embeddings: {e}")
+    # 0.45 : retrait par le service fail-closed. CHANGEMENT VOLONTAIRE de
+    # comportement sur erreur : l'ancien code avalait l'échec Qdrant puis
+    # supprimait quand même la ligne - des vecteurs orphelins restaient servis
+    # par la recherche, sans plus aucune métadonnée pour les retrouver. Une
+    # erreur Qdrant répond désormais 500 et la ligne reste : l'état demeure
+    # réparable en réessayant.
+    from app.services.retrait_index import retirer_de_lindex
 
-        await session.delete(file_meta)
-        await session.commit()
+    try:
+        await retirer_de_lindex(file_id_attendu=file_id)
+    except Exception as e:
+        logger.error(f"Retrait d'index en échec pour {file_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Le retrait de l'index a échoué, rien n'a été supprimé - réessaie.",
+        )
 
     return {"deleted": True, "id": file_id}
 
@@ -561,90 +256,34 @@ async def upload_file(
     # Sauvegarder le fichier (copie disque hors boucle d'événements - finding F3
     # de la revue du 27/07 : une pièce jointe de projet volumineuse gelait
     # l'application exactement comme l'indexation du chat).
+    # Dépôt + indexation par le service central (0.45) : la copie disque
+    # entre SOUS le verrou du chemin - elle se faisait avant toute prise de
+    # verrou, et ce pipeline maison dupliquait le cœur avec deux défauts :
+    # transaction longue pendant l'extraction, et vecteurs supprimés AVANT que
+    # le nouveau contenu soit prêt (l'inverse de l'invariant N1). Déposer un
+    # fichier DANS un projet est un geste explicite : périmètre voulu.
     dest_path = therese_dir / file.filename
 
     def _copier_sur_disque() -> None:
-        with dest_path.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
+        # Écriture ATOMIQUE : une erreur de copie ne doit jamais tronquer le
+        # fichier en place pendant que son index reste servi (revue jalon).
+        temporaire = dest_path.with_name(dest_path.name + ".therese-tmp")
+        try:
+            with temporaire.open("wb") as f:
+                shutil.copyfileobj(file.file, f)
+            os.replace(temporaire, dest_path)
+        finally:
+            temporaire.unlink(missing_ok=True)
 
-    try:
-        await run_in_threadpool(_copier_sur_disque)
-    except Exception as e:
-        logger.error(f"Erreur sauvegarde fichier : {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde du fichier")
+    async def _deposer() -> None:
+        try:
+            await run_in_threadpool(_copier_sur_disque)
+        except Exception as e:
+            logger.error(f"Erreur sauvegarde fichier : {e}")
+            raise HTTPException(
+                status_code=500, detail="Erreur lors de la sauvegarde du fichier"
+            )
 
-    # Récupérer les métadonnées
-    metadata = get_file_metadata(dest_path)
-
-    # Créer ou mettre à jour l'entrée en base
-    result = await session.execute(
-        select(FileMetadata).where(FileMetadata.path == str(dest_path))
-    )
-    existing = result.scalar_one_or_none()
-
-    if existing:
-        qdrant = get_qdrant_service()
-        await qdrant.async_delete_by_entity(existing.id)
-        existing.size = metadata["size"]
-        existing.mime_type = metadata["mime_type"]
-        existing.scope = "project"
-        existing.scope_id = project_id
-        # Déposer un fichier DANS un projet est un geste explicite : le
-        # périmètre qui en résulte est voulu, et aucun attachement ultérieur ne
-        # doit pouvoir le rectifier.
-        existing.scope_provisoire = False
-        existing.updated_at = datetime.now(UTC)
-        file_meta = existing
-    else:
-        file_meta = FileMetadata(
-            path=str(dest_path),
-            name=metadata["name"],
-            extension=metadata["extension"],
-            size=metadata["size"],
-            mime_type=metadata["mime_type"],
-            scope="project",
-            scope_id=project_id,
-        )
-        session.add(file_meta)
-        await session.flush()
-
-    # Extraire et indexer le contenu (hors boucle d'événements - finding F3)
-    text_content = await extract_text_async(dest_path)
-    if text_content:
-        chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
-        qdrant = get_qdrant_service()
-        # Contre-vérification Soso : ce chemin construisait son propre payload,
-        # sans `scope`. Le document était alors pris pour un document global et
-        # pouvait ressortir dans un autre projet.
-        items = construire_items_indexation(
-            chunks=chunks,
-            file_id=file_meta.id,
-            file_name=file_meta.name,
-            chemin=str(dest_path),
-            scope="project",
-            scope_id=project_id,
-        )
-        if items:
-            await qdrant.async_add_memories(items)
-            logger.info(f"Indexé {len(chunks)} chunks pour {file_meta.name} (projet {project_id})")
-        file_meta.chunk_count = len(chunks)
-    else:
-        file_meta.chunk_count = 0
-
-    file_meta.indexed_at = datetime.now(UTC)
-    await session.commit()
-    await session.refresh(file_meta)
-
-    return FileResponse(
-        id=file_meta.id,
-        path=file_meta.path,
-        name=file_meta.name,
-        extension=file_meta.extension,
-        size=file_meta.size,
-        mime_type=file_meta.mime_type,
-        chunk_count=file_meta.chunk_count,
-        indexed_at=file_meta.indexed_at,
-        created_at=file_meta.created_at,
-        scope=file_meta.scope,
-        scope_id=file_meta.scope_id,
+    return await remplacer_puis_indexer(
+        str(dest_path), _deposer, scope="project", scope_id=project_id,
     )

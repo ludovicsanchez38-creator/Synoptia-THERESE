@@ -595,3 +595,13 @@ export {
   type DocumentExportResponse,
   type ReorderConflictBody,
 } from './documents';
+
+export {
+  appliquerPlanSync,
+  definirRacineSync,
+  etatSync,
+  journalSync,
+  preparerPlanSync,
+  retirerRacineSync,
+} from './projectSync';
+export type { SyncEtat, SyncOperation, SyncPlan } from './projectSync';
