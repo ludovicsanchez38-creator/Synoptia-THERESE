@@ -36,5 +36,37 @@ jobs:
         shell: bash
         # --timeout par test relevé à 60 s : les runners Windows sont plus
         # lents que les Linux, un seuil calé sur Linux fabriquerait des flakes.
-        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider
+        # JUnit XML obligatoire : la sortie console est tronquée par le
+        # os._exit du teardown, le résumé des échecs n'apparaît jamais.
+        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows.xml
         timeout-minutes: 20
+
+      - name: Bilan des échecs (lisible même quand la console est tronquée)
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PYEOF'
+          import xml.etree.ElementTree as ET
+          try:
+              r = ET.parse("junit-windows.xml").getroot()
+          except Exception as e:
+              print(f"::warning::junit-windows.xml illisible : {e}")
+              raise SystemExit(0)
+          s = r.find("testsuite") if r.tag == "testsuites" else r
+          print(f"tests={s.get('tests')} echecs={s.get('failures')} erreurs={s.get('errors')} skip={s.get('skipped')}")
+          for tc in s.iter("testcase"):
+              probleme = tc.find("failure")
+              if probleme is None:
+                  probleme = tc.find("error")
+              if probleme is not None:
+                  print(f"::error::ECHEC {tc.get('classname')}::{tc.get('name')}")
+                  print((probleme.text or "")[:800])
+          PYEOF
+
+      - name: Publier le rapport JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-windows
+          path: junit-windows.xml
+          retention-days: 14
