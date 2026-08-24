@@ -17,7 +17,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import all models to ensure they're registered with SQLModel.metadata
 from app.config import settings  # noqa: E402
-from app.models import entities, entities_agents  # noqa: F401, E402
+from app.models import (  # noqa: F401, E402
+    entities,
+    entities_agents,
+    entities_sync,
+    processing,
+)
 from app.services import audit  # noqa: F401, E402 - ActivityLog
 
 # Alembic Config object

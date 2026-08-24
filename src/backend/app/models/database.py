@@ -333,7 +333,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "d9e0f1a2b3c4"
+ALEMBIC_HEAD_REVISION = "e5f6a7b8c9d0"
 
 
 def ensure_alembic_stamp(db_path) -> None:
@@ -674,6 +674,7 @@ async def init_db() -> None:
     from app.models import (
         entities,  # noqa: F401
         entities_agents,  # noqa: F401 - Agent system tables
+        entities_sync,  # noqa: F401 - project.sync (0.45)
         processing,  # noqa: F401 - Traitements longs (J1a)
     )
     from app.services import audit  # noqa: F401 - ActivityLog model
