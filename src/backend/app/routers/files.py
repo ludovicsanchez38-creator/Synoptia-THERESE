@@ -13,12 +13,10 @@ from app.models.database import get_session, get_session_context
 from app.models.entities import FileMetadata
 from app.models.schemas import FileIndexRequest, FileResponse
 from app.services.indexation import (
-    _verrou_de_chemin,
     extract_text_async,
     index_payload,
     remplacer_puis_indexer,
 )
-from app.services.qdrant import get_qdrant_service
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -148,20 +146,22 @@ async def delete_file(
     if not file_meta:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Contre-vérification du 27/07 (N2) : sans ce verrou, la suppression pouvait
-    # s'intercaler pendant une indexation du même fichier - la ligne disparaissait
-    # et l'indexation écrivait ensuite ses vecteurs, restés orphelins.
-    async with _verrou_de_chemin(file_meta.path):
-        # Remove embeddings from Qdrant
-        try:
-            qdrant = get_qdrant_service()
-            deleted_count = await qdrant.async_delete_by_entity(file_id)
-            logger.info(f"Deleted {deleted_count} embeddings for file {file_id}")
-        except Exception as e:
-            logger.warning(f"Failed to delete embeddings: {e}")
+    # 0.45 : retrait par le service fail-closed. CHANGEMENT VOLONTAIRE de
+    # comportement sur erreur : l'ancien code avalait l'échec Qdrant puis
+    # supprimait quand même la ligne - des vecteurs orphelins restaient servis
+    # par la recherche, sans plus aucune métadonnée pour les retrouver. Une
+    # erreur Qdrant répond désormais 500 et la ligne reste : l'état demeure
+    # réparable en réessayant.
+    from app.services.retrait_index import retirer_de_lindex
 
-        await session.delete(file_meta)
-        await session.commit()
+    try:
+        await retirer_de_lindex(file_id_attendu=file_id)
+    except Exception as e:
+        logger.error(f"Retrait d'index en échec pour {file_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Le retrait de l'index a échoué, rien n'a été supprimé - réessaie.",
+        )
 
     return {"deleted": True, "id": file_id}
 
