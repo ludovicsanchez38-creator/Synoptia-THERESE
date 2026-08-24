@@ -1,8 +1,8 @@
 # Traitements longs (0.46) - voir, suivre et arrêter, sans mentir
 
-> **Design V2 du 24/08/2026** - après challenge Soso de la V1 (10 findings,
-> « à reprendre », tous intégrés ; liste des corrections en fin de document).
-> À re-challenger avant le code.
+> **Design V2.1 du 24/08/2026** - V1 challengée (10 findings, « à
+> reprendre »), V2 contre-challengée (VIABLE, 5 corrections intégrées
+> ci-dessous). Le code peut démarrer.
 
 ## Le vocabulaire d'abord (finding 1)
 
@@ -40,7 +40,10 @@ Aucun système ne fait cesser instantanément le calcul d'un fournisseur
 cloud. La promesse tenable, et tenue : **THÉRÈSE cesse d'attendre, ferme le
 transport quand c'est possible, et interdit tout effet local ultérieur.**
 L'interface distingue « Arrêter » de « Arrêt demandé - fin de l'étape en
-cours ».
+cours ». Précision V2.1 sur les outils : la garantie MVP est « aucune
+NOUVELLE étape lancée ; une étape non interruptible déjà en cours (thread,
+MCP) peut finir » - le fencing avant commit des outils mutateurs est un
+chantier 0.47, pas une promesse implicite.
 
 ## Architecture
 
@@ -61,9 +64,17 @@ await handle.terminer(etat, error=...)  # SEUL le producteur décide l'état
 
 ### Annulation - l'autorité est au producteur (finding 4)
 
-`POST /api/processing-tasks/{id}/cancel` fait UNE chose : transition
-atomique `running|queued -> cancel_requested` + transmission à l'adaptateur
-s'il est vivant. Il n'écrit JAMAIS `cancelled` ni `interrupted` :
+`POST /api/processing-tasks/{id}/cancel` (corrections V2.1) :
+- `queued` → CAS atomique direct vers `cancelled` (un producteur ne peut
+  plus la faire passer `running` ensuite : le démarrage vérifie l'état) -
+  sans cela une tâche jamais démarrée resterait `cancel_requested` pour
+  toujours ;
+- `running` → transition atomique vers `cancel_requested` + transmission à
+  l'adaptateur s'il est vivant ; `lier_adaptateur()` REJOUE une demande
+  arrivée avant l'enrôlement (fenêtre de course fermée) ;
+- `can_cancel` devient FAUX dès la demande posée (plus « adaptateur
+  vivant » seul) ;
+- il n'écrit JAMAIS `cancelled` sur une running, ni `interrupted` :
 - `cancelled` : posé par le producteur, après son nettoyage réel ;
 - `interrupted` : réservé au redémarrage (existant) ;
 - l'absence d'adaptateur ne prouve rien (fenêtre d'enregistrement,
@@ -83,16 +94,21 @@ s'il est vivant. Il n'écrit JAMAIS `cancelled` ni `interrupted` :
 - `POST /api/processing-tasks/{id}/cancel` - 404 inconnue, 409 terminale,
   200 `{state, transmise}`.
 
-### Chat : une ligne PAR GÉNÉRATION LLM (finding 8.4)
+### Chat : une ligne PAR GÉNÉRATION LLM (finding 8.4, convergence V2.1)
 
-- identité unique par génération (`generation_id`), le registre d'annulation
-  converge dessus - plus d'indexation par conversation seule ;
+- **`ProcessingTask.id` EST le `generation_id`** ; le SSE émet
+  `conversation_id` + `generation_id` dès le premier événement ;
+- `/api/chat/cancel/{conversation_id}` reste une FAÇADE compatible (le
+  frontend J1b déployé envoie un conversation_id) : elle résout la
+  génération active de la conversation puis appelle le service canonique ;
 - la ligne est créée IMMÉDIATEMENT (des centaines de petites lignes ne
   gênent pas SQLite) ; les commandes déterministes `{action: ...}` n'en
   créent JAMAIS (ce sont des navigations instantanées, pas des traitements) ;
-- le seuil de 2 s est un seuil de VISIBILITÉ côté panneau : masquer les
-  générations actives < 2 s et les succès < 2 s, toujours montrer échecs et
-  annulations. JAMAIS de création différée (courses fin/annulation) ;
+- le seuil de 2 s est un seuil de VISIBILITÉ filtré CÔTÉ SERVEUR, avant
+  `limit`, UNIQUEMENT pour les types `chat` et `deep-research` : actives
+  masquées si `now - created_at < 2 s`, succès masqués si
+  `finished_at - created_at < 2 s` ; échecs et annulations TOUJOURS
+  visibles. JAMAIS de création différée (courses fin/annulation) ;
 - sur annulation : persister le message partiel en base, puis `cancelled`.
 
 ### Frontend
@@ -103,8 +119,10 @@ s'il est vivant. Il n'écrit JAMAIS `cancelled` ni `interrupted` :
 - `TraitementsIndicator` (badge) + `TraitementsPanel` : label, étape,
   progression, bouton Arrêter si `can_cancel`, état « Arrêt demandé - fin
   de l'étape en cours » après le clic ;
-- TOUS les boutons Stop existants (chat, Atelier, Board) passent par le
-  même service d'annulation.
+- les boutons Stop du chat et de l'Atelier passent par le service
+  d'annulation canonique ; celui du Board GARDE son mécanisme existant
+  (fermeture de flux) jusqu'à son enrôlement en 0.47 - pas de façade
+  précipitée sur le producteur le plus résistant.
 
 ## Séquencement - prouver le cycle avant de généraliser (finding 9)
 
@@ -117,7 +135,10 @@ Le MVP enrôle TROIS producteurs, du plus simple au plus dur, et s'arrête là :
    terminal posé sur TOUS les chemins. C'est le banc d'essai du patron.
 3. **Atelier** (le plus facile : `asyncio.Task` + finally existants) :
    ProcessingTask lié à `agent_tasks` (`entity_id` = agent_task.id), même
-   adaptateur pour le panneau et la route existante.
+   adaptateur pour le panneau et la route existante. Tests exigés :
+   annulation par le panneau ET par la route historique, déconnexion du
+   client pendant la mission, cohérence des états `AgentTask` /
+   `ProcessingTask` sur tous les chemins de sortie.
 4. **Chat** (le plus dur sémantiquement) : generation_id, ligne par
    génération, garde après outil, message partiel persisté, deep-research
    inclus, tests d'absence d'écriture tardive (fournisseur bloqué, outil
