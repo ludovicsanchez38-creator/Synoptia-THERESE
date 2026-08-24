@@ -35,7 +35,8 @@ from app.models.entities_sync import (
     SyncPlan,
     TypeOperation,
 )
-from app.models.processing import EtatTache, ProcessingTask
+from app.models.processing import EtatTache as EtatTacheTraitement
+from app.models.processing import ProcessingTask
 from app.services import indexation, retrait_index, task_registry
 from app.services.project_sync import calculer_diff, scanner_racine
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -350,29 +351,59 @@ async def _valider_plan_applicable(project_id: str, plan_id: str) -> ProjectSync
 async def _appliquer_sous_verrou(
     project_id: str, plan_id: str, *, deja_valide: bool = False
 ) -> None:
+    from app.services import traitements
+
     root = await _valider_plan_applicable(project_id, plan_id)
 
     await _marquer_plan(plan_id, EtatPlan.EN_COURS)
-    task_id = await _creer_run(project_id, plan_id, root)
+    # 0.46 : le run est un TraitementHandle - banc d'essai du patron
+    # (finding 5 : sans try/finally, une exception hors boucle laissait la
+    # ligne `running` fantôme jusqu'au prochain redémarrage).
+    handle = await traitements.creer_traitement(
+        type="project_sync",
+        label=f"Synchronisation de {Path(root.racine).name}",
+        project_id=project_id,
+        entity_id=plan_id,
+    )
+    await handle.demarrer()
+    # Adaptateur coopératif : l'état durable cancel_requested EST le drapeau,
+    # consulté entre deux opérations - le point d'arrêt sûr de cette famille.
+    await handle.lier_adaptateur(
+        task_registry.AnnulationCooperative(poser_drapeau=lambda: None)
+    )
 
-    operations = [
-        o for o in await lire_operations(plan_id)
-        if o.etat in (EtatOperation.A_FAIRE, EtatOperation.ECHEC)
-        and o.type != TypeOperation.CONFLIT
-    ]
-    faites = 0
-    echecs = 0
-    for operation in operations:
-        try:
-            await _executer_operation(project_id, root, operation)
-            faites += 1
-        except Exception as e:  # l'échec d'une opération n'arrête pas le plan
-            echecs += 1
-            await _consigner_operation(
-                operation.id, EtatOperation.ECHEC, erreur=str(e)[:500]
+    interrompu = False
+    try:
+        operations = [
+            o for o in await lire_operations(plan_id)
+            if o.etat in (EtatOperation.A_FAIRE, EtatOperation.ECHEC)
+            and o.type != TypeOperation.CONFLIT
+        ]
+        faites = 0
+        echecs = 0
+        for operation in operations:
+            if await handle.annulation_demandee():
+                # Ce qui est fait reste fait ; le reste attend un nouvel
+                # apply. Le producteur pose cancelled APRÈS sa sortie réelle.
+                interrompu = True
+                break
+            try:
+                await _executer_operation(project_id, root, operation)
+                faites += 1
+            except Exception as e:  # l'échec d'une opération n'arrête pas le plan
+                echecs += 1
+                await _consigner_operation(
+                    operation.id, EtatOperation.ECHEC, erreur=str(e)[:500]
+                )
+                logger.warning(
+                    "Opération sync en échec (%s): %s", operation.chemin, e
+                )
+            await handle.progresser(
+                progress=(faites + echecs) / max(len(operations), 1)
             )
-            logger.warning("Opération sync en échec (%s): %s", operation.chemin, e)
-        await _progresser(task_id, (faites + echecs) / max(len(operations), 1))
+    except BaseException:
+        await handle.terminer(EtatTacheTraitement.FAILED, error="exception hors boucle")
+        raise
 
     finales = [
         o for o in await lire_operations(plan_id)
@@ -390,7 +421,15 @@ async def _appliquer_sous_verrou(
     )
     restantes = [o for o in finales if o.etat == EtatOperation.ECHEC]
     await _finaliser_plan(plan_id, etat_final)
-    await _terminer_run(task_id, en_echec=bool(restantes))
+    if interrompu:
+        await handle.terminer(EtatTacheTraitement.CANCELLED)
+    elif restantes:
+        await handle.terminer(
+            EtatTacheTraitement.FAILED,
+            error=f"{len(restantes)} opération(s) en échec, réessayables",
+        )
+    else:
+        await handle.terminer(EtatTacheTraitement.DONE)
 
 
 async def _executer_operation(
@@ -696,43 +735,3 @@ async def _supprimer_entree(project_id: str, chemin: str) -> None:
             await session.commit()
 
 
-async def _creer_run(
-    project_id: str, plan_id: str, root: ProjectSyncRoot
-) -> str:
-    async with get_session_context() as session:
-        tache = ProcessingTask(
-            type="project_sync",
-            label=f"Synchronisation de {Path(root.racine).name}",
-            state=EtatTache.RUNNING,
-            project_id=project_id,
-            entity_id=plan_id,
-            run_instance_id=task_registry.instance_courante(),
-            started_at=datetime.now(UTC),
-        )
-        session.add(tache)
-        await session.commit()
-        await session.refresh(tache)
-        return str(tache.id)
-
-
-async def _progresser(task_id: str, progression: float) -> None:
-    async with get_session_context() as session:
-        resultat = await session.execute(
-            select(ProcessingTask).where(ProcessingTask.id == task_id)
-        )
-        tache = resultat.scalar_one_or_none()
-        if tache is not None:
-            tache.progress = progression
-            await session.commit()
-
-
-async def _terminer_run(task_id: str, *, en_echec: bool) -> None:
-    async with get_session_context() as session:
-        resultat = await session.execute(
-            select(ProcessingTask).where(ProcessingTask.id == task_id)
-        )
-        tache = resultat.scalar_one_or_none()
-        if tache is not None:
-            tache.state = EtatTache.FAILED if en_echec else EtatTache.DONE
-            tache.finished_at = datetime.now(UTC)
-            await session.commit()

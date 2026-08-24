@@ -7,6 +7,8 @@ import logging
 
 from app.models.processing import EtatTache
 from app.services import traitements
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 logger = logging.getLogger(__name__)
@@ -15,12 +17,12 @@ router = APIRouter()
 
 
 @router.get("")
-async def lister(actives: bool | None = None, limit: int = 50) -> dict:
+async def lister(actives: bool | None = None, limit: int = 50) -> dict[str, Any]:
     return {"traitements": await traitements.lister(actives=actives, limit=limit)}
 
 
 @router.post("/{task_id}/cancel")
-async def annuler(task_id: str) -> dict:
+async def annuler(task_id: str) -> dict[str, Any]:
     resultat = await traitements.demander_arret(task_id)
     if resultat is None:
         raise HTTPException(status_code=404, detail="Traitement inconnu.")

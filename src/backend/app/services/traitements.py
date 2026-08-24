@@ -275,7 +275,7 @@ async def purger_les_terminees(*, retention_jours: int = 30) -> int:
     return len(anciennes)
 
 
-async def _ligne(session, task_id: str) -> ProcessingTask | None:
+async def _ligne(session: Any, task_id: str) -> ProcessingTask | None:
     resultat = await session.execute(
         select(ProcessingTask).where(ProcessingTask.id == task_id)
     )
