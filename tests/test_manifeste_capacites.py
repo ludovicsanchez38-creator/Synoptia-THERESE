@@ -328,3 +328,111 @@ class TestLEmpreinteDetecteLesGenerationsDivergentes:
         assert corps["schema"] >= 1
         assert len(corps["empreinte"]) >= 16
         assert corps["nombre_capacites"] > 0
+
+
+class TestUnManifesteInvalideNeCassePasLAide:
+    """Revue 0.44, seconde passe : la validation laissait passer des manifestes
+    qui faisaient planter `/aide` plus loin.
+
+    Reproductions de la revue, contre-vérifiées : un point d'entrée sans `id`
+    passait la validation puis levait KeyError dans `available_actions_text` ;
+    une capacité avec `"textes": null` passait puis levait TypeError dans
+    `texte()`. Le fail-open annoncé n'était donc pas acquis. Ces tests valident
+    CHAQUE champ que les consommateurs lisent réellement.
+    """
+
+    def _base(self) -> dict:
+        return {"schema": 1, "capacites": [], "points_entree": []}
+
+    def test_un_point_sans_id_est_refuse(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["points_entree"] = [
+            {"type": "vue", "capacites": [], "binding": {"registre": "vue", "view": "email"}}
+        ]
+
+        assert not _structure_valide(manifeste), (
+            "`available_actions_text` et `acces_principal` lisent p['id'] "
+            "directement : sans id, KeyError au premier /aide"
+        )
+
+    def test_des_textes_null_sont_refuses(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["capacites"] = [{"id": "x", "entrees": [], "textes": None}]
+
+        assert not _structure_valide(manifeste), (
+            "texte() enchaîne .get sur textes : null lève TypeError"
+        )
+
+    def test_des_textes_non_dict_par_langue_sont_refuses(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["capacites"] = [
+            {"id": "x", "entrees": [], "textes": {"fr-FR": "Accueil"}}
+        ]
+
+        assert not _structure_valide(manifeste), (
+            "texte() fait textes[langue].get(champ) : une chaîne à la place "
+            "du dictionnaire lève AttributeError"
+        )
+
+    def test_un_id_de_capacite_non_texte_est_refuse(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["capacites"] = [{"id": 7, "entrees": []}]
+
+        assert not _structure_valide(manifeste)
+
+    def test_une_entree_non_texte_est_refusee(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["capacites"] = [{"id": "x", "entrees": [None]}]
+
+        assert not _structure_valide(manifeste)
+
+    def test_un_binding_vue_sans_view_est_refuse(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = self._base()
+        manifeste["points_entree"] = [
+            {"id": "p", "capacites": [], "type": "vue", "binding": {"registre": "vue"}}
+        ]
+
+        assert not _structure_valide(manifeste)
+
+    def test_le_parcours_complet_degrade_sans_500(self, tmp_path, monkeypatch):
+        """Le vrai contrat : manifeste invalide → manifeste vide → aide
+        dégradée, jamais une exception qui remonte au chat."""
+        import json as json_module
+
+        from app.services import capacites as module
+        from app.services.chat_actions import available_actions_text
+
+        invalide = tmp_path / "invalide.json"
+        invalide.write_text(
+            json_module.dumps({
+                "schema": 1,
+                "capacites": [{"id": "x", "entrees": ["p"], "textes": None}],
+                "points_entree": [
+                    {"type": "vue", "capacites": ["x"],
+                     "binding": {"registre": "vue", "view": "email"}}
+                ],
+            }),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(module, "CHEMIN_MANIFESTE", invalide)
+        module.charger_manifeste.cache_clear()
+
+        assert module.charger_manifeste() == module._MANIFESTE_VIDE
+
+        aide = available_actions_text()
+        assert isinstance(aide, str) and "{action:" in aide, (
+            "l'aide doit retomber sur la forme brute, dégradée mais jamais absente"
+        )
+        assert module.acces_principal("x") is None
