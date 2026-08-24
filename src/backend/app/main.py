@@ -189,6 +189,19 @@ async def lifespan(app: FastAPI):
             reprises = await recuperer_taches_orphelines(session)
         if reprises:
             logger.info(f"Traitements interrompus repris : {reprises}")
+        # project.sync (0.45) : marquer `interrupted` ne relance RIEN - les
+        # plans restés `en_cours` sont repris par un récupérateur dédié,
+        # APRÈS l'initialisation de Qdrant, en tâche de fond référencée.
+        from app.services.project_sync_service import (
+            _applies_en_cours,
+            reprendre_applies_orphelins,
+        )
+
+        reprise_sync = asyncio.get_running_loop().create_task(
+            reprendre_applies_orphelins()
+        )
+        _applies_en_cours.add(reprise_sync)
+        reprise_sync.add_done_callback(_applies_en_cours.discard)
     except Exception as e:
         # Un ménage de démarrage ne doit jamais empêcher l'application de
         # se lancer : au pire les tâches restent affichées comme actives.
@@ -728,6 +741,9 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # Include routers
 app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
+from app.routers.project_sync import router as project_sync_router  # noqa: E402
+
+app.include_router(project_sync_router, prefix="/api/projects", tags=["ProjectSync"])
 app.include_router(files_router, prefix="/api/files", tags=["Files"])
 app.include_router(config_router, prefix="/api/config", tags=["Config"])
 app.include_router(skills_router, prefix="/api/skills", tags=["Skills"])

@@ -953,6 +953,12 @@ async def delete_project(
         project_id: ID of the project to delete
         cascade: If True, also delete scoped files
     """
+    # project.sync (0.45) : ménage explicite - les FK SQLite ne sont pas
+    # activées, une racine orpheline bloquerait ce dossier pour toujours.
+    from app.services.project_sync_service import retirer_racine
+
+    await retirer_racine(project_id)
+
     result = await session.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
 
