@@ -21,7 +21,7 @@ from pathlib import Path
 _SECRET_PATTERNS = re.compile(
     r"("
     r"(?:api[_-]?key|token|password|secret|auth|credential|private[_-]?key|access[_-]?key)"
-    r"\s*[:=\s]\s*"
+    r"\s*[:=]\s*"
     r")"
     r"(['\"]?[A-Za-z0-9+/=_\-]{8,}['\"]?)",
     re.IGNORECASE,
@@ -39,7 +39,7 @@ _SECRET_PATTERNS = re.compile(
 # fuit dans un rapport de bug colle sur Discord est compromise, quel que soit
 # son emetteur.
 _BARE_SECRET_PATTERNS = re.compile(
-    r"("
+    r"(?<![A-Za-z0-9])("
     # Seuil bas assume : tres peu de texte francais ou anglais commence par
     # « sk- », alors qu'une cle tronquee dans un message d'erreur reste une cle.
     r"sk-[A-Za-z0-9_\-]{8,}"           # OpenAI, y compris sk-proj- et sk-ant-
