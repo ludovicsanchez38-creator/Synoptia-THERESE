@@ -1,119 +1,171 @@
-# Registre de tâches (0.46) - voir, suivre et arrêter les traitements longs
+# Traitements longs (0.46) - voir, suivre et arrêter, sans mentir
 
-> Design V1 du 24/08/2026, À CHALLENGER par Soso avant toute ligne de code.
-> Reprend le socle A du plan 0.42 (suggestions 1, 2, 12), corrigé par ce qui
-> existe DÉJÀ : `ProcessingTask` + `task_registry` (31/07), le Stop du chat
-> câblé frontend→backend (J1b, 31/07), project.sync enrôlé (0.45).
+> **Design V2 du 24/08/2026** - après challenge Soso de la V1 (10 findings,
+> « à reprendre », tous intégrés ; liste des corrections en fin de document).
+> À re-challenger avant le code.
 
-## Le manque, constaté dans le code au 24/08
+## Le vocabulaire d'abord (finding 1)
 
-| Existant | Trou |
-|---|---|
-| `POST /api/chat/cancel` câblé depuis l'interface (J1b) | le drapeau n'est consulté qu'ENTRE deux chunks (`chat.py`) : ni dans la boucle fournisseur, ni autour des outils ; une sortie anticipée saute la finalisation des métriques |
-| `ProcessingTask` (durable) + `task_registry` (runtime, 4 adaptateurs définis) | UN seul producteur (project.sync) ; personne d'autre n'appelle `inscrire()` ; aucune route ne LISTE les tâches ; rien à montrer |
-| `agent_tasks` (Atelier, cycle de vie persisté) | pas de lien avec `processing_tasks` ; `ActionRunner` marque `CANCELLED` alors que le flux LLM continue (mensonge à ne pas généraliser) |
-| `statusStore.progress` (frontend) | slot déclaré, JAMAIS alimenté |
-| 4 registres mémoire séparés (`_active_generations`, `_running_agent_tasks`, `ActionRunner._tasks`, flux Board) | aucune vue d'ensemble, annulations hétérogènes |
+« Tâches » est PRIS : `/api/tasks`, `taskStore`, `TasksPanel` sont les todos
+métier. Ce chantier parle de **traitements** :
+route `/api/processing-tasks`, store `useProcessingTasksStore`, panneau
+`TraitementsPanel`. Aucune collision.
 
-## Contrat produit (MVP 0.46)
+## État des lieux exact (finding 2, corrigé)
 
-1. **Une surface Traitements** : un indicateur discret dans la coque (badge
-   n tâches actives) ouvre un panneau listant les traitements actifs et les
-   N derniers terminés - label lisible, étape, progression quand elle est
-   mesurable, bouton Arrêter quand un adaptateur vivant existe.
-2. **Arrêter dit la vérité** : `cancel_requested` tant que l'arrêt n'est pas
-   CONFIRMÉ par l'adaptateur ; `cancelled` seulement quand le travail est
-   réellement coupé. La sémantique mensongère d'ActionRunner est CORRIGÉE,
-   pas généralisée.
-3. **Le Stop du chat arrête le compteur** : le drapeau est consulté dans la
-   boucle de consommation du flux fournisseur ET avant chaque exécution
-   d'outil ; la sortie anticipée finalise les métriques et l'état durable
-   APRÈS le nettoyage runtime.
-4. **Cinq producteurs enrôlés** : chat, indexation de fichiers, missions
-   Atelier, décisions Board, actions `{action: ...}` - chacun via
-   l'adaptateur de SA famille (jamais une mécanique inventée). project.sync
-   l'est déjà.
-5. **Récupération au redémarrage** : déjà en place (`interrupted`) - les
-   nouveaux producteurs en héritent gratuitement.
+Le Stop du chat est DÉJÀ profond (J1b, 31/07) : surveillant d'annulation en
+concurrence avec `__anext__()` du producteur, fermeture du générateur,
+métriques finalisées, garde avant chaque outil et avant la première écriture
+durable, nettoyage en `finally`. Sémantique du drapeau :
+`_active_generations[id] = True` signifie « annulation demandée ».
+
+Les VRAIS trous :
+- pas de garde APRÈS l'outil ; un outil lancé (thread, MCP) peut poursuivre
+  ses effets après l'annulation de la coroutine ;
+- le message partiel n'est pas persisté en base sur annulation ;
+- le registre est indexé par `conversation_id`, pas par GÉNÉRATION unique ;
+- `deep-research` est un long flux chat séparé (chat.py:840) : il est INCLUS
+  dans ce chantier (même mécanique, type `deep-research`).
+
+`task_registry` : complet côté runtime mais **zéro producteur en
+production** (seuls les tests appellent `inscrire()`). project.sync est
+producteur DURABLE seulement - et il est mal fini : pas de try/finally
+autour du run, une exception hors boucle laisse la ligne `running` jusqu'au
+redémarrage (finding 5). `statusStore.progress` n'est lu par personne :
+suppression sûre, en nettoyage séparé.
+
+## La promesse réaliste (finding 9)
+
+Aucun système ne fait cesser instantanément le calcul d'un fournisseur
+cloud. La promesse tenable, et tenue : **THÉRÈSE cesse d'attendre, ferme le
+transport quand c'est possible, et interdit tout effet local ultérieur.**
+L'interface distingue « Arrêter » de « Arrêt demandé - fin de l'étape en
+cours ».
 
 ## Architecture
 
-### Durable - `ProcessingTask` (table existante, AUCUNE colonne ajoutée)
-Les types s'étendent par convention de chaîne : `chat`, `indexation`,
-`atelier`, `board`, `action`, `project_sync` (existant). `entity_id` porte
-l'identifiant métier (conversation, fichier, mission, décision).
+### `TraitementHandle` - explicite, jamais magique (finding 7)
 
-### Runtime - `task_registry` (existant)
-`inscrire(task_id, adaptateur)` à l'entrée du traitement, `retirer()` en
-finally. Adaptateurs par famille, DÉJÀ définis dans le module :
-- chat → `AnnulationParDrapeauCooperatif` (pose `_active_generations[id] = False`) ;
-- indexation → drapeau coopératif (le `est_abandonnee` existant) ;
-- Atelier → `AnnulationParTacheAsyncio` (le `.cancel()` déjà éprouvé d'`agents.py`) ;
-- Board → fermeture de flux ;
-- actions → drapeau coopératif de l'`ActionRunner`, MAIS l'état durable ne
-  passe `cancelled` qu'à la sortie effective de la boucle.
+Les familles n'ont ni leur session DB, ni leur identifiant métier, ni la
+même signification de `CancelledError` au même moment. Pas de context
+manager qui infère l'état terminal :
 
-### Cycle de vie type d'un producteur
+```python
+handle = await creer_traitement(type, label, project_id=..., conversation_id=...)
+handle.lier_adaptateur(adaptateur)      # inscrit au registre runtime
+await handle.progresser(step=..., progress=...)
+await handle.terminer(etat, error=...)  # SEUL le producteur décide l'état
+# + un mini context manager optionnel qui garantit UNIQUEMENT le retrait
+# runtime (pas l'état terminal)
 ```
-row = creer_processing_task(type, label, ...)   # queued -> running
-task_registry.inscrire(row.id, adaptateur)
-try:    ... travail, MAJ progress/step par transactions courtes ...
-finally:
-    task_registry.retirer(row.id)
-    finaliser(row.id, done|failed|cancelled)     # l'état durable EN DERNIER
-```
-Un helper unique `app/services/traitements.py` porte ce squelette
-(`ouvrir_traitement()` context manager async) pour que les cinq producteurs
-n'aient pas cinq variantes.
+
+### Annulation - l'autorité est au producteur (finding 4)
+
+`POST /api/processing-tasks/{id}/cancel` fait UNE chose : transition
+atomique `running|queued -> cancel_requested` + transmission à l'adaptateur
+s'il est vivant. Il n'écrit JAMAIS `cancelled` ni `interrupted` :
+- `cancelled` : posé par le producteur, après son nettoyage réel ;
+- `interrupted` : réservé au redémarrage (existant) ;
+- l'absence d'adaptateur ne prouve rien (fenêtre d'enregistrement,
+  traitement non annulable, nettoyage en cours) - la réponse dit juste
+  `transmise: true|false` ;
+- résultat d'adaptateur STRUCTURÉ : `accepted | stopped | unavailable`
+  (le booléen actuel est ambigu) ;
+- un `cancel_requested` arrivé trop tard est résolu par le producteur :
+  il termine `done` si le travail était déjà fini (et le dit).
 
 ### API
-- `GET /api/tasks?actives=true|false&limit=` → tâches triées récentes
-  d'abord (état, label, step, progress, type, created/started/finished).
-- `POST /api/tasks/{id}/cancel` → 404 inconnu ; si adaptateur vivant :
-  `demander_annulation()` → confirmé = `cancelled`, non confirmé =
-  `cancel_requested` (200 avec l'état résultant) ; si plus vivant et état
-  actif → `interrupted` (le processus est mort) ; si terminal → 409.
+
+- `GET /api/processing-tasks?actives=true|false&limit=` - DTO : id, type,
+  label, state, step, progress, `can_cancel` (adaptateur vivant),
+  horodatages, error. Index sur `created_at` + rétention (purge des
+  terminées > 30 jours, au démarrage).
+- `POST /api/processing-tasks/{id}/cancel` - 404 inconnue, 409 terminale,
+  200 `{state, transmise}`.
+
+### Chat : une ligne PAR GÉNÉRATION LLM (finding 8.4)
+
+- identité unique par génération (`generation_id`), le registre d'annulation
+  converge dessus - plus d'indexation par conversation seule ;
+- la ligne est créée IMMÉDIATEMENT (des centaines de petites lignes ne
+  gênent pas SQLite) ; les commandes déterministes `{action: ...}` n'en
+  créent JAMAIS (ce sont des navigations instantanées, pas des traitements) ;
+- le seuil de 2 s est un seuil de VISIBILITÉ côté panneau : masquer les
+  générations actives < 2 s et les succès < 2 s, toujours montrer échecs et
+  annulations. JAMAIS de création différée (courses fin/annulation) ;
+- sur annulation : persister le message partiel en base, puis `cancelled`.
 
 ### Frontend
-- `tasksStore` (zustand) : liste + polling léger (3 s quand le panneau est
-  ouvert OU qu'une tâche active existe, sinon rien).
-- `TasksIndicator` dans la coque (badge) + `TasksPanel` (liste, Arrêter).
-- `statusStore.progress` : SUPPRIMÉ (slot jamais alimenté) - le panneau est
-  la seule vérité. Les 65 `Loader2` ad hoc restent en place (hors MVP).
 
-## Profondeur du Stop chat (le point technique dur)
+- `useProcessingTasksStore` : polling 3 s quand le panneau est ouvert OU
+  qu'une tâche active est connue ; 10-15 s sinon quand l'app est visible
+  (pas d'angle mort au démarrage) ;
+- `TraitementsIndicator` (badge) + `TraitementsPanel` : label, étape,
+  progression, bouton Arrêter si `can_cancel`, état « Arrêt demandé - fin
+  de l'étape en cours » après le clic ;
+- TOUS les boutons Stop existants (chat, Atelier, Board) passent par le
+  même service d'annulation.
 
-État : le flag n'est consulté qu'entre deux chunks émis au client. Cibles :
-1. consulter AVANT chaque exécution d'outil et juste APRÈS (un outil peut
-   durer des secondes) ;
-2. dans la boucle de consommation du flux fournisseur, à chaque événement
-   reçu (pas seulement à chaque chunk retransmis) ;
-3. sur sortie anticipée : fermer le flux fournisseur (`aclose`), finaliser
-   métriques et message partiel en base, PUIS l'état durable `cancelled` ;
-4. test rouge exigé (plan 0.42) : fournisseur bloqué → le producteur reçoit
-   l'arrêt, aucune écriture tardive, registre runtime nettoyé, état durable
-   terminal après nettoyage. Le test existant ne vérifie que le booléen.
+## Séquencement - prouver le cycle avant de généraliser (finding 9)
 
-## Atelier : lien, pas absorption
-`agent_tasks` garde branche/diff/événements. La mission crée AUSSI un
-`ProcessingTask` (type `atelier`, `entity_id` = agent_task.id) et l'annulation
-passe par le panneau comme par la route existante - même adaptateur.
+Le MVP enrôle TROIS producteurs, du plus simple au plus dur, et s'arrête là :
 
-## Hors périmètre 0.46 (explicite)
-`llm_usage`/temps par projet (J5), remplacement des 65 Loader2, barrière de
-restauration (la restauration reste le cas spécial documenté), reprise
-`resumable` (seul `interrupted` + réessayer manuel), watchers.
+1. **Fondation** : `TraitementHandle` + routes + rétention + DTO `can_cancel`
+   + résultat d'adaptateur structuré. TDD sur un producteur factice.
+2. **project.sync réparé** (finding 5) : try/finally autour du run,
+   enrôlement runtime (annulation d'un apply depuis le panneau), état
+   terminal posé sur TOUS les chemins. C'est le banc d'essai du patron.
+3. **Atelier** (le plus facile : `asyncio.Task` + finally existants) :
+   ProcessingTask lié à `agent_tasks` (`entity_id` = agent_task.id), même
+   adaptateur pour le panneau et la route existante.
+4. **Chat** (le plus dur sémantiquement) : generation_id, ligne par
+   génération, garde après outil, message partiel persisté, deep-research
+   inclus, tests d'absence d'écriture tardive (fournisseur bloqué, outil
+   lent).
+5. **Surface frontend** + bascule des boutons Stop existants.
 
-## Questions ouvertes pour le challenge
-1. Le polling 3 s suffit-il, ou le flux SSE existant du chat doit-il pousser
-   les changements de tâches (coût/complexité) ?
-2. `ouvrir_traitement()` context manager : quelle signature pour couvrir les
-   cinq familles sans devenir un fourre-tout ?
-3. Board : la « tâche » est-elle le flux SSE (annulé à la fermeture du
-   panneau ?) ou la décision en cours de génération ?
-4. Le chat crée-t-il une ProcessingTask PAR message (volume !) ou seulement
-   au-delà d'un seuil de durée ? Un row par message = des centaines de
-   lignes/jour ; proposition : créer la row à la volée seulement si la
-   génération dépasse 2 s, sinon rien.
-5. L'indexation en masse (dépôt de 30 fichiers) : une tâche par fichier ou
-   une tâche agrégée ?
+**Reportés à 0.47** (après preuve du cycle) : Board (le plus résistant :
+pas d'ID avant la sauvegarde, annulation couplée au panneau - il faudra un
+ProcessingTask.id créé avant le premier événement SSE), ActionRunner
+(corriger le mensonge CANCELLED en même temps que son enrôlement),
+indexation de fichiers (une tâche PAR fichier, arrêt différé assumé).
+
+## Hors périmètre (explicite)
+
+Remplacement des 65 Loader2, llm_usage/temps par projet, reprise
+`resumable`, watchers, barrière de restauration, SSE dédié aux traitements
+(le polling suffit au MVP).
+
+## Tests exigés
+
+- annulation pendant chaque phase du chat (avant outil, pendant outil lent,
+  entre chunks, après dernier chunk) → aucune écriture locale tardive,
+  message partiel persisté, état `cancelled` posé par le producteur ;
+- cancel sur tâche sans adaptateur → `cancel_requested` + `transmise: false`,
+  PAS `interrupted` ;
+- producteur qui finit pendant un `cancel_requested` → `done`, pas
+  d'écrasement ;
+- project.sync : exception hors boucle → ligne `failed`, jamais `running`
+  fantôme ; annulation d'un apply depuis le panneau → `cancelled` + reprise
+  possible par nouveau plan ;
+- rétention : les terminées > 30 j sont purgées, les actives jamais.
+
+## Révision V2 - ce que le challenge a changé
+
+1. Renommage complet (« traitements ») : `/api/tasks` et TasksPanel sont les
+   todos (collision bloquante).
+2. État des lieux du chat corrigé : J1b a déjà fait le travail profond, les
+   trous réels sont la garde post-outil, les effets threadés/MCP, le message
+   partiel et l'identité par génération - et la sémantique du drapeau était
+   INVERSÉE dans la V1.
+3. L'endpoint cancel ne pose plus jamais d'état terminal (l'autorité est au
+   producteur) ; `interrupted` réservé au redémarrage.
+4. `TraitementHandle` explicite au lieu du context manager magique.
+5. project.sync réparé EN PREMIER (try/finally manquant constaté).
+6. MVP resserré : 3 producteurs prouvés (project.sync, Atelier, chat) ;
+   Board, ActionRunner et indexation reportés à 0.47.
+7. Chat : ligne par génération immédiate + seuil de VISIBILITÉ (jamais de
+   création différée) ; `{action:...}` déterministes exclus ; deep-research
+   inclus.
+8. Résultat d'adaptateur structuré, `can_cancel` au DTO, « Arrêt demandé »
+   distinct dans l'interface, promesse réaliste écrite noir sur blanc.
