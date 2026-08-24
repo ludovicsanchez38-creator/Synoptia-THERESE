@@ -228,8 +228,23 @@ export function EmailMessageCanvas({
       if (replacing) setPreviousDraft(draft);
       setDraft(generated);
       setConfirmReplace(false);
-    } catch {
-      setError('La génération du brouillon a échoué. Tu peux écrire la réponse manuellement.');
+    } catch (reason) {
+      // BUG-171. Ce bloc remplaçait TOUTE erreur par un message unique, qui ne
+      // disait ni ce qui s'était passé, ni quoi faire. Le testeur l'a résumé :
+      // « c'est amusant de préciser tu peux écrire la réponse manuellement,
+      // sans déconner ! » Un échec technique était transformé en conseil
+      // évident.
+      //
+      // Le backend renvoie désormais une cause déjà traduite et nettoyée —
+      // clé refusée, modèle sans outils, délai dépassé, fournisseur injoignable.
+      // On l'affiche telle quelle, et on ne retombe sur une phrase générique
+      // que si le serveur n'a rien dit.
+      const cause = (reason as { message?: string } | null)?.message?.trim();
+      setError(
+        cause && cause.length > 10
+          ? cause
+          : "La rédaction assistée n'a pas abouti. Réessaie, ou vérifie ton modèle dans Réglages, rubrique IA.",
+      );
     } finally {
       setGenerating(false);
     }
