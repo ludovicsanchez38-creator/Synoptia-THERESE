@@ -47,6 +47,16 @@ ehthumbs.db
 
 # Data (ne pas commiter les données utilisateur)
 data/
+# Le manifeste de capacités est du CODE, pas des données d'utilisateur : il est
+# lu par le frontend ET embarqué dans le binaire du sidecar. Sans cette
+# exception il n'aurait jamais été commité, et la compilation du frontend
+# échouerait sur un import introuvable.
+#
+# La forme compte : git ne réinclut JAMAIS un fichier dont un répertoire parent
+# est exclu. Il faut donc rouvrir le répertoire AVANT de nommer le fichier —
+# reproduit en dépôt d'essai, l'ordre inverse ne fonctionne pas.
+!src/backend/app/data/
+!src/backend/app/data/*.json
 *.db
 *.sqlite
 *.sqlite3
