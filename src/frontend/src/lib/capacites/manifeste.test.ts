@@ -164,3 +164,49 @@ describe('Mode fantôme : le manifeste dit la même chose que l’existant', () 
     }
   });
 });
+
+describe('Le crosswalk est réel, pas déclaratif', () => {
+  /**
+   * Revue 0.44 : les gates vérifiaient que les identifiants EXISTENT, jamais
+   * qu'ils pointent au BON endroit. En échangeant `email.open` et `crm.open`
+   * dans le manifeste, tout restait vert — mais `/aide` aurait attribué les
+   * mauvaises descriptions aux commandes.
+   *
+   * Ce test EXÉCUTE chaque action de navigation du manifeste et observe la vue
+   * réellement ouverte. Une capacité qui déclare la vue `email` et l'action
+   * `crm.open` échoue ici.
+   */
+  it('chaque action de navigation ouvre la vue que sa capacité déclare', async () => {
+    const { runAction } = await import('../actionRegistry');
+    const { useNavigationStore } = await import('../../stores/navigationStore');
+
+    const setViewOriginal = useNavigationStore.getState().setView;
+    const vuesOuvertes: string[] = [];
+    useNavigationStore.setState({
+      setView: (vue: (typeof APP_VIEWS)[number]) => {
+        vuesOuvertes.push(vue);
+      },
+    });
+
+    try {
+      for (const capacite of CAPACITES) {
+        const entrees = POINTS_ENTREE.filter((p) => capacite.entrees.includes(p.id));
+        const vue = entrees.find((p) => p.binding.registre === 'vue');
+        const action = entrees.find((p) => p.binding.registre === 'action');
+        if (!vue || !action) continue;
+        if (vue.binding.registre !== 'vue' || action.binding.registre !== 'action') continue;
+
+        vuesOuvertes.length = 0;
+        runAction(action.binding.actionId);
+
+        expect(
+          vuesOuvertes,
+          `la capacité « ${capacite.id} » déclare la vue « ${vue.binding.view} » `
+          + `mais son action « ${action.binding.actionId} » ouvre « ${vuesOuvertes[0] ?? 'rien'} »`,
+        ).toContain(vue.binding.view);
+      }
+    } finally {
+      useNavigationStore.setState({ setView: setViewOriginal });
+    }
+  });
+});

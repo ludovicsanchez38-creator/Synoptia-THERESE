@@ -248,6 +248,20 @@ def _points_de(capacite):
     return [p for p in points_entree() if p["id"] in ids]
 
 
+@pytest.fixture(autouse=True)
+def _purger_le_cache_du_manifeste():
+    """Le cache est un état de module : chaque test repart du fichier réel.
+
+    Sans cette purge, un test qui monkeypatche le chemin laisse son manifeste
+    aux tests suivants — la dissociation même que l'empreinte doit détecter.
+    """
+    from app.services.capacites import charger_manifeste
+
+    charger_manifeste.cache_clear()
+    yield
+    charger_manifeste.cache_clear()
+
+
 class TestLEmpreinteDetecteLesGenerationsDivergentes:
     """Le manifeste vit en deux exemplaires : bundle frontend et binaire sidecar.
 
@@ -264,11 +278,19 @@ class TestLEmpreinteDetecteLesGenerationsDivergentes:
         from app.services import capacites as module
 
         fichier = tmp_path / "capacites.json"
-        fichier.write_text('{"schema": 1, "capacites": []}', encoding="utf-8")
+        fichier.write_text(
+            '{"schema": 1, "capacites": [{"id": "a", "entrees": []}], "points_entree": []}',
+            encoding="utf-8",
+        )
         monkeypatch.setattr(module, "CHEMIN_MANIFESTE", fichier)
+        module.charger_manifeste.cache_clear()
 
         premiere = module.empreinte_manifeste()
-        fichier.write_text('{"schema": 1, "capacites": [{"id": "x"}]}', encoding="utf-8")
+        fichier.write_text(
+            '{"schema": 1, "capacites": [{"id": "b", "entrees": []}], "points_entree": []}',
+            encoding="utf-8",
+        )
+        module.charger_manifeste.cache_clear()
         seconde = module.empreinte_manifeste()
 
         assert premiere != seconde, (
@@ -282,12 +304,14 @@ class TestLEmpreinteDetecteLesGenerationsDivergentes:
         from app.services import capacites as module
 
         monkeypatch.setattr(module, "CHEMIN_MANIFESTE", tmp_path / "absent.json")
+        module.charger_manifeste.cache_clear()
 
         assert module.empreinte_manifeste() == "absent"
 
         casse = tmp_path / "casse.json"
         casse.write_text("{pas du json", encoding="utf-8")
         monkeypatch.setattr(module, "CHEMIN_MANIFESTE", casse)
+        module.charger_manifeste.cache_clear()
 
         assert module.empreinte_manifeste() == "absent", (
             "un manifeste illisible doit produire une empreinte sentinelle "

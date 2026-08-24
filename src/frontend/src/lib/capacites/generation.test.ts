@@ -41,12 +41,12 @@ describe('La sérialisation est canonique', () => {
 describe('Le contrôle signale sans jamais bloquer', () => {
   it('déclare une divergence quand les empreintes diffèrent', async () => {
     const avertir = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetcher = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ empreinte: 'autre-generation' }),
-    }));
+    } as unknown as Response);
 
-    const verdict = await verifierGeneration('http://localhost:17293');
+    const verdict = await verifierGeneration('http://localhost:17293', fetcher);
 
     expect(verdict.coherent).toBe(false);
     expect(avertir).toHaveBeenCalledOnce();
@@ -54,20 +54,20 @@ describe('Le contrôle signale sans jamais bloquer', () => {
 
   it('reste cohérent quand les deux côtés portent le même manifeste', async () => {
     const locale = await empreinteLocale();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    const fetcher = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ empreinte: locale }),
-    }));
+    } as unknown as Response);
 
-    const verdict = await verifierGeneration('http://localhost:17293');
+    const verdict = await verifierGeneration('http://localhost:17293', fetcher);
 
     expect(verdict.coherent).toBe(true);
   });
 
   it('un backend injoignable ne produit ni erreur ni fausse alerte', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('refusé')));
+    const fetcher = vi.fn().mockRejectedValue(new Error('refusé'));
 
-    const verdict = await verifierGeneration('http://localhost:17293');
+    const verdict = await verifierGeneration('http://localhost:17293', fetcher);
 
     expect(verdict.coherent).toBe(true);
     expect(verdict.distante).toBe('inconnue');

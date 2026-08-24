@@ -45,16 +45,26 @@ export interface VerdictGeneration {
 }
 
 /**
- * Compare le manifeste du bundle à celui du sidecar. À appeler au démarrage.
+ * Compare le manifeste du bundle à celui du sidecar. À appeler au démarrage,
+ * APRÈS l'initialisation de l'authentification : la revue a montré qu'un
+ * `fetch` nu prenait un 401 (la route n'est pas exemptée du jeton de session),
+ * et que le verdict « cohérent par défaut » sur toute réponse non-OK rendait le
+ * contrôle incapable d'échouer — pour la seconde fois. D'où `apiFetch`, qui
+ * porte le jeton, injectable pour les tests.
+ *
  * Toute erreur (backend pas encore prêt, route absente) rend un verdict
  * cohérent par défaut : ce contrôle signale, il ne bloque jamais.
  */
 export async function verifierGeneration(
   apiBase: string,
+  fetcher?: (url: string) => Promise<Response>,
 ): Promise<VerdictGeneration> {
   const locale = await empreinteLocale();
   try {
-    const reponse = await fetch(`${apiBase}/api/config/capacites`);
+    const appel =
+      fetcher
+      ?? (await import('../../services/api/core')).apiFetch;
+    const reponse = await appel(`${apiBase}/api/config/capacites`);
     if (!reponse.ok) return { coherent: true, locale, distante: 'inconnue' };
     const corps = (await reponse.json()) as { empreinte?: string };
     const distante = corps.empreinte ?? 'inconnue';

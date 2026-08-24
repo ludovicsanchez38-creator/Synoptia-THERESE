@@ -29,36 +29,31 @@ async def _attendre() -> None:
 
 class TestUneIndexationPerimeeNEcritPas:
     @pytest.mark.asyncio
-    async def test_la_tache_perimee_renonce_avant_d_ecrire(
-        self, db_session, monkeypatch
-    ):
-        """Le cas où la course existe VRAIMENT : la première est encore en vol."""
+    async def test_une_generation_depassee_renonce(self, monkeypatch):
+        """Déterministe : on appelle la tâche avec une génération périmée.
+
+        La version précédente orchestrait deux sauvegardes concurrentes et
+        espérait un ordonnancement : elle flakait en suite complète. Ici, pas
+        de course à reproduire — on vérifie directement le contrat de la
+        tâche : périmée, elle n'écrit pas ; à jour, elle écrit.
+        """
         from app.services import user_profile as module
 
         ecritures: list[str] = []
-        laisser_passer = asyncio.Event()
 
-        async def indexation_bloquee(profile):
-            await laisser_passer.wait()
+        async def indexation(profile):
             ecritures.append(profile.name)
 
-        monkeypatch.setattr(module, "_embed_profile", indexation_bloquee)
+        monkeypatch.setattr(module, "_embed_profile", indexation)
+        monkeypatch.setattr(module, "_GENERATION_PROFIL", 5)
 
-        # La première indexation démarre et se bloque : elle est en vol.
-        await module.set_user_profile(db_session, module.UserProfile(name="Ancien"))
-        await asyncio.sleep(0.02)
+        # Génération dépassée : renonce avant d'écrire.
+        await module._indexer_en_arriere_plan(module.UserProfile(name="Périmé"), 3)
+        assert ecritures == [], "une indexation périmée a écrit quand même"
 
-        # La seconde arrive pendant que la première attend encore.
-        await module.set_user_profile(db_session, module.UserProfile(name="Nouveau"))
-
-        laisser_passer.set()
-        await _attendre()
-
-        assert "Nouveau" in ecritures, "la dernière indexation n'a pas abouti"
-        assert ecritures[-1] == "Nouveau", (
-            f"séquence observée : {ecritures}. Une écriture périmée s'est "
-            "terminée en dernier : elle écrase le profil le plus récent."
-        )
+        # Génération courante : écrit.
+        await module._indexer_en_arriere_plan(module.UserProfile(name="À jour"), 5)
+        assert ecritures == ["À jour"]
 
 
 class TestUneSuppressionTient:
