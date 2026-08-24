@@ -5,6 +5,7 @@ Manages user identity and profile for personalized interactions.
 Fixes the bug where THÉRÈSE calls the user "Pierre" instead of their real name.
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -263,9 +264,20 @@ async def set_user_profile(
 
         await session.commit()
 
-        # Embed in Qdrant for semantic search
+        # BUG-172. Le profil est ecrit : le travail durable est fait. Calculer
+        # son vecteur semantique prend 19 secondes sur une machine modeste, et
+        # attendre ce calcul pour repondre faisait voir a l'utilisateur
+        # « Delai de 30 000 ms depasse » sur le tout premier ecran du logiciel,
+        # alors que son profil etait bien enregistre.
+        #
+        # Allonger le delai cote client aurait deplace le seuil sans supprimer
+        # l'attente : une machine plus lente l'aurait franchi a nouveau.
+        # L'indexation part donc en tache de fond, et son echec eventuel ne
+        # remet pas en cause une sauvegarde deja acquise.
         if embed_in_qdrant:
-            await _embed_profile(profile)
+            tache = asyncio.create_task(_indexer_en_arriere_plan(profile))
+            _INDEXATIONS_EN_COURS.add(tache)
+            tache.add_done_callback(_INDEXATIONS_EN_COURS.discard)
 
         logger.info(f"User profile saved: {profile.name}")
         return profile
@@ -274,6 +286,28 @@ async def set_user_profile(
         logger.error(f"Failed to save user profile: {e}")
         await session.rollback()
         raise
+
+
+# Les taches asyncio ne sont retenues que par une reference forte : sans cet
+# ensemble, le ramasse-miettes peut annuler une indexation en cours de route.
+_INDEXATIONS_EN_COURS: set[asyncio.Task] = set()
+
+
+async def _indexer_en_arriere_plan(profile: UserProfile) -> None:
+    """Indexe le profil sans jamais faire echouer sa sauvegarde.
+
+    Une indexation qui echoue prive la recherche semantique de son proprietaire,
+    ce qui merite un journal ; elle ne justifie pas de perdre un profil que
+    l'utilisateur vient de saisir.
+    """
+    try:
+        await _embed_profile(profile)
+    except Exception:
+        logger.warning(
+            "Profil enregistre mais non indexe : la question « qui suis-je ? » "
+            "restera sans reponse jusqu'a la prochaine sauvegarde",
+            exc_info=True,
+        )
 
 
 async def _embed_profile(profile: UserProfile) -> None:
@@ -318,7 +352,12 @@ async def _embed_profile(profile: UserProfile) -> None:
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 
-        qdrant.add_memory(
+        # Revue : `add_memory` est SYNCHRONE. Appelee telle quelle depuis une
+        # tache asyncio, elle gelerait la boucle d'evenements pendant tout le
+        # calcul — le serveur n'a qu'un processus, donc une requete d'un autre
+        # ecran attendrait ces 19 secondes sans raison. La version asynchrone
+        # deporte le travail hors de la boucle.
+        await qdrant.async_add_memory(
             text=text,
             memory_type="owner",
             entity_id="owner_profile",
