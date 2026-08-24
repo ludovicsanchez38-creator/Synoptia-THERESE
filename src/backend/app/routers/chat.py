@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import time
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 from app.config import settings
@@ -172,7 +173,13 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
     return commands
 
 
-async def _indexer_piece_jointe_sous_verrou(session, path, text_content, scope, scope_id):
+async def _indexer_piece_jointe_sous_verrou(
+    session: AsyncSession,
+    path: Path,
+    text_content: str,
+    scope: str,
+    scope_id: str | None,
+) -> None:
     """Indexation de secours d'une pièce jointe - le verrou du chemin est tenu.
 
     Corps historique du trombone, extrait tel quel (fragments 500/50 via la

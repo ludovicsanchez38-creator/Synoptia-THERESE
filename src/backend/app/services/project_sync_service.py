@@ -1,0 +1,610 @@
+"""Orchestration de project.sync : racine, plan, apply, reprise (0.45).
+
+Design V2.1 challengé deux fois. Les règles qui structurent ce module :
+
+- **verrou par projet étendu** : `plan`, `apply` et tout changement de racine
+  passent par le même verrou - un plan ne peut pas devenir caduc pendant
+  qu'un apply court sur lui ;
+- **fail-closed** : un scan en erreur (racine absente, volume changé, parcours
+  incomplet) ne produit AUCUN plan, donc jamais un retrait massif ;
+- **at-least-once** : une opération n'est `fait` qu'après le succès COMPLET
+  (vecteurs + métadonnée + entrée de référence), `a_faire` ET `echec` se
+  rejouent, les gestes sont idempotents ;
+- **l'état de référence naît des opérations réussies**, jamais du
+  rattachement : `project_sync_entries` dit le dernier snapshot APPLIQUÉ,
+  `files` dit l'identité et le périmètre réellement indexés ;
+- **un `ProcessingTask` par run d'apply**, lié au plan par `entity_id` - et
+  un récupérateur spécifique relance les plans `en_cours` orphelins, car
+  `recuperer_taches_orphelines()` ne fait que marquer `interrupted`.
+"""
+import asyncio
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+
+from app.models.database import get_session_context
+from app.models.entities import FileMetadata
+from app.models.entities_sync import (
+    EtatOperation,
+    EtatPlan,
+    ProjectSyncEntry,
+    ProjectSyncRoot,
+    SyncOperation,
+    SyncPlan,
+    TypeOperation,
+)
+from app.models.processing import EtatTache, ProcessingTask
+from app.services import indexation, retrait_index, task_registry
+from app.services.project_sync import calculer_diff, scanner_racine
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
+logger = logging.getLogger(__name__)
+
+
+class ErreurRacine(Exception):
+    """Racine invalide : inexistante, partagée ou imbriquée."""
+
+
+class OperationRefusee(Exception):
+    """Un apply court déjà, ou le plan n'est plus applicable."""
+
+
+# Verrou global des racines (exclusivité et non-imbrication se vérifient dans
+# la même section critique) et verrous par projet (plan/apply/racine).
+_verrou_racines = asyncio.Lock()
+_verrous_projet: dict[str, asyncio.Lock] = {}
+# Références fortes des applies en cours : sans elles, le ramasse-miettes
+# peut annuler une tâche de fond (leçon 0.43.4, indexation du profil).
+_applies_en_cours: set["asyncio.Task[None]"] = set()
+
+
+def _verrou(project_id: str) -> asyncio.Lock:
+    return _verrous_projet.setdefault(project_id, asyncio.Lock())
+
+
+@asynccontextmanager
+async def _verrou_du_projet(project_id: str) -> "AsyncIterator[None]":
+    verrou = _verrou(project_id)
+    if verrou.locked():
+        raise OperationRefusee(
+            "Une synchronisation est déjà en cours sur ce projet."
+        )
+    async with verrou:
+        yield
+
+
+# ---------------------------------------------------------------------------
+# Racine
+# ---------------------------------------------------------------------------
+
+async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
+    racine = Path(chemin).expanduser().resolve()
+    if not racine.is_dir():
+        raise ErreurRacine(f"Le dossier n'existe pas : {racine}")
+
+    async with _verrou_racines, get_session_context() as session:
+        resultat = await session.execute(select(ProjectSyncRoot))
+        existantes = list(resultat.scalars().all())
+
+        for autre in existantes:
+            if autre.project_id == project_id:
+                continue
+            autre_racine = Path(autre.racine)
+            if autre_racine == racine:
+                raise ErreurRacine(
+                    "Cette racine appartient déjà à un autre projet."
+                )
+            if racine.is_relative_to(autre_racine) or autre_racine.is_relative_to(
+                racine
+            ):
+                raise ErreurRacine(
+                    f"Racine imbriquée avec celle d'un autre projet : {autre_racine}"
+                )
+            try:
+                if autre_racine.exists() and racine.samefile(autre_racine):
+                    raise ErreurRacine(
+                        "Cette racine désigne le même dossier qu'un autre projet."
+                    )
+            except OSError:
+                pass
+
+        actuelle = next(
+            (r for r in existantes if r.project_id == project_id), None
+        )
+        if actuelle is None:
+            root = ProjectSyncRoot(
+                project_id=project_id,
+                racine=str(racine),
+                volume_id=racine.stat().st_dev,
+            )
+            session.add(root)
+            await session.commit()
+            await session.refresh(root)
+            return root
+
+        # Remplacement : nouvelle génération, plans caducs, entrées purgées.
+        actuelle.racine = str(racine)
+        actuelle.volume_id = racine.stat().st_dev
+        actuelle.generation += 1
+        await _invalider_generation(session, project_id)
+        await session.commit()
+        await session.refresh(actuelle)
+        return actuelle
+
+
+async def retirer_racine(project_id: str) -> None:
+    """Délie la racine. Ne retire RIEN de l'index : ça, c'est un plan."""
+    async with _verrou_racines, get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncRoot).where(
+                ProjectSyncRoot.project_id == project_id
+            )
+        )
+        root = resultat.scalar_one_or_none()
+        if root is None:
+            return
+        await _invalider_generation(session, project_id)
+        await session.delete(root)
+        await session.commit()
+
+
+async def _invalider_generation(session: AsyncSession, project_id: str) -> None:
+    """Plans caducs et entrées purgées : l'ancienne génération est finie.
+    Les FK SQLite ne sont pas activées - le ménage est explicite."""
+    resultat = await session.execute(
+        select(SyncPlan).where(
+            SyncPlan.project_id == project_id,
+            SyncPlan.etat.in_((EtatPlan.PROPOSE, EtatPlan.EN_COURS)),
+        )
+    )
+    for plan in resultat.scalars():
+        plan.etat = EtatPlan.CADUC
+    resultat = await session.execute(
+        select(ProjectSyncEntry).where(ProjectSyncEntry.project_id == project_id)
+    )
+    for entree in resultat.scalars():
+        await session.delete(entree)
+
+
+# ---------------------------------------------------------------------------
+# Plan
+# ---------------------------------------------------------------------------
+
+async def preparer_plan(project_id: str) -> SyncPlan:
+    async with _verrou_du_projet(project_id):
+        root = await _racine_de(project_id)
+        racine = Path(root.racine)
+        if not racine.is_dir() or racine.stat().st_dev != root.volume_id:
+            from app.services.project_sync import ErreurDeScan
+
+            raise ErreurDeScan(
+                "Racine introuvable ou volume changé : aucun plan ne sera "
+                "produit (un montage débranché ne vide jamais un index)."
+            )
+
+        scannees = await scanner_racine(racine)
+        referentiel = await lire_referentiel(project_id)
+
+        # Chemins possédés par un AUTRE périmètre voulu : conflit montré.
+        proprietaires: dict[str, tuple[str, str | None]] = {}
+        async with get_session_context() as session:
+            chemins = [e.chemin for e in scannees]
+            if chemins:
+                resultat = await session.execute(
+                    select(FileMetadata).where(FileMetadata.path.in_(chemins))
+                )
+                for meta in resultat.scalars():
+                    if meta.scope_provisoire:
+                        continue
+                    if (meta.scope, meta.scope_id) != ("project", project_id):
+                        proprietaires[meta.path] = (meta.scope, meta.scope_id)
+
+        diff = calculer_diff(scannees, referentiel, proprietaires=proprietaires)
+
+        async with get_session_context() as session:
+            resultat = await session.execute(
+                select(SyncPlan).where(
+                    SyncPlan.project_id == project_id,
+                    SyncPlan.etat == EtatPlan.PROPOSE,
+                )
+            )
+            for ancien in resultat.scalars():
+                ancien.etat = EtatPlan.CADUC
+
+            plan = SyncPlan(
+                project_id=project_id,
+                generation_racine=root.generation,
+                nb_indexer=len(diff.indexer),
+                nb_reindexer=len(diff.reindexer),
+                nb_retirer=len(diff.retirer),
+                nb_conflits=len(diff.conflits),
+                nb_inchanges=diff.inchanges,
+            )
+            session.add(plan)
+            await session.flush()
+            for type_op, operations in (
+                (TypeOperation.INDEXER, diff.indexer),
+                (TypeOperation.REINDEXER, diff.reindexer),
+                (TypeOperation.RETIRER, diff.retirer),
+                (TypeOperation.CONFLIT, diff.conflits),
+            ):
+                for op in operations:
+                    session.add(SyncOperation(
+                        plan_id=plan.id,
+                        type=type_op,
+                        chemin=op.chemin,
+                        file_id_prevu=op.file_id_prevu,
+                        empreinte_prevue=op.empreinte_prevue,
+                    ))
+            await session.commit()
+            await session.refresh(plan)
+            return plan
+
+
+# ---------------------------------------------------------------------------
+# Apply
+# ---------------------------------------------------------------------------
+
+async def appliquer_plan(project_id: str, plan_id: str) -> None:
+    """Exécute le plan, opération par opération. Bloquant : la route
+    l'enveloppe dans une tâche de fond à référence forte."""
+    async with _verrou_du_projet(project_id):
+        await _appliquer_sous_verrou(project_id, plan_id)
+
+
+def lancer_apply(project_id: str, plan_id: str) -> "asyncio.Task[None]":
+    """Version arrière-plan, référence forte conservée (leçon 0.43.4)."""
+    tache = asyncio.get_running_loop().create_task(
+        appliquer_plan(project_id, plan_id)
+    )
+    _applies_en_cours.add(tache)
+    tache.add_done_callback(_applies_en_cours.discard)
+    return tache
+
+
+async def _appliquer_sous_verrou(project_id: str, plan_id: str) -> None:
+    plan = await lire_plan(plan_id)
+    if plan is None or plan.project_id != project_id:
+        raise OperationRefusee("Plan inconnu pour ce projet.")
+    if plan.etat not in (EtatPlan.PROPOSE, EtatPlan.EN_COURS, EtatPlan.APPLIQUE_PARTIEL):
+        raise OperationRefusee(f"Ce plan n'est plus applicable ({plan.etat}).")
+    root = await _racine_de(project_id)
+    if plan.generation_racine != root.generation:
+        raise OperationRefusee("La racine a changé depuis ce plan : refais un plan.")
+    # Seul le DERNIER plan proposé s'applique - un plan en_cours (reprise)
+    # reste prioritaire et aucun nouveau plan n'a pu naître pendant l'apply
+    # (même verrou).
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan).where(
+                SyncPlan.project_id == project_id,
+                SyncPlan.etat == EtatPlan.PROPOSE,
+                SyncPlan.created_at > plan.created_at,
+            )
+        )
+        if resultat.scalars().first() is not None:
+            raise OperationRefusee("Un plan plus récent existe : applique-le, lui.")
+
+    await _marquer_plan(plan_id, EtatPlan.EN_COURS)
+    task_id = await _creer_run(project_id, plan_id, root)
+
+    operations = [
+        o for o in await lire_operations(plan_id)
+        if o.etat in (EtatOperation.A_FAIRE, EtatOperation.ECHEC)
+        and o.type != TypeOperation.CONFLIT
+    ]
+    faites = 0
+    echecs = 0
+    for operation in operations:
+        try:
+            await _executer_operation(project_id, root, operation)
+            faites += 1
+        except Exception as e:  # l'échec d'une opération n'arrête pas le plan
+            echecs += 1
+            await _consigner_operation(
+                operation.id, EtatOperation.ECHEC, erreur=str(e)[:500]
+            )
+            logger.warning("Opération sync en échec (%s): %s", operation.chemin, e)
+        await _progresser(task_id, (faites + echecs) / max(len(operations), 1))
+
+    finales = [
+        o for o in await lire_operations(plan_id)
+        if o.type != TypeOperation.CONFLIT
+    ]
+    tout_est_fait = all(o.etat == EtatOperation.FAIT for o in finales)
+    plan_final = await lire_plan(plan_id)
+    conflits = (plan_final.nb_conflits if plan_final else 0) or 0
+    # `applique` = TOUT est fait, sans conflit ni obsolète : le disque et
+    # l'index disent la même chose. Tout le reste est `applique_partiel`,
+    # réessayable (echec) ou à re-planifier (obsolete, conflit).
+    etat_final = (
+        EtatPlan.APPLIQUE if tout_est_fait and not conflits
+        else EtatPlan.APPLIQUE_PARTIEL
+    )
+    restantes = [o for o in finales if o.etat == EtatOperation.ECHEC]
+    await _marquer_plan(plan_id, etat_final)
+    await _terminer_run(task_id, en_echec=bool(restantes))
+
+
+async def _executer_operation(
+    project_id: str, root: ProjectSyncRoot, operation: SyncOperation
+) -> None:
+    if operation.type == TypeOperation.RETIRER:
+        resultat = await retrait_index.retirer_par_chemin(
+            operation.chemin, file_id_attendu=operation.file_id_prevu
+        )
+        if resultat.conflit:
+            await _consigner_operation(
+                operation.id, EtatOperation.OBSOLETE,
+                erreur="Le chemin a changé d'identité depuis le plan.",
+            )
+            return
+        await _supprimer_entree(project_id, operation.chemin)
+        await _consigner_operation(operation.id, EtatOperation.FAIT)
+        return
+
+    # indexer / reindexer : les attendus se vérifient dans le cœur, sous le
+    # verrou du chemin, avant toute écriture.
+    try:
+        reponse = await indexation.index_payload(
+            operation.chemin,
+            scope="project",
+            scope_id=project_id,
+            sha256_attendu=operation.empreinte_prevue,
+        )
+    except indexation.ContenuModifieDepuisLePlan:
+        await _consigner_operation(
+            operation.id, EtatOperation.OBSOLETE,
+            erreur="Le contenu a changé depuis le plan : refais un plan.",
+        )
+        return
+    except indexation.ConflitDePerimetre as e:
+        await _consigner_operation(
+            operation.id, EtatOperation.OBSOLETE, erreur=str(e)[:500]
+        )
+        return
+    except Exception as e:
+        # HTTPException 404 = fichier disparu depuis le plan : obsolète aussi.
+        from fastapi import HTTPException
+
+        if isinstance(e, HTTPException) and e.status_code == 404:
+            await _consigner_operation(
+                operation.id, EtatOperation.OBSOLETE,
+                erreur="Le fichier a disparu depuis le plan.",
+            )
+            return
+        raise
+
+    if (reponse.scope, reponse.scope_id) != ("project", project_id):
+        await _consigner_operation(
+            operation.id, EtatOperation.OBSOLETE,
+            erreur=f"Le périmètre effectif est {reponse.scope}/{reponse.scope_id}.",
+        )
+        return
+
+    await _etablir_entree(project_id, root, operation, reponse.id)
+    await _consigner_operation(
+        operation.id, EtatOperation.FAIT,
+        empreinte_reelle=operation.empreinte_prevue,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Reprise des applies orphelins (après un crash ou une fermeture)
+# ---------------------------------------------------------------------------
+
+async def reprendre_applies_orphelins() -> int:
+    """Relance les plans restés `en_cours` sans exécution vivante.
+
+    `recuperer_taches_orphelines()` marque les ProcessingTask `interrupted`
+    mais ne relance RIEN - challenge V2.1, correction 3. À appeler APRÈS
+    l'initialisation de Qdrant.
+    """
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan).where(SyncPlan.etat == EtatPlan.EN_COURS)
+        )
+        orphelins = list(resultat.scalars().all())
+
+    repris = 0
+    for plan in orphelins:
+        try:
+            await appliquer_plan(plan.project_id, plan.id)
+            repris += 1
+        except Exception:
+            logger.warning(
+                "Reprise du plan %s impossible", plan.id, exc_info=True
+            )
+    return repris
+
+
+# ---------------------------------------------------------------------------
+# Lectures et écritures unitaires (transactions courtes)
+# ---------------------------------------------------------------------------
+
+async def _racine_de(project_id: str) -> ProjectSyncRoot:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
+        )
+        root = resultat.scalar_one_or_none()
+    if root is None:
+        raise ErreurRacine("Ce projet n'a pas de dossier synchronisé.")
+    return root
+
+
+async def lire_plan(plan_id: str) -> SyncPlan | None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan).where(SyncPlan.id == plan_id)
+        )
+        return resultat.scalar_one_or_none()
+
+
+async def lire_operations(plan_id: str) -> list[SyncOperation]:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncOperation).where(SyncOperation.plan_id == plan_id)
+        )
+        return list(resultat.scalars().all())
+
+
+async def lire_referentiel(project_id: str) -> dict[str, tuple[str, str]]:
+    """chemin -> (file_id, sha256) du dernier snapshot appliqué."""
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncEntry).where(
+                ProjectSyncEntry.project_id == project_id
+            )
+        )
+        return {
+            e.chemin: (e.file_id, e.sha256) for e in resultat.scalars()
+        }
+
+
+async def etat_sync(project_id: str) -> dict[str, object]:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
+        )
+        root = resultat.scalar_one_or_none()
+        resultat = await session.execute(
+            select(SyncPlan)
+            .where(SyncPlan.project_id == project_id)
+            .where(SyncPlan.etat != EtatPlan.CADUC)
+            .order_by(SyncPlan.created_at.desc())
+            .limit(1)
+        )
+        plan = resultat.scalars().first()
+    return {
+        "racine": root.racine if root else None,
+        "generation": root.generation if root else None,
+        "dernier_plan": plan,
+    }
+
+
+async def _marquer_plan(plan_id: str, etat: str) -> None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan).where(SyncPlan.id == plan_id)
+        )
+        plan = resultat.scalar_one_or_none()
+        if plan is not None:
+            plan.etat = etat
+            await session.commit()
+
+
+async def _consigner_operation(
+    operation_id: str, etat: str, *, erreur: str | None = None,
+    empreinte_reelle: str | None = None,
+) -> None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncOperation).where(SyncOperation.id == operation_id)
+        )
+        operation = resultat.scalar_one_or_none()
+        if operation is None:
+            return
+        operation.etat = etat
+        operation.erreur = erreur
+        if empreinte_reelle is not None:
+            operation.empreinte_reelle = empreinte_reelle
+        operation.attempt_count += 1
+        operation.last_attempt_at = datetime.now(UTC)
+        await session.commit()
+
+
+async def _etablir_entree(
+    project_id: str, root: ProjectSyncRoot, operation: SyncOperation, file_id: str
+) -> None:
+    try:
+        stat = Path(operation.chemin).stat()
+        taille, mtime_ns = stat.st_size, stat.st_mtime_ns
+    except OSError:
+        taille, mtime_ns = 0, 0
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncEntry).where(
+                ProjectSyncEntry.project_id == project_id,
+                ProjectSyncEntry.chemin == operation.chemin,
+            )
+        )
+        entree = resultat.scalar_one_or_none()
+        if entree is None:
+            entree = ProjectSyncEntry(
+                project_id=project_id,
+                chemin=operation.chemin,
+                file_id=file_id,
+                taille=taille,
+                mtime_ns=mtime_ns,
+                sha256=operation.empreinte_prevue or "",
+                generation_racine=root.generation,
+            )
+            session.add(entree)
+        else:
+            entree.file_id = file_id
+            entree.taille = taille
+            entree.mtime_ns = mtime_ns
+            entree.sha256 = operation.empreinte_prevue or ""
+            entree.generation_racine = root.generation
+            entree.updated_at = datetime.now(UTC)
+        await session.commit()
+
+
+async def _supprimer_entree(project_id: str, chemin: str) -> None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProjectSyncEntry).where(
+                ProjectSyncEntry.project_id == project_id,
+                ProjectSyncEntry.chemin == chemin,
+            )
+        )
+        entree = resultat.scalar_one_or_none()
+        if entree is not None:
+            await session.delete(entree)
+            await session.commit()
+
+
+async def _creer_run(
+    project_id: str, plan_id: str, root: ProjectSyncRoot
+) -> str:
+    async with get_session_context() as session:
+        tache = ProcessingTask(
+            type="project_sync",
+            label=f"Synchronisation de {Path(root.racine).name}",
+            state=EtatTache.RUNNING,
+            project_id=project_id,
+            entity_id=plan_id,
+            run_instance_id=task_registry.instance_courante(),
+            started_at=datetime.now(UTC),
+        )
+        session.add(tache)
+        await session.commit()
+        await session.refresh(tache)
+        return str(tache.id)
+
+
+async def _progresser(task_id: str, progression: float) -> None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProcessingTask).where(ProcessingTask.id == task_id)
+        )
+        tache = resultat.scalar_one_or_none()
+        if tache is not None:
+            tache.progress = progression
+            await session.commit()
+
+
+async def _terminer_run(task_id: str, *, en_echec: bool) -> None:
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProcessingTask).where(ProcessingTask.id == task_id)
+        )
+        tache = resultat.scalar_one_or_none()
+        if tache is not None:
+            tache.state = EtatTache.FAILED if en_echec else EtatTache.DONE
+            tache.finished_at = datetime.now(UTC)
+            await session.commit()

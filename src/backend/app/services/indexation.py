@@ -320,7 +320,7 @@ async def _indexer_apres_verifications(
     scope: str,
     scope_id: str | None,
     perimetre_provisoire: bool,
-    metadata: dict,
+    metadata: dict[str, Any],
     source_extraction: Path,
 ) -> FileResponse:
 
