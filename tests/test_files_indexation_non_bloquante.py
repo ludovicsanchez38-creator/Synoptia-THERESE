@@ -29,7 +29,7 @@ class TestIndexationNonBloquante:
     @pytest.mark.asyncio
     async def test_extraction_lente_ne_gele_pas_la_boucle(self, gros_fichier, monkeypatch):
         """Une extraction lente laisse les autres coroutines progresser."""
-        from app.routers import files as files_router
+        from app.services import indexation
 
         duree_extraction = 0.4
 
@@ -37,7 +37,7 @@ class TestIndexationNonBloquante:
             time.sleep(duree_extraction)  # simule un PDF de plusieurs centaines de pages
             return "texte extrait"
 
-        monkeypatch.setattr(files_router, "extract_text", extraction_lente)
+        monkeypatch.setattr(indexation, "extract_text", extraction_lente)
 
         battements = 0
 
@@ -49,7 +49,7 @@ class TestIndexationNonBloquante:
 
         tache_horloge = asyncio.create_task(horloge())
         try:
-            await files_router.extract_text_async(gros_fichier)
+            await indexation.extract_text_async(gros_fichier)
         finally:
             tache_horloge.cancel()
 
@@ -62,13 +62,13 @@ class TestIndexationNonBloquante:
     @pytest.mark.asyncio
     async def test_decoupage_lent_ne_gele_pas_la_boucle(self, gros_fichier, monkeypatch):
         """Le découpage en fragments passe lui aussi hors de la boucle."""
-        from app.routers import files as files_router
+        from app.services import indexation
 
         def decoupage_lent(_texte, chunk_size=1000, overlap=200):
             time.sleep(0.4)
             return iter(["fragment 1", "fragment 2"])
 
-        monkeypatch.setattr(files_router, "chunk_text", decoupage_lent)
+        monkeypatch.setattr(indexation, "chunk_text", decoupage_lent)
 
         battements = 0
 
@@ -80,7 +80,7 @@ class TestIndexationNonBloquante:
 
         tache_horloge = asyncio.create_task(horloge())
         try:
-            fragments = await files_router.chunk_text_async("texte extrait")
+            fragments = await indexation.chunk_text_async("texte extrait")
         finally:
             tache_horloge.cancel()
 
@@ -100,13 +100,13 @@ class TestIndexationNonBloquante:
         structurel dont découle le non-blocage : `extract_text` et `chunk_text`
         s'exécutent dans un thread distinct de celui qui porte la route.
         """
-        from app.routers import files as files_router
+        from app.services import indexation
 
         thread_route: list[int] = []
         thread_extraction: list[int] = []
         thread_decoupage: list[int] = []
 
-        vrai_get_metadata = files_router.get_file_metadata
+        vrai_get_metadata = indexation.get_file_metadata
 
         def metadata_tracee(path):
             thread_route.append(threading.get_ident())
@@ -120,9 +120,9 @@ class TestIndexationNonBloquante:
             thread_decoupage.append(threading.get_ident())
             return iter(["fragment 1", "fragment 2"])
 
-        monkeypatch.setattr(files_router, "get_file_metadata", metadata_tracee)
-        monkeypatch.setattr(files_router, "extract_text", extraction_tracee)
-        monkeypatch.setattr(files_router, "chunk_text", decoupage_trace)
+        monkeypatch.setattr(indexation, "get_file_metadata", metadata_tracee)
+        monkeypatch.setattr(indexation, "extract_text", extraction_tracee)
+        monkeypatch.setattr(indexation, "chunk_text", decoupage_trace)
 
         appels_qdrant = []
 
@@ -134,7 +134,7 @@ class TestIndexationNonBloquante:
                 appels_qdrant.append(items)
                 return None
 
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: FauxQdrant())
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: FauxQdrant())
 
         reponse = await client.post("/api/files/index", json={"path": str(gros_fichier)})
 

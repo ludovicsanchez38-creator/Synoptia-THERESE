@@ -31,6 +31,7 @@ class TestLaRouteIndexEstGelee:
     @pytest.mark.asyncio
     async def test_fragments_1000_200(self, client, fichier_texte, monkeypatch):
         from app.routers import files as module
+        from app.services import indexation
 
         decoupages: list[tuple[int, int]] = []
 
@@ -38,12 +39,12 @@ class TestLaRouteIndexEstGelee:
             decoupages.append((chunk_size, overlap))
             return [texte[:50]]
 
-        monkeypatch.setattr(module, "chunk_text_async", espionne)
+        monkeypatch.setattr(indexation, "chunk_text_async", espionne)
         monkeypatch.setattr(
             module, "extract_text_async", AsyncMock(return_value="du texte")
         )
         qdrant = AsyncMock()
-        monkeypatch.setattr(module, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
 
         reponse = await module.index_payload(str(fichier_texte))
 
@@ -57,6 +58,7 @@ class TestLaRouteIndexEstGelee:
         """Invariant N1 : delete_by_entity n'est appelé qu'une fois les
         nouveaux items construits - jamais avant l'extraction."""
         from app.routers import files as module
+        from app.services import indexation
 
         journal: list[str] = []
         qdrant = AsyncMock()
@@ -66,7 +68,7 @@ class TestLaRouteIndexEstGelee:
         qdrant.async_add_memories.side_effect = (
             lambda *a, **k: journal.append("ecriture")
         )
-        monkeypatch.setattr(module, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
         monkeypatch.setattr(
             module, "extract_text_async", AsyncMock(return_value="du texte")
         )
@@ -99,7 +101,7 @@ class TestLUploadDeProjetEstGele:
     async def test_perimetre_projet_voulu_et_fragments_1000_200(
         self, client, monkeypatch
     ):
-        from app.routers import files as module
+        from app.services import indexation
 
         decoupages: list[tuple[int, int]] = []
 
@@ -107,8 +109,8 @@ class TestLUploadDeProjetEstGele:
             decoupages.append((chunk_size, overlap))
             return [texte[:50]]
 
-        monkeypatch.setattr(module, "chunk_text_async", espionne)
-        monkeypatch.setattr(module, "get_qdrant_service", lambda: AsyncMock())
+        monkeypatch.setattr(indexation, "chunk_text_async", espionne)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: AsyncMock())
 
         resp, projet_id = await self._uploader(client)
 
@@ -119,15 +121,15 @@ class TestLUploadDeProjetEstGele:
         assert decoupages == [(1000, 200)]
 
     @pytest.mark.asyncio
-    async def test_defaut_assume_les_vecteurs_partent_avant_la_reecriture(
+    async def test_le_re_upload_respecte_l_invariant_n1(
         self, client, monkeypatch
     ):
-        """DÉFAUT PRÉEXISTANT, gelé en connaissance de cause : au ré-upload,
-        l'upload supprime les anciens vecteurs AVANT d'extraire le nouveau
-        contenu (l'inverse de l'invariant N1 de la route). La correction
-        viendra du service de retrait fail-closed (design 0.45) - ce test
-        devra alors être MIS À JOUR, pas contourné."""
-        from app.routers import files as module
+        """CORRECTION VOLONTAIRE (migration vers le service central) : l'upload
+        supprimait les anciens vecteurs AVANT d'extraire le nouveau contenu -
+        un échec d'extraction laissait le document sans aucun vecteur. Passé
+        par le cœur commun, il applique l'invariant N1 de la route : la
+        suppression ne précède que l'écriture, jamais l'extraction."""
+        from app.services import indexation
 
         journal: list[str] = []
         qdrant = AsyncMock()
@@ -137,7 +139,7 @@ class TestLUploadDeProjetEstGele:
         qdrant.async_add_memories.side_effect = (
             lambda *a, **k: journal.append("ecriture")
         )
-        monkeypatch.setattr(module, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
 
         resp, projet_id = await self._uploader(client)
         assert resp.status_code == 200
@@ -152,9 +154,10 @@ class TestLUploadDeProjetEstGele:
             data={"project_id": projet_id},
         )
         assert resp.status_code == 200
-        assert journal[0] == "suppression", (
-            "comportement actuel gelé : la suppression précède l'extraction "
-            "(défaut connu, correction prévue par le design 0.45)"
+        assert journal == ["suppression", "ecriture"], (
+            "au ré-upload, la suppression doit précéder immédiatement "
+            "l'écriture - jamais l'extraction (invariant N1, désormais "
+            "partagé par tous les producteurs)"
         )
 
 

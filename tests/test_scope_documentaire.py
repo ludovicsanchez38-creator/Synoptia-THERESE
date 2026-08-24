@@ -64,10 +64,11 @@ class TestLePerimetreEstEcritDansLePayload:
     ):
         """Sans ces clés, `search(scope=...)` ne peut jamais retrouver ce document."""
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         await files_router.index_payload(
             path=str(fichier), scope="project", scope_id="projet-alpha"
@@ -94,10 +95,11 @@ class TestLePerimetreEstEcritDansLePayload:
         depuis le composeur deviendrait invisible dès qu'un filtre est posé.
         """
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         await files_router.index_payload(path=str(fichier))
 
@@ -125,12 +127,12 @@ class TestLePerimetreEstEcritDansLePayload:
         projet A remonterait donc dans une recherche du projet B — la fuite que
         ce chantier est censé fermer.
         """
-        from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
 
-        items = files_router.construire_items_indexation(
+        items = indexation.construire_items_indexation(
             chunks=["un fragment"],
             file_id="fic-1",
             file_name="compte-rendu.txt",
@@ -153,10 +155,11 @@ class TestLePerimetreEstEcritDansLePayload:
     ):
         """La base et le vectoriel doivent raconter la même histoire."""
         from app.routers import files as files_router
+        from app.services import indexation
 
         faux = FauxQdrant()
-        monkeypatch.setattr(files_router, "get_qdrant_service", lambda: faux)
-        monkeypatch.setattr(files_router, "extract_text", lambda _p: "texte extrait")
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte extrait")
 
         resultat = await files_router.index_payload(
             path=str(fichier), scope="project", scope_id="projet-alpha"

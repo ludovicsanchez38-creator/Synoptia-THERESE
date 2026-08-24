@@ -172,6 +172,73 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
     return commands
 
 
+async def _indexer_piece_jointe_sous_verrou(session, path, text_content, scope, scope_id):
+    """Indexation de secours d'une pièce jointe - le verrou du chemin est tenu.
+
+    Corps historique du trombone, extrait tel quel (fragments 500/50 via la
+    configuration, gelés par test_caracterisation_indexation). Seule la
+    sérialisation change : elle n'existait pas.
+    """
+    from datetime import UTC, datetime
+
+    metadata = get_file_metadata(path)
+
+    file_meta = FileMetadata(
+        path=str(path),
+        name=metadata["name"],
+        extension=metadata["extension"],
+        size=metadata["size"],
+        mime_type=metadata["mime_type"],
+        # 0.43 : une pièce jointe déposée DANS une conversation de
+        # projet appartient à ce projet. Sans cela elle naissait
+        # globale, donc consultable depuis tous les autres dossiers.
+        scope=scope,
+        scope_id=scope_id,
+    )
+    session.add(file_meta)
+    # 3e passe de revue : la session gardait le verrou d'écriture SQLite
+    # (mono-écrivain) pendant tout l'encodage. Commit court d'abord, le
+    # résultat est consigné plus bas dans une seconde transaction.
+    await session.commit()
+    await session.refresh(file_meta)
+
+    # Chunk and store in Qdrant (découpage hors boucle d'événements)
+    chunks = await run_in_threadpool(
+        lambda: list(
+            chunk_text(
+                text_content,
+                chunk_size=settings.chunk_size,
+                overlap=settings.chunk_overlap,
+            )
+        )
+    )
+    qdrant = get_qdrant_service()
+    items = []
+
+    for i, chunk in enumerate(chunks):
+        items.append({
+            "text": chunk,
+            "memory_type": "file",
+            "entity_id": file_meta.id,
+            "metadata": {
+                "name": file_meta.name,
+                "path": str(path),
+                "chunk_index": i,
+                "total_chunks": len(chunks),
+                "scope": file_meta.scope or "global",
+                "scope_id": file_meta.scope_id,
+            },
+        })
+
+    if items:
+        await qdrant.async_add_memories(items)
+        logger.info(f"Indexed {len(chunks)} chunks for file {path.name}")
+
+    file_meta.chunk_count = len(chunks)
+    file_meta.indexed_at = datetime.now(UTC)
+    await session.commit()
+
+
 async def _get_file_context(
     file_path: str,
     session: AsyncSession,
@@ -260,63 +327,18 @@ async def _get_file_context(
 
         # Index if not already done
         if not existing:
-            from datetime import UTC, datetime
-            metadata = get_file_metadata(path)
 
-            file_meta = FileMetadata(
-                path=str(path),
-                name=metadata["name"],
-                extension=metadata["extension"],
-                size=metadata["size"],
-                mime_type=metadata["mime_type"],
-                # 0.43 : une pièce jointe déposée DANS une conversation de
-                # projet appartient à ce projet. Sans cela elle naissait
-                # globale, donc consultable depuis tous les autres dossiers.
-                scope=scope,
-                scope_id=scope_id,
-            )
-            session.add(file_meta)
-            # 3e passe de revue : la session gardait le verrou d'écriture SQLite
-            # (mono-écrivain) pendant tout l'encodage. Commit court d'abord, le
-            # résultat est consigné plus bas dans une seconde transaction.
-            await session.commit()
-            await session.refresh(file_meta)
+            from app.services.indexation import _verrou_de_chemin
 
-            # Chunk and store in Qdrant (découpage hors boucle d'événements)
-            chunks = await run_in_threadpool(
-                lambda: list(
-                    chunk_text(
-                        text_content,
-                        chunk_size=settings.chunk_size,
-                        overlap=settings.chunk_overlap,
-                    )
+            # 0.45 : le MÊME verrou de chemin que la route d'indexation et
+            # l'upload. Ce chemin de secours créait la métadonnée et écrivait
+            # les fragments sans aucune sérialisation - deux demandes sur le
+            # même fichier (trombone + bouton Indexer) se marchaient dessus,
+            # jusqu'à la contrainte d'unicité sur `path`.
+            async with _verrou_de_chemin(str(path)):
+                await _indexer_piece_jointe_sous_verrou(
+                    session, path, text_content, scope, scope_id
                 )
-            )
-            qdrant = get_qdrant_service()
-            items = []
-
-            for i, chunk in enumerate(chunks):
-                items.append({
-                    "text": chunk,
-                    "memory_type": "file",
-                    "entity_id": file_meta.id,
-                    "metadata": {
-                        "name": file_meta.name,
-                        "path": str(path),
-                        "chunk_index": i,
-                        "total_chunks": len(chunks),
-                        "scope": file_meta.scope or "global",
-                        "scope_id": file_meta.scope_id,
-                    },
-                })
-
-            if items:
-                await qdrant.async_add_memories(items)
-                logger.info(f"Indexed {len(chunks)} chunks for file {path.name}")
-
-            file_meta.chunk_count = len(chunks)
-            file_meta.indexed_at = datetime.now(UTC)
-            await session.commit()
 
         # Build context string
         file_name = path.name
