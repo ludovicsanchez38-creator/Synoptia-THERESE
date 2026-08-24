@@ -1,0 +1,40 @@
+# Dette 0.43.4 : les binaires Windows partaient sans qu'aucun test n'ait
+# jamais tourné sous Windows - les 7 bugs de Jérôme (24/08) sont arrivés par
+# là. Workflow volontairement SÉPARÉ de ci.yml : il ne conditionne pas encore
+# la release. Une fois prouvé stable sur quelques runs, l'intégrer au gate.
+name: Tests Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-tests-windows:
+    name: Tests Backend (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      - name: Tests unitaires (pytest)
+        shell: bash
+        # --timeout par test relevé à 60 s : les runners Windows sont plus
+        # lents que les Linux, un seuil calé sur Linux fabriquerait des flakes.
+        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider
+        timeout-minutes: 20
