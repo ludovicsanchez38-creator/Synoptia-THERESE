@@ -83,6 +83,7 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
     has_fal_key: boolean;
     has_brave_key: boolean;
     corrupted_keys: string[];
+    api_keys?: Record<string, boolean>;
   }>('/api/config/');
   return {
     keys: {
@@ -97,6 +98,10 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
       gemini_image: config.has_gemini_image_key,
       fal: config.has_fal_key,
       brave: config.has_brave_key,
+      // Revue dette 0.43.4 : les champs has_*_key n'ont jamais suivi les
+      // fournisseurs (perplexity, deepseek, puis glm/kimi/qwen/minimax :
+      // clé enregistrée, jamais restituée). La carte générique fait foi.
+      ...(config.api_keys ?? {}),
     },
     corrupted: config.corrupted_keys || [],
   };

@@ -1059,7 +1059,14 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
         if not api_key:
             return None
 
-    base_url = "http://localhost:11434" if provider_name == "ollama" else None
+    # Revue dette 0.43.4 : le routage des agents reconstruisait le service
+    # avec base_url=None - l'adresse Qwen enregistrée ne valait que pour le
+    # chat principal, les agents repartaient sur le défaut inutilisable.
+    base_url: str | None
+    if provider_name == "ollama":
+        base_url = "http://localhost:11434"
+    else:
+        base_url = _get_preference_value(f"{provider_name}_base_url")
 
     config = LLMConfig(
         provider=provider,

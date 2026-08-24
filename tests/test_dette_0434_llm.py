@@ -138,3 +138,102 @@ class TestLesAgentsRoutentLesNouveauxFournisseurs:
         """qwen3:32b est un modèle LOCAL : les deux-points doivent router vers
         Ollama avant que le préfixe qwen ne s'en mêle."""
         assert self._fournisseur_demande(monkeypatch, "qwen3:32b") == "ollama"
+
+
+class TestLesAgentsRecoiventLaConfigurationComplete:
+    """Revue dette : le routage trouvait le bon fournisseur mais reconstruisait
+    le service avec base_url=None - Qwen restait cassé dans les agents."""
+
+    def test_le_service_agent_qwen_porte_l_adresse_enregistree(self, monkeypatch):
+        import app.services.llm as llm_module
+        from app.services.agents import runtime
+
+        monkeypatch.setenv("QWEN_API_KEY", "cle-de-test")
+        monkeypatch.setattr(
+            llm_module, "_get_preference_value",
+            lambda cle: ADRESSE_ESPACE if cle == "qwen_base_url" else None,
+        )
+
+        service = runtime._get_llm_for_model("qwen3.8-max")
+
+        assert service is not None
+        assert service.config.base_url == ADRESSE_ESPACE, (
+            "le service reconstruit pour un agent doit relire qwen_base_url : "
+            "sinon l'adresse ne vaut que pour le chat principal"
+        )
+
+
+class TestLesClesDesFournisseursSontRestituees:
+    """Revue dette : une clé GLM enregistrée disparaissait à la réouverture
+    des Réglages - GET /api/config/ ne connaissait que six fournisseurs.
+    perplexity, deepseek et infomaniak souffraient déjà du même oubli."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "fournisseur", ["glm", "kimi", "qwen", "minimax", "perplexity", "deepseek"]
+    )
+    async def test_une_cle_enregistree_reste_visible(self, client, fournisseur):
+        resp = await client.post(
+            "/api/config/api-key",
+            json={"provider": fournisseur, "api_key": "sk-visible-apres-reouverture"},
+        )
+        assert resp.status_code == 200, resp.text
+
+        resp = await client.get("/api/config/")
+        corps = resp.json()
+        assert corps.get("api_keys", {}).get(fournisseur) is True, (
+            f"la clé {fournisseur} vient d'être enregistrée : la carte api_keys "
+            "doit la restituer, sinon l'interface redemande une clé déjà là"
+        )
+
+
+class TestLAdresseInvalideEstRefusee:
+    """Revue dette : http:// tout seul, une espace dans l'hôte ou
+    https://javascript:... passaient la validation startswith."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "adresse",
+        ["http://", "http:///chemin", "https:// ex ample.com/v1",
+         "https://javascript:alert(1)", "javascript:alert(1)", "/chemin/seul"],
+    )
+    async def test_refus(self, client, adresse):
+        resp = await client.post(
+            "/api/config/llm",
+            json={"provider": "qwen", "model": "qwen3.8-max", "base_url": adresse},
+        )
+        assert resp.status_code == 400, f"{adresse!r} devrait être refusée"
+
+    @pytest.mark.asyncio
+    async def test_le_detour_par_les_preferences_est_ferme(self, db_session):
+        """L'endpoint générique PUT /preferences/{key} pouvait écrire
+        qwen_base_url sans validation, relue telle quelle ensuite.
+
+        Appel direct de la fonction de route : le client de test ne
+        transmet pas les corps non-Pydantic (paramètre-union), et c'est la
+        GARDE qu'on prouve ici, pas le transport."""
+        from app.routers.config import set_preference
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as leve:
+            await set_preference(
+                key="qwen_base_url", value="http://", session=db_session
+            )
+        assert leve.value.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_une_valeur_stockee_invalide_est_ignoree_a_la_relecture(
+        self, client, db_session
+    ):
+        """Défense en profondeur : même écrite par un autre chemin, une adresse
+        invalide ne doit jamais atteindre le fournisseur."""
+        from app.models.entities import Preference
+
+        db_session.add(Preference(key="qwen_base_url", value="http://", category="llm"))
+        await db_session.commit()
+
+        resp = await client.post(
+            "/api/config/llm", json={"provider": "qwen", "model": "qwen3.8-max"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["base_url"] is None

@@ -13,6 +13,19 @@ const apiMocks = vi.hoisted(() => ({
 
 vi.mock('../../services/api', () => apiMocks);
 
+const catalogueMocks = vi.hoisted(() => ({ chargerCatalogue: vi.fn() }));
+vi.mock('../../lib/catalogueModeles', async (importOriginal) => {
+  const reel = await importOriginal<typeof import('../../lib/catalogueModeles')>();
+  return {
+    ...reel,
+    // Sans implantation posée par le test, se comporte comme un backend
+    // muet (null = repli statique) - restoreAllMocks efface les implantations,
+    // le repli doit donc vivre ICI, pas dans un mockResolvedValue global.
+    chargerCatalogue: (...args: Parameters<typeof reel.chargerCatalogue>) =>
+      catalogueMocks.chargerCatalogue(...args) ?? Promise.resolve(null),
+  };
+});
+
 describe('LLMStep', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -129,3 +142,4 @@ describe('LLMStep - dette 0.43.4, le parcours des nouveaux fournisseurs', () => 
     );
   });
 });
+
