@@ -482,3 +482,154 @@ class TestLesBloquantsDeLaRevue:
             "le fichier n'est plus indexé : le plan doit proposer de le "
             "réindexer, pas le déclarer inchangé"
         )
+
+
+class TestLeRunEstUnTraitementHonnete:
+    """0.46, phase 2 : project.sync est le banc d'essai du patron
+    TraitementHandle. Finding 5 du challenge : pas de try/finally autour du
+    run - une exception hors boucle laissait la ligne `running` fantôme."""
+
+    @pytest.mark.asyncio
+    async def test_une_exception_hors_boucle_termine_failed(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        from app.models.database import get_session_context
+        from app.models.processing import EtatTache, ProcessingTask
+        from app.services import project_sync_service as svc
+        from sqlmodel import select
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        def explose(*a, **k):
+            raise RuntimeError("hors boucle")
+
+        monkeypatch.setattr(svc, "lire_operations", explose)
+
+        with pytest.raises(RuntimeError):
+            await svc.appliquer_plan(projet, plan.id)
+
+        async with get_session_context() as session:
+            resultat = await session.execute(
+                select(ProcessingTask).where(
+                    ProcessingTask.type == "project_sync",
+                    ProcessingTask.entity_id == plan.id,
+                )
+            )
+            run = resultat.scalars().first()
+        assert run is not None
+        assert run.state == EtatTache.FAILED, (
+            "une exception hors boucle laissait le run `running` jusqu'au "
+            "prochain redémarrage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_apply_s_arrete_depuis_le_panneau(
+        self, client, racine, qdrant_factice
+    ):
+        """L'annulation par /api/processing-tasks coupe l'apply ENTRE deux
+        opérations : ce qui est fait reste fait, le reste attend, le run est
+        `cancelled` par le producteur."""
+        from app.models.entities_sync import EtatOperation, EtatPlan
+        from app.models.processing import EtatTache
+        from app.services import indexation, traitements
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+        assert plan.nb_indexer == 2
+
+        # poser l'annulation APRÈS la première opération, par le vrai service
+        vraie = indexation.index_payload
+        run_id: list[str] = []
+
+        async def index_puis_annule(*a, **k):
+            reponse = await vraie(*a, **k)
+            if not run_id:
+                run = await svc.lire_run(plan.id)
+                run_id.append(run.id)
+                await traitements.demander_arret(run.id)
+            return reponse
+
+        import unittest.mock as mock
+
+        with mock.patch.object(indexation, "index_payload", index_puis_annule):
+            await svc.appliquer_plan(projet, plan.id)
+
+        ops = await svc.lire_operations(plan.id)
+        etats = sorted(o.etat for o in ops)
+        assert etats == [EtatOperation.A_FAIRE, EtatOperation.FAIT], etats
+
+        run = await svc.lire_run(plan.id)
+        assert run.state == EtatTache.CANCELLED, (
+            "le producteur pose cancelled après son arrêt réel"
+        )
+        assert (await svc.lire_plan(plan.id)).etat == EtatPlan.APPLIQUE_PARTIEL
+
+    @pytest.mark.asyncio
+    async def test_une_panne_de_finalisation_ne_laisse_pas_running(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """Revue jalon (F3) : _finaliser_plan vivait HORS du try - sa panne
+        laissait le run running fantôme."""
+        from app.models.processing import EtatTache
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        async def finalisation_en_panne(*a, **k):
+            raise RuntimeError("finalisation en panne")
+
+        monkeypatch.setattr(svc, "_finaliser_plan", finalisation_en_panne)
+
+        with pytest.raises(RuntimeError):
+            await svc.appliquer_plan(projet, plan.id)
+
+        run = await svc.lire_run(plan.id)
+        assert run.state == EtatTache.FAILED
+
+    @pytest.mark.asyncio
+    async def test_le_shutdown_est_un_arret_pas_une_panne(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """Une CancelledError (shutdown) termine cancelled - jamais failed
+        avec une erreur inventée."""
+        import asyncio
+
+        from app.models.processing import EtatTache
+        from app.services import indexation
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        async def index_annule(*a, **k):
+            raise asyncio.CancelledError()
+
+        monkeypatch.setattr(indexation, "index_payload", index_annule)
+
+        # CancelledError DANS une operation est absorbee par la boucle
+        # (echec d'operation) SAUF si elle traverse : ici on la fait traverser
+        # en la levant hors operation, via lire_operations au 2e appel
+        vraie = svc.lire_operations
+        appels = {"n": 0}
+
+        async def lire_puis_annule(plan_id):
+            appels["n"] += 1
+            if appels["n"] >= 2:
+                raise asyncio.CancelledError()
+            return await vraie(plan_id)
+
+        monkeypatch.setattr(svc, "lire_operations", lire_puis_annule)
+
+        with pytest.raises(asyncio.CancelledError):
+            await svc.appliquer_plan(projet, plan.id)
+
+        run = await svc.lire_run(plan.id)
+        assert run.state == EtatTache.CANCELLED
+        assert "hors boucle" not in (run.error or "")

@@ -85,6 +85,9 @@ class TestAnnulationCoupeLeProducteur:
             async for morceau in chat_router._stream_response(
                 conversation_id, "question", None, None
             )
+            # 0.46 : le premier événement peut annoncer le generation_id -
+            # c'est du suivi, pas du contenu.
+            if '"generation"' not in morceau
         ]
 
         assert len(morceaux) == 3
@@ -128,8 +131,12 @@ class TestAnnulationCoupeLeProducteur:
 
         flux = chat_router._stream_response(conversation_id, "question", None, None)
         # Amorcer le générateur sans attendre de morceau : il se met en attente
-        # sur un fournisseur qui ne répond pas.
+        # sur un fournisseur qui ne répond pas. 0.46 : le premier événement
+        # peut être le suivi de génération - on le consomme et on ré-amorce.
         tache = asyncio.create_task(flux.__anext__())
+        fini, _ = await asyncio.wait({tache}, timeout=2)
+        if tache in fini and '"generation"' in tache.result():
+            tache = asyncio.create_task(flux.__anext__())
         await asyncio.wait_for(producteur_demarre.wait(), timeout=2)
 
         # Le client s'en va : le consommateur est annulé, puis le générateur

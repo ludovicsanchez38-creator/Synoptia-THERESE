@@ -85,6 +85,7 @@ import type { ActivityResponse } from '../../services/api/crm-extended';
 import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
 import { useConversationSync } from '../../hooks/useConversationSync';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { usePanelStore } from '../../stores/panelStore';
@@ -1292,6 +1293,7 @@ export function ConversationCanvasPrototype() {
               Rechercher
               <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
+            <TraitementsIndicator />
             <WindowControls side="right" />
           </div>
         </header>

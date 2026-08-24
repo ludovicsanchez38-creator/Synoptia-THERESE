@@ -12,6 +12,7 @@ branche, son diff et ses événements, et référencera une tâche de traitement
 """
 from datetime import UTC, datetime
 
+from sqlalchemy import Index
 from sqlmodel import Field, SQLModel
 
 from .entities import generate_uuid
@@ -49,6 +50,10 @@ class ProcessingTask(SQLModel, table=True):
     """Un traitement long, visible et interruptible par l'utilisateur."""
 
     __tablename__ = "processing_tasks"
+    __table_args__ = (
+        # Le panneau trie par created_at et la retention filtre dessus (0.46).
+        Index("ix_processing_tasks_created_at", "created_at"),
+    )
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
 
