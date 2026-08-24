@@ -56,8 +56,13 @@ function ApplicationBootstrap() {
   useEffect(() => {
     void (async () => {
       const { verifierGeneration } = await import('./lib/capacites/generation');
-      const { API_BASE } = await import('./services/api/core');
-      await verifierGeneration(API_BASE);
+      const core = await import('./services/api/core');
+      // Attendre le port RÉEL du sidecar avant de lire API_BASE : en mode
+      // packagé le port est dynamique, et un contrôle parti sur le port par
+      // défaut serait toujours « cohérent » — donc ne contrôlerait rien.
+      // initApiBase est un singleton : l'appel est gratuit si déjà fait.
+      await core.initApiBase();
+      await verifierGeneration(core.API_BASE);
     })();
   }, []);
 
