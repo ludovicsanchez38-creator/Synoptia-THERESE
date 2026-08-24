@@ -277,11 +277,57 @@ def parse_action_message(text: str) -> ParsedChatAction | None:
 
 
 def available_actions_text() -> str:
-    """Liste lisible des actions disponibles (réponse « action inconnue »)."""
+    """Liste lisible des actions disponibles (réponse « action inconnue »).
+
+    0.44, premier consommateur du manifeste de capacités. Cette aide énumérait
+    des expressions brutes — `{action: ouvrir memoire}` — sans dire ce qu'on
+    ouvre ni à quoi ça sert : une liste d'identifiants, pas une aide.
+
+    Le nom et la description viennent désormais du manifeste. Le partage des
+    rôles est celui du design V2 : `NAVIGATION_TARGETS` reste l'autorité sur ce
+    qui S'EXÉCUTE, le manifeste devient l'autorité sur ce qui SE DIT. Ajouter
+    une capacité au manifeste enrichit l'aide sans toucher de seconde liste —
+    c'est la divergence « sept déclarations concurrentes » qu'on résorbe.
+
+    Si le manifeste est illisible, l'aide retombe sur la forme brute : dégradée
+    mais jamais absente.
+    """
+    from app.services.capacites import capacites, points_entree, texte
+
+    # action_id -> (nom, quoi), déduits du manifeste.
+    descriptions: dict[str, tuple[str, str]] = {}
+    entrees_par_id = {p["id"]: p for p in points_entree()}
+    for capacite in capacites():
+        for entree_id in capacite.get("entrees", []):
+            entree = entrees_par_id.get(entree_id)
+            if not entree:
+                continue
+            binding = entree.get("binding", {})
+            # `.get` et non `[...]` : la validation du manifeste garantit la
+            # présence d'actionId, mais l'aide ne doit pas dépendre de cette
+            # garantie pour survivre.
+            if binding.get("registre") in ("action", "raccourci") and binding.get("actionId"):
+                descriptions.setdefault(
+                    binding["actionId"],
+                    (texte(capacite, "nom"), texte(capacite, "quoi")),
+                )
+
     seen: dict[str, str] = {}
     for cible, (action_id, _label) in NAVIGATION_TARGETS.items():
         seen.setdefault(action_id, cible)
-    lignes = [f"- {{action: ouvrir {cible}}}" for cible in sorted(seen.values())]
+
+    lignes = []
+    for action_id, cible in sorted(seen.items(), key=lambda item: item[1]):
+        nom, _quoi = descriptions.get(action_id, ("", ""))
+        # Le NOM seul, pas la description : cette réponse part aussi sur chaque
+        # action inconnue, et la version avec descriptions triplait sa longueur
+        # (621 -> 1898 caractères, mesuré en revue). Le nom suffit à savoir ce
+        # qu'on ouvre ; la description appartient au catalogue, pas à une
+        # réponse d'erreur.
+        if nom:
+            lignes.append(f"- {{action: ouvrir {cible}}} — {nom}")
+        else:
+            lignes.append(f"- {{action: ouvrir {cible}}}")
     lignes += [
         f'- {{action: produire {fmt} "sujet du document"}}'
         for fmt in sorted(PRODUCE_SKILLS)

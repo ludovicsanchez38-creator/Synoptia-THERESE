@@ -15,7 +15,7 @@ const FileBrowser = lazy(() => import('../files/FileBrowser').then((module) => (
 const ProjectsPanel = lazy(() => import('../memory/ProjectsPanel').then((module) => ({ default: module.ProjectsPanel })));
 const DocumentsList = lazy(() => import('../documents/DocumentsList').then((module) => ({ default: module.DocumentsList })));
 
-const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
+export const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
   home: 'Accueil et alertes',
   memory: 'Contacts et mémoire',
   crm: 'Pipeline commercial',
