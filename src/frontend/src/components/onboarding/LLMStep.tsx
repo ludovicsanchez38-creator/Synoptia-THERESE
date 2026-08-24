@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
-import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
+import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
@@ -53,6 +53,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   // Adresse d'espace de travail Qwen : sans elle, le fournisseur ne peut pas
   // fonctionner - elle fait donc partie du parcours, pas d'un réglage caché.
   const [baseUrlInput, setBaseUrlInput] = useState('');
+  // Revue dette : l'arrivée du catalogue dynamique corrigeait la sélection
+  // même quand l'utilisateur venait de choisir un modèle à la main - un
+  // reclassement silencieux, précisément ce qu'on corrige partout ailleurs.
+  const modeleChoisiParLUtilisateur = useRef(false);
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -174,7 +178,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       if (annule || !modeles) return;
       setCatalogueDynamique(modeles);
       setSelectedModel((actuel) =>
-        modeles.some((m) => m.id === actuel) ? actuel : modeles[0].id,
+        selectionApresCatalogue(actuel, modeles, modeleChoisiParLUtilisateur.current),
       );
     });
     return () => { annule = true; };
@@ -182,6 +186,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
+    modeleChoisiParLUtilisateur.current = false;
     setError(null);
     setSaved(false);
 
@@ -427,7 +432,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           <select
             id="llm-model"
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => {
+              modeleChoisiParLUtilisateur.current = true;
+              setSelectedModel(e.target.value);
+            }}
             className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
           >
             {availableModels.map((model) => (

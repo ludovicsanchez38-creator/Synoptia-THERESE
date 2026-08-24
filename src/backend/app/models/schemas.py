@@ -434,6 +434,12 @@ class ConfigResponse(BaseModel):
     has_gemini_image_key: bool = False
     has_fal_key: bool = False
     has_brave_key: bool = False
+    # Revue dette 0.43.4 : les champs has_*_key ci-dessus n'ont jamais suivi
+    # les fournisseurs (perplexity, deepseek, infomaniak, puis glm/kimi/qwen/
+    # minimax : cle enregistree, jamais restituee, l'interface la redemandait).
+    # Cette carte couvre TOUS les fournisseurs LLM ; les champs historiques
+    # restent pour compatibilite.
+    api_keys: dict[str, bool] = {}
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True

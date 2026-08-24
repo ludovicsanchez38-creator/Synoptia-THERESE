@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { _viderLeCache, chargerCatalogue, decorer } from './catalogueModeles';
+import { _viderLeCache, chargerCatalogue, decorer, selectionApresCatalogue } from './catalogueModeles';
 
 afterEach(() => {
   _viderLeCache();
@@ -55,5 +55,25 @@ describe('La décoration', () => {
     expect(decorer(['MiniMax-M3'])[0]).toEqual({
       id: 'MiniMax-M3', name: 'MiniMax M3', badge: 'Recommandé',
     });
+  });
+});
+
+describe('La liste fraîche ne reclasse jamais un choix explicite', () => {
+  const modeles = [{ id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' }];
+
+  it('garde le modèle choisi à la main, même absent de la liste', () => {
+    expect(selectionApresCatalogue('gpt-5.4', modeles, true)).toBe('gpt-5.4');
+  });
+
+  it('corrige un défaut périmé vers le premier modèle servi', () => {
+    expect(selectionApresCatalogue('gpt-5.4', modeles, false)).toBe('gpt-5.6-sol');
+  });
+
+  it('ne touche pas une sélection présente dans la liste', () => {
+    expect(selectionApresCatalogue('gpt-5.6-sol', modeles, false)).toBe('gpt-5.6-sol');
+  });
+
+  it('ne casse rien sur une liste vide', () => {
+    expect(selectionApresCatalogue('gpt-5.4', [], false)).toBe('gpt-5.4');
   });
 });

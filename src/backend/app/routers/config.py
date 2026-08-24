@@ -164,6 +164,39 @@ async def get_config(session: AsyncSession = Depends(get_session)):
     if pref:
         web_search_enabled = pref.value.lower() == "true"
 
+    # Carte generique (revue dette 0.43.4) : un fournisseur = une entree,
+    # env d'abord puis cle chiffree en base - la meme regle pour tous, plus
+    # jamais un fournisseur ajoute sans restitution de sa cle.
+    fournisseurs_llm = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+        "mistral": "MISTRAL_API_KEY",
+        "groq": "GROQ_API_KEY",
+        "grok": "XAI_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
+        "perplexity": "PERPLEXITY_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+        "glm": "GLM_API_KEY",
+        "kimi": "KIMI_API_KEY",
+        "qwen": "QWEN_API_KEY",
+        "minimax": "MINIMAX_API_KEY",
+        "infomaniak": "INFOMANIAK_API_KEY",
+    }
+    api_keys: dict[str, bool] = {}
+    for fournisseur, env_var in fournisseurs_llm.items():
+        if os.environ.get(env_var) or (
+            fournisseur == "gemini" and os.environ.get("GOOGLE_API_KEY")
+        ):
+            api_keys[fournisseur] = True
+            continue
+        has_db, is_corrupted = await _check_key_decryptable(
+            session, f"{fournisseur}_api_key"
+        )
+        if is_corrupted and fournisseur not in corrupted_keys:
+            corrupted_keys.append(fournisseur)
+        api_keys[fournisseur] = has_db and not is_corrupted
+
     return ConfigResponse(
         app_name=settings.app_name,
         app_version=settings.app_version,
@@ -182,6 +215,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         ollama_available=ollama_available,
         web_search_enabled=web_search_enabled,
         corrupted_keys=corrupted_keys,
+        api_keys=api_keys,
     )
 
 
@@ -417,6 +451,15 @@ async def set_preference(
         raise HTTPException(
             status_code=400, detail="Use /api-key endpoint for API keys"
         )
+
+    # Revue dette 0.43.4 : ce detour permettait d'ecrire une adresse de
+    # fournisseur invalide, relue ensuite sans controle par POST /llm.
+    if key.lower().endswith("_base_url"):
+        if not isinstance(value, str) or not _base_url_valide(value.strip()):
+            raise HTTPException(
+                status_code=400,
+                detail="Adresse invalide : http(s):// avec un hôte, sans espace",
+            )
 
     # Serialize value
     if isinstance(value, (list, dict)):
@@ -1167,6 +1210,30 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
     )
 
 
+def _base_url_valide(adresse: str) -> bool:
+    """Une adresse de fournisseur exploitable, pas juste un prefixe plausible.
+
+    Revue dette 0.43.4 : startswith("http://") laissait passer « http:// »
+    tout seul, « http:///chemin » (hote vide), une espace dans l'hote et
+    « https://javascript:alert(1) » (port imparsable). urlsplit + hostname +
+    port tranchent ; le moindre blanc disqualifie.
+    """
+    from urllib.parse import urlsplit
+
+    if any(c.isspace() for c in adresse):
+        return False
+    try:
+        morceaux = urlsplit(adresse)
+        if morceaux.scheme not in ("http", "https"):
+            return False
+        if not morceaux.hostname:
+            return False
+        morceaux.port  # noqa: B018 - leve ValueError sur un port imparsable
+    except ValueError:
+        return False
+    return True
+
+
 @router.get("/llm/models/{provider_value}")
 async def get_available_models(provider_value: str) -> dict[str, Any]:
     """Catalogue des modèles d'un fournisseur - LA source, servie au frontend.
@@ -1269,12 +1336,19 @@ async def set_llm_config(
         pref_base = result.scalar_one_or_none()
         if request.base_url is None:
             base_url = pref_base.value or None if pref_base else None
+            # Defense en profondeur : une adresse invalide arrivee par un autre
+            # chemin d'ecriture ne doit jamais atteindre le fournisseur.
+            if base_url and not _base_url_valide(base_url):
+                logger.warning(
+                    "Adresse %s stockee invalide (%r) : ignoree", cle_base_url, base_url
+                )
+                base_url = None
         else:
             demandee = request.base_url.strip()
-            if demandee and not demandee.startswith(("http://", "https://")):
+            if demandee and not _base_url_valide(demandee):
                 raise HTTPException(
                     status_code=400,
-                    detail="L'adresse doit commencer par http:// ou https://",
+                    detail="Adresse invalide : http(s):// avec un hôte, sans espace",
                 )
             base_url = demandee or None
             if pref_base:

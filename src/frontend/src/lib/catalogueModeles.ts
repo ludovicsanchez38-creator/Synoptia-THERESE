@@ -79,6 +79,24 @@ export async function chargerCatalogue(
   }
 }
 
+/**
+ * Que devient la sélection quand la liste fraîche arrive ?
+ *
+ * Revue dette 0.43.4 : l'arrivée du catalogue corrigeait la sélection même
+ * quand l'utilisateur venait de choisir un modèle à la main - un reclassement
+ * silencieux. Règle : un choix EXPLICITE ne se corrige jamais ; un défaut
+ * absent de la liste fraîche bascule sur le premier modèle servi.
+ */
+export function selectionApresCatalogue(
+  actuelle: string,
+  modeles: ModeleDecore[],
+  choisieParLUtilisateur: boolean,
+): string {
+  if (choisieParLUtilisateur) return actuelle;
+  if (modeles.some((m) => m.id === actuelle)) return actuelle;
+  return modeles[0]?.id ?? actuelle;
+}
+
 /** Pour les tests : le cache est un état de module. */
 export function _viderLeCache(): void {
   cache.clear();
