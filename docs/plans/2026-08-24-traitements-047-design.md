@@ -1,125 +1,158 @@
 # Traitements longs, complément (0.47) - Board, actions, indexation, fencing
 
-> Design V1 du 24/08/2026 (soir), À CHALLENGER par Soso avant toute ligne de
-> code. Solde la dette actée du jalon 0.46 : les trois producteurs reportés
-> et la promesse complète sur les outils.
+> **Design V2 du 24/08/2026 (nuit)** - V1 challengée par Soso (10 findings,
+> « à reprendre » : plusieurs constats de la V1 étaient factuellement faux).
+> Tout est intégré ; corrections en fin de document. À re-challenger.
 
-## Ce qui existe et fait foi
+## Le socle qui fait foi
 
-Le patron 0.46 est prouvé sur quatre producteurs : `TraitementHandle`
-(CAS durables, état terminal au producteur, `AnnuleAvantDemarrage` = zéro
-production, échec post-création = `failed` explicite), panneau Traitements,
-annulation canonique par `/api/processing-tasks/{id}/cancel`. Chaque
-enrôlement 0.47 suit EXACTEMENT ce patron - y compris ses deux pièges
-d'initialisation fermés en passe 2/3 de revue.
+Patron 0.46 prouvé : `TraitementHandle` (CAS durables, état terminal au
+producteur, `AnnuleAvantDemarrage` = zéro production, échec post-création =
+`failed`), panneau Traitements, annulation canonique. Chaque enrôlement суit
+ce patron, pièges d'initialisation compris.
 
-## 1. Board - le producteur résistant
+## 1. Board
 
-État réel : `generate_stream` lance les advisors en tâches parallèles + un
-moniteur ; le `finally` du flux annule déjà tout à la fermeture (panneau
-fermé = déconnexion SSE) ; `decision_id` ne naît qu'à la SAUVEGARDE finale.
+Constats exacts (challenge) : le `finally` du flux n'est qu'un nettoyage
+LOCAL de la branche cloud parallèle - il ne couvre ni la recherche web, ni
+le mode souverain, ni la synthèse, ni la persistance. La garantie d'arrêt
+global vient de l'annulation de la TÂCHE PORTEUSE du flux. Avec la pile
+verrouillée (Starlette 1.2.1 + Uvicorn 0.40, listener de déconnexion ASGI),
+pas de trou de buffering connu.
 
-Enrôlement (recommandation du challenge 0.46) :
-- le handle naît AVANT le premier événement SSE (type `board`, label =
-  question tronquée), `generation_id` émis au frontend en premier événement ;
-- `entity_id` renseigné avec le `decision_id` APRÈS la sauvegarde (le
-  handle gagne une méthode `rattacher_entite(entity_id)` - UPDATE simple) ;
-- adaptateur : `AnnulationParTacheAsyncio` sur la tâche du flux - l'arrêt
-  canonique emprunte le MÊME chemin que la fermeture du panneau (le finally
-  existant annule les advisors) ; « fermer le panneau annule » reste vrai ;
-- états : `done` après sauvegarde, `cancelled` sur fermeture/annulation
-  (partiel NON persisté : une décision à moitié délibérée ne se sauve pas,
-  c'est le contrat Board existant), `failed` avec cause.
+- **`decision_id` PRÉALLOUÉ** avant la création du handle et passé au
+  service (l'UUID naissait à la sauvegarde sans nécessité) - `entity_id`
+  posé dès la création, pas de `rattacher_entite` ;
+- handle type `board` créé avant le premier événement SSE, `generation_id`
+  émis en premier ;
+- adaptateur `AnnulationParTacheAsyncio` sur la tâche porteuse du flux ;
+- **fence avant le commit** de la décision ; après commit confirmé, `done`
+  GAGNE même si une demande d'arrêt arrive trop tard (le producteur résout
+  le cancel_requested tardif en done - contrat 0.46) ;
+- états : done après commit, cancelled sur annulation/déconnexion (pas de
+  partiel : une décision à moitié délibérée ne se sauve pas), failed ;
+- **contrats UI distincts** : le Board classique ferme = annule (existant) ;
+  le nouveau canevas MASQUE sans annuler (contrat testé) - les boutons
+  Annuler des DEUX passent par l'endpoint canonique avec le generation_id
+  PUIS ferment le transport ; masquer ne touche à rien ;
+- matrice de tests par phase : annulation pendant recherche web, pendant
+  advisors cloud, en mode souverain séquentiel, pendant la synthèse, avant
+  le commit, après le commit (done gagne) - au niveau StreamingResponse,
+  pas seulement sur le générateur du service.
 
-## 2. ActionRunner - corriger le mensonge AVEC l'enrôlement
+## 2. ActionRunner - corriger le mensonge sans casser son panneau
 
-État réel : `cancel_task` pose l'évènement ET marque immédiatement
-`CANCELLED` + `completed_at` pendant que le flux LLM de l'étape continue -
-le mensonge historique documenté partout.
+Constats exacts : le panneau Actions est VIVANT (lancement + progression
+par étapes, `TaskState` consommé par actions.ts et ActionPanel.tsx) - il
+reste ; Traitements est la vue globale. Les deux seules écritures de
+`CANCELLED` sont cancel_task (le mensonge) et le chemin final de la boucle.
+L'enum d'échec s'appelle `ERROR` (pas FAILED). `_execute` a des zones hors
+try (contexte local, callbacks) qui peuvent le tuer en laissant tout
+`running`.
 
-- `cancel_task` ne pose QUE l'évènement (plus jamais l'état) ; le statut
-  `CANCELLED` n'est posé que par la boucle `run()` quand elle constate
-  l'évènement (chemin existant lignes ~594-609, qui devient le SEUL) ;
-- le TaskState gagne `CANCEL_REQUESTED` pour l'affichage de son propre
-  panneau historique - même distinction que ProcessingTask ;
-- enrôlement : un ProcessingTask type `action` par run (label = agent),
-  adaptateur `AnnulationCooperative(poser_drapeau=_cancel_event.set)`,
-  progression = étapes (i+1)/n via `handle.progresser(step=label)`,
-  mapping final COMPLETED→done, FAILED→failed, CANCELLED→cancelled ;
-- la route historique d'annulation d'action passe par le service canonique
-  (résolution par entity_id = task_id du runner), repli direct sinon -
-  même bascule que l'Atelier en 0.46.
+- `cancel_task` pose l'évènement + `TaskStatus.CANCEL_REQUESTED` (nouvel
+  état TaskState), SANS `completed_at` ; seul le chemin de boucle pose
+  `CANCELLED` ;
+- `_execute` ne réécrit pas `RUNNING` si l'annulation a gagné avant son
+  démarrage (course testée) ;
+- **enveloppe terminale autour de TOUT `_execute`** (contexte local et
+  callbacks compris) : correspondance COMPLETED→done, ERROR→failed,
+  CANCELLED→cancelled - plus aucun chemin qui laisse TaskState ET
+  ProcessingTask `running` ;
+- enrôlement : un ProcessingTask type `action` par run, adaptateur
+  `AnnulationCooperative(poser_drapeau=_cancel_event.set)`, progression =
+  étapes via `handle.progresser(step=label, progress=(i+1)/n)` ;
+- frontend Actions : `cancel_requested` ajouté à l'union TS, libellés,
+  couleurs, états ACTIFS (le polling continue, le spinner devient « arrêt
+  demandé »), nettoyage mémoire ;
+- la route d'annulation d'action passe par le service canonique (résolution
+  entity_id), repli direct sinon - bascule identique à l'Atelier 0.46.
 
-## 3. Indexation - une tâche par fichier
+## 3. Indexation - deux niveaux formalisés
 
-État réel : `index_payload` porte `est_abandonnee` (coopératif, consulté
-aux étapes sûres) ; l'extraction threadée va à son terme (arrêt différé
-ASSUMÉ, documenté depuis 0.41.3).
+Constats exacts : le trombone appelle `/api/files/index` DIRECTEMENT à
+l'attachement (avant tout message, avec son AbortController) - c'est un
+traitement AUTONOME ; le fallback interne de chat.py (~197) a encore son
+propre pipeline sans fence ; `index_payload` saute l'écriture sur abandon
+puis retourne un FileResponse NORMAL - l'enveloppe ne peut pas distinguer
+done de cancelled.
 
-- la route `/api/files/index` crée un handle type `indexation` (label =
-  nom du fichier), et `est_abandonnee` devient : déconnexion OU
-  `handle.annulation_demandee()` - le panneau peut donc abandonner une
-  indexation exactement comme la déconnexion le fait déjà ;
-- `remplacer_puis_indexer` (upload de projet) : même enveloppe ;
-- le trombone du chat n'a PAS de tâche propre : il vit dans la génération
-  de chat qui le porte (déjà annulable par elle) ;
-- états : done (chunk_count consigné), cancelled (abandon constaté - l'état
-  précédent de l'index reste la vérité, invariant N1 existant), failed ;
-- project.sync appelle `index_payload` DANS son apply : pas de double
-  tâche - `index_payload` n'enrôle RIEN lui-même, ce sont ses APPELANTS
-  de surface (route, upload) qui enrôlent. Règle écrite : un traitement =
-  un geste UTILISATEUR, pas une fonction interne.
+- **Règle écrite** : le cœur (`index_payload`, `remplacer_puis_indexer`)
+  n'enrôle JAMAIS ; seules les enveloppes de SURFACE (route `/index`,
+  route `/upload`) créent un traitement. Un geste utilisateur = un
+  traitement. Test : un apply project.sync avec plusieurs indexations =
+  exactement UN ProcessingTask ;
+- **issue d'abandon explicite** : le cœur lève `IndexationAbandonnee` au
+  point exact où l'abandon est observé (au lieu du FileResponse normal) -
+  seule façon honnête de poser `cancelled` sans course. Les appelants
+  existants qui passaient `est_abandonnee` (chat trombone fallback,
+  project.sync via revalidation) traitent l'exception ;
+- adaptateur runtime : évènement local + `TravailNonInterruptible(event.set)`
+  (l'extraction threadée va au bout - arrêt différé assumé), callback
+  combiné `await request.is_disconnected() OR event.is_set()` ;
+- le fallback interne de chat.py est raccordé au même cœur et au même
+  signal (il vit dans la génération de chat qui le porte) ;
+- type `indexation` ajouté au seuil de visibilité serveur (< 2 s masquées) ;
+- une tâche PAR fichier (annulation individuelle) ; le regroupement visuel
+  des lots attendra.
 
-## 4. Fencing des outils mutateurs - la promesse complète
+## 4. Fencing - un contexte d'exécution, pas un drapeau partagé
 
-Promesse 0.46 : « aucune NOUVELLE étape lancée ». Reste le trou documenté :
-un outil DÉJÀ lancé (thread, MCP) commite son effet après l'annulation.
+Constats exacts : le drapeau réel est indexé par conversation - deux
+générations chevauchées peuvent fencer la mauvaise ; les outils workspace
+ne reçoivent pas le conversation_id ; le chemin de confirmation perd tout ;
+les mutateurs locaux immédiats réels sont `create_contact`,
+`create_project`, `generate_document` (calendrier = geste confirmé séparé,
+HORS périmètre ; email/web/MCP = externes).
 
-- un helper `annulation_en_vol(conversation_id) -> bool` (lecture du
-  drapeau existant) exposé par le module chat aux outils ;
-- les outils mutateurs LOCAUX (workspace : création de contact/projet/tâche,
-  écriture de document, mutations agenda locales) appellent le fence JUSTE
-  AVANT leur commit : annulation en vol = l'outil retourne « interrompu
-  avant écriture » comme résultat d'outil, AUCUN commit ;
-- les outils MCP externes et le web restent HORS fencing (on ne peut pas
-  dé-lancer une requête externe) - la promesse écrite reste « aucun effet
-  LOCAL ultérieur », les effets externes déjà partis sont assumés ;
-- inventaire des outils mutateurs à figer par un test de complétude : tout
-  outil du dispatcher qui écrit en base ou sur disque doit référencer le
-  fence (test par inspection du module, même esprit que les tests de
-  parité du manifeste).
+- **`ContexteExecution`** explicite : `generation_id` + token d'annulation
+  (callable), construit par le chat au lancement de la génération, passé au
+  dispatcher puis aux handlers - AUCUN service n'importe `routers.chat` ;
+- **registre déclaratif des outils** : chaque outil du dispatcher est classé
+  `read_only | local_mutation | external_mutation` - test de complétude sur
+  le registre (un outil non classé = rouge) ;
+- les trois mutateurs locaux appellent le fence JUSTE AVANT leur premier
+  effet durable (Qdrant compris : contact/projet écrivent Qdrant PUIS
+  SQLite) : annulation observée = résultat d'outil « interrompu avant
+  écriture », zéro effet ;
+- **tests COMPORTEMENTAUX avec barrières** : lancer l'outil, annuler avant
+  le premier effet durable, relâcher, vérifier SQLite + Qdrant + disque -
+  l'inspection statique ne prouve rien (generate_document écrit via le
+  registre de skills) ;
+- promesse écrite : « aucun nouvel effet MÉTIER local après observation de
+  l'annulation » - la consignation du traitement et le message partiel sont
+  explicitement exclus.
 
-## 5. Dette interne soldée au passage
+## 5. Divers
 
-- déduplication du message partiel LIÉE à la génération : le Message
-  partiel porte `{"generation_id": ...}` dans `extra_data`, la dédup se
-  fait dessus - deux réponses identiques légitimes ne sont plus confondues ;
-- avertissements React `act()` des tests à faux timers : nettoyés ;
-- `docs/releases` et CLAUDE.md mis à jour en fin de jalon.
+- index sur `ProcessingTask.entity_id` (la résolution historique Atelier +
+  actions devient un chemin normal) - modèle + migration ad-hoc, patron 0.45.
+
+## Retirés du MVP (challenge)
+
+`rattacher_entite` générique, fencing du calendrier confirmé, regroupement
+des lots d'indexation, nettoyage des warnings React (lot séparé), dédup du
+partiel par generation_id (lot séparé non bloquant).
 
 ## Séquencement
 
-1. ActionRunner (le mensonge est le plus ancien défaut documenté) ;
-2. Indexation (enveloppe de route, la plus mécanique) ;
-3. Board (le résistant, avec `rattacher_entite`) ;
-4. Fencing (transversal, test de complétude) ;
-5. dette interne + revue de jalon.
+1. ActionRunner (mensonge + enveloppe terminale + frontend Actions) ;
+2. Indexation (issue d'abandon + enveloppes + trombone/fallback) ;
+3. Board (préallocation + adaptateur + matrice de phases) ;
+4. Fencing (contexte + registre déclaratif + tests à barrières) ;
+5. index entity_id + revue de jalon.
 
-## Hors périmètre (explicite)
+## Révision V2 - ce que le challenge a corrigé
 
-Reprise `resumable`, watchers, llm_usage/temps par projet, remplacement des
-Loader2, SSE dédié aux traitements, barrière de restauration.
-
-## Questions ouvertes pour le challenge
-
-1. Board : l'adaptateur sur la tâche du flux SSE annule le TRANSPORT - le
-   même chemin que la déconnexion. Y a-t-il un cas où le flux survit au
-   transport (buffering Starlette) qui rendrait l'arrêt mensonger ?
-2. ActionRunner : son panneau historique (TaskState) reste-t-il exposé
-   quelque part côté frontend, ou le panneau Traitements le remplace-t-il
-   de fait (deux listes pour la même chose = divergence garantie) ?
-3. Le fence par conversation_id : les outils reçoivent-ils tous le
-   conversation_id aujourd'hui, ou faut-il le faire circuler ?
-4. Indexation en MASSE (déposer 30 fichiers = 30 requêtes = 30 tâches) :
-   le panneau devient-il illisible ? Seuil de visibilité à étendre au type
-   `indexation` (< 2 s masquées) ?
+1. Board : finally = nettoyage local cloud seulement ; decision_id
+   préalloué au lieu de rattacher_entite ; masquer ≠ annuler (deux
+   contrats UI distincts) ; matrice de phases exigée.
+2. ActionRunner : le panneau Actions est vivant et reste ; CANCEL_REQUESTED
+   écrit dans TaskState (sinon inobservable) ; enveloppe terminale totale ;
+   l'enum s'appelle ERROR.
+3. Indexation : le trombone est un traitement autonome (il appelle la
+   route) ; IndexationAbandonnee au lieu du FileResponse ambigu ; fallback
+   chat.py raccordé ; adaptateur TravailNonInterruptible.
+4. Fencing : ContexteExecution par generation_id (le drapeau par
+   conversation fençait potentiellement la mauvaise génération) ; registre
+   déclaratif + tests comportementaux ; inventaire corrigé (3 mutateurs).
