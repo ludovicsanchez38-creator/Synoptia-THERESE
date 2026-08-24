@@ -275,7 +275,13 @@ async def set_user_profile(
         # L'indexation part donc en tache de fond, et son echec eventuel ne
         # remet pas en cause une sauvegarde deja acquise.
         if embed_in_qdrant:
+            global _INDEXATION_COURANTE
+            # Une indexation deja lancee porte forcement un profil perime :
+            # celui qu'on vient d'ecrire l'a remplace.
+            if _INDEXATION_COURANTE and not _INDEXATION_COURANTE.done():
+                _INDEXATION_COURANTE.cancel()
             tache = asyncio.create_task(_indexer_en_arriere_plan(profile))
+            _INDEXATION_COURANTE = tache
             _INDEXATIONS_EN_COURS.add(tache)
             tache.add_done_callback(_INDEXATIONS_EN_COURS.discard)
 
@@ -292,6 +298,25 @@ async def set_user_profile(
 # ensemble, le ramasse-miettes peut annuler une indexation en cours de route.
 _INDEXATIONS_EN_COURS: set[asyncio.Task] = set()
 
+# Revue : deux sauvegardes rapprochees lancaient deux indexations CONCURRENTES
+# sur la meme entite, et chacune commence par supprimer l'ancienne. Entre la
+# suppression de la seconde et son ecriture, le profil n'existait plus dans
+# l'index : « qui suis-je ? » restait sans reponse, sans que rien ne le signale.
+#
+# C'est exactement le scenario du testeur : « j'ai refait Continuer et c'est
+# passe ».
+#
+# Un simple verrou ne suffit PAS. Il serialise, mais ne garantit pas l'ordre :
+# l'ordonnanceur asyncio peut lancer la seconde tache avant la premiere, et
+# l'index garderait alors l'ANCIEN nom - le testeur corrige son prenom, la
+# correction est perdue. Verifie en test.
+#
+# On annule donc l'indexation precedente au lieu de l'attendre. Indexer un
+# profil deja perime n'a aucun interet, et le dernier enregistre gagne
+# vraiment.
+_VERROU_INDEXATION = asyncio.Lock()
+_INDEXATION_COURANTE: asyncio.Task | None = None
+
 
 async def _indexer_en_arriere_plan(profile: UserProfile) -> None:
     """Indexe le profil sans jamais faire echouer sa sauvegarde.
@@ -301,7 +326,11 @@ async def _indexer_en_arriere_plan(profile: UserProfile) -> None:
     l'utilisateur vient de saisir.
     """
     try:
-        await _embed_profile(profile)
+        async with _VERROU_INDEXATION:
+            await _embed_profile(profile)
+    except asyncio.CancelledError:
+        # Remplacee par une indexation plus recente : rien d'anormal.
+        raise
     except Exception:
         logger.warning(
             "Profil enregistre mais non indexe : la question « qui suis-je ? » "
@@ -348,7 +377,9 @@ async def _embed_profile(profile: UserProfile) -> None:
         # Use special ID for owner profile
         # Supprimer l'ancien embedding si existant
         try:
-            qdrant.delete_by_entity("owner_profile")
+            # Meme piege que l'ajout : `delete_by_entity` est SYNCHRONE et
+            # gelerait la boucle d'evenements pendant tout l'appel.
+            await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 
@@ -402,7 +433,10 @@ async def delete_user_profile(session: AsyncSession) -> bool:
         # Remove from Qdrant
         try:
             qdrant = get_qdrant_service()
-            qdrant.delete_by_entity("owner_profile")
+            # Troisieme appel synchrone du meme genre, trouve par le test de
+            # serialisation. La suppression d'un profil gelait la boucle
+            # d'evenements comme le faisait l'indexation.
+            await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 
