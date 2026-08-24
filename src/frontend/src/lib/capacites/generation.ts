@@ -92,3 +92,53 @@ export async function verifierGeneration(
     return { coherent: true, locale, distante: 'inconnue' };
   }
 }
+
+/**
+ * Orchestration du contrôle au démarrage (seconde passe de revue 0.44).
+ *
+ * L'effet initial partait au montage de l'application : sur un démarrage lent
+ * du sidecar, `initializeAuth()` échouait en silence, le contrôle prenait un
+ * 401 traduit en « cohérent », et l'effet — déclenché une seule fois — ne
+ * recommençait jamais. Le contrôle redevenait inopérant précisément dans le
+ * cas packagé qu'il doit couvrir.
+ *
+ * D'où ce contrat : attendre un jeton VÉRIFIABLE (pas un `initializeAuth` qui
+ * absorbe ses erreurs), réessayer borné, et si le jeton ne vient pas, le dire
+ * honnêtement plutôt que de conclure « cohérent ». L'appelant garde la
+ * responsabilité de n'appeler qu'une fois le backend confirmé prêt.
+ */
+export async function controlerGenerationAuDemarrage(deps?: {
+  initApiBase?: () => Promise<unknown>;
+  initializeAuth?: () => Promise<unknown>;
+  getSessionToken?: () => string | null;
+  apiBase?: () => string;
+  verifier?: typeof verifierGeneration;
+  tentatives?: number;
+  attendreMs?: (tentative: number) => Promise<void>;
+}): Promise<VerdictGeneration | null> {
+  const core = await import('../../services/api/core');
+  const initApiBase = deps?.initApiBase ?? core.initApiBase;
+  const initializeAuth = deps?.initializeAuth ?? core.initializeAuth;
+  const getSessionToken = deps?.getSessionToken ?? core.getSessionToken;
+  const apiBase = deps?.apiBase ?? core.getApiBase;
+  const verifier = deps?.verifier ?? verifierGeneration;
+  const tentatives = deps?.tentatives ?? 5;
+  const attendreMs =
+    deps?.attendreMs
+    ?? ((tentative: number) =>
+      new Promise<void>((resoudre) => setTimeout(resoudre, tentative * 500)));
+
+  await initApiBase();
+  for (let tentative = 1; tentative <= tentatives; tentative++) {
+    await initializeAuth();
+    if (getSessionToken()) {
+      return verifier(apiBase());
+    }
+    if (tentative < tentatives) await attendreMs(tentative);
+  }
+  console.warn(
+    '[capacités] Contrôle de génération non exécuté : pas de jeton de session '
+    + `après ${tentatives} tentatives. Divergence éventuelle non détectée.`,
+  );
+  return null;
+}

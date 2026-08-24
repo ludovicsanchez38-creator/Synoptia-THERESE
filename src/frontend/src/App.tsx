@@ -53,21 +53,18 @@ function ApplicationBootstrap() {
   // fichier canonique ; s'ils ont été packagés à des moments différents, l'aide
   // et le catalogue mentiraient sur ce que le backend sait faire. Le contrôle
   // signale (console), il ne bloque jamais le démarrage.
+  //
+  // Gardé par `backendReady` (seconde passe de revue) : lancé au montage, il
+  // partait avant que le sidecar ne réponde, l'auth échouait en silence et le
+  // 401 devenait « cohérent » — sans jamais recommencer. L'attente du jeton
+  // et le réessai borné vivent dans `controlerGenerationAuDemarrage`, testés.
   useEffect(() => {
+    if (!backendReady) return;
     void (async () => {
-      const { verifierGeneration } = await import('./lib/capacites/generation');
-      const core = await import('./services/api/core');
-      // Attendre le port RÉEL du sidecar avant de lire API_BASE : en mode
-      // packagé le port est dynamique, et un contrôle parti sur le port par
-      // défaut serait toujours « cohérent » — donc ne contrôlerait rien.
-      // Attendre AUSSI le jeton de session : la route n'est pas exemptée, et
-      // un fetch sans jeton prenait un 401 traduit en « cohérent » — même
-      // défaut sous une autre forme. Les deux inits sont des singletons.
-      await core.initApiBase();
-      await core.initializeAuth();
-      await verifierGeneration(core.API_BASE);
+      const { controlerGenerationAuDemarrage } = await import('./lib/capacites/generation');
+      await controlerGenerationAuDemarrage();
     })();
-  }, []);
+  }, [backendReady]);
 
   // US-012 : Detecter la preference systeme reduced-motion au premier lancement
   // et synchroniser avec le store. Ecoute aussi les changements en temps reel.

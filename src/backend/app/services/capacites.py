@@ -44,17 +44,37 @@ def _structure_valide(manifeste: dict[str, Any]) -> bool:
     if not isinstance(manifeste.get("points_entree"), list):
         return False
     for capacite in manifeste["capacites"]:
-        if not isinstance(capacite, dict) or "id" not in capacite:
+        if not isinstance(capacite, dict) or not isinstance(capacite.get("id"), str):
             return False
-        if not isinstance(capacite.get("entrees", []), list):
+        entrees = capacite.get("entrees", [])
+        if not isinstance(entrees, list) or not all(isinstance(e, str) for e in entrees):
             return False
+        # texte() enchaîne textes[langue].get(champ) : chaque niveau doit être
+        # un dictionnaire, chaque feuille un texte. Seconde passe de revue :
+        # `"textes": null` passait la validation puis levait TypeError.
+        textes = capacite.get("textes", {})
+        if not isinstance(textes, dict):
+            return False
+        for par_langue in textes.values():
+            if not isinstance(par_langue, dict):
+                return False
+            if not all(isinstance(v, str) for v in par_langue.values()):
+                return False
     for point in manifeste["points_entree"]:
-        if not isinstance(point, dict):
+        # `available_actions_text` et `acces_principal` lisent p["id"]
+        # directement : un point sans id levait KeyError après validation.
+        if not isinstance(point, dict) or not isinstance(point.get("id"), str):
+            return False
+        if not all(isinstance(c, str) for c in point.get("capacites", [])):
             return False
         binding = point.get("binding")
         if not isinstance(binding, dict) or "registre" not in binding:
             return False
-        if binding["registre"] in ("action", "raccourci") and "actionId" not in binding:
+        if binding["registre"] in ("action", "raccourci") and not isinstance(
+            binding.get("actionId"), str
+        ):
+            return False
+        if binding["registre"] == "vue" and not isinstance(binding.get("view"), str):
             return False
 
     def _sur(valeur: Any) -> bool:

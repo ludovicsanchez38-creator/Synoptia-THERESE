@@ -10,6 +10,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
 import {
+  controlerGenerationAuDemarrage,
   empreinteLocale,
   serialisationCanonique,
   verifierGeneration,
@@ -93,5 +94,56 @@ describe('Un sidecar sans manifeste n’est pas une divergence de packaging', ()
     const message = String(avertir.mock.calls[0][0]);
     expect(message).toContain('pas pu lire');
     expect(message).not.toContain('packagés à des moments différents');
+  });
+});
+
+describe('Le contrôle attend un jeton vérifiable avant de conclure', () => {
+  /**
+   * Seconde passe de revue : sur un démarrage lent, l'auth échouait en
+   * silence, le contrôle prenait un 401 « cohérent », et ne recommençait
+   * jamais. Le contrat : réessayer borné, puis dire honnêtement que le
+   * contrôle n'a pas eu lieu — jamais conclure « cohérent » sans preuve.
+   */
+  it('ne vérifie rien et le dit quand le jeton ne vient jamais', async () => {
+    const avertir = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const verifier = vi.fn();
+
+    const verdict = await controlerGenerationAuDemarrage({
+      initApiBase: vi.fn().mockResolvedValue(undefined),
+      initializeAuth: vi.fn().mockResolvedValue(undefined),
+      getSessionToken: () => null,
+      apiBase: () => 'http://localhost:17293',
+      verifier,
+      tentatives: 3,
+      attendreMs: () => Promise.resolve(),
+    });
+
+    expect(verdict).toBeNull();
+    expect(verifier).not.toHaveBeenCalled();
+    expect(String(avertir.mock.calls.at(-1)?.[0])).toContain('non exécuté');
+  });
+
+  it('vérifie dès que le jeton arrive, même tardivement', async () => {
+    let jeton: string | null = null;
+    const initializeAuth = vi.fn().mockImplementation(async () => {
+      if (initializeAuth.mock.calls.length >= 3) jeton = 'jeton-tardif';
+    });
+    const verifier = vi.fn().mockResolvedValue({
+      coherent: true, locale: 'a', distante: 'a',
+    });
+
+    const verdict = await controlerGenerationAuDemarrage({
+      initApiBase: vi.fn().mockResolvedValue(undefined),
+      initializeAuth,
+      getSessionToken: () => jeton,
+      apiBase: () => 'http://localhost:17293',
+      verifier,
+      tentatives: 5,
+      attendreMs: () => Promise.resolve(),
+    });
+
+    expect(verifier).toHaveBeenCalledExactlyOnceWith('http://localhost:17293');
+    expect(verdict?.coherent).toBe(true);
+    expect(initializeAuth).toHaveBeenCalledTimes(3);
   });
 });

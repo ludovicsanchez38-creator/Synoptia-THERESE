@@ -188,25 +188,56 @@ describe('Le crosswalk est réel, pas déclaratif', () => {
       },
     });
 
+    // Seconde passe de revue : `find()` ne prenait que la PREMIÈRE action de
+    // chaque capacité — `atelier.creation` n'était jamais exécutée. Toutes les
+    // entrées `registre === 'action'` passent désormais au banc.
+    let actionsExecutees = 0;
     try {
       for (const capacite of CAPACITES) {
         const entrees = POINTS_ENTREE.filter((p) => capacite.entrees.includes(p.id));
         const vue = entrees.find((p) => p.binding.registre === 'vue');
-        const action = entrees.find((p) => p.binding.registre === 'action');
-        if (!vue || !action) continue;
-        if (vue.binding.registre !== 'vue' || action.binding.registre !== 'action') continue;
+        if (!vue || vue.binding.registre !== 'vue') {
+          // Réglages n'est pas une vue, c'est un panneau : son action se
+          // vérifie sur son effet réel (le panneau s'ouvre), pas sur la
+          // navigation. Sans cette branche, `reglages.action` échappait au
+          // banc — c'est le garde-fou de comptage qui l'a montré.
+          const { usePanelStore } = await import('../../stores/panelStore');
+          for (const action of entrees) {
+            if (action.binding.registre !== 'action') continue;
+            usePanelStore.setState({ showSettings: false });
+            runAction(action.binding.actionId);
+            actionsExecutees++;
+            expect(
+              usePanelStore.getState().showSettings,
+              `l'action « ${action.binding.actionId} » de « ${capacite.id} » `
+              + 'devrait ouvrir le panneau des réglages',
+            ).toBe(true);
+            usePanelStore.setState({ showSettings: false });
+          }
+          continue;
+        }
 
-        vuesOuvertes.length = 0;
-        runAction(action.binding.actionId);
+        for (const action of entrees) {
+          if (action.binding.registre !== 'action') continue;
 
-        expect(
-          vuesOuvertes,
-          `la capacité « ${capacite.id} » déclare la vue « ${vue.binding.view} » `
-          + `mais son action « ${action.binding.actionId} » ouvre « ${vuesOuvertes[0] ?? 'rien'} »`,
-        ).toContain(vue.binding.view);
+          vuesOuvertes.length = 0;
+          runAction(action.binding.actionId);
+          actionsExecutees++;
+
+          expect(
+            vuesOuvertes,
+            `la capacité « ${capacite.id} » déclare la vue « ${vue.binding.view} » `
+            + `mais son action « ${action.binding.actionId} » ouvre « ${vuesOuvertes[0] ?? 'rien'} »`,
+          ).toContain(vue.binding.view);
+        }
       }
     } finally {
       useNavigationStore.setState({ setView: setViewOriginal });
     }
+
+    // Garde-fou : si le manifeste ou le filtre changent au point de ne plus
+    // rien exécuter, ce test doit devenir rouge, pas silencieusement vide.
+    const attendues = POINTS_ENTREE.filter((p) => p.binding.registre === 'action').length;
+    expect(actionsExecutees).toBe(attendues);
   });
 });
