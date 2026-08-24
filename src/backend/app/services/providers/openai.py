@@ -45,6 +45,24 @@ class OpenAIProvider(BaseProvider):
     # d'outils (xAI est OpenAI-compatible) en ne changeant que l'endpoint.
     API_URL = OPENAI_API_URL
 
+    def url_effective(self) -> str:
+        """L'adresse réellement appelée : celle configurée, sinon le défaut.
+
+        Dette 0.43.4 : cette méthode existait sur QwenProvider mais n'était
+        appelée NULLE PART - stream() partait sur API_URL en dur, et le défaut
+        Qwen contient un marqueur {EspaceDeTravail} qui ne peut pas
+        fonctionner. La documentation des fournisseurs donne l'adresse SANS le
+        suffixe /chat/completions : on l'ajoute si l'utilisateur a collé la
+        base, on ne double pas s'il a collé l'adresse complète.
+        """
+        base = getattr(self.config, "base_url", None)
+        if not base:
+            return self.API_URL
+        base = base.rstrip("/")
+        if base.endswith("/chat/completions"):
+            return base
+        return f"{base}/chat/completions"
+
     def _build_request_body(
         self,
         messages: list[dict],
@@ -96,7 +114,7 @@ class OpenAIProvider(BaseProvider):
         try:
             async with self.client.stream(
                 "POST",
-                self.API_URL,
+                self.url_effective(),
                 headers={
                     "Authorization": f"Bearer {self.config.api_key}",
                     "Content-Type": "application/json",
