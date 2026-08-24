@@ -189,6 +189,11 @@ async def lifespan(app: FastAPI):
             reprises = await recuperer_taches_orphelines(session)
         if reprises:
             logger.info(f"Traitements interrompus repris : {reprises}")
+        # 0.46 : rétention des traitements - les terminées de plus de 30 jours
+        # partent, les actives jamais (elles relèvent du récupérateur).
+        from app.services.traitements import purger_les_terminees
+
+        await purger_les_terminees(retention_jours=30)
     except Exception as e:
         # Un ménage de démarrage ne doit jamais empêcher l'application de
         # se lancer : au pire les tâches restent affichées comme actives.
@@ -778,6 +783,11 @@ app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
 from app.routers.project_sync import router as project_sync_router  # noqa: E402
 
 app.include_router(project_sync_router, prefix="/api/projects", tags=["ProjectSync"])
+from app.routers.processing_tasks import router as processing_tasks_router  # noqa: E402
+
+app.include_router(
+    processing_tasks_router, prefix="/api/processing-tasks", tags=["Traitements"]
+)
 app.include_router(files_router, prefix="/api/files", tags=["Files"])
 app.include_router(config_router, prefix="/api/config", tags=["Config"])
 app.include_router(skills_router, prefix="/api/skills", tags=["Skills"])
