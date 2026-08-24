@@ -275,13 +275,11 @@ async def set_user_profile(
         # L'indexation part donc en tache de fond, et son echec eventuel ne
         # remet pas en cause une sauvegarde deja acquise.
         if embed_in_qdrant:
-            global _INDEXATION_COURANTE
-            # Une indexation deja lancee porte forcement un profil perime :
-            # celui qu'on vient d'ecrire l'a remplace.
-            if _INDEXATION_COURANTE and not _INDEXATION_COURANTE.done():
-                _INDEXATION_COURANTE.cancel()
-            tache = asyncio.create_task(_indexer_en_arriere_plan(profile))
-            _INDEXATION_COURANTE = tache
+            global _GENERATION_PROFIL
+            _GENERATION_PROFIL += 1
+            tache = asyncio.create_task(
+                _indexer_en_arriere_plan(profile, _GENERATION_PROFIL)
+            )
             _INDEXATIONS_EN_COURS.add(tache)
             tache.add_done_callback(_INDEXATIONS_EN_COURS.discard)
 
@@ -306,19 +304,26 @@ _INDEXATIONS_EN_COURS: set[asyncio.Task] = set()
 # C'est exactement le scenario du testeur : « j'ai refait Continuer et c'est
 # passe ».
 #
-# Un simple verrou ne suffit PAS. Il serialise, mais ne garantit pas l'ordre :
-# l'ordonnanceur asyncio peut lancer la seconde tache avant la premiere, et
+# Un simple verrou ne suffit PAS : il serialise, mais ne garantit pas l'ordre de
+# DEMARRAGE. L'ordonnanceur peut lancer la seconde tache avant la premiere, et
 # l'index garderait alors l'ANCIEN nom - le testeur corrige son prenom, la
-# correction est perdue. Verifie en test.
+# correction est perdue.
 #
-# On annule donc l'indexation precedente au lieu de l'attendre. Indexer un
-# profil deja perime n'a aucun interet, et le dernier enregistre gagne
-# vraiment.
+# Annuler la tache perimee ne marche pas non plus, et c'est PIRE : les
+# operations Qdrant passent par `asyncio.to_thread`, qui n'est pas annulable.
+# Annuler libere le verrou, mais le travail deja lance dans le thread continue.
+# Reproduit en revue : une ancienne suppression se terminait APRES le nouvel
+# ajout, et l'etat final ne contenait plus aucun profil.
+#
+# D'ou le NUMERO DE GENERATION. Chaque sauvegarde en prend un ; une tache
+# renonce AVANT d'entrer dans la section critique si sa generation est deja
+# depassee, et une tache deja entree va au bout - la suivante repassera derriere
+# elle. Rien n'est interrompu en vol, et le dernier enregistre gagne quand meme.
 _VERROU_INDEXATION = asyncio.Lock()
-_INDEXATION_COURANTE: asyncio.Task | None = None
+_GENERATION_PROFIL = 0
 
 
-async def _indexer_en_arriere_plan(profile: UserProfile) -> None:
+async def _indexer_en_arriere_plan(profile: UserProfile, generation: int) -> None:
     """Indexe le profil sans jamais faire echouer sa sauvegarde.
 
     Une indexation qui echoue prive la recherche semantique de son proprietaire,
@@ -327,10 +332,16 @@ async def _indexer_en_arriere_plan(profile: UserProfile) -> None:
     """
     try:
         async with _VERROU_INDEXATION:
+            # Sa generation a-t-elle ete depassee pendant l'attente du verrou ?
+            # Si oui, indexer un profil perime effacerait le plus recent : on
+            # renonce ici, AVANT toute ecriture, et non en pleine operation.
+            if generation != _GENERATION_PROFIL:
+                logger.debug(
+                    "Indexation du profil abandonnee : generation %s depassee par %s",
+                    generation, _GENERATION_PROFIL,
+                )
+                return
             await _embed_profile(profile)
-    except asyncio.CancelledError:
-        # Remplacee par une indexation plus recente : rien d'anormal.
-        raise
     except Exception:
         logger.warning(
             "Profil enregistre mais non indexe : la question « qui suis-je ? » "
@@ -430,13 +441,25 @@ async def delete_user_profile(session: AsyncSession) -> bool:
         await session.delete(pref)
         await session.commit()
 
+        # RGPD : une suppression doit TENIR. Deux protections, car une seule ne
+        # suffit pas.
+        #
+        # Avancer la generation fait renoncer les indexations qui attendent
+        # encore le verrou. Mais une indexation DEJA entree dans la section
+        # critique a franchi ce controle : elle ecrirait apres la suppression,
+        # et les donnees personnelles reapparaitraient. La suppression prend
+        # donc le verrou a son tour - elle attend celle qui est en vol, puis
+        # supprime pour de bon.
+        global _GENERATION_PROFIL
+        _GENERATION_PROFIL += 1
+
         # Remove from Qdrant
         try:
             qdrant = get_qdrant_service()
-            # Troisieme appel synchrone du meme genre, trouve par le test de
-            # serialisation. La suppression d'un profil gelait la boucle
-            # d'evenements comme le faisait l'indexation.
-            await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
+            async with _VERROU_INDEXATION:
+                # Appel synchrone deporte : il gelait la boucle d'evenements,
+                # comme le faisait l'indexation avant sa correction.
+                await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 

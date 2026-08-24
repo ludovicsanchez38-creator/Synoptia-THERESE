@@ -10,6 +10,8 @@ nos testeurs quand ils rapportent une panne.
 """
 import logging
 
+import pytest
+
 
 def _journaliser_avec_secret(formatter: logging.Formatter) -> str:
     """Provoque une vraie exception porteuse d'un secret, et la formate."""
@@ -60,3 +62,50 @@ class TestUnSecretNeTraversePasLesJournaux:
 
         assert "RuntimeError" in sortie, "le type d'erreur a disparu"
         assert "401" in sortie, "le code d'erreur a disparu, on ne diagnostique plus rien"
+
+
+class TestLeMasquageNeRendPasLesJournauxIllisibles:
+    """Régression introduite puis corrigée le 24/08/2026.
+
+    Le motif des clés brutes n'avait pas de frontière gauche : il attrapait le
+    « sk- » au MILIEU des mots. « task-scheduler started » devenait
+    « ta***MASKED*** started », « disk-space-warning » disparaissait.
+
+    Un journal illisible ne protège personne : il empêche seulement de
+    diagnostiquer. C'est le contraire du but recherché.
+    """
+
+    @pytest.mark.parametrize(
+        "texte_ordinaire",
+        [
+            "task-scheduler started",
+            "disk-space-warning",
+            "password validation failed",
+            "mask-space test",
+            "ask-user-confirmation",
+            "risk-assessment done",
+        ],
+    )
+    def test_un_texte_ordinaire_reste_intact(self, texte_ordinaire):
+        from app.core.logging_config import _mask_secrets
+
+        assert _mask_secrets(texte_ordinaire) == texte_ordinaire, (
+            "du texte ordinaire est masqué : les journaux deviennent illisibles "
+            "et le diagnostic impossible"
+        )
+
+    @pytest.mark.parametrize(
+        "secret",
+        [
+            "sk-proj-abcdefghijklmnop",
+            "sk-ant-api03-abcdefghijkl",
+            "xai-abcdefghijklmnopqrstuvwx",
+            "AIzaSyAbcdefghijklmnopqrstuvwxyz12",
+            "gsk_abcdefghijklmnopqrst",
+        ],
+    )
+    def test_une_vraie_cle_est_toujours_masquee(self, secret):
+        """Le verrou inverse : ne pas devenir si prudent qu'on ne masque plus."""
+        from app.core.logging_config import _mask_secrets
+
+        assert _mask_secrets(secret) == "***MASKED***"
