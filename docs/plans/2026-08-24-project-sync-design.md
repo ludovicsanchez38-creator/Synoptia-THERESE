@@ -59,10 +59,17 @@ d'une base 0.44 réelle).
   course entre deux requêtes). `delete_project` nettoie explicitement.
 - **`project_sync_entries`** - l'état de référence par fichier : `project_id`,
   chemin canonique (unique par projet), `file_id`, `taille`, `mtime_ns`
-  (entier epoch, jamais une date locale), `sha256` validé, horodatages.
-  Distingue les fichiers gérés par la sync des pièces jointes et indexations
-  manuelles.
-- **`sync_plans`** : id, project_id, created_at, état
+  (entier epoch, jamais une date locale), `sha256` validé, horodatages,
+  `generation_racine`. Distingue les fichiers gérés par la sync des pièces
+  jointes et indexations manuelles. **Autorité formalisée (V2.1)** : cette
+  table fait foi sur le DERNIER SNAPSHOT APPLIQUÉ ; `files` fait foi sur
+  l'identité et le périmètre réellement indexés. Une entrée n'est JAMAIS
+  écrite par le rattachement seul : seule une opération d'apply réussie
+  l'établit. Après un crash, la divergence transitoire est réparée par la
+  reprise (l'opération non `fait` se rejoue, idempotente). Changer ou
+  retirer la racine incrémente `generation_racine`, invalide les plans et
+  nettoie les entrées de l'ancienne génération.
+- **`sync_plans`** : id, project_id, `generation_racine`, created_at, état
   (`propose | en_cours | applique | applique_partiel | caduc`), compteurs.
   (`abandonne` retiré : aucun geste utilisateur ne le déclenchait.)
 - **`sync_operations`** : id, plan_id, type (`indexer | reindexer | retirer |
@@ -82,9 +89,11 @@ verrous :
    passer TOUS les producteurs par lui (route index, `upload_file` - qui a
    aujourd'hui son propre pipeline non verrouillé -, chemin de secours du
    trombone dans chat.py, et la sync). La lecture des métadonnées passe SOUS
-   le verrou (elle pouvait être périmée après une attente). Le service
-   retourne le **scope effectif** : l'appelant sync compare au projet demandé
-   et déclare le conflit.
+   le verrou (elle pouvait être périmée après une attente). V2.1 : vérifier le
+   scope AU RETOUR est trop tard - le service accepte les ATTENDUS
+   (`file_id`, scope, SHA-256), les vérifie sous verrou AVANT toute écriture
+   (mismatch = conflit, zéro écriture), et extrait depuis une **copie
+   stable** du fichier - le verrou interne ne protège pas contre rsync.
 2. **Service de retrait** (`services/retrait_index.py`) idempotent et
    fail-closed : verrou du chemin, vérification du `file_id` attendu,
    suppression Qdrant **complète** (par filtre ou pagination - l'existant
@@ -92,23 +101,29 @@ verrous :
    erreurs Qdrant puis supprime quand même la ligne SQLite), PUIS suppression
    SQLite + entrée de référence. Entité déjà absente = succès (reprise).
 
-Ces deux extractions sont des refactors à comportement constant pour
-l'existant, testés en premier.
+V2.1 - « comportement constant » précisé : la route et l'upload fragmentent
+en 1000/200, le trombone indexe seulement si nécessaire en 500/50, et
+l'upload remplace le fichier AVANT le verrou actuel. D'où : **tests de
+caractérisation d'abord** (ils gèlent le comportement observable de chaque
+appelant), des **adaptateurs distincts** par famille d'appelant, et le
+remplacement de fichier de l'upload ramené sous le même verrou. Le retrait
+fail-closed est une CORRECTION volontaire du comportement sur erreur
+(l'existant avalait les erreurs Qdrant), documentée comme telle.
 
 ## Détection des changements
 
 Référentiel = `project_sync_entries` (pas `files` seul).
 
 - **nouveau** : sur disque, absent du référentiel ;
-- **candidat modifié** : `taille` ou `mtime_ns` diffèrent → SHA-256 (stat
-  avant/après le hash : si le fichier a bougé pendant la lecture, il est
-  marqué **instable** et exclu du plan) ; hash égal → inchangé ;
+- **candidat modifié** : SHA-256 systématique de chaque fichier scanné (stat
+  avant/après le hash : s'il a bougé pendant la lecture, il est marqué
+  **instable** et exclu du plan) ; hash égal au référentiel → inchangé.
+  V2.1 : le préfiltre taille+mtime et son mode « vérification intégrale »
+  sont retirés - hasher tout simplifie le produit et supprime une branche
+  d'API, d'interface et de tests ; taille et mtime_ns restent STOCKÉS
+  (diagnostic et évolution future) ;
 - **disparu** : au référentiel, absent du disque ;
 - **conflit** : sur disque mais possédé par un autre périmètre dans `files` ;
-- limites ANNONCÉES dans l'interface du plan : le préfiltre taille+mtime peut
-  rater un contenu changé à taille et mtime identiques (rsync `-t`, FAT à
-  granularité 2 s) → un mode **« vérification intégrale »** re-hashe tout, à
-  la demande ;
 - scan et hachage **hors boucle asyncio** (`asyncio.to_thread`), erreurs de
   parcours REMONTÉES (jamais ignorées), extensions indexables et limites de
   taille du pipeline existant, liens symboliques sortant de la racine ignorés
@@ -116,19 +131,25 @@ Référentiel = `project_sync_entries` (pas `files` seul).
 
 ## Exécution d'apply
 
-- **Un `ProcessingTask` par run** : le registre existant (`task_registry`,
-  `run_instance_id`, récupération des orphelins au démarrage) porte le cycle
-  de vie - PAS le pattern « référence forte » seul de `user_profile`, qui ne
-  survit à rien. Référence forte dans `app.state`, arrêt coopératif au
-  shutdown (le lifespan ferme SQLite et Qdrant : l'apply doit s'interrompre
-  proprement AVANT), reprise des `en_cours` au démarrage suivant.
-- Verrou par projet : un seul apply à la fois (409). Seul le DERNIER plan
-  `propose` est applicable.
+- **Un `ProcessingTask` par run**, lié explicitement au plan
+  (`plan_id` dans son payload). V2.1 : `recuperer_taches_orphelines()` ne
+  fait que marquer `interrupted` - un **récupérateur sync spécifique**,
+  lancé APRÈS l'initialisation de Qdrant, retrouve les plans `en_cours`
+  orphelins et crée un **nouveau run de reprise** sur le même plan.
+  Référence forte dans `app.state`, arrêt coopératif au shutdown (le
+  lifespan ferme SQLite et Qdrant : l'apply s'interrompt proprement AVANT).
+- **Verrou par projet étendu** (V2.1) : il couvre `apply`, `plan` ET la
+  modification de racine. Un plan ne peut pas devenir caduc pendant qu'un
+  apply court sur lui - créer un plan pendant un apply répond 409. Hors
+  apply, seul le DERNIER plan `propose` est applicable.
 - Boucle séquentielle sur `a_faire` : revalidation (stat + empreinte) sous le
   verrou du service central → dérive = `obsolete` ; indexation via le service
-  central (scope vérifié au retour) ou retrait via le service de retrait ;
-  succès COMPLET puis commit court `fait` + MAJ `project_sync_entries` ;
-  échec → `echec`, `attempt_count += 1`, on continue.
+  central (attendus vérifiés avant écriture) ou retrait via le service de
+  retrait ; succès COMPLET puis commit court `fait` + MAJ
+  `project_sync_entries` ; échec → `echec`, `attempt_count += 1`, on
+  continue. V2.1 : la reprise reparcourt `a_faire` **et** `echec` - un
+  `echec` est réessayable dans le même plan, sinon l'at-least-once promis
+  n'existait pas.
 - Progression : compteurs du plan + état du ProcessingTask.
 
 ## API
@@ -149,8 +170,16 @@ Référentiel = `project_sync_entries` (pas `files` seul).
 
 Fiche projet, section « Dossier synchronisé » : choisir/retirer la racine ;
 « Préparer la synchronisation » → plan (n nouveaux, n modifiés, n disparus,
-n conflits, liste dépliable, limites du préfiltre annoncées, bouton
-« vérification intégrale ») ; « Appliquer » → progression ; journal.
+n conflits, liste dépliable) ; « Appliquer » → progression ; journal.
+
+## Séquencement de construction (validé au challenge V2)
+
+1. Tests de caractérisation des appelants existants (route index, upload,
+   trombone) ; 2. extraction des deux services ; 3. modèles + imports +
+   Alembic (avec test de **bootstrap neuf** : `alembic/env.py` n'importe
+   aujourd'hui ni `processing` ni les futurs modèles sync) ; 4. scanner/diff
+   pur ; 5. persistance des plans ; 6. apply + reprise (indissociables) ;
+   7. API puis interface.
 
 ## Tests exigés (au-delà du TDD usuel)
 
