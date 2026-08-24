@@ -178,7 +178,13 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
-  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  // BUG-169 : on garde la CAPACITÉ du modèle, pas seulement son nom. Un modèle
+  // sans appel d'outils ne peut ni créer un contact, ni poser un rendez-vous.
+  // Le masquer laisserait une liste vide sans explication ; on le montre
+  // désactivé, avec son motif.
+  const [ollamaModels, setOllamaModels] = useState<
+    { nom: string; gereLesOutils: boolean; motif?: string | null }[]
+  >([]);
   const [systemResources, setSystemResources] = useState<api.SystemResources | null>(null);
   const [saving, setSaving] = useState(false);
   const [configuring, setConfiguring] = useState(false);
@@ -205,7 +211,13 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       setSystemResources(systemResourcesData);
       setOllamaModels(
         ollamaStatusData.available
-          ? ollamaStatusData.models.map((model) => model.name)
+          ? ollamaStatusData.models.map((model) => ({
+              nom: model.name,
+              // Un modèle inconnu du serveur est présumé capable : Ollama
+              // accepte n'importe quel modèle, y compris construit localement.
+              gereLesOutils: model.gere_les_outils !== false,
+              motif: model.motif_indisponible,
+            }))
           : [],
       );
     } catch (err) {
@@ -230,8 +242,20 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const hasApiKey = apiKeys[selectedProvider] === true;
   const needsApiKey = selectedProvider !== 'ollama';
 
-  const availableModels: { id: string; name: string; badge?: string }[] = selectedProvider === 'ollama'
-    ? ollamaModels.map(name => ({ id: name, name }))
+  const availableModels: {
+    id: string;
+    name: string;
+    badge?: string;
+    indisponible?: boolean;
+    motif?: string | null;
+  }[] = selectedProvider === 'ollama'
+    ? ollamaModels.map((m) => ({
+        id: m.nom,
+        name: m.nom,
+        badge: m.gereLesOutils ? undefined : 'Sans actions',
+        indisponible: !m.gereLesOutils,
+        motif: m.motif,
+      }))
     : currentProviderConfig?.models || [];
 
   async function handleSaveApiKey() {
@@ -271,7 +295,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     let defaultModel = providerConfig?.models[0]?.id || '';
 
     if (provider === 'ollama' && ollamaModels.length > 0) {
-      defaultModel = ollamaModels[0];
+      // Ne jamais pré-sélectionner un modèle incapable d'agir : c'est ce qui a
+      // fait attendre 3 min 26 s au testeur pour une réponse dégradée.
+      const capable = ollamaModels.find((m) => m.gereLesOutils);
+      defaultModel = (capable ?? ollamaModels[0]).nom;
     }
 
     if (defaultModel) {
@@ -295,7 +322,11 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   }
 
   const canContinue = selectedProvider === 'ollama'
-    ? Boolean(ollamaStatus?.available && ollamaModels.length > 0 && selectedModel)
+    ? Boolean(
+        ollamaStatus?.available
+        && ollamaModels.some((m) => m.gereLesOutils)
+        && selectedModel,
+      )
     : hasApiKey || saved;
 
   if (loading) {
@@ -476,11 +507,24 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
           >
             {availableModels.map((model) => (
-              <option key={model.id} value={model.id}>
+              <option key={model.id} value={model.id} disabled={model.indisponible}>
                 {model.name} {model.badge ? `(${model.badge})` : ''}
               </option>
             ))}
           </select>
+
+          {/* BUG-169 : le motif, dit à l'utilisateur plutôt que gardé pour le
+              code. Un modèle qui disparaît sans explication est le défaut qu'on
+              corrige partout ailleurs dans cette version ; un modèle désactivé
+              sans raison visible en serait la moitié. */}
+          {availableModels.some((model) => model.indisponible) && (
+            <p className="mt-2 text-xs text-text-muted">
+              {availableModels.find((model) => model.indisponible)?.motif
+                ?? "Certains modèles installés ne savent pas déclencher d'actions : "
+                   + 'ils sont grisés.'}
+            </p>
+          )}
+
           {selectedProvider === 'ollama' && (
             <div className="mt-3">
               <LocalModelFeasibility
