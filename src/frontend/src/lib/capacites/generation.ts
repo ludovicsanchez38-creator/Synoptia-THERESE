@@ -68,6 +68,17 @@ export async function verifierGeneration(
     if (!reponse.ok) return { coherent: true, locale, distante: 'inconnue' };
     const corps = (await reponse.json()) as { empreinte?: string };
     const distante = corps.empreinte ?? 'inconnue';
+    // Deux anomalies distinctes, deux messages : « absent » signifie que le
+    // sidecar n'a pas PU lire son manifeste (fail-open côté backend), pas que
+    // les générations divergent. L'annoncer comme un écart de packaging
+    // enverrait le diagnostic dans la mauvaise direction.
+    if (distante === 'absent') {
+      console.warn(
+        '[capacités] Le sidecar n\'a pas pu lire son manifeste : son aide et '
+        + 'son catalogue seront incomplets. Voir les journaux du backend.',
+      );
+      return { coherent: false, locale, distante };
+    }
     const coherent = distante === 'inconnue' || distante === locale;
     if (!coherent) {
       console.warn(

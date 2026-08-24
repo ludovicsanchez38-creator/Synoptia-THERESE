@@ -73,3 +73,25 @@ describe('Le contrôle signale sans jamais bloquer', () => {
     expect(verdict.distante).toBe('inconnue');
   });
 });
+
+describe('Un sidecar sans manifeste n’est pas une divergence de packaging', () => {
+  it('signale la bonne cause, pas la mauvaise', async () => {
+    // « absent » = le backend n'a pas PU lire son manifeste (fail-open).
+    // L'annoncer comme un écart de générations enverrait le diagnostic dans
+    // la mauvaise direction : on chercherait un problème de build qui
+    // n'existe pas.
+    const avertir = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ empreinte: 'absent' }),
+    } as unknown as Response);
+
+    const verdict = await verifierGeneration('http://localhost:17293', fetcher);
+
+    expect(verdict.coherent).toBe(false);
+    expect(avertir).toHaveBeenCalledOnce();
+    const message = String(avertir.mock.calls[0][0]);
+    expect(message).toContain('pas pu lire');
+    expect(message).not.toContain('packagés à des moments différents');
+  });
+});
