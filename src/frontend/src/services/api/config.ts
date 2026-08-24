@@ -83,6 +83,7 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
     has_fal_key: boolean;
     has_brave_key: boolean;
     corrupted_keys: string[];
+    api_keys?: Record<string, boolean>;
   }>('/api/config/');
   return {
     keys: {
@@ -97,6 +98,10 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
       gemini_image: config.has_gemini_image_key,
       fal: config.has_fal_key,
       brave: config.has_brave_key,
+      // Revue dette 0.43.4 : les champs has_*_key n'ont jamais suivi les
+      // fournisseurs (perplexity, deepseek, puis glm/kimi/qwen/minimax :
+      // clé enregistrée, jamais restituée). La carte générique fait foi.
+      ...(config.api_keys ?? {}),
     },
     corrupted: config.corrupted_keys || [],
   };
@@ -211,6 +216,8 @@ export interface LLMConfig {
   /** Disponibilité réelle du modèle actif : clé cloud présente ou Ollama opérationnel. */
   available?: boolean;
   effort?: string | null;
+  /** Adresse personnalisée du fournisseur courant (Qwen : espace de travail). */
+  base_url?: string | null;
 }
 
 export interface OllamaModel {
@@ -250,12 +257,18 @@ export type LLMEffort = 'auto' | 'low' | 'medium' | 'high' | 'max';
 export async function setLLMConfig(
   provider: LLMProvider,
   model: string,
-  effort?: LLMEffort
+  effort?: LLMEffort,
+  baseUrl?: string
 ): Promise<LLMConfig> {
+  // effort omis = conserver le reglage existant cote backend ; meme contrat
+  // pour base_url (dette 0.43.4 : adresse d'espace de travail Qwen). Chaine
+  // vide = effacer l'adresse enregistree.
+  const corps: Record<string, string> = { provider, model };
+  if (effort) corps.effort = effort;
+  if (baseUrl !== undefined) corps.base_url = baseUrl;
   return request<LLMConfig>('/api/config/llm', {
     method: 'POST',
-    // effort omis = conserver le reglage existant cote backend.
-    body: JSON.stringify(effort ? { provider, model, effort } : { provider, model }),
+    body: JSON.stringify(corps),
   });
 }
 

@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
+from typing import Any
 
 from app.config import settings
 from app.models.database import get_session
@@ -43,6 +44,31 @@ from app.services.export_profile import ExportProfile as ExportProfileBody  # no
 
 # Track startup time
 _startup_time = datetime.now(UTC)
+
+
+async def _cles_dechiffrables(
+    session: AsyncSession, pref_keys: list[str]
+) -> dict[str, tuple[bool, bool]]:
+    """Le même verdict que `_check_key_decryptable`, en UNE requête SQL.
+
+    Seconde passe de revue dette 0.43.4 : la carte api_keys ajoutait 14
+    vérifications unitaires aux 11 existantes (25 SELECT + déchiffrements par
+    GET /api/config/, 7 clés vérifiées deux fois). Une clé absente du
+    résultat n'existe pas en base : (False, False).
+    """
+    result = await session.execute(
+        select(Preference).where(Preference.key.in_(pref_keys))
+    )
+    verdicts: dict[str, tuple[bool, bool]] = {k: (False, False) for k in pref_keys}
+    for pref in result.scalars():
+        try:
+            if is_value_encrypted(pref.value):
+                decrypt_value(pref.value)
+            verdicts[pref.key] = (True, False)
+        except Exception as e:
+            logger.debug("Verification echouee (%s): %s", pref.key, e)
+            verdicts[pref.key] = (False, True)
+    return verdicts
 
 
 async def _check_key_decryptable(session: AsyncSession, pref_key: str) -> tuple[bool, bool]:
@@ -82,77 +108,65 @@ async def get_config(session: AsyncSession = Depends(get_session)):
 
     corrupted_keys: list[str] = []
 
-    # Check API keys from environment (updated dynamically) or DB
-    has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY") or settings.anthropic_api_key)
-    has_mistral = bool(os.environ.get("MISTRAL_API_KEY") or settings.mistral_api_key)
-    has_openai = bool(os.environ.get("OPENAI_API_KEY"))
-    has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
-    has_groq = bool(os.environ.get("GROQ_API_KEY"))
-    has_grok = bool(os.environ.get("XAI_API_KEY"))
-
-    # BUG-051 : vérifier que les clés DB sont déchiffrables (pas juste "is not None")
-    key_checks = {
-        "anthropic": ("anthropic_api_key", has_anthropic),
-        "mistral": ("mistral_api_key", has_mistral),
-        "openai": ("openai_api_key", has_openai),
-        "gemini": ("gemini_api_key", has_gemini),
-        "groq": ("groq_api_key", has_groq),
-        "grok": ("grok_api_key", has_grok),
+    # Un fournisseur = une entrée, env d'abord puis clé chiffrée en base - la
+    # même règle pour tous, plus jamais un fournisseur ajouté sans restitution
+    # de sa clé (revue dette 0.43.4). Lecture GROUPÉE : une requête SQL pour
+    # toutes les clés, là où l'ancien flux en faisait une par fournisseur.
+    fournisseurs_llm = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+        "mistral": "MISTRAL_API_KEY",
+        "groq": "GROQ_API_KEY",
+        "grok": "XAI_API_KEY",
+        "openrouter": "OPENROUTER_API_KEY",
+        "perplexity": "PERPLEXITY_API_KEY",
+        "deepseek": "DEEPSEEK_API_KEY",
+        "glm": "GLM_API_KEY",
+        "kimi": "KIMI_API_KEY",
+        "qwen": "QWEN_API_KEY",
+        "minimax": "MINIMAX_API_KEY",
+        "infomaniak": "INFOMANIAK_API_KEY",
     }
-    for provider_id, (db_key, has_env) in key_checks.items():
-        if not has_env:
-            has_db, is_corrupted = await _check_key_decryptable(session, db_key)
-            if is_corrupted:
-                corrupted_keys.append(provider_id)
-            # has_key = True seulement si la clé existe ET est lisible
-            if provider_id == "anthropic":
-                has_anthropic = has_db and not is_corrupted
-            elif provider_id == "mistral":
-                has_mistral = has_db and not is_corrupted
-            elif provider_id == "openai":
-                has_openai = has_db and not is_corrupted
-            elif provider_id == "gemini":
-                has_gemini = has_db and not is_corrupted
-            elif provider_id == "groq":
-                has_groq = has_db and not is_corrupted
-            elif provider_id == "grok":
-                has_grok = has_db and not is_corrupted
+    autres_cles = ["openai_image", "gemini_image", "fal", "brave"]
+    verdicts = await _cles_dechiffrables(
+        session,
+        [f"{p}_api_key" for p in fournisseurs_llm] + [f"{c}_api_key" for c in autres_cles],
+    )
 
-    has_openrouter = bool(os.environ.get("OPENROUTER_API_KEY"))
-    if not has_openrouter:
-        has_db, is_corrupted = await _check_key_decryptable(session, "openrouter_api_key")
-        if is_corrupted:
-            corrupted_keys.append("openrouter")
-        has_openrouter = has_db and not is_corrupted
+    def _statut(nom: str, env_ok: bool) -> bool:
+        if env_ok:
+            return True
+        has_db, is_corrupted = verdicts[f"{nom}_api_key"]
+        if is_corrupted and nom not in corrupted_keys:
+            corrupted_keys.append(nom)
+        return has_db and not is_corrupted
 
-    # Check for image-specific API keys
-    has_openai_image = bool(os.environ.get("OPENAI_IMAGE_API_KEY"))
-    if not has_openai_image:
-        has_db, is_corrupted = await _check_key_decryptable(session, "openai_image_api_key")
-        if is_corrupted:
-            corrupted_keys.append("openai_image")
-        has_openai_image = has_db and not is_corrupted
+    api_keys: dict[str, bool] = {}
+    for fournisseur, env_var in fournisseurs_llm.items():
+        env_ok = bool(os.environ.get(env_var))
+        if fournisseur == "anthropic":
+            env_ok = env_ok or bool(settings.anthropic_api_key)
+        elif fournisseur == "mistral":
+            env_ok = env_ok or bool(settings.mistral_api_key)
+        elif fournisseur == "gemini":
+            env_ok = env_ok or bool(os.environ.get("GOOGLE_API_KEY"))
+        api_keys[fournisseur] = _statut(fournisseur, env_ok)
 
-    has_gemini_image = bool(os.environ.get("GEMINI_IMAGE_API_KEY"))
-    if not has_gemini_image:
-        has_db, is_corrupted = await _check_key_decryptable(session, "gemini_image_api_key")
-        if is_corrupted:
-            corrupted_keys.append("gemini_image")
-        has_gemini_image = has_db and not is_corrupted
+    # Clés hors LLM (images, recherche web) : même flux groupé.
+    has_openai_image = _statut("openai_image", bool(os.environ.get("OPENAI_IMAGE_API_KEY")))
+    has_gemini_image = _statut("gemini_image", bool(os.environ.get("GEMINI_IMAGE_API_KEY")))
+    has_fal = _statut("fal", bool(os.environ.get("FAL_API_KEY")))
+    has_brave = _statut("brave", bool(os.environ.get("BRAVE_API_KEY")))
 
-    has_fal = bool(os.environ.get("FAL_API_KEY"))
-    if not has_fal:
-        has_db, is_corrupted = await _check_key_decryptable(session, "fal_api_key")
-        if is_corrupted:
-            corrupted_keys.append("fal")
-        has_fal = has_db and not is_corrupted
-
-    has_brave = bool(os.environ.get("BRAVE_API_KEY"))
-    if not has_brave:
-        has_db, is_corrupted = await _check_key_decryptable(session, "brave_api_key")
-        if is_corrupted:
-            corrupted_keys.append("brave")
-        has_brave = has_db and not is_corrupted
+    # Champs historiques, servis depuis la carte (compatibilité).
+    has_anthropic = api_keys["anthropic"]
+    has_mistral = api_keys["mistral"]
+    has_openai = api_keys["openai"]
+    has_gemini = api_keys["gemini"]
+    has_groq = api_keys["groq"]
+    has_grok = api_keys["grok"]
+    has_openrouter = api_keys["openrouter"]
 
     # Check web search preference (default: enabled)
     web_search_enabled = True
@@ -162,6 +176,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
     pref = result.scalar_one_or_none()
     if pref:
         web_search_enabled = pref.value.lower() == "true"
+
 
     return ConfigResponse(
         app_name=settings.app_name,
@@ -181,6 +196,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         ollama_available=ollama_available,
         web_search_enabled=web_search_enabled,
         corrupted_keys=corrupted_keys,
+        api_keys=api_keys,
     )
 
 
@@ -416,6 +432,15 @@ async def set_preference(
         raise HTTPException(
             status_code=400, detail="Use /api-key endpoint for API keys"
         )
+
+    # Revue dette 0.43.4 : ce detour permettait d'ecrire une adresse de
+    # fournisseur invalide, relue ensuite sans controle par POST /llm.
+    if key.lower().endswith("_base_url"):
+        if not isinstance(value, str) or not _base_url_valide(value.strip()):
+            raise HTTPException(
+                status_code=400,
+                detail="Adresse invalide : http(s):// avec un hôte, sans espace",
+            )
 
     # Serialize value
     if isinstance(value, (list, dict)):
@@ -1138,6 +1163,7 @@ async def get_capacites_manifeste() -> dict:
 @router.get("/llm", response_model=LLMConfigResponse)
 async def get_llm_config(session: AsyncSession = Depends(get_session)):
     """Get current LLM configuration."""
+    from app.services.llm import LLMProvider as LLMProvider_module
     from app.services.llm import get_llm_service
 
     service = get_llm_service()
@@ -1161,7 +1187,38 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         available_models=available_models,
         available=config_available,
         effort=config.effort,
+        base_url=config.base_url if config.provider != LLMProvider_module.OLLAMA else None,
     )
+
+
+def _base_url_valide(adresse: str) -> bool:
+    """Délègue au module neutre : la même règle pour tout lecteur/écrivain."""
+    from app.services.providers.base import adresse_fournisseur_valide
+
+    return bool(adresse_fournisseur_valide(adresse))
+
+
+@router.get("/llm/models/{provider_value}")
+async def get_available_models(provider_value: str) -> dict[str, Any]:
+    """Catalogue des modèles d'un fournisseur - LA source, servie au frontend.
+
+    Dette 0.43.4 : quatre copies du catalogue vivaient dans le frontend et
+    divergeaient déjà (l'onboarding proposait encore gpt-5.3-codex, retiré
+    partout ailleurs). Le frontend interroge cette route ; les noms lisibles
+    et les badges restent une décoration locale, la LISTE vient d'ici.
+    """
+    from app.services.llm import LLMProvider
+
+    try:
+        LLMProvider(provider_value)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail=f"Fournisseur inconnu : {provider_value}"
+        )
+    return {
+        "provider": provider_value,
+        "models": await _available_models_for(provider_value),
+    }
 
 
 @router.post("/llm", response_model=LLMConfigResponse)
@@ -1231,6 +1288,40 @@ async def set_llm_config(
         pref = result.scalar_one_or_none()
         if pref and not api_key:
             api_key = _decrypt_pref_value(pref.value)
+
+    # Adresse personnalisée (dette 0.43.4). Portée par fournisseur - l'adresse
+    # d'espace de travail Qwen n'a aucun sens pour OpenAI. None = conserver
+    # l'existante, chaîne vide = effacer.
+    if provider != LLMProvider.OLLAMA:
+        cle_base_url = f"{provider.value}_base_url"
+        result = await session.execute(
+            select(Preference).where(Preference.key == cle_base_url)
+        )
+        pref_base = result.scalar_one_or_none()
+        if request.base_url is None:
+            base_url = pref_base.value or None if pref_base else None
+            # Defense en profondeur : une adresse invalide arrivee par un autre
+            # chemin d'ecriture ne doit jamais atteindre le fournisseur.
+            if base_url and not _base_url_valide(base_url):
+                logger.warning(
+                    "Adresse %s stockee invalide (%r) : ignoree", cle_base_url, base_url
+                )
+                base_url = None
+        else:
+            demandee = request.base_url.strip()
+            if demandee and not _base_url_valide(demandee):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Adresse invalide : http(s):// avec un hôte, sans espace",
+                )
+            base_url = demandee or None
+            if pref_base:
+                pref_base.value = demandee
+                pref_base.updated_at = datetime.now(UTC)
+            else:
+                session.add(Preference(
+                    key=cle_base_url, value=demandee, category="llm",
+                ))
 
     # Effort de raisonnement (10/07/2026) : None = conserver le reglage
     # existant ; "auto" = defaut serveur (rien d'envoye, preference posee).
@@ -1311,6 +1402,7 @@ async def set_llm_config(
         available_models=post_available_models,
         available=config_available,
         effort=effective_effort,
+        base_url=base_url if provider != LLMProvider.OLLAMA else None,
     )
 
 

@@ -7,165 +7,14 @@ import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
+import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 
-// Configuration des providers LLM
-export interface ProviderConfig {
-  id: api.LLMProvider;
-  name: string;
-  description: string;
-  keyPrefix?: string;
-  keyPlaceholder?: string;
-  consoleUrl?: string;
-  models: { id: string; name: string; badge?: string }[];
-}
-
-export const PROVIDERS: ProviderConfig[] = [
-  {
-    id: 'anthropic',
-    name: 'Claude (Anthropic)',
-    description: 'Recommandé - Excellent coding et français',
-    keyPrefix: 'sk-ant-',
-    keyPlaceholder: 'sk-ant-...',
-    consoleUrl: 'https://console.anthropic.com/settings/keys',
-    models: [
-      // Fable 5 : modèle frontier Anthropic (1M contexte). Thinking toujours
-      // actif, paramètres de sampling refusés - géré côté provider backend.
-      { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Frontier' },
-      { id: 'claude-opus-5', name: 'Claude Opus 5', badge: 'Recommandé' },
-      { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Puissance max' },
-      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Équilibré' },
-      { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Recommandé' },
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Équilibré' },
-      { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'openai',
-    name: 'GPT (OpenAI)',
-    description: 'GPT-5.6 (Sol, Terra, Luna) et 5.5 - Polyvalent et puissant',
-    keyPrefix: 'sk-',
-    keyPlaceholder: 'sk-...',
-    consoleUrl: 'https://platform.openai.com/api-keys',
-    models: [
-      // GPT-5.6 : GA du 09/07/2026 - trois variantes, six niveaux d'effort.
-      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', badge: 'Frontier' },
-      { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', badge: 'Équilibré' },
-      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', badge: 'Rapide' },
-      { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Flagship' },
-      { id: 'gpt-5.4', name: 'GPT-5.4' },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini' },
-      { id: 'gpt-5.5-pro', name: 'GPT-5.5 pro', badge: 'Raisonnement' },
-    ],
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini (Google)',
-    description: 'Gemini 3.x - Contexte 1M tokens',
-    keyPlaceholder: 'AIza...',
-    consoleUrl: 'https://aistudio.google.com/app/apikey',
-    models: [
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
-      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', badge: 'Recommandé' },
-      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
-    ],
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral AI',
-    description: 'IA française souveraine',
-    keyPlaceholder: '...',
-    consoleUrl: 'https://console.mistral.ai/api-keys',
-    models: [
-      { id: 'mistral-large-latest', name: 'Mistral Large 3', badge: 'Flagship' },
-      // Medium 3.5 (avril 2026) : meilleur équilibre coût-performance Mistral.
-      { id: 'mistral-medium-latest', name: 'Mistral Medium 3.5', badge: 'Équilibré' },
-      { id: 'mistral-small-latest', name: 'Mistral Small 4', badge: 'Économique' },
-      { id: 'mistral-large-2512', name: 'Mistral Large 3 (fixé)', badge: 'Stable' },
-      { id: 'codestral-latest', name: 'Codestral', badge: 'Coding' },
-      { id: 'devstral-small-latest', name: 'Devstral Small', badge: 'Dev' },
-    ],
-  },
-  {
-    id: 'grok',
-    name: 'Grok (xAI)',
-    description: 'Grok 4.5 - co-développé avec Cursor, 500k contexte',
-    keyPrefix: 'xai-',
-    keyPlaceholder: 'xai-...',
-    consoleUrl: 'https://console.x.ai',
-    models: [
-      // ATTENTION : l'ID API est grok-4.5 avec un POINT (grok-4-5 -> 404).
-      { id: 'grok-4.5', name: 'Grok 4.5', badge: 'Flagship' },
-      { id: 'grok-4.6', name: 'Grok 4.6', badge: 'Recommandé' },
-      { id: 'grok-4.5', name: 'Grok 4.5' },
-      { id: 'grok-4.3', name: 'Grok 4.3' },
-      { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
-      { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    description: 'Accès unifié à 200+ modèles (Claude, GPT, Gemini, Llama...)',
-    keyPrefix: 'sk-or-',
-    keyPlaceholder: 'sk-or-v1-...',
-    consoleUrl: 'https://openrouter.ai/keys',
-    models: [
-      { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
-      { id: 'anthropic/claude-opus-5', name: 'Claude Opus 5', badge: 'Premium' },
-      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
-      { id: 'google/gemini-3.1-pro', name: 'Gemini 3.1 Pro' },
-      { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-      { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
-    ],
-  },
-  {
-    id: 'perplexity',
-    name: 'Perplexity',
-    description: 'Recherche augmentée par IA (Sonar)',
-    keyPrefix: 'pplx-',
-    keyPlaceholder: 'pplx-...',
-    consoleUrl: 'https://www.perplexity.ai/settings/api',
-    models: [
-      { id: 'sonar-pro', name: 'Sonar Pro', badge: 'Recherche' },
-      { id: 'sonar', name: 'Sonar', badge: 'Rapide' },
-      { id: 'sonar-reasoning-pro', name: 'Sonar Reasoning Pro', badge: 'Raisonnement' },
-      { id: 'sonar-deep-research', name: 'Sonar Deep Research', badge: 'Recherche+' },
-    ],
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    description: 'DeepSeek V4 (Pro et Flash)',
-    keyPrefix: 'sk-',
-    keyPlaceholder: 'sk-...',
-    consoleUrl: 'https://platform.deepseek.com/api_keys',
-    models: [
-      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', badge: 'Flagship' },
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'infomaniak',
-    name: 'Infomaniak AI',
-    description: 'IA souveraine suisse - serveurs en Suisse, RGPD',
-    keyPlaceholder: 'Ton token API Infomaniak...',
-    consoleUrl: 'https://www.infomaniak.com/fr/hebergement/ai-tools',
-    models: [
-      { id: 'mix', name: 'Mix', badge: 'Polyvalent' },
-      { id: 'mix-large', name: 'Mix Large', badge: 'Puissant' },
-    ],
-  },
-  {
-    id: 'ollama',
-    name: 'Ollama (Local)',
-    description: '100% local - Aucune clé API requise',
-    models: [], // Chargé dynamiquement
-  },
-];
+// Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
+// la liste statique vit dans lib/catalogueModeles, la liste dynamique vient
+// du backend. Ré-exports pour ne pas casser les importeurs existants.
+export type { FournisseurConfig as ProviderConfig } from '../../lib/catalogueModeles';
+export { FOURNISSEURS as PROVIDERS } from '../../lib/catalogueModeles';
 
 // Configuration des providers de génération d'images
 export interface ImageProviderConfig {
@@ -263,10 +112,52 @@ export function LLMTab({
   const hasApiKey = apiKeys[selectedProvider] === true;
   const needsApiKey = selectedProvider !== 'ollama';
 
+  // Catalogue dynamique (dette 0.43.4) : la LISTE vient du backend, la liste
+  // statique du fournisseur ne sert plus que de repli hors-ligne.
+  const [catalogueDynamique, setCatalogueDynamique] = useState<ModeleDecore[] | null>(null);
+  useEffect(() => {
+    setCatalogueDynamique(null);
+    if (selectedProvider === 'ollama') return;
+    let annule = false;
+    void chargerCatalogue(selectedProvider).then((modeles) => {
+      if (!annule) setCatalogueDynamique(modeles);
+    });
+    return () => { annule = true; };
+  }, [selectedProvider]);
+
+  // Adresse personnalisée Qwen : l'adresse d'espace de travail est propre au
+  // compte - sans elle, le fournisseur ne peut pas fonctionner.
+  const [baseUrlInput, setBaseUrlInput] = useState('');
+  const [baseUrlSaved, setBaseUrlSaved] = useState(false);
+  const [savingBaseUrl, setSavingBaseUrl] = useState(false);
+  useEffect(() => {
+    setBaseUrlSaved(false);
+    if (selectedProvider !== 'qwen') return;
+    let annule = false;
+    void api.getLLMConfig().then((config) => {
+      if (!annule && config.provider === 'qwen') setBaseUrlInput(config.base_url ?? '');
+    }).catch(() => {});
+    return () => { annule = true; };
+  }, [selectedProvider]);
+
+  async function handleSaveBaseUrl() {
+    setSavingBaseUrl(true);
+    setError(null);
+    try {
+      await api.setLLMConfig(selectedProvider, selectedModel, undefined, baseUrlInput.trim());
+      setBaseUrlSaved(true);
+      setTimeout(() => setBaseUrlSaved(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement de l'adresse");
+    } finally {
+      setSavingBaseUrl(false);
+    }
+  }
+
   // Modèles disponibles pour le provider sélectionné
   const availableModels: { id: string; name: string; badge?: string }[] = selectedProvider === 'ollama'
     ? ollamaModels.map(name => ({ id: name, name }))
-    : currentProviderConfig?.models || [];
+    : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   return (
     <div className="space-y-6">
@@ -506,6 +397,37 @@ export function LLMTab({
         onSelectModel={onSelectModel}
         selectedProvider={selectedProvider}
       />
+
+      {/* Adresse d'espace de travail Qwen (dette 0.43.4) : l'URL contient
+          l'identifiant du compte, le défaut ne peut fonctionner pour personne. */}
+      {selectedProvider === 'qwen' && (
+        <div className="space-y-2 p-3 rounded-[6px] border-[1.5px] border-border bg-surface">
+          <label htmlFor="qwen-base-url" className="text-sm font-medium text-text">
+            Adresse de ton espace de travail
+          </label>
+          <p className="text-xs text-text-muted">
+            Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton
+            espace de travail. Sans elle, Qwen ne peut pas répondre.
+          </p>
+          <div className="flex gap-2">
+            <input
+              id="qwen-base-url"
+              type="url"
+              value={baseUrlInput}
+              onChange={(e) => setBaseUrlInput(e.target.value)}
+              placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+              className="flex-1 px-3 py-2 text-sm rounded-[6px] border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+            />
+            <Button
+              onClick={() => void handleSaveBaseUrl()}
+              disabled={savingBaseUrl || !baseUrlInput.trim()}
+              size="sm"
+            >
+              {savingBaseUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : baseUrlSaved ? <Check className="w-4 h-4" /> : 'Enregistrer'}
+            </Button>
+          </div>
+        </div>
+      )}
       {selectedProvider === 'ollama' && selectedModel && (
         <LocalModelFeasibility
           model={ollamaStatus?.models.find((model) => model.name === selectedModel)}

@@ -434,6 +434,12 @@ class ConfigResponse(BaseModel):
     has_gemini_image_key: bool = False
     has_fal_key: bool = False
     has_brave_key: bool = False
+    # Revue dette 0.43.4 : les champs has_*_key ci-dessus n'ont jamais suivi
+    # les fournisseurs (perplexity, deepseek, infomaniak, puis glm/kimi/qwen/
+    # minimax : cle enregistree, jamais restituee, l'interface la redemandait).
+    # Cette carte couvre TOUS les fournisseurs LLM ; les champs historiques
+    # restent pour compatibilite.
+    api_keys: dict[str, bool] = {}
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True
@@ -565,6 +571,10 @@ class LLMConfigUpdate(BaseModel):
         "ollama",
     ]
     model: str
+    # Dette 0.43.4 : l'adresse Qwen contient l'identifiant d'espace de travail
+    # du compte - sans ce champ, le fournisseur ne marchait pour personne.
+    # None = conserver l'adresse deja enregistree ; "" = l'effacer.
+    base_url: str | None = None
     # Effort de raisonnement (10/07/2026) : auto = defaut serveur (rien
     # d'envoye). None = ne pas toucher au reglage existant.
     effort: Literal["auto", "low", "medium", "high", "max"] | None = None
@@ -578,6 +588,7 @@ class LLMConfigResponse(BaseModel):
     available_models: list[str] = []
     available: bool = False
     effort: str | None = None  # Effort de raisonnement courant (None = Auto)
+    base_url: str | None = None  # Adresse personnalisee (Qwen : espace de travail)
 
 
 class OllamaModelInfo(BaseModel):

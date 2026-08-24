@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
+import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
@@ -17,138 +18,10 @@ interface LLMStepProps {
   onBack: () => void;
 }
 
-interface ProviderConfig {
-  id: api.LLMProvider;
-  name: string;
-  description: string;
-  keyPrefix?: string;
-  keyPlaceholder?: string;
-  consoleUrl?: string;
-  models: { id: string; name: string; badge?: string }[];
-}
-
-const PROVIDERS: ProviderConfig[] = [
-  {
-    id: 'anthropic',
-    name: 'Claude (Anthropic)',
-    description: 'Recommandé - Excellent pour le français',
-    keyPrefix: 'sk-ant-',
-    keyPlaceholder: 'sk-ant-...',
-    consoleUrl: 'https://console.anthropic.com/settings/keys',
-    models: [
-      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
-      { id: 'claude-haiku-4-5-20251001', name: 'Claude 4.5 Haiku', badge: 'Rapide' },
-      { id: 'claude-opus-4-8', name: 'Claude 4.8 Opus', badge: 'Premium' },
-    ],
-  },
-  {
-    id: 'openai',
-    name: 'GPT (OpenAI)',
-    description: 'Polyvalent et puissant',
-    keyPrefix: 'sk-',
-    keyPlaceholder: 'sk-...',
-    consoleUrl: 'https://platform.openai.com/api-keys',
-    models: [
-      { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Recommandé' },
-      { id: 'gpt-5.4', name: 'GPT-5.4' },
-      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', badge: 'Économique' },
-      { id: 'gpt-5.3-codex', name: 'GPT-5.3 Codex', badge: 'Coding' },
-    ],
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini (Google)',
-    description: 'Contexte très long (1M tokens)',
-    keyPlaceholder: 'AIza...',
-    consoleUrl: 'https://aistudio.google.com/app/apikey',
-    models: [
-      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', badge: 'Recommandé' },
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', badge: 'Flagship' },
-      { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite', badge: 'Économique' },
-    ],
-  },
-  {
-    id: 'mistral',
-    name: 'Mistral AI',
-    description: 'IA française souveraine',
-    keyPlaceholder: '...',
-    consoleUrl: 'https://console.mistral.ai/api-keys',
-    models: [
-      { id: 'mistral-large-latest', name: 'Mistral Large', badge: 'Puissant' },
-      { id: 'codestral-latest', name: 'Codestral', badge: 'Code' },
-      { id: 'mistral-small-latest', name: 'Mistral Small', badge: 'Économique' },
-    ],
-  },
-  {
-    id: 'grok',
-    name: 'Grok (xAI)',
-    description: 'IA de xAI (Elon Musk)',
-    keyPrefix: 'xai-',
-    keyPlaceholder: 'xai-...',
-    consoleUrl: 'https://console.x.ai',
-    models: [
-      { id: 'grok-4.3', name: 'Grok 4.3', badge: 'Flagship' },
-      { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
-      { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    description: 'Accès unifié à 200+ modèles (Claude, GPT, Gemini, Llama...)',
-    keyPrefix: 'sk-or-',
-    keyPlaceholder: 'sk-or-v1-...',
-    consoleUrl: 'https://openrouter.ai/keys',
-    models: [
-      { id: 'anthropic/claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Recommandé' },
-      { id: 'anthropic/claude-opus-4-8', name: 'Claude Opus 4.8', badge: 'Premium' },
-      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
-      { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash' },
-      { id: 'meta-llama/llama-4-maverick', name: 'Llama 4 Maverick', badge: 'Open Source' },
-    ],
-  },
-  {
-    id: 'perplexity',
-    name: 'Perplexity',
-    description: 'Recherche augmentée par IA',
-    keyPrefix: 'pplx-',
-    keyPlaceholder: 'pplx-...',
-    consoleUrl: 'https://www.perplexity.ai/settings/api',
-    models: [
-      { id: 'sonar-pro', name: 'Sonar Pro', badge: 'Recherche' },
-      { id: 'sonar', name: 'Sonar', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    description: 'DeepSeek V4 (Pro et Flash)',
-    keyPrefix: 'sk-',
-    keyPlaceholder: 'sk-...',
-    consoleUrl: 'https://platform.deepseek.com/api_keys',
-    models: [
-      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', badge: 'Flagship' },
-      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', badge: 'Rapide' },
-    ],
-  },
-  {
-    id: 'infomaniak',
-    name: 'Infomaniak AI',
-    description: 'IA suisse souveraine - serveurs en Suisse',
-    keyPlaceholder: 'Ton token API Infomaniak...',
-    consoleUrl: 'https://www.infomaniak.com/fr/hebergement/ai-tools',
-    models: [
-      { id: 'mix', name: 'Mix', badge: 'Polyvalent' },
-      { id: 'mix-large', name: 'Mix Large', badge: 'Puissant' },
-    ],
-  },
-  {
-    id: 'ollama',
-    name: 'Ollama (Local)',
-    description: '100% local - Aucune clé API requise',
-    models: [],
-  },
-];
+// Catalogue centralisé (dette 0.43.4) : l'onboarding déclarait sa PROPRE copie
+// des fournisseurs et elle divergeait déjà des Réglages - gpt-5.3-codex y était
+// encore proposé, retiré partout ailleurs. Une seule copie statique de repli
+// (lib/catalogueModeles), la liste dynamique vient du backend.
 
 const LLM_SETUP_TIMEOUT_MS = 10_000;
 
@@ -173,6 +46,17 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
 
 export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
+  // La LISTE des modèles cloud vient du backend ; le repli statique ne sert
+  // que si la route échoue. En onboarding rien n'est encore enregistré : si le
+  // modèle sélectionné n'existe pas dans la liste fraîche, on prend le premier.
+  const [catalogueDynamique, setCatalogueDynamique] = useState<ModeleDecore[] | null>(null);
+  // Adresse d'espace de travail Qwen : sans elle, le fournisseur ne peut pas
+  // fonctionner - elle fait donc partie du parcours, pas d'un réglage caché.
+  const [baseUrlInput, setBaseUrlInput] = useState('');
+  // Revue dette : l'arrivée du catalogue dynamique corrigeait la sélection
+  // même quand l'utilisateur venait de choisir un modèle à la main - un
+  // reclassement silencieux, précisément ce qu'on corrige partout ailleurs.
+  const modeleChoisiParLUtilisateur = useRef(false);
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -256,7 +140,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         indisponible: !m.gereLesOutils,
         motif: m.motif,
       }))
-    : currentProviderConfig?.models || [];
+    : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   async function handleSaveApiKey() {
     if (!apiKeyInput.trim()) {
@@ -286,8 +170,23 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     }
   }
 
+  useEffect(() => {
+    setCatalogueDynamique(null);
+    if (selectedProvider === 'ollama') return;
+    let annule = false;
+    void chargerCatalogue(selectedProvider).then((modeles) => {
+      if (annule || !modeles) return;
+      setCatalogueDynamique(modeles);
+      setSelectedModel((actuel) =>
+        selectionApresCatalogue(actuel, modeles, modeleChoisiParLUtilisateur.current),
+      );
+    });
+    return () => { annule = true; };
+  }, [selectedProvider]);
+
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
+    modeleChoisiParLUtilisateur.current = false;
     setError(null);
     setSaved(false);
 
@@ -312,7 +211,12 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     setConfiguring(true);
     setError(null);
     try {
-      await api.setLLMConfig(selectedProvider, selectedModel);
+      await api.setLLMConfig(
+        selectedProvider,
+        selectedModel,
+        undefined,
+        selectedProvider === 'qwen' ? baseUrlInput.trim() : undefined,
+      );
       onNext(selectedProvider);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la configuration');
@@ -327,7 +231,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         && ollamaModels.some((m) => m.gereLesOutils)
         && selectedModel,
       )
-    : hasApiKey || saved;
+    : (hasApiKey || saved)
+      // L'adresse Qwen n'est pas optionnelle : continuer sans elle livrerait
+      // un fournisseur configuré incapable de répondre.
+      && (selectedProvider !== 'qwen' || /^https?:\/\//.test(baseUrlInput.trim()));
 
   if (loading) {
     return (
@@ -496,6 +403,28 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         </div>
       )}
 
+      {/* Adresse d'espace de travail Qwen (dette 0.43.4) : l'URL contient
+          l'identifiant du compte - sans elle, le fournisseur ne répond pas. */}
+      {selectedProvider === 'qwen' && (
+        <div className="mb-6">
+          <label htmlFor="qwen-base-url" className="text-sm text-text-muted mb-2 block">
+            Adresse de ton espace de travail
+          </label>
+          <input
+            id="qwen-base-url"
+            type="url"
+            value={baseUrlInput}
+            onChange={(e) => setBaseUrlInput(e.target.value)}
+            placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
+          />
+          <p className="text-xs text-text-muted mt-2">
+            Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton
+            espace de travail. Elle est indispensable pour continuer.
+          </p>
+        </div>
+      )}
+
       {/* Model Selection */}
       {availableModels.length > 0 && (
         <div className="mb-6">
@@ -503,7 +432,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           <select
             id="llm-model"
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => {
+              modeleChoisiParLUtilisateur.current = true;
+              setSelectedModel(e.target.value);
+            }}
             className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
           >
             {availableModels.map((model) => (

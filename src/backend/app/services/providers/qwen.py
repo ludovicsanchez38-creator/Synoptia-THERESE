@@ -32,10 +32,10 @@ QWEN_API_URL = (
 
 
 class QwenProvider(OpenAIProvider):
-    """Fournisseur Qwen d'Alibaba, compatible OpenAI, outils inclus."""
+    """Fournisseur Qwen d'Alibaba, compatible OpenAI, outils inclus.
+
+    `url_effective()` vit désormais sur OpenAIProvider (dette 0.43.4) : ici,
+    seul le défaut change - et il est inutilisable tel quel, à dessein.
+    """
 
     API_URL = QWEN_API_URL
-
-    def url_effective(self) -> str:
-        """L'adresse réellement appelée : celle du compte, sinon le défaut."""
-        return getattr(self.config, "base_url", None) or self.API_URL

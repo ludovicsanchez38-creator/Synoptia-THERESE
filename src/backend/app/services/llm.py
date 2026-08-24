@@ -98,6 +98,48 @@ def invalidate_api_key_cache() -> None:
     _api_key_cache.clear()
 
 
+def _get_preference_value(cle: str) -> str | None:
+    """Lit une préférence en clair (non chiffrée), en synchrone.
+
+    Dette 0.43.4 : miroir de `_get_api_key_from_db` sans la couche de
+    déchiffrement, pour les adresses personnalisées `{provider}_base_url`.
+    Appelée depuis `_default_config`, un chemin déjà synchrone au démarrage.
+    """
+    try:
+        from app.models.database import get_sync_connection
+        from sqlalchemy import text
+
+        with get_sync_connection() as conn:
+            result = conn.execute(
+                text("SELECT value FROM preferences WHERE key = :key"),
+                {"key": cle},
+            )
+            row = result.fetchone()
+            return row[0] if row and row[0] else None
+    except Exception as e:
+        logger.warning(f"Lecture de la préférence {cle} impossible : {e}")
+        return None
+
+
+def _base_url_configuree(provider: str) -> str | None:
+    """L'adresse personnalisée d'un fournisseur, VALIDÉE à la relecture.
+
+    Seconde passe de revue : la validation ne vivait que dans POST /llm - une
+    adresse invalide arrivée par un autre chemin d'écriture atteignait le
+    service reconstruit au démarrage et les agents (url_effective() en aurait
+    fait « http:/chat/completions »). Tout lecteur passe par ici.
+    """
+    from app.services.providers.base import adresse_fournisseur_valide
+
+    valeur = _get_preference_value(f"{provider}_base_url")
+    if valeur and not adresse_fournisseur_valide(valeur):
+        logger.warning(
+            "Adresse %s_base_url stockée invalide (%r) : ignorée", provider, valeur
+        )
+        return None
+    return valeur
+
+
 def _get_api_key_from_db(provider: str) -> str | None:
     """Load API key from database or cache."""
     if _api_key_cache_loaded:
@@ -486,12 +528,20 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     "openrouter": "OPENROUTER_API_KEY",
                     "perplexity": "PERPLEXITY_API_KEY",
                     "deepseek": "DEEPSEEK_API_KEY",
+                    "glm": "GLM_API_KEY",
+                    "kimi": "KIMI_API_KEY",
+                    "qwen": "QWEN_API_KEY",
+                    "minimax": "MINIMAX_API_KEY",
                     "infomaniak": "INFOMANIAK_API_KEY",
                 }
                 api_key = os.getenv(env_map.get(selected_provider, ""))
 
             if api_key:
-                return LLMConfig(provider_enum, model, api_key=api_key, context_window=ctx_window, effort=selected_effort)
+                # Adresse personnalisée par fournisseur (dette 0.43.4) : sans
+                # cette lecture, l'adresse Qwen enregistrée ne survivait pas au
+                # redémarrage - le service repartait sur le défaut inutilisable.
+                base_url = _base_url_configuree(selected_provider)
+                return LLMConfig(provider_enum, model, api_key=api_key, base_url=base_url, context_window=ctx_window, effort=selected_effort)
 
             logger.warning(f"Selected provider {selected_provider} has no API key, falling back")
 
@@ -1028,7 +1078,14 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
         if not api_key:
             return None
 
-    base_url = "http://localhost:11434" if provider_name == "ollama" else None
+    # Revue dette 0.43.4 : le routage des agents reconstruisait le service
+    # avec base_url=None - l'adresse Qwen enregistrée ne valait que pour le
+    # chat principal, les agents repartaient sur le défaut inutilisable.
+    base_url: str | None
+    if provider_name == "ollama":
+        base_url = "http://localhost:11434"
+    else:
+        base_url = _base_url_configuree(provider_name)
 
     config = LLMConfig(
         provider=provider,

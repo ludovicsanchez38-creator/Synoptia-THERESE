@@ -38,6 +38,32 @@ class LLMProvider(str, Enum):
     MINIMAX = "minimax"
 
 
+def adresse_fournisseur_valide(adresse: str) -> bool:
+    """Une adresse de fournisseur exploitable, pas juste un préfixe plausible.
+
+    Revue dette 0.43.4 (deux passes) : startswith("http://") laissait passer
+    « http:// » tout seul, un hôte avec espace et « https://javascript:… » ;
+    puis la validation ne vivait que dans la route POST /llm alors que le
+    démarrage et les agents relisent la préférence par un autre chemin. D'où
+    ce module neutre : tout lecteur ou écrivain d'adresse applique LA même
+    règle. urlsplit + hostname + port tranchent ; le moindre blanc disqualifie.
+    """
+    from urllib.parse import urlsplit
+
+    if any(c.isspace() for c in adresse):
+        return False
+    try:
+        morceaux = urlsplit(adresse)
+        if morceaux.scheme not in ("http", "https"):
+            return False
+        if not morceaux.hostname:
+            return False
+        morceaux.port  # noqa: B018 - lève ValueError sur un port imparsable
+    except ValueError:
+        return False
+    return True
+
+
 @dataclass
 class LLMConfig:
     """LLM configuration."""
