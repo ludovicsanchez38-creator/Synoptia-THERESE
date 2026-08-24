@@ -9,18 +9,33 @@
 import { create } from 'zustand';
 import { usePersonalisationStore } from './personalisationStore';
 
-export type AppView =
-  | 'chat'
-  | 'home' // Vue Accueil persistante (refonte dashboard)
-  | 'memory'
-  | 'crm'
-  | 'email'
-  | 'calendar'
-  | 'tasks'
-  | 'invoices'
-  | 'files' // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
-  | 'projects' // Vue Projets dédiée (BUG-104 : surface perdue à la refonte 0.20)
-  | 'documents'; // Atelier documentaire : liste + création (D2), atelier de rédaction (D3)
+/**
+ * La liste des vues, en CONSTANTE plutôt qu'en union de types (0.44).
+ *
+ * Une union TypeScript disparaît à la compilation : aucun test ne peut vérifier
+ * qu'une vue est décrite quelque part, ni qu'un catalogue la couvre. L'inventaire
+ * du 13/08 a montré le prix de cette invisibilité — la même liste redéclarée à
+ * sept endroits, et `files` oubliée dans la table du backend, ce qui rendait la
+ * vue de l'indexation introuvable par `{action: ouvrir …}` comme par `/aide`.
+ *
+ * Le type est désormais DÉRIVÉ de la constante : ajouter une vue au type sans
+ * l'ajouter ici devient impossible.
+ */
+export const APP_VIEWS = [
+  'chat',
+  'home', // Vue Accueil persistante (refonte dashboard)
+  'memory',
+  'crm',
+  'email',
+  'calendar',
+  'tasks',
+  'invoices',
+  'files', // Indexation de fichiers (sortie de la Mémoire, arbitrage A/B 2026-06-05)
+  'projects', // Vue Projets dédiée (BUG-104 : surface perdue à la refonte 0.20)
+  'documents', // Atelier documentaire : liste + création (D2), atelier de rédaction (D3)
+] as const;
+
+export type AppView = (typeof APP_VIEWS)[number];
 
 interface NavigationStore {
   activeView: AppView;

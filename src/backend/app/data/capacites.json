@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "note": "Manifeste de capacités de THÉRÈSE. Fichier CANONIQUE, source neutre : importé par le frontend TypeScript et embarqué par PyInstaller pour le sidecar. Ne pas générer depuis le TypeScript — le sidecar est construit avant le frontend, il ne verrait jamais le résultat. Le manifeste ne remplace aucun registre : chaque binding référence un identifiant qui existe déjà (actionRegistry, AppView, command_registry), et c'est cette référence qui rend les vérifications mécaniques possibles. Pilote 0.44 : vues et navigation.",
+  "capacites": [
+    {
+      "id": "accueil",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Accueil et alertes", "quoi": "Voir la journée d'un coup d'œil : agenda du jour, urgences, factures en retard et prospects à relancer." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["accueil.vue", "accueil.action"],
+      "exigences": [],
+      "cycle": { "introduite": "0.20" }
+    },
+    {
+      "id": "contacts",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Contacts et mémoire", "quoi": "Retrouver les personnes enregistrées, leurs notes et le contexte mémorisé au fil des conversations." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["contacts.vue", "contacts.action", "contacts.raccourci"],
+      "exigences": [],
+      "cycle": { "introduite": "0.1" }
+    },
+    {
+      "id": "pipeline",
+      "famille": "developper",
+      "textes": { "fr-FR": { "nom": "Pipeline commercial", "quoi": "Suivre prospects et opportunités par étape, avec leur score de potentiel et leur historique." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["pipeline.vue", "pipeline.action", "pipeline.raccourci"],
+      "exigences": [],
+      "cycle": { "introduite": "0.5" }
+    },
+    {
+      "id": "email",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Email", "quoi": "Lire la boîte connectée, préparer une réponse et créer un brouillon, sans jamais envoyer sans confirmation." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["email.vue", "email.action", "email.raccourci"],
+      "exigences": ["compte-email"],
+      "cycle": { "introduite": "0.12" }
+    },
+    {
+      "id": "agenda",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Agenda", "quoi": "Consulter les événements, poser un rendez-vous et préparer une rencontre avec le contexte des participants." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["agenda.vue", "agenda.action", "agenda.raccourci"],
+      "exigences": [],
+      "cycle": { "introduite": "0.15" }
+    },
+    {
+      "id": "taches",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Tâches", "quoi": "Tenir la liste de ce qu'il reste à faire, avec échéances et rattachement à un projet." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["taches.vue", "taches.action", "taches.raccourci"],
+      "exigences": [],
+      "cycle": { "introduite": "0.8" }
+    },
+    {
+      "id": "facturation",
+      "famille": "developper",
+      "textes": { "fr-FR": { "nom": "Devis et factures", "quoi": "Établir un devis ou une facture conforme, la suivre jusqu'au paiement et produire son PDF." } },
+      "maturite": "partielle",
+      "audience": "tous",
+      "entrees": ["facturation.vue", "facturation.action", "facturation.raccourci"],
+      "exigences": ["profil-emetteur"],
+      "limites": ["L'envoi par email depuis cette vue n'est pas disponible : le devis se télécharge en PDF."],
+      "cycle": { "introduite": "0.18" }
+    },
+    {
+      "id": "documents-indexes",
+      "famille": "documents",
+      "textes": { "fr-FR": { "nom": "Fichiers et connaissances", "quoi": "Parcourir ses dossiers et indexer des documents pour que THÉRÈSE puisse s'y référer ensuite." } },
+      "maturite": "partielle",
+      "audience": "tous",
+      "entrees": ["fichiers.vue", "fichiers.action"],
+      "exigences": [],
+      "limites": [
+        "Un PDF n'est lu que jusqu'à sa 100e page.",
+        "Un CSV n'est lu que jusqu'à sa 500e ligne.",
+        "Certains formats bureautiques anciens sont acceptés mais ne peuvent pas être lus."
+      ],
+      "cycle": { "introduite": "0.20" }
+    },
+    {
+      "id": "projets",
+      "famille": "developper",
+      "textes": { "fr-FR": { "nom": "Projets", "quoi": "Suivre l'avancement de chaque dossier client, ses livrables et ses tâches ouvertes." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["projets.vue", "projets.action"],
+      "exigences": [],
+      "cycle": { "introduite": "0.20" }
+    },
+    {
+      "id": "atelier-documentaire",
+      "famille": "documents",
+      "textes": { "fr-FR": { "nom": "Atelier documentaire", "quoi": "Construire un document structuré section par section : trame, rédaction guidée, pistes à creuser, export Word." } },
+      "maturite": "partielle",
+      "audience": "tous",
+      "entrees": ["atelier.vue", "atelier.action", "atelier.creation"],
+      "exigences": [],
+      "limites": ["La rédaction d'une section ne s'appuie pas sur les documents indexés."],
+      "cycle": { "introduite": "0.27" }
+    },
+    {
+      "id": "reglages",
+      "famille": "quotidien",
+      "textes": { "fr-FR": { "nom": "Réglages", "quoi": "Choisir son modèle d'IA, connecter ses comptes, régler la confidentialité et l'accessibilité." } },
+      "maturite": "complete",
+      "audience": "tous",
+      "entrees": ["reglages.action", "reglages.raccourci"],
+      "exigences": [],
+      "cycle": { "introduite": "0.1" }
+    }
+  ],
+  "points_entree": [
+    { "id": "accueil.vue", "capacites": ["accueil"], "type": "vue", "principal": true, "binding": { "registre": "vue", "view": "home" } },
+    { "id": "accueil.action", "capacites": ["accueil"], "type": "action", "binding": { "registre": "action", "actionId": "home.open" } },
+
+    { "id": "contacts.vue", "capacites": ["contacts"], "type": "vue", "binding": { "registre": "vue", "view": "memory" } },
+    { "id": "contacts.action", "capacites": ["contacts"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "memory.open" } },
+    { "id": "contacts.raccourci", "capacites": ["contacts"], "type": "raccourci", "touches": "Cmd+M", "binding": { "registre": "raccourci", "actionId": "memory.open" } },
+
+    { "id": "pipeline.vue", "capacites": ["pipeline"], "type": "vue", "binding": { "registre": "vue", "view": "crm" } },
+    { "id": "pipeline.action", "capacites": ["pipeline"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "crm.open" } },
+    { "id": "pipeline.raccourci", "capacites": ["pipeline"], "type": "raccourci", "touches": "Cmd+P", "binding": { "registre": "raccourci", "actionId": "crm.open" } },
+
+    { "id": "email.vue", "capacites": ["email"], "type": "vue", "binding": { "registre": "vue", "view": "email" } },
+    { "id": "email.action", "capacites": ["email"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "email.open" } },
+    { "id": "email.raccourci", "capacites": ["email"], "type": "raccourci", "touches": "Cmd+E", "binding": { "registre": "raccourci", "actionId": "email.open" } },
+
+    { "id": "agenda.vue", "capacites": ["agenda"], "type": "vue", "binding": { "registre": "vue", "view": "calendar" } },
+    { "id": "agenda.action", "capacites": ["agenda"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "calendar.open" } },
+    { "id": "agenda.raccourci", "capacites": ["agenda"], "type": "raccourci", "touches": "Cmd+Shift+C", "binding": { "registre": "raccourci", "actionId": "calendar.open" } },
+
+    { "id": "taches.vue", "capacites": ["taches"], "type": "vue", "binding": { "registre": "vue", "view": "tasks" } },
+    { "id": "taches.action", "capacites": ["taches"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "tasks.open" } },
+    { "id": "taches.raccourci", "capacites": ["taches"], "type": "raccourci", "touches": "Cmd+T", "binding": { "registre": "raccourci", "actionId": "tasks.open" } },
+
+    { "id": "facturation.vue", "capacites": ["facturation"], "type": "vue", "binding": { "registre": "vue", "view": "invoices" } },
+    { "id": "facturation.action", "capacites": ["facturation"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "invoices.open" } },
+    { "id": "facturation.raccourci", "capacites": ["facturation"], "type": "raccourci", "touches": "Cmd+I", "binding": { "registre": "raccourci", "actionId": "invoices.open" } },
+
+    { "id": "fichiers.vue", "capacites": ["documents-indexes"], "type": "vue", "binding": { "registre": "vue", "view": "files" } },
+    { "id": "fichiers.action", "capacites": ["documents-indexes"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "files.open" } },
+
+    { "id": "projets.vue", "capacites": ["projets"], "type": "vue", "binding": { "registre": "vue", "view": "projects" } },
+    { "id": "projets.action", "capacites": ["projets"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "projects.open" } },
+
+    { "id": "atelier.vue", "capacites": ["atelier-documentaire"], "type": "vue", "binding": { "registre": "vue", "view": "documents" } },
+    { "id": "atelier.action", "capacites": ["atelier-documentaire"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "documents.open" } },
+    { "id": "atelier.creation", "capacites": ["atelier-documentaire"], "type": "action", "binding": { "registre": "action", "actionId": "documents.new" } },
+
+    { "id": "reglages.action", "capacites": ["reglages"], "type": "action", "principal": true, "binding": { "registre": "action", "actionId": "settings.open" } },
+    { "id": "reglages.raccourci", "capacites": ["reglages"], "type": "raccourci", "touches": "Cmd+,", "binding": { "registre": "raccourci", "actionId": "settings.open" } }
+  ],
+  "identifiants_reserves": []
+}
