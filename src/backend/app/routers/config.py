@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
+from typing import Any
 
 from app.config import settings
 from app.models.database import get_session
@@ -1167,7 +1168,7 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/llm/models/{provider_value}")
-async def get_available_models(provider_value: str) -> dict:
+async def get_available_models(provider_value: str) -> dict[str, Any]:
     """Catalogue des modèles d'un fournisseur - LA source, servie au frontend.
 
     Dette 0.43.4 : quatre copies du catalogue vivaient dans le frontend et

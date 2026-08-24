@@ -55,7 +55,7 @@ class OpenAIProvider(BaseProvider):
         suffixe /chat/completions : on l'ajoute si l'utilisateur a collé la
         base, on ne double pas s'il a collé l'adresse complète.
         """
-        base = getattr(self.config, "base_url", None)
+        base: str | None = getattr(self.config, "base_url", None)
         if not base:
             return self.API_URL
         base = base.rstrip("/")
