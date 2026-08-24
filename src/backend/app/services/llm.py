@@ -121,6 +121,25 @@ def _get_preference_value(cle: str) -> str | None:
         return None
 
 
+def _base_url_configuree(provider: str) -> str | None:
+    """L'adresse personnalisée d'un fournisseur, VALIDÉE à la relecture.
+
+    Seconde passe de revue : la validation ne vivait que dans POST /llm - une
+    adresse invalide arrivée par un autre chemin d'écriture atteignait le
+    service reconstruit au démarrage et les agents (url_effective() en aurait
+    fait « http:/chat/completions »). Tout lecteur passe par ici.
+    """
+    from app.services.providers.base import adresse_fournisseur_valide
+
+    valeur = _get_preference_value(f"{provider}_base_url")
+    if valeur and not adresse_fournisseur_valide(valeur):
+        logger.warning(
+            "Adresse %s_base_url stockée invalide (%r) : ignorée", provider, valeur
+        )
+        return None
+    return valeur
+
+
 def _get_api_key_from_db(provider: str) -> str | None:
     """Load API key from database or cache."""
     if _api_key_cache_loaded:
@@ -521,7 +540,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 # Adresse personnalisée par fournisseur (dette 0.43.4) : sans
                 # cette lecture, l'adresse Qwen enregistrée ne survivait pas au
                 # redémarrage - le service repartait sur le défaut inutilisable.
-                base_url = _get_preference_value(f"{selected_provider}_base_url")
+                base_url = _base_url_configuree(selected_provider)
                 return LLMConfig(provider_enum, model, api_key=api_key, base_url=base_url, context_window=ctx_window, effort=selected_effort)
 
             logger.warning(f"Selected provider {selected_provider} has no API key, falling back")
@@ -1066,7 +1085,7 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
     if provider_name == "ollama":
         base_url = "http://localhost:11434"
     else:
-        base_url = _get_preference_value(f"{provider_name}_base_url")
+        base_url = _base_url_configuree(provider_name)
 
     config = LLMConfig(
         provider=provider,
