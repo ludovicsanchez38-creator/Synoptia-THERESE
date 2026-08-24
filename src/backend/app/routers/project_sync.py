@@ -9,11 +9,10 @@ Le routeur est une peau fine : toute la logique vit dans
 """
 import logging
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-
 from app.services import project_sync_service as svc
 from app.services.project_sync import ErreurDeScan
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
