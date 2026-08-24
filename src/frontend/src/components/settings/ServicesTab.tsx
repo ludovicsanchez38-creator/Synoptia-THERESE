@@ -8,6 +8,7 @@ import { IMAGE_PROVIDERS } from './LLMTab';
 import { ExportProfileSection } from './ExportProfileSection';
 import { VariablesSection } from './VariablesSection';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { EmailAccountsSection } from './EmailAccountsSection';
 
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
@@ -90,6 +91,8 @@ export function ServicesTab({
       <VariablesSection />
 
       {/* Génération d'images */}
+      <EmailAccountsSection />
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
