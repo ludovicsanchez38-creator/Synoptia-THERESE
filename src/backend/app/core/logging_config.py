@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import re
+import sys
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -134,7 +135,20 @@ def setup_logging() -> None:
     root_logger.handlers.clear()
 
     # --- Console handler (lisible) ---
-    console_handler = logging.StreamHandler()
+    # Le handler fichier force utf-8 (plus bas) ; la console, elle, héritait de
+    # l'encodage du terminal. Sur une console Windows en cp1252, « Jérôme »
+    # s'écrivait « J?r?me » dans les journaux du sidecar. Un diagnostic sur un
+    # nom français en devenait illisible, précisément quand on en a besoin.
+    _flux = sys.stdout
+    if hasattr(_flux, "reconfigure"):
+        try:
+            _flux.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            # Flux non reconfigurable (redirigé, capturé par les tests) : on
+            # garde le comportement d'origine plutôt que d'empêcher le
+            # démarrage pour une question de journalisation.
+            pass
+    console_handler = logging.StreamHandler(_flux)
     console_handler.setLevel(log_level)
     console_handler.setFormatter(ReadableFormatter())
     console_handler.addFilter(secret_filter)
