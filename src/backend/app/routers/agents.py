@@ -13,6 +13,7 @@ from typing import Any
 
 from app.models.database import get_session
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
+from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas_agents import (
     AgentConfigResponse,
     AgentConfigUpdate,
@@ -240,6 +241,21 @@ async def agent_request(
         current_async_task = asyncio.current_task()
         if current_async_task is not None:
             _running_agent_tasks[task.id] = current_async_task
+        # 0.46 : la mission est un TRAITEMENT visible - ProcessingTask lié à
+        # l'AgentTask (entity_id), annulable depuis le panneau par le même
+        # mécanisme que la route historique (asyncio.Task.cancel).
+        from app.services import task_registry, traitements
+
+        handle = await traitements.creer_traitement(
+            type="atelier",
+            label=f"Atelier : {request.message[:80]}",
+            entity_id=task.id,
+        )
+        await handle.demarrer()
+        if current_async_task is not None:
+            await handle.lier_adaptateur(
+                task_registry.AnnulationParTacheAsyncio(current_async_task)
+            )
         orchestrator = SwarmOrchestrator(source_path)
         final_status = "review"
         final_error = None
@@ -311,6 +327,21 @@ async def agent_request(
         finally:
             if _running_agent_tasks.get(task.id) is current_async_task:
                 _running_agent_tasks.pop(task.id, None)
+            # Cohérence des deux cycles de vie : le traitement dit la même
+            # chose que l'AgentTask, sur TOUS les chemins de sortie.
+            try:
+                if final_status == "cancelled":
+                    await handle.terminer(EtatTacheTraitement.CANCELLED)
+                elif final_status == "error":
+                    await handle.terminer(
+                        EtatTacheTraitement.FAILED, error=(final_error or "")[:500]
+                    )
+                else:
+                    await handle.terminer(EtatTacheTraitement.DONE)
+            except Exception:
+                logger.warning(
+                    "État du traitement Atelier non consigné", exc_info=True
+                )
             # Même si le client ferme le flux, l'état local doit refléter
             # l'annulation et ne jamais rester artificiellement « en cours ».
             try:
