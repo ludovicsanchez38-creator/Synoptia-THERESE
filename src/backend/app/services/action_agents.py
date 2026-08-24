@@ -18,6 +18,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from app.models.processing import EtatTache
+from app.services import task_registry
+from app.services import traitements as traitements_service
+
 logger = logging.getLogger(__name__)
 
 # Chemin du fichier de definition des agents
@@ -30,10 +34,16 @@ _AGENTS_JSON = Path(__file__).parent.parent / "agents" / "action_agents.json"
 
 
 class TaskStatus(str, Enum):
-    """Statut d'execution d'une tache."""
+    """Statut d'execution d'une tache.
+
+    `CANCEL_REQUESTED` est distinct de `CANCELLED` (0.47) : demander l'arret
+    n'est pas l'obtenir - le flux LLM de l'etape en cours tourne encore.
+    Seul le chemin de boucle de `_execute` pose `CANCELLED`.
+    """
 
     PENDING = "pending"
     RUNNING = "running"
+    CANCEL_REQUESTED = "cancel_requested"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     ERROR = "error"
@@ -114,6 +124,11 @@ class TaskState:
     error: Optional[str] = None
     _cancel_event: asyncio.Event = field(
         default_factory=asyncio.Event, repr=False
+    )
+    # Traitement durable (panneau Traitements) - None si le suivi n'a pas
+    # pu naitre : l'action s'execute quand meme (fail-open).
+    _handle: Optional["traitements_service.TraitementHandle"] = field(
+        default=None, repr=False
     )
 
     def to_dict(self) -> dict[str, Any]:
@@ -390,12 +405,28 @@ async def _gather_local_context(tools: list[str]) -> str:
 
 ProgressCallback = Callable[[TaskState], None]
 
+# Etats en memoire ou plus rien ne bouge.
+_STATUTS_TERMINAUX = (
+    TaskStatus.COMPLETED,
+    TaskStatus.CANCELLED,
+    TaskStatus.ERROR,
+)
+
+# Mapping vers l'etat durable du ProcessingTask (design 0.47).
+_ETAT_DURABLE = {
+    TaskStatus.COMPLETED: EtatTache.DONE,
+    TaskStatus.ERROR: EtatTache.FAILED,
+    TaskStatus.CANCELLED: EtatTache.CANCELLED,
+}
+
 
 class ActionRunner:
     """Execute un agent actionnable etape par etape."""
 
     # Stockage en memoire des taches en cours / terminees
     _tasks: dict[str, TaskState] = {}
+    # References fortes sur les executions de fond (lecon 0.43.4).
+    _taches_de_fond: set["asyncio.Task[None]"] = set()
 
     @classmethod
     def get_task(cls, task_id: str) -> TaskState | None:
@@ -409,16 +440,8 @@ class ActionRunner:
 
     @classmethod
     def cancel_task(cls, task_id: str) -> bool:
-        """Annule une tache en cours."""
-        task = cls._tasks.get(task_id)
-        if not task:
-            return False
-        if task.status not in (TaskStatus.PENDING, TaskStatus.RUNNING):
-            return False
-        task._cancel_event.set()
-        task.status = TaskStatus.CANCELLED
-        task.completed_at = datetime.now(UTC).isoformat()
-        return True
+        """Demande l'arret d'une tache (primitive unique, jamais terminal)."""
+        return demander_arret_action(task_id)
 
     @classmethod
     async def run(
@@ -465,10 +488,30 @@ class ActionRunner:
         )
         cls._tasks[task_id] = task
 
-        # Lancer l'execution en tache de fond
-        asyncio.create_task(
+        # Enrolement 0.47 : chaque run est un ProcessingTask visible au
+        # panneau Traitements. Fail-open : le suivi en panne ne doit pas
+        # empecher l'action elle-meme.
+        try:
+            task._handle = await traitements_service.creer_traitement(
+                type="action",
+                label=agent_def.name,
+                entity_id=task_id,
+            )
+        except Exception:
+            logger.warning(
+                "Suivi indisponible pour l'action %s : elle s'execute sans "
+                "apparaitre au panneau Traitements",
+                agent_id,
+                exc_info=True,
+            )
+
+        # Lancer l'execution en tache de fond. Reference forte obligatoire
+        # (lecon 0.43.4) : sans elle le GC peut avaler la tache en plein vol.
+        tache = asyncio.create_task(
             cls._execute(task, agent_def, params, on_progress)
         )
+        cls._taches_de_fond.add(tache)
+        tache.add_done_callback(cls._taches_de_fond.discard)
 
         return task
 
@@ -480,7 +523,86 @@ class ActionRunner:
         params: dict[str, str],
         on_progress: ProgressCallback | None,
     ) -> None:
+        """Enveloppe terminale (0.47) : AUCUN chemin ne laisse la tache
+        running - ni en memoire, ni au panneau Traitements."""
+        try:
+            await cls._derouler(task, agent_def, params, on_progress)
+        except Exception as e:
+            logger.error(
+                "Echec de l'action %s : %s", agent_def.id, e, exc_info=True
+            )
+            if task.status not in _STATUTS_TERMINAUX:
+                task.status = TaskStatus.ERROR
+                task.error = str(e)
+                task.completed_at = datetime.now(UTC).isoformat()
+                if on_progress:
+                    on_progress(task)
+        finally:
+            if task._handle is not None:
+                try:
+                    await task._handle.terminer(
+                        _ETAT_DURABLE.get(task.status, EtatTache.FAILED),
+                        error=task.error,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Cloture du traitement de l'action %s impossible",
+                        task.task_id,
+                        exc_info=True,
+                    )
+            cls._purger_vieilles_taches()
+
+    @classmethod
+    def _clore_annulee(
+        cls, task: TaskState, on_progress: ProgressCallback | None
+    ) -> None:
+        """Annulation gagnee avant toute production : clore sans RUNNING."""
+        for step in task.steps:
+            if step.status == StepStatus.PENDING:
+                step.status = StepStatus.SKIPPED
+        task.status = TaskStatus.CANCELLED
+        task.completed_at = datetime.now(UTC).isoformat()
+        if on_progress:
+            on_progress(task)
+
+    @classmethod
+    async def _derouler(
+        cls,
+        task: TaskState,
+        agent_def: ActionAgentDef,
+        params: dict[str, str],
+        on_progress: ProgressCallback | None,
+    ) -> None:
         """Execution interne sequentielle des etapes."""
+        handle = task._handle
+
+        # La course (0.47) : une annulation posee avant ce point a gagne -
+        # RUNNING n'est jamais reecrit, aucune etape ne tourne.
+        if (
+            task._cancel_event.is_set()
+            or task.status == TaskStatus.CANCEL_REQUESTED
+        ):
+            cls._clore_annulee(task, on_progress)
+            return
+
+        if handle is not None:
+            try:
+                await handle.demarrer()
+            except traitements_service.AnnuleAvantDemarrage:
+                # demander_arret a deja pose CANCELLED durable.
+                cls._clore_annulee(task, on_progress)
+                return
+            await handle.lier_adaptateur(
+                task_registry.AnnulationCooperative(
+                    lambda: demander_arret_action(task.task_id)
+                )
+            )
+            # L'enrolement peut avoir rejoue une demande durable : la course
+            # se rejoue ici, avant d'ecrire RUNNING.
+            if task._cancel_event.is_set():
+                cls._clore_annulee(task, on_progress)
+                return
+
         task.status = TaskStatus.RUNNING
         task.started_at = datetime.now(UTC).isoformat()
         if on_progress:
@@ -524,6 +646,11 @@ class ActionRunner:
             step_result.started_at = datetime.now(UTC).isoformat()
             if on_progress:
                 on_progress(task)
+            if handle is not None:
+                await handle.progresser(
+                    step=step_def.label,
+                    progress=i / len(agent_def.steps),
+                )
 
             # Preparer le prompt de l'etape
             step_prompt = step_def.prompt
@@ -605,6 +732,8 @@ class ActionRunner:
                 task.result = "\n".join(result_parts)
 
             task.status = TaskStatus.COMPLETED
+            if handle is not None:
+                await handle.progresser(progress=1.0)
         else:
             task.status = TaskStatus.CANCELLED
 
@@ -612,15 +741,38 @@ class ActionRunner:
         if on_progress:
             on_progress(task)
 
-        # Nettoyage : garder max 20 taches en memoire
-        if len(cls._tasks) > 20:
-            sorted_tasks = sorted(
-                cls._tasks.values(),
-                key=lambda t: t.created_at,
-            )
-            for old_task in sorted_tasks[:-20]:
-                if old_task.status not in (
-                    TaskStatus.PENDING,
-                    TaskStatus.RUNNING,
-                ):
-                    del cls._tasks[old_task.task_id]
+    @classmethod
+    def _purger_vieilles_taches(cls) -> None:
+        """Garder au plus 20 taches en memoire (jamais une vivante)."""
+        if len(cls._tasks) <= 20:
+            return
+        sorted_tasks = sorted(
+            cls._tasks.values(),
+            key=lambda t: t.created_at,
+        )
+        for old_task in sorted_tasks[:-20]:
+            if old_task.status in _STATUTS_TERMINAUX:
+                del cls._tasks[old_task.task_id]
+
+
+def demander_arret_action(task_id: str) -> bool:
+    """LA primitive d'arret des actions (0.47) : poser la demande, jamais
+    l'etat terminal.
+
+    L'evenement coupe la boucle entre deux etapes ; le statut passe a
+    CANCEL_REQUESTED pour que l'interface dise la verite (le flux LLM de
+    l'etape en cours tourne encore). Utilisee par `cancel_task` ET par
+    l'adaptateur du traitement durable - un seul chemin d'annulation.
+    """
+    task = ActionRunner._tasks.get(task_id)
+    if not task:
+        return False
+    if task.status in (TaskStatus.PENDING, TaskStatus.RUNNING):
+        task._cancel_event.set()
+        task.status = TaskStatus.CANCEL_REQUESTED
+        return True
+    if task.status == TaskStatus.CANCEL_REQUESTED:
+        # Idempotent : la demande tient toujours.
+        task._cancel_event.set()
+        return True
+    return False

@@ -233,12 +233,16 @@ function TaskProgress({
   onClose: () => void;
 }) {
   const isRunning = task.status === 'running' || task.status === 'pending';
+  // 0.47 : l'arrêt est DEMANDÉ, pas obtenu - l'étape en cours va à son
+  // terme. Le panneau le dit tel quel au lieu d'annoncer « Annulé ».
+  const isStopping = task.status === 'cancel_requested';
   const isDone = task.status === 'completed';
   const isError = task.status === 'error';
 
   const statusLabel = {
     pending: 'En attente...',
     running: 'En cours...',
+    cancel_requested: 'Arrêt demandé...',
     completed: 'Terminé',
     cancelled: 'Annulé',
     error: 'Erreur',
@@ -247,6 +251,7 @@ function TaskProgress({
   const statusColor = {
     pending: 'text-warning',
     running: 'text-cyan-400',
+    cancel_requested: 'text-warning',
     completed: 'text-emerald-400',
     cancelled: 'text-text-muted',
     error: 'text-red-400',
@@ -272,6 +277,11 @@ function TaskProgress({
             <Square size={12} />
             Annuler
           </button>
+        ) : isStopping ? (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-warning">
+            <Loader2 size={12} className="animate-spin" />
+            Arrêt en cours
+          </span>
         ) : (
           <button
             onClick={onClose}
@@ -465,7 +475,12 @@ export function ActionPanel() {
   const showList = !showTask && !showForm;
 
   if (!isPanelOpen) {
-    if (activeTask && (activeTask.status === 'running' || activeTask.status === 'pending')) {
+    if (
+      activeTask &&
+      (activeTask.status === 'running' ||
+        activeTask.status === 'pending' ||
+        activeTask.status === 'cancel_requested')
+    ) {
       return (
         <button
           onClick={() => openPanel()}

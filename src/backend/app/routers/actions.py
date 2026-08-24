@@ -162,14 +162,41 @@ async def get_task(task_id: str):
 
 @router.delete("/tasks/{task_id}")
 async def cancel_task(task_id: str):
-    """Annule une tache en cours."""
-    cancelled = ActionRunner.cancel_task(task_id)
-    if not cancelled:
-        task = ActionRunner.get_task(task_id)
-        if not task:
-            raise HTTPException(status_code=404, detail=f"Tache '{task_id}' introuvable")
+    """Demande l'arret d'une tache en cours.
+
+    0.47 : la route historique passe par le service canonique quand le
+    traitement durable existe - meme transition cancel_requested, meme
+    adaptateur, un seul chemin d'annulation. Repli sur la primitive
+    in-memory si le suivi n'a pas pu naitre (fail-open de `run`).
+    """
+    task = ActionRunner.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Tache '{task_id}' introuvable")
+
+    from app.models.database import get_session_context
+    from app.models.processing import EtatTache, ProcessingTask
+    from app.services import traitements
+    from sqlmodel import select
+
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProcessingTask).where(
+                ProcessingTask.type == "action",
+                ProcessingTask.entity_id == task_id,
+                ProcessingTask.state.in_(tuple(EtatTache.actifs())),
+            )
+        )
+        traitement = resultat.scalars().first()
+
+    if traitement is not None:
+        arret = await traitements.demander_arret(traitement.id)
+        transmise = arret is not None and arret.resultat != "unavailable"
+    else:
+        transmise = ActionRunner.cancel_task(task_id)
+
+    if not transmise:
         raise HTTPException(
             status_code=400,
             detail=f"Impossible d'annuler (statut : {task.status.value})",
         )
-    return {"message": f"Tache '{task_id}' annulee"}
+    return {"message": f"Arret demande pour la tache '{task_id}'"}
