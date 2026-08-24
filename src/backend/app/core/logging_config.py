@@ -14,19 +14,43 @@ from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-# Patterns de secrets a masquer dans les logs
+# Patterns de secrets a masquer dans les logs.
+#
+# Le separateur accepte aussi l'ESPACE : les fournisseurs ecrivent souvent
+# « invalid api key sk-... » dans leurs messages d'erreur, sans deux-points.
 _SECRET_PATTERNS = re.compile(
     r"("
     r"(?:api[_-]?key|token|password|secret|auth|credential|private[_-]?key|access[_-]?key)"
-    r"\s*[:=]\s*"
+    r"\s*[:=\s]\s*"
     r")"
     r"(['\"]?[A-Za-z0-9+/=_\-]{8,}['\"]?)",
     re.IGNORECASE,
 )
 
-# Patterns supplementaires pour les cles API brutes (Bearer tokens, sk-xxx, gAAAAA, etc.)
+# Cles d'API brutes.
+#
+# CORRECTIF du 24/08/2026 : l'ancien motif exigeait `sk-` suivi de caracteres
+# ALPHANUMERIQUES uniquement. Or les cles OpenAI modernes portent un prefixe a
+# tiret - `sk-proj-...`, `sk-svcacct-...`, `sk-admin-...` - et n'etaient donc
+# JAMAIS masquees. Verifie : `_mask_secrets("sk-proj-SECRET42")` rendait la
+# chaine intacte.
+#
+# Les prefixes des autres fournisseurs sont ajoutes au passage : une cle qui
+# fuit dans un rapport de bug colle sur Discord est compromise, quel que soit
+# son emetteur.
 _BARE_SECRET_PATTERNS = re.compile(
-    r"(sk-[A-Za-z0-9]{20,}|gAAAAA[A-Za-z0-9+/=_\-]{20,}|Bearer\s+[A-Za-z0-9+/=_\-]{20,})",
+    r"("
+    # Seuil bas assume : tres peu de texte francais ou anglais commence par
+    # « sk- », alors qu'une cle tronquee dans un message d'erreur reste une cle.
+    r"sk-[A-Za-z0-9_\-]{8,}"           # OpenAI, y compris sk-proj- et sk-ant-
+    r"|xai-[A-Za-z0-9_\-]{16,}"        # xAI
+    r"|AIza[A-Za-z0-9_\-]{20,}"        # Google
+    r"|gsk_[A-Za-z0-9_\-]{16,}"        # Groq
+    r"|glpat-[A-Za-z0-9_\-]{16,}"      # GitLab
+    r"|gh[pousr]_[A-Za-z0-9]{16,}"      # GitHub
+    r"|gAAAAA[A-Za-z0-9+/=_\-]{20,}"   # Fernet (nos propres secrets chiffres)
+    r"|Bearer\s+[A-Za-z0-9+/=_\-\.]{20,}"
+    r")",
     re.IGNORECASE,
 )
 
@@ -90,9 +114,14 @@ class JSONFormatter(logging.Formatter):
         if extras:
             log_entry["extra"] = extras
 
-        # Ajouter l'exception si presente
+        # Ajouter l'exception si presente.
+        # Le filtre de secrets ne voit que `record.msg` et `record.args` : la
+        # trace, elle, est formatee ici et lui echappait. Or un message d'erreur
+        # de fournisseur contient parfois la requete, donc l'en-tete
+        # d'autorisation, donc la cle. Ces journaux sont lus, copies et colles
+        # dans des rapports de bug - c'est meme ce que font nos testeurs.
         if record.exc_info and record.exc_info[1]:
-            log_entry["exception"] = self.formatException(record.exc_info)
+            log_entry["exception"] = _mask_secrets(self.formatException(record.exc_info))
 
         return json.dumps(log_entry, ensure_ascii=False, default=str)
 
@@ -105,6 +134,14 @@ class ReadableFormatter(logging.Formatter):
             fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
+
+    def formatException(self, ei) -> str:  # noqa: N802 (nom impose par la stdlib)
+        """Masque les secrets dans la trace, comme pour le format JSON.
+
+        C'est cette sortie-la que les testeurs copient : le sidecar ecrit sur la
+        console, et un rapport de bug contient souvent ces lignes telles quelles.
+        """
+        return _mask_secrets(super().formatException(ei))
 
 
 def setup_logging() -> None:

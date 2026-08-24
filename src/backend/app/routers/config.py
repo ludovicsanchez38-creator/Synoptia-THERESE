@@ -1369,9 +1369,13 @@ async def get_ollama_status():
                 error=f"Ollama returned status {response.status_code}",
             )
 
+        from app.services.ollama_capabilites import gere_les_outils, motif_d_exclusion
+
         data = response.json()
         models = [
             OllamaModelInfo(
+                gere_les_outils=gere_les_outils(m.get("name", "")),
+                motif_indisponible=motif_d_exclusion(m.get("name", "")),
                 name=m.get("name", ""),
                 size=m.get("size"),
                 modified_at=m.get("modified_at"),
