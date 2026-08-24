@@ -605,3 +605,6 @@ export {
   retirerRacineSync,
 } from './projectSync';
 export type { SyncEtat, SyncOperation, SyncPlan } from './projectSync';
+
+export { annulerTraitement, listerTraitements } from './processingTasks';
+export type { Traitement } from './processingTasks';
