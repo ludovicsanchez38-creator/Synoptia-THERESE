@@ -26,7 +26,13 @@ interface ProcessingTasksStore {
   arreterSondage: () => void;
 }
 
+// Revue jalon (F9) : propriétaire + refcount. Sans eux, un démontage
+// pendant le premier chargement laissait une boucle orpheline, et deux
+// montages rapprochés (StrictMode) créaient deux boucles dont une
+// impossible à arrêter.
 let minuterie: ReturnType<typeof setTimeout> | null = null;
+let abonnes = 0;
+let boucleEnVol = false;
 
 export const useProcessingTasksStore = create<ProcessingTasksStore>((set, get) => ({
   traitements: [],
@@ -44,7 +50,18 @@ export const useProcessingTasksStore = create<ProcessingTasksStore>((set, get) =
   charger: async () => {
     try {
       const traitements = await api.listerTraitements({ limit: 30 });
-      set({ traitements, erreur: null });
+      // Purge des arrêts demandés arrivés à terme (F9) : sans elle, un
+      // traitement fini trop tard affichait « Arrêt demandé » pour toujours.
+      const arrets = new Set(
+        [...get().arretsDemandes].filter((id) => {
+          const t = traitements.find((x) => x.id === id);
+          return t !== undefined && (
+            t.state === 'running' || t.state === 'queued'
+            || t.state === 'cancel_requested'
+          );
+        }),
+      );
+      set({ traitements, erreur: null, arretsDemandes: arrets });
     } catch {
       set({ erreur: 'Traitements indisponibles pour le moment.' });
     }
@@ -63,7 +80,12 @@ export const useProcessingTasksStore = create<ProcessingTasksStore>((set, get) =
   },
 
   demarrerSondage: () => {
+    abonnes += 1;
     const boucle = async () => {
+      if (abonnes === 0) {
+        boucleEnVol = false;
+        return;
+      }
       const { panneauOuvert, traitements } = get();
       const actives = traitements.some((t) =>
         t.state === 'running' || t.state === 'queued' || t.state === 'cancel_requested',
@@ -75,17 +97,28 @@ export const useProcessingTasksStore = create<ProcessingTasksStore>((set, get) =
       ) {
         await get().charger();
       }
+      // Garde APRÈS chaque await (F9) : le dernier abonné a pu partir
+      // pendant le chargement - ne jamais reprogrammer dans le vide.
+      if (abonnes === 0) {
+        boucleEnVol = false;
+        return;
+      }
       const cadence =
         panneauOuvert || actives ? CADENCE_ACTIVE_MS : CADENCE_VEILLE_MS;
       minuterie = setTimeout(() => void boucle(), cadence);
     };
-    if (minuterie === null) void boucle();
+    if (!boucleEnVol) {
+      boucleEnVol = true;
+      void boucle();
+    }
   },
 
   arreterSondage: () => {
-    if (minuterie !== null) {
+    abonnes = Math.max(0, abonnes - 1);
+    if (abonnes === 0 && minuterie !== null) {
       clearTimeout(minuterie);
       minuterie = null;
+      boucleEnVol = false;
     }
   },
 }));

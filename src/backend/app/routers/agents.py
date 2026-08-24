@@ -243,19 +243,26 @@ async def agent_request(
             _running_agent_tasks[task.id] = current_async_task
         # 0.46 : la mission est un TRAITEMENT visible - ProcessingTask lié à
         # l'AgentTask (entity_id), annulable depuis le panneau par le même
-        # mécanisme que la route historique (asyncio.Task.cancel).
+        # mécanisme que la route historique (asyncio.Task.cancel). Créé DANS
+        # la zone couverte par le finally (revue F8) : une panne ici ne doit
+        # pas laisser un suivi orphelin.
         from app.services import task_registry, traitements
 
-        handle = await traitements.creer_traitement(
-            type="atelier",
-            label=f"Atelier : {request.message[:80]}",
-            entity_id=task.id,
-        )
-        await handle.demarrer()
-        if current_async_task is not None:
-            await handle.lier_adaptateur(
-                task_registry.AnnulationParTacheAsyncio(current_async_task)
+        handle = None
+        try:
+            handle = await traitements.creer_traitement(
+                type="atelier",
+                label=f"Atelier : {request.message[:80]}",
+                entity_id=task.id,
             )
+            await handle.demarrer()
+            if current_async_task is not None:
+                await handle.lier_adaptateur(
+                    task_registry.AnnulationParTacheAsyncio(current_async_task)
+                )
+        except Exception:
+            logger.warning("Suivi de mission indisponible", exc_info=True)
+            handle = None
         orchestrator = SwarmOrchestrator(source_path)
         final_status = "review"
         final_error = None
@@ -325,23 +332,12 @@ async def agent_request(
             final_status = "error"
             final_error = str(e)
         finally:
+            persistance_agent_task_ok = False
             if _running_agent_tasks.get(task.id) is current_async_task:
                 _running_agent_tasks.pop(task.id, None)
-            # Cohérence des deux cycles de vie : le traitement dit la même
-            # chose que l'AgentTask, sur TOUS les chemins de sortie.
-            try:
-                if final_status == "cancelled":
-                    await handle.terminer(EtatTacheTraitement.CANCELLED)
-                elif final_status == "error":
-                    await handle.terminer(
-                        EtatTacheTraitement.FAILED, error=(final_error or "")[:500]
-                    )
-                else:
-                    await handle.terminer(EtatTacheTraitement.DONE)
-            except Exception:
-                logger.warning(
-                    "État du traitement Atelier non consigné", exc_info=True
-                )
+            # rien ici : le traitement est terminé APRÈS la persistance de
+            # l'AgentTask, plus bas (revue F8 : deux transactions, la seconde
+            # en échec laissait done + in_progress - incohérence durable).
             # Même si le client ferme le flux, l'état local doit refléter
             # l'annulation et ne jamais rester artificiellement « en cours ».
             try:
@@ -373,9 +369,34 @@ async def agent_request(
                         db_task.error = final_error
                         db_task.updated_at = datetime.now(UTC)
                         await update_session.commit()
+                persistance_agent_task_ok = True
             except Exception as e:
                 logger.error(f"Erreur mise à jour tâche: {e}")
 
+
+            # Cohérence des deux cycles de vie (revue F8) : le traitement se
+            # termine APRÈS l'AgentTask. Si SA persistance a échoué, le
+            # traitement le DIT (failed) plutôt que d'annoncer un done
+            # incohérent avec une mission restée in_progress.
+            if handle is not None:
+                try:
+                    if not persistance_agent_task_ok:
+                        await handle.terminer(
+                            EtatTacheTraitement.FAILED,
+                            error="Persistance de la mission en échec - états à réconcilier",
+                        )
+                    elif final_status == "cancelled":
+                        await handle.terminer(EtatTacheTraitement.CANCELLED)
+                    elif final_status == "error":
+                        await handle.terminer(
+                            EtatTacheTraitement.FAILED, error=(final_error or "")[:500]
+                        )
+                    else:
+                        await handle.terminer(EtatTacheTraitement.DONE)
+                except Exception:
+                    logger.warning(
+                        "État du traitement Atelier non consigné", exc_info=True
+                    )
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
@@ -385,6 +406,7 @@ async def agent_request(
             "X-Accel-Buffering": "no",
         },
     )
+
 
 
 # ============================================================
@@ -590,7 +612,29 @@ async def cancel_task(
             status_code=409,
             detail="Le processus de cette mission n'est plus actif. Recharge son statut.",
         )
-    running_task.cancel()
+    # 0.46 : le Stop historique passe par le service canonique quand le
+    # traitement existe - même transition cancel_requested, même adaptateur
+    # (.cancel() de l'asyncio.Task), un seul chemin d'annulation. Repli sur
+    # le cancel direct si le suivi n'a pas pu naître.
+    from app.models.database import get_session_context as _ctx
+    from app.models.processing import EtatTache as _Etat
+    from app.models.processing import ProcessingTask as _PT
+    from app.services import traitements as _traitements
+    from sqlmodel import select as _select
+
+    async with _ctx() as _session:
+        _r = await _session.execute(
+            _select(_PT).where(
+                _PT.type == "atelier",
+                _PT.entity_id == task_id,
+                _PT.state.in_(tuple(_Etat.actifs())),
+            )
+        )
+        _traitement = _r.scalars().first()
+    if _traitement is not None:
+        await _traitements.demander_arret(_traitement.id)
+    else:
+        running_task.cancel()
     return {"status": "cancelling", "task_id": task_id}
 
 

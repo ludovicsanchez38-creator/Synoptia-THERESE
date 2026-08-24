@@ -26,6 +26,7 @@ from app.models.database import get_session_context
 from app.models.processing import EtatTache, ProcessingTask
 from app.services import task_registry
 from app.services.task_registry import AdaptateurAnnulation
+from sqlalchemy import update
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
@@ -57,26 +58,39 @@ class TraitementHandle:
         self.id = task_id
 
     async def demarrer(self) -> None:
+        # Revue jalon (F1) : SELECT puis commit n'est pas un CAS - une
+        # annulation intercalée laissait l'état final `running`. L'UPDATE
+        # conditionnel fait foi : rowcount 0 = la transition a perdu.
         async with get_session_context() as session:
-            ligne = await _ligne(session, self.id)
-            if ligne is None:
-                raise AnnuleAvantDemarrage(f"Traitement {self.id} introuvable")
-            if ligne.state == EtatTache.CANCELLED:
-                raise AnnuleAvantDemarrage(
-                    f"Traitement {self.id} annulé avant démarrage"
+            resultat = await session.execute(
+                update(ProcessingTask)
+                .where(
+                    ProcessingTask.id == self.id,
+                    ProcessingTask.state == EtatTache.QUEUED,
                 )
-            if ligne.state != EtatTache.QUEUED:
-                raise RuntimeError(
-                    f"Démarrage refusé depuis l'état {ligne.state}"
-                )
-            ligne.state = EtatTache.RUNNING
-            ligne.started_at = datetime.now(UTC)
+                .values(state=EtatTache.RUNNING, started_at=datetime.now(UTC))
+            )
             await session.commit()
+            if resultat.rowcount == 1:
+                return
+            ligne = await _ligne(session, self.id)
+        if ligne is None or ligne.state == EtatTache.CANCELLED:
+            raise AnnuleAvantDemarrage(
+                f"Traitement {self.id} annulé avant démarrage"
+            )
+        raise RuntimeError(f"Démarrage refusé depuis l'état {ligne.state}")
 
     async def lier_adaptateur(self, adaptateur: AdaptateurAnnulation) -> None:
         task_registry.inscrire(self.id, adaptateur)
-        if self.id in _demandes_en_attente:
-            # La demande a précédé l'enrôlement : la fenêtre se referme ici.
+        # Revue jalon (F2) : le set volatile n'est qu'une optimisation - la
+        # VÉRITÉ est l'état durable, relu APRÈS l'inscription. Une demande
+        # commitée avant l'enrôlement est toujours transmise, même si le set
+        # a été perdu entre-temps.
+        rejouer = self.id in _demandes_en_attente
+        if not rejouer:
+            ligne = await lire(self.id)
+            rejouer = ligne is not None and ligne.state == EtatTache.CANCEL_REQUESTED
+        if rejouer:
             _demandes_en_attente.discard(self.id)
             await task_registry.demander_annulation(self.id)
 
@@ -105,12 +119,16 @@ class TraitementHandle:
         task_registry.retirer(self.id)
         _demandes_en_attente.discard(self.id)
         async with get_session_context() as session:
-            ligne = await _ligne(session, self.id)
-            if ligne is None or ligne.state in EtatTache.terminaux():
-                return
-            ligne.state = etat
-            ligne.error = error
-            ligne.finished_at = datetime.now(UTC)
+            await session.execute(
+                update(ProcessingTask)
+                .where(
+                    ProcessingTask.id == self.id,
+                    ProcessingTask.state.not_in(tuple(EtatTache.terminaux())),
+                )
+                .values(
+                    state=etat, error=error, finished_at=datetime.now(UTC)
+                )
+            )
             await session.commit()
 
 
@@ -150,16 +168,40 @@ async def demander_arret(task_id: str) -> ResultatArret | None:
             )
         if ligne.state == EtatTache.QUEUED:
             # CAS direct : sans producteur, cancel_requested ne se résoudrait
-            # jamais. demarrer() refusera ensuite (l'état fait foi).
-            ligne.state = EtatTache.CANCELLED
-            ligne.finished_at = datetime.now(UTC)
-            await session.commit()
-            return ResultatArret(
-                state=EtatTache.CANCELLED, resultat="stopped", transmise=False
+            # jamais. rowcount 0 = un demarrer() a gagné la course - on
+            # retombe alors sur le chemin running.
+            resultat_cas = await session.execute(
+                update(ProcessingTask)
+                .where(
+                    ProcessingTask.id == task_id,
+                    ProcessingTask.state == EtatTache.QUEUED,
+                )
+                .values(
+                    state=EtatTache.CANCELLED, finished_at=datetime.now(UTC)
+                )
             )
-        if ligne.state == EtatTache.RUNNING:
-            ligne.state = EtatTache.CANCEL_REQUESTED
             await session.commit()
+            if resultat_cas.rowcount == 1:
+                return ResultatArret(
+                    state=EtatTache.CANCELLED, resultat="stopped", transmise=False
+                )
+        # running -> cancel_requested, en CAS : un producteur qui vient de
+        # terminer done ne doit JAMAIS être régressé (revue jalon, F1).
+        resultat_cas = await session.execute(
+            update(ProcessingTask)
+            .where(
+                ProcessingTask.id == task_id,
+                ProcessingTask.state == EtatTache.RUNNING,
+            )
+            .values(state=EtatTache.CANCEL_REQUESTED)
+        )
+        await session.commit()
+        if resultat_cas.rowcount == 0:
+            ligne = await _ligne(session, task_id)
+            if ligne is not None and ligne.state in EtatTache.terminaux():
+                return ResultatArret(
+                    state=ligne.state, resultat="unavailable", transmise=False
+                )
         # cancel_requested (déjà ou à l'instant) : transmettre.
 
     if task_registry.est_vivante(task_id):
@@ -205,9 +247,13 @@ def _dto(ligne: ProcessingTask) -> dict[str, Any]:
         "started_at": ligne.started_at.isoformat() if ligne.started_at else None,
         "finished_at": ligne.finished_at.isoformat() if ligne.finished_at else None,
         # Faux dès la demande posée : un second clic n'a rien à couper.
+        # Une queued est TOUJOURS annulable (CAS direct, sans adaptateur).
         "can_cancel": (
-            ligne.state == EtatTache.RUNNING
-            and task_registry.est_vivante(ligne.id)
+            ligne.state == EtatTache.QUEUED
+            or (
+                ligne.state == EtatTache.RUNNING
+                and task_registry.est_vivante(ligne.id)
+            )
         ),
     }
 
@@ -226,7 +272,11 @@ async def lister(*, actives: bool | None = None, limit: int = 50) -> list[dict[s
             requete = requete.where(
                 ProcessingTask.state.in_(tuple(EtatTache.terminaux()))
             )
-        resultat = await session.execute(requete.limit(500))
+        # Le filtre de visibilité s'applique APRÈS cette lecture : le cap
+        # interne doit être largement supérieur à `limit` pour ne pas manger
+        # des lignes visibles derrière des masquées (revue jalon). 2000 lignes
+        # = très au-delà d'un usage réel avec rétention 30 jours.
+        resultat = await session.execute(requete.limit(2000))
         lignes = list(resultat.scalars().all())
 
     maintenant = datetime.now(UTC)

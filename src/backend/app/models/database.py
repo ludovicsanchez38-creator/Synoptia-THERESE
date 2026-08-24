@@ -718,6 +718,11 @@ async def init_db() -> None:
             "CREATE UNIQUE INDEX IF NOT EXISTS uq_sync_root_racine_active "
             "ON project_sync_roots(racine) WHERE detachee = 0"
         )
+        # 0.46 : le panneau trie et la retention filtre par created_at.
+        conn.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_processing_tasks_created_at "
+            "ON processing_tasks(created_at)"
+        )
         conn.commit()
 
     with sync_engine.connect() as conn:

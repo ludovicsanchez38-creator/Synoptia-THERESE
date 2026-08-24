@@ -567,3 +567,69 @@ class TestLeRunEstUnTraitementHonnete:
             "le producteur pose cancelled après son arrêt réel"
         )
         assert (await svc.lire_plan(plan.id)).etat == EtatPlan.APPLIQUE_PARTIEL
+
+    @pytest.mark.asyncio
+    async def test_une_panne_de_finalisation_ne_laisse_pas_running(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """Revue jalon (F3) : _finaliser_plan vivait HORS du try - sa panne
+        laissait le run running fantôme."""
+        from app.models.processing import EtatTache
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        async def finalisation_en_panne(*a, **k):
+            raise RuntimeError("finalisation en panne")
+
+        monkeypatch.setattr(svc, "_finaliser_plan", finalisation_en_panne)
+
+        with pytest.raises(RuntimeError):
+            await svc.appliquer_plan(projet, plan.id)
+
+        run = await svc.lire_run(plan.id)
+        assert run.state == EtatTache.FAILED
+
+    @pytest.mark.asyncio
+    async def test_le_shutdown_est_un_arret_pas_une_panne(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """Une CancelledError (shutdown) termine cancelled - jamais failed
+        avec une erreur inventée."""
+        import asyncio
+
+        from app.models.processing import EtatTache
+        from app.services import indexation
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        async def index_annule(*a, **k):
+            raise asyncio.CancelledError()
+
+        monkeypatch.setattr(indexation, "index_payload", index_annule)
+
+        # CancelledError DANS une operation est absorbee par la boucle
+        # (echec d'operation) SAUF si elle traverse : ici on la fait traverser
+        # en la levant hors operation, via lire_operations au 2e appel
+        vraie = svc.lire_operations
+        appels = {"n": 0}
+
+        async def lire_puis_annule(plan_id):
+            appels["n"] += 1
+            if appels["n"] >= 2:
+                raise asyncio.CancelledError()
+            return await vraie(plan_id)
+
+        monkeypatch.setattr(svc, "lire_operations", lire_puis_annule)
+
+        with pytest.raises(asyncio.CancelledError):
+            await svc.appliquer_plan(projet, plan.id)
+
+        run = await svc.lire_run(plan.id)
+        assert run.state == EtatTache.CANCELLED
+        assert "hors boucle" not in (run.error or "")

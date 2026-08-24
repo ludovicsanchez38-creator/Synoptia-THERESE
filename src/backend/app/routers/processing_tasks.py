@@ -4,11 +4,10 @@
 todos métier (challenge de design, finding bloquant n°1).
 """
 import logging
+from typing import Any
 
 from app.models.processing import EtatTache
 from app.services import traitements
-from typing import Any
-
 from fastapi import APIRouter, HTTPException
 
 logger = logging.getLogger(__name__)

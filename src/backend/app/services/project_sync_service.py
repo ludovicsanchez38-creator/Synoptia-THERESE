@@ -365,15 +365,15 @@ async def _appliquer_sous_verrou(
         project_id=project_id,
         entity_id=plan_id,
     )
-    await handle.demarrer()
-    # Adaptateur coopératif : l'état durable cancel_requested EST le drapeau,
-    # consulté entre deux opérations - le point d'arrêt sûr de cette famille.
-    await handle.lier_adaptateur(
-        task_registry.AnnulationCooperative(poser_drapeau=lambda: None)
-    )
 
     interrompu = False
     try:
+        await handle.demarrer()
+        # Adaptateur coopératif : l'état durable cancel_requested EST le
+        # drapeau, consulté entre deux opérations - le point d'arrêt sûr.
+        await handle.lier_adaptateur(
+            task_registry.AnnulationCooperative(poser_drapeau=lambda: None)
+        )
         operations = [
             o for o in await lire_operations(plan_id)
             if o.etat in (EtatOperation.A_FAIRE, EtatOperation.ECHEC)
@@ -401,35 +401,41 @@ async def _appliquer_sous_verrou(
             await handle.progresser(
                 progress=(faites + echecs) / max(len(operations), 1)
             )
-    except BaseException:
-        await handle.terminer(EtatTacheTraitement.FAILED, error="exception hors boucle")
+        # Revue jalon (F3) : les lectures finales et _finaliser_plan vivaient
+        # HORS du try - une panne à cet endroit laissait la ligne running.
+        finales = [
+            o for o in await lire_operations(plan_id)
+            if o.type != TypeOperation.CONFLIT
+        ]
+        tout_est_fait = all(o.etat == EtatOperation.FAIT for o in finales)
+        plan_final = await lire_plan(plan_id)
+        conflits = (plan_final.nb_conflits if plan_final else 0) or 0
+        etat_final = (
+            EtatPlan.APPLIQUE if tout_est_fait and not conflits
+            else EtatPlan.APPLIQUE_PARTIEL
+        )
+        restantes = [o for o in finales if o.etat == EtatOperation.ECHEC]
+        await _finaliser_plan(plan_id, etat_final)
+        if interrompu:
+            await handle.terminer(EtatTacheTraitement.CANCELLED)
+        elif restantes:
+            await handle.terminer(
+                EtatTacheTraitement.FAILED,
+                error=f"{len(restantes)} opération(s) en échec, réessayables",
+            )
+        else:
+            await handle.terminer(EtatTacheTraitement.DONE)
+    except asyncio.CancelledError:
+        # Shutdown ou annulation de la tâche de fond : c'est un ARRÊT, pas
+        # une panne inventée (revue jalon, F3). Le plan reste en_cours, la
+        # reprise du prochain démarrage termine le travail.
+        await handle.terminer(EtatTacheTraitement.CANCELLED)
+        raise
+    except BaseException as e:
+        await handle.terminer(EtatTacheTraitement.FAILED, error=str(e)[:200])
         raise
 
-    finales = [
-        o for o in await lire_operations(plan_id)
-        if o.type != TypeOperation.CONFLIT
-    ]
-    tout_est_fait = all(o.etat == EtatOperation.FAIT for o in finales)
-    plan_final = await lire_plan(plan_id)
-    conflits = (plan_final.nb_conflits if plan_final else 0) or 0
-    # `applique` = TOUT est fait, sans conflit ni obsolète : le disque et
-    # l'index disent la même chose. Tout le reste est `applique_partiel`,
-    # réessayable (echec) ou à re-planifier (obsolete, conflit).
-    etat_final = (
-        EtatPlan.APPLIQUE if tout_est_fait and not conflits
-        else EtatPlan.APPLIQUE_PARTIEL
-    )
-    restantes = [o for o in finales if o.etat == EtatOperation.ECHEC]
-    await _finaliser_plan(plan_id, etat_final)
-    if interrompu:
-        await handle.terminer(EtatTacheTraitement.CANCELLED)
-    elif restantes:
-        await handle.terminer(
-            EtatTacheTraitement.FAILED,
-            error=f"{len(restantes)} opération(s) en échec, réessayables",
-        )
-    else:
-        await handle.terminer(EtatTacheTraitement.DONE)
+
 
 
 async def _executer_operation(

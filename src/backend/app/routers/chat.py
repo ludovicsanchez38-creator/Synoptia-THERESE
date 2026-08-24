@@ -99,9 +99,20 @@ _generation_timestamps: dict[str, float] = {}
 _GENERATION_TIMEOUT_S = 300
 
 
-def _register_generation(conversation_id: str) -> None:
+# Propriétaire courant de l'entrée d'une conversation (0.46, revue F6) :
+# deux générations successives dans la même conversation ne partagent plus
+# leur sort - la fin de la première ne retire l'entrée que si elle la
+# possède encore, et le drapeau ne vaut que pour la propriétaire.
+_generation_owners: dict[str, str] = {}
+
+
+def _register_generation(
+    conversation_id: str, generation_id: str | None = None
+) -> None:
     """Register an active generation."""
     _active_generations[conversation_id] = False
+    if generation_id is not None:
+        _generation_owners[conversation_id] = generation_id
     _generation_timestamps[conversation_id] = time.monotonic()
     # Nettoyage opportuniste des entrees orphelines
     _cleanup_stale_generations()
@@ -120,9 +131,18 @@ def _is_cancelled(conversation_id: str) -> bool:
     return _active_generations.get(conversation_id, False)
 
 
-def _unregister_generation(conversation_id: str) -> None:
-    """Remove a generation from tracking."""
+def _unregister_generation(
+    conversation_id: str, generation_id: str | None = None
+) -> None:
+    """Remove a generation from tracking - seulement si on la possède encore."""
+    if (
+        generation_id is not None
+        and _generation_owners.get(conversation_id) not in (None, generation_id)
+    ):
+        # Une génération plus récente a repris l'entrée : ne pas la casser.
+        return
     _active_generations.pop(conversation_id, None)
+    _generation_owners.pop(conversation_id, None)
     _generation_timestamps.pop(conversation_id, None)
 
 
@@ -911,52 +931,115 @@ async def deep_research_endpoint(
         # Envoyer l'ID de conversation pour le frontend
         yield f"data: {json.dumps({'type': 'conversation_id', 'content': conversation.id})}\n\n"
 
+        # 0.46 (revue F7) : la recherche approfondie est un TRAITEMENT -
+        # visible au panneau, annulable ENTRE deux étapes (coopératif), avec
+        # un état final honnête et le partiel de synthèse persisté à l'arrêt.
+        from app.services import task_registry as _registre
+        from app.services import traitements as _traitements
+
+        recherche = None
+        arret_demande = {"drapeau": False}
+        try:
+            recherche = await _traitements.creer_traitement(
+                type="deep-research",
+                label=f"Recherche : {request.question[:70]}",
+                conversation_id=conversation.id,
+            )
+            await recherche.demarrer()
+            await recherche.lier_adaptateur(
+                _registre.AnnulationCooperative(
+                    poser_drapeau=lambda: arret_demande.__setitem__("drapeau", True)
+                )
+            )
+            yield (
+                "data: "
+                + json.dumps({
+                    "type": "generation",
+                    "generation_id": recherche.id,
+                    "conversation_id": conversation.id,
+                })
+                + "\n\n"
+            )
+        except Exception:
+            logger.warning("Suivi deep-research indisponible", exc_info=True)
+            recherche = None
+        etat_recherche = {"etat": EtatTacheTraitement.DONE}
+
         full_synthesis = ""
         sources_data: list[dict] = []
 
-        async for progress in deep_research(
-            request.question,
-            llm_service,
-            max_queries=request.max_queries,
-        ):
-            event_data: dict = {
-                "type": progress.type,
-                "content": progress.content,
-                "step": progress.step,
-                "total_steps": progress.total_steps,
-                "query": progress.query,
-            }
+        try:
+            async for progress in deep_research(
+                request.question,
+                llm_service,
+                max_queries=request.max_queries,
+            ):
+                if arret_demande["drapeau"]:
+                    etat_recherche["etat"] = EtatTacheTraitement.CANCELLED
+                    await _persister_message_partiel(
+                        conversation.id, full_synthesis, llm_service
+                    )
+                    yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+                    return
+                event_data: dict = {
+                    "type": progress.type,
+                    "content": progress.content,
+                    "step": progress.step,
+                    "total_steps": progress.total_steps,
+                    "query": progress.query,
+                }
 
-            if progress.type == "synthesizing" and progress.content:
-                full_synthesis += progress.content
-                # Streamer le contenu de la synthèse comme du texte
-                yield f"data: {json.dumps({'type': 'text', 'content': progress.content})}\n\n"
-                continue
+                if progress.type == "synthesizing" and progress.content:
+                    full_synthesis += progress.content
+                    # Streamer le contenu de la synthèse comme du texte
+                    yield f"data: {json.dumps({'type': 'text', 'content': progress.content})}\n\n"
+                    continue
 
-            if progress.type == "done":
-                full_synthesis = progress.content
-                sources_data = [
-                    {"title": s.title, "url": s.url, "snippet": s.snippet}
-                    for s in progress.sources
-                ]
-                # Sauvegarder la réponse en base
-                try:
-                    async with get_session() as save_session:
-                        assistant_message = Message(
-                            conversation_id=conversation.id,
-                            role="assistant",
-                            content=full_synthesis,
-                        )
-                        save_session.add(assistant_message)
-                        await save_session.commit()
-                except Exception as e:
-                    logger.error(f"Erreur sauvegarde recherche : {e}")
+                if progress.type == "error":
+                    etat_recherche["etat"] = EtatTacheTraitement.FAILED
+                    etat_recherche["erreur"] = (progress.content or "")[:500]
 
-                yield f"data: {json.dumps({'type': 'sources', 'content': json.dumps(sources_data)})}\n\n"
-                yield f"data: {json.dumps({'type': 'done', 'content': ''})}\n\n"
-                continue
+                if progress.type == "done":
+                    full_synthesis = progress.content
+                    sources_data = [
+                        {"title": s.title, "url": s.url, "snippet": s.snippet}
+                        for s in progress.sources
+                    ]
+                    # Sauvegarder la réponse en base
+                    try:
+                        async with get_session() as save_session:
+                            assistant_message = Message(
+                                conversation_id=conversation.id,
+                                role="assistant",
+                                content=full_synthesis,
+                            )
+                            save_session.add(assistant_message)
+                            await save_session.commit()
+                    except Exception as e:
+                        logger.error(f"Erreur sauvegarde recherche : {e}")
 
-            yield f"data: {json.dumps(event_data)}\n\n"
+                    yield f"data: {json.dumps({'type': 'sources', 'content': json.dumps(sources_data)})}\n\n"
+                    yield f"data: {json.dumps({'type': 'done', 'content': ''})}\n\n"
+                    continue
+
+                yield f"data: {json.dumps(event_data)}\n\n"
+        except (GeneratorExit, asyncio.CancelledError):
+            etat_recherche["etat"] = EtatTacheTraitement.CANCELLED
+            await _persister_message_partiel(
+                conversation.id, full_synthesis, llm_service
+            )
+            raise
+        except Exception as e:
+            etat_recherche["etat"] = EtatTacheTraitement.FAILED
+            etat_recherche["erreur"] = str(e)[:500]
+            raise
+        finally:
+            if recherche is not None:
+                with contextlib.suppress(Exception):
+                    await recherche.terminer(
+                        etat_recherche["etat"],
+                        error=etat_recherche.get("erreur"),
+                    )
 
     return StreamingResponse(
         stream_research(),
@@ -1601,8 +1684,6 @@ async def _stream_response(
     detection_message: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
-    # Register generation for cancellation tracking (US-ERR-04)
-    _register_generation(conversation_id)
 
     # 0.46 : chaque génération LLM est un TRAITEMENT - ProcessingTask créée
     # immédiatement (jamais différée : courses garanties), son id EST le
@@ -1630,7 +1711,11 @@ async def _stream_response(
         # historique reste le filet d'annulation.
         logger.warning("Suivi de génération indisponible", exc_info=True)
         generation = None
-    etat_generation = {"etat": EtatTacheTraitement.DONE}
+    # L'entrée du registre appartient à CETTE génération (revue F6).
+    _register_generation(
+        conversation_id, generation.id if generation is not None else None
+    )
+    etat_generation: dict[str, Any] = {"etat": EtatTacheTraitement.DONE}
     if generation is not None:
         yield (
             "data: "
@@ -1698,6 +1783,14 @@ async def _stream_response(
                 etat_generation["etat"] = EtatTacheTraitement.CANCELLED
                 yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
+            # Revue jalon (F5) : un flux qui émet une erreur puis se termine
+            # proprement n'est PAS un succès - le panneau mentirait.
+            if '"type": "error"' in chunk:
+                etat_generation["etat"] = EtatTacheTraitement.FAILED
+                with contextlib.suppress(Exception):
+                    etat_generation["erreur"] = json.loads(
+                        chunk.removeprefix("data: ").strip()
+                    ).get("content", "")[:500]
             yield chunk
     except BaseException as sortie:
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
@@ -1744,10 +1837,16 @@ async def _stream_response(
             # sans effet.
             with contextlib.suppress(Exception):
                 get_performance_monitor().finish_stream(conversation_id)
-            _unregister_generation(conversation_id)
+            _unregister_generation(
+                conversation_id,
+                generation.id if generation is not None else None,
+            )
             if generation is not None:
                 with contextlib.suppress(Exception):
-                    await generation.terminer(etat_generation["etat"])
+                    await generation.terminer(
+                        etat_generation["etat"],
+                        error=etat_generation.get("erreur"),
+                    )
 
 
 async def _persister_message_partiel(
@@ -2161,12 +2260,12 @@ async def _do_stream_response(
                     logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
 
-    except GeneratorExit:
+    except (GeneratorExit, asyncio.CancelledError):
         # 0.46 : l'annulation arrive par la FERMETURE du générateur (wrapper
-        # aclose, client parti) - la garde d'écriture plus bas n'est jamais
-        # atteinte. Le texte déjà produit survit ici ; aucun effet (skill,
-        # outil) n'est lancé, on ne fait que consigner ce que l'utilisateur a
-        # déjà vu à l'écran.
+        # aclose, client parti) OU par l'annulation du __anext__ en vol
+        # (fournisseur bloqué, revue jalon F4) - la garde d'écriture plus bas
+        # n'est jamais atteinte. Le texte déjà produit survit ici ; aucun
+        # effet (skill, outil) n'est lancé.
         await _persister_message_partiel(conversation_id, full_content, llm_service)
         raise
     except Exception as e:

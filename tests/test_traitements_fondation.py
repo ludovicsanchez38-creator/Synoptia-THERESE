@@ -239,3 +239,85 @@ class TestLaRetention:
             "une active n'est JAMAIS purgee, meme antique - elle finira "
             "interrupted au recuperateur, pas a la corbeille"
         )
+
+
+class TestLesTransitionsSontDesCAS:
+    """Revue jalon (F1-F2) : SELECT puis commit n'est pas un CAS - deux
+    sessions concurrentes cassaient les garanties. Les transitions passent
+    par UPDATE conditionnel, verifie par rowcount."""
+
+    @pytest.mark.asyncio
+    async def test_demarrer_perd_contre_une_annulation(self, client):
+        """L'annulation commite cancelled entre le SELECT et le commit de
+        demarrer : l'etat final ne doit JAMAIS etre running."""
+        from app.models.database import get_session_context
+        from app.models.processing import ProcessingTask
+        from app.services import traitements
+        from sqlmodel import select as sel
+
+        handle = await _traitement(client)
+        # une autre session pose cancelled directement (la course simulee)
+        async with get_session_context() as session:
+            r = await session.execute(
+                sel(ProcessingTask).where(ProcessingTask.id == handle.id)
+            )
+            ligne = r.scalar_one()
+            ligne.state = EtatTache.CANCELLED
+            await session.commit()
+
+        with pytest.raises(traitements.AnnuleAvantDemarrage):
+            await handle.demarrer()
+        assert (await traitements.lire(handle.id)).state == EtatTache.CANCELLED
+
+    @pytest.mark.asyncio
+    async def test_l_arret_ne_regresse_jamais_un_terminal(self, client):
+        """Le producteur termine done pendant que la demande d'arret est en
+        vol : done ne doit JAMAIS regresser en cancel_requested."""
+        from app.models.database import get_session_context
+        from app.models.processing import ProcessingTask
+        from app.services import traitements
+        from sqlmodel import select as sel
+
+        handle = await _traitement(client)
+        await handle.demarrer()
+        # le producteur termine juste avant l'UPDATE de la demande
+        async with get_session_context() as session:
+            r = await session.execute(
+                sel(ProcessingTask).where(ProcessingTask.id == handle.id)
+            )
+            ligne = r.scalar_one()
+            ligne.state = EtatTache.DONE
+            await session.commit()
+
+        resultat = await traitements.demander_arret(handle.id)
+
+        assert (await traitements.lire(handle.id)).state == EtatTache.DONE
+        assert resultat.state == EtatTache.DONE
+
+    @pytest.mark.asyncio
+    async def test_le_rejeu_survit_a_la_perte_du_set_volatile(self, client):
+        """F2 : la demande durable cancel_requested est la verite - meme si
+        le set memoire a ete perdu (redemarrage partiel, course), l'enrolement
+        transmet."""
+        from app.services import traitements
+
+        handle = await _traitement(client)
+        await handle.demarrer()
+        await traitements.demander_arret(handle.id)
+        traitements._demandes_en_attente.discard(handle.id)  # le set est perdu
+
+        espion = AdaptateurEspion()
+        await handle.lier_adaptateur(espion)
+
+        assert espion.demandes == 1, (
+            "l'etat durable cancel_requested doit suffire au rejeu"
+        )
+
+    @pytest.mark.asyncio
+    async def test_une_queued_est_annulable_depuis_le_panneau(self, client):
+        """Une queued s'annule par l'API : can_cancel doit le dire."""
+        from app.services import traitements
+
+        handle = await _traitement(client)
+
+        assert (await traitements.dto(handle.id))["can_cancel"] is True
