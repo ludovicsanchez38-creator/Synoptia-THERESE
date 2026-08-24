@@ -274,13 +274,51 @@ class TestMCPToolCalling:
     """Tests for US-CHAT-05: MCP tool calling."""
 
     @pytest.mark.asyncio
-    async def test_chat_with_tools(self, client: AsyncClient, sample_chat_message):
-        """US-CHAT-05: Chat can use MCP tools."""
+    async def test_chat_with_tools(
+        self, client: AsyncClient, sample_chat_message, monkeypatch
+    ):
+        """US-CHAT-05 : le chat accepte une demande qui mobilise des outils.
+
+        Ce test appelait un VRAI fournisseur. Sur une machine où un Ollama local
+        écoute (le cas de plusieurs postes de développement), il partait vers le
+        modèle réel : durée imprévisible, et un 500 selon l'état du serveur. Il
+        signalait alors une panne qui n'existait pas, et pouvait en masquer une
+        vraie en acceptant trois codes de statut différents.
+
+        Il est désormais hermétique — aucun appel sortant — et n'accepte plus
+        qu'une seule issue.
+        """
+        from app.routers import chat as chat_router
+
+        async def faux_flux(*args, **kwargs):
+            for morceau in ("Voici ", "les fichiers."):
+                yield morceau
+
+        class FauxService:
+            # `provider` est un enum côté production : le chat lit `.value`.
+            # Une simple chaîne ici produisait un 500 par AttributeError, et
+            # c'était exactement le faux signal que ce test envoyait.
+            config = type(
+                "C", (),
+                {"provider": type("P", (), {"value": "ollama"})(), "model": "test"},
+            )()
+
+            def prepare_context(self, messages, system_prompt=None, memory_context=None):
+                return type("Ctx", (), {"messages": messages, "system_prompt": system_prompt})()
+
+            async def stream_response(self, *args, **kwargs):
+                async for morceau in faux_flux():
+                    yield morceau
+
+        monkeypatch.setattr(chat_router, "get_llm_service", lambda: FauxService())
+
         sample_chat_message["message"] = "Liste les fichiers dans /tmp"
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
-        # Request should be accepted (tools may or may not be available)
-        assert response.status_code in [200, 401, 503]
+        assert response.status_code == 200, (
+            f"la demande a echoue ({response.status_code}) alors qu'aucun "
+            "fournisseur reel n'est sollicite : la panne est dans le chat"
+        )
 
 
 class TestEntityExtraction:
