@@ -7,6 +7,41 @@
 
 import { API_BASE, apiFetch, request, ApiError } from './core';
 
+
+/**
+ * Délais d'attente des appels de configuration (0.43.4).
+ *
+ * `API_TIMEOUT_MS` vaut 30 secondes et s'applique à TOUT appel passant par
+ * `request()`. Douze fichiers de ce dossier posent un opt-out là où l'attente
+ * est légitime — indexation, transcription, flux SSE. Ce fichier n'en posait
+ * AUCUN, alors qu'il porte tout le parcours de premier usage.
+ *
+ * Sur la machine d'un testeur (AMD E1-7010, 1,5 GHz), le modèle d'embeddings a
+ * mis 68 secondes à se charger et Ollama plusieurs minutes pour un premier
+ * jeton. Trois de ses sept rapports partageaient cette cause unique : faux
+ * timeout du profil, « Ollama grisé », backend « indisponible ».
+ *
+ * La réponse n'est pas de tout passer en attente illimitée. Un appel qui ne
+ * revient jamais laisse l'utilisateur devant un écran figé, sans recours — ce
+ * serait remplacer un défaut par un autre. Chaque famille reçoit donc un délai
+ * justifié par ce qu'elle attend réellement.
+ */
+export const DELAIS_CONFIG = {
+  /** Ollama charge le modèle en mémoire avant de répondre. Trente secondes ne
+   *  suffisent pas sur une machine modeste ; l'utilisateur voyait
+   *  « indisponible » alors qu'il fallait simplement attendre. Borné quand
+   *  même : un serveur planté doit finir par le dire. */
+  interrogationOllama: 120_000,
+
+  /** Lecture d'un fichier, analyse, puis indexation éventuelle : aucune borne
+   *  raisonnable, comme pour l'indexation dans `files.ts`. */
+  importProfil: null,
+
+  /** Lectures en base : si elles traînent, c'est une panne, et mieux vaut le
+   *  dire vite que faire patienter. */
+  lectureSimple: 30_000,
+} as const;
+
 // Preferences
 export async function getPreferences(): Promise<Record<string, unknown>> {
   return request('/api/config/preferences');
@@ -143,6 +178,8 @@ export async function deleteProfile(): Promise<void> {
 
 export async function importClaudeMd(filePath: string): Promise<UserProfile> {
   return request<UserProfile>('/api/config/profile/import-claude-md', {
+    // Lecture de fichier + analyse + indexation : pas de borne utile.
+    timeoutMs: DELAIS_CONFIG.importProfil,
     method: 'POST',
     body: JSON.stringify({ file_path: filePath }),
   });
@@ -160,7 +197,12 @@ export async function setWorkingDirectory(path: string): Promise<WorkingDirector
 }
 
 // LLM Configuration
-export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok' | 'openrouter' | 'perplexity' | 'deepseek' | 'infomaniak' | 'ollama';
+export type LLMProvider = 'anthropic' | 'openai' | 'gemini' | 'mistral' | 'grok' | 'openrouter' | 'perplexity' | 'deepseek' | 'infomaniak' | 'ollama'
+  // Ajoutés le 24/08/2026 : compatibles OpenAI, ils héritent de la boucle d'outils.
+  | 'glm'
+  | 'kimi'
+  | 'qwen'
+  | 'minimax';
 
 export interface LLMConfig {
   provider: LLMProvider;
@@ -176,6 +218,9 @@ export interface OllamaModel {
   size: number | null;
   modified_at: string | null;
   digest: string | null;
+  /** BUG-169 : un modèle sans outils ne peut déclencher aucune action. */
+  gere_les_outils?: boolean;
+  motif_indisponible?: string | null;
 }
 
 export interface OllamaStatus {
@@ -193,7 +238,11 @@ export interface SystemResources {
 }
 
 export async function getLLMConfig(): Promise<LLMConfig> {
-  return request<LLMConfig>('/api/config/llm');
+  // Cette route interroge Ollama et OpenRouter pour lister les modèles
+  // disponibles : elle hérite donc de leur lenteur éventuelle.
+  return request<LLMConfig>('/api/config/llm', {
+    timeoutMs: DELAIS_CONFIG.interrogationOllama,
+  });
 }
 
 export type LLMEffort = 'auto' | 'low' | 'medium' | 'high' | 'max';
@@ -211,7 +260,10 @@ export async function setLLMConfig(
 }
 
 export async function getOllamaStatus(): Promise<OllamaStatus> {
-  return request<OllamaStatus>('/api/config/ollama/status');
+  // Ollama peut charger un modèle avant de répondre : voir DELAIS_CONFIG.
+  return request<OllamaStatus>('/api/config/ollama/status', {
+    timeoutMs: DELAIS_CONFIG.interrogationOllama,
+  });
 }
 
 export async function getSystemResources(): Promise<SystemResources> {

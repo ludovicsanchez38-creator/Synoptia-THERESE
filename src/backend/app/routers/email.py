@@ -1510,7 +1510,10 @@ async def generate_email_response(
 
     US-EMAIL-09: Génération de réponse IA
     """
-    from app.services.email_response_generator import EmailResponseGenerator
+    from app.services.email_response_generator import (
+    EmailResponseGenerator,
+    GenerationImpossible,
+)
 
     # Get message from DB
     message = await session.get(EmailMessage, message_id)
@@ -1556,17 +1559,26 @@ async def generate_email_response(
     except Exception as e:
         logger.warning(f"Failed to get thread context for {message_id}: {e}")
 
-    # Generate response
-    response_text = await EmailResponseGenerator.generate_response(
-        subject=message.subject or '',
-        from_name=message.from_name or message.from_email,
-        from_email=message.from_email,
-        body=message.body_plain or message.snippet or '',
-        tone=request.tone,
-        length=request.length,
-        contact_context=contact_context,
-        thread_context=thread_context,
-    )
+    # BUG-171 : la cause de l'échec doit arriver jusqu'à l'écran. Sans ce
+    # traitement, l'exception remonterait en 500 générique et l'interface
+    # afficherait de nouveau « la génération a échoué » sans dire pourquoi.
+    # Le message porté par l'exception est déjà nettoyé : aucune URL, aucun nom
+    # d'hôte, aucun fragment de clé n'y figure.
+    try:
+        response_text = await EmailResponseGenerator.generate_response(
+            subject=message.subject or '',
+            from_name=message.from_name or message.from_email,
+            from_email=message.from_email,
+            body=message.body_plain or message.snippet or '',
+            tone=request.tone,
+            length=request.length,
+            contact_context=contact_context,
+            thread_context=thread_context,
+        )
+    except GenerationImpossible as e:
+        # 502 plutôt que 500 : la panne vient du fournisseur de modèle, pas de
+        # THÉRÈSE. La distinction compte pour qui lit les journaux.
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
     return {
         'message_id': message_id,

@@ -13,6 +13,67 @@ from app.services.user_profile import get_cached_profile
 logger = logging.getLogger(__name__)
 
 
+class GenerationImpossible(RuntimeError):
+    """La rédaction assistée a échoué, avec une cause dicible à l'utilisateur."""
+
+
+# Causes reconnues, de la plus specifique a la plus generale. Le message dit ce
+# qui s'est passe ET ce que l'utilisateur peut faire : un diagnostic sans issue
+# ne vaut pas mieux qu'un silence.
+_CAUSES_CONNUES: tuple[tuple[tuple[str, ...], str], ...] = (
+    (
+        ("api key", "unauthorized", "401", "invalid_api_key", "authentication"),
+        "La clé d'API du fournisseur est refusée. Vérifie-la dans Réglages, "
+        "rubrique IA.",
+    ),
+    (
+        ("does not support tools", "tool", "function calling"),
+        "Le modèle choisi ne sait pas rédiger de réponse assistée. Choisis un "
+        "autre modèle dans Réglages, rubrique IA.",
+    ),
+    (
+        ("timed out", "timeout", "deadline"),
+        "Le modèle a mis trop de temps à répondre. Réessaie, ou choisis un "
+        "modèle plus rapide.",
+    ),
+    (
+        ("connection refused", "connect", "unreachable", "network", "dns"),
+        "Impossible de joindre le fournisseur. Vérifie ta connexion, ou que "
+        "ton serveur local est bien démarré.",
+    ),
+    (
+        ("rate limit", "429", "quota", "insufficient_quota"),
+        "Le fournisseur a refusé la demande : quota atteint. Réessaie plus "
+        "tard, ou vérifie ton compte.",
+    ),
+    (
+        ("context length", "too many tokens", "maximum context"),
+        "Le message est trop long pour ce modèle. Choisis un modèle à plus "
+        "grande fenêtre, ou réponds à un extrait.",
+    ),
+)
+
+
+def cause_lisible(erreur_brute: str) -> str:
+    """Traduit une erreur technique en phrase utile, sans rien laisser fuiter.
+
+    L'erreur brute d'un fournisseur contient parfois une URL interne, un nom
+    d'hote ou un fragment de cle. Elle n'est JAMAIS recopiee : seule une phrase
+    ecrite d'avance remonte a l'ecran, le detail restant au journal.
+    """
+    minuscule = (erreur_brute or "").lower()
+
+    for marqueurs, message in _CAUSES_CONNUES:
+        if any(marqueur in minuscule for marqueur in marqueurs):
+            return message
+
+    return (
+        "La rédaction assistée n'a pas abouti. Le détail est dans le journal "
+        "de l'application ; tu peux réessayer ou changer de modèle dans "
+        "Réglages, rubrique IA."
+    )
+
+
 def build_email_system_prompt(
     user_name: str,
     user_role: str,
@@ -130,13 +191,14 @@ Rédige une réponse appropriée en français."""
             return response_text
 
         except Exception as e:
-            logger.warning("Erreur generation reponse email, fallback: %s", e)
-            # Fallback si erreur LLM
-            return f"""Bonjour {from_name},
-
-Merci pour votre email concernant : {subject}
-
-Je reviens vers vous rapidement.
-
-Cordialement,
-{user_name}"""
+            # BUG-171. Ce bloc renvoyait un brouillon FABRIQUE (« Je reviens
+            # vers vous rapidement ») avec un HTTP 200. L'utilisateur recevait
+            # donc un texte qu'aucune IA n'avait ecrit, sans savoir que la
+            # generation avait echoue — et pouvait l'envoyer tel quel a son
+            # client.
+            #
+            # Entre un echec annonce et un faux succes, l'echec annonce est
+            # toujours preferable. Le detail technique va au journal, la cause
+            # traduite remonte a l'ecran.
+            logger.warning("Generation de reponse email impossible : %s", e, exc_info=True)
+            raise GenerationImpossible(cause_lisible(str(e))) from e

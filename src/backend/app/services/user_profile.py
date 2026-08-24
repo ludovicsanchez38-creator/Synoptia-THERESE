@@ -5,6 +5,7 @@ Manages user identity and profile for personalized interactions.
 Fixes the bug where THÉRÈSE calls the user "Pierre" instead of their real name.
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -263,9 +264,24 @@ async def set_user_profile(
 
         await session.commit()
 
-        # Embed in Qdrant for semantic search
+        # BUG-172. Le profil est ecrit : le travail durable est fait. Calculer
+        # son vecteur semantique prend 19 secondes sur une machine modeste, et
+        # attendre ce calcul pour repondre faisait voir a l'utilisateur
+        # « Delai de 30 000 ms depasse » sur le tout premier ecran du logiciel,
+        # alors que son profil etait bien enregistre.
+        #
+        # Allonger le delai cote client aurait deplace le seuil sans supprimer
+        # l'attente : une machine plus lente l'aurait franchi a nouveau.
+        # L'indexation part donc en tache de fond, et son echec eventuel ne
+        # remet pas en cause une sauvegarde deja acquise.
         if embed_in_qdrant:
-            await _embed_profile(profile)
+            global _GENERATION_PROFIL
+            _GENERATION_PROFIL += 1
+            tache = asyncio.create_task(
+                _indexer_en_arriere_plan(profile, _GENERATION_PROFIL)
+            )
+            _INDEXATIONS_EN_COURS.add(tache)
+            tache.add_done_callback(_INDEXATIONS_EN_COURS.discard)
 
         logger.info(f"User profile saved: {profile.name}")
         return profile
@@ -274,6 +290,64 @@ async def set_user_profile(
         logger.error(f"Failed to save user profile: {e}")
         await session.rollback()
         raise
+
+
+# Les taches asyncio ne sont retenues que par une reference forte : sans cet
+# ensemble, le ramasse-miettes peut annuler une indexation en cours de route.
+_INDEXATIONS_EN_COURS: set[asyncio.Task] = set()
+
+# Revue : deux sauvegardes rapprochees lancaient deux indexations CONCURRENTES
+# sur la meme entite, et chacune commence par supprimer l'ancienne. Entre la
+# suppression de la seconde et son ecriture, le profil n'existait plus dans
+# l'index : « qui suis-je ? » restait sans reponse, sans que rien ne le signale.
+#
+# C'est exactement le scenario du testeur : « j'ai refait Continuer et c'est
+# passe ».
+#
+# Un simple verrou ne suffit PAS : il serialise, mais ne garantit pas l'ordre de
+# DEMARRAGE. L'ordonnanceur peut lancer la seconde tache avant la premiere, et
+# l'index garderait alors l'ANCIEN nom - le testeur corrige son prenom, la
+# correction est perdue.
+#
+# Annuler la tache perimee ne marche pas non plus, et c'est PIRE : les
+# operations Qdrant passent par `asyncio.to_thread`, qui n'est pas annulable.
+# Annuler libere le verrou, mais le travail deja lance dans le thread continue.
+# Reproduit en revue : une ancienne suppression se terminait APRES le nouvel
+# ajout, et l'etat final ne contenait plus aucun profil.
+#
+# D'ou le NUMERO DE GENERATION. Chaque sauvegarde en prend un ; une tache
+# renonce AVANT d'entrer dans la section critique si sa generation est deja
+# depassee, et une tache deja entree va au bout - la suivante repassera derriere
+# elle. Rien n'est interrompu en vol, et le dernier enregistre gagne quand meme.
+_VERROU_INDEXATION = asyncio.Lock()
+_GENERATION_PROFIL = 0
+
+
+async def _indexer_en_arriere_plan(profile: UserProfile, generation: int) -> None:
+    """Indexe le profil sans jamais faire echouer sa sauvegarde.
+
+    Une indexation qui echoue prive la recherche semantique de son proprietaire,
+    ce qui merite un journal ; elle ne justifie pas de perdre un profil que
+    l'utilisateur vient de saisir.
+    """
+    try:
+        async with _VERROU_INDEXATION:
+            # Sa generation a-t-elle ete depassee pendant l'attente du verrou ?
+            # Si oui, indexer un profil perime effacerait le plus recent : on
+            # renonce ici, AVANT toute ecriture, et non en pleine operation.
+            if generation != _GENERATION_PROFIL:
+                logger.debug(
+                    "Indexation du profil abandonnee : generation %s depassee par %s",
+                    generation, _GENERATION_PROFIL,
+                )
+                return
+            await _embed_profile(profile)
+    except Exception:
+        logger.warning(
+            "Profil enregistre mais non indexe : la question « qui suis-je ? » "
+            "restera sans reponse jusqu'a la prochaine sauvegarde",
+            exc_info=True,
+        )
 
 
 async def _embed_profile(profile: UserProfile) -> None:
@@ -314,11 +388,18 @@ async def _embed_profile(profile: UserProfile) -> None:
         # Use special ID for owner profile
         # Supprimer l'ancien embedding si existant
         try:
-            qdrant.delete_by_entity("owner_profile")
+            # Meme piege que l'ajout : `delete_by_entity` est SYNCHRONE et
+            # gelerait la boucle d'evenements pendant tout l'appel.
+            await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 
-        qdrant.add_memory(
+        # Revue : `add_memory` est SYNCHRONE. Appelee telle quelle depuis une
+        # tache asyncio, elle gelerait la boucle d'evenements pendant tout le
+        # calcul — le serveur n'a qu'un processus, donc une requete d'un autre
+        # ecran attendrait ces 19 secondes sans raison. La version asynchrone
+        # deporte le travail hors de la boucle.
+        await qdrant.async_add_memory(
             text=text,
             memory_type="owner",
             entity_id="owner_profile",
@@ -360,10 +441,25 @@ async def delete_user_profile(session: AsyncSession) -> bool:
         await session.delete(pref)
         await session.commit()
 
+        # RGPD : une suppression doit TENIR. Deux protections, car une seule ne
+        # suffit pas.
+        #
+        # Avancer la generation fait renoncer les indexations qui attendent
+        # encore le verrou. Mais une indexation DEJA entree dans la section
+        # critique a franchi ce controle : elle ecrirait apres la suppression,
+        # et les donnees personnelles reapparaitraient. La suppression prend
+        # donc le verrou a son tour - elle attend celle qui est en vol, puis
+        # supprime pour de bon.
+        global _GENERATION_PROFIL
+        _GENERATION_PROFIL += 1
+
         # Remove from Qdrant
         try:
             qdrant = get_qdrant_service()
-            qdrant.delete_by_entity("owner_profile")
+            async with _VERROU_INDEXATION:
+                # Appel synchrone deporte : il gelait la boucle d'evenements,
+                # comme le faisait l'indexation avant sa correction.
+                await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
         except Exception as e:
             logger.debug("Qdrant operation non critique echouee: %s", e)
 

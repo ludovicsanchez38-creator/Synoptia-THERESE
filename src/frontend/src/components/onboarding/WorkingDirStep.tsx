@@ -99,8 +99,15 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
 
           {/* Description */}
           <p className="text-text-muted mb-6">
-            THÉRÈSE utilisera ce dossier comme point de départ pour la recherche de fichiers
-            et l'organisation de tes documents.
+            {/* BUG-167. Le texte promettait « la recherche de fichiers et
+                l'organisation de tes documents ». En réalité, ce dossier est
+                le point de départ de l'explorateur : rien n'est parcouru,
+                indexé ni rendu consultable dans le chat tant que tu ne l'as pas
+                demandé. Le testeur l'a relevé d'un mot — « ben j'aimerais bien
+                voir ça ! ». Promettre ce qu'on ne fait pas coûte plus cher que
+                de faire moins. */}
+            L'explorateur de fichiers s'ouvrira sur ce dossier. Tu pourras y choisir
+            les documents à confier à THÉRÈSE, un par un.
           </p>
 
           {/* Current directory display */}
