@@ -444,7 +444,14 @@ class ConfigResponse(BaseModel):
 class ApiKeyUpdate(BaseModel):
     """API key update request."""
 
-    provider: Literal["anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter", "openai_image", "gemini_image", "fal", "brave", "infomaniak", "deepseek", "perplexity"]
+    provider: Literal[
+        "anthropic", "mistral", "openai", "gemini", "groq", "grok", "openrouter",
+        "openai_image", "gemini_image", "fal", "brave", "infomaniak", "deepseek",
+        "perplexity",
+        # Ajoutés le 24/08/2026 : sans eux, la clé d'API de ces fournisseurs
+        # ne peut même pas être enregistrée.
+        "glm", "kimi", "qwen", "minimax",
+    ]
     api_key: str
 
 
@@ -548,6 +555,13 @@ class LLMConfigUpdate(BaseModel):
         "perplexity",
         "deepseek",
         "infomaniak",
+        # Ajoutés le 24/08/2026. Sans ces valeurs, les classes de fournisseur
+        # existaient mais AUCUNE configuration n'était acceptée : le travail
+        # était invisible depuis l'application.
+        "glm",
+        "kimi",
+        "qwen",
+        "minimax",
         "ollama",
     ]
     model: str
@@ -574,6 +588,12 @@ class OllamaModelInfo(BaseModel):
     modified_at: str | None = None
     digest: str | None = None
     usage_type: str = "chat"  # chat, embedding, vision, transcription
+    # BUG-169. Un modèle sans appel d'outils ne peut ni créer un contact, ni
+    # poser un rendez-vous, ni produire un document. Le masquer laisserait une
+    # liste vide sans explication ; on le marque pour que l'interface le montre
+    # désactivé, avec son motif.
+    gere_les_outils: bool = True
+    motif_indisponible: str | None = None
 
 
 class OllamaModelRecommendation(BaseModel):
