@@ -294,7 +294,7 @@ async def set_user_profile(
 
 # Les taches asyncio ne sont retenues que par une reference forte : sans cet
 # ensemble, le ramasse-miettes peut annuler une indexation en cours de route.
-_INDEXATIONS_EN_COURS: set[asyncio.Task] = set()
+_INDEXATIONS_EN_COURS: set[asyncio.Task[None]] = set()
 
 # Revue : deux sauvegardes rapprochees lancaient deux indexations CONCURRENTES
 # sur la meme entite, et chacune commence par supprimer l'ancienne. Entre la
