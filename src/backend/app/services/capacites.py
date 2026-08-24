@@ -65,7 +65,10 @@ def _structure_valide(manifeste: dict[str, Any]) -> bool:
         # directement : un point sans id levait KeyError après validation.
         if not isinstance(point, dict) or not isinstance(point.get("id"), str):
             return False
-        if not all(isinstance(c, str) for c in point.get("capacites", [])):
+        capacites_du_point = point.get("capacites", [])
+        if not isinstance(capacites_du_point, list):
+            return False
+        if not all(isinstance(c, str) for c in capacites_du_point):
             return False
         binding = point.get("binding")
         if not isinstance(binding, dict) or "registre" not in binding:
@@ -110,7 +113,20 @@ def charger_manifeste() -> dict[str, Any]:
             CHEMIN_MANIFESTE, exc_info=True,
         )
         return dict(_MANIFESTE_VIDE)
-    if not isinstance(manifeste, dict) or not _structure_valide(manifeste):
+    # Ceinture (troisième passe de revue) : la remédiation précédente avait
+    # introduit un TypeError DANS le validateur (« capacites »: null itéré sans
+    # garde), et l'exception traversait jusqu'aux routes - le fail-open que la
+    # validation devait garantir était détruit par la validation elle-même. Un
+    # validateur qui plante vaut un manifeste invalide, jamais un 500.
+    try:
+        structure_ok = isinstance(manifeste, dict) and _structure_valide(manifeste)
+    except Exception:
+        logger.error(
+            "Le validateur du manifeste a levé une exception : manifeste "
+            "traité comme invalide", exc_info=True,
+        )
+        structure_ok = False
+    if not structure_ok:
         logger.error(
             "Manifeste de capacités invalide (%s) : structure non conforme, "
             "l'aide sera incomplète", CHEMIN_MANIFESTE,
