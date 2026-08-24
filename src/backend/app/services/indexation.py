@@ -172,6 +172,7 @@ async def index_payload(
     scope_id: str | None = None,
     perimetre_provisoire: bool = False,
     sha256_attendu: str | None = None,
+    file_id_attendu: str | None = None,
 ) -> FileResponse:
     """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
@@ -213,6 +214,7 @@ async def index_payload(
         return await _indexer_sous_verrou(
             file_path, est_abandonnee, scope, scope_id, perimetre_provisoire,
             sha256_attendu=sha256_attendu,
+            file_id_attendu=file_id_attendu,
         )
 
 
@@ -245,6 +247,7 @@ async def _indexer_sous_verrou(
     scope_id: str | None,
     perimetre_provisoire: bool,
     sha256_attendu: str | None = None,
+    file_id_attendu: str | None = None,
 ) -> FileResponse:
     """Le cœur de l'indexation. Le verrou du chemin est DÉJÀ tenu.
 
@@ -272,6 +275,15 @@ async def _indexer_sous_verrou(
             raise ConflitDePerimetre(
                 f"{file_path} appartient au périmètre "
                 f"{existant.scope}/{existant.scope_id}"
+            )
+        # B5 (revue jalon) : l'IDENTITÉ prévue au plan fait partie du contrat.
+        # Un fichier supprimé puis recréé sous le même chemin est une autre
+        # entité - la réindexer comme si de rien n'était mentirait au journal.
+        if file_id_attendu is not None and (
+            existant is None or existant.id != file_id_attendu
+        ):
+            raise ContenuModifieDepuisLePlan(
+                f"{file_path} ne désigne plus l'entité prévue au plan"
             )
         copie_stable = await run_in_threadpool(
             _copier_si_conforme, file_path, sha256_attendu

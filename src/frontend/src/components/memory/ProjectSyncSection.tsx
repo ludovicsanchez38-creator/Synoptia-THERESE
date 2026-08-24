@@ -22,6 +22,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   const [chemin, setChemin] = useState('');
   const [occupe, setOccupe] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [journal, setJournal] = useState<api.SyncOperation[]>([]);
   const sondage = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const charger = useCallback(async () => {
@@ -89,19 +90,49 @@ export function ProjectSyncSection({ projectId }: Props) {
     setErreur(null);
     try {
       await api.appliquerPlanSync(projectId, plan.id);
-      // 202 : suivre l'avancement par l'état, jamais bloquer l'interface.
+      // 202 : suivre l'avancement par l'état - sondage BORNÉ (revue jalon,
+      // B7) : cinq erreurs consécutives ou vingt minutes arrêtent la boucle
+      // avec un message, jamais un spinner éternel.
+      let erreursConsecutives = 0;
+      let ticks = 0;
       sondage.current = setInterval(async () => {
-        const e = await charger();
+        ticks += 1;
+        let e: api.SyncEtat | null = null;
+        try {
+          e = await api.etatSync(projectId);
+          setEtat(e);
+          erreursConsecutives = 0;
+        } catch {
+          erreursConsecutives += 1;
+        }
         const etatPlan = e?.dernier_plan?.etat;
-        if (etatPlan && etatPlan !== 'propose' && etatPlan !== 'en_cours') {
+        const termine = etatPlan && etatPlan !== 'propose' && etatPlan !== 'en_cours';
+        const aBout = erreursConsecutives >= 5 || ticks >= 1200;
+        if (termine || aBout) {
           if (sondage.current) clearInterval(sondage.current);
           setOccupe(null);
           setPlan(null);
+          if (aBout && !termine) {
+            setErreur(
+              "Impossible de suivre la synchronisation - vérifie l'état du projet.",
+            );
+          } else {
+            void chargerJournal();
+          }
         }
-      }, 500);
+      }, 1000);
     } catch (e) {
       setOccupe(null);
       setErreur(e instanceof Error ? e.message : "L'application a échoué");
+    }
+  };
+
+  const chargerJournal = async () => {
+    try {
+      const j = await api.journalSync(projectId);
+      setJournal(j.operations.slice(0, 10));
+    } catch {
+      // le journal est un confort : son échec ne masque pas le résultat
     }
   };
 
@@ -202,7 +233,25 @@ export function ProjectSyncSection({ projectId }: Props) {
           {occupe === 'apply' && (
             <p className="text-xs text-text-muted" role="status">
               Synchronisation en cours…
+              {etat?.run?.progression != null && (
+                <> {Math.round(etat.run.progression * 100)} %</>
+              )}
             </p>
+          )}
+
+          {journal.length > 0 && occupe === null && (
+            <div className="text-xs text-text-muted space-y-0.5" data-testid="sync-journal">
+              <p className="font-medium">Dernières opérations :</p>
+              <ul className="max-h-24 overflow-y-auto">
+                {journal.map((o) => (
+                  <li key={o.id} className="truncate">
+                    <span className="uppercase text-[10px] mr-1">{o.type}</span>
+                    {o.chemin.split('/').pop()}
+                    <span className="ml-1">({o.etat}{o.erreur ? ` - ${o.erreur}` : ''})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           {dernier && !plan && occupe !== 'apply' && (

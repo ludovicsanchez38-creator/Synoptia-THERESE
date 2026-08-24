@@ -17,6 +17,7 @@ Autorité formalisée (challenge V2, finding 6) :
 from datetime import UTC, datetime
 
 from app.models.entities import generate_uuid
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -49,17 +50,21 @@ class ProjectSyncRoot(SQLModel, table=True):
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     project_id: str = Field(unique=True, index=True)
-    # Chemin CANONIQUE (resolve) - contrainte unique : deux projets ne
-    # partagent jamais une racine. La non-imbrication et samefile() se
-    # vérifient dans la même section critique, sous le verrou global du
-    # service (une contrainte SQL ne sait pas dire « ancêtre de »).
-    racine: str = Field(unique=True)
+    # Chemin CANONIQUE (resolve). L'exclusivité (unicité, non-imbrication,
+    # samefile) se vérifie dans la section critique du service, sous le
+    # verrou global - PAS par une contrainte SQL : un tombeau (`detachee`)
+    # conserve son dernier chemin pour l'audit, et une contrainte unique
+    # empêcherait un autre projet de reprendre un dossier délié.
+    racine: str
     # Identité du volume (st_dev) au rattachement : un montage débranché ne
     # doit JAMAIS produire un plan de retrait massif (fail-closed).
     volume_id: int
     # Incrémentée à chaque changement ou retrait de racine : les plans d'une
     # génération précédente deviennent caducs, les entrées sont nettoyées.
+    # Elle ne repart JAMAIS à 1 : au retrait, la ligne devient un tombeau
+    # (`detachee`) plutôt que d'être supprimée (revue jalon, B1).
     generation: int = Field(default=1)
+    detachee: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -69,6 +74,9 @@ class ProjectSyncEntry(SQLModel, table=True):
     table est le seul référentiel exploitable pour détecter les changements."""
 
     __tablename__ = "project_sync_entries"
+    __table_args__ = (
+        UniqueConstraint("project_id", "chemin", name="uq_sync_entry_projet_chemin"),
+    )
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     project_id: str = Field(index=True)
@@ -113,6 +121,9 @@ class SyncOperation(SQLModel, table=True):
     détaillé par tentative - promesse MVP réduite, assumée)."""
 
     __tablename__ = "sync_operations"
+    __table_args__ = (
+        Index("ix_sync_operations_plan_etat", "plan_id", "etat"),
+    )
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     plan_id: str = Field(index=True)

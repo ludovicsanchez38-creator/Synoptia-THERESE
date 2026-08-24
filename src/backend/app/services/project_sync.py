@@ -22,7 +22,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.services.path_security import INDEXABLE_EXTENSIONS
+from app.services.path_security import INDEXABLE_EXTENSIONS, MAX_INDEXABLE_SIZE
 from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
@@ -57,6 +57,15 @@ class Diff:
     retirer: list[OperationPrevue] = field(default_factory=list)
     conflits: list[OperationPrevue] = field(default_factory=list)
     inchanges: int = 0
+    instables: int = 0
+
+
+@dataclass(frozen=True)
+class ResultatScan:
+    entrees: list[EntreeScannee]
+    # Chemins exclus parce qu'ils bougeaient pendant la lecture : le diff ne
+    # doit JAMAIS les traiter comme disparus (revue jalon, B2).
+    instables: frozenset[str] = frozenset()
 
 
 def _hacher(chemin: Path) -> str:
@@ -67,7 +76,7 @@ def _hacher(chemin: Path) -> str:
     return h.hexdigest()
 
 
-def _scanner_sync(racine: Path) -> list[EntreeScannee]:
+def _scanner_sync(racine: Path) -> "ResultatScan":
     racine = racine.resolve()
     if not racine.is_dir():
         raise ErreurDeScan(f"Racine introuvable ou illisible : {racine}")
@@ -79,6 +88,7 @@ def _scanner_sync(racine: Path) -> list[EntreeScannee]:
         erreurs.append(f"{err.filename}: {err.strerror}")
 
     entrees: list[EntreeScannee] = []
+    instables: set[str] = set()
     for dossier, sous_dossiers, fichiers in os.walk(racine, onerror=_sur_erreur):
         sous_dossiers[:] = [
             d for d in sous_dossiers
@@ -99,6 +109,11 @@ def _scanner_sync(racine: Path) -> list[EntreeScannee]:
                 continue
             try:
                 avant = resolu.stat()
+                if avant.st_size > MAX_INDEXABLE_SIZE:
+                    # La même limite que le pipeline : proposer un fichier que
+                    # l'indexation refusera ferait échouer chaque apply.
+                    logger.info("Scan : %s dépasse la limite, ignoré", resolu)
+                    continue
                 empreinte = _hacher(resolu)
                 apres = resolu.stat()
             except OSError as e:
@@ -110,6 +125,7 @@ def _scanner_sync(racine: Path) -> list[EntreeScannee]:
                     "Scan %s : %s a changé pendant la lecture, exclu du plan",
                     racine, resolu,
                 )
+                instables.add(str(resolu))
                 continue
             entrees.append(EntreeScannee(
                 chemin=str(resolu),
@@ -122,10 +138,10 @@ def _scanner_sync(racine: Path) -> list[EntreeScannee]:
         raise ErreurDeScan(
             "Parcours incomplet, aucun plan ne sera produit : " + " ; ".join(erreurs[:5])
         )
-    return entrees
+    return ResultatScan(entrees=entrees, instables=frozenset(instables))
 
 
-async def scanner_racine(racine: Path | str) -> list[EntreeScannee]:
+async def scanner_racine(racine: Path | str) -> "ResultatScan":
     """Photographie la racine, hors boucle d'événements (hash = disque + CPU)."""
     return await run_in_threadpool(_scanner_sync, Path(racine))
 
@@ -135,6 +151,7 @@ def calculer_diff(
     referentiel: dict[str, tuple[str, str]],
     *,
     proprietaires: dict[str, tuple[str, str | None]],
+    instables: frozenset[str] = frozenset(),
 ) -> Diff:
     """Classe chaque chemin. Pur : aucune entrée-sortie.
 
@@ -163,8 +180,14 @@ def calculer_diff(
         else:
             diff.inchanges += 1
     for chemin, (file_id, sha) in referentiel.items():
-        if chemin not in vus:
-            diff.retirer.append(OperationPrevue(
-                chemin=chemin, file_id_prevu=file_id, empreinte_prevue=sha
-            ))
+        if chemin in vus:
+            continue
+        if chemin in instables:
+            # Instable = on ne sait pas ce qu'il y a sur le disque : on ne
+            # touche à RIEN, surtout pas un retrait (revue jalon, B2).
+            diff.instables += 1
+            continue
+        diff.retirer.append(OperationPrevue(
+            chemin=chemin, file_id_prevu=file_id, empreinte_prevue=sha
+        ))
     return diff

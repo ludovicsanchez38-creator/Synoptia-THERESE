@@ -39,7 +39,7 @@ def racine(tmp_path: Path) -> Path:
 class TestLeScanner:
     @pytest.mark.asyncio
     async def test_scanne_et_hashe_tout(self, racine):
-        entrees = await scanner_racine(racine)
+        entrees = (await scanner_racine(racine)).entrees
 
         chemins = {e.chemin for e in entrees}
         assert chemins == {
@@ -63,7 +63,7 @@ class TestLeScanner:
         (nm / "paquet.txt").write_text("x", encoding="utf-8")
         (racine / "binaire.exe").write_bytes(b"\x00\x01")
 
-        entrees = await scanner_racine(racine)
+        entrees = (await scanner_racine(racine)).entrees
 
         chemins = {Path(e.chemin).name for e in entrees}
         assert chemins == {"notes.txt", "rapport.md", "annexe.txt"}
@@ -79,7 +79,7 @@ class TestLeScanner:
         dehors.write_text("hors racine", encoding="utf-8")
         (racine / "evade.txt").symlink_to(dehors)
 
-        entrees = await scanner_racine(racine)
+        entrees = (await scanner_racine(racine)).entrees
 
         assert "evade.txt" not in {Path(e.chemin).name for e in entrees}
 
@@ -102,7 +102,7 @@ class TestLeScanner:
 
         monkeypatch.setattr(module, "_hacher", hash_qui_derange)
 
-        entrees = await scanner_racine(racine)
+        entrees = (await scanner_racine(racine)).entrees
 
         assert "notes.txt" not in {Path(e.chemin).name for e in entrees}
         assert {Path(e.chemin).name for e in entrees} == {"rapport.md", "annexe.txt"}

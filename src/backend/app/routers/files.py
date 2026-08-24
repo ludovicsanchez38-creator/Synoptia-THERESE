@@ -5,6 +5,7 @@ Endpoints for file management and indexing.
 """
 
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -264,8 +265,15 @@ async def upload_file(
     dest_path = therese_dir / file.filename
 
     def _copier_sur_disque() -> None:
-        with dest_path.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
+        # Écriture ATOMIQUE : une erreur de copie ne doit jamais tronquer le
+        # fichier en place pendant que son index reste servi (revue jalon).
+        temporaire = dest_path.with_name(dest_path.name + ".therese-tmp")
+        try:
+            with temporaire.open("wb") as f:
+                shutil.copyfileobj(file.file, f)
+            os.replace(temporaire, dest_path)
+        finally:
+            temporaire.unlink(missing_ok=True)
 
     async def _deposer() -> None:
         try:

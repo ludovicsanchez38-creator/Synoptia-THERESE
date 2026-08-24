@@ -82,6 +82,13 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
             + ", ".join(f"{column} TEXT" for column in atelier_columns)
             + ")"
         )
+        # 0.45 : au vrai démarrage, create_all a déjà créé les tables sync -
+        # la preuve de schéma les exige avant tout ré-estampillage (B4).
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"CREATE TABLE {table} (id VARCHAR PRIMARY KEY)")
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
@@ -229,3 +236,27 @@ def test_make_db_migrate_sur_db_chiffree(tmp_path):
     result = _run_upgrade_head(data_dir)
     assert result.returncode == 0, result.stderr[-800:]
     assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
+def test_une_base_044_n_est_pas_reestampillee_sans_les_tables_sync(tmp_path):
+    """B4 (revue jalon) : la preuve de schéma doit exiger les tables sync.
+
+    Sans cela, une base 0.44 suivie par Alembic était ré-estampillée à la
+    tête e5f6a7b8c9d0 AVANT `upgrade head` - la migration des quatre tables
+    était sautée pour toujours."""
+    db = tmp_path / "base-044.db"
+    _make_patched_tracked_db(db)
+    with sqlite3.connect(str(db)) as conn:
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"DROP TABLE {table}")
+        conn.execute("UPDATE alembic_version SET version_num = 'd9e0f1a2b3c4'")
+        conn.commit()
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "d9e0f1a2b3c4", (
+        "ré-estampiller sans les tables sync ferait sauter leur migration"
+    )

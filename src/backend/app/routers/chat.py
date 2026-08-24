@@ -188,6 +188,15 @@ async def _indexer_piece_jointe_sous_verrou(
     """
     from datetime import UTC, datetime
 
+    # Revue jalon : l'existence était testée AVANT la prise du verrou - deux
+    # demandes concurrentes sur un même nouveau fichier passaient toutes deux
+    # le test, et la seconde violait l'unicité de `path` après son attente.
+    deja_la = await session.execute(
+        select(FileMetadata).where(FileMetadata.path == str(path))
+    )
+    if deja_la.scalar_one_or_none() is not None:
+        return
+
     metadata = get_file_metadata(path)
 
     file_meta = FileMetadata(

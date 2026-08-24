@@ -312,3 +312,173 @@ class TestLaReprise:
         assert (await svc.lire_plan(plan.id)).etat == EtatPlan.APPLIQUE
         ops = await svc.lire_operations(plan.id)
         assert all(o.etat == EtatOperation.FAIT for o in ops)
+
+
+class TestLesBloquantsDeLaRevue:
+    """Reproductions de la revue du jalon (NO-GO), transformées en tests."""
+
+    @pytest.mark.asyncio
+    async def test_b1_changer_de_racine_attend_la_fin_de_l_apply(
+        self, client, racine, tmp_path, qdrant_factice
+    ):
+        """B1 : la racine ne change pas PENDANT un apply - même verrou projet.
+        Sans lui, l'apply finissant réécrivait `applique` sur un plan caduc et
+        recréait des entrées de génération 1 vers l'ancienne racine."""
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        autre = tmp_path / "autre"
+        autre.mkdir()
+
+        async with svc._verrou_du_projet(projet):
+            with pytest.raises(svc.OperationRefusee):
+                await svc.definir_racine(projet, str(autre))
+            with pytest.raises(svc.OperationRefusee):
+                await svc.retirer_racine(projet)
+
+    @pytest.mark.asyncio
+    async def test_b1_un_plan_caduc_ne_redevient_jamais_applique(
+        self, client, racine, qdrant_factice
+    ):
+        from app.models.entities_sync import EtatPlan
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+
+        await svc._marquer_plan(plan.id, EtatPlan.CADUC)
+        # même si un finaliseur tardif tente d'écrire l'état final :
+        await svc._finaliser_plan(plan.id, EtatPlan.APPLIQUE)
+
+        assert (await svc.lire_plan(plan.id)).etat == EtatPlan.CADUC
+
+    @pytest.mark.asyncio
+    async def test_b1_la_generation_ne_repart_jamais_a_1(
+        self, client, racine, tmp_path, qdrant_factice
+    ):
+        """Retirer puis rattacher NE remet PAS la génération à 1 : un ancien
+        plan partiel de génération 1 redeviendrait compatible."""
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        await svc.retirer_racine(projet)
+        autre = tmp_path / "encore"
+        autre.mkdir()
+        root = await svc.definir_racine(projet, str(autre))
+
+        assert root.generation >= 2
+
+    @pytest.mark.asyncio
+    async def test_b2_un_fichier_revenu_n_est_jamais_retire(
+        self, client, racine, qdrant_factice
+    ):
+        """B2 : le retrait revalide le DISQUE - un fichier revenu entre le
+        plan et l'apply devient obsolete, jamais retiré."""
+        from app.models.entities_sync import EtatOperation
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        premier = await svc.preparer_plan(projet)
+        await svc.appliquer_plan(projet, premier.id)
+
+        cible = racine / "deux.txt"
+        contenu = cible.read_bytes()
+        cible.unlink()
+        plan = await svc.preparer_plan(projet)
+        assert plan.nb_retirer == 1
+        cible.write_bytes(contenu)  # le fichier REVIENT avant l'apply
+
+        await svc.appliquer_plan(projet, plan.id)
+
+        ops = await svc.lire_operations(plan.id)
+        retirer = next(o for o in ops if o.type == "retirer")
+        assert retirer.etat == EtatOperation.OBSOLETE
+        referentiel = await svc.lire_referentiel(projet)
+        assert str(cible.resolve()) in referentiel, (
+            "le fichier est là ET indexé : le retirer aurait vidé son index"
+        )
+
+    @pytest.mark.asyncio
+    async def test_b2_un_fichier_instable_n_est_pas_declare_disparu(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """Un fichier exclu du scan pour instabilité ne doit pas devenir une
+        opération de retrait au plan suivant."""
+        from app.services import project_sync
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        premier = await svc.preparer_plan(projet)
+        await svc.appliquer_plan(projet, premier.id)
+
+        cible = (racine / "un.txt").resolve()
+        vrai_hash = project_sync._hacher
+
+        def hash_derangeant(chemin):
+            r = vrai_hash(chemin)
+            if chemin == cible:
+                cible.write_text("bouge encore", encoding="utf-8")
+            return r
+
+        monkeypatch.setattr(project_sync, "_hacher", hash_derangeant)
+        plan = await svc.preparer_plan(projet)
+
+        assert plan.nb_retirer == 0, (
+            "instable = on ne touche à rien, surtout pas un retrait"
+        )
+
+    @pytest.mark.asyncio
+    async def test_b5_un_chemin_recree_n_est_pas_la_meme_entite(
+        self, client, racine, qdrant_factice
+    ):
+        """B5 : la réindexation vérifie l'IDENTITÉ prévue (file_id), pas
+        seulement l'empreinte - un fichier supprimé puis recréé est une autre
+        entité."""
+        import hashlib
+
+        from app.services import indexation
+
+        fichier = racine / "un.txt"
+        await indexation.index_payload(str(fichier.resolve()))
+        empreinte = hashlib.sha256(fichier.read_bytes()).hexdigest()
+
+        with pytest.raises(indexation.ContenuModifieDepuisLePlan):
+            await indexation.index_payload(
+                str(fichier.resolve()),
+                sha256_attendu=empreinte,
+                file_id_attendu="une-entite-disparue",
+            )
+
+    @pytest.mark.asyncio
+    async def test_b5_le_retrait_manuel_nettoie_l_entree_sync(
+        self, client, racine, qdrant_factice
+    ):
+        """Supprimer un fichier depuis l'explorateur (delete_file) doit aussi
+        retirer son entrée de référence - sinon le plan suivant annonce
+        « inchangé » un fichier qui n'est plus indexé."""
+        from app.services import project_sync_service as svc
+
+        projet = await _creer_projet(client)
+        await svc.definir_racine(projet, str(racine))
+        plan = await svc.preparer_plan(projet)
+        await svc.appliquer_plan(projet, plan.id)
+
+        referentiel = await svc.lire_referentiel(projet)
+        chemin, (file_id, _sha) = next(iter(referentiel.items()))
+
+        resp = await client.delete(f"/api/files/{file_id}")
+        assert resp.status_code == 200, resp.text
+
+        referentiel = await svc.lire_referentiel(projet)
+        assert chemin not in referentiel
+
+        second = await svc.preparer_plan(projet)
+        assert second.nb_indexer == 1, (
+            "le fichier n'est plus indexé : le plan doit proposer de le "
+            "réindexer, pas le déclarer inchangé"
+        )

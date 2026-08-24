@@ -98,6 +98,16 @@ async def _retirer_sous_verrou(
             ligne = result.scalar_one_or_none()
             if ligne is not None:
                 await session.delete(ligne)
-                await session.commit()
+            # Revue jalon (B5) : un retrait manuel doit aussi retirer l'entrée
+            # de référence sync - sinon le plan suivant annonce « inchangé »
+            # un fichier qui n'est plus indexé.
+            from app.models.entities_sync import ProjectSyncEntry
+
+            result = await session.execute(
+                select(ProjectSyncEntry).where(ProjectSyncEntry.chemin == chemin)
+            )
+            for entree in result.scalars():
+                await session.delete(entree)
+            await session.commit()
 
         return RetraitResultat(retire=True, file_id=meta.id)

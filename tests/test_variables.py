@@ -250,6 +250,14 @@ class TestMigration:
         conn.execute("INSERT INTO alembic_version VALUES ('ancienne_tete')")
         if with_variables:
             conn.execute("CREATE TABLE variables (id TEXT PRIMARY KEY)")
+        # 0.45 : la preuve de schéma exige aussi les tables project.sync
+        # (créées par create_all au vrai démarrage avant l'estampillage).
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY)")
+
         conn.commit()
         conn.close()
         return db

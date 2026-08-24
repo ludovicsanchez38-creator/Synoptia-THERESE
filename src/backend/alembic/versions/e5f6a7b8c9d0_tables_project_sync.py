@@ -26,9 +26,10 @@ def upgrade() -> None:
             "project_sync_roots",
             sa.Column("id", sa.String(), primary_key=True),
             sa.Column("project_id", sa.String(), nullable=False, unique=True),
-            sa.Column("racine", sa.String(), nullable=False, unique=True),
+            sa.Column("racine", sa.String(), nullable=False),
             sa.Column("volume_id", sa.Integer(), nullable=False),
             sa.Column("generation", sa.Integer(), nullable=False),
+            sa.Column("detachee", sa.Boolean(), nullable=False),
             sa.Column("created_at", sa.DateTime(), nullable=False),
         )
         op.create_index(
@@ -48,6 +49,9 @@ def upgrade() -> None:
             sa.Column("generation_racine", sa.Integer(), nullable=False),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.Column("updated_at", sa.DateTime(), nullable=False),
+            sa.UniqueConstraint(
+                "project_id", "chemin", name="uq_sync_entry_projet_chemin"
+            ),
         )
         op.create_index(
             "ix_project_sync_entries_project_id", "project_sync_entries",
@@ -90,6 +94,9 @@ def upgrade() -> None:
         )
         op.create_index("ix_sync_operations_plan_id", "sync_operations", ["plan_id"])
         op.create_index("ix_sync_operations_etat", "sync_operations", ["etat"])
+        op.create_index(
+            "ix_sync_operations_plan_etat", "sync_operations", ["plan_id", "etat"]
+        )
 
 
 def downgrade() -> None:

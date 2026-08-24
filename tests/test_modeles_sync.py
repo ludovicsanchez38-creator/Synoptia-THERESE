@@ -93,4 +93,3 @@ class TestLeContratDesColonnes:
 
         colonnes = set(ProjectSyncRoot.model_fields.keys())
         assert {"project_id", "racine", "volume_id", "generation"} <= colonnes
-

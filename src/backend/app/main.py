@@ -189,19 +189,6 @@ async def lifespan(app: FastAPI):
             reprises = await recuperer_taches_orphelines(session)
         if reprises:
             logger.info(f"Traitements interrompus repris : {reprises}")
-        # project.sync (0.45) : marquer `interrupted` ne relance RIEN - les
-        # plans restés `en_cours` sont repris par un récupérateur dédié,
-        # APRÈS l'initialisation de Qdrant, en tâche de fond référencée.
-        from app.services.project_sync_service import (
-            _applies_en_cours,
-            reprendre_applies_orphelins,
-        )
-
-        reprise_sync = asyncio.get_running_loop().create_task(
-            reprendre_applies_orphelins()
-        )
-        _applies_en_cours.add(reprise_sync)
-        reprise_sync.add_done_callback(_applies_en_cours.discard)
     except Exception as e:
         # Un ménage de démarrage ne doit jamais empêcher l'application de
         # se lancer : au pire les tâches restent affichées comme actives.
@@ -235,6 +222,24 @@ async def lifespan(app: FastAPI):
     if not skip_services:
         await init_qdrant()
         logger.info("Qdrant vector store initialized")
+
+        # project.sync (0.45, B6) : marquer `interrupted` ne relance RIEN -
+        # les plans restés `en_cours` sont repris par un récupérateur dédié,
+        # APRÈS l'initialisation de Qdrant (un apply écrit des vecteurs),
+        # en tâche de fond référencée.
+        try:
+            from app.services.project_sync_service import (
+                _applies_en_cours,
+                reprendre_applies_orphelins,
+            )
+
+            reprise_sync = asyncio.get_running_loop().create_task(
+                reprendre_applies_orphelins()
+            )
+            _applies_en_cours.add(reprise_sync)
+            reprise_sync.add_done_callback(_applies_en_cours.discard)
+        except Exception as e:
+            logger.warning(f"Reprise project.sync ignorée : {e}")
 
         # Reclassement des payloads sans périmètre, en tâche de fond : il peut
         # parcourir une grande collection et ne doit pas retarder /health.
@@ -362,6 +367,22 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
+
+    # project.sync (0.45, B6) : arrêter les applies AVANT de fermer Qdrant et
+    # SQLite. L'at-least-once rend l'annulation sûre : l'opération en cours
+    # reste `a_faire`, le plan reste `en_cours`, la reprise du prochain
+    # démarrage termine le travail.
+    try:
+        from app.services.project_sync_service import _applies_en_cours
+
+        vivantes = [t for t in _applies_en_cours if not t.done()]
+        for tache in vivantes:
+            tache.cancel()
+        if vivantes:
+            await asyncio.wait(vivantes, timeout=5)
+            logger.info(f"Applies project.sync arrêtés : {len(vivantes)}")
+    except Exception as e:
+        logger.warning(f"Arrêt des applies project.sync : {e}")
 
     if oauth_cleanup_task is not None:
         oauth_cleanup_task.cancel()

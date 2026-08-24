@@ -399,11 +399,25 @@ def ensure_alembic_stamp(db_path) -> None:
                     has_atelier_history = (
                         ATELIER_HISTORY_COLUMN_DEFINITIONS.keys() <= atelier_cols
                     )
+                    # 0.45 : la preuve couvre les tables project.sync - sans
+                    # elles, ré-estampiller ferait sauter la migration
+                    # e5f6a7b8c9d0 sur une vraie base 0.44 (revue jalon, B4).
+                    tables_presentes = {
+                        row[0]
+                        for row in conn.execute(
+                            "SELECT name FROM sqlite_master WHERE type='table'"
+                        )
+                    }
+                    has_sync_tables = {
+                        "project_sync_roots", "project_sync_entries",
+                        "sync_plans", "sync_operations",
+                    } <= tables_presentes
                     if (
                         "validite_jours" in inv_cols
                         and has_variables
                         and has_board_history
                         and has_atelier_history
+                        and has_sync_tables
                     ):
                         conn.execute(
                             "UPDATE alembic_version SET version_num = ?",

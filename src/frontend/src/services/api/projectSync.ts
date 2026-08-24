@@ -41,6 +41,7 @@ export interface SyncEtat {
   racine: string | null;
   generation: number | null;
   dernier_plan: SyncPlan | null;
+  run: { etat: string; progression: number | null } | null;
 }
 
 export async function definirRacineSync(

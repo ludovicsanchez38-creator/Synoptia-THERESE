@@ -85,12 +85,18 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
     if not racine.is_dir():
         raise ErreurRacine(f"Le dossier n'existe pas : {racine}")
 
-    async with _verrou_racines, get_session_context() as session:
+    # B1 (revue jalon) : la racine ne change JAMAIS pendant un plan ou un
+    # apply - même verrou projet d'abord, puis le verrou global des racines.
+    async with _verrou_du_projet(project_id), _verrou_racines, \
+            get_session_context() as session:
         resultat = await session.execute(select(ProjectSyncRoot))
         existantes = list(resultat.scalars().all())
 
         for autre in existantes:
             if autre.project_id == project_id:
+                continue
+            if autre.detachee:
+                # Un tombeau garde la génération, pas la propriété du dossier.
                 continue
             autre_racine = Path(autre.racine)
             if autre_racine == racine:
@@ -125,10 +131,13 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
             await session.refresh(root)
             return root
 
-        # Remplacement : nouvelle génération, plans caducs, entrées purgées.
+        # Remplacement OU ré-attachement d'une racine déliée : la génération
+        # ne repart JAMAIS - un ancien plan partiel de génération 1
+        # redeviendrait compatible (revue jalon, B1).
         actuelle.racine = str(racine)
         actuelle.volume_id = racine.stat().st_dev
         actuelle.generation += 1
+        actuelle.detachee = False
         await _invalider_generation(session, project_id)
         await session.commit()
         await session.refresh(actuelle)
@@ -137,17 +146,21 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
 
 async def retirer_racine(project_id: str) -> None:
     """Délie la racine. Ne retire RIEN de l'index : ça, c'est un plan."""
-    async with _verrou_racines, get_session_context() as session:
+    async with _verrou_du_projet(project_id), _verrou_racines, \
+            get_session_context() as session:
         resultat = await session.execute(
             select(ProjectSyncRoot).where(
                 ProjectSyncRoot.project_id == project_id
             )
         )
         root = resultat.scalar_one_or_none()
-        if root is None:
+        if root is None or root.detachee:
             return
+        # Tombeau, pas suppression : la génération survit à un retrait puis
+        # rattachement (revue jalon, B1).
+        root.detachee = True
+        root.generation += 1
         await _invalider_generation(session, project_id)
-        await session.delete(root)
         await session.commit()
 
 
@@ -185,7 +198,8 @@ async def preparer_plan(project_id: str) -> SyncPlan:
                 "produit (un montage débranché ne vide jamais un index)."
             )
 
-        scannees = await scanner_racine(racine)
+        scan = await scanner_racine(racine)
+        scannees = scan.entrees
         referentiel = await lire_referentiel(project_id)
 
         # Chemins possédés par un AUTRE périmètre voulu : conflit montré.
@@ -202,7 +216,10 @@ async def preparer_plan(project_id: str) -> SyncPlan:
                     if (meta.scope, meta.scope_id) != ("project", project_id):
                         proprietaires[meta.path] = (meta.scope, meta.scope_id)
 
-        diff = calculer_diff(scannees, referentiel, proprietaires=proprietaires)
+        diff = calculer_diff(
+            scannees, referentiel,
+            proprietaires=proprietaires, instables=scan.instables,
+        )
 
         async with get_session_context() as session:
             resultat = await session.execute(
@@ -249,23 +266,63 @@ async def preparer_plan(project_id: str) -> SyncPlan:
 # ---------------------------------------------------------------------------
 
 async def appliquer_plan(project_id: str, plan_id: str) -> None:
-    """Exécute le plan, opération par opération. Bloquant : la route
-    l'enveloppe dans une tâche de fond à référence forte."""
+    """Exécute le plan, opération par opération. Bloquant : la route passe
+    par `reserver_apply` + `executer_reservation` pour répondre 202 APRÈS
+    la validation, jamais avant."""
     async with _verrou_du_projet(project_id):
         await _appliquer_sous_verrou(project_id, plan_id)
 
 
-def lancer_apply(project_id: str, plan_id: str) -> "asyncio.Task[None]":
-    """Version arrière-plan, référence forte conservée (leçon 0.43.4)."""
+class ReservationApply:
+    """Un apply validé et verrouillé, pas encore exécuté.
+
+    B3 (revue jalon) : le 202 couvrait un échec immédiat - la route testait
+    `locked()` puis lançait une tâche qui validait APRÈS coup ; deux requêtes
+    pouvaient aussi franchir le test avant la première acquisition. La
+    réservation acquiert le verrou et valide AVANT que la route ne réponde ;
+    l'exécution différée libère le verrou quoi qu'il arrive.
+    """
+
+    def __init__(self, project_id: str, plan_id: str) -> None:
+        self.project_id = project_id
+        self.plan_id = plan_id
+
+
+async def reserver_apply(project_id: str, plan_id: str) -> ReservationApply:
+    verrou = _verrou(project_id)
+    if verrou.locked():
+        raise OperationRefusee(
+            "Une synchronisation est déjà en cours sur ce projet."
+        )
+    await verrou.acquire()
+    try:
+        await _valider_plan_applicable(project_id, plan_id)
+    except BaseException:
+        verrou.release()
+        raise
+    return ReservationApply(project_id, plan_id)
+
+
+async def executer_reservation(reservation: ReservationApply) -> None:
+    try:
+        await _appliquer_sous_verrou(
+            reservation.project_id, reservation.plan_id, deja_valide=True
+        )
+    finally:
+        _verrou(reservation.project_id).release()
+
+
+def lancer_apply_reserve(reservation: ReservationApply) -> "asyncio.Task[None]":
+    """Exécution différée d'une réservation, référence forte conservée."""
     tache = asyncio.get_running_loop().create_task(
-        appliquer_plan(project_id, plan_id)
+        executer_reservation(reservation)
     )
     _applies_en_cours.add(tache)
     tache.add_done_callback(_applies_en_cours.discard)
     return tache
 
 
-async def _appliquer_sous_verrou(project_id: str, plan_id: str) -> None:
+async def _valider_plan_applicable(project_id: str, plan_id: str) -> ProjectSyncRoot:
     plan = await lire_plan(plan_id)
     if plan is None or plan.project_id != project_id:
         raise OperationRefusee("Plan inconnu pour ce projet.")
@@ -275,7 +332,7 @@ async def _appliquer_sous_verrou(project_id: str, plan_id: str) -> None:
     if plan.generation_racine != root.generation:
         raise OperationRefusee("La racine a changé depuis ce plan : refais un plan.")
     # Seul le DERNIER plan proposé s'applique - un plan en_cours (reprise)
-    # reste prioritaire et aucun nouveau plan n'a pu naître pendant l'apply
+    # reste prioritaire et aucun nouveau plan ne peut naître pendant l'apply
     # (même verrou).
     async with get_session_context() as session:
         resultat = await session.execute(
@@ -287,6 +344,13 @@ async def _appliquer_sous_verrou(project_id: str, plan_id: str) -> None:
         )
         if resultat.scalars().first() is not None:
             raise OperationRefusee("Un plan plus récent existe : applique-le, lui.")
+    return root
+
+
+async def _appliquer_sous_verrou(
+    project_id: str, plan_id: str, *, deja_valide: bool = False
+) -> None:
+    root = await _valider_plan_applicable(project_id, plan_id)
 
     await _marquer_plan(plan_id, EtatPlan.EN_COURS)
     task_id = await _creer_run(project_id, plan_id, root)
@@ -325,7 +389,7 @@ async def _appliquer_sous_verrou(project_id: str, plan_id: str) -> None:
         else EtatPlan.APPLIQUE_PARTIEL
     )
     restantes = [o for o in finales if o.etat == EtatOperation.ECHEC]
-    await _marquer_plan(plan_id, etat_final)
+    await _finaliser_plan(plan_id, etat_final)
     await _terminer_run(task_id, en_echec=bool(restantes))
 
 
@@ -333,6 +397,14 @@ async def _executer_operation(
     project_id: str, root: ProjectSyncRoot, operation: SyncOperation
 ) -> None:
     if operation.type == TypeOperation.RETIRER:
+        # B2 (revue jalon) : revalider le DISQUE - un fichier revenu entre le
+        # plan et l'apply ne doit JAMAIS être retiré.
+        if Path(operation.chemin).exists():
+            await _consigner_operation(
+                operation.id, EtatOperation.OBSOLETE,
+                erreur="Le fichier est réapparu depuis le plan : refais un plan.",
+            )
+            return
         resultat = await retrait_index.retirer_par_chemin(
             operation.chemin, file_id_attendu=operation.file_id_prevu
         )
@@ -354,6 +426,7 @@ async def _executer_operation(
             scope="project",
             scope_id=project_id,
             sha256_attendu=operation.empreinte_prevue,
+            file_id_attendu=operation.file_id_prevu,
         )
     except indexation.ContenuModifieDepuisLePlan:
         await _consigner_operation(
@@ -431,7 +504,7 @@ async def _racine_de(project_id: str) -> ProjectSyncRoot:
             select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
         )
         root = resultat.scalar_one_or_none()
-    if root is None:
+    if root is None or root.detachee:
         raise ErreurRacine("Ce projet n'a pas de dossier synchronisé.")
     return root
 
@@ -471,6 +544,8 @@ async def etat_sync(project_id: str) -> dict[str, object]:
             select(ProjectSyncRoot).where(ProjectSyncRoot.project_id == project_id)
         )
         root = resultat.scalar_one_or_none()
+        if root is not None and root.detachee:
+            root = None
         resultat = await session.execute(
             select(SyncPlan)
             .where(SyncPlan.project_id == project_id)
@@ -484,6 +559,59 @@ async def etat_sync(project_id: str) -> dict[str, object]:
         "generation": root.generation if root else None,
         "dernier_plan": plan,
     }
+
+
+async def _finaliser_plan(plan_id: str, etat: str) -> None:
+    """Écrit l'état FINAL d'un apply, seulement si le plan est encore à lui.
+
+    Revue jalon (B1) : un changement de racine pendant l'apply passait le
+    plan à `caduc`, puis la fin de l'apply le réécrivait `applique` - et les
+    entrées de l'ancienne génération renaissaient. Un plan qui n'est plus
+    `en_cours` n'appartient plus à ce run.
+    """
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan).where(SyncPlan.id == plan_id)
+        )
+        plan = resultat.scalar_one_or_none()
+        if plan is not None and plan.etat == EtatPlan.EN_COURS:
+            plan.etat = etat
+            await session.commit()
+
+
+async def lire_run(plan_id: str) -> ProcessingTask | None:
+    """Le dernier run d'apply d'un plan - c'est lui qui porte la progression."""
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProcessingTask)
+            .where(
+                ProcessingTask.type == "project_sync",
+                ProcessingTask.entity_id == plan_id,
+            )
+            .order_by(ProcessingTask.created_at.desc())
+            .limit(1)
+        )
+        return resultat.scalars().first()
+
+
+async def lire_journal(project_id: str) -> list[SyncOperation]:
+    """Toutes les opérations du projet, tous plans confondus - l'HISTORIQUE,
+    pas seulement le dernier plan (revue jalon, B7)."""
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(SyncPlan.id).where(SyncPlan.project_id == project_id)
+        )
+        plan_ids = [r for r in resultat.scalars().all()]
+        if not plan_ids:
+            return []
+        resultat = await session.execute(
+            select(SyncOperation).where(SyncOperation.plan_id.in_(plan_ids))
+        )
+        operations = list(resultat.scalars().all())
+    operations.sort(
+        key=lambda o: (o.last_attempt_at or o.created_at), reverse=True
+    )
+    return operations
 
 
 async def _marquer_plan(plan_id: str, etat: str) -> None:

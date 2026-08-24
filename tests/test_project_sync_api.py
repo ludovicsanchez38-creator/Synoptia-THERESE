@@ -143,3 +143,47 @@ class TestLeParcoursComplet:
             f"/api/projects/{autre}/sync/racine", json={"chemin": str(racine)}
         )
         assert resp.status_code == 200, resp.text
+
+
+class TestLe202NeMentJamais:
+    @pytest.mark.asyncio
+    async def test_un_plan_caduc_est_refuse_avant_le_202(
+        self, client, racine, qdrant_factice
+    ):
+        """B3 : la validation complète (dernier plan, génération) précède la
+        réponse - l'ancien précontrôle laissait la tâche de fond découvrir le
+        refus APRÈS le 202."""
+        projet = await _projet(client)
+        await client.put(
+            f"/api/projects/{projet}/sync/racine", json={"chemin": str(racine)}
+        )
+        premier = (await client.post(f"/api/projects/{projet}/sync/plan")).json()
+        # un plan plus recent existe : le premier reste "propose" mais caduc de fait
+        await client.post(f"/api/projects/{projet}/sync/plan")
+
+        resp = await client.post(
+            f"/api/projects/{projet}/sync/apply", json={"plan_id": premier["id"]}
+        )
+
+        assert resp.status_code == 409
+
+    @pytest.mark.asyncio
+    async def test_le_verrou_est_tenu_des_le_202(self, client, racine, qdrant_factice):
+        from app.services import project_sync_service as svc
+
+        projet = await _projet(client)
+        await client.put(
+            f"/api/projects/{projet}/sync/racine", json={"chemin": str(racine)}
+        )
+        plan = (await client.post(f"/api/projects/{projet}/sync/plan")).json()
+
+        reservation = await svc.reserver_apply(projet, plan["id"])
+        try:
+            # le verrou est déjà tenu : une seconde demande est refusée
+            resp = await client.post(
+                f"/api/projects/{projet}/sync/apply", json={"plan_id": plan["id"]}
+            )
+            assert resp.status_code == 409
+        finally:
+            svc._verrou(projet).release()
+        del reservation

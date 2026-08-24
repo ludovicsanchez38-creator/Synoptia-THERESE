@@ -111,6 +111,11 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
 
 
 # Extensions de fichiers autorisees pour l'indexation (SEC-002/003)
+# Limite du pipeline d'indexation - au niveau module : le scanner de
+# project.sync applique la MÊME règle (proposer un fichier que l'indexation
+# refuserait ferait échouer chaque apply).
+MAX_INDEXABLE_SIZE = 50 * 1024 * 1024
+
 INDEXABLE_EXTENSIONS = {
     # Documents texte
     # `.markdown` était lisible par le parseur mais refusé à l'entrée : la
@@ -156,7 +161,6 @@ def validate_indexable_file(file_path: str | Path, allowed_base: Path | None = N
     path = validate_file_path(file_path, allowed_base)
 
     # Vérifier la taille (max 50 Mo)
-    MAX_INDEXABLE_SIZE = 50 * 1024 * 1024
     file_size = path.stat().st_size
     if file_size > MAX_INDEXABLE_SIZE:
         logger.warning(
