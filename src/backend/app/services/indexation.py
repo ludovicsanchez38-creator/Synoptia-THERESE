@@ -28,6 +28,23 @@ from starlette.concurrency import run_in_threadpool
 logger = logging.getLogger(__name__)
 
 
+class ContenuModifieDepuisLePlan(Exception):
+    """Le fichier ne correspond plus à l'empreinte attendue : rien n'est écrit.
+
+    Mode sync (0.45) : on n'indexe jamais une version différente de celle
+    montrée dans le plan approuvé - l'opération devient `obsolete` et un
+    nouveau plan la reprendra."""
+
+
+class ConflitDePerimetre(Exception):
+    """Le chemin appartient, de façon voulue, à un autre périmètre.
+
+    Vérifié AVANT toute écriture (correction 1 du challenge V2.1) : un
+    fichier global ou d'un autre projet est un conflit montré, jamais un
+    reclassement silencieux."""
+
+
+
 # BUG-155 (27/07/2026) : extraction et découpage sont des traitements CPU/disque
 # synchrones. Appelés directement depuis une route `async`, ils bloquaient la
 # boucle d'événements : pendant l'indexation d'un gros document, plus aucune
@@ -154,6 +171,7 @@ async def index_payload(
     scope: str = "global",
     scope_id: str | None = None,
     perimetre_provisoire: bool = False,
+    sha256_attendu: str | None = None,
 ) -> FileResponse:
     """Indexe un fichier sans jamais tenir la base ni la boucle d'événements.
 
@@ -193,7 +211,8 @@ async def index_payload(
 
     async with _verrou_de_chemin(str(file_path)):
         return await _indexer_sous_verrou(
-            file_path, est_abandonnee, scope, scope_id, perimetre_provisoire
+            file_path, est_abandonnee, scope, scope_id, perimetre_provisoire,
+            sha256_attendu=sha256_attendu,
         )
 
 
@@ -225,6 +244,7 @@ async def _indexer_sous_verrou(
     scope: str,
     scope_id: str | None,
     perimetre_provisoire: bool,
+    sha256_attendu: str | None = None,
 ) -> FileResponse:
     """Le cœur de l'indexation. Le verrou du chemin est DÉJÀ tenu.
 
@@ -233,6 +253,76 @@ async def _indexer_sous_verrou(
     attendu une indexation précédente du même chemin).
     """
     metadata = get_file_metadata(file_path)
+
+    # Mode sync (0.45) : les ATTENDUS se vérifient sous le verrou, AVANT toute
+    # écriture. La copie stable garantit que les octets extraits sont
+    # exactement les octets vérifiés - rsync ne connaît pas notre verrou.
+    copie_stable: Path | None = None
+    if sha256_attendu is not None:
+        async with get_session_context() as session:
+            result = await session.execute(
+                select(FileMetadata).where(FileMetadata.path == str(file_path))
+            )
+            existant = result.scalar_one_or_none()
+        if (
+            existant is not None
+            and not existant.scope_provisoire
+            and (existant.scope, existant.scope_id) != (scope, scope_id)
+        ):
+            raise ConflitDePerimetre(
+                f"{file_path} appartient au périmètre "
+                f"{existant.scope}/{existant.scope_id}"
+            )
+        copie_stable = await run_in_threadpool(
+            _copier_si_conforme, file_path, sha256_attendu
+        )
+        if copie_stable is None:
+            raise ContenuModifieDepuisLePlan(
+                f"{file_path} ne correspond plus à l'empreinte du plan"
+            )
+
+    try:
+        return await _indexer_apres_verifications(
+            file_path, est_abandonnee, scope, scope_id, perimetre_provisoire,
+            metadata, source_extraction=copie_stable or file_path,
+        )
+    finally:
+        if copie_stable is not None:
+            copie_stable.unlink(missing_ok=True)
+
+
+def _copier_si_conforme(source: Path, sha256_attendu: str) -> Path | None:
+    """Copie le fichier en hashant AU FIL de la lecture : la copie rendue
+    porte exactement les octets vérifiés. None si l'empreinte diverge."""
+    import hashlib
+    import tempfile
+
+    h = hashlib.sha256()
+    descripteur, chemin_copie = tempfile.mkstemp(prefix="therese-sync-")
+    copie = Path(chemin_copie)
+    try:
+        with source.open("rb") as src, open(descripteur, "wb") as dst:
+            for bloc in iter(lambda: src.read(1 << 20), b""):
+                h.update(bloc)
+                dst.write(bloc)
+    except OSError:
+        copie.unlink(missing_ok=True)
+        raise
+    if h.hexdigest() != sha256_attendu:
+        copie.unlink(missing_ok=True)
+        return None
+    return copie
+
+
+async def _indexer_apres_verifications(
+    file_path: Path,
+    est_abandonnee: Callable[[], Awaitable[bool]] | None,
+    scope: str,
+    scope_id: str | None,
+    perimetre_provisoire: bool,
+    metadata: dict,
+    source_extraction: Path,
+) -> FileResponse:
 
     # 1. Transaction COURTE : enregistrer le fichier, puis rendre la main.
     async with get_session_context() as session:
@@ -307,7 +397,7 @@ async def _indexer_sous_verrou(
     # échec laissait alors un fichier sans aucun vecteur, présenté comme
     # indexé. La suppression n'a lieu qu'une fois le nouveau contenu prêt
     # et l'écriture décidée : jusque-là, l'index existant reste valide.
-    text_content = await extract_text_async(file_path)
+    text_content = await extract_text_async(source_extraction)
     chunk_count = chunk_count_existant
     indexed_at = indexed_at_existant
     ecriture_faite = False

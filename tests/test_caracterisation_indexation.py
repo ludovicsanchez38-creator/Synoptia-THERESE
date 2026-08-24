@@ -179,3 +179,85 @@ class TestLeTromboneEstGele:
         source = inspect.getsource(module)
         assert "chunk_size=settings.chunk_size" in source
         assert "overlap=settings.chunk_overlap" in source
+
+
+class TestLeModeSyncVerifieAvantDEcrire:
+    """Correction 1 du challenge V2.1 : vérifier le scope au RETOUR est trop
+    tard - le service accepte les attendus (sha256, périmètre), les vérifie
+    sous verrou AVANT toute écriture, et extrait depuis une copie stable :
+    les octets indexés sont exactement les octets vérifiés."""
+
+    @pytest.mark.asyncio
+    async def test_un_contenu_modifie_depuis_le_plan_ne_s_indexe_pas(
+        self, client, fichier_texte, monkeypatch
+    ):
+        from app.services import indexation
+
+        qdrant = AsyncMock()
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte")
+
+        with pytest.raises(indexation.ContenuModifieDepuisLePlan):
+            await indexation.index_payload(
+                str(fichier_texte), sha256_attendu="0" * 64
+            )
+
+        qdrant.async_add_memories.assert_not_awaited()
+        qdrant.async_delete_by_entity.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_un_perimetre_possede_ailleurs_est_un_conflit_avant_ecriture(
+        self, client, fichier_texte, monkeypatch
+    ):
+        import hashlib
+
+        from app.services import indexation
+
+        qdrant = AsyncMock()
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte")
+
+        # le fichier appartient déjà, de façon VOULUE, au périmètre global
+        await indexation.index_payload(str(fichier_texte), scope="global")
+        qdrant.reset_mock()
+
+        empreinte = hashlib.sha256(fichier_texte.read_bytes()).hexdigest()
+        with pytest.raises(indexation.ConflitDePerimetre):
+            await indexation.index_payload(
+                str(fichier_texte),
+                scope="project", scope_id="p-1",
+                sha256_attendu=empreinte,
+            )
+
+        qdrant.async_add_memories.assert_not_awaited()
+        qdrant.async_delete_by_entity.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_le_mode_sync_extrait_depuis_la_copie_stable(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Les octets extraits sont ceux de la copie vérifiée, pas du fichier
+        source qui peut encore bouger (rsync ne connaît pas notre verrou)."""
+        import hashlib
+
+        from app.services import indexation
+
+        sources: list[str] = []
+
+        def extraction_espionne(chemin):
+            sources.append(str(chemin))
+            return "texte"
+
+        monkeypatch.setattr(indexation, "extract_text", extraction_espionne)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: AsyncMock())
+
+        empreinte = hashlib.sha256(fichier_texte.read_bytes()).hexdigest()
+        reponse = await indexation.index_payload(
+            str(fichier_texte), scope="project", scope_id="p-1",
+            sha256_attendu=empreinte,
+        )
+
+        assert reponse.chunk_count >= 1
+        assert sources and sources[0] != str(fichier_texte), (
+            "l'extraction doit lire la copie stable, pas la source vivante"
+        )
