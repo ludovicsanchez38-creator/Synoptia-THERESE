@@ -38,6 +38,13 @@ from app.services.providers import (
     ToolTurn,
 )
 
+# Fournisseurs ajoutés le 24/08/2026 : tous compatibles OpenAI, ils héritent
+# d'OpenAIProvider et donc de sa boucle d'outils.
+from app.services.providers.glm import GLMProvider
+from app.services.providers.kimi import KimiProvider
+from app.services.providers.minimax import MiniMaxProvider
+from app.services.providers.qwen import QwenProvider
+
 logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
@@ -448,6 +455,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
             "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", 200000),
             "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", 128000),
+            "glm": (LLMProvider.GLM, "glm-5.3", 200000),
+            "kimi": (LLMProvider.KIMI, "kimi-k3", 1000000),
+            "qwen": (LLMProvider.QWEN, "qwen3.8-max", 1000000),
+            "minimax": (LLMProvider.MINIMAX, "MiniMax-M3", 200000),
             "infomaniak": (LLMProvider.INFOMANIAK, "mix", 128000),
             "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
         }
@@ -541,6 +552,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 LLMProvider.OPENROUTER: OpenRouterProvider,
                 LLMProvider.PERPLEXITY: PerplexityProvider,
                 LLMProvider.DEEPSEEK: DeepSeekProvider,
+                LLMProvider.GLM: GLMProvider,
+                LLMProvider.KIMI: KimiProvider,
+                LLMProvider.QWEN: QwenProvider,
+                LLMProvider.MINIMAX: MiniMaxProvider,
                 LLMProvider.INFOMANIAK: InfomaniakProvider,
                 LLMProvider.OLLAMA: OllamaProvider,
             }
@@ -957,6 +972,10 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
         "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),
         "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", "PERPLEXITY_API_KEY", 200000),
         "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", "DEEPSEEK_API_KEY", 128000),
+        "glm": (LLMProvider.GLM, "glm-5.3", "GLM_API_KEY", 200000),
+        "kimi": (LLMProvider.KIMI, "kimi-k3", "KIMI_API_KEY", 1000000),
+        "qwen": (LLMProvider.QWEN, "qwen3.8-max", "QWEN_API_KEY", 1000000),
+        "minimax": (LLMProvider.MINIMAX, "MiniMax-M3", "MINIMAX_API_KEY", 200000),
         "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
     }
 

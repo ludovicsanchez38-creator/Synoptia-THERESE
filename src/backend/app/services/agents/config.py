@@ -55,6 +55,17 @@ AVAILABLE_MODELS = [
     # DeepSeek
     {"id": "deepseek-v4-pro", "name": "DeepSeek V4 Pro", "provider": "deepseek"},
     {"id": "deepseek-v4-flash", "name": "DeepSeek V4 Flash", "provider": "deepseek"},
+    # Z.ai (GLM)
+    {"id": "glm-5.3", "name": "GLM-5.3", "provider": "glm"},
+    {"id": "glm-5.2", "name": "GLM-5.2", "provider": "glm"},
+    # Moonshot (Kimi) - un million de jetons de contexte sur K3
+    {"id": "kimi-k3", "name": "Kimi K3", "provider": "kimi"},
+    {"id": "kimi-k2.7-code", "name": "Kimi K2.7 Code", "provider": "kimi"},
+    # Alibaba (Qwen) - l'adresse contient l'espace de travail du compte
+    {"id": "qwen3.8-max", "name": "Qwen3.8-Max", "provider": "qwen"},
+    {"id": "qwen3-coder-plus", "name": "Qwen3-Coder-Plus", "provider": "qwen"},
+    # MiniMax - la casse des identifiants compte
+    {"id": "MiniMax-M3", "name": "MiniMax M3", "provider": "minimax"},
     # Local (Ollama) - tous porteurs de l'étiquette « tools » d'Ollama, avec la
     # taille du téléchargement, parce que nos testeurs ont des machines modestes.
     {"id": "qwen3.5:9b", "name": "Qwen3.5 9B (local, 6,6 Go)", "provider": "ollama"},
