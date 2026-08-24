@@ -492,6 +492,28 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         </div>
       )}
 
+      {/* BUG-166. Le bouton de revérification ci-dessous n'apparaissait qu'en
+          cas d'ERREUR. Or un Ollama simplement pas encore lancé ne produit
+          aucune erreur : il répond proprement « indisponible ». Le testeur
+          voyait donc Ollama grisé, sans aucun moyen de revérifier après l'avoir
+          démarré — il fallait relancer tout l'assistant. On propose la
+          revérification dès qu'Ollama est absent, erreur ou pas. */}
+      {!loadError && ollamaStatus && !ollamaStatus.available && (
+        <div className="mb-6 rounded-lg border border-border bg-surface px-3 py-3">
+          <p className="text-sm text-text-muted">
+            Ollama n'a pas répondu. S'il n'était pas encore lancé, démarre-le
+            puis revérifie : inutile de recommencer l'installation.
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadState()}
+            className="mt-3 text-xs font-semibold text-text underline underline-offset-2"
+          >
+            Revérifier la disponibilité
+          </button>
+        </div>
+      )}
+
       {/* Error */}
       {loadError && (
         <div className="mb-6 rounded-lg border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-3" role="alert">
