@@ -176,7 +176,8 @@ export function ProjectSyncSection({ projectId }: Props) {
             <button
               type="button"
               onClick={() => void delier()}
-              className="text-text-muted hover:text-error"
+              disabled={occupe !== null}
+              className="text-text-muted hover:text-error disabled:opacity-40 disabled:pointer-events-none"
               aria-label="Délier le dossier"
               title="Délier (ne retire rien de l'index)"
             >

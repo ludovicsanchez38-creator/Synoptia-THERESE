@@ -66,6 +66,10 @@ async def definir_racine(project_id: str, request: RacineRequest) -> dict[str, A
         root = await svc.definir_racine(project_id, request.chemin)
     except svc.ErreurRacine as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except svc.OperationRefusee as e:
+        # Passe 2 de revue : sans cette conversion, changer la racine pendant
+        # un apply repondait 500 - c'est un refus normal, pas une panne.
+        raise HTTPException(status_code=409, detail=str(e))
     return {
         "racine": root.racine,
         "generation": root.generation,
@@ -75,7 +79,10 @@ async def definir_racine(project_id: str, request: RacineRequest) -> dict[str, A
 @router.delete("/{project_id}/sync/racine")
 async def retirer_racine(project_id: str) -> dict[str, Any]:
     """Délie la racine. Ne retire RIEN de l'index : ça, c'est un plan."""
-    await svc.retirer_racine(project_id)
+    try:
+        await svc.retirer_racine(project_id)
+    except svc.OperationRefusee as e:
+        raise HTTPException(status_code=409, detail=str(e))
     return {"deliee": True}
 
 

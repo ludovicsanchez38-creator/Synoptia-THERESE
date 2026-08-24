@@ -83,12 +83,23 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
             + ")"
         )
         # 0.45 : au vrai démarrage, create_all a déjà créé les tables sync -
-        # la preuve de schéma les exige avant tout ré-estampillage (B4).
-        for table in (
-            "project_sync_roots", "project_sync_entries",
-            "sync_plans", "sync_operations",
-        ):
-            conn.execute(f"CREATE TABLE {table} (id VARCHAR PRIMARY KEY)")
+        # la preuve exige leurs COLONNES réelles (passe 2 : des tables au bon
+        # nom mais au mauvais schéma passaient la preuve).
+        for table, colonnes in {
+            "project_sync_roots":
+                "project_id TEXT, racine TEXT, volume_id INTEGER, "
+                "generation INTEGER, detachee INTEGER",
+            "project_sync_entries":
+                "project_id TEXT, chemin TEXT, file_id TEXT, taille INTEGER, "
+                "mtime_ns INTEGER, sha256 TEXT, generation_racine INTEGER",
+            "sync_plans":
+                "project_id TEXT, generation_racine INTEGER, etat TEXT, "
+                "nb_indexer INTEGER, nb_retirer INTEGER",
+            "sync_operations":
+                "plan_id TEXT, type TEXT, chemin TEXT, etat TEXT, "
+                "file_id_prevu TEXT, attempt_count INTEGER",
+        }.items():
+            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY, {colonnes})")
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
@@ -259,4 +270,25 @@ def test_une_base_044_n_est_pas_reestampillee_sans_les_tables_sync(tmp_path):
 
     assert _read_stamp(db) == "d9e0f1a2b3c4", (
         "ré-estampiller sans les tables sync ferait sauter leur migration"
+    )
+
+def test_des_tables_sync_malformees_ne_passent_pas_la_preuve(tmp_path):
+    """Passe 2 de revue : quatre tables au bon NOM mais réduites à `id`
+    étaient estampillées head - la preuve vérifie les colonnes réelles."""
+    db = tmp_path / "malformee.db"
+    _make_patched_tracked_db(db)
+    with sqlite3.connect(str(db)) as conn:
+        for table in (
+            "project_sync_roots", "project_sync_entries",
+            "sync_plans", "sync_operations",
+        ):
+            conn.execute(f"DROP TABLE {table}")
+            conn.execute(f"CREATE TABLE {table} (id VARCHAR PRIMARY KEY)")
+        conn.execute("UPDATE alembic_version SET version_num = 'd9e0f1a2b3c4'")
+        conn.commit()
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "d9e0f1a2b3c4", (
+        "un schéma sync inutilisable ne doit jamais être estampillé head"
     )

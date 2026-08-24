@@ -379,8 +379,22 @@ async def lifespan(app: FastAPI):
         for tache in vivantes:
             tache.cancel()
         if vivantes:
-            await asyncio.wait(vivantes, timeout=5)
-            logger.info(f"Applies project.sync arrêtés : {len(vivantes)}")
+            # Une tâche annulée se termine à son prochain point d'attente ;
+            # seul un hachage en cours dans un thread peut la retenir. On
+            # attend jusqu'à 15 s, puis on le DIT : les opérations restées
+            # ouvertes sont couvertes par l'at-least-once (le plan reste
+            # en_cours, la reprise du prochain démarrage termine) - mais un
+            # pending ignoré en silence n'est pas un arrêt coopératif
+            # (passe 2 de revue).
+            _, pending = await asyncio.wait(vivantes, timeout=15)
+            if pending:
+                logger.error(
+                    "%d apply(s) project.sync non terminés au shutdown - "
+                    "la reprise du prochain démarrage terminera leur plan",
+                    len(pending),
+                )
+            else:
+                logger.info(f"Applies project.sync arrêtés : {len(vivantes)}")
     except Exception as e:
         logger.warning(f"Arrêt des applies project.sync : {e}")
 

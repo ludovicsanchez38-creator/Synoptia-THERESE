@@ -94,3 +94,73 @@ describe('ProjectSyncSection', () => {
     });
   });
 });
+
+describe('ProjectSyncSection - le suivi d’apply ne ment jamais', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('le sondage s’arrête après cinq erreurs consécutives, avec un message', async () => {
+    vi.useFakeTimers();
+    apiMocks.etatSync.mockResolvedValueOnce({
+      racine: '/r', generation: 1, dernier_plan: null, run: null,
+    });
+    apiMocks.preparerPlanSync.mockResolvedValue(PLAN);
+    apiMocks.appliquerPlanSync.mockResolvedValue(undefined);
+
+    render(<ProjectSyncSection projectId="p-1" />);
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: /Préparer/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Préparer/ }));
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: /Appliquer/ })).toBeInTheDocument();
+    });
+
+    apiMocks.etatSync.mockRejectedValue(new Error('backend muet'));
+    fireEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+    for (let i = 0; i < 6; i++) {
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Impossible de suivre la synchronisation',
+    );
+    vi.useRealTimers();
+  });
+
+  it('affiche le journal une fois la synchronisation terminée', async () => {
+    vi.useFakeTimers();
+    apiMocks.etatSync.mockResolvedValue({
+      racine: '/r', generation: 1, dernier_plan: null, run: null,
+    });
+    apiMocks.preparerPlanSync.mockResolvedValue(PLAN);
+    apiMocks.appliquerPlanSync.mockResolvedValue(undefined);
+    apiMocks.journalSync.mockResolvedValue({
+      operations: [
+        { id: 'op-1', type: 'indexer', chemin: '/r/a.txt', etat: 'fait',
+          erreur: null, attempt_count: 1, last_attempt_at: null },
+      ],
+    });
+
+    render(<ProjectSyncSection projectId="p-1" />);
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: /Préparer/ })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Préparer/ }));
+    await vi.waitFor(() => {
+      expect(screen.getByRole('button', { name: /Appliquer/ })).toBeInTheDocument();
+    });
+
+    apiMocks.etatSync.mockResolvedValue({
+      racine: '/r', generation: 1,
+      dernier_plan: { ...PLAN, etat: 'applique' }, run: { etat: 'done', progression: 1 },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Appliquer/ }));
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.waitFor(() => {
+      expect(screen.getByTestId('sync-journal')).toHaveTextContent('a.txt');
+    });
+    vi.useRealTimers();
+  });
+});

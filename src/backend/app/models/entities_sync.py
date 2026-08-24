@@ -17,7 +17,7 @@ Autorité formalisée (challenge V2, finding 6) :
 from datetime import UTC, datetime
 
 from app.models.entities import generate_uuid
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint, text
 from sqlmodel import Field, SQLModel
 
 
@@ -47,6 +47,18 @@ class ProjectSyncRoot(SQLModel, table=True):
     """La racine locale d'un projet. Une seule, exclusive, jamais imbriquée."""
 
     __tablename__ = "project_sync_roots"
+    __table_args__ = (
+        # Passe 2 de revue : le verrou global du service ne protège qu'UN
+        # processus. L'invariant durable est SQL : une racine active (non
+        # détachée) n'appartient qu'à un seul projet - index unique PARTIEL,
+        # compatible avec les tombeaux qui gardent leur dernier chemin.
+        Index(
+            "uq_sync_root_racine_active",
+            "racine",
+            unique=True,
+            sqlite_where=text("detachee = 0"),
+        ),
+    )
 
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     project_id: str = Field(unique=True, index=True)

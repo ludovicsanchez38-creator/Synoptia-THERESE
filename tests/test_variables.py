@@ -250,13 +250,23 @@ class TestMigration:
         conn.execute("INSERT INTO alembic_version VALUES ('ancienne_tete')")
         if with_variables:
             conn.execute("CREATE TABLE variables (id TEXT PRIMARY KEY)")
-        # 0.45 : la preuve de schéma exige aussi les tables project.sync
-        # (créées par create_all au vrai démarrage avant l'estampillage).
-        for table in (
-            "project_sync_roots", "project_sync_entries",
-            "sync_plans", "sync_operations",
-        ):
-            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY)")
+        # 0.45 : la preuve de schéma exige les tables project.sync avec
+        # leurs COLONNES réelles (passe 2 de revue).
+        for table, colonnes in {
+            "project_sync_roots":
+                "project_id TEXT, racine TEXT, volume_id INTEGER, "
+                "generation INTEGER, detachee INTEGER",
+            "project_sync_entries":
+                "project_id TEXT, chemin TEXT, file_id TEXT, taille INTEGER, "
+                "mtime_ns INTEGER, sha256 TEXT, generation_racine INTEGER",
+            "sync_plans":
+                "project_id TEXT, generation_racine INTEGER, etat TEXT, "
+                "nb_indexer INTEGER, nb_retirer INTEGER",
+            "sync_operations":
+                "plan_id TEXT, type TEXT, chemin TEXT, etat TEXT, "
+                "file_id_prevu TEXT, attempt_count INTEGER",
+        }.items():
+            conn.execute(f"CREATE TABLE {table} (id TEXT PRIMARY KEY, {colonnes})")
 
         conn.commit()
         conn.close()

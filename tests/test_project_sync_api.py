@@ -187,3 +187,26 @@ class TestLe202NeMentJamais:
         finally:
             svc._verrou(projet).release()
         del reservation
+
+    @pytest.mark.asyncio
+    async def test_changer_la_racine_pendant_un_apply_repond_409(
+        self, client, racine, qdrant_factice, tmp_path
+    ):
+        """Passe 2 de revue : le service refusait bien, mais la route
+        traduisait le refus en 500 - c'est un refus normal, pas une panne."""
+        from app.services import project_sync_service as svc
+
+        projet = await _projet(client)
+        await client.put(
+            f"/api/projects/{projet}/sync/racine", json={"chemin": str(racine)}
+        )
+        autre = tmp_path / "pendant-apply"
+        autre.mkdir()
+
+        async with svc._verrou_du_projet(projet):
+            resp = await client.put(
+                f"/api/projects/{projet}/sync/racine", json={"chemin": str(autre)}
+            )
+            assert resp.status_code == 409, resp.text
+            resp = await client.delete(f"/api/projects/{projet}/sync/racine")
+            assert resp.status_code == 409, resp.text

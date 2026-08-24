@@ -36,6 +36,11 @@ def upgrade() -> None:
             "ix_project_sync_roots_project_id", "project_sync_roots",
             ["project_id"], unique=True,
         )
+        op.create_index(
+            "uq_sync_root_racine_active", "project_sync_roots",
+            ["racine"], unique=True,
+            sqlite_where=sa.text("detachee = 0"),
+        )
     if _absente("project_sync_entries"):
         op.create_table(
             "project_sync_entries",

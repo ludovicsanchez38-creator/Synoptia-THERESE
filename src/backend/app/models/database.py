@@ -402,16 +402,37 @@ def ensure_alembic_stamp(db_path) -> None:
                     # 0.45 : la preuve couvre les tables project.sync - sans
                     # elles, ré-estampiller ferait sauter la migration
                     # e5f6a7b8c9d0 sur une vraie base 0.44 (revue jalon, B4).
-                    tables_presentes = {
-                        row[0]
-                        for row in conn.execute(
-                            "SELECT name FROM sqlite_master WHERE type='table'"
-                        )
+                    # Passe 2 de revue : quatre tables au bon NOM mais au
+                    # mauvais schéma passaient la preuve - vérifier les
+                    # colonnes réellement apportées par la révision.
+                    def _colonnes(table: str) -> set[str]:
+                        return {
+                            row[1]
+                            for row in conn.execute(f"PRAGMA table_info({table})")
+                        }
+
+                    COLONNES_SYNC_ATTENDUES = {
+                        "project_sync_roots": {
+                            "project_id", "racine", "volume_id",
+                            "generation", "detachee",
+                        },
+                        "project_sync_entries": {
+                            "project_id", "chemin", "file_id", "taille",
+                            "mtime_ns", "sha256", "generation_racine",
+                        },
+                        "sync_plans": {
+                            "project_id", "generation_racine", "etat",
+                            "nb_indexer", "nb_retirer",
+                        },
+                        "sync_operations": {
+                            "plan_id", "type", "chemin", "etat",
+                            "file_id_prevu", "attempt_count",
+                        },
                     }
-                    has_sync_tables = {
-                        "project_sync_roots", "project_sync_entries",
-                        "sync_plans", "sync_operations",
-                    } <= tables_presentes
+                    has_sync_tables = all(
+                        attendues <= _colonnes(table)
+                        for table, attendues in COLONNES_SYNC_ATTENDUES.items()
+                    )
                     if (
                         "validite_jours" in inv_cols
                         and has_variables
