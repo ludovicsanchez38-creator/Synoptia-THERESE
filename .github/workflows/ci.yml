@@ -186,7 +186,11 @@ jobs:
       - name: mypy - BLOQUANT au-delà de la baseline
         shell: bash
         env:
-          MYPY_BASELINE: "999"
+          # Recalée 999 -> 1004 le 24/08/2026 : le cliquet était rouge depuis
+          # plusieurs chantiers sans bloquer personne (aucun check requis sur
+          # les PR), la dérive de 5 erreurs est passée inaperçue. Repartir d'un
+          # compte VRAI pour que le cliquet re-signale la moindre hausse.
+          MYPY_BASELINE: "1004"
         run: |
           mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
           if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then
