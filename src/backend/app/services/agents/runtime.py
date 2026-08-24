@@ -35,13 +35,22 @@ def _get_llm_for_model(model_id: str):
     """
     from app.services.llm import get_llm_service, get_llm_service_for_provider
 
-    # Mapping model ID → provider
+    # Mapping model ID → provider. Comparaison en minuscules : MiniMax-M3
+    # porte sa casse officielle, et un préfixe sensible à la casse l'aurait
+    # fait retomber en silence sur le service principal (dette 0.43.4).
     provider_map = {
         "claude-": "anthropic",
         "gpt-": "openai",
         "gemini-": "gemini",
         "grok-": "grok",
         "mistral-": "mistral",
+        "glm-": "glm",
+        "kimi-": "kimi",
+        # Sans tiret : les identifiants cloud sont qwen3.8-max, qwen3-coder-plus.
+        # Les modèles LOCAUX qwen3:32b contiennent « : » et sont routés vers
+        # Ollama AVANT d'arriver ici - l'ordre des tests fait partie du contrat.
+        "qwen": "qwen",
+        "minimax-": "minimax",
     }
 
     # Modèles OpenRouter (contiennent "/" comme nvidia/nemotron-3-super-120b-a12b)
@@ -57,7 +66,7 @@ def _get_llm_for_model(model_id: str):
             return svc
 
     for prefix, provider in provider_map.items():
-        if model_id.startswith(prefix):
+        if model_id.lower().startswith(prefix):
             svc = get_llm_service_for_provider(provider, model_override=model_id)
             if svc:
                 return svc

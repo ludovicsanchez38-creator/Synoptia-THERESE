@@ -1138,6 +1138,7 @@ async def get_capacites_manifeste() -> dict:
 @router.get("/llm", response_model=LLMConfigResponse)
 async def get_llm_config(session: AsyncSession = Depends(get_session)):
     """Get current LLM configuration."""
+    from app.services.llm import LLMProvider as LLMProvider_module
     from app.services.llm import get_llm_service
 
     service = get_llm_service()
@@ -1161,7 +1162,31 @@ async def get_llm_config(session: AsyncSession = Depends(get_session)):
         available_models=available_models,
         available=config_available,
         effort=config.effort,
+        base_url=config.base_url if config.provider != LLMProvider_module.OLLAMA else None,
     )
+
+
+@router.get("/llm/models/{provider_value}")
+async def get_available_models(provider_value: str) -> dict:
+    """Catalogue des modèles d'un fournisseur - LA source, servie au frontend.
+
+    Dette 0.43.4 : quatre copies du catalogue vivaient dans le frontend et
+    divergeaient déjà (l'onboarding proposait encore gpt-5.3-codex, retiré
+    partout ailleurs). Le frontend interroge cette route ; les noms lisibles
+    et les badges restent une décoration locale, la LISTE vient d'ici.
+    """
+    from app.services.llm import LLMProvider
+
+    try:
+        LLMProvider(provider_value)
+    except ValueError:
+        raise HTTPException(
+            status_code=400, detail=f"Fournisseur inconnu : {provider_value}"
+        )
+    return {
+        "provider": provider_value,
+        "models": await _available_models_for(provider_value),
+    }
 
 
 @router.post("/llm", response_model=LLMConfigResponse)
@@ -1231,6 +1256,33 @@ async def set_llm_config(
         pref = result.scalar_one_or_none()
         if pref and not api_key:
             api_key = _decrypt_pref_value(pref.value)
+
+    # Adresse personnalisée (dette 0.43.4). Portée par fournisseur - l'adresse
+    # d'espace de travail Qwen n'a aucun sens pour OpenAI. None = conserver
+    # l'existante, chaîne vide = effacer.
+    if provider != LLMProvider.OLLAMA:
+        cle_base_url = f"{provider.value}_base_url"
+        result = await session.execute(
+            select(Preference).where(Preference.key == cle_base_url)
+        )
+        pref_base = result.scalar_one_or_none()
+        if request.base_url is None:
+            base_url = pref_base.value or None if pref_base else None
+        else:
+            demandee = request.base_url.strip()
+            if demandee and not demandee.startswith(("http://", "https://")):
+                raise HTTPException(
+                    status_code=400,
+                    detail="L'adresse doit commencer par http:// ou https://",
+                )
+            base_url = demandee or None
+            if pref_base:
+                pref_base.value = demandee
+                pref_base.updated_at = datetime.now(UTC)
+            else:
+                session.add(Preference(
+                    key=cle_base_url, value=demandee, category="llm",
+                ))
 
     # Effort de raisonnement (10/07/2026) : None = conserver le reglage
     # existant ; "auto" = defaut serveur (rien d'envoye, preference posee).
@@ -1311,6 +1363,7 @@ async def set_llm_config(
         available_models=post_available_models,
         available=config_available,
         effort=effective_effort,
+        base_url=base_url if provider != LLMProvider.OLLAMA else None,
     )
 
 
