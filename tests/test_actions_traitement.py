@@ -172,7 +172,11 @@ class TestLeRunEstUnTraitement:
         assert await _attendre(
             lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.ERROR
         )
-        assert "panne" in (ActionRunner.get_task(task.task_id).error or "")
+        # Revue 0.48 (F4) : l'erreur consignée est LISIBLE, jamais le brut -
+        # « contexte local en panne » vit dans les logs, pas à l'écran.
+        erreur = ActionRunner.get_task(task.task_id).error or ""
+        assert erreur, "une erreur lisible doit être consignée"
+        assert "contexte local en panne" not in erreur
 
         for _ in range(50):
             traitement = await _traitement_action(task.task_id)

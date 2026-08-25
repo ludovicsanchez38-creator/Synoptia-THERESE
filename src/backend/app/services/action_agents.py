@@ -534,7 +534,9 @@ class ActionRunner:
             )
             if task.status not in _STATUTS_TERMINAUX:
                 task.status = TaskStatus.ERROR
-                task.error = str(e)
+                # Revue 0.48 (F4) : task.error part à l'écran (panneau
+                # Actions, suivi durable) - le brut reste aux logs.
+                task.error = message_pour_ecran(e, ou="pendant l'action")
                 task.completed_at = datetime.now(UTC).isoformat()
                 if on_progress:
                     on_progress(task)
@@ -712,7 +714,9 @@ class ActionRunner:
                     exc_info=True,
                 )
                 step_result.status = StepStatus.ERROR
-                step_result.error = str(e)
+                step_result.error = message_pour_ecran(
+                    e, ou=f"à l'étape « {step_def.label} »"
+                )
                 step_result.completed_at = datetime.now(UTC).isoformat()
                 # On continue les etapes suivantes malgre l'erreur
 

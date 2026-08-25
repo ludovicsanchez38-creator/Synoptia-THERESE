@@ -84,6 +84,17 @@ ERROR_MESSAGES = {
 }
 
 
+class ErreurPourEcran(RuntimeError):
+    """Un RuntimeError dont le message est ÉCRIT POUR L'UTILISATEUR.
+
+    Revue 0.48 (F5) : la frontière transforme toute exception non marquée
+    en message générique - les messages métier intentionnels du Board
+    (« Mode souverain indisponible... ») portent cette marque pour
+    traverser tels quels. Hérite de RuntimeError : les appelants et tests
+    existants qui attrapent RuntimeError restent valides.
+    """
+
+
 def message_pour_ecran(exc: BaseException, ou: str | None = None) -> str:
     """La frontière d'erreurs utilisateur (lot C, 0.48).
 
@@ -97,6 +108,8 @@ def message_pour_ecran(exc: BaseException, ou: str | None = None) -> str:
     """
     if isinstance(exc, TheresError):
         return exc.user_message
+    if isinstance(exc, ErreurPourEcran):
+        return str(exc)
     generique = ERROR_MESSAGES[ErrorCode.UNKNOWN_ERROR]
     if ou:
         return f"Une erreur s'est produite {ou}. Réessaie ; si le problème persiste, redémarre l'application."

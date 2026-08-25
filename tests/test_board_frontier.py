@@ -213,3 +213,170 @@ class TestLeBoardPrechargeEnFrontier:
             assert kwargs.get("max_tokens_override") == max_tokens_recommande(attendu)
         # claude-opus-5 porte un max_tokens recommandé (64k, doc officielle)
         assert par_provider["anthropic"]["max_tokens_override"] == 64000
+
+
+class TestLeTrimDuMessageUnique:
+    """Revue 0.48 F2 : le Board place question + contexte + résultats web
+    dans UN message ; trim_to_fit ne retirait du contenu que s'il restait
+    plus d'un message - un message unique au-delà du budget partait intact
+    et la requête échouait hors limite au lieu d'être tronquée."""
+
+    def test_un_message_unique_est_tronque_au_budget(self):
+        from app.services.context import ContextWindow
+        from app.services.providers.base import Message
+
+        contenu = "x" * 40000  # ~10 000 tokens estimés
+        context = ContextWindow(
+            messages=[Message(role="user", content=contenu)],
+            system_prompt="s",
+            max_tokens=1000,
+        ).trim_to_fit()
+
+        assert len(context.messages) == 1
+        assert context.total_tokens() <= 1000
+        # La coupe est annoncée, pas silencieuse
+        assert "tronqué" in context.messages[0].content
+
+    def test_un_message_sous_le_budget_reste_intact(self):
+        from app.services.context import ContextWindow
+        from app.services.providers.base import Message
+
+        context = ContextWindow(
+            messages=[Message(role="user", content="courte question")],
+            system_prompt="s",
+            max_tokens=1000,
+        ).trim_to_fit()
+
+        assert context.messages[0].content == "courte question"
+
+
+class TestLeBoardNeBasculePasEnSilence:
+    """Revue 0.48 F3 : le circuit breaker basculait silencieusement le
+    fournisseur d'un conseiller - identité SSE, usage, effort et sémaphore
+    anti-429 devenaient faux. Contrat du design : repli EXPLICITE sur le
+    service principal (visible dans actual_provider), jamais de bascule
+    cachée au sein du flux d'un conseiller."""
+
+    def test_le_service_sans_bascule_garde_son_fournisseur(self, monkeypatch):
+        from app.services.circuit_breaker import get_circuit_breaker
+        from app.services.llm import LLMService
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+        cb = get_circuit_breaker()
+        cb.reset()
+        for _ in range(10):
+            cb.record_failure("anthropic", "boom")
+        assert not cb.is_available("anthropic")
+
+        service = LLMService(
+            LLMConfig(
+                provider=LLMProvider.ANTHROPIC,
+                model="claude-opus-5",
+                api_key="sk-ant-test",
+            ),
+            bascule_circuit=False,
+        )
+        config = service._resolve_with_circuit_breaker()
+        assert config.provider is LLMProvider.ANTHROPIC
+        cb.reset()
+
+    def test_le_helper_transmet_le_refus_de_bascule(self, client, monkeypatch):
+        from app.services.llm import get_llm_service_for_provider
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        service = get_llm_service_for_provider(
+            "anthropic", bascule_circuit=False
+        )
+        assert service is not None
+        assert service.bascule_circuit is False
+
+    @pytest.mark.asyncio
+    async def test_circuit_ouvert_au_prechargement_repli_explicite(self, monkeypatch):
+        """Circuit du fournisseur préféré ouvert -> le conseiller part sur le
+        service principal, et actual_provider dit la vérité."""
+        import contextlib
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.circuit_breaker import get_circuit_breaker
+        from app.services.llm import LLMProvider
+
+        cb = get_circuit_breaker()
+        cb.reset()
+        for _ in range(10):
+            cb.record_failure("anthropic", "boom")
+
+        synthesis = json.dumps({
+            "consensus_points": ["OK"], "divergence_points": [],
+            "recommendation": "Y aller.", "confidence": "high",
+            "next_steps": ["Cadrer"],
+        })
+
+        class FakeLLM:
+            def __init__(self, responses, provider=LLMProvider.OPENAI):
+                self.responses = responses
+                self.calls = 0
+                self.config = SimpleNamespace(provider=provider, model="modele-test")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None):
+                response = self.responses[min(self.calls, len(self.responses) - 1)]
+                self.calls += 1
+                yield response
+
+        class FakeSession:
+            def add(self, _value):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _value):
+                pass
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        conseiller_anthropic = FakeLLM(["ne doit pas être appelé"])
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        principal = FakeLLM(["Avis du principal.", synthesis])
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: principal)
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider",
+            lambda *a, **k: conseiller_anthropic,
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.ANALYST],  # préféré : anthropic (circuit ouvert)
+        )
+        chunks = [c async for c in service.deliberate(request)]
+
+        # Le conseiller dédié n'a JAMAIS été appelé (circuit ouvert au
+        # préchargement) ; les chunks annoncent le fournisseur RÉEL (openai,
+        # celui du service principal), pas anthropic.
+        assert conseiller_anthropic.calls == 0
+        providers_annonces = {
+            c.provider for c in chunks if c.type == "advisor_start"
+        }
+        assert providers_annonces == {"openai"}
+        cb.reset()

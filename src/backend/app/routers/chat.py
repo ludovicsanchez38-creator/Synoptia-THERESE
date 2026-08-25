@@ -34,6 +34,7 @@ from app.services.contexte_execution import ContexteExecution
 from app.services.entity_extractor import (
     get_entity_extractor,
 )
+from app.services.error_handler import message_pour_ecran
 from app.services.file_parser import extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
@@ -2353,10 +2354,13 @@ async def _do_stream_response(
         await _persister_message_partiel(conversation_id, full_content, llm_service)
         raise
     except Exception as e:
-        logger.error(f"LLM streaming error: {e}")
+        logger.error(f"LLM streaming error: {e}", exc_info=True)
+        # Revue 0.48 (F4) : jamais str(e) brut dans un chunk SSE destiné à
+        # l'écran - le détail vit dans les logs ci-dessus.
+        message_erreur = message_pour_ecran(e, ou="pendant la génération")
         error_data = StreamChunk(
             type="error",
-            content=f"Erreur de generation: {str(e)}",
+            content=message_erreur,
             conversation_id=conversation_id,
         )
         yield f"data: {json.dumps(error_data.model_dump())}\n\n"
@@ -2365,7 +2369,7 @@ async def _do_stream_response(
             err_msg = Message(
                 conversation_id=conversation_id,
                 role="assistant",
-                content=full_content or f"⚠️ Erreur de génération: {str(e)}",
+                content=full_content or f"⚠️ {message_erreur}",
                 model=llm_service.config.model if llm_service else "unknown",
             )
             session.add(err_msg)

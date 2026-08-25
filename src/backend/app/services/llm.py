@@ -403,9 +403,18 @@ INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
 AUTORISÉ : les listes à puces (- point clé : valeur).
 {therese_md}"""
 
-    def __init__(self, config: LLMConfig | None = None):
+    def __init__(
+        self,
+        config: LLMConfig | None = None,
+        bascule_circuit: bool = True,
+    ):
         self.config = config or self._default_config()
         self._provider = None
+
+        # Revue 0.48 (F3) : le Board refuse la bascule silencieuse du
+        # circuit breaker - son repli est EXPLICITE (service principal,
+        # actual_provider vrai). Le chat garde la bascule automatique.
+        self.bascule_circuit = bascule_circuit
 
     def _get_system_prompt_with_identity(self) -> str:
         """Get system prompt with user identity injected."""
@@ -689,6 +698,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         current_name = self.config.provider.value
 
         if cb.is_available(current_name):
+            return self.config
+
+        # Revue 0.48 (F3) : sans bascule autorisée, on tente le fournisseur
+        # d'origine même circuit ouvert - l'échec remonte proprement et le
+        # repli reste une décision VISIBLE de l'appelant (Board).
+        if not self.bascule_circuit:
+            logger.info(
+                "Circuit breaker: %s indisponible, bascule refusée par "
+                "l'appelant - tentative sur le fournisseur d'origine",
+                current_name,
+            )
             return self.config
 
         # Provider principal indisponible - chercher un fallback
@@ -1013,6 +1033,7 @@ def get_llm_service_for_provider(
     model_override: str | None = None,
     effort_override: str | None = None,
     max_tokens_override: int | None = None,
+    bascule_circuit: bool = True,
 ) -> LLMService | None:
     """Get LLM service for a specific provider if configured.
 
@@ -1107,7 +1128,7 @@ def get_llm_service_for_provider(
     if max_tokens_override is not None:
         config.max_tokens = max_tokens_override
 
-    return LLMService(config)
+    return LLMService(config, bascule_circuit=bascule_circuit)
 
 
 # ---------------------------------------------------------------------------

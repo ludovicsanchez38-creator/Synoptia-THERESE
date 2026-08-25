@@ -24,6 +24,7 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
+from app.services.error_handler import ErreurPourEcran
 from app.services.llm import (
     LLMProvider,
     get_llm_service,
@@ -416,7 +417,7 @@ class BoardService:
                 if not ollama_llm:
                     ollama_llm = get_llm_service_for_provider("ollama")
                 if not ollama_llm:
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         "Mode souverain indisponible : aucun service Ollama local utilisable."
                     )
                 llm_service = ollama_llm
@@ -452,7 +453,7 @@ class BoardService:
                         )
                 except Exception as e:
                     logger.error(f"Sovereign advisor {config['name']} error: {e}")
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
                     ) from e
 
@@ -487,7 +488,7 @@ class BoardService:
             # --- MODE CLOUD : parallèle multi-providers ---
             # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
             if default_llm is None:
-                raise RuntimeError("Aucun service LLM cloud disponible.")
+                raise ErreurPourEcran("Aucun service LLM cloud disponible.")
             advisor_services: dict[AdvisorRole, tuple] = {}
             for role in advisors:
                 config = ADVISOR_CONFIG[role]
@@ -495,19 +496,32 @@ class BoardService:
                 advisor_llm = None
                 actual_provider = default_llm.config.provider.value
                 if preferred_provider:
-                    # 0.48 : chaque conseiller cloud reçoit le FRONTIER de son
-                    # fournisseur, l'effort max et le max_tokens recommandé -
-                    # quelles que soient les préférences utilisateur.
-                    modele_frontier = frontier(preferred_provider)
-                    advisor_llm = get_llm_service_for_provider(
-                        preferred_provider,
-                        model_override=modele_frontier,
-                        effort_override="max",
-                        max_tokens_override=(
-                            max_tokens_recommande(modele_frontier)
-                            if modele_frontier else None
-                        ),
-                    )
+                    # Revue 0.48 (F3) : circuit ouvert = repli EXPLICITE sur le
+                    # service principal (actual_provider vrai), jamais de
+                    # bascule cachée au sein du flux d'un conseiller.
+                    from app.services.circuit_breaker import get_circuit_breaker
+
+                    if not get_circuit_breaker().is_available(preferred_provider):
+                        logger.warning(
+                            "Board : circuit %s ouvert - repli explicite sur "
+                            "le service principal", preferred_provider,
+                        )
+                        advisor_llm = None
+                    else:
+                        # 0.48 : chaque conseiller cloud reçoit le FRONTIER de
+                        # son fournisseur, l'effort max et le max_tokens
+                        # recommandé - quelles que soient les préférences.
+                        modele_frontier = frontier(preferred_provider)
+                        advisor_llm = get_llm_service_for_provider(
+                            preferred_provider,
+                            model_override=modele_frontier,
+                            effort_override="max",
+                            max_tokens_override=(
+                                max_tokens_recommande(modele_frontier)
+                                if modele_frontier else None
+                            ),
+                            bascule_circuit=False,
+                        )
                     if advisor_llm:
                         actual_provider = preferred_provider
                         logger.info(f"Advisor {config['name']} using {preferred_provider}")
@@ -569,7 +583,7 @@ class BoardService:
                             ))
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a pas pu terminer son avis."
                     ) from e
 
@@ -637,7 +651,7 @@ class BoardService:
                 if isinstance(result, BaseException)
             ]
             if advisor_errors:
-                raise RuntimeError(
+                raise ErreurPourEcran(
                     "La délibération est incomplète : au moins un conseiller a échoué."
                 ) from advisor_errors[0]
             opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
@@ -651,7 +665,7 @@ class BoardService:
             synth_model = (request.ollama_models or {}).get("synthesis", default_ollama_model)
             ollama_synth = get_llm_service_for_provider("ollama", model_override=synth_model)
             if not ollama_synth:
-                raise RuntimeError(
+                raise ErreurPourEcran(
                     "Mode souverain indisponible : la synthèse Ollama locale ne peut pas démarrer."
                 )
             synthesis_llm = ollama_synth
@@ -664,7 +678,7 @@ class BoardService:
         decision_id = decision_id or str(uuid4())
         logger.info(f"Saving board decision {decision_id} (mode={request.mode.value}) to SQLite...")
         if not self._session:
-            raise RuntimeError("La décision ne peut pas être sauvegardée sans session locale.")
+            raise ErreurPourEcran("La décision ne peut pas être sauvegardée sans session locale.")
 
         # Fence (0.47) : une demande d'arrêt posée AVANT le commit gagne -
         # aucune décision à moitié voulue ne se sauve. Après le commit, done
@@ -744,7 +758,7 @@ class BoardService:
                 await session.rollback()
             except Exception as rollback_error:
                 logger.debug("Rollback apres erreur save: %s", rollback_error)
-            raise RuntimeError("La décision n'a pas pu être sauvegardée localement.") from e
+            raise ErreurPourEcran("La décision n'a pas pu être sauvegardée localement.") from e
         # Passe 3 de revue (P3-7) : le commit a RÉUSSI - la vérification
         # est une ceinture, sa panne ne requalifie pas un commit abouti.
         # Seule une relecture qui aboutit ET ne trouve rien est un échec.
@@ -763,7 +777,7 @@ class BoardService:
             )
             return
         if introuvable:
-            raise RuntimeError("La décision sauvegardée est introuvable.")
+            raise ErreurPourEcran("La décision sauvegardée est introuvable.")
         logger.info(f"Board decision saved: {decision_id}")
 
     async def _generate_synthesis(
@@ -841,7 +855,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         except Exception as e:
             logger.error(f"Failed to parse synthesis JSON: {e}")
             logger.error(f"Raw response: {full_response}")
-            raise RuntimeError("La synthèse du Board est invalide et ne sera pas sauvegardée.") from e
+            raise ErreurPourEcran("La synthèse du Board est invalide et ne sera pas sauvegardée.") from e
 
     async def get_decision(self, decision_id: str) -> BoardDecision | None:
         """Récupère une décision par son ID depuis SQLite."""

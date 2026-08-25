@@ -257,7 +257,9 @@ class TestActionEndpoint:
         assert messages.status_code == 200
         contents = [m["content"] for m in messages.json()]
         assert "{action: ouvrir calendrier}" in contents  # message utilisateur
-        assert any("calendrier" in c.lower() for c in contents[1:] or contents)
+        # Revue 0.48 (F6) : l'alias « calendrier » reste compris, mais la
+        # confirmation parle le LEXIQUE - « l'Agenda ».
+        assert any("agenda" in c.lower() for c in contents[1:] or contents)
 
     @pytest.mark.asyncio
     async def test_produire_docx_stream_fichier_reel(self, client: AsyncClient):
@@ -500,3 +502,45 @@ class TestActionEndpoint:
             )
         assert response.status_code == 200
         assert "Jean Actiontest" in response.json()["content"]
+
+
+class TestLeLexiqueDansLesCommandes:
+    """Revue 0.48 (F6) : /aide affichait « {action: ouvrir crm} — Pipeline »
+    mais « ouvrir pipeline » restait inconnu. Les cibles du lexique entrent
+    au parseur (les anciennes restent en alias de compatibilité)."""
+
+    @pytest.mark.parametrize(
+        ("cible", "action_id"),
+        [
+            ("pipeline", "crm.open"),
+            ("contacts", "memory.open"),
+            ("agenda", "calendar.open"),
+            ("devis", "invoices.open"),
+            # Compat : les anciennes cibles restent parsées
+            ("crm", "crm.open"),
+            ("memoire", "memory.open"),
+            ("calendrier", "calendar.open"),
+            ("facturation", "invoices.open"),
+        ],
+    )
+    def test_les_cibles_du_lexique_sont_parsees(self, cible, action_id):
+        from app.services.chat_actions import parse_action_message
+
+        resultat = parse_action_message(f"{{action: ouvrir {cible}}}")
+        assert resultat is not None
+        assert resultat.kind == "navigate", f"« ouvrir {cible} » -> {resultat.kind}"
+        assert resultat.action_id == action_id
+
+    def test_l_aide_annonce_les_cibles_canoniques(self):
+        """/aide affiche la cible du LEXIQUE (pipeline, contacts, agenda),
+        pas l'ancienne (crm, memoire, calendrier) - fin des couples
+        contradictoires « {action: ouvrir crm} — Pipeline »."""
+        from app.services.chat_actions import available_actions_text
+
+        aide = available_actions_text()
+        assert "{action: ouvrir pipeline}" in aide
+        assert "{action: ouvrir contacts}" in aide
+        assert "{action: ouvrir agenda}" in aide
+        assert "{action: ouvrir crm}" not in aide
+        assert "{action: ouvrir memoire}" not in aide
+        assert "{action: ouvrir calendrier}" not in aide

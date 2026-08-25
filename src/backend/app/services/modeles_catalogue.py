@@ -221,6 +221,15 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         context_window=128000,
         modeles=("deepseek-v4-pro", "deepseek-v4-flash"),
     ),
+    # Revue 0.48 F1 : Infomaniak avait disparu du catalogue (l'enum, le
+    # provider et l'API le proposaient toujours) - au redémarrage, la
+    # préférence n'était plus reconnue et retombait sur Ollama.
+    "infomaniak": FicheFournisseur(
+        provider=LLMProvider.INFOMANIAK,
+        env_vars=("INFOMANIAK_API_KEY",),
+        context_window=128000,
+        modeles=("mix",),
+    ),
     "perplexity": FicheFournisseur(
         provider=LLMProvider.PERPLEXITY,
         env_vars=("PERPLEXITY_API_KEY",),

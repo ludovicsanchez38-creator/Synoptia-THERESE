@@ -14,7 +14,7 @@ from app.models.schemas_images import (
     ImageProviderStatus,
     ImageResponse,
 )
-from app.services.error_handler import message_pour_ecran
+from app.services.error_handler import TheresError, message_pour_ecran
 from app.services.image_generator import (
     ImageConfig,
     ImageProvider,
@@ -110,14 +110,23 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
             download_url=f"/api/images/download/{result.id}",
         )
 
+    except TheresError as e:
+        # Les messages écrits POUR l'utilisateur (clé manquante) traversent.
+        logger.error(f"Image generation config error: {e.technical_message}")
+        raise HTTPException(status_code=400, detail=e.user_message)
     except ValueError as e:
-        logger.error(f"Image generation config error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        # Revue 0.48 (F4) : le générateur lève aussi ValueError pour du
+        # technique (« No image data in response ») - frontière, pas relais.
+        logger.error(f"Image generation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=message_pour_ecran(e, ou="pendant la génération d'image"),
+        )
     except ImportError as e:
         logger.error(f"Missing dependency: {e}")
         raise HTTPException(
             status_code=503,
-            detail=f"Missing dependency for image generation: {e}",
+            detail=message_pour_ecran(e, ou="pendant la génération d'image"),
         )
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
@@ -189,9 +198,15 @@ async def generate_with_reference(
             if temp_path.exists():
                 temp_path.unlink()
 
+    except TheresError as e:
+        logger.error(f"Image generation config error: {e.technical_message}")
+        raise HTTPException(status_code=400, detail=e.user_message)
     except ValueError as e:
-        logger.error(f"Image generation config error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Image generation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=message_pour_ecran(e, ou="pendant la génération d'image"),
+        )
     except Exception as e:
         logger.error(f"Image generation with reference failed: {e}")
         raise HTTPException(

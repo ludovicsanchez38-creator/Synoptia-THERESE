@@ -197,7 +197,19 @@ class AgentRuntime:
                                 }
                             )
                         elif event.type == "error":
-                            yield AgentEvent(type="error", content=event.content or "Erreur LLM")
+                            # Revue 0.48 (F4) : le content provider peut être
+                            # un str(e) brut - le détail va aux logs.
+                            logger.error(
+                                "Agent %s : erreur provider : %s",
+                                self.config.id, event.content,
+                            )
+                            yield AgentEvent(
+                                type="error",
+                                content=message_pour_ecran(
+                                    RuntimeError(event.content or "Erreur LLM"),
+                                    ou="pendant la mission de l'agent",
+                                ),
+                            )
                             return
                 else:
                     async for chunk in llm_service.stream_response(context):

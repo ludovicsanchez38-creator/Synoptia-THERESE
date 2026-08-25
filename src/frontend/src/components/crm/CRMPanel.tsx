@@ -142,7 +142,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           <LayoutDashboard className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">CRM Pipeline</h2>
+          <h2 className="text-lg font-semibold text-text">Pipeline</h2>
           <p className="text-sm text-text-muted">
             {contacts.length} contact{contacts.length > 1 ? 's' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
           </p>

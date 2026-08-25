@@ -5,6 +5,8 @@ l'écran (SSE, notification, HTTP, task.error), seuls les messages
 localisés passent - jamais str(e) brut. Le technique va aux logs.
 """
 
+import pytest
+
 
 
 class TestLeMessagePourEcran:
@@ -108,3 +110,121 @@ class TestLaRouteImages:
         )
         assert reponse.status_code == 500
         assert "x8_technique" not in reponse.json()["message"]
+
+
+class TestLaFrontiereEstTotale:
+    """Revue 0.48 (F4) : la migration était partielle - l'enveloppe
+    terminale des actions, les étapes, la recopie AgentEvent et le catch
+    du chat exposaient encore str(e). Repro de la revue : un RuntimeError
+    portant un secret et un chemin local ressortait dans task.error."""
+
+    @pytest.mark.asyncio
+    async def test_l_enveloppe_terminale_ne_fuit_pas_le_brut(
+        self, client, monkeypatch
+    ):
+        import asyncio
+
+        from app.services import action_agents as module
+        from app.services.action_agents import ActionRunner, TaskStatus
+
+        async def contexte_qui_fuit(_tools):
+            raise RuntimeError("sk-secret /Users/ludo/interne")
+
+        monkeypatch.setattr(module, "_gather_local_context", contexte_qui_fuit)
+
+        task = await ActionRunner.run("rapport-hebdo")
+        for _ in range(100):
+            if ActionRunner.get_task(task.task_id).status == TaskStatus.ERROR:
+                break
+            await asyncio.sleep(0.05)
+        etat = ActionRunner.get_task(task.task_id)
+        assert etat.status == TaskStatus.ERROR
+        assert etat.error, "une erreur lisible doit être consignée"
+        assert "sk-secret" not in etat.error
+        assert "/Users/ludo" not in etat.error
+        assert "sk-secret" not in str(etat.to_dict())
+
+    def test_aucun_site_str_e_dans_les_enveloppes(self):
+        """Verrouillage structurel : les écritures d'erreur des actions et
+        des étapes passent par la frontière, plus par str(e)."""
+        import inspect
+
+        from app.services import action_agents
+
+        source = inspect.getsource(action_agents)
+        assert "task.error = str(e)" not in source
+        assert "step_result.error = str(e)" not in source
+
+    def test_la_recopie_agent_event_passe_la_frontiere(self):
+        import inspect
+
+        from app.services.agents import runtime
+
+        source = inspect.getsource(runtime)
+        assert (
+            'yield AgentEvent(type="error", content=event.content or "Erreur LLM")'
+            not in source
+        ), "runtime recopie encore le contenu d'erreur provider brut"
+
+    def test_le_catch_du_chat_ne_fuit_pas_str_e(self):
+        import inspect
+
+        from app.routers import chat
+
+        source = inspect.getsource(chat)
+        assert 'content=f"Erreur de generation: {str(e)}"' not in source
+        assert 'f"⚠️ Erreur de génération: {str(e)}"' not in source
+
+
+class TestLaRouteImagesTechnique:
+    def test_value_error_technique_ne_fuit_pas(self, client, monkeypatch):
+        """Le générateur lève aussi ValueError pour du technique anglais
+        (« No image data in response ») - la route ne doit relayer que les
+        messages INTENTIONNELS (TheresError), pas tout ValueError."""
+        from app.services.image_generator import get_image_service
+
+        async def _explose(*a, **k):
+            raise ValueError("No image data in response x9_interne")
+
+        monkeypatch.setattr(type(get_image_service()), "generate", _explose)
+        reponse = client.post(
+            "/api/images/generate",
+            json={"prompt": "un chat", "provider": "gpt-image-2"},
+        )
+        assert reponse.status_code >= 400
+        assert "x9_interne" not in reponse.json()["message"]
+
+
+class TestLesMessagesIntentionnelsTraversent:
+    """Revue 0.48 (F5) : le Board lève des RuntimeError aux messages
+    français écrits POUR l'utilisateur (« Mode souverain indisponible... »).
+    La frontière les transformait en générique - l'utilisateur perdait la
+    cause et l'action corrective. ErreurPourEcran marque l'intention."""
+
+    def test_erreur_pour_ecran_traverse_la_frontiere(self):
+        from app.services.error_handler import ErreurPourEcran, message_pour_ecran
+
+        exc = ErreurPourEcran(
+            "Mode souverain indisponible : aucun service Ollama local utilisable."
+        )
+        assert message_pour_ecran(exc) == (
+            "Mode souverain indisponible : aucun service Ollama local utilisable."
+        )
+
+    def test_erreur_pour_ecran_reste_un_runtime_error(self):
+        """Compat : les pytest.raises(RuntimeError) existants du Board."""
+        from app.services.error_handler import ErreurPourEcran
+
+        assert issubclass(ErreurPourEcran, RuntimeError)
+
+    def test_les_messages_du_board_sont_marques(self):
+        """Structurel : plus aucun RuntimeError NU à message utilisateur
+        dans board.py - ils portent tous la marque ErreurPourEcran."""
+        import inspect
+
+        from app.services import board
+
+        source = inspect.getsource(board)
+        assert "raise RuntimeError(" not in source, (
+            "un message intentionnel du Board serait masqué par la frontière"
+        )

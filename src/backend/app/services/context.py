@@ -31,12 +31,26 @@ class ContextWindow:
             total += self.estimate_tokens(msg.content) + 4  # role overhead
         return total
 
+    _MARQUE_TRONCATURE = "\n[... contenu tronqué pour tenir dans la fenêtre du modèle]"
+
     def trim_to_fit(self) -> "ContextWindow":
         """Trim oldest messages to fit within max_tokens."""
         while self.total_tokens() > self.max_tokens and len(self.messages) > 1:
             # Always keep the system prompt and last user message
             # Remove oldest non-system messages
             self.messages.pop(0)
+        # Revue 0.48 (F2) : quand il ne reste qu'UN message et qu'il déborde
+        # encore (le Board met question + contexte + résultats web dans un
+        # seul message), tronquer son CONTENU au budget restant - sinon la
+        # requête part hors limite et échoue au lieu d'être bornée.
+        if self.messages and self.total_tokens() > self.max_tokens:
+            dernier = self.messages[-1]
+            hors_dernier = self.total_tokens() - self.estimate_tokens(dernier.content)
+            budget_tokens = self.max_tokens - hors_dernier - self.estimate_tokens(
+                self._MARQUE_TRONCATURE
+            )
+            budget_chars = max(budget_tokens, 0) * 4
+            dernier.content = dernier.content[:budget_chars] + self._MARQUE_TRONCATURE
         return self
 
     def to_anthropic_format(self) -> tuple[str | None, list[dict]]:

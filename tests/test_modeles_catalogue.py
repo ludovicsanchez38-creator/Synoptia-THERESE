@@ -223,3 +223,43 @@ class TestSabotageParPermutation:
         assert tete != "gpt-5.6-sol"
         assert service is not None and service.config.model == tete
         assert config.model == tete or config.provider.value != "openai"
+
+
+class TestLaCompletudeDuCatalogue:
+    """Revue 0.48 F1 : le catalogue est devenu LA source des 4 tables de
+    llm.py - un fournisseur de l'enum absent du catalogue disparaît de
+    l'application au redémarrage (Infomaniak, trouvé par la revue)."""
+
+    def test_chaque_fournisseur_de_l_enum_a_sa_fiche(self):
+        from app.services.modeles_catalogue import CATALOGUE
+        from app.services.providers.base import LLMProvider
+
+        manquants = {p.value for p in LLMProvider} - set(CATALOGUE)
+        assert manquants == set(), (
+            f"fournisseurs sans fiche au catalogue : {manquants} - "
+            "ils disparaissent de _default_config au redémarrage"
+        )
+
+    def test_infomaniak_redevient_reconnu_au_demarrage(self, client, monkeypatch):
+        """Le scénario de la revue : préférence infomaniak posée, clé env -
+        _default_config doit rendre une config infomaniak, pas Ollama."""
+        from app.models.database import get_sync_connection
+        from app.services.llm import LLMService
+        from sqlalchemy import text
+
+        with get_sync_connection() as conn:
+            for cle, valeur in (("llm_provider", "infomaniak"), ("llm_model", "mix")):
+                conn.execute(
+                    text(
+                        "INSERT OR REPLACE INTO preferences"
+                        " (id, key, value, category, created_at, updated_at)"
+                        " VALUES (lower(hex(randomblob(16))), :k, :v, 'llm',"
+                        " datetime('now'), datetime('now'))"
+                    ),
+                    {"k": cle, "v": valeur},
+                )
+            conn.commit()
+        monkeypatch.setenv("INFOMANIAK_API_KEY", "ik-test")
+        config = LLMService()._default_config()
+        assert config.provider.value == "infomaniak"
+        assert config.model == "mix"
