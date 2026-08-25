@@ -11,8 +11,6 @@ executent des taches multi-etapes avec progression en temps reel.
 import asyncio
 import json
 import logging
-
-from app.services.error_handler import message_pour_ecran
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -23,6 +21,7 @@ from typing import Any, Callable, Optional
 from app.models.processing import EtatTache
 from app.services import task_registry
 from app.services import traitements as traitements_service
+from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 

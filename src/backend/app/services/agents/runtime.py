@@ -7,13 +7,12 @@ Réutilise LLMService pour le streaming multi-provider.
 
 import json
 import logging
-
-from app.services.error_handler import message_pour_ecran
 from dataclasses import dataclass
 from typing import Any, AsyncGenerator
 
 from app.services.agents.config import AgentConfig
 from app.services.agents.tools import AgentToolExecutor
+from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,6 @@ l'écran (SSE, notification, HTTP, task.error), seuls les messages
 localisés passent - jamais str(e) brut. Le technique va aux logs.
 """
 
-import pytest
 
 
 class TestLeMessagePourEcran:

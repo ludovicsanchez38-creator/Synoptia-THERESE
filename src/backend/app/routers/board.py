@@ -43,6 +43,8 @@ async def list_advisors():
     Returns:
         Liste des conseillers avec leurs métadonnées
     """
+    from app.services.board import etat_catalogue
+
     return [
         AdvisorInfo(
             role=role,
@@ -50,6 +52,7 @@ async def list_advisors():
             emoji=config["emoji"],
             color=config["color"],
             personality=config["personality"],
+            modele_deprecie=etat_catalogue(config.get("preferred_provider")),
         )
         for role, config in ADVISOR_CONFIG.items()
     ]

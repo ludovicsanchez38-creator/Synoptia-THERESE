@@ -14,6 +14,8 @@ export interface AdvisorInfo {
   emoji: string;
   color: string;
   personality: string;
+  /** A2 (0.48) : null = non sondé, false = frontier vérifié, true = dérive. */
+  modele_deprecie?: boolean | null;
 }
 
 export type BoardMode = 'cloud' | 'sovereign';

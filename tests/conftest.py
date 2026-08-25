@@ -26,6 +26,7 @@ if _backend_dir not in sys.path:
 # Set test environment before importing app
 os.environ["THERESE_ENV"] = "test"
 os.environ["THERESE_SKIP_SERVICES"] = "1"
+os.environ["THERESE_SONDE_CATALOGUE"] = "off"  # A2 : pas de GET /models réels en tests
 # Isolation des données : ne JAMAIS toucher la base réelle de l'utilisateur.
 # Les fixtures client/db_session font drop_all/create_all ; sans data dir dédié,
 # lancer la suite détruirait ~/.therese. setdefault respecte un override (CI/dev).

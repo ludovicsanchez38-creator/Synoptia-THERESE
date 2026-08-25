@@ -8,6 +8,7 @@ Persistance SQLite pour les décisions.
 import asyncio
 import json
 import logging
+import os
 from collections.abc import Awaitable, Callable
 from typing import AsyncGenerator
 from uuid import uuid4
@@ -37,6 +38,145 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# Sonde de dérive du catalogue (lot A2, 0.48)
+#
+# Le frontier de chaque fournisseur est un choix ÉDITORIAL relevé en doc ;
+# la sonde vérifie seulement qu'il existe ENCORE dans la liste /models du
+# fournisseur. Dérive = frontier ABSENT de la liste. Endpoint indisponible
+# = PAS une dérive (drapeau inchangé, re-tentative le lendemain). JAMAIS
+# de bascule de modèle : l'information remonte, la décision reste
+# éditoriale. État au niveau MODULE : BoardService est recréé à chaque
+# requête (patron des registres 0.47).
+# ============================================================
+
+#: fournisseur -> None (non sondé) | False (frontier vérifié) | True (absent)
+_etat_catalogue: dict[str, bool | None] = {}
+_date_derniere_sonde: str | None = None
+_verrou_sonde = asyncio.Lock()
+
+#: fournisseur -> (URL /models, mode d'authentification)
+_SONDES: dict[str, tuple[str, str]] = {
+    "openai": ("https://api.openai.com/v1/models", "bearer"),
+    "grok": ("https://api.x.ai/v1/models", "bearer"),
+    "mistral": ("https://api.mistral.ai/v1/models", "bearer"),
+    "anthropic": ("https://api.anthropic.com/v1/models", "x-api-key"),
+    "gemini": (
+        "https://generativelanguage.googleapis.com/v1beta/models", "query-key"
+    ),
+}
+
+
+def _cle_configuree(fournisseur: str) -> str | None:
+    import os
+
+    from app.services.llm import _get_api_key_from_db
+    from app.services.modeles_catalogue import CATALOGUE
+
+    try:
+        cle = _get_api_key_from_db(fournisseur)
+        if cle:
+            return cle
+    except Exception:  # noqa: BLE001 - la sonde ne casse jamais le Board
+        pass
+    for var in CATALOGUE[fournisseur].env_vars:
+        cle = os.getenv(var)
+        if cle:
+            return cle
+    return None
+
+
+def _ids_de_la_reponse(fournisseur: str, corps: dict) -> set[str]:
+    if fournisseur == "gemini":
+        # {"models": [{"name": "models/gemini-..."}]} - comparer le nom court
+        return {
+            str(m.get("name", "")).removeprefix("models/")
+            for m in corps.get("models", [])
+        }
+    return {str(m.get("id", "")) for m in corps.get("data", [])}
+
+
+async def _sonder_un(fournisseur: str, cle: str, client) -> None:
+    url, mode = _SONDES[fournisseur]
+    try:
+        if mode == "bearer":
+            reponse = await client.get(
+                url, headers={"Authorization": f"Bearer {cle}"}, timeout=5.0
+            )
+        elif mode == "x-api-key":
+            reponse = await client.get(
+                url,
+                headers={"x-api-key": cle, "anthropic-version": "2023-06-01"},
+                timeout=5.0,
+            )
+        else:  # query-key (Gemini)
+            reponse = await client.get(url, params={"key": cle}, timeout=5.0)
+        reponse.raise_for_status()
+        ids = _ids_de_la_reponse(fournisseur, reponse.json())
+    except Exception as e:  # noqa: BLE001 - indisponible = PAS une dérive
+        logger.info("Sonde catalogue %s indisponible : %s", fournisseur, e)
+        return
+    modele = frontier(fournisseur)
+    if not modele:
+        return
+    _etat_catalogue[fournisseur] = modele not in ids
+    if _etat_catalogue[fournisseur]:
+        logger.warning(
+            "Dérive catalogue : %s n'expose plus %s", fournisseur, modele
+        )
+
+
+async def sonder_catalogue(client=None) -> None:
+    """Sonde les fournisseurs à clé configurée - au plus une fois par jour.
+
+    Sondes PARALLÈLES, timeout global 6 s : jamais cinq timeouts en série
+    avant le premier chunk d'une délibération.
+    """
+    global _date_derniere_sonde
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    aujourd_hui = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
+    async with _verrou_sonde:
+        if _date_derniere_sonde == aujourd_hui:
+            return
+        cibles = {
+            nom: cle
+            for nom in _SONDES
+            if (cle := _cle_configuree(nom))
+        }
+        # La date se pose même sans cible : re-tentative demain, pas en boucle.
+        _date_derniere_sonde = aujourd_hui
+        if not cibles:
+            return
+        if client is None:
+            from app.services.http_client import get_http_client
+
+            client = await get_http_client()
+        try:
+            async with asyncio.timeout(6.0):
+                await asyncio.gather(
+                    *(
+                        _sonder_un(nom, cle, client)
+                        for nom, cle in cibles.items()
+                    ),
+                    return_exceptions=True,
+                )
+        except TimeoutError:
+            logger.info("Sonde catalogue : timeout global (6 s)")
+
+
+def derives_connues() -> dict[str, bool]:
+    """Les fournisseurs dont le frontier est ABSENT de leur liste."""
+    return {nom: True for nom, etat in _etat_catalogue.items() if etat is True}
+
+
+def etat_catalogue(fournisseur: str | None) -> bool | None:
+    """None = non sondé, False = vérifié présent, True = absent (dérive)."""
+    if not fournisseur:
+        return None
+    return _etat_catalogue.get(fournisseur)
 
 
 def validate_advisor_providers() -> bool:
@@ -212,6 +352,18 @@ class BoardService:
         # cloud. Ollama doit être réellement disponible, sinon on échoue.
         default_llm = None if is_sovereign else get_llm_service()
         advisors = request.advisors or list(AdvisorRole)
+
+        # A2 (0.48) : la sonde de dérive du catalogue - au plus une fois par
+        # jour, fournisseurs à clé configurée seulement. Une dérive connue
+        # s'annonce en tête ; JAMAIS de bascule de modèle.
+        if os.environ.get("THERESE_SONDE_CATALOGUE", "on") != "off":
+            await sonder_catalogue()
+        derives = derives_connues()
+        if derives:
+            yield BoardDeliberationChunk(
+                type="catalogue_status",
+                content=json.dumps({"providers": derives}),
+            )
 
         # --- Recherche web (cloud uniquement) ---
         web_search_results = ""
