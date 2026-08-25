@@ -28,6 +28,12 @@ from starlette.concurrency import run_in_threadpool
 logger = logging.getLogger(__name__)
 
 
+class IndexationAbandonnee(Exception):
+    """La demande a été retirée (déconnexion ou arrêt au panneau) : le cœur
+    s'arrête AVANT toute écriture et le dit - plus de retour silencieux qui
+    laissait chaque surface inventer sa propre interprétation (0.47)."""
+
+
 class ContenuModifieDepuisLePlan(Exception):
     """Le fichier ne correspond plus à l'empreinte attendue : rien n'est écrit.
 
@@ -66,8 +72,20 @@ INDEX_SEMAPHORE = asyncio.Semaphore(MAX_INDEXATIONS_SIMULTANEES)
 _verrous_par_chemin: dict[str, list[Any]] = {}
 
 
+def _chemin_canonique(chemin: str) -> Path:
+    """Répertoires résolus, nom terminal non suivi (P4-1 + P5-1)."""
+    p = Path(chemin)
+    return p.parent.resolve() / p.name
+
+
 @asynccontextmanager
 async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
+    # Passe 4 de revue (P4-1) : la clé est le chemin CANONIQUE - un alias
+    # (relatif, dossier symlinké) contournait la sérialisation par chemin.
+    # Passe 5 (P5-1) : les RÉPERTOIRES sont résolus mais le nom terminal
+    # n'est PAS suivi - os.replace sur un lien terminal remplace le lien
+    # lui-même, son identité est le chemin du lien, pas son ancienne cible.
+    chemin = str(_chemin_canonique(chemin))
     entree = _verrous_par_chemin.get(chemin)
     if entree is None:
         entree = [asyncio.Lock(), 0]
@@ -210,18 +228,27 @@ async def index_payload(
     if not file_path.is_file():
         raise HTTPException(status_code=400, detail="Path is not a file")
 
-    async with _verrou_de_chemin(str(file_path)):
-        return await _indexer_sous_verrou(
-            file_path, est_abandonnee, scope, scope_id, perimetre_provisoire,
-            sha256_attendu=sha256_attendu,
-            file_id_attendu=file_id_attendu,
-        )
+    # Passe 3 de revue (P3-1) : le geste détaché POSSÈDE le verrou de
+    # chemin. Détacher seulement l'écriture laissait le porteur annulé
+    # libérer le verrou pendant que le geste écrivait encore - une demande
+    # B entrait et entrelaçait ses écritures avec celles de A.
+    async def _geste() -> FileResponse:
+        async with _verrou_de_chemin(str(file_path)):
+            return await _indexer_sous_verrou(
+                file_path, est_abandonnee, scope, scope_id,
+                perimetre_provisoire,
+                sha256_attendu=sha256_attendu,
+                file_id_attendu=file_id_attendu,
+            )
+
+    return await _proteger_le_geste(_geste())
 
 
 async def remplacer_puis_indexer(
     chemin: str,
     deposer: Callable[[], Awaitable[None]],
     *,
+    est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
     scope: str = "global",
     scope_id: str | None = None,
     perimetre_provisoire: bool = False,
@@ -233,11 +260,33 @@ async def remplacer_puis_indexer(
     pouvait lire un contenu à moitié écrit. Le dépôt entre dans la section
     critique, et l'indexation qui suit est le même cœur que la route.
     """
-    async with _verrou_de_chemin(chemin):
-        await deposer()
-        return await _indexer_sous_verrou(
-            Path(chemin), None, scope, scope_id, perimetre_provisoire
-        )
+    # Passe 3 de revue (P3-1/P3-6) : tout le geste (dépôt + extraction +
+    # écriture) est détaché et possède le verrou - une annulation dure du
+    # porteur après os.replace n'ampute plus l'indexation de la version
+    # réellement en place.
+    # P4-1/P5-1 : même identité de chemin que le verrou - répertoires
+    # résolus, nom terminal non suivi : après os.replace, CE chemin est le
+    # fichier réellement déposé (l'ancienne cible d'un lien ne l'est plus).
+    chemin_canonique = _chemin_canonique(chemin)
+
+    async def _geste() -> FileResponse:
+        async with _verrou_de_chemin(str(chemin_canonique)):
+            # Revue jalon (F4) : consulter l'abandon AVANT le dépôt -
+            # os.replace est le premier effet durable de ce chemin.
+            if est_abandonnee is not None and await est_abandonnee():
+                raise IndexationAbandonnee(
+                    f"Indexation de {chemin_canonique.name} abandonnée "
+                    "avant le dépôt"
+                )
+            await deposer()
+            # Second panel de revue : le dépôt est le POINT DE NON-RETOUR.
+            # Après lui, l'indexation va au bout ; la demande d'arrêt
+            # tardive se résout au terminer du producteur (contrat 0.46).
+            return await _indexer_sous_verrou(
+                chemin_canonique, None, scope, scope_id, perimetre_provisoire
+            )
+
+    return await _proteger_le_geste(_geste())
 
 
 async def _indexer_sous_verrou(
@@ -326,6 +375,71 @@ def _copier_si_conforme(source: Path, sha256_attendu: str) -> Path | None:
     return copie
 
 
+# Gestes d'indexation détachés (référence forte). Passe 3 (P3-1) : le
+# geste inclut le verrou de chemin - il survit à l'annulation du porteur
+# et aucune demande concurrente ne peut s'intercaler.
+_gestes_en_cours: set["asyncio.Task[FileResponse]"] = set()
+
+
+def _consommer_issue(geste: "asyncio.Task[FileResponse]") -> None:
+    _gestes_en_cours.discard(geste)
+    if geste.cancelled():
+        return
+    issue = geste.exception()
+    if issue is not None and not isinstance(
+        issue,
+        (IndexationAbandonnee, ContenuModifieDepuisLePlan, ConflitDePerimetre),
+    ):
+        logger.warning(
+            "Geste d'indexation détaché terminé en échec", exc_info=issue
+        )
+
+
+async def _proteger_le_geste(coro: "Any") -> FileResponse:
+    geste: "asyncio.Task[FileResponse]" = asyncio.create_task(coro)
+    _gestes_en_cours.add(geste)
+    geste.add_done_callback(_consommer_issue)
+    return await asyncio.shield(geste)
+
+
+async def _ecrire_et_consigner(
+    file_id: str,
+    file_name: str,
+    items: list[dict[str, Any]],
+    reindexation: bool,
+    figer_perimetre: bool,
+) -> tuple[int, datetime]:
+    """Le geste d'écriture COMPLET : suppression de l'ancien index,
+    écriture du nouveau, consignation en base.
+
+    Passe 2 de revue (P2-7) : les écritures Qdrant tournent dans des
+    threads - annuler la coroutine appelante ne les arrête pas. Ce geste
+    s'exécute en tâche détachée (sous shield) : il finit les DEUX côtés
+    ou consigne l'échec, jamais un état à moitié.
+    """
+    if reindexation:
+        await get_qdrant_service().async_delete_by_entity(file_id)
+    chunk_count = 0
+    if items:
+        try:
+            await get_qdrant_service().async_add_memories(items)
+        except Exception:
+            # Les anciens fragments viennent d'être retirés : l'index est
+            # vide. Le consigner avant de propager, sinon la base
+            # promettrait un contenu introuvable.
+            await _consigner_resultat(file_id, 0, datetime.now(UTC))
+            raise
+        logger.info(f"Indexed {len(items)} chunks for file {file_name}")
+        chunk_count = len(items)
+    else:
+        logger.warning(f"No text extracted for {file_name}")
+    indexed_at = datetime.now(UTC)
+    await _consigner_resultat(
+        file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre
+    )
+    return chunk_count, indexed_at
+
+
 async def _indexer_apres_verifications(
     file_path: Path,
     est_abandonnee: Callable[[], Awaitable[bool]] | None,
@@ -409,12 +523,23 @@ async def _indexer_apres_verifications(
     # échec laissait alors un fichier sans aucun vecteur, présenté comme
     # indexé. La suppression n'a lieu qu'une fois le nouveau contenu prêt
     # et l'écriture décidée : jusque-là, l'index existant reste valide.
+    async def _verifier_abandon() -> None:
+        # 0.47 : l'abandon n'est plus silencieux. L'ancien contrat (rendre
+        # l'etat precedent comme si de rien n'etait) forcait chaque surface
+        # a deviner - et project.sync marquait FAIT une operation jamais
+        # ecrite. L'index existant, lui, reste intact : on leve AVANT toute
+        # ecriture.
+        if est_abandonnee and await est_abandonnee():
+            raise IndexationAbandonnee(
+                f"Indexation de {file_path.name} abandonnée avant écriture"
+            )
+
     text_content = await extract_text_async(source_extraction)
+    await _verifier_abandon()
     chunk_count = chunk_count_existant
     indexed_at = indexed_at_existant
-    ecriture_faite = False
 
-    if text_content and not (est_abandonnee and await est_abandonnee()):
+    if text_content:
         chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
         items = construire_items_indexation(
             chunks=chunks,
@@ -424,40 +549,20 @@ async def _indexer_apres_verifications(
             scope=perimetre,
             scope_id=perimetre_id,
         )
-        if items and not (est_abandonnee and await est_abandonnee()):
+        await _verifier_abandon()
+        if items:
             async with INDEX_SEMAPHORE:
                 # L'attente du sémaphore peut durer : re-consulter l'abandon
                 # juste avant d'écrire (finding F1 resté ouvert).
-                if not (est_abandonnee and await est_abandonnee()):
-                    if reindexation:
-                        await get_qdrant_service().async_delete_by_entity(file_id)
-                    try:
-                        await get_qdrant_service().async_add_memories(items)
-                    except Exception:
-                        # Les anciens fragments viennent d'être retirés :
-                        # l'index est vide. Le consigner avant de propager,
-                        # sinon la base promettrait un contenu introuvable.
-                        await _consigner_resultat(file_id, 0, datetime.now(UTC))
-                        raise
-                    logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
-                    chunk_count = len(chunks)
-                    indexed_at = datetime.now(UTC)
-                    ecriture_faite = True
-    elif not text_content and not (est_abandonnee and await est_abandonnee()):
-        # 3e passe de revue : ce chemin détruisait l'index sans consulter
-        # l'abandon. Une demande retirée ne doit rien effacer.
-        logger.warning(f"No text extracted from {file_path}")
-        if reindexation:
-            await get_qdrant_service().async_delete_by_entity(file_id)
-        chunk_count = 0
-        indexed_at = datetime.now(UTC)
-        ecriture_faite = True
-
-    # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
-    # demande a été abandonnée : l'état précédent reste la vérité.
-    if ecriture_faite:
-        await _consigner_resultat(
-            file_id, chunk_count, indexed_at, figer_perimetre=_perimetre_a_figer
+                await _verifier_abandon()
+                chunk_count, indexed_at = await _ecrire_et_consigner(
+                    file_id, file_name, items, reindexation, _perimetre_a_figer
+                )
+    else:
+        # Contenu vide : l'abandon a déjà été consulté après l'extraction
+        # (une demande retirée n'efface rien - 3e passe de revue 0.45).
+        chunk_count, indexed_at = await _ecrire_et_consigner(
+            file_id, file_name, [], reindexation, _perimetre_a_figer
         )
 
     return FileResponse(

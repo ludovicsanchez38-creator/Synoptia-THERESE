@@ -328,3 +328,45 @@ describe('images Markdown du chat', () => {
     expect(container.querySelector('img')).toBeNull();
   });
 });
+
+describe('BUG-173 : lien de téléchargement markdown redirigé vers le save natif', () => {
+  beforeEach(() => {
+    downloadSkillFileMock.mockClear();
+  });
+
+  it('intercepte le clic sur un lien /api/skills/download historique', async () => {
+    const message = makeMessage({
+      content:
+        'Document généré : [Télécharger](/api/skills/download/48ed1acf-9f99-41e8-a540-76467fec571f)',
+    });
+    render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'Télécharger' });
+    // le lien ne doit PAS partir en navigateur externe (tauri.localhost)
+    expect(lien.getAttribute('target')).not.toBe('_blank');
+
+    fireEvent.click(lien);
+    await waitFor(() => {
+      expect(downloadSkillFileMock).toHaveBeenCalledWith(
+        '48ed1acf-9f99-41e8-a540-76467fec571f',
+        expect.any(String),
+      );
+    });
+  });
+});
+
+describe('P5-4 : la redirection ne capture pas les liens externes', () => {
+  it('laisse un lien web externe contenant le motif partir en externe', () => {
+    downloadSkillFileMock.mockClear();
+    const message = makeMessage({
+      content:
+        'Voir la [doc](https://docs.example.com/api/skills/download/guide-2026)',
+    });
+    render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'doc' });
+    expect(lien.getAttribute('target')).toBe('_blank');
+    fireEvent.click(lien);
+    expect(downloadSkillFileMock).not.toHaveBeenCalled();
+  });
+});

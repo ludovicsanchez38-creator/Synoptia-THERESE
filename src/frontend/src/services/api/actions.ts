@@ -40,7 +40,7 @@ export interface TaskState {
   task_id: string;
   agent_id: string;
   agent_name: string;
-  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'error';
+  status: 'pending' | 'running' | 'cancel_requested' | 'completed' | 'cancelled' | 'error';
   params: Record<string, string>;
   steps: TaskStep[];
   result: string;

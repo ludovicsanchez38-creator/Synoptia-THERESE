@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # Seuil de VISIBILITÉ (jamais de création différée) : les générations de
 # chat trop brèves n'apparaissent pas au panneau - sauf échec ou annulation.
 SEUIL_VISIBILITE_S = 2
-TYPES_A_SEUIL = {"chat", "deep-research"}
+TYPES_A_SEUIL = {"chat", "deep-research", "indexation"}
 
 # Demandes d'arrêt posées avant l'enrôlement de l'adaptateur, à rejouer.
 _demandes_en_attente: set[str] = set()

@@ -233,12 +233,16 @@ function TaskProgress({
   onClose: () => void;
 }) {
   const isRunning = task.status === 'running' || task.status === 'pending';
+  // 0.47 : l'arrêt est DEMANDÉ, pas obtenu - l'étape en cours va à son
+  // terme. Le panneau le dit tel quel au lieu d'annoncer « Annulé ».
+  const isStopping = task.status === 'cancel_requested';
   const isDone = task.status === 'completed';
   const isError = task.status === 'error';
 
   const statusLabel = {
     pending: 'En attente...',
     running: 'En cours...',
+    cancel_requested: 'Arrêt demandé...',
     completed: 'Terminé',
     cancelled: 'Annulé',
     error: 'Erreur',
@@ -247,6 +251,7 @@ function TaskProgress({
   const statusColor = {
     pending: 'text-warning',
     running: 'text-cyan-400',
+    cancel_requested: 'text-warning',
     completed: 'text-emerald-400',
     cancelled: 'text-text-muted',
     error: 'text-red-400',
@@ -272,6 +277,11 @@ function TaskProgress({
             <Square size={12} />
             Annuler
           </button>
+        ) : isStopping ? (
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-warning">
+            <Loader2 size={12} className="animate-spin" />
+            Arrêt en cours
+          </span>
         ) : (
           <button
             onClick={onClose}
@@ -465,26 +475,36 @@ export function ActionPanel() {
   const showList = !showTask && !showForm;
 
   if (!isPanelOpen) {
-    if (activeTask && (activeTask.status === 'running' || activeTask.status === 'pending')) {
+    if (
+      activeTask &&
+      (activeTask.status === 'running' ||
+        activeTask.status === 'pending' ||
+        activeTask.status === 'cancel_requested')
+    ) {
       return (
         <button
           onClick={() => openPanel()}
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-cyan-400 shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
         >
           <Loader2 size={14} className="animate-spin" />
-          {activeTask.agent_name || 'Action'} en cours...
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              cancelAction(activeTask.task_id);
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
-            className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
-          >
-            <Square size={10} />
-          </span>
+          {activeTask.status === 'cancel_requested'
+            ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
+            : `${activeTask.agent_name || 'Action'} en cours...`}
+          {activeTask.status !== 'cancel_requested' && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Annuler l'action"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelAction(activeTask.task_id);
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
+              className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+            >
+              <Square size={10} />
+            </span>
+          )}
         </button>
       );
     }

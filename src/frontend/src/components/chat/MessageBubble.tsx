@@ -425,6 +425,30 @@ export const MessageBubble = memo(function MessageBubble({
                 return <li className="text-text">{children}</li>;
               },
               a({ href, children }) {
+                // BUG-173 : un lien de téléchargement de document généré
+                // (messages historiques, ou LLM qui invente un lien) mourait
+                // en navigateur externe sur tauri.localhost. Le rediriger
+                // vers le save natif de la carte.
+                // Ancrée (P5-4) : seulement les liens INTERNES - un lien
+                // web externe contenant le motif doit partir en externe.
+                const skillDl = href?.match(
+                  /^(?:https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?)?\/api\/skills\/download\/([\w-]+)$/,
+                );
+                if (skillDl) {
+                  const fileId = skillDl[1];
+                  return (
+                    <a
+                      href={href}
+                      className="text-accent-cyan hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void downloadSkillFile(fileId, `document-${fileId}`);
+                      }}
+                    >
+                      {children}
+                    </a>
+                  );
+                }
                 return (
                   <a
                     href={href}

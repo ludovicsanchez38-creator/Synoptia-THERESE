@@ -13,7 +13,6 @@ import time
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from app.config import settings
 from app.models.database import get_session
 from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
 from app.models.processing import EtatTache as EtatTacheTraitement
@@ -31,10 +30,12 @@ from app.services.chat_actions import (
     available_actions_text,
     parse_action_message,
 )
+from app.services.contexte_execution import ContexteExecution
 from app.services.entity_extractor import (
     get_entity_extractor,
 )
-from app.services.file_parser import chunk_text, extract_text, get_file_metadata
+from app.services.file_parser import extract_text
+from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
     ContextWindow,
     LLMService,
@@ -91,58 +92,68 @@ router = APIRouter()
 # Generation Cancellation (US-ERR-04)
 # ============================================================
 
-# Track active generations for cancellation
-_active_generations: dict[str, bool] = {}
+# 0.47 (fencing) : le token par GÉNÉRATION est l'autorité. La table par
+# conversation ne sert plus qu'à la compat lecture (façade /cancel, drapeau
+# historique) : elle pointe vers le contexte de la génération COURANTE.
+_active_generations: dict[str, ContexteExecution] = {}
 # Timestamps pour detecter les entrees orphelines (client deconnecte)
 _generation_timestamps: dict[str, float] = {}
 # Duree max avant nettoyage automatique (5 minutes)
 _GENERATION_TIMEOUT_S = 300
 
 
-# Propriétaire courant de l'entrée d'une conversation (0.46, revue F6) :
-# deux générations successives dans la même conversation ne partagent plus
-# leur sort - la fin de la première ne retire l'entrée que si elle la
-# possède encore, et le drapeau ne vaut que pour la propriétaire.
-_generation_owners: dict[str, str] = {}
-
-
 def _register_generation(
     conversation_id: str, generation_id: str | None = None
-) -> None:
-    """Register an active generation."""
-    _active_generations[conversation_id] = False
-    if generation_id is not None:
-        _generation_owners[conversation_id] = generation_id
+) -> ContexteExecution:
+    """Crée le contexte de CETTE génération et en fait la courante."""
+    contexte = ContexteExecution(generation_id=generation_id)
+    _active_generations[conversation_id] = contexte
     _generation_timestamps[conversation_id] = time.monotonic()
     # Nettoyage opportuniste des entrees orphelines
     _cleanup_stale_generations()
+    return contexte
 
 
 def _cancel_generation(conversation_id: str) -> bool:
-    """Mark a generation for cancellation. Returns True if generation was active."""
-    if conversation_id in _active_generations:
-        _active_generations[conversation_id] = True
+    """Pose le token de la génération COURANTE de la conversation."""
+    contexte = _active_generations.get(conversation_id)
+    if contexte is not None:
+        contexte.demander_arret()
         return True
     return False
 
 
 def _is_cancelled(conversation_id: str) -> bool:
-    """Check if a generation has been cancelled."""
-    return _active_generations.get(conversation_id, False)
+    """Compat lecture : le drapeau par conversation lit le token courant."""
+    contexte = _active_generations.get(conversation_id)
+    return contexte is not None and contexte.annulation_observee()
 
 
 def _unregister_generation(
-    conversation_id: str, generation_id: str | None = None
+    conversation_id: str,
+    generation_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> None:
-    """Remove a generation from tracking - seulement si on la possède encore."""
-    if (
+    """Remove a generation from tracking - seulement si on la possède encore.
+
+    Revue jalon (F2) : l'identité par OBJET fait foi. Le guard par
+    generation_id laissait une fenêtre - une génération neuve dont l'id
+    n'est pas encore affecté (creer_traitement en cours) se faisait
+    retirer par la fin de la précédente, et la façade /cancel ne trouvait
+    plus rien à arrêter.
+    """
+    courante = _active_generations.get(conversation_id)
+    if contexte is not None:
+        if courante is not contexte:
+            return
+    elif (
         generation_id is not None
-        and _generation_owners.get(conversation_id) not in (None, generation_id)
+        and courante is not None
+        and courante.generation_id != generation_id
     ):
         # Une génération plus récente a repris l'entrée : ne pas la casser.
         return
     _active_generations.pop(conversation_id, None)
-    _generation_owners.pop(conversation_id, None)
     _generation_timestamps.pop(conversation_id, None)
 
 
@@ -194,86 +205,66 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
     return commands
 
 
-async def _indexer_piece_jointe_sous_verrou(
-    session: AsyncSession,
-    path: Path,
-    text_content: str,
-    scope: str,
-    scope_id: str | None,
+# Passe 2 de revue (P2-6) : rattrapages de périmètre en vol (détachés).
+_rattrapages_en_cours: set["asyncio.Task[None]"] = set()
+
+
+async def _rattraper_perimetre(
+    file_id: str, chemin: str, scope: str, scope_id: str | None
 ) -> None:
-    """Indexation de secours d'une pièce jointe - le verrou du chemin est tenu.
+    """Rattrape le périmètre d'un document déjà indexé (BUG-165) - geste
+    complet et insensible à l'annulation du chat qui l'a déclenché.
 
-    Corps historique du trombone, extrait tel quel (fragments 500/50 via la
-    configuration, gelés par test_caracterisation_indexation). Seule la
-    sérialisation change : elle n'existait pas.
+    Passe 3 de revue (P3-2) : SOUS le verrou de chemin, avec REVALIDATION -
+    deux conversations pouvaient lire « provisoire » toutes les deux et
+    rattraper vers deux projets différents (SQLite disait A, Qdrant servait
+    B). Le premier gagne, le second constate et ne touche à rien.
+
+    L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
+    périmètre que la recherche n'appliquait pas encore : en cas d'échec,
+    la base affirme le statu quo (document visible dans le périmètre
+    général), jamais une fuite nouvelle.
     """
-    from datetime import UTC, datetime
+    from app.models.database import get_session_context as _ctx
+    from app.services.indexation import _verrou_de_chemin
 
-    # Revue jalon : l'existence était testée AVANT la prise du verrou - deux
-    # demandes concurrentes sur un même nouveau fichier passaient toutes deux
-    # le test, et la seconde violait l'unicité de `path` après son attente.
-    deja_la = await session.execute(
-        select(FileMetadata).where(FileMetadata.path == str(path))
-    )
-    if deja_la.scalar_one_or_none() is not None:
-        return
-
-    metadata = get_file_metadata(path)
-
-    file_meta = FileMetadata(
-        path=str(path),
-        name=metadata["name"],
-        extension=metadata["extension"],
-        size=metadata["size"],
-        mime_type=metadata["mime_type"],
-        # 0.43 : une pièce jointe déposée DANS une conversation de
-        # projet appartient à ce projet. Sans cela elle naissait
-        # globale, donc consultable depuis tous les autres dossiers.
-        scope=scope,
-        scope_id=scope_id,
-    )
-    session.add(file_meta)
-    # 3e passe de revue : la session gardait le verrou d'écriture SQLite
-    # (mono-écrivain) pendant tout l'encodage. Commit court d'abord, le
-    # résultat est consigné plus bas dans une seconde transaction.
-    await session.commit()
-    await session.refresh(file_meta)
-
-    # Chunk and store in Qdrant (découpage hors boucle d'événements)
-    chunks = await run_in_threadpool(
-        lambda: list(
-            chunk_text(
-                text_content,
-                chunk_size=settings.chunk_size,
-                overlap=settings.chunk_overlap,
+    nom = Path(chemin).name
+    async with _verrou_de_chemin(chemin):
+        async with _ctx() as session:
+            ligne = (await session.execute(
+                select(FileMetadata).where(FileMetadata.id == file_id)
+            )).scalar_one_or_none()
+            if ligne is None or not ligne.scope_provisoire:
+                # Déjà rattrapé (ou disparu) : ne rien réécrire.
+                return
+        try:
+            await run_in_threadpool(
+                get_qdrant_service().definir_perimetre_entite,
+                file_id, scope, scope_id,
             )
-        )
-    )
-    qdrant = get_qdrant_service()
-    items = []
-
-    for i, chunk in enumerate(chunks):
-        items.append({
-            "text": chunk,
-            "memory_type": "file",
-            "entity_id": file_meta.id,
-            "metadata": {
-                "name": file_meta.name,
-                "path": str(path),
-                "chunk_index": i,
-                "total_chunks": len(chunks),
-                "scope": file_meta.scope or "global",
-                "scope_id": file_meta.scope_id,
-            },
-        })
-
-    if items:
-        await qdrant.async_add_memories(items)
-        logger.info(f"Indexed {len(chunks)} chunks for file {path.name}")
-
-    file_meta.chunk_count = len(chunks)
-    file_meta.indexed_at = datetime.now(UTC)
-    await session.commit()
+        except Exception:
+            logger.warning(
+                "Périmètre non appliqué à l'index pour %s : le document "
+                "reste dans son périmètre actuel plutôt que d'être annoncé "
+                "cloisonné sans l'être", nom, exc_info=True,
+            )
+            return
+        try:
+            async with _ctx() as session:
+                ligne = (await session.execute(
+                    select(FileMetadata).where(FileMetadata.id == file_id)
+                )).scalar_one_or_none()
+                if ligne is None:
+                    return
+                ligne.scope = scope
+                ligne.scope_id = scope_id
+                ligne.scope_provisoire = False
+                await session.commit()
+        except Exception:
+            logger.warning(
+                "Périmètre appliqué à l'index mais pas consigné en base "
+                "pour %s", nom, exc_info=True,
+            )
 
 
 async def _get_file_context(
@@ -282,6 +273,7 @@ async def _get_file_context(
     command: str = "fichier",
     scope: str = "global",
     scope_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> tuple[str | None, str | None]:
     """
     Get file content for context injection.
@@ -337,45 +329,47 @@ async def _get_file_context(
         # ceux posés par défaut lors du pré-index parce que la conversation
         # n'existait pas encore. Un document rendu général depuis l'explorateur,
         # ou déjà rattaché à un projet, n'est jamais capté ni confisqué.
-        if existing and scope and scope != "global" and existing.scope_provisoire:
-            # L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
-            # périmètre que la recherche n'appliquait pas encore : en cas
-            # d'échec, la base affirmait « ce document appartient au projet »
-            # pendant que ses fragments restaient visibles partout. Ici, un
-            # échec laisse le document là où il était — visible dans le
-            # périmètre général, ce qui est le statu quo, jamais une fuite
-            # nouvelle.
-            try:
-                await run_in_threadpool(
-                    get_qdrant_service().definir_perimetre_entite,
-                    existing.id, scope, scope_id,
-                )
-            except Exception:
-                logger.warning(
-                    "Périmètre non appliqué à l'index pour %s : le document "
-                    "reste dans son périmètre actuel plutôt que d'être annoncé "
-                    "cloisonné sans l'être", path.name, exc_info=True,
-                )
-            else:
-                existing.scope = scope
-                existing.scope_id = scope_id
-                existing.scope_provisoire = False
-                await session.commit()
+        if (
+            existing and scope and scope != "global"
+            and existing.scope_provisoire
+            # Revue jalon (F7) : le rattrapage mute Qdrant + SQLite - c'est
+            # un effet métier local, il respecte la promesse du fencing.
+            and not (contexte is not None and contexte.annulation_observee())
+        ):
+            # Passe 2 de revue (P2-6) : le geste part en tâche DÉTACHÉE avec
+            # sa propre session - une annulation en vol (pendant le thread
+            # Qdrant) coupait la coroutine entre les deux écritures et
+            # laissait les vecteurs re-périmétrés avec une base restée
+            # globale. Détaché, le geste finit les DEUX côtés ou aucun.
+            rattrapage = asyncio.create_task(
+                _rattraper_perimetre(existing.id, str(path), scope, scope_id)
+            )
+            _rattrapages_en_cours.add(rattrapage)
+            rattrapage.add_done_callback(_rattrapages_en_cours.discard)
+            await asyncio.shield(rattrapage)
+            await session.refresh(existing)
 
         # Index if not already done
         if not existing:
+            # 0.47 : le chemin de secours passe par le MÊME cœur que la
+            # route et l'upload (verrou de chemin, invariant N1, périmètre
+            # dans le payload) et par le MÊME signal - le token de SA
+            # génération. Le corps historique dupliquait le cœur avec son
+            # propre découpage : deux constructeurs pour un même index,
+            # c'était une divergence garantie.
+            from app.services import indexation
 
-            from app.services.indexation import _verrou_de_chemin
-
-            # 0.45 : le MÊME verrou de chemin que la route d'indexation et
-            # l'upload. Ce chemin de secours créait la métadonnée et écrivait
-            # les fragments sans aucune sérialisation - deux demandes sur le
-            # même fichier (trombone + bouton Indexer) se marchaient dessus,
-            # jusqu'à la contrainte d'unicité sur `path`.
-            async with _verrou_de_chemin(str(path)):
-                await _indexer_piece_jointe_sous_verrou(
-                    session, path, text_content, scope, scope_id
+            async def _abandonnee() -> bool:
+                return (
+                    contexte is not None and contexte.annulation_observee()
                 )
+
+            await indexation.index_payload(
+                str(path),
+                est_abandonnee=_abandonnee,
+                scope=scope,
+                scope_id=scope_id,
+            )
 
         # Build context string
         file_name = path.name
@@ -400,6 +394,11 @@ Chemin: {path}
 
         return context, None
 
+    except IndexationAbandonnee:
+        # 0.47 : l'utilisateur a retiré sa demande - la déguiser en
+        # « Erreur lors de la lecture » mentait deux fois (au journal et
+        # à l'utilisateur). L'appelant sait quoi faire d'un abandon.
+        raise
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {e}")
         return None, f"Erreur lors de la lecture de {path.name}: {str(e)}"
@@ -1583,7 +1582,8 @@ async def send_message(
             elif error:
                 logger.warning(f"Attached file error: {error}")
 
-    # BUG-160 : même rappel que sur le chemin streaming.
+    # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
+    # ici : le chemin non-stream n'a ni génération ni annulation.
     for fp in await _pieces_jointes_recentes(
         conversation.id, session, deja_fournis=list(request.file_paths or [])
     ):
@@ -1708,17 +1708,22 @@ async def _stream_response(
 
     generation = None
     annulee_avant_demarrage = False
+    # 0.47 : le contexte naît AVANT le handle - l'adaptateur canonique pose
+    # directement le token de CETTE génération (aucune fenêtre où une
+    # demande rejouée viserait l'entrée d'une génération précédente).
+    contexte_execution = _register_generation(conversation_id)
     try:
         generation = await _traitements.creer_traitement(
             type="chat",
             label=(user_message or "Message")[:80],
             conversation_id=conversation_id,
         )
+        contexte_execution.generation_id = generation.id
         try:
             await generation.demarrer()
             await generation.lier_adaptateur(
                 _registre.AnnulationCooperative(
-                    poser_drapeau=lambda: _cancel_generation(conversation_id)
+                    poser_drapeau=contexte_execution.demander_arret
                 )
             )
         except _traitements.AnnuleAvantDemarrage:
@@ -1744,12 +1749,9 @@ async def _stream_response(
         generation = None
 
     if annulee_avant_demarrage:
+        _unregister_generation(conversation_id, contexte=contexte_execution)
         yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
         return
-    # L'entrée du registre appartient à CETTE génération (revue F6).
-    _register_generation(
-        conversation_id, generation.id if generation is not None else None
-    )
     etat_generation: dict[str, Any] = {"etat": EtatTacheTraitement.DONE}
     if generation is not None:
         yield (
@@ -1779,6 +1781,7 @@ async def _stream_response(
         pending_confirmations=pending_confirmations,
         allow_file_commands=allow_file_commands,
         detection_message=detection_message,
+        contexte=contexte_execution,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -1790,7 +1793,9 @@ async def _stream_response(
     try:
         while True:
             prochain = asyncio.ensure_future(producteur.__anext__())
-            surveillance = asyncio.ensure_future(_attendre_annulation(conversation_id))
+            surveillance = asyncio.ensure_future(
+                _attendre_annulation(contexte_execution, conversation_id)
+            )
             termines, _ = await asyncio.wait(
                 {prochain, surveillance}, return_when=asyncio.FIRST_COMPLETED
             )
@@ -1813,8 +1818,21 @@ async def _stream_response(
                 chunk = prochain.result()
             except StopAsyncIteration:
                 return
+            except IndexationAbandonnee:
+                # Passe 2 de revue (P2-9) : l'abandon d'une indexation de
+                # pièce jointe est une ANNULATION, pas une panne de stream -
+                # le client reçoit un cancelled propre.
+                etat_generation["etat"] = EtatTacheTraitement.CANCELLED
+                yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
+                return
 
-            if _is_cancelled(conversation_id):
+            # Une génération qui produit encore n'est pas orpheline : sans ce
+            # rafraîchissement, _cleanup_stale_generations retirait après 5 min
+            # l'entrée d'un stream VIVANT (second panel de revue).
+            if _active_generations.get(conversation_id) is contexte_execution:
+                _generation_timestamps[conversation_id] = time.monotonic()
+
+            if contexte_execution.annulation_observee():
                 etat_generation["etat"] = EtatTacheTraitement.CANCELLED
                 yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
@@ -1831,7 +1849,7 @@ async def _stream_response(
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
         # autre sortie non prévue est un échec. L'état terminal reste posé
         # par CE producteur, jamais par l'endpoint d'annulation.
-        if isinstance(sortie, GeneratorExit) or _is_cancelled(conversation_id):
+        if isinstance(sortie, GeneratorExit) or contexte_execution.annulation_observee():
             etat_generation["etat"] = EtatTacheTraitement.CANCELLED
         else:
             etat_generation["etat"] = EtatTacheTraitement.FAILED
@@ -1873,8 +1891,7 @@ async def _stream_response(
             with contextlib.suppress(Exception):
                 get_performance_monitor().finish_stream(conversation_id)
             _unregister_generation(
-                conversation_id,
-                generation.id if generation is not None else None,
+                conversation_id, contexte=contexte_execution
             )
             if generation is not None:
                 with contextlib.suppress(Exception):
@@ -1918,9 +1935,23 @@ async def _persister_message_partiel(
         logger.warning("Message partiel non persisté", exc_info=True)
 
 
-async def _attendre_annulation(conversation_id: str, intervalle_s: float = 0.05) -> None:
-    """Se résout dès que l'annulation est demandée pour cette conversation."""
-    while not _is_cancelled(conversation_id):
+async def _attendre_annulation(
+    contexte: ContexteExecution,
+    conversation_id: str | None = None,
+    intervalle_s: float = 0.05,
+) -> None:
+    """Se résout dès que l'annulation de CETTE génération est demandée.
+
+    Passe 2 de revue (P2-11) : rafraîchit aussi le timestamp - une
+    génération vivante mais silencieuse (outil long) restait purgeable par
+    _cleanup_stale_generations après 5 minutes.
+    """
+    while not contexte.annulation_observee():
+        if (
+            conversation_id is not None
+            and _active_generations.get(conversation_id) is contexte
+        ):
+            _generation_timestamps[conversation_id] = time.monotonic()
         await asyncio.sleep(intervalle_s)
 
 
@@ -1937,8 +1968,17 @@ async def _do_stream_response(
     pending_confirmations: list[dict[str, Any]] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+
+    def _annulation_observee() -> bool:
+        # 0.47 : le token de CETTE génération est l'autorité ; le drapeau
+        # par conversation n'est que le repli des appels sans contexte.
+        if contexte is not None:
+            return bool(contexte.annulation_observee())
+        return _is_cancelled(conversation_id)
+
     for pending_confirmation in pending_confirmations or []:
         confirm_chunk = StreamChunk(
             type="confirmation_required",
@@ -2036,7 +2076,8 @@ async def _do_stream_response(
 
     for cmd, path in file_commands:
         file_ctx, error = await _get_file_context(
-            path, session, cmd, scope=perimetre_fichiers, scope_id=perimetre_fichiers_id
+            path, session, cmd, scope=perimetre_fichiers,
+            scope_id=perimetre_fichiers_id, contexte=contexte,
         )
         if file_ctx:
             file_contexts.append(file_ctx)
@@ -2050,6 +2091,7 @@ async def _do_stream_response(
             file_ctx, error = await _get_file_context(
                 fp, session, "analyse",
                 scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+                contexte=contexte,
             )
             if file_ctx:
                 file_contexts.append(file_ctx)
@@ -2067,6 +2109,7 @@ async def _do_stream_response(
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            contexte=contexte,
         )
         if file_ctx:
             file_contexts.append(file_ctx)
@@ -2260,6 +2303,7 @@ async def _do_stream_response(
                         session=session,
                         usage_totals=usage_totals,
                         tool_outcomes=tool_outcomes,
+                        contexte=contexte,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -2384,7 +2428,7 @@ async def _do_stream_response(
     #
     # Le sondage d'annulation a un pas de 50 ms : la course est réelle. La garde
     # est donc reposée ICI, juste avant le premier effet durable.
-    if _is_cancelled(conversation_id):
+    if _annulation_observee():
         # 0.46 (design V2.1) : le TEXTE déjà produit survit - l'utilisateur le
         # voit à l'écran, le faire disparaître au rechargement était un
         # mensonge inverse. Les EFFETS (skill qui écrit un fichier, outils),
@@ -2583,6 +2627,7 @@ async def _execute_tools_and_continue(
     prior_turns: list[ToolTurn] | None = None,
     usage_totals: dict | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -2641,7 +2686,11 @@ async def _execute_tools_and_continue(
         #
         # La garde est en TÊTE de boucle : un seul endroit couvre tous les
         # chemins d'exécution (web, navigateur, mémoire, workspace, MCP).
-        if _is_cancelled(conversation_id):
+        if (
+            contexte.annulation_observee()
+            if contexte is not None
+            else _is_cancelled(conversation_id)
+        ):
             logger.info("Annulation demandée : les outils restants ne sont pas exécutés")
             return
 
@@ -2765,6 +2814,7 @@ async def _execute_tools_and_continue(
                     tc.name, tc.arguments, session,
                     scope=perimetre, scope_id=perimetre_id,
                     conversation_id=conversation_id,
+                    contexte=contexte,
                 )
                 execution_time = (time.time() - start_time) * 1000
 
@@ -2794,7 +2844,9 @@ async def _execute_tools_and_continue(
             try:
                 if session is None:
                     raise RuntimeError("Database session not available for workspace tools")
-                tool_result_str = await execute_workspace_tool(tc.name, tc.arguments, session)
+                tool_result_str = await execute_workspace_tool(
+                    tc.name, tc.arguments, session, contexte=contexte
+                )
                 execution_time = (time.time() - start_time) * 1000
 
                 class WorkspaceToolResult:
@@ -2883,7 +2935,11 @@ async def _execute_tools_and_continue(
     # 0.46 : la garde POST-outils. Celle en tête de boucle couvre chaque
     # outil suivant ; celle-ci empêche de relancer un TOUR DE MODÈLE entier
     # alors que l'utilisateur vient d'arrêter pendant le dernier outil.
-    if _is_cancelled(conversation_id):
+    if (
+        contexte.annulation_observee()
+        if contexte is not None
+        else _is_cancelled(conversation_id)
+    ):
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
         return
 
@@ -2942,6 +2998,7 @@ async def _execute_tools_and_continue(
                     session=session,
                     usage_totals=usage_totals,
                     tool_outcomes=tool_outcomes,
+                    contexte=contexte,
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.

@@ -5,10 +5,14 @@ Provides email and calendar tools that the LLM can call
 during conversation to interact with user's connected accounts.
 """
 
+import asyncio
+import contextlib
 import logging
 from contextvars import ContextVar
+from pathlib import Path
 from typing import Any
 
+from app.services.contexte_execution import ContexteExecution
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -287,6 +291,9 @@ WORKSPACE_TOOLS = [
 # (avant : detection d'intention fragile -> aucun fichier produit / faux lien).
 _DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro"}
 
+# Passe 2 de revue (P2-5) : gestes de génération détachés (référence forte).
+_generations_en_cours: set["asyncio.Task[Any]"] = set()
+
 WORKSPACE_TOOL_NAMES = {t["function"]["name"] for t in WORKSPACE_TOOLS}
 
 
@@ -298,6 +305,7 @@ async def execute_workspace_tool(
     tool_name: str,
     arguments: dict[str, Any],
     session: AsyncSession,
+    contexte: ContexteExecution | None = None,
 ) -> str:
     """Execute a workspace tool and return the result as string."""
     if tool_name == "read_emails":
@@ -313,7 +321,7 @@ async def execute_workspace_tool(
     elif tool_name == "create_calendar_event":
         return await _create_calendar_event(arguments, session)
     elif tool_name == "generate_document":
-        return await _generate_document(arguments, session)
+        return await _generate_document(arguments, session, contexte=contexte)
     elif tool_name == "search_invoices":
         return await _search_invoices(arguments, session)
     else:
@@ -404,7 +412,11 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     return f"{len(rows)} document(s) trouvé(s) :\n{listing}{guidance}"
 
 
-async def _generate_document(args: dict, session: AsyncSession) -> str:
+async def _generate_document(
+    args: dict,
+    session: AsyncSession,
+    contexte: ContexteExecution | None = None,
+) -> str:
     """Génère un vrai fichier Office via le registre de skills (P8).
 
     Avant : le chat « bluffait » un faux lien faute de routage fiable. Désormais
@@ -423,30 +435,94 @@ async def _generate_document(args: dict, session: AsyncSession) -> str:
         return "Aucun contenu fourni : impossible de generer le document."
 
     title = args.get("title")
+
+    # Fence 0.47 : le premier effet durable est le fichier que le skill
+    # écrit sur le disque - annulation observée = le registre n'est jamais
+    # invoqué, aucun fichier.
+    if contexte is not None and contexte.annulation_observee():
+        return (
+            "Génération du document interrompue avant écriture : "
+            "l'utilisateur a arrêté la génération."
+        )
+
     try:
         registry = get_skills_registry()
-        resp = await registry.execute(
+
+        # Passe 2/3 de revue (P2-5, P3-4) : le skill écrit via thread et
+        # sous-processus - annuler la coroutine ne l'arrête pas. Le geste
+        # part DÉTACHÉ ; le POST-TRAITEMENT (carte ou retrait) appartient
+        # au porteur s'il est vivant, et à une continuation détachée s'il
+        # est mort (déconnexion réelle : aucun token posé, mais le fichier
+        # produit dans un flux mort ne doit ni rester ni faire une carte).
+        geste = asyncio.create_task(registry.execute(
             skill_id,
             SkillExecuteRequest(prompt=title or content[:120], title=title),
             content,
-        )
-        if resp.success:
-            record_generated_file({
-                "skill_id": skill_id,
-                "file_id": resp.file_id,
-                "file_name": resp.file_name,
-                "file_size": resp.file_size,
-                "download_url": resp.download_url,
-                "format": fmt,
-                "local_dir": str(registry.output_dir),
-            })
-            return (
-                f"Document {fmt.upper()} généré : {resp.file_name}. "
-                f"Téléchargement : {resp.download_url}"
+        ))
+        _generations_en_cours.add(geste)
+        geste.add_done_callback(_generations_en_cours.discard)
+        try:
+            resp = await asyncio.shield(geste)
+        except asyncio.CancelledError:
+            continuation = asyncio.create_task(
+                _retirer_document_orphelin(geste, Path(registry.output_dir))
             )
-        return f"Échec de génération du document : {resp.error}"
+            _generations_en_cours.add(continuation)
+            continuation.add_done_callback(_generations_en_cours.discard)
+            raise
+        if not resp.success:
+            return f"Échec de génération du document : {resp.error}"
+        if contexte is not None and contexte.annulation_observee():
+            with contextlib.suppress(Exception):
+                if resp.file_name:
+                    (Path(registry.output_dir) / resp.file_name).unlink(
+                        missing_ok=True
+                    )
+            return (
+                "Génération interrompue : le document produit a été retiré."
+            )
+        record_generated_file({
+            "skill_id": skill_id,
+            "file_id": resp.file_id,
+            "file_name": resp.file_name,
+            "file_size": resp.file_size,
+            "download_url": resp.download_url,
+            "format": fmt,
+            "local_dir": str(registry.output_dir),
+        })
+        # BUG-173 : ne JAMAIS donner l'URL au modèle - il la recopiait en
+        # lien markdown, qui s'ouvre en navigateur externe sur
+        # tauri.localhost dans l'app desktop et meurt. La carte native
+        # sous le message (BUG-136) est LE chemin de téléchargement.
+        return (
+            f"Document {fmt.upper()} généré : {resp.file_name}. "
+            "L'utilisateur peut l'enregistrer via la carte affichée sous "
+            "ce message - ne fournis aucun lien."
+        )
+    except asyncio.CancelledError:
+        raise
     except Exception as e:  # pragma: no cover - dépend du sandbox skills
         return f"Erreur lors de la génération du document : {e}"
+
+
+async def _retirer_document_orphelin(
+    geste: "asyncio.Task[Any]", dossier: Path
+) -> None:
+    """Le porteur est mort : un document qui aboutit après lui n'a plus
+    personne pour le montrer - le retirer, aucune carte (passe 3, P3-4)."""
+    resultats = await asyncio.gather(geste, return_exceptions=True)
+    resp = resultats[0]
+    with contextlib.suppress(Exception):
+        if (
+            not isinstance(resp, BaseException)
+            and getattr(resp, "success", False)
+            and getattr(resp, "file_name", None)
+        ):
+            (dossier / resp.file_name).unlink(missing_ok=True)
+            logger.info(
+                "Document %s retiré : produit après la mort du flux qui "
+                "l'avait demandé", resp.file_name,
+            )
 
 
 async def _get_email_provider(session: AsyncSession):

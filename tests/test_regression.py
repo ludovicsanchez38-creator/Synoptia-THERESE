@@ -3583,10 +3583,14 @@ class TestChantierA_VeriteExecution:
 
     def test_create_tools_return_honest_errors(self):
         content = self.MEMORY_TOOLS.read_text(encoding="utf-8")
-        # Sur échec, les outils renvoient un objet {"error": ...} + rollback (pas de faux succès)
-        assert content.count("await session.rollback()") >= 2, (
+        # Sur échec ou interruption, les outils rollback LEUR session (0.47 :
+        # le geste d'écriture possède sa session, session_geste) et renvoient
+        # {"error"/"interrupted": ...} - jamais de faux succès. Le
+        # comportement réel est couvert par test_fencing_traitement (F6).
+        assert content.count("await session_geste.rollback()") >= 2, (
             "Les outils de création doivent rollback et renvoyer une erreur honnête en cas d'échec"
         )
+        assert '"error":' in content
 
     def test_chat_enforces_create_cap_and_recap(self):
         content = self.CHAT_PY.read_text(encoding="utf-8")
@@ -6935,7 +6939,12 @@ class TestQW_GenerateDocumentTool:
 
     @pytest.mark.asyncio
     async def test_generate_document_produces_real_link(self, db_session, monkeypatch):
-        """L'outil exécute le bon skill et renvoie une URL de téléchargement réelle."""
+        """L'outil exécute le bon skill et annonce le fichier généré.
+
+        BUG-173 (25/08) : le retour ne contient PLUS l'URL - le modèle la
+        recopiait en lien markdown, mort en navigateur externe
+        (tauri.localhost). La carte native est LE chemin de téléchargement.
+        """
         from unittest.mock import AsyncMock, MagicMock
 
         import app.services.skills as skills_mod
@@ -6958,7 +6967,10 @@ class TestQW_GenerateDocumentTool:
         )
 
         assert "rapport_ab12.docx" in result
-        assert "/api/skills/download/ab12" in result
+        assert "/api/skills/download" not in result, (
+            "BUG-173 : une URL dans le texte devient un lien markdown mort"
+        )
+        assert "carte" in result
         assert fake_registry.execute.await_args[0][0] == "docx-pro"
 
     @pytest.mark.asyncio

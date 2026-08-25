@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { annulerDeliberation } from '../board/annulerDeliberation';
 import {
   getBoardDecision,
   listAdvisors,
@@ -59,6 +60,9 @@ export function usePrototypeBoardData(enabled = true) {
   const detailRequestId = useRef(0);
   const selectedDecisionId = useRef<string | null>(null);
   const abortController = useRef<AbortController | null>(null);
+  // 0.47 : identifiant du ProcessingTask, reçu en premier événement SSE -
+  // c'est lui que vise le bouton Annuler (chemin canonique).
+  const processingTaskId = useRef<string | null>(null);
   const running = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -124,7 +128,9 @@ export function usePrototypeBoardData(enabled = true) {
     running.current = true;
     const controller = new AbortController();
     abortController.current = controller;
+    processingTaskId.current = null;
     let receivedDone = false;
+    let receivedCancelled = false;
     setRun({
       ...idleRun,
       status: 'running',
@@ -137,7 +143,15 @@ export function usePrototypeBoardData(enabled = true) {
     try {
       for await (const chunk of streamDeliberation(request, controller.signal)) {
         if (controller.signal.aborted) break;
-        if (chunk.type === 'web_search_start') {
+        if (chunk.type === 'task') {
+          processingTaskId.current = chunk.content || null;
+        } else if (chunk.type === 'cancelled') {
+          // Second panel de revue : sans ce drapeau, le post-loop écrasait
+          // « annulée » en « erreur » pour toute annulation externe.
+          receivedCancelled = true;
+          setRun((current) => ({ ...current, status: 'cancelled', phase: 'Délibération annulée', error: null }));
+          break;
+        } else if (chunk.type === 'web_search_start') {
           setRun((current) => ({ ...current, isSearchingWeb: true, phase: 'Recherche web en cours' }));
         } else if (chunk.type === 'web_search_done') {
           setRun((current) => ({ ...current, isSearchingWeb: false, phase: 'Consultation des conseillers' }));
@@ -235,7 +249,7 @@ export function usePrototypeBoardData(enabled = true) {
 
       if (controller.signal.aborted) {
         setRun((current) => ({ ...current, status: 'cancelled', phase: 'Délibération annulée', error: null }));
-      } else if (!receivedDone) {
+      } else if (!receivedDone && !receivedCancelled) {
         setRun((current) => ({ ...current, status: 'error', phase: 'Flux interrompu', error: 'La délibération s’est interrompue avant sa sauvegarde.' }));
       }
     } catch (error) {
@@ -251,7 +265,11 @@ export function usePrototypeBoardData(enabled = true) {
   }, [refresh]);
 
   const cancelDeliberation = useCallback(() => {
-    abortController.current?.abort();
+    // Chemin canonique d'abord (le backend arrête réellement le travail),
+    // transport ensuite - un abort seul laissait les conseillers tourner.
+    void annulerDeliberation(processingTaskId.current, () => {
+      abortController.current?.abort();
+    });
   }, []);
 
   const resetRun = useCallback(() => {

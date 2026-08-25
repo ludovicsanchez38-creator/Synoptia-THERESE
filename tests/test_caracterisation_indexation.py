@@ -161,24 +161,24 @@ class TestLUploadDeProjetEstGele:
         )
 
 
-class TestLeTromboneEstGele:
-    def test_fragments_500_50_depuis_la_configuration(self):
-        from app.config import settings
+class TestLeCheminDeSecoursEstRaccorde:
+    """Jusqu'en 0.46, le fallback du chat découpait en 500/50 via la
+    configuration - un second constructeur d'index à côté du cœur. Le
+    design 0.47 (fencing) a DÉCIDÉ le raccord : même cœur, même verrou,
+    même invariant N1, même signal d'abandon. Le gel 500/50 n'a plus de
+    chemin à geler ; ce test fige la délégation à la place."""
 
-        assert settings.chunk_size == 500
-        assert settings.chunk_overlap == 50
-
-    def test_le_trombone_lit_bien_la_configuration(self):
-        """Le chemin de secours du chat découpe via settings.chunk_size :
-        c'est CE couplage que l'extraction devra préserver ou décider de
-        changer - pas le changer par accident."""
+    def test_le_fallback_ne_decoupe_plus_lui_meme(self):
         import inspect
 
         from app.routers import chat as module
 
         source = inspect.getsource(module)
-        assert "chunk_size=settings.chunk_size" in source
-        assert "overlap=settings.chunk_overlap" in source
+        assert "chunk_size=settings.chunk_size" not in source, (
+            "le fallback re-découpe par lui-même : le raccord 0.47 au cœur "
+            "a été défait"
+        )
+        assert "indexation.index_payload" in source
 
 
 class TestLeModeSyncVerifieAvantDEcrire:
