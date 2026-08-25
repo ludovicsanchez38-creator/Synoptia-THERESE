@@ -8,6 +8,7 @@ Persistance SQLite pour les décisions.
 import asyncio
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from typing import AsyncGenerator
 from uuid import uuid4
 
@@ -190,6 +191,8 @@ class BoardService:
     async def deliberate(
         self,
         request: BoardRequest,
+        decision_id: str | None = None,
+        annulation_demandee: Callable[[], Awaitable[bool]] | None = None,
     ) -> AsyncGenerator[BoardDeliberationChunk, None]:
         """
         Lance une délibération du board en streaming.
@@ -488,11 +491,48 @@ class BoardService:
         synthesis = await self._generate_synthesis(request.question, opinions, synthesis_llm)
 
         # --- Persistance SQLite ---
-        decision_id = str(uuid4())
+        # 0.47 : le decision_id est PRÉALLOUÉ par la route (entity_id du
+        # traitement posé dès la création) ; il ne naît ici qu'en repli.
+        decision_id = decision_id or str(uuid4())
         logger.info(f"Saving board decision {decision_id} (mode={request.mode.value}) to SQLite...")
         if not self._session:
             raise RuntimeError("La décision ne peut pas être sauvegardée sans session locale.")
 
+        # Fence (0.47) : une demande d'arrêt posée AVANT le commit gagne -
+        # aucune décision à moitié voulue ne se sauve. Après le commit, done
+        # gagne : le shield laisse la persistance déjà lancée aboutir même
+        # si la tâche porteuse est annulée pendant.
+        if annulation_demandee is not None and await annulation_demandee():
+            raise asyncio.CancelledError(
+                "Arrêt demandé avant le commit de la décision"
+            )
+        await asyncio.shield(
+            self._persister_decision(decision_id, request, opinions, synthesis)
+        )
+
+        yield BoardDeliberationChunk(
+            type="synthesis_chunk",
+            content=json.dumps(synthesis.model_dump(), ensure_ascii=False),
+        )
+
+        yield BoardDeliberationChunk(
+            type="done",
+            content=decision_id,
+        )
+
+    async def _persister_decision(
+        self,
+        decision_id: str,
+        request: BoardRequest,
+        opinions: list[AdvisorOpinion],
+        synthesis: BoardSynthesis,
+    ) -> None:
+        """Le commit de la décision - corps historique, extrait tel quel."""
+        session = self._session
+        if session is None:
+            raise RuntimeError(
+                "La décision ne peut pas être sauvegardée sans session locale."
+            )
         try:
             db_decision = BoardDecisionDB(
                 id=decision_id,
@@ -506,28 +546,18 @@ class BoardService:
                 web_sources=json.dumps(self._last_web_sources, ensure_ascii=False),
                 synthesis_usage=json.dumps(self._last_synthesis_usage, ensure_ascii=False),
             )
-            self._session.add(db_decision)
-            await self._session.commit()
+            session.add(db_decision)
+            await session.commit()
             if await self.get_decision(decision_id) is None:
                 raise RuntimeError("La décision sauvegardée est introuvable.")
             logger.info(f"Board decision saved: {decision_id}")
         except Exception as e:
             logger.error(f"Failed to save board decision: {e}", exc_info=True)
             try:
-                await self._session.rollback()
+                await session.rollback()
             except Exception as rollback_error:
                 logger.debug("Rollback apres erreur save: %s", rollback_error)
             raise RuntimeError("La décision n'a pas pu être sauvegardée localement.") from e
-
-        yield BoardDeliberationChunk(
-            type="synthesis_chunk",
-            content=json.dumps(synthesis.model_dump(), ensure_ascii=False),
-        )
-
-        yield BoardDeliberationChunk(
-            type="done",
-            content=decision_id,
-        )
 
     async def _generate_synthesis(
         self,

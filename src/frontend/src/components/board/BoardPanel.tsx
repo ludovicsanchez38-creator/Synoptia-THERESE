@@ -28,6 +28,7 @@ import {
   type BoardSynthesis,
   type BoardDecisionResponse,
 } from '../../services/api';
+import { annulerDeliberation } from './annulerDeliberation';
 
 interface BoardPanelProps {
   isOpen: boolean;
@@ -113,6 +114,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [runError, setRunError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // 0.47 : identifiant du ProcessingTask (premier événement SSE) - cible
+  // du chemin canonique d'annulation.
+  const processingTaskIdRef = useRef<string | null>(null);
 
   // Check Ollama availability
   const checkOllama = useCallback(() => {
@@ -170,7 +174,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   }, [isOpen]);
 
   const handleCloseAndReset = useCallback(() => {
-    abortRef.current?.abort();
+    // Board classique : fermer = annuler - par le chemin canonique, le
+    // backend arrête réellement les conseillers (un abort seul ne coupait
+    // que le transport).
+    void annulerDeliberation(processingTaskIdRef.current, () => {
+      abortRef.current?.abort();
+    });
     abortRef.current = null;
     resetDeliberation();
     setViewState('input');
@@ -180,10 +189,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   }, [resetDeliberation, onClose]);
 
   const handleCancelDeliberation = useCallback(() => {
-    if (abortRef.current) {
-      abortRef.current.abort();
+    void annulerDeliberation(processingTaskIdRef.current, () => {
+      abortRef.current?.abort();
       abortRef.current = null;
-    }
+    });
     resetDeliberation();
     setViewState('input');
   }, [resetDeliberation]);
@@ -223,6 +232,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    processingTaskIdRef.current = null;
 
     resetDeliberation();
     setViewState('deliberating');
@@ -240,6 +250,14 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
         if (controller.signal.aborted) break;
 
         switch (chunk.type) {
+          case 'task':
+            processingTaskIdRef.current = chunk.content || null;
+            break;
+
+          case 'cancelled':
+            // Le backend confirme l'arrêt : rien à sauver, retour au calme.
+            break;
+
           case 'web_search_start':
             setIsSearchingWeb(true);
             break;

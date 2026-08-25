@@ -27,7 +27,7 @@ export interface BoardRequest {
 }
 
 export interface BoardDeliberationChunk {
-  type: 'web_search_start' | 'web_search_done' | 'advisor_start' | 'advisor_chunk' | 'advisor_done' | 'synthesis_start' | 'synthesis_chunk' | 'done' | 'error';
+  type: 'task' | 'web_search_start' | 'web_search_done' | 'advisor_start' | 'advisor_chunk' | 'advisor_done' | 'synthesis_start' | 'synthesis_chunk' | 'done' | 'cancelled' | 'error';
   role?: AdvisorRole;
   name?: string;
   emoji?: string;
@@ -129,7 +129,7 @@ export async function* streamDeliberation(
           try {
             const chunk = JSON.parse(data) as BoardDeliberationChunk;
             yield chunk;
-            if (chunk.type === 'done' || chunk.type === 'error') {
+            if (chunk.type === 'done' || chunk.type === 'cancelled' || chunk.type === 'error') {
               return;
             }
           } catch {
