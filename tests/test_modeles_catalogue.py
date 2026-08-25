@@ -120,3 +120,75 @@ class TestLesQuatreTablesDerivent:
             assert await _available_models_for(fournisseur) == cat.modeles_ordonnes(
                 fournisseur
             ), f"la liste UI de {fournisseur} diverge du catalogue"
+
+
+class TestLesTablesDeLlmDeriventDuCatalogue:
+    """0.48 : les 3 tables restantes de llm.py (_default_config principale,
+    repli par clé, circuit breaker) suivent le catalogue - plus aucun
+    modèle codé en dur qui périme en silence (claude-opus-4-8, gpt-5.5,
+    grok-4.3 étaient restés dans ces tables après la MAJ 0.43.4)."""
+
+    def _poser_preference(self, cle, valeur):
+        from app.models.database import get_sync_connection
+        from sqlalchemy import text
+
+        with get_sync_connection() as conn:
+            conn.execute(
+                text(
+                    "INSERT OR REPLACE INTO preferences"
+                    " (id, key, value, category, created_at, updated_at)"
+                    " VALUES (lower(hex(randomblob(16))), :k, :v, 'llm',"
+                    " datetime('now'), datetime('now'))"
+                ),
+                {"k": cle, "v": valeur},
+            )
+            conn.commit()
+
+    def test_provider_selectionne_sans_modele_recoit_le_frontier(
+        self, client, monkeypatch
+    ):
+        from app.services.llm import LLMService
+        from app.services.modeles_catalogue import CATALOGUE, frontier
+
+        self._poser_preference("llm_provider", "openai")
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+        config = LLMService()._default_config()
+        assert config.model == frontier("openai")
+        assert config.context_window == CATALOGUE["openai"].context_window
+
+    def test_repli_par_cle_recoit_le_frontier(self, client, monkeypatch):
+        """Sans préférence : première clé trouvée (anthropic) -> frontier."""
+        from app.services.llm import LLMService
+        from app.services.modeles_catalogue import CATALOGUE, frontier
+
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+        for var in ("OPENAI_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+        config = LLMService()._default_config()
+        assert config.provider.value == "anthropic"
+        assert config.model == frontier("anthropic")
+        assert config.context_window == CATALOGUE["anthropic"].context_window
+
+    def test_circuit_breaker_derive_du_catalogue(self, client, monkeypatch):
+        from app.services.llm import LLMService
+        from app.services.modeles_catalogue import CATALOGUE, frontier
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        for var in (
+            "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "MISTRAL_API_KEY",
+            "XAI_API_KEY", "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY",
+        ):
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+        service = LLMService(LLMConfig(
+            provider=LLMProvider.ANTHROPIC,
+            model="claude-opus-5",
+            api_key="sk-ant-test",
+        ))
+        fallbacks = service._get_fallback_configs()
+        openai_fb = next(
+            c for c in fallbacks if c.provider is LLMProvider.OPENAI
+        )
+        assert openai_fb.model == frontier("openai")
+        assert openai_fb.context_window == CATALOGUE["openai"].context_window

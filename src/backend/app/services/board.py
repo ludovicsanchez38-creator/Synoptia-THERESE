@@ -23,6 +23,7 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
+from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.llm import (
     LLMProvider,
     get_llm_service,
@@ -342,7 +343,19 @@ class BoardService:
                 advisor_llm = None
                 actual_provider = default_llm.config.provider.value
                 if preferred_provider:
-                    advisor_llm = get_llm_service_for_provider(preferred_provider)
+                    # 0.48 : chaque conseiller cloud reçoit le FRONTIER de son
+                    # fournisseur, l'effort max et le max_tokens recommandé -
+                    # quelles que soient les préférences utilisateur.
+                    modele_frontier = frontier(preferred_provider)
+                    advisor_llm = get_llm_service_for_provider(
+                        preferred_provider,
+                        model_override=modele_frontier,
+                        effort_override="max",
+                        max_tokens_override=(
+                            max_tokens_recommande(modele_frontier)
+                            if modele_frontier else None
+                        ),
+                    )
                     if advisor_llm:
                         actual_provider = preferred_provider
                         logger.info(f"Advisor {config['name']} using {preferred_provider}")
