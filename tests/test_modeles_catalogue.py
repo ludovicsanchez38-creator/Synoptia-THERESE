@@ -40,7 +40,9 @@ class TestLesFrontiers:
             "__depends__", ""
         )
 
-        source = open(cat.__file__, encoding="utf-8").read()
+        from pathlib import Path
+
+        source = Path(cat.__file__).read_text(encoding="utf-8")
         assert "from app.services.llm" not in source
         assert "import app.services.llm" not in source
         assert "from app.services import llm" not in source
