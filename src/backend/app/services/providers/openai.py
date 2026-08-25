@@ -228,6 +228,7 @@ class OpenAIProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue OpenAI conversation with tool results."""
         messages = list(messages)  # copie

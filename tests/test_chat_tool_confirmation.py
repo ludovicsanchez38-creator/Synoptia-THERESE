@@ -20,12 +20,13 @@ class _Event:
         self.content = content
         self.tool_call = tool_call
         self.stop_reason = stop_reason
+        self.assistant_content_brut = None  # contrat StreamEvent 0.48
 
 
 class _FakeLLM:
     async def continue_with_tool_results(
         self, context, assistant_content, tool_calls, tool_results, tools
-    , prior_turns=None):
+    , prior_turns=None, assistant_content_brut=None):
         self.received_tool_results = tool_results
         yield _Event("done", stop_reason="end_turn")
 
@@ -94,7 +95,8 @@ class _FakeLLMReemetSendEmail:
         self.continuations = 0
 
     async def continue_with_tool_results(
-        self, context, assistant_content, tool_calls, tool_results, tools, prior_turns=None
+        self, context, assistant_content, tool_calls, tool_results, tools, prior_turns=None,
+        assistant_content_brut=None,
     ):
         self.continuations += 1
         # Le modèle re-tente un envoi avec des arguments hallucinés différents

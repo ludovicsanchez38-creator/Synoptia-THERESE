@@ -2249,6 +2249,8 @@ async def _do_stream_response(
         )
         yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
     tool_calls_collected: list[ToolCall] = []
+    # 0.48 : content brut du tour (mode reasoning Mistral), a rejouer tel quel
+    assistant_brut_collected: list | None = None
     max_tool_iterations = 5  # Prevent infinite tool loops
     # Usage réel (dette 14/06/2026) : accumulé sur TOUS les tours d'outils (un
     # tour = un appel API = son propre usage). "estimated" passe à True dès
@@ -2280,6 +2282,8 @@ async def _do_stream_response(
 
             elif event.type == "tool_call" and event.tool_call:
                 tool_calls_collected.append(event.tool_call)
+                if event.assistant_content_brut is not None:
+                    assistant_brut_collected = event.assistant_content_brut
 
             elif event.type == "done":
                 if event.input_tokens is not None and event.output_tokens is not None:
@@ -2304,6 +2308,7 @@ async def _do_stream_response(
                         usage_totals=usage_totals,
                         tool_outcomes=tool_outcomes,
                         contexte=contexte,
+                        assistant_content_brut=assistant_brut_collected,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -2628,6 +2633,7 @@ async def _execute_tools_and_continue(
     usage_totals: dict | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
+    assistant_content_brut: list | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -2945,6 +2951,7 @@ async def _execute_tools_and_continue(
 
     # Continue conversation with tool results
     new_tool_calls: list[ToolCall] = []
+    new_assistant_brut: list | None = None
     continued_content = ""
 
     async for event in llm_service.continue_with_tool_results(
@@ -2954,6 +2961,9 @@ async def _execute_tools_and_continue(
         tool_results,
         tools,
         prior_turns=prior_turns,
+        # 0.48 : content BRUT du tour courant (liste de chunks reasoning
+        # Mistral), rejoue tel quel dans le message assistant a tool_calls
+        assistant_content_brut=assistant_content_brut,
     ):
         if event.type == "text" and event.content:
             continued_content += event.content
@@ -2966,6 +2976,8 @@ async def _execute_tools_and_continue(
 
         elif event.type == "tool_call" and event.tool_call:
             new_tool_calls.append(event.tool_call)
+            if event.assistant_content_brut is not None:
+                new_assistant_brut = event.assistant_content_brut
 
         elif event.type == "done":
             if usage_totals is not None:
@@ -3002,6 +3014,7 @@ async def _execute_tools_and_continue(
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.
+                    assistant_content_brut=new_assistant_brut,
                     prior_turns=[
                         *(prior_turns or []),
                         ToolTurn(
@@ -3022,6 +3035,7 @@ async def _execute_tools_and_continue(
                                 )
                                 for tr in tool_results
                             ],
+                            assistant_content_brut=assistant_content_brut,
                         ),
                     ],
                 ):

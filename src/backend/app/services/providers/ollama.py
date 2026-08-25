@@ -332,6 +332,7 @@ class OllamaProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """US-009 : continuation après exécution des outils (format Ollama).
 

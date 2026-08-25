@@ -885,6 +885,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         await self._ensure_provider()
@@ -917,6 +918,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             tool_results,
             tools,
             prior_turns=prior_turns,
+            assistant_content_brut=assistant_content_brut,
         ):
             if event.type == "error" and _is_provider_outage(event.content):
                 had_error = True
