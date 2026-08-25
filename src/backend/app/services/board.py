@@ -552,7 +552,7 @@ class BoardService:
 
     async def _commettre_decision(
         self,
-        session,
+        session: AsyncSession,
         decision_id: str,
         request: BoardRequest,
         opinions: list[AdvisorOpinion],

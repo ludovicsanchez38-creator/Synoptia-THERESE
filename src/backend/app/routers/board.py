@@ -7,7 +7,7 @@ API endpoints pour le board de décision stratégique.
 import asyncio
 import json
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from app.models.board import (
     ADVISOR_CONFIG,
@@ -19,6 +19,7 @@ from app.models.board import (
 )
 from app.models.database import get_session, get_session_context
 from app.services.board import BoardService
+from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,8 +81,8 @@ async def get_advisor(role: AdvisorRole):
 async def _clore_apres_deconnexion(
     porteur: "asyncio.Task[None]",
     board_service: BoardService,
-    handle,
-    decision_sauvee,
+    handle: TraitementHandle | None,
+    decision_sauvee: "Callable[[], Awaitable[bool]]",
 ) -> None:
     """Clôture d'une délibération dont le client a disparu - exécutée hors
     du scope annulé : attend la fin réelle du porteur ET de la persistance
