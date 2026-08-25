@@ -328,3 +328,29 @@ describe('images Markdown du chat', () => {
     expect(container.querySelector('img')).toBeNull();
   });
 });
+
+describe('BUG-173 : lien de téléchargement markdown redirigé vers le save natif', () => {
+  beforeEach(() => {
+    downloadSkillFileMock.mockClear();
+  });
+
+  it('intercepte le clic sur un lien /api/skills/download historique', async () => {
+    const message = makeMessage({
+      content:
+        'Document généré : [Télécharger](/api/skills/download/48ed1acf-9f99-41e8-a540-76467fec571f)',
+    });
+    render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'Télécharger' });
+    // le lien ne doit PAS partir en navigateur externe (tauri.localhost)
+    expect(lien.getAttribute('target')).not.toBe('_blank');
+
+    fireEvent.click(lien);
+    await waitFor(() => {
+      expect(downloadSkillFileMock).toHaveBeenCalledWith(
+        '48ed1acf-9f99-41e8-a540-76467fec571f',
+        expect.any(String),
+      );
+    });
+  });
+});

@@ -1079,3 +1079,31 @@ class TestLaPasse3:
             "sans carte : personne ne le montrera jamais"
         )
         assert cartes == [], "aucune carte ne doit partir dans un flux mort"
+
+    @pytest.mark.asyncio
+    async def test_p44_une_panne_du_geste_rend_une_erreur_honnete(
+        self, client, monkeypatch
+    ):
+        """Durcissement passe 4 (P4-4) : la branche d'erreur promise par le
+        test textuel, vérifiée en COMPORTEMENT - une panne d'écriture rend
+        {"error": ...} et ne laisse aucune ligne."""
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from sqlalchemy.ext.asyncio import AsyncSession as _AS
+
+        async def flush_en_panne(self):
+            raise RuntimeError("disque plein")
+
+        monkeypatch.setattr(_AS, "flush", flush_en_panne)
+
+        async with get_session_context() as session:
+            resultat = json.loads(await memory_tools.execute_create_contact(
+                {"first_name": "Pan", "last_name": "Ne"}, session,
+            ))
+
+        assert "error" in resultat, "un faux succès masquerait la panne"
+        assert "succès" not in json.dumps(resultat)
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Contact))).scalars().all()
+        assert lignes == []

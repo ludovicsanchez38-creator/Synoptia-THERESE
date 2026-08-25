@@ -6939,7 +6939,12 @@ class TestQW_GenerateDocumentTool:
 
     @pytest.mark.asyncio
     async def test_generate_document_produces_real_link(self, db_session, monkeypatch):
-        """L'outil exécute le bon skill et renvoie une URL de téléchargement réelle."""
+        """L'outil exécute le bon skill et annonce le fichier généré.
+
+        BUG-173 (25/08) : le retour ne contient PLUS l'URL - le modèle la
+        recopiait en lien markdown, mort en navigateur externe
+        (tauri.localhost). La carte native est LE chemin de téléchargement.
+        """
         from unittest.mock import AsyncMock, MagicMock
 
         import app.services.skills as skills_mod
@@ -6962,7 +6967,10 @@ class TestQW_GenerateDocumentTool:
         )
 
         assert "rapport_ab12.docx" in result
-        assert "/api/skills/download/ab12" in result
+        assert "/api/skills/download" not in result, (
+            "BUG-173 : une URL dans le texte devient un lien markdown mort"
+        )
+        assert "carte" in result
         assert fake_registry.execute.await_args[0][0] == "docx-pro"
 
     @pytest.mark.asyncio

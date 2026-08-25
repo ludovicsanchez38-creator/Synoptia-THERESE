@@ -133,24 +133,30 @@ async def _executer_avec_suivi(
                 "annulation possible", label, exc_info=True,
             )
 
+    # Passe 4 de revue (P4-2) : le SUPERVISEUR (travail + clôture) part
+    # détaché en UN bloc - une annulation du porteur pendant la clôture
+    # vivante laissait une fenêtre à zéro terminaison (ligne running).
+    # Le porteur ne fait qu'attendre ; l'état final est TOUJOURS posé par
+    # le superviseur, que le porteur vive ou meure.
+    superviseur: "asyncio.Task[FileResponse]" = asyncio.ensure_future(
+        _travailler_et_clore(executer, _abandonnee, handle, label, suivi_bancal)
+    )
+    _travaux_en_cours.add(superviseur)
+    superviseur.add_done_callback(_travaux_en_cours.discard)
+    return await asyncio.shield(superviseur)
+
+
+async def _travailler_et_clore(
+    executer: "Callable[[Callable[[], Awaitable[bool]]], Awaitable[FileResponse]]",
+    abandonnee: "Callable[[], Awaitable[bool]]",
+    handle: "TraitementHandle | None",
+    label: str,
+    suivi_bancal: bool,
+) -> FileResponse:
+    """Exécute le geste ET pose l'état final - insensible au sort du
+    porteur HTTP (passe 4, P4-2)."""
     try:
-        travail: "asyncio.Task[FileResponse]" = asyncio.ensure_future(
-            executer(_abandonnee)
-        )
-        _travaux_en_cours.add(travail)
-        travail.add_done_callback(_travaux_en_cours.discard)
-        reponse = await asyncio.shield(travail)
-    except asyncio.CancelledError:
-        # Passe 3 (P3-1b) : le porteur meurt (déconnexion dure) mais le
-        # geste continue - une clôture DÉTACHÉE pose l'état final d'après
-        # son issue réelle, sinon la ligne restait running à jamais.
-        if handle is not None:
-            cloture = asyncio.create_task(
-                _clore_apres_porteur_mort(travail, handle, label, suivi_bancal)
-            )
-            _travaux_en_cours.add(cloture)
-            cloture.add_done_callback(_travaux_en_cours.discard)
-        raise
+        reponse = await executer(abandonnee)
     except IndexationAbandonnee:
         if handle is not None:
             with contextlib.suppress(Exception):
@@ -221,26 +227,6 @@ async def _clore_succes(
         )
 
 
-async def _clore_apres_porteur_mort(
-    travail: "asyncio.Task[FileResponse]",
-    handle: "TraitementHandle",
-    label: str,
-    suivi_bancal: bool,
-) -> None:
-    """Le porteur HTTP est mort : attendre l'issue réelle du geste et la
-    consigner - done, cancelled ou failed, jamais running fantôme."""
-    resultats = await asyncio.gather(travail, return_exceptions=True)
-    issue = resultats[0]
-    if isinstance(issue, IndexationAbandonnee):
-        with contextlib.suppress(Exception):
-            await handle.terminer(EtatTacheTraitement.CANCELLED)
-    elif isinstance(issue, BaseException):
-        with contextlib.suppress(Exception):
-            await handle.terminer(
-                EtatTacheTraitement.FAILED, error=str(issue)[:200]
-            )
-    else:
-        await _clore_succes(handle, label, suivi_bancal)
 
 
 async def indexer_avec_suivi(

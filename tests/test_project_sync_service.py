@@ -633,3 +633,44 @@ class TestLeRunEstUnTraitementHonnete:
         run = await svc.lire_run(plan.id)
         assert run.state == EtatTache.CANCELLED
         assert "hors boucle" not in (run.error or "")
+
+
+class TestBug172VolumeWindows:
+    @pytest.mark.asyncio
+    async def test_un_volume_serial_windows_geant_ne_casse_pas_la_racine(
+        self, client, racine, qdrant_factice, monkeypatch
+    ):
+        """BUG-172 (Dr_logic, Win10) : sur Windows, st_dev est le volume
+        serial - un entier qui peut dépasser l'INTEGER signé de SQLite.
+        definir_racine explosait en OverflowError au commit (500 présenté
+        comme « Impossible de contacter le serveur »)."""
+        from pathlib import Path
+
+        from app.services import project_sync_service as svc
+
+        vrai_stat = Path.stat
+
+        class StatVolumeGeant:
+            def __init__(self, interne):
+                self._interne = interne
+
+            def __getattr__(self, nom):
+                return getattr(self._interne, nom)
+
+            @property
+            def st_dev(self):
+                return 2**64 - 30  # volume serial NTFS non signé
+
+        def stat_geant(self, *a, **k):
+            return StatVolumeGeant(vrai_stat(self, *a, **k))
+
+        monkeypatch.setattr(Path, "stat", stat_geant)
+
+        projet = await _creer_projet(client)
+        root = await svc.definir_racine(projet, str(racine))
+        assert root is not None
+
+        # le témoin de volume reste cohérent : le plan se prépare (même
+        # masque des deux côtés de la comparaison)
+        plan = await svc.preparer_plan(projet)
+        assert plan.nb_indexer == 2

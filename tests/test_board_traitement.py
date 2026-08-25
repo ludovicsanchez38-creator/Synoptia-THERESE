@@ -537,3 +537,66 @@ class TestLaPasse3Board:
             "requalifiée en échec alors que la décision existe"
         )
         assert any(e["type"] == "done" for e in evenements)
+
+    @pytest.mark.asyncio
+    async def test_p37b_la_separation_interne_commit_verification(
+        self, client, board_rapide
+    ):
+        """Durcissement passe 4 (P4-3) : tester la SÉPARATION INTERNE de
+        _commettre_decision, pas seulement la ceinture du routeur - une
+        panne du SELECT de vérification après un commit abouti ne doit pas
+        lever."""
+        from app.models.board import (
+            AdvisorOpinion,
+            AdvisorRole,
+            BoardMode,
+            BoardRequest,
+            BoardSynthesis,
+        )
+        from app.models.database import get_session_context
+        from app.services.board import BoardService
+
+        class SessionVerificationCassee:
+            """Proxy : commit réel, puis tout execute suivant casse."""
+
+            def __init__(self, vraie):
+                self._vraie = vraie
+                self._commit_fait = False
+
+            def add(self, obj):
+                self._vraie.add(obj)
+
+            async def commit(self):
+                await self._vraie.commit()
+                self._commit_fait = True
+
+            async def execute(self, *a, **k):
+                if self._commit_fait:
+                    raise RuntimeError("SELECT de vérification en panne")
+                return await self._vraie.execute(*a, **k)
+
+            async def rollback(self):
+                await self._vraie.rollback()
+
+        synthese = BoardSynthesis(
+            consensus_points=["x"], divergence_points=[],
+            recommendation="Tester", confidence="high", next_steps=[],
+        )
+        requete = BoardRequest(
+            question="Faut-il lancer ce pilote dès maintenant ?",
+            mode=BoardMode.CLOUD, advisors=[AdvisorRole.ANALYST],
+        )
+        opinions = [AdvisorOpinion(
+            role=AdvisorRole.ANALYST, name="L'Analyste", emoji="",
+            content="Avis", provider="test",
+        )]
+
+        async with get_session_context() as session:
+            service = BoardService(session)
+            # ne doit PAS lever : le commit a abouti
+            await service._commettre_decision(
+                SessionVerificationCassee(session),
+                "decision-verif-cassee", requete, opinions, synthese,
+            )
+
+        assert await _decision_existe()

@@ -74,6 +74,10 @@ _verrous_par_chemin: dict[str, list[Any]] = {}
 
 @asynccontextmanager
 async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
+    # Passe 4 de revue (P4-1) : la clé est le chemin CANONIQUE - un alias
+    # (relatif, symlink) contournait la sérialisation par chemin et deux
+    # écritures pouvaient s'entrelacer sur le même fichier physique.
+    chemin = str(Path(chemin).resolve())
     entree = _verrous_par_chemin.get(chemin)
     if entree is None:
         entree = [asyncio.Lock(), 0]
@@ -252,21 +256,25 @@ async def remplacer_puis_indexer(
     # écriture) est détaché et possède le verrou - une annulation dure du
     # porteur après os.replace n'ampute plus l'indexation de la version
     # réellement en place.
+    # P4-1 : même identité de chemin que la route d'indexation - la
+    # métadonnée et le verrou vivent sous le chemin canonique.
+    chemin_canonique = Path(chemin).resolve()
+
     async def _geste() -> FileResponse:
-        async with _verrou_de_chemin(chemin):
+        async with _verrou_de_chemin(str(chemin_canonique)):
             # Revue jalon (F4) : consulter l'abandon AVANT le dépôt -
             # os.replace est le premier effet durable de ce chemin.
             if est_abandonnee is not None and await est_abandonnee():
                 raise IndexationAbandonnee(
-                    f"Indexation de {Path(chemin).name} abandonnée avant "
-                    "le dépôt"
+                    f"Indexation de {chemin_canonique.name} abandonnée "
+                    "avant le dépôt"
                 )
             await deposer()
             # Second panel de revue : le dépôt est le POINT DE NON-RETOUR.
             # Après lui, l'indexation va au bout ; la demande d'arrêt
             # tardive se résout au terminer du producteur (contrat 0.46).
             return await _indexer_sous_verrou(
-                Path(chemin), None, scope, scope_id, perimetre_provisoire
+                chemin_canonique, None, scope, scope_id, perimetre_provisoire
             )
 
     return await _proteger_le_geste(_geste())

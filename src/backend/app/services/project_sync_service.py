@@ -45,6 +45,17 @@ from sqlmodel import select
 logger = logging.getLogger(__name__)
 
 
+def _volume_id(chemin: Path) -> int:
+    """Témoin d'identité du volume, borné à l'INTEGER signé de SQLite.
+
+    BUG-172 (Windows) : `st_dev` y est le volume serial, un entier non
+    signé qui peut dépasser 2^63-1 - le commit explosait en OverflowError.
+    Le masque est DÉTERMINISTE : appliqué à l'écriture comme à la
+    comparaison, le témoin « le volume a changé » reste fiable.
+    """
+    return chemin.stat().st_dev & 0x7FFF_FFFF_FFFF_FFFF
+
+
 class ErreurRacine(Exception):
     """Racine invalide : inexistante, partagée ou imbriquée."""
 
@@ -125,7 +136,7 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
             root = ProjectSyncRoot(
                 project_id=project_id,
                 racine=str(racine),
-                volume_id=racine.stat().st_dev,
+                volume_id=_volume_id(racine),
             )
             session.add(root)
             await session.commit()
@@ -136,7 +147,7 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
         # ne repart JAMAIS - un ancien plan partiel de génération 1
         # redeviendrait compatible (revue jalon, B1).
         actuelle.racine = str(racine)
-        actuelle.volume_id = racine.stat().st_dev
+        actuelle.volume_id = _volume_id(racine)
         actuelle.generation += 1
         actuelle.detachee = False
         await _invalider_generation(session, project_id)
@@ -191,7 +202,7 @@ async def preparer_plan(project_id: str) -> SyncPlan:
     async with _verrou_du_projet(project_id):
         root = await _racine_de(project_id)
         racine = Path(root.racine)
-        if not racine.is_dir() or racine.stat().st_dev != root.volume_id:
+        if not racine.is_dir() or _volume_id(racine) != root.volume_id:
             from app.services.project_sync import ErreurDeScan
 
             raise ErreurDeScan(

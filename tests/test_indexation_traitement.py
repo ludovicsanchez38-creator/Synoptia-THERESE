@@ -728,3 +728,117 @@ class TestLaPasse3:
             f"« {lignes[0].state if lignes else '?'} » : porteur mort = "
             "plus personne pour clore"
         )
+
+
+class TestLaPasse4:
+    @pytest.mark.asyncio
+    async def test_p41_le_verrou_ne_se_contourne_pas_par_alias(
+        self, client, tmp_path, monkeypatch
+    ):
+        """Passe 4 (P4-1) : index_payload verrouillait le chemin RÉSOLU,
+        remplacer_puis_indexer la chaîne BRUTE - un alias (relatif vs
+        absolu, symlink) contournait la sérialisation par chemin."""
+        import contextlib as _ctx
+        import os
+
+        from app.services import indexation
+
+        reel = tmp_path / "dossier"
+        reel.mkdir()
+        fichier = reel / "piece.txt"
+        fichier.write_text("contenu", encoding="utf-8")
+        lien = tmp_path / "alias"
+        os.symlink(reel, lien)
+        chemin_alias = str(lien / "piece.txt")
+
+        porte = asyncio.Event()
+        en_section = asyncio.Event()
+        entrees: list[str] = []
+
+        class QdrantGate:
+            async def async_delete_by_entity(self, _eid):
+                return None
+
+            async def async_add_memories(self, items):
+                entrees.append("ecriture")
+                if len(entrees) == 1:
+                    en_section.set()
+                    await porte.wait()
+
+        monkeypatch.setattr(
+            indexation, "get_qdrant_service", lambda: QdrantGate()
+        )
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte")
+        # neutraliser le sémaphore d'encodage : c'est le VERROU DE CHEMIN
+        # qui doit sérialiser, pas la borne d'encodages simultanés
+        monkeypatch.setattr(indexation, "INDEX_SEMAPHORE", asyncio.Semaphore(10))
+
+        tache_a = asyncio.create_task(
+            indexation.index_payload(str(fichier))
+        )
+        await asyncio.wait_for(en_section.wait(), timeout=5)
+
+        async def deposer():
+            (lien / "piece.txt").write_text("v2", encoding="utf-8")
+
+        tache_b = asyncio.create_task(indexation.remplacer_puis_indexer(
+            chemin_alias, deposer,
+        ))
+        await asyncio.sleep(0.3)
+        assert len(entrees) == 1, (
+            "B est entré en ÉCRITURE par l'ALIAS pendant que A tenait le "
+            "verrou du chemin réel : la sérialisation par chemin est "
+            "contournée"
+        )
+        porte.set()
+        with _ctx.suppress(Exception):
+            await asyncio.wait_for(tache_a, timeout=10)
+        with _ctx.suppress(Exception):
+            await asyncio.wait_for(tache_b, timeout=10)
+
+    @pytest.mark.asyncio
+    async def test_p42_annulation_pendant_la_cloture_pose_quand_meme_l_etat(
+        self, client, fichier_texte, qdrant_factice, monkeypatch
+    ):
+        """Passe 4 (P4-2) : le porteur annulé PENDANT _clore_succes (travail
+        déjà fini) échappait à la continuation - zéro terminaison, ligne
+        running. Le superviseur travail+clôture doit être détaché en bloc."""
+        import contextlib as _ctx
+
+        from app.routers import files as surface
+        from app.services import traitements
+
+        porte = asyncio.Event()
+        cloture_commencee = asyncio.Event()
+        progresser_originale = traitements.TraitementHandle.progresser
+
+        async def progresser_gated(self, **kwargs):
+            if kwargs.get("progress") == 1.0:
+                cloture_commencee.set()
+                await porte.wait()
+            await progresser_originale(self, **kwargs)
+
+        monkeypatch.setattr(
+            traitements.TraitementHandle, "progresser", progresser_gated
+        )
+
+        porteur = asyncio.create_task(
+            surface.indexer_avec_suivi(str(fichier_texte))
+        )
+        await asyncio.wait_for(cloture_commencee.wait(), timeout=5)
+        porteur.cancel()  # l'annulation frappe PENDANT la clôture vivante
+        with _ctx.suppress(asyncio.CancelledError):
+            await porteur
+        porte.set()
+
+        ligne = None
+        for _ in range(100):
+            lignes = await _traitements_indexation()
+            if lignes and lignes[0].state == EtatTache.DONE:
+                ligne = lignes[0]
+                break
+            await asyncio.sleep(0.05)
+        assert ligne is not None and ligne.state == EtatTache.DONE, (
+            f"ligne « {lignes[0].state if lignes else '?'} » : l'annulation "
+            "pendant la clôture a laissé zéro terminaison"
+        )

@@ -70,6 +70,14 @@ async def definir_racine(project_id: str, request: RacineRequest) -> dict[str, A
         # Passe 2 de revue : sans cette conversion, changer la racine pendant
         # un apply repondait 500 - c'est un refus normal, pas une panne.
         raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        # BUG-172 : une panne inattendue partait en 500 nu que le client
+        # affichait « Impossible de contacter le serveur ». Dire la vérité.
+        logger.error("Échec de définition de racine", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"La définition de la racine a échoué : {e}",
+        )
     return {
         "racine": root.racine,
         "generation": root.generation,

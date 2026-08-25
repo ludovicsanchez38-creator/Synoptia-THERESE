@@ -490,9 +490,14 @@ async def _generate_document(
             "format": fmt,
             "local_dir": str(registry.output_dir),
         })
+        # BUG-173 : ne JAMAIS donner l'URL au modèle - il la recopiait en
+        # lien markdown, qui s'ouvre en navigateur externe sur
+        # tauri.localhost dans l'app desktop et meurt. La carte native
+        # sous le message (BUG-136) est LE chemin de téléchargement.
         return (
             f"Document {fmt.upper()} généré : {resp.file_name}. "
-            f"Téléchargement : {resp.download_url}"
+            "L'utilisateur peut l'enregistrer via la carte affichée sous "
+            "ce message - ne fournis aucun lien."
         )
     except asyncio.CancelledError:
         raise
