@@ -351,3 +351,37 @@ border: 1px solid rgba(255, 255, 255, 0.05); /* border-white/5 */
 | Fond dégradé agressif | Distraction | Couleurs plates |
 | Police custom lourde | Performance | Police système native |
 | Z-index > 9999 | Ingérable | Échelle ordonnée (10, 20, 30...) |
+
+---
+
+## 13. Lexique - un mot par chose (0.48, source unique)
+
+Le test `src/frontend/src/lib/lexique.test.ts` verrouille cette table sur
+les registres de textes exportés (Centre de capacités, manifeste, actions,
+raccourcis, commandes slash, vues, onboarding). Les ids internes restent
+STABLES : seul le libellé d'écran change.
+
+| Interne (id stable, inchangé) | À l'écran |
+|---|---|
+| memory | Contacts |
+| crm | Pipeline |
+| calendar | Agenda |
+| invoices | Devis et factures |
+| files | Fichiers |
+| documents | Documents |
+| processing-tasks (Traitements) | Travaux - panneau « Travaux récents », compteur « N travaux en cours » |
+| tasks | Tâches |
+| Atelier documentaire | Rédiger un document (l'entrée-action ; la vue s'appelle Documents) |
+| Atelier agents | Améliorer THÉRÈSE (au tiroir) |
+| Board | Décision (libellés de navigation et titres seulement - le mot reste libre dans le texte courant) |
+| LLM / provider | Service d'IA |
+| MCP | Connecteurs |
+
+**Interdits à l'écran standard** (comparés sur les registres, pas le texte
+libre) : sidecar, fencing, Qdrant, generation_id, tools, BYOK, LLM, MCP,
+provider.
+
+**Frontière d'erreurs** (`app/services/error_handler.py`,
+`message_pour_ecran`) : à la limite de l'écran (SSE, notification, HTTP,
+`task.error`), seuls les messages localisés passent - jamais `str(e)` brut.
+Le technique va aux logs.

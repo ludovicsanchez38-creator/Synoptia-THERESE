@@ -11,6 +11,8 @@ executent des taches multi-etapes avec progression en temps reel.
 import asyncio
 import json
 import logging
+
+from app.services.error_handler import message_pour_ecran
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -625,7 +627,8 @@ class ActionRunner:
                 return
         except Exception as e:
             task.status = TaskStatus.ERROR
-            task.error = f"Erreur LLM : {e}"
+            logger.error("Action : échec d'accès au service LLM : %s", e, exc_info=True)
+            task.error = message_pour_ecran(e, ou="au démarrage de l'action")
             task.completed_at = datetime.now(UTC).isoformat()
             if on_progress:
                 on_progress(task)

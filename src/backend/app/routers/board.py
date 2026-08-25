@@ -19,6 +19,7 @@ from app.models.board import (
 )
 from app.models.database import get_session, get_session_context
 from app.services.board import BoardService
+from app.services.error_handler import message_pour_ecran
 from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -206,8 +207,9 @@ async def deliberate(
                 except Exception as e:
                     tache.cancel()
                     await asyncio.gather(tache, return_exceptions=True)
-                    await handle.terminer(EtatTache.FAILED, error=str(e)[:200])
-                    yield _sse({"type": "error", "content": str(e)})
+                    message = message_pour_ecran(e, ou="pendant la délibération")
+                    await handle.terminer(EtatTache.FAILED, error=message[:200])
+                    yield _sse({"type": "error", "content": message})
                     return
 
             # Premier événement : l'identité du traitement - sans elle,
@@ -253,11 +255,14 @@ async def deliberate(
                             await handle.terminer(EtatTache.DONE)
                         yield _sse({"type": "done", "content": decision_id})
                     else:
+                        message = message_pour_ecran(
+                            erreur, ou="pendant la délibération"
+                        )
                         if handle is not None:
                             await handle.terminer(
-                                EtatTache.FAILED, error=str(erreur)[:200]
+                                EtatTache.FAILED, error=message[:200]
                             )
-                        yield _sse({"type": "error", "content": str(erreur)})
+                        yield _sse({"type": "error", "content": message})
                 else:
                     if handle is not None:
                         await handle.progresser(progress=1.0)

@@ -19,6 +19,7 @@ from app.services.image_generator import (
     ImageProvider,
     get_image_service,
 )
+from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
@@ -120,7 +121,10 @@ async def generate_image(request: ImageGenerateRequest) -> ImageResponse:
         )
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Image generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=message_pour_ecran(e, ou="pendant la génération d'image"),
+        )
 
 
 @router.post("/generate-with-reference")
@@ -190,7 +194,10 @@ async def generate_with_reference(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Image generation with reference failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Image generation failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=message_pour_ecran(e, ou="pendant la génération d'image"),
+        )
 
 
 @router.get("/download/{image_id}")

@@ -7,6 +7,8 @@ Réutilise LLMService pour le streaming multi-provider.
 
 import json
 import logging
+
+from app.services.error_handler import message_pour_ecran
 from dataclasses import dataclass
 from typing import Any, AsyncGenerator
 
@@ -205,7 +207,10 @@ class AgentRuntime:
 
             except Exception as e:
                 logger.error(f"Agent {self.config.id} erreur LLM: {e}", exc_info=True)
-                yield AgentEvent(type="error", content=f"Erreur LLM : {e}")
+                yield AgentEvent(
+                    type="error",
+                    content=message_pour_ecran(e, ou="pendant la mission de l'agent"),
+                )
                 return
 
             # Pas d'appels d'outils → fin de la boucle
