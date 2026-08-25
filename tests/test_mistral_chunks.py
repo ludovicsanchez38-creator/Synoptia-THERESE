@@ -294,3 +294,64 @@ class TestLeTransportDansChat:
         assert len(captured[1][1]) == 1
         assert captured[1][1][0].assistant_content_brut == BRUT_TOUR_1
         assert captured[1][0] == BRUT_TOUR_2
+
+
+class TestDeuxChatsConcurrents:
+    """Design V3.5 : deux streams Mistral entrelacés ne mélangent jamais
+    leurs bruts - brut_du_tour est LOCAL à chaque appel de stream()."""
+
+    @pytest.mark.asyncio
+    async def test_les_bruts_ne_se_melangent_pas(self, monkeypatch):
+        provider_a = _provider()
+        provider_b = _provider()
+
+        def lignes_pour(texte, tool_id):
+            return [
+                'data: {"choices": [{"delta": {"content": [{"type": "thinking", "thinking": "'
+                + texte + '"}]}}]}',
+                'data: {"choices": [{"delta": {"tool_calls": [{"index": 0, "id": "'
+                + tool_id + '", "function": {"name": "web_search", "arguments": "{}"}}]}}]}',
+                'data: {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}',
+                "data: [DONE]",
+            ]
+
+        def faux_stream(lignes):
+            class FauxResponse:
+                status_code = 200
+
+                async def aiter_lines(self):
+                    for ligne in lignes:
+                        yield ligne
+
+                def raise_for_status(self):
+                    return None
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return lambda *a, **k: FauxResponse()
+
+        monkeypatch.setattr(
+            provider_a.client, "stream", faux_stream(lignes_pour("pensee-A", "ca"))
+        )
+        monkeypatch.setattr(
+            provider_b.client, "stream", faux_stream(lignes_pour("pensee-B", "cb"))
+        )
+
+        import asyncio
+
+        async def collecte(provider):
+            bruts = []
+            async for event in provider.stream(None, [{"role": "user", "content": "x"}], None):
+                if event.type == "tool_call":
+                    bruts.append(event.assistant_content_brut)
+            return bruts
+
+        bruts_a, bruts_b = await asyncio.gather(
+            collecte(provider_a), collecte(provider_b)
+        )
+        assert bruts_a == [[{"type": "thinking", "thinking": "pensee-A"}]]
+        assert bruts_b == [[{"type": "thinking", "thinking": "pensee-B"}]]

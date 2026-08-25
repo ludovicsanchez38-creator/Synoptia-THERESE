@@ -17,6 +17,7 @@ import { SHORTCUT_GROUPS } from '../components/chat/ShortcutsModal';
 import { SLASH_COMMANDS } from '../components/chat/SlashCommandsMenu';
 import { viewLabels } from '../components/prototype/PrototypeUnifiedViewCanvas';
 import { TEXTES_ONBOARDING } from '../components/onboarding/textes';
+import { ALL_TABS } from '../components/settings/SettingsModal';
 
 /**
  * Interdits à l'écran standard. Comparés aux libellés des registres —
@@ -89,6 +90,13 @@ describe('Aucun terme technique dans les registres de textes', () => {
     const textes: [string, string][] = SLASH_COMMANDS.flatMap((c) => [
       [`${c.prefix} (nom)`, c.name] as [string, string],
       [`${c.prefix} (description)`, c.description] as [string, string],
+    ]);
+    expect(violations(textes)).toEqual([]);
+  });
+
+  it('les onglets des Réglages', () => {
+    const textes: [string, string][] = ALL_TABS.map((t) => [
+      `onglet ${t.id}`, t.label,
     ]);
     expect(violations(textes)).toEqual([]);
   });

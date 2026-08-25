@@ -29,7 +29,7 @@ export interface BoardRequest {
 }
 
 export interface BoardDeliberationChunk {
-  type: 'task' | 'web_search_start' | 'web_search_done' | 'advisor_start' | 'advisor_chunk' | 'advisor_done' | 'synthesis_start' | 'synthesis_chunk' | 'done' | 'cancelled' | 'error';
+  type: 'task' | 'web_search_start' | 'web_search_done' | 'advisor_start' | 'advisor_chunk' | 'advisor_done' | 'synthesis_start' | 'synthesis_chunk' | 'done' | 'cancelled' | 'error' | 'catalogue_status';
   role?: AdvisorRole;
   name?: string;
   emoji?: string;

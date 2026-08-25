@@ -192,3 +192,34 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         )
         assert openai_fb.model == frontier("openai")
         assert openai_fb.context_window == CATALOGUE["openai"].context_window
+
+
+class TestSabotageParPermutation:
+    """Design V3.5 : permuter la tête d'une fiche du catalogue doit se
+    refléter PARTOUT (preuve que les tables dérivent, sans copie cachée)."""
+
+    def test_permuter_la_tete_change_le_defaut_partout(self, client, monkeypatch):
+        import dataclasses
+
+        from app.services import modeles_catalogue as mc
+        from app.services.llm import LLMService, get_llm_service_for_provider
+
+        fiche = mc.CATALOGUE["openai"]
+        modeles_permutes = (fiche.modeles[1], fiche.modeles[0], *fiche.modeles[2:])
+        fiche_permutee = dataclasses.replace(fiche, modeles=modeles_permutes)
+        monkeypatch.setitem(mc.CATALOGUE, "openai", fiche_permutee)
+        # 1. frontier() suit
+        tete = mc.frontier("openai")
+        # 2. le helper (Board) suit
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+        service = get_llm_service_for_provider(
+            "openai", model_override=mc.frontier("openai")
+        )
+        # 3. _default_config suit (repli par clé, sans préférence)
+        for var in ("ANTHROPIC_API_KEY",):
+            monkeypatch.delenv(var, raising=False)
+        config = LLMService()._default_config()
+
+        assert tete != "gpt-5.6-sol"
+        assert service is not None and service.config.model == tete
+        assert config.model == tete or config.provider.value != "openai"
