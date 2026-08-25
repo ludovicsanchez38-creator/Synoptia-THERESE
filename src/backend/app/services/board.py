@@ -10,7 +10,7 @@ import json
 import logging
 import os
 from collections.abc import Awaitable, Callable
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from uuid import uuid4
 
 from app.models.board import (
@@ -77,7 +77,7 @@ def _cle_configuree(fournisseur: str) -> str | None:
     try:
         cle = _get_api_key_from_db(fournisseur)
         if cle:
-            return cle
+            return str(cle)
     except Exception:  # noqa: BLE001 - la sonde ne casse jamais le Board
         pass
     for var in CATALOGUE[fournisseur].env_vars:
@@ -87,7 +87,7 @@ def _cle_configuree(fournisseur: str) -> str | None:
     return None
 
 
-def _ids_de_la_reponse(fournisseur: str, corps: dict) -> set[str]:
+def _ids_de_la_reponse(fournisseur: str, corps: dict[str, Any]) -> set[str]:
     if fournisseur == "gemini":
         # {"models": [{"name": "models/gemini-..."}]} - comparer le nom court
         return {
@@ -97,7 +97,7 @@ def _ids_de_la_reponse(fournisseur: str, corps: dict) -> set[str]:
     return {str(m.get("id", "")) for m in corps.get("data", [])}
 
 
-async def _sonder_un(fournisseur: str, cle: str, client) -> None:
+async def _sonder_un(fournisseur: str, cle: str, client: Any) -> None:
     url, mode = _SONDES[fournisseur]
     try:
         if mode == "bearer":
@@ -127,7 +127,7 @@ async def _sonder_un(fournisseur: str, cle: str, client) -> None:
         )
 
 
-async def sonder_catalogue(client=None) -> None:
+async def sonder_catalogue(client: Any = None) -> None:
     """Sonde les fournisseurs à clé configurée - au plus une fois par jour.
 
     Sondes PARALLÈLES, timeout global 6 s : jamais cinq timeouts en série
