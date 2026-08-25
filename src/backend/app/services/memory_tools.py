@@ -5,6 +5,8 @@ Provides create_contact and create_project tools that the LLM can call
 to directly add entities to the memory system during conversation.
 """
 
+import asyncio
+import contextlib
 import json
 import logging
 import unicodedata
@@ -376,6 +378,18 @@ async def execute_create_contact(
         session.add(contact)
         await session.flush()
 
+        # Re-check du fence (revue jalon, F6) : une annulation posée pendant
+        # le flush laissait un contact ENTIER se créer (SQLite + Qdrant).
+        # Avant l'écriture vectorielle : rollback, zéro effet.
+        if contexte is not None and contexte.annulation_observee():
+            await session.rollback()
+            return json.dumps({
+                "success": False,
+                "interrupted": True,
+                "message": "Création du contact interrompue avant écriture : "
+                           "l'utilisateur a arrêté la génération.",
+            }, ensure_ascii=False)
+
         # Index in Qdrant
         try:
             qdrant = get_qdrant_service()
@@ -416,6 +430,14 @@ async def execute_create_contact(
             "message": f"Contact '{contact.display_name}' créé avec succès.",
         }, ensure_ascii=False)
 
+    except asyncio.CancelledError:
+        # Second panel de revue : le wrapper J1b annule la coroutine en
+        # plein vol (attente Qdrant). Sans rollback ICI, l'écriture flushée
+        # restait pendante et le teardown de `get_session` la committait -
+        # un contact « annulé » apparaissait après coup.
+        with contextlib.suppress(Exception):
+            await session.rollback()
+        raise
     except Exception as e:
         logger.error(f"Failed to create contact via tool: {e}")
         await session.rollback()
@@ -483,6 +505,16 @@ async def execute_create_project(
         session.add(project)
         await session.flush()
 
+        # Re-check du fence (revue jalon, F6) - même contrat que le contact.
+        if contexte is not None and contexte.annulation_observee():
+            await session.rollback()
+            return json.dumps({
+                "success": False,
+                "interrupted": True,
+                "message": "Création du projet interrompue avant écriture : "
+                           "l'utilisateur a arrêté la génération.",
+            }, ensure_ascii=False)
+
         # Index in Qdrant
         try:
             qdrant = get_qdrant_service()
@@ -519,6 +551,11 @@ async def execute_create_project(
             "message": f"Projet '{project.name}' créé avec succès.",
         }, ensure_ascii=False)
 
+    except asyncio.CancelledError:
+        # Même contrat que le contact (second panel de revue).
+        with contextlib.suppress(Exception):
+            await session.rollback()
+        raise
     except Exception as e:
         logger.error(f"Failed to create project via tool: {e}")
         await session.rollback()

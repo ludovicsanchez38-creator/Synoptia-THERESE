@@ -331,3 +331,109 @@ class TestLaFenceAuNiveauService:
                     pass
 
         assert not await _decision_existe()
+
+
+class TestLaFenetreDuCommit:
+    @pytest.mark.asyncio
+    async def test_f3_annulation_pendant_la_persistance_done_gagne_quand_meme(
+        self, client, board_rapide, monkeypatch
+    ):
+        """F3 : la demande d'arrêt tombe PENDANT la persistance (avant la
+        fin du commit sous shield). La route décidait `cancelled` sans
+        attendre la fin de la persistance protégée - la décision
+        apparaissait ensuite avec un traitement qui la niait."""
+        from app.services.board import BoardService
+
+        persistance_originale = BoardService._persister_decision
+
+        async def persistance_pendant_laquelle_on_annule(
+            self, decision_id, request, opinions, synthesis
+        ):
+            await _arret_depuis_une_autre_tache()
+            # laisser l'adaptateur annuler la tâche porteuse et la route
+            # avancer jusqu'à sa décision
+            await asyncio.sleep(0.3)
+            await persistance_originale(
+                self, decision_id, request, opinions, synthesis
+            )
+
+        monkeypatch.setattr(
+            BoardService, "_persister_decision",
+            persistance_pendant_laquelle_on_annule,
+        )
+
+        reponse = await client.post("/api/board/deliberate", json=REQUETE)
+        evenements = _evenements(reponse.text)
+
+        # le commit protégé DOIT aboutir (le shield existe pour ça)
+        decision_la = False
+        for _ in range(100):
+            if await _decision_existe():
+                decision_la = True
+                break
+            await asyncio.sleep(0.05)
+        assert decision_la, "le shield n'a pas laissé la persistance aboutir"
+
+        ligne = await _traitement_board()
+        assert ligne.state == EtatTache.DONE, (
+            "la route a décidé cancelled sans attendre la fin de la "
+            "persistance protégée : la décision existe mais le traitement "
+            "la nie"
+        )
+        assert any(e["type"] == "done" for e in evenements), (
+            "le client doit apprendre que sa décision existe"
+        )
+
+
+class TestLaDeconnexionSousAnyio:
+    @pytest.mark.asyncio
+    async def test_le_nettoyage_survit_a_l_annulation_level_triggered(
+        self, client, board_rapide, monkeypatch
+    ):
+        """Second panel : sous uvicorn/Starlette, la déconnexion annule le
+        générateur via un CancelScope anyio LEVEL-TRIGGERED - chaque await
+        du bloc de nettoyage re-lève CancelledError. Un nettoyage attendu
+        dans le except est coupé : la ligne board restait `running` fantôme
+        jusqu'au redémarrage. Le nettoyage doit survivre en tâche détachée."""
+        import anyio
+        from app.models.board import BoardRequest
+        from app.routers import board as board_router
+        from app.services import board as board_module
+
+        avancee = asyncio.Event()
+
+        async def arret_jamais(*_a, **_k):
+            avancee.set()
+            await asyncio.sleep(3600)
+
+        llm = FauxLLM(["jamais rendu"], avant_flux=arret_jamais)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: llm)
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider", lambda *a, **k: llm
+        )
+
+        reponse = await board_router.deliberate(BoardRequest(**REQUETE))
+
+        async def consommer(scope):
+            async for _chunk in reponse.body_iterator:
+                if avancee.is_set():
+                    # le client disparaît : Starlette annule le scope
+                    scope.cancel()
+
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(consommer, tg.cancel_scope)
+
+        # la ligne DOIT devenir terminale sans redémarrage
+        ligne = None
+        for _ in range(100):
+            ligne = await _traitement_board()
+            if ligne is not None and ligne.state in (
+                EtatTache.CANCELLED, EtatTache.DONE, EtatTache.FAILED
+            ):
+                break
+            await asyncio.sleep(0.05)
+        assert ligne is not None
+        assert ligne.state == EtatTache.CANCELLED, (
+            f"ligne restée « {ligne.state} » : le nettoyage a été coupé par "
+            "l'annulation level-triggered - board fantôme jusqu'au redémarrage"
+        )

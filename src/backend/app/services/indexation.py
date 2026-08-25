@@ -241,9 +241,21 @@ async def remplacer_puis_indexer(
     critique, et l'indexation qui suit est le même cœur que la route.
     """
     async with _verrou_de_chemin(chemin):
+        # Revue jalon (F4) : consulter l'abandon AVANT le dépôt - os.replace
+        # est le premier effet durable de ce chemin, remplacer le fichier
+        # d'un utilisateur qui vient d'annuler perdait sa version en place.
+        if est_abandonnee is not None and await est_abandonnee():
+            raise IndexationAbandonnee(
+                f"Indexation de {Path(chemin).name} abandonnée avant le dépôt"
+            )
         await deposer()
+        # Second panel de revue : le dépôt est le POINT DE NON-RETOUR. Un
+        # abandon honoré après os.replace laissait trois vérités (disque v2,
+        # fiche v2, index v1) : mieux vaut finir d'indexer la version
+        # réellement en place. La demande d'arrêt tardive se résout au
+        # terminer du producteur (done écrase cancel_requested, contrat 0.46).
         return await _indexer_sous_verrou(
-            Path(chemin), est_abandonnee, scope, scope_id, perimetre_provisoire
+            Path(chemin), None, scope, scope_id, perimetre_provisoire
         )
 
 

@@ -190,7 +190,12 @@ async def cancel_task(task_id: str):
 
     if traitement is not None:
         arret = await traitements.demander_arret(traitement.id)
-        transmise = arret is not None and arret.resultat != "unavailable"
+        # Revue jalon (F9) : « unavailable » dans la fenêtre d'enrôlement
+        # n'est PAS un refus - la demande est posée durablement et rejouée
+        # par lier_adaptateur. Seul un état déjà terminal refuse.
+        transmise = arret is not None and arret.state in (
+            EtatTache.CANCEL_REQUESTED, EtatTache.CANCELLED
+        )
     else:
         transmise = ActionRunner.cancel_task(task_id)
 

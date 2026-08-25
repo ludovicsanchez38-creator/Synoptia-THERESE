@@ -52,3 +52,28 @@ describe('annulerDeliberation', () => {
     expect(coupe).toBe(true);
   });
 });
+
+describe('couperTransport (revue jalon F8)', () => {
+  it('capture le controller à l’instant du clic, pas au moment du repli', async () => {
+    const { couperTransport } = await import('./annulerDeliberation');
+
+    let aborted = false;
+    const controller = { abort: () => { aborted = true; } } as AbortController;
+    const ref: { current: AbortController | null } = { current: controller };
+
+    const couper = couperTransport(ref);
+    // Le handler nettoie la ref tout de suite (nouveau run possible) -
+    // le repli doit quand même couper l'ANCIEN transport.
+    expect(ref.current).toBeNull();
+    ref.current = { abort: () => { throw new Error('mauvais controller'); } } as unknown as AbortController;
+
+    couper();
+    expect(aborted).toBe(true);
+  });
+
+  it('reste inoffensif sans controller', async () => {
+    const { couperTransport } = await import('./annulerDeliberation');
+    const couper = couperTransport({ current: null });
+    expect(() => couper()).not.toThrow();
+  });
+});

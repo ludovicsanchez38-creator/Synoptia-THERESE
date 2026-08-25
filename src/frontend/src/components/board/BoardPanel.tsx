@@ -28,7 +28,7 @@ import {
   type BoardSynthesis,
   type BoardDecisionResponse,
 } from '../../services/api';
-import { annulerDeliberation } from './annulerDeliberation';
+import { annulerDeliberation, couperTransport } from './annulerDeliberation';
 
 interface BoardPanelProps {
   isOpen: boolean;
@@ -176,11 +176,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const handleCloseAndReset = useCallback(() => {
     // Board classique : fermer = annuler - par le chemin canonique, le
     // backend arrête réellement les conseillers (un abort seul ne coupait
-    // que le transport).
-    void annulerDeliberation(processingTaskIdRef.current, () => {
-      abortRef.current?.abort();
-    });
-    abortRef.current = null;
+    // que le transport). couperTransport capture le controller MAINTENANT
+    // (revue F8 : la ref est nettoyée avant le repli asynchrone).
+    void annulerDeliberation(
+      processingTaskIdRef.current, couperTransport(abortRef),
+    );
     resetDeliberation();
     setViewState('input');
     setQuestion('');
@@ -189,10 +189,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   }, [resetDeliberation, onClose]);
 
   const handleCancelDeliberation = useCallback(() => {
-    void annulerDeliberation(processingTaskIdRef.current, () => {
-      abortRef.current?.abort();
-      abortRef.current = null;
-    });
+    void annulerDeliberation(
+      processingTaskIdRef.current, couperTransport(abortRef),
+    );
     resetDeliberation();
     setViewState('input');
   }, [resetDeliberation]);
@@ -228,8 +227,14 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       return;
     }
 
-    // Annuler une éventuelle délibération précédente
-    if (abortRef.current) abortRef.current.abort();
+    // Annuler une éventuelle délibération précédente - par le chemin
+    // canonique aussi (second panel : un abort seul laissait le backend
+    // délibérer et sauvegarder dans le vide).
+    if (abortRef.current) {
+      void annulerDeliberation(
+        processingTaskIdRef.current, couperTransport(abortRef),
+      );
+    }
     const controller = new AbortController();
     abortRef.current = controller;
     processingTaskIdRef.current = null;
@@ -237,6 +242,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     resetDeliberation();
     setViewState('deliberating');
     let receivedDone = false;
+    let receivedCancelled = false;
 
     try {
       const stream = streamDeliberation({
@@ -255,7 +261,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             break;
 
           case 'cancelled':
-            // Le backend confirme l'arrêt : rien à sauver, retour au calme.
+            // Le backend confirme l'arrêt : rien à sauver, retour au calme
+            // (revue F11 : ne pas requalifier l'annulation en panne).
+            receivedCancelled = true;
             break;
 
           case 'web_search_start':
@@ -341,7 +349,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             return;
         }
       }
-      if (!controller.signal.aborted && !receivedDone) {
+      if (receivedCancelled) {
+        // Annulé depuis le panneau Traitements : retour au calme, sans
+        // faux message de panne.
+        resetDeliberation();
+        setViewState('input');
+      } else if (!controller.signal.aborted && !receivedDone) {
         setRunError('La délibération s’est interrompue avant sa sauvegarde.');
       }
     } catch (error) {

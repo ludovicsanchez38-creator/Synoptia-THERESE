@@ -18,6 +18,11 @@ from dataclasses import dataclass, field
 
 # Classes d'effet des outils du dispatcher. Un outil non classé échappe au
 # raisonnement d'annulation : le test de complétude le rend rouge.
+#
+# La classe décrit l'effet MÉTIER. Un outil « lecture seule » peut avoir des
+# effets techniques d'infrastructure (ex. read_emails rafraîchit un token
+# OAuth expiré, ce qui écrit en base) : ces effets ne créent aucune donnée
+# métier et ne sont pas soumis à la promesse du fencing.
 LECTURE_SEULE = "read_only"
 MUTATION_LOCALE = "local_mutation"
 MUTATION_EXTERNE = "external_mutation"

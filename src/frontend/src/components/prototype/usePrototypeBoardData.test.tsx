@@ -193,6 +193,27 @@ describe('usePrototypeBoardData', () => {
     await act(async () => deliberation);
   });
 
+  it('une annulation venue du panneau Traitements finit « annulée », pas « erreur »', async () => {
+    // Second panel de revue : le status cancelled posé dans la boucle était
+    // écrasé par le post-loop (!receivedDone -> error) - le bandeau
+    // « Délibération annulée » était inatteignable pour une annulation externe.
+    consentCloud();
+    vi.mocked(streamDeliberation).mockImplementation(async function* () {
+      yield { type: 'task', content: 'traitement-42' } as BoardDeliberationChunk;
+      yield { type: 'advisor_start', role: 'analyst', content: '' } as BoardDeliberationChunk;
+      yield { type: 'cancelled', content: '' } as BoardDeliberationChunk;
+    });
+    const { result } = renderHook(() => usePrototypeBoardData(true));
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+    let deliberation: Promise<void> | undefined;
+    act(() => { deliberation = result.current.startDeliberation({ question: decision.question, mode: 'cloud' }); });
+    await act(async () => deliberation);
+
+    expect(result.current.run.status).toBe('cancelled');
+    expect(result.current.run.error).toBeNull();
+  });
+
   it('laisse le flux actif quand le canevas Board est simplement masqué', async () => {
     consentCloud();
     let signal: AbortSignal | undefined;

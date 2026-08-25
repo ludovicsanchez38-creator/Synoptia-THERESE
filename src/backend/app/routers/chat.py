@@ -129,14 +129,26 @@ def _is_cancelled(conversation_id: str) -> bool:
 
 
 def _unregister_generation(
-    conversation_id: str, generation_id: str | None = None
+    conversation_id: str,
+    generation_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> None:
-    """Remove a generation from tracking - seulement si on la possède encore."""
+    """Remove a generation from tracking - seulement si on la possède encore.
+
+    Revue jalon (F2) : l'identité par OBJET fait foi. Le guard par
+    generation_id laissait une fenêtre - une génération neuve dont l'id
+    n'est pas encore affecté (creer_traitement en cours) se faisait
+    retirer par la fin de la précédente, et la façade /cancel ne trouvait
+    plus rien à arrêter.
+    """
     courante = _active_generations.get(conversation_id)
-    if (
+    if contexte is not None:
+        if courante is not contexte:
+            return
+    elif (
         generation_id is not None
         and courante is not None
-        and courante.generation_id not in (None, generation_id)
+        and courante.generation_id != generation_id
     ):
         # Une génération plus récente a repris l'entrée : ne pas la casser.
         return
@@ -254,7 +266,13 @@ async def _get_file_context(
         # ceux posés par défaut lors du pré-index parce que la conversation
         # n'existait pas encore. Un document rendu général depuis l'explorateur,
         # ou déjà rattaché à un projet, n'est jamais capté ni confisqué.
-        if existing and scope and scope != "global" and existing.scope_provisoire:
+        if (
+            existing and scope and scope != "global"
+            and existing.scope_provisoire
+            # Revue jalon (F7) : le rattrapage mute Qdrant + SQLite - c'est
+            # un effet métier local, il respecte la promesse du fencing.
+            and not (contexte is not None and contexte.annulation_observee())
+        ):
             # L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
             # périmètre que la recherche n'appliquait pas encore : en cas
             # d'échec, la base affirmait « ce document appartient au projet »
@@ -1512,7 +1530,8 @@ async def send_message(
             elif error:
                 logger.warning(f"Attached file error: {error}")
 
-    # BUG-160 : même rappel que sur le chemin streaming.
+    # BUG-160 : même rappel que sur le chemin streaming. Pas de contexte
+    # ici : le chemin non-stream n'a ni génération ni annulation.
     for fp in await _pieces_jointes_recentes(
         conversation.id, session, deja_fournis=list(request.file_paths or [])
     ):
@@ -1678,10 +1697,7 @@ async def _stream_response(
         generation = None
 
     if annulee_avant_demarrage:
-        _unregister_generation(
-            conversation_id,
-            generation.id if generation is not None else None,
-        )
+        _unregister_generation(conversation_id, contexte=contexte_execution)
         yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
         return
     etat_generation: dict[str, Any] = {"etat": EtatTacheTraitement.DONE}
@@ -1751,7 +1767,13 @@ async def _stream_response(
             except StopAsyncIteration:
                 return
 
-            if _is_cancelled(conversation_id):
+            # Une génération qui produit encore n'est pas orpheline : sans ce
+            # rafraîchissement, _cleanup_stale_generations retirait après 5 min
+            # l'entrée d'un stream VIVANT (second panel de revue).
+            if _active_generations.get(conversation_id) is contexte_execution:
+                _generation_timestamps[conversation_id] = time.monotonic()
+
+            if contexte_execution.annulation_observee():
                 etat_generation["etat"] = EtatTacheTraitement.CANCELLED
                 yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
@@ -1768,7 +1790,7 @@ async def _stream_response(
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
         # autre sortie non prévue est un échec. L'état terminal reste posé
         # par CE producteur, jamais par l'endpoint d'annulation.
-        if isinstance(sortie, GeneratorExit) or _is_cancelled(conversation_id):
+        if isinstance(sortie, GeneratorExit) or contexte_execution.annulation_observee():
             etat_generation["etat"] = EtatTacheTraitement.CANCELLED
         else:
             etat_generation["etat"] = EtatTacheTraitement.FAILED
@@ -1810,8 +1832,7 @@ async def _stream_response(
             with contextlib.suppress(Exception):
                 get_performance_monitor().finish_stream(conversation_id)
             _unregister_generation(
-                conversation_id,
-                generation.id if generation is not None else None,
+                conversation_id, contexte=contexte_execution
             )
             if generation is not None:
                 with contextlib.suppress(Exception):
@@ -1999,6 +2020,7 @@ async def _do_stream_response(
             file_ctx, error = await _get_file_context(
                 fp, session, "analyse",
                 scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+                contexte=contexte,
             )
             if file_ctx:
                 file_contexts.append(file_ctx)
@@ -2016,6 +2038,7 @@ async def _do_stream_response(
         file_ctx, error = await _get_file_context(
             fp, session, "analyse",
             scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
+            contexte=contexte,
         )
         if file_ctx:
             file_contexts.append(file_ctx)

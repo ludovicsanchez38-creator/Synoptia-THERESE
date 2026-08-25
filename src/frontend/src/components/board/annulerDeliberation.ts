@@ -23,3 +23,19 @@ export async function annulerDeliberation(
   }
   couperLeTransport();
 }
+
+
+/**
+ * Revue jalon (F8) : capturer le controller À L'INSTANT du clic.
+ *
+ * Les handlers nettoient `abortRef.current` tout de suite (un nouveau run
+ * peut démarrer) ; le repli asynchrone d'`annulerDeliberation` lisait alors
+ * `null` et ne coupait jamais l'ancien transport.
+ */
+export function couperTransport(
+  ref: { current: AbortController | null },
+): () => void {
+  const controller = ref.current;
+  ref.current = null;
+  return () => controller?.abort();
+}

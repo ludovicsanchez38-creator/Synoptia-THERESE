@@ -130,6 +130,7 @@ export function usePrototypeBoardData(enabled = true) {
     abortController.current = controller;
     processingTaskId.current = null;
     let receivedDone = false;
+    let receivedCancelled = false;
     setRun({
       ...idleRun,
       status: 'running',
@@ -145,6 +146,9 @@ export function usePrototypeBoardData(enabled = true) {
         if (chunk.type === 'task') {
           processingTaskId.current = chunk.content || null;
         } else if (chunk.type === 'cancelled') {
+          // Second panel de revue : sans ce drapeau, le post-loop écrasait
+          // « annulée » en « erreur » pour toute annulation externe.
+          receivedCancelled = true;
           setRun((current) => ({ ...current, status: 'cancelled', phase: 'Délibération annulée', error: null }));
           break;
         } else if (chunk.type === 'web_search_start') {
@@ -245,7 +249,7 @@ export function usePrototypeBoardData(enabled = true) {
 
       if (controller.signal.aborted) {
         setRun((current) => ({ ...current, status: 'cancelled', phase: 'Délibération annulée', error: null }));
-      } else if (!receivedDone) {
+      } else if (!receivedDone && !receivedCancelled) {
         setRun((current) => ({ ...current, status: 'error', phase: 'Flux interrompu', error: 'La délibération s’est interrompue avant sa sauvegarde.' }));
       }
     } catch (error) {

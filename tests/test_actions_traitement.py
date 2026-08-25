@@ -332,3 +332,61 @@ class TestLaRouteHistoriqueEstCanonique:
         assert await _attendre(
             lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
         )
+
+
+class TestLaFenetreDEnrolement:
+    @pytest.mark.asyncio
+    async def test_f9_delete_pendant_l_enrolement_est_accepte(
+        self, client, monkeypatch
+    ):
+        """F9 : entre demarrer() et lier_adaptateur(), demander_arret rend
+        « unavailable » mais RETIENT la demande (rejouée à l'enrôlement).
+        La route répondait 400 alors que l'arrêt allait réellement avoir
+        lieu."""
+        from app.services import traitements
+
+        monkeypatch.setattr(
+            "app.services.llm.get_llm_service", lambda: _faux_llm(),
+        )
+
+        porte = asyncio.Event()
+        lier_originale = traitements.TraitementHandle.lier_adaptateur
+
+        async def lier_retardee(self, adaptateur):
+            await porte.wait()
+            await lier_originale(self, adaptateur)
+
+        monkeypatch.setattr(
+            traitements.TraitementHandle, "lier_adaptateur", lier_retardee
+        )
+
+        task = await ActionRunner.run("rapport-hebdo")
+
+        # attendre la fenêtre : traitement RUNNING, adaptateur pas encore là
+        traitement = None
+        for _ in range(100):
+            traitement = await _traitement_action(task.task_id)
+            if traitement is not None and traitement.state == EtatTache.RUNNING:
+                break
+            await asyncio.sleep(0.05)
+        assert traitement is not None and traitement.state == EtatTache.RUNNING
+
+        reponse = await client.delete(f"/api/actions/tasks/{task.task_id}")
+        assert reponse.status_code == 200, (
+            "la demande est posée durablement et sera rejouée à "
+            "l'enrôlement : la refuser en 400 est un mensonge"
+        )
+
+        porte.set()
+        assert await _attendre(
+            lambda: ActionRunner.get_task(task.task_id).status
+            == TaskStatus.CANCELLED
+        )
+        etapes_executees = [
+            s for s in ActionRunner.get_task(task.task_id).steps
+            if s.status.value == "completed"
+        ]
+        assert etapes_executees == [], (
+            "des étapes ont tourné alors que l'arrêt était demandé avant "
+            "l'enrôlement"
+        )

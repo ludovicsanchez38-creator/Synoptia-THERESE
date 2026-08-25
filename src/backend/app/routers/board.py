@@ -25,6 +25,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
+# Second panel de revue : les nettoyages après déconnexion partent dans des
+# tâches DÉTACHÉES (l'annulation level-triggered d'anyio coupe tout await
+# du bloc except du générateur). Référence forte obligatoire.
+_nettoyages_en_cours: set["asyncio.Task[None]"] = set()
+
 router = APIRouter()
 
 
@@ -70,6 +75,35 @@ async def get_advisor(role: AdvisorRole):
         color=config["color"],
         personality=config["personality"],
     )
+
+
+async def _clore_apres_deconnexion(
+    porteur: "asyncio.Task[None]",
+    board_service: BoardService,
+    handle,
+    decision_sauvee,
+) -> None:
+    """Clôture d'une délibération dont le client a disparu - exécutée hors
+    du scope annulé : attend la fin réelle du porteur ET de la persistance
+    protégée avant de trancher done/cancelled."""
+    from app.models.processing import EtatTache
+
+    await asyncio.gather(porteur, return_exceptions=True)
+    persistance = board_service._persistance_en_cours
+    if persistance is not None:
+        await asyncio.gather(persistance, return_exceptions=True)
+    if handle is None:
+        return
+    try:
+        if await decision_sauvee():
+            await handle.terminer(EtatTache.DONE)
+        else:
+            await handle.terminer(EtatTache.CANCELLED)
+    except Exception:
+        logger.warning(
+            "Clôture après déconnexion impossible pour le Board",
+            exc_info=True,
+        )
 
 
 @router.post("/deliberate")
@@ -188,6 +222,14 @@ async def deliberate(
                 await asyncio.gather(tache, return_exceptions=True)
 
                 if tache.cancelled():
+                    # Revue jalon (F3) : attendre la persistance PROTÉGÉE
+                    # avant de trancher - un commit lent sous shield aboutit
+                    # après l'annulation de la porteuse.
+                    persistance = board_service._persistance_en_cours
+                    if persistance is not None:
+                        await asyncio.gather(
+                            persistance, return_exceptions=True
+                        )
                     if await _decision_sauvee():
                         # Le commit a gagné la course : la décision existe,
                         # un cancel_requested tardif se résout en done
@@ -215,13 +257,20 @@ async def deliberate(
                 # Déconnexion du client : pas de partiel - une décision à
                 # moitié délibérée ne se sauve pas. Si le commit avait déjà
                 # eu lieu, done reste la vérité.
+                #
+                # Second panel de revue : sous uvicorn/Starlette, cette
+                # annulation est LEVEL-TRIGGERED (re-livrée à chaque await
+                # de ce bloc). Tout nettoyage attendu ICI serait coupé et
+                # la ligne resterait running à jamais : il part donc dans
+                # une tâche détachée, insensible au scope annulé.
                 tache.cancel()
-                await asyncio.gather(tache, return_exceptions=True)
-                if handle is not None:
-                    if await _decision_sauvee():
-                        await handle.terminer(EtatTache.DONE)
-                    else:
-                        await handle.terminer(EtatTache.CANCELLED)
+                nettoyage = asyncio.create_task(
+                    _clore_apres_deconnexion(
+                        tache, board_service, handle, _decision_sauvee
+                    )
+                )
+                _nettoyages_en_cours.add(nettoyage)
+                nettoyage.add_done_callback(_nettoyages_en_cours.discard)
                 raise
 
     return StreamingResponse(

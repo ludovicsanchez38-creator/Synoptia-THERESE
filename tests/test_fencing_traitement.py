@@ -306,3 +306,317 @@ class TestLeFallbackChatEstRaccorde:
                 )
 
         qdrant.async_add_memories.assert_not_called()
+
+
+class TestLesFenetresDeLaRevue:
+    """Passe 1 de la revue de jalon : les fenêtres que la matrice ne
+    couvrait pas. Chaque test reproduit le scénario du finding."""
+
+    @pytest.mark.asyncio
+    async def test_f1_le_wrapper_lit_le_token_de_sa_generation(
+        self, client, monkeypatch
+    ):
+        """F1 : annuler G2 ne doit JAMAIS déclarer G1 annulée - le wrapper
+        de G1 doit relire SON token, pas le drapeau partagé par
+        conversation."""
+        import json as json_module
+
+        from app.models.processing import EtatTache
+        from app.routers import chat as chat_router
+
+        capture: dict = {}
+        intruse: dict = {}
+
+        class FauxService:
+            class config:
+                model = "test"
+
+                class provider:
+                    value = "ollama"
+
+            def prepare_context(self, messages, system_prompt=None, memory_context=None):
+                return type("Ctx", (), {"messages": messages, "system_prompt": ""})()
+
+            async def stream_response_with_tools(self, _context, _tools=None):
+                from app.services.providers import StreamEvent
+
+                yield StreamEvent(type="text", content="Début ")
+                # Une seconde génération démarre et est annulée PENDANT G1.
+                intruse["ctx"] = chat_router._register_generation(
+                    capture["conversation"], "gen-intruse"
+                )
+                chat_router._cancel_generation(capture["conversation"])
+                yield StreamEvent(type="text", content="suite et fin.")
+                yield StreamEvent(type="done", stop_reason="stop")
+
+        monkeypatch.setattr(chat_router, "get_llm_service", lambda: FauxService())
+
+        creation = await client.post(
+            "/api/chat/conversations", json={"title": "Chevauchement"}
+        )
+        capture["conversation"] = creation.json()["id"]
+
+        try:
+            reponse = await client.post(
+                "/api/chat/send",
+                json={"message": "Salut", "stream": True,
+                      "conversation_id": capture["conversation"]},
+            )
+            assert reponse.status_code == 200
+            assert '"cancelled"' not in reponse.text, (
+                "G1 a été déclarée annulée alors que c'est G2 (l'intruse) "
+                "qui l'était - le wrapper lit encore le drapeau partagé"
+            )
+            evenement = next(
+                (json_module.loads(ligne.removeprefix("data: "))
+                 for ligne in reponse.text.splitlines()
+                 if ligne.startswith("data: ") and '"generation"' in ligne),
+                None,
+            )
+            assert evenement is not None
+
+            from app.services import traitements
+
+            ligne = await traitements.lire(evenement["generation_id"])
+            assert ligne.state == EtatTache.DONE
+        finally:
+            chat_router._active_generations.pop(capture["conversation"], None)
+
+    def test_f2_le_nettoyage_d_une_vieille_generation_epargne_la_neuve(self):
+        """F2 : G2 s'enregistre AVANT que son generation_id soit connu
+        (fenêtre creer_traitement). La fin de G1 ne doit pas retirer
+        l'entrée de G2 - sinon la façade /cancel ne trouve plus rien."""
+        from app.routers import chat as chat_router
+
+        conversation = "conv-fenetre-none"
+        try:
+            ctx2 = chat_router._register_generation(conversation)
+            assert ctx2.generation_id is None  # la fenêtre du finding
+
+            chat_router._unregister_generation(conversation, "gen-1-finie")
+
+            assert chat_router._active_generations.get(conversation) is ctx2, (
+                "la fin de G1 a supprimé le contexte de G2 : dans cette "
+                "fenêtre, la façade /cancel ne peut plus rien arrêter"
+            )
+        finally:
+            chat_router._active_generations.pop(conversation, None)
+
+    @pytest.mark.asyncio
+    async def test_f6_annulation_entre_flush_et_qdrant_zero_effet(
+        self, client, monkeypatch
+    ):
+        """F6 : le fence unique laissait un contact ENTIER se créer (SQLite
+        + Qdrant) quand l'annulation tombait après le flush. Re-check avant
+        l'écriture vectorielle : rollback, zéro ligne, zéro vecteur."""
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-flush")
+        qdrant = AsyncMock()
+        monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
+
+        async with get_session_context() as session:
+            flush_originale = session.flush
+
+            async def flush_puis_annulation():
+                await flush_originale()
+                contexte.demander_arret()
+
+            session.flush = flush_puis_annulation
+            resultat = json.loads(await memory_tools.execute_create_contact(
+                {"first_name": "Zoe", "last_name": "Flush"},
+                session,
+                contexte=contexte,
+            ))
+
+        assert resultat.get("interrupted") is True
+        qdrant.async_add_memory.assert_not_called()
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Contact))).scalars().all()
+        assert lignes == []
+
+    @pytest.mark.asyncio
+    async def test_f6_projet_annule_entre_flush_et_qdrant_zero_effet(
+        self, client, monkeypatch
+    ):
+        from app.models.database import get_session_context
+        from app.models.entities import Project
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-flush")
+        qdrant = AsyncMock()
+        monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
+
+        async with get_session_context() as session:
+            flush_originale = session.flush
+
+            async def flush_puis_annulation():
+                await flush_originale()
+                contexte.demander_arret()
+
+            session.flush = flush_puis_annulation
+            resultat = json.loads(await memory_tools.execute_create_project(
+                {"name": "Chantier Flush"},
+                session,
+                contexte=contexte,
+            ))
+
+        assert resultat.get("interrupted") is True
+        qdrant.async_add_memory.assert_not_called()
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Project))).scalars().all()
+        assert lignes == []
+
+    @pytest.mark.asyncio
+    async def test_f7_les_pieces_jointes_recoivent_le_token(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """F7 : le token n'était transmis qu'aux commandes /fichier - les
+        pièces jointes (file_paths) et leur rejeu doivent le recevoir
+        aussi."""
+        from app.routers import chat as chat_router
+
+        contextes_recus: list = []
+
+        async def espionne(
+            file_path, session, command="fichier",
+            scope="global", scope_id=None, contexte=None,
+        ):
+            contextes_recus.append(contexte)
+            return None, None
+
+        monkeypatch.setattr(chat_router, "_get_file_context", espionne)
+
+        class FauxService:
+            class config:
+                model = "test"
+
+                class provider:
+                    value = "ollama"
+
+            def prepare_context(self, messages, system_prompt=None, memory_context=None):
+                return type("Ctx", (), {"messages": messages, "system_prompt": ""})()
+
+            async def stream_response_with_tools(self, _context, _tools=None):
+                from app.services.providers import StreamEvent
+
+                yield StreamEvent(type="text", content="ok")
+                yield StreamEvent(type="done", stop_reason="stop")
+
+        monkeypatch.setattr(chat_router, "get_llm_service", lambda: FauxService())
+
+        reponse = await client.post(
+            "/api/chat/send",
+            json={"message": "regarde ce document", "stream": True,
+                  "file_paths": [str(fichier_texte)]},
+        )
+        assert reponse.status_code == 200
+        assert contextes_recus, "la pièce jointe n'a pas été traitée"
+        assert all(c is not None for c in contextes_recus), (
+            "une pièce jointe traitée sans token : son indexation et son "
+            "rattrapage de périmètre échappent à l'annulation"
+        )
+
+    @pytest.mark.asyncio
+    async def test_f7_le_rattrapage_de_perimetre_est_fence(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """F7 (suite) : le rattrapage BUG-165 mute Qdrant + SQLite pour un
+        fichier DÉJÀ indexé - annulation observée = aucun rattrapage."""
+        from app.models.database import get_session_context
+        from app.models.entities import FileMetadata
+        from app.routers import chat as module
+        from app.services.contexte_execution import ContexteExecution
+
+        qdrant = AsyncMock()
+        monkeypatch.setattr(module, "get_qdrant_service", lambda: qdrant)
+        monkeypatch.setattr(
+            module, "extract_text", lambda _p: "du texte", raising=False
+        )
+
+        async with get_session_context() as session:
+            session.add(FileMetadata(
+                path=str(fichier_texte.resolve()),
+                name=fichier_texte.name,
+                extension=".txt", size=10, mime_type="text/plain",
+                scope="global", scope_id=None, scope_provisoire=True,
+            ))
+            await session.commit()
+
+        contexte = ContexteExecution(generation_id="gen-rattrapage")
+        contexte.demander_arret()
+
+        async with get_session_context() as session:
+            await module._get_file_context(
+                str(fichier_texte), session,
+                scope="project", scope_id="projet-x",
+                contexte=contexte,
+            )
+
+        qdrant.definir_perimetre_entite.assert_not_called()
+        async with get_session_context() as session:
+            ligne = (await session.execute(
+                select(FileMetadata).where(
+                    FileMetadata.path == str(fichier_texte.resolve())
+                )
+            )).scalar_one()
+        assert ligne.scope == "global", (
+            "le périmètre a été rattrapé après l'annulation observée"
+        )
+
+
+class TestLeSecondPanel:
+    """Second panel de revue (vérification interne multi-agents) : les
+    chemins que ni la matrice ni la première passe ne couvraient."""
+
+    @pytest.mark.asyncio
+    async def test_annulation_en_vol_pendant_qdrant_rollback_avant_le_teardown(
+        self, client, monkeypatch
+    ):
+        """Le wrapper J1b annule la coroutine de l'outil par CancelledError.
+        Tombée entre flush et commit (attente Qdrant), elle sautait le
+        rollback (except Exception) - et le teardown de `get_session`
+        committait l'écriture « annulée » à la fin de la requête."""
+        import asyncio
+        import contextlib
+
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        qdrant_commence = asyncio.Event()
+
+        class QdrantBloquant:
+            async def async_add_memory(self, **_k):
+                qdrant_commence.set()
+                await asyncio.sleep(3600)
+
+        monkeypatch.setattr(
+            memory_tools, "get_qdrant_service", lambda: QdrantBloquant()
+        )
+
+        async with get_session_context() as session:
+            tache = asyncio.create_task(memory_tools.execute_create_contact(
+                {"first_name": "Jean", "last_name": "EnVol"},
+                session,
+                contexte=ContexteExecution(generation_id="gen-vol"),
+            ))
+            await asyncio.wait_for(qdrant_commence.wait(), timeout=5)
+            tache.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await tache
+            # le teardown de la dépendance get_session commit sur sortie
+            # propre : rejouer exactement ce geste
+            await session.commit()
+
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Contact))).scalars().all()
+        assert lignes == [], (
+            "l'écriture flushée a été commitée par le teardown alors que "
+            "l'outil venait d'être annulé en vol"
+        )

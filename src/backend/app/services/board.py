@@ -99,6 +99,9 @@ class BoardService:
     def __init__(self, session: AsyncSession | None = None):
         self._session = session
         self._web_search = WebSearchService()
+        # Revue jalon (F3) : persistance en vol, attendue par la route avant
+        # tout verdict cancelled/done.
+        self._persistance_en_cours: "asyncio.Task[None] | None" = None
         self._last_web_sources: list[dict[str, str]] = []
         self._last_synthesis_usage: dict[str, str | int | float] = {}
         # Validation unique au premier usage
@@ -506,9 +509,15 @@ class BoardService:
             raise asyncio.CancelledError(
                 "Arrêt demandé avant le commit de la décision"
             )
-        await asyncio.shield(
+        # Revue jalon (F3) : la tâche de persistance est EXPOSÉE - la route
+        # doit pouvoir l'attendre avant de décider cancelled/done, sinon un
+        # commit lent aboutit APRÈS le verdict et la décision existe avec un
+        # traitement qui la nie.
+        persistance = asyncio.create_task(
             self._persister_decision(decision_id, request, opinions, synthesis)
         )
+        self._persistance_en_cours = persistance
+        await asyncio.shield(persistance)
 
         yield BoardDeliberationChunk(
             type="synthesis_chunk",

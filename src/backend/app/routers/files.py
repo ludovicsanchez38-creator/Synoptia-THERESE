@@ -5,6 +5,7 @@ Endpoints for file management and indexing.
 """
 
 import asyncio
+import contextlib
 import logging
 import os
 import shutil
@@ -103,8 +104,11 @@ async def _executer_avec_suivi(
             return True
         return bool(est_deconnecte and await est_deconnecte())
 
-    try:
-        if handle is not None:
+    # Second panel de revue : le suivi est un TÉMOIN, jamais un acteur.
+    # Une panne du suivi (SQLite occupée) ne doit ni empêcher d'indexer,
+    # ni transformer un succès en 500, ni un 409 d'annulation en panne.
+    if handle is not None:
+        try:
             await handle.demarrer()
             # L'extraction déjà lancée va à son terme (un thread ne
             # s'interrompt pas) : on note la demande, les étapes suivantes
@@ -112,29 +116,52 @@ async def _executer_avec_suivi(
             await handle.lier_adaptateur(
                 task_registry.TravailNonInterruptible(arret.set)
             )
+        except traitements.AnnuleAvantDemarrage:
+            # demander_arret a déjà posé CANCELLED durable.
+            raise IndexationAbandonnee(
+                f"Indexation de {label} annulée avant démarrage"
+            )
+        except Exception:
+            logger.warning(
+                "Suivi en panne au démarrage pour %s : indexation sans "
+                "suivi", label, exc_info=True,
+            )
+            with contextlib.suppress(Exception):
+                await handle.terminer(
+                    EtatTacheTraitement.FAILED, error="suivi en panne"
+                )
+            handle = None
+
+    try:
         reponse = await executer(_abandonnee)
-    except traitements.AnnuleAvantDemarrage:
-        # demander_arret a déjà posé CANCELLED durable.
-        raise IndexationAbandonnee(
-            f"Indexation de {label} annulée avant démarrage"
-        )
     except IndexationAbandonnee:
         if handle is not None:
-            await handle.terminer(EtatTacheTraitement.CANCELLED)
+            with contextlib.suppress(Exception):
+                await handle.terminer(EtatTacheTraitement.CANCELLED)
         raise
     except HTTPException as e:
         if handle is not None:
-            await handle.terminer(
-                EtatTacheTraitement.FAILED, error=str(e.detail)[:200]
-            )
+            with contextlib.suppress(Exception):
+                await handle.terminer(
+                    EtatTacheTraitement.FAILED, error=str(e.detail)[:200]
+                )
         raise
     except Exception as e:
         if handle is not None:
-            await handle.terminer(EtatTacheTraitement.FAILED, error=str(e)[:200])
+            with contextlib.suppress(Exception):
+                await handle.terminer(
+                    EtatTacheTraitement.FAILED, error=str(e)[:200]
+                )
         raise
     if handle is not None:
-        await handle.progresser(progress=1.0)
-        await handle.terminer(EtatTacheTraitement.DONE)
+        try:
+            await handle.progresser(progress=1.0)
+            await handle.terminer(EtatTacheTraitement.DONE)
+        except Exception:
+            logger.warning(
+                "Clôture du suivi impossible pour %s : l'indexation a "
+                "pourtant réussi", label, exc_info=True,
+            )
     return reponse
 
 
@@ -324,6 +351,7 @@ ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".csv", ".xlsx", ".pdf", ".docx"}
 @router.post("/upload", response_model=FileResponse)
 async def upload_file(
     file: UploadFile,
+    http_request: Request,
     project_id: str = Form(...),
     session: AsyncSession = Depends(get_session),
 ):
@@ -393,7 +421,7 @@ async def upload_file(
             label=dest_path.name,
             entity_id=str(dest_path),
             project_id=project_id,
-            est_deconnecte=None,
+            est_deconnecte=http_request.is_disconnected,
             executer=lambda abandonnee: remplacer_puis_indexer(
                 str(dest_path), _deposer,
                 est_abandonnee=abandonnee,

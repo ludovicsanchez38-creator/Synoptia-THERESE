@@ -487,19 +487,24 @@ export function ActionPanel() {
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-cyan-400 shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
         >
           <Loader2 size={14} className="animate-spin" />
-          {activeTask.agent_name || 'Action'} en cours...
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              cancelAction(activeTask.task_id);
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
-            className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
-          >
-            <Square size={10} />
-          </span>
+          {activeTask.status === 'cancel_requested'
+            ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
+            : `${activeTask.agent_name || 'Action'} en cours...`}
+          {activeTask.status !== 'cancel_requested' && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label="Annuler l'action"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelAction(activeTask.task_id);
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
+              className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+            >
+              <Square size={10} />
+            </span>
+          )}
         </button>
       );
     }

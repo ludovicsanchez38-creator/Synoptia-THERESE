@@ -307,3 +307,173 @@ class TestLeFallbackChat:
         async with get_session_context() as session:
             with pytest.raises(IndexationAbandonnee):
                 await module._get_file_context(str(fichier_texte), session)
+
+
+class TestLesFenetresDeLaRevue:
+    @pytest.mark.asyncio
+    async def test_f4_le_depot_n_a_pas_lieu_si_l_arret_est_deja_pose(
+        self, client, fichier_texte, qdrant_factice
+    ):
+        """F4 : `remplacer_puis_indexer` remplaçait le fichier sur disque
+        AVANT de consulter l'abandon - la version précédente était perdue
+        alors que son index restait servi."""
+        from app.services import indexation
+
+        await indexation.index_payload(str(fichier_texte))
+        contenu_initial = fichier_texte.read_bytes()
+
+        depots = {"n": 0}
+
+        async def deposer():
+            depots["n"] += 1
+            fichier_texte.write_text("NOUVELLE VERSION", encoding="utf-8")
+
+        async def toujours_abandonnee() -> bool:
+            return True
+
+        with pytest.raises(indexation.IndexationAbandonnee):
+            await indexation.remplacer_puis_indexer(
+                str(fichier_texte), deposer,
+                est_abandonnee=toujours_abandonnee,
+            )
+
+        assert depots["n"] == 0, (
+            "le dépôt a eu lieu alors que l'arrêt était déjà posé"
+        )
+        assert fichier_texte.read_bytes() == contenu_initial
+
+    @pytest.mark.asyncio
+    async def test_f5_l_upload_ecoute_la_deconnexion_du_client(
+        self, client, qdrant_factice, monkeypatch
+    ):
+        """F5 : contrairement à /index, /upload ne recevait pas la requête
+        et ne pouvait jamais constater la déconnexion du client."""
+        import io
+
+        from app.routers import files as surface
+        from fastapi import HTTPException
+
+        capture: dict = {}
+
+        async def espionne(**kwargs):
+            capture.update(kwargs)
+            raise HTTPException(status_code=418, detail="spy")
+
+        monkeypatch.setattr(surface, "_executer_avec_suivi", espionne)
+
+        resp = await client.post(
+            "/api/memory/projects", json={"name": "Chantier deco"}
+        )
+        projet_id = resp.json()["id"]
+        await client.post(
+            "/api/files/upload",
+            files={"file": ("gros.txt", io.BytesIO(b"x" * 100), "text/plain")},
+            data={"project_id": projet_id},
+        )
+
+        assert capture, "l'enveloppe n'a pas été invoquée"
+        assert capture.get("est_deconnecte") is not None, (
+            "/upload ignore la déconnexion : copie, extraction et indexation "
+            "continuent pour un client parti"
+        )
+
+
+class TestLeSecondPanel:
+    @pytest.mark.asyncio
+    async def test_une_panne_du_suivi_apres_succes_ne_ment_pas_au_client(
+        self, client, fichier_texte, qdrant_factice, monkeypatch
+    ):
+        """Une indexation RÉUSSIE (Qdrant écrit, résultat consigné) doit
+        répondre 200 même si la clôture du suivi tombe en panne - pas un
+        500 qui fait croire à un échec."""
+        from app.services import traitements
+
+        async def progresser_en_panne(self, **_k):
+            raise RuntimeError("database is locked")
+
+        monkeypatch.setattr(
+            traitements.TraitementHandle, "progresser", progresser_en_panne
+        )
+
+        reponse = await client.post(
+            "/api/files/index", json={"path": str(fichier_texte)}
+        )
+        assert reponse.status_code == 200, (
+            "le fichier EST indexé et cherchable : répondre 500 fait "
+            "recommencer l'utilisateur pour rien"
+        )
+        qdrant_factice.async_add_memories.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_une_panne_du_demarrage_du_suivi_n_empeche_pas_d_indexer(
+        self, client, fichier_texte, qdrant_factice, monkeypatch
+    ):
+        """Fail-open promis : une panne de demarrer()/lier_adaptateur() ne
+        doit pas transformer l'indexation en échec jamais tenté."""
+        from app.services import traitements
+
+        async def demarrer_en_panne(self):
+            raise RuntimeError("database is locked")
+
+        monkeypatch.setattr(
+            traitements.TraitementHandle, "demarrer", demarrer_en_panne
+        )
+
+        reponse = await client.post(
+            "/api/files/index", json={"path": str(fichier_texte)}
+        )
+        assert reponse.status_code == 200
+        qdrant_factice.async_add_memories.assert_called()
+
+    @pytest.mark.asyncio
+    async def test_une_panne_de_la_cloture_cancelled_garde_le_409(
+        self, client, fichier_texte, qdrant_factice, monkeypatch
+    ):
+        from app.routers import files as surface
+        from app.services import indexation, traitements
+
+        async def toujours_abandonnee() -> bool:
+            return True
+
+        async def terminer_en_panne(self, *_a, **_k):
+            raise RuntimeError("database is locked")
+
+        monkeypatch.setattr(
+            traitements.TraitementHandle, "terminer", terminer_en_panne
+        )
+
+        with pytest.raises(indexation.IndexationAbandonnee):
+            await surface.indexer_avec_suivi(
+                str(fichier_texte), est_deconnecte=toujours_abandonnee
+            )
+
+    @pytest.mark.asyncio
+    async def test_apres_le_depot_l_indexation_va_au_bout(
+        self, client, fichier_texte, qdrant_factice
+    ):
+        """Second panel : un abandon constaté APRÈS os.replace laissait
+        trois vérités (disque v2, fiche v2, index v1). Le dépôt est le
+        point de non-retour : ensuite, l'indexation va au bout."""
+        from app.services import indexation
+
+        await indexation.index_payload(str(fichier_texte))
+        qdrant_factice.async_add_memories.reset_mock()
+
+        drapeau = {"pose": False}
+
+        async def deposer():
+            fichier_texte.write_text("NOUVELLE VERSION", encoding="utf-8")
+            drapeau["pose"] = True  # l'arrêt arrive juste après le dépôt
+
+        async def abandonnee_apres_depot() -> bool:
+            return drapeau["pose"]
+
+        reponse = await indexation.remplacer_puis_indexer(
+            str(fichier_texte), deposer,
+            est_abandonnee=abandonnee_apres_depot,
+        )
+
+        assert reponse.chunk_count > 0
+        qdrant_factice.async_add_memories.assert_called(), (
+            "après le point de non-retour, l'index doit suivre le disque"
+        )
