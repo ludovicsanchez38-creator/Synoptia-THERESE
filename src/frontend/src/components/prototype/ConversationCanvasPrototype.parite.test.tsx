@@ -24,6 +24,8 @@ import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { APP_ACTIONS, runAction } from '../../lib/actionRegistry';
 import { runNavigationAction } from '../../lib/clientActions';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
+import { ActionPanel } from '../actions/ActionPanel';
+import { useActionsStore } from '../../stores/actionsStore';
 
 const voiceHarness = vi.hoisted(() => ({ toggleRecording: vi.fn() }));
 const activityHarness = vi.hoisted(() => ({
@@ -149,7 +151,9 @@ describe('Gate de parité par source d’action', () => {
     // couverte par le gate, soit exemptée NOMMÉMENT ci-dessous.
     const PANNEAUX_HORS_GATE = [
       // Ces actions n'ouvrent pas une vue embarquée mais un panneau ou une
-      // modale par-dessus. Leur ouverture est vérifiée ailleurs.
+      // modale par-dessus. Depuis B0 (0.48), celles qui servent une entrée du
+      // tiroir sont couvertes par le bloc « Entrées du tiroir » ci-dessous —
+      // l'exclusion ne vaut que pour CE test de vues embarquées.
       'actions.open',
       'board.open',
       'guided.open',
@@ -423,6 +427,88 @@ describe('Gate de parité par source d’action', () => {
         expect(screen.getByTestId('conversation-canvas-prototype'))
           .toHaveAttribute('data-embedded-view', 'chat');
       });
+    });
+  });
+});
+
+// B0 (0.48) : les entrées du tiroir sortent du non-testé. Le manifeste les
+// déclare (binding {registre: 'tiroir', carte}) ; ce bloc vérifie que leur
+// point d'entrée RÉEL produit un changement visible — le panneau s'ouvre,
+// l'onglet demandé est le bon. Les cartes à destination spécialisée
+// (images, calculateurs) sont couvertes par lib/capacites/cartes.test.ts.
+describe('Entrées du tiroir (B0)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, '', '/?interface=conversation-canvas');
+    useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
+    usePanelStore.setState({
+      showSettings: false, requestedSettingsTab: null, showSaveCommand: false,
+      showContactModal: false, showProjectModal: false, showBoardPanel: false,
+      showShortcuts: false, showPromptLibrary: false, showCommandPalette: false,
+      showConversationSidebar: false,
+    });
+    useActionsStore.setState({ isPanelOpen: false });
+    _clearEscapeHandlers();
+    useNavigationStore.setState({ activeView: 'chat', history: [] });
+    usePersonalisationStore.setState({ skipDashboard: false });
+  });
+
+  it('board.open rend le panneau Board visible dans la coque', async () => {
+    render(<ConversationCanvasPrototype />);
+
+    await act(async () => {
+      runAction('board.open');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('board-panel')).toBeInTheDocument();
+    });
+  });
+
+  it('actions.open rend le panneau Actions visible', async () => {
+    render(
+      <>
+        <ConversationCanvasPrototype />
+        <ActionPanel />
+      </>,
+    );
+
+    await act(async () => {
+      runAction('actions.open');
+    });
+
+    await waitFor(() => {
+      expect(useActionsStore.getState().isPanelOpen).toBe(true);
+      expect(screen.getByRole('heading', { name: 'Actions' })).toBeInTheDocument();
+    });
+  });
+
+  it('la carte Connecteurs mène aux réglages, onglet outils, par son chemin réel', async () => {
+    render(<ConversationCanvasPrototype />);
+
+    // Le chemin complet du tiroir : porte du rail → carte → envoi.
+    fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
+    // La carte vit dans le groupe « Automatiser » - le Centre ouvre sur un autre
+    fireEvent.click(await screen.findByRole('tab', { name: /Automatisation/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Connecteurs MCP/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ouvrir le parcours réel' }));
+
+    await waitFor(() => {
+      const etat = usePanelStore.getState();
+      expect(etat.showSettings).toBe(true);
+      expect(etat.requestedSettingsTab).toBe('tools');
+    });
+  });
+
+  it('la carte Modèles et variables ouvre la bibliothèque de prompts', async () => {
+    render(<ConversationCanvasPrototype />);
+
+    await act(async () => {
+      runAction('prompt-library.open');
+    });
+
+    await waitFor(() => {
+      expect(usePanelStore.getState().showPromptLibrary).toBe(true);
     });
   });
 });

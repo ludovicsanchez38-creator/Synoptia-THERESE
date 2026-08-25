@@ -35,7 +35,8 @@ export type Binding =
   | { registre: 'scenario'; scenarioId: string }
   | { registre: 'lien_profond'; parametre: string }
   | { registre: 'ui'; composant: string; testid: string }
-  | { registre: 'externe'; note: string };
+  | { registre: 'externe'; note: string }
+  | { registre: 'tiroir'; carte: string };
 
 export interface Capacite {
   id: CapabilityId;
@@ -54,7 +55,8 @@ export interface PointEntree {
   capacites: CapabilityId[];
   type:
     | 'vue' | 'action' | 'commande' | 'raccourci'
-    | 'scenario' | 'lien_profond' | 'ui_contextuelle' | 'outil' | 'api';
+    | 'scenario' | 'lien_profond' | 'ui_contextuelle' | 'outil' | 'api'
+    | 'tiroir';
   binding: Binding;
   /** Déclaré, jamais déduit de l'ordre du tableau : l'ordre serait un contrat caché. */
   principal?: boolean;

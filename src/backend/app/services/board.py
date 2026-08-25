@@ -23,7 +23,6 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
-from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.llm import (
     LLMProvider,
     get_llm_service,
@@ -31,6 +30,7 @@ from app.services.llm import (
     load_therese_md,
 )
 from app.services.llm import Message as LLMMessage
+from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import WebSearchService
 from sqlalchemy.ext.asyncio import AsyncSession

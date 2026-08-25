@@ -505,3 +505,68 @@ class TestUnManifesteInvalideNeCassePasLAide:
         module.charger_manifeste.cache_clear()
 
         assert module.charger_manifeste() == module._MANIFESTE_VIDE
+
+
+class TestLeTiroirEstDeclare:
+    """B0 (0.48) : le manifeste s'étend aux capacités du tiroir.
+
+    Binding typé FIGÉ {registre: "tiroir", carte: "<id de carte>"} - la
+    carte est un id du Centre de capacités (registre canonique exporté
+    par lib/capacites/cartes.ts côté frontend). Accès principal = tiroir.
+    """
+
+    ATTENDUES = {
+        "board": "decision-board",
+        "atelier-agents": "agents",
+        "connecteurs": "mcp",
+        "images": "images",
+        "calculateurs": "calculators",
+        "variables": "prompts-variables",
+    }
+
+    def test_les_six_capacites_du_tiroir_existent(self):
+        from app.services.capacites import capacites
+
+        ids = {c["id"] for c in capacites()}
+        manquantes = set(self.ATTENDUES) - ids
+        assert manquantes == set(), f"capacités absentes du manifeste : {manquantes}"
+
+    def test_leur_acces_principal_est_le_tiroir(self):
+        from app.services.capacites import acces_principal
+
+        for capacite_id, carte in self.ATTENDUES.items():
+            principal = acces_principal(capacite_id)
+            assert principal is not None, f"{capacite_id} : aucun accès principal"
+            binding = principal["binding"]
+            assert binding["registre"] == "tiroir", (
+                f"{capacite_id} : accès principal {binding['registre']}, attendu tiroir"
+            )
+            assert binding["carte"] == carte
+
+    def test_un_binding_tiroir_sans_carte_est_invalide(self):
+        from app.services.capacites import _structure_valide
+
+        manifeste = {
+            "schema": 1,
+            "capacites": [{
+                "id": "x", "famille": "quotidien",
+                "textes": {"fr-FR": {"nom": "X", "quoi": "x."}},
+                "maturite": "complete", "audience": "tous",
+                "entrees": ["x.tiroir"], "exigences": [],
+                "cycle": {"introduite": "0.48"},
+            }],
+            "points_entree": [{
+                "id": "x.tiroir", "capacites": ["x"], "type": "tiroir",
+                "binding": {"registre": "tiroir"},
+            }],
+            "identifiants_reserves": [],
+        }
+        assert _structure_valide(manifeste) is False
+
+    def test_l_aide_annonce_le_chemin_du_tiroir(self):
+        from app.services.chat_actions import available_actions_text
+
+        aide = available_actions_text()
+        assert "Plus d'outils" in aide
+        # Le nom vient du manifeste (lexique 0.48 validé)
+        assert "Décision" in aide

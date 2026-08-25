@@ -328,6 +328,15 @@ def available_actions_text() -> str:
             lignes.append(f"- {{action: ouvrir {cible}}} — {nom}")
         else:
             lignes.append(f"- {{action: ouvrir {cible}}}")
+    # B0 (0.48) : les capacités dont l'accès principal est le tiroir
+    # s'annoncent par leur chemin réel - « Plus d'outils → <nom> ».
+    from app.services.capacites import acces_principal
+
+    for capacite in capacites():
+        principal = acces_principal(capacite["id"])
+        if principal and principal.get("binding", {}).get("registre") == "tiroir":
+            lignes.append(f"- Plus d'outils → {texte(capacite, 'nom')}")
+
     lignes += [
         f'- {{action: produire {fmt} "sujet du document"}}'
         for fmt in sorted(PRODUCE_SKILLS)
