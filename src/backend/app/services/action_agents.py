@@ -21,6 +21,7 @@ from typing import Any, Callable, Optional
 from app.models.processing import EtatTache
 from app.services import task_registry
 from app.services import traitements as traitements_service
+from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 
@@ -533,7 +534,9 @@ class ActionRunner:
             )
             if task.status not in _STATUTS_TERMINAUX:
                 task.status = TaskStatus.ERROR
-                task.error = str(e)
+                # Revue 0.48 (F4) : task.error part à l'écran (panneau
+                # Actions, suivi durable) - le brut reste aux logs.
+                task.error = message_pour_ecran(e, ou="pendant l'action")
                 task.completed_at = datetime.now(UTC).isoformat()
                 if on_progress:
                     on_progress(task)
@@ -625,7 +628,8 @@ class ActionRunner:
                 return
         except Exception as e:
             task.status = TaskStatus.ERROR
-            task.error = f"Erreur LLM : {e}"
+            logger.error("Action : échec d'accès au service LLM : %s", e, exc_info=True)
+            task.error = message_pour_ecran(e, ou="au démarrage de l'action")
             task.completed_at = datetime.now(UTC).isoformat()
             if on_progress:
                 on_progress(task)
@@ -710,7 +714,9 @@ class ActionRunner:
                     exc_info=True,
                 )
                 step_result.status = StepStatus.ERROR
-                step_result.error = str(e)
+                step_result.error = message_pour_ecran(
+                    e, ou=f"à l'étape « {step_def.label} »"
+                )
                 step_result.completed_at = datetime.now(UTC).isoformat()
                 # On continue les etapes suivantes malgre l'erreur
 

@@ -489,7 +489,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             <Wrench className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h3 className="font-medium text-text">Serveurs MCP</h3>
+            <h3 className="font-medium text-text">Connecteurs</h3>
             <p className="text-xs text-text-muted">
               {status?.running_servers || 0} actif(s) sur {status?.total_servers || 0} •{' '}
               {status?.total_tools || 0} tools disponibles
@@ -642,7 +642,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4 text-accent-cyan" />
-                <span className="text-sm font-medium text-text">Nouveau serveur MCP</span>
+                <span className="text-sm font-medium text-text">Nouveau connecteur</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -712,7 +712,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       {servers.length === 0 ? (
         <div className="p-8 text-center bg-background/40 rounded-lg border border-border/30">
           <Server className="w-8 h-8 text-text-muted mx-auto mb-3" />
-          <p className="text-text-muted">Aucun serveur MCP configuré</p>
+          <p className="text-text-muted">Aucun connecteur configuré</p>
           <p className="text-xs text-text-muted mt-1">
             Clique sur "Presets" pour installer des serveurs prédéfinis
           </p>
@@ -926,7 +926,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             <motion.div
               role="dialog"
               aria-modal="true"
-              aria-label="Confirmer la suppression du serveur MCP"
+              aria-label="Confirmer la suppression du connecteur"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -937,7 +937,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   <AlertCircle className="w-5 h-5 text-error" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-text">Supprimer ce serveur MCP ?</h3>
+                  <h3 className="font-semibold text-text">Supprimer ce connecteur ?</h3>
                   <p className="text-sm text-text-muted">Cette action est irréversible.</p>
                 </div>
               </div>

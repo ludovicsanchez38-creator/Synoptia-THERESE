@@ -30,7 +30,7 @@ export function TraitementsIndicator() {
       <button
         type="button"
         onClick={() => (panneauOuvert ? fermer() : ouvrir())}
-        aria-label={`Traitements (${actives} actif${actives > 1 ? 's' : ''})`}
+        aria-label={`Travaux (${actives} en cours)`}
         className="relative flex items-center rounded-[9px] border border-border bg-surface p-1.5 text-text-muted hover:bg-surface-2"
       >
         <Activity className="h-3.5 w-3.5" />

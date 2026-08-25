@@ -12,7 +12,7 @@ re-stream). Cette implementation est alignee sur openai.py.
 
 import json
 import logging
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 import httpx
 
@@ -27,6 +27,25 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
+
+
+def normaliser_content(content: "str | list[Any] | None") -> str:
+    """Normalise le content Mistral pour l'AFFICHAGE (0.48).
+
+    En mode reasoning, l'API rend une LISTE de chunks (thinking + text) au
+    lieu d'une string - et delta.content change de forme en cours de flux.
+    Seuls les chunks `text` sont affichés ; le thinking n'apparaît jamais
+    (le brut complet, lui, voyage séparément pour le rejeu multi-tours).
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    morceaux: list[str] = []
+    for chunk in content:
+        if isinstance(chunk, dict) and chunk.get("type") == "text":
+            morceaux.append(chunk.get("text") or "")
+    return "".join(morceaux)
 
 
 class MistralProvider(BaseProvider):
@@ -50,6 +69,11 @@ class MistralProvider(BaseProvider):
         if tools:
             request_body["tools"] = tools
             request_body["tool_choice"] = "auto"
+        # 0.48 : effort RESOLU par le catalogue (page Reasoning Mistral :
+        # seuls high/none documentes pour medium-3-5 ; les autres modeles
+        # ne recoivent rien).
+        if self.config.effort_resolu:
+            request_body["reasoning_effort"] = self.config.effort_resolu
         return request_body
 
     async def stream(
@@ -92,6 +116,8 @@ class MistralProvider(BaseProvider):
                 # tool_calls en cours de construction, indexes par position
                 tool_calls: dict[int, dict] = {}
 
+                brut_du_tour: list[Any] = []
+                tour_en_chunks = False
                 async for line in response.aiter_lines():
                     if not line.startswith("data: "):
                         continue
@@ -121,9 +147,21 @@ class MistralProvider(BaseProvider):
                     delta = choices[0].get("delta", {})
                     finish_reason = choices[0].get("finish_reason")
 
-                    # Texte
+                    # Texte - delta.content peut être une LISTE de chunks
+                    # (mode reasoning) ou une string, et changer de forme en
+                    # cours de flux (0.48).
                     if content := delta.get("content"):
-                        yield StreamEvent(type="text", content=content)
+                        if isinstance(content, list):
+                            tour_en_chunks = True
+                            brut_du_tour.extend(content)
+                            texte = normaliser_content(content)
+                        else:
+                            brut_du_tour.append(
+                                {"type": "text", "text": content}
+                            )
+                            texte = content
+                        if texte:
+                            yield StreamEvent(type="text", content=texte)
 
                     # Fragments de tool_calls (accumulation par index)
                     if tool_call_deltas := delta.get("tool_calls"):
@@ -156,6 +194,12 @@ class MistralProvider(BaseProvider):
                                         name=tc["name"],
                                         arguments=arguments,
                                     ),
+                                    # 0.48 : le brut du tour voyage avec le
+                                    # tool_call (rejeu multi-tours reasoning)
+                                    assistant_content_brut=(
+                                        list(brut_du_tour)
+                                        if tour_en_chunks else None
+                                    ),
                                 )
                         pending_stop_reason = "tool_calls"
                     elif finish_reason:
@@ -176,7 +220,20 @@ class MistralProvider(BaseProvider):
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Mistral streaming error: {e}")
-            yield StreamEvent(type="error", content=str(e))
+            # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
+            # relayé à l'écran - le détail vit dans le log ci-dessus. La forme
+            # dit la CLASSE d'erreur : une panne de transport ouvre le circuit
+            # (_is_provider_outage matche « réseau »), un bug local jamais.
+            if isinstance(e, httpx.TransportError):
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur réseau vers le service d'IA ({type(e).__name__})",
+                )
+            else:
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur interne du service d'IA ({type(e).__name__})",
+                )
 
     async def continue_with_tool_results(
         self,
@@ -187,20 +244,28 @@ class MistralProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Renvoie les resultats d'outils a Mistral et re-stream la reponse finale.
 
         Format OpenAI-compatible : un message assistant portant les tool_calls,
         puis un message role="tool" par resultat (tool_call_id + content).
+        0.48 : en mode reasoning, le content BRUT du tour (liste de chunks)
+        est rejoue tel quel - la doc Mistral exige le message complet.
         """
         messages = list(messages)  # copie
         # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
         # avant le tour courant, sinon le modèle re-demande le même outil.
         for turn in prior_turns or []:
             self._append_openai_tool_turn(
-                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+                messages, turn.assistant_content, turn.tool_calls,
+                turn.tool_results,
+                assistant_content_brut=turn.assistant_content_brut,
             )
-        self._append_openai_tool_turn(messages, assistant_content, tool_calls, tool_results)
+        self._append_openai_tool_turn(
+            messages, assistant_content, tool_calls, tool_results,
+            assistant_content_brut=assistant_content_brut,
+        )
 
         async for event in self.stream(system_prompt, messages, tools):
             yield event

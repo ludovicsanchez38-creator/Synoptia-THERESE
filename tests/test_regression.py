@@ -7794,7 +7794,10 @@ class TestDeepResearchSurfacesSynthesisError:
     def test_synthesis_emits_error_event(self):
         synth = self._synthesis_section()
         assert 'type="error"' in synth, "une erreur de synthèse doit émettre un ResearchProgress type='error'"
-        assert "La synthèse a échoué" in synth
+        # Panel 0.48 : le message passe par la frontière d'erreurs - plus
+        # d'interpolation de str(e) brut dans l'évènement d'écran.
+        assert "message_pour_ecran" in synth
+        assert "La synthèse a échoué : {e}" not in synth
 
 
 class TestDocumentsDraftSurfacesProviderErrors:

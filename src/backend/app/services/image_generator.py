@@ -14,6 +14,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
+from app.services.error_handler import ErrorCode, TheresError
+
 logger = logging.getLogger(__name__)
 
 
@@ -156,7 +158,11 @@ class ImageGeneratorService:
             or _get_api_key_from_db("openai")
         )
         if not api_key:
-            raise ValueError("Clé API OpenAI (Image) non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.")
+            raise TheresError(
+                ErrorCode.API_AUTH_FAILED,
+                "cle image absente",
+                user_message="Clé API OpenAI (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
+            )
 
         client = OpenAI(api_key=api_key)
 
@@ -228,7 +234,11 @@ class ImageGeneratorService:
             or _get_api_key_from_db("gemini")
         )
         if not api_key:
-            raise ValueError("Clé API Gemini (Image) non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.")
+            raise TheresError(
+                ErrorCode.API_AUTH_FAILED,
+                "cle image absente",
+                user_message="Clé API Gemini (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
+            )
 
         client = genai.Client(api_key=api_key)
 
@@ -296,7 +306,11 @@ class ImageGeneratorService:
             or _get_api_key_from_db("fal")
         )
         if not api_key:
-            raise ValueError("Clé API Fal non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.")
+            raise TheresError(
+                ErrorCode.API_AUTH_FAILED,
+                "cle image absente",
+                user_message="Clé API Fal non configurée. Ajoutez-la dans Paramètres > IA.",
+            )
 
         client = await get_http_client()
 

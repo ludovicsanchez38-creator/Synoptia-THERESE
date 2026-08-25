@@ -79,6 +79,10 @@ def _structure_valide(manifeste: dict[str, Any]) -> bool:
             return False
         if binding["registre"] == "vue" and not isinstance(binding.get("view"), str):
             return False
+        if binding["registre"] == "tiroir" and not isinstance(
+            binding.get("carte"), str
+        ):
+            return False
 
     def _sur(valeur: Any) -> bool:
         if isinstance(valeur, dict):

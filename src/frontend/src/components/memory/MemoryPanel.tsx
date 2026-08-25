@@ -238,7 +238,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                 <div className="flex h-10 w-10 items-center justify-center rounded-[6px] border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
                   <Users className="h-5 w-5 text-accent" />
                 </div>
-                <h2 className="text-lg font-semibold text-text">Mémoire</h2>
+                <h2 className="text-lg font-semibold text-text">Contacts</h2>
               </div>
               {standalone ? (
                 <div className="flex items-center gap-1.5">

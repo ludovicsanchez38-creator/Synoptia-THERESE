@@ -142,6 +142,9 @@ class AdvisorInfo(BaseModel):
     emoji: str
     color: str
     personality: str
+    # A2 (0.48) : None = non sondé, False = frontier vérifié présent,
+    # True = absent de la liste du fournisseur (dérive du catalogue).
+    modele_deprecie: bool | None = None
 
 
 class AdvisorOpinion(BaseModel):

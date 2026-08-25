@@ -71,7 +71,7 @@ function BoardDialogShell({
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Board de décision"
+      aria-label="Décision"
       data-testid="board-panel"
       variants={modalVariants}
       initial="initial"
@@ -465,7 +465,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     <circle cx="8.6" cy="16.3" r="3" stroke="#E11D8D" strokeWidth="1.5" />
                   </svg>
                   <h2 className="text-lg font-semibold text-text">
-                    Board de Décision Stratégique
+                    Décision
                   </h2>
                 </div>
               </div>

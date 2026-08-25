@@ -76,10 +76,23 @@ class LLMConfig:
     api_key: str | None = None
     base_url: str | None = None
     # Effort de raisonnement (chantier 10/07/2026) : None = Auto (rien
-    # d'envoye, defaut serveur). Valeurs normalisees low/medium/high/max,
-    # traduites par provider et envoyees SEULEMENT aux modeles au support
-    # verifie (voir tests/test_provider_effort.py).
+    # d'envoye, defaut serveur). Valeurs normalisees low/medium/high/max.
     effort: str | None = None
+    # 0.48 : la valeur REELLEMENT emise, resolue par le catalogue a la
+    # CONSTRUCTION (resoudre_effort est ainsi appele par tout chemin de
+    # creation - helper, config par defaut, POST /config/llm, replis -
+    # sans qu'aucun site ne puisse l'oublier). Les providers emettent ce
+    # champ dans leur syntaxe, sans table locale.
+    effort_resolu: str | None = None
+
+    def __post_init__(self) -> None:
+        # Import local : modeles_catalogue importe LLMProvider d'ici -
+        # l'import module-niveau serait un cycle.
+        from app.services.modeles_catalogue import resoudre_effort
+
+        self.effort_resolu = resoudre_effort(
+            self.model, self.effort, self.provider.value
+        )
 
 
 @dataclass
@@ -115,8 +128,12 @@ class ToolTurn:
     boucle puis invente une explication d'échec (bug lcjp 11/06/2026).
     """
     assistant_content: str
+    # 0.48 (Mistral reasoning) : le content BRUT du tour (liste de chunks,
+    # thinking compris) quand le fournisseur l'exige au rejeu. None pour
+    # tous les autres providers.
     tool_calls: list[ToolCall]
     tool_results: list[ToolResult]
+    assistant_content_brut: Any | None = None
 
 
 @dataclass
@@ -131,6 +148,10 @@ class StreamEvent:
     # l'estimation ~2 tokens/mot (cf chat.py/board.py).
     input_tokens: int | None = None
     output_tokens: int | None = None
+    # 0.48 (Mistral reasoning) : le content brut du tour, posé sur
+    # l'évènement tool_call quand le tour était en chunks - transporté
+    # par chat.py jusqu'au ToolTurn du rejeu.
+    assistant_content_brut: Any | None = None
 
 
 class BaseProvider(ABC):
@@ -170,6 +191,7 @@ class BaseProvider(ABC):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """
         Continue streaming after tool execution.
@@ -195,6 +217,7 @@ class BaseProvider(ABC):
         assistant_content: str,
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
+        assistant_content_brut: Any | None = None,
     ) -> None:
         """Ajoute un tour d'outils au format OpenAI-compatible (in place).
 
@@ -214,7 +237,17 @@ class BaseProvider(ABC):
             # déjà envoyée par l'ancien code quand le texte était vide, donc
             # éprouvée côté Mistral). Le texte pré-appel reste affiché/streamé à
             # l'utilisateur. Couvre aussi OpenRouter/Infomaniak routant vers Mistral.
-            "content": None,
+            #
+            # 0.48 : EXCEPTION documentée - en mode reasoning, Mistral rend le
+            # content en LISTE de chunks et sa doc exige de rejouer le message
+            # assistant COMPLET en multi-tours. Seule une LISTE se rejoue ;
+            # une string reste None (BUG-108 préservé).
+            "content": (
+                assistant_content_brut
+                if isinstance(assistant_content_brut, list)
+                and assistant_content_brut
+                else None
+            ),
             "tool_calls": [
                 {
                     "id": tc.id,

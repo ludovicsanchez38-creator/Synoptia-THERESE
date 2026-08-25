@@ -27,7 +27,7 @@ interface OnboardingWizardProps {
 const STEPS = [
   { id: 'welcome', title: 'Bienvenue' },
   { id: 'profile', title: 'Profil' },
-  { id: 'llm', title: 'LLM' },
+  { id: 'llm', title: 'Service d’IA' },
   { id: 'security', title: 'Sécurité' },
   { id: 'workingDir', title: 'Dossier' },
   { id: 'complete', title: 'Terminé' },

@@ -106,6 +106,8 @@ import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { ACTIONS_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
+import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
@@ -422,7 +424,7 @@ function CommandPalette({
         .includes(normalized),
     ).slice(0, 6);
   }, [query]);
-  const scenarioCount = query ? 0 : 7;
+  const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;
   const optionCount = scenarioCount + visibleCapabilities.length + visibleActions.length;
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -492,9 +494,9 @@ function CommandPalette({
           {!query && (
             <>
               <SectionLabel>Parcours</SectionLabel>
-              {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item, optionIndex) => (
+              {ACTIONS_ETABLI.map((action, optionIndex) => (
                 <button
-                  key={item}
+                  key={action.id}
                   id={`prototype-command-option-${optionIndex}`}
                   role="option"
                   aria-selected={activeOption === optionIndex}
@@ -502,31 +504,25 @@ function CommandPalette({
                   type="button"
                   onMouseEnter={() => setActiveOption(optionIndex)}
                   onClick={() => {
-                    onSelect(item);
+                    onSelect(action.id);
                     onClose();
                   }}
                   className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
                 >
                   <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-[8px] bg-accent-tint text-accent">
-                    {item === 'today' ? (
-                      <CharacterPortrait index={0} className="h-8 w-8 rounded-[8px]" />
-                    ) : item === 'memory' ? (
+                    {action.id === 'memory' ? (
                       <Users className="h-4 w-4" />
-                    ) : item === 'email' ? (
+                    ) : action.id === 'email' ? (
                       <Mail className="h-4 w-4" />
-                    ) : item === 'meeting' ? (
+                    ) : action.id === 'meeting' ? (
                       <Calendar className="h-4 w-4" />
-                    ) : item === 'invoice' ? (
-                      <Receipt className="h-4 w-4" />
-                    ) : item === 'board' ? (
-                      <CharacterPortrait index={1} className="h-8 w-8 rounded-[8px]" />
                     ) : (
-                      <CharacterPortrait index={6} className="h-8 w-8 rounded-[8px]" />
+                      <Receipt className="h-4 w-4" />
                     )}
                   </span>
                   <span className="flex-1">
-                    <span className="block text-sm font-semibold text-text">{scenarioLabels[item]}</span>
-                    <span className="block text-xs text-text-muted">{scenarioPrompts[item]}</span>
+                    <span className="block text-sm font-semibold text-text">{action.label}</span>
+                    <span className="block text-xs text-text-muted">{scenarioPrompts[action.id]}</span>
                   </span>
                   <ChevronRight className="h-4 w-4 text-text-muted" />
                 </button>
@@ -627,6 +623,15 @@ export function ConversationCanvasPrototype() {
     return value === 'memory' || value === 'email' || value === 'meeting' || value === 'invoice' || value === 'board' || value === 'atelier' ? value : 'today';
   }, []);
   const { resource: todayResource, refresh: refreshToday } = useTodayDashboardResource();
+  // B1 (0.48) : la coque charge le SetupStatus (l'état vide honnête du brief).
+  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
+  useEffect(() => {
+    let annule = false;
+    fetchSetupStatus()
+      .then((statut) => { if (!annule) setSetupStatus(statut); })
+      .catch(() => { /* indisponible : l'état vide standard s'affiche */ });
+    return () => { annule = true; };
+  }, []);
   const { resource: contactsResource, refresh: refreshContacts } = useContactsResource();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
   const [canvasOpen, setCanvasOpen] = useState(
@@ -1036,7 +1041,7 @@ export function ConversationCanvasPrototype() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, closeCapabilityCenter, closeCommandPalette, closeConversationDrawer, closeTrustCenter, collapseEmbeddedView, collapseScenarioPanel, collapseToolPanel, commandOpen, deliverablesOpen, drawerOpen, embeddedView, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
+  }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, closeCapabilityCenter, closeCommandPalette, closeConversationDrawer, closeTrustCenter, collapseEmbeddedView, collapseScenarioPanel, collapseToolPanel, commandOpen, deliverablesOpen, drawerOpen, embeddedView, fermerLeChat, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
 
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
@@ -1324,7 +1329,7 @@ export function ConversationCanvasPrototype() {
                   conversation » ne le voyait jamais.
 
                   Le bouton d'aide ouvre donc ce catalogue, depuis n'importe où. */}
-              <IconButton label="Aide" onClick={() => setCapabilityCenterOpen(true)}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
+              <IconButton label="Plus d’outils" onClick={() => setCapabilityCenterOpen(true)}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
               <button
                 type="button"
                 data-testid="shell-profile-button"
@@ -1419,6 +1424,8 @@ export function ConversationCanvasPrototype() {
                         if (view === 'chat') openChat();
                         else openEmbeddedView(view);
                       }}
+                      setup={setupStatus}
+                      onSetupEmail={() => openEmbeddedView('email')}
                     />
                   ) : scenario === 'memory' ? (
                     <ContactsMemoryCard
@@ -1577,19 +1584,19 @@ export function ConversationCanvasPrototype() {
                   <div className="mt-9 border-t border-border pt-5">
                     <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
                     <div className="flex flex-wrap gap-2">
-                      {(['today', 'memory', 'email', 'meeting', 'invoice', 'board', 'atelier'] as Scenario[]).map((item) => (
+                      {ACTIONS_ETABLI.map((action) => (
                         <button
-                          key={item}
+                          key={action.id}
                           type="button"
-                          onClick={() => chooseScenario(item)}
-                          aria-pressed={scenario === item}
+                          onClick={() => chooseScenario(action.id)}
+                          aria-pressed={scenario === action.id}
                           className={`rounded-full border px-3 py-2 text-xs font-semibold ${
-                            scenario === item
+                            scenario === action.id
                               ? 'border-text bg-text text-white'
                               : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'
                           }`}
                         >
-                          {scenarioLabels[item]}
+                          {action.label}
                         </button>
                       ))}
                     </div>
@@ -1627,7 +1634,7 @@ export function ConversationCanvasPrototype() {
                           }
                         }}
                         rows={2}
-                        placeholder="Demande à Thérèse d’organiser, créer ou agir…"
+                        placeholder={PLACEHOLDER_COMPOSEUR}
                         className="max-h-28 min-h-12 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-text outline-none placeholder:text-text-muted"
                       />
                     ) : (
@@ -1651,23 +1658,10 @@ export function ConversationCanvasPrototype() {
                       </div>
                     )}
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCapabilityCenterOpen(true);
-                            setCommandOpen(false);
-                            setTrustCenterOpen(false);
-                          }}
-                          className="flex h-9 items-center gap-1.5 rounded-[10px] px-2.5 text-xs font-medium text-text-muted hover:bg-bg hover:text-text"
-                        >
-                          {/* Triage 26/07 : dans un chat, le « + » annonce une
-                              pièce jointe. L'associer aux capacités mélangeait
-                              deux gestes sans rapport. */}
-                          <Sparkles className="h-4 w-4" />
-                          Capacités
-                        </button>
-                      </div>
+                      {/* B1 (0.48) : le bouton « Capacités » du composeur est
+                          retiré - le tiroir s'ouvre par sa porte unique du
+                          rail (« Plus d'outils »). */}
+                      <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
                         <span className="hidden text-xs font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
                         {destinationUsesChat && (

@@ -42,16 +42,25 @@ PRODUCE_SKILLS: dict[str, str] = {
 }
 
 # cible normalisée (minuscules, sans accents) -> (action_id frontend, libellé)
+# Revue 0.48 (F6) : les cibles CANONIQUES suivent le lexique (table
+# docs/rules/RULES-DESIGN.md) et viennent EN TÊTE - c'est la première cible
+# d'un action_id qui s'affiche dans /aide. Les anciennes restent des alias
+# de compatibilité (jamais annoncées, toujours parsées).
 NAVIGATION_TARGETS: dict[str, tuple[str, str]] = {
     "accueil": ("home.open", "l'Accueil"),
     "email": ("email.open", "l'Email"),
-    "crm": ("crm.open", "le CRM"),
-    "memoire": ("memory.open", "la Mémoire"),
+    "pipeline": ("crm.open", "le Pipeline"),
+    "contacts": ("memory.open", "les Contacts"),
+    "agenda": ("calendar.open", "l'Agenda"),
+    "devis et factures": ("invoices.open", "les Devis et factures"),
+    "crm": ("crm.open", "le Pipeline"),
+    "memoire": ("memory.open", "les Contacts"),
     "documents": ("documents.open", "les Documents"),
     "taches": ("tasks.open", "les Tâches"),
-    "calendrier": ("calendar.open", "le Calendrier"),
-    "facturation": ("invoices.open", "la Facturation"),
-    "factures": ("invoices.open", "la Facturation"),
+    "calendrier": ("calendar.open", "l'Agenda"),
+    "devis": ("invoices.open", "les Devis et factures"),
+    "facturation": ("invoices.open", "les Devis et factures"),
+    "factures": ("invoices.open", "les Devis et factures"),
     "projets": ("projects.open", "les Projets"),
     # Inventaire du 13/08/2026 : cette entrée manquait. La vue qui porte
     # l'indexation et la recherche documentaire était donc inatteignable par
@@ -328,6 +337,15 @@ def available_actions_text() -> str:
             lignes.append(f"- {{action: ouvrir {cible}}} — {nom}")
         else:
             lignes.append(f"- {{action: ouvrir {cible}}}")
+    # B0 (0.48) : les capacités dont l'accès principal est le tiroir
+    # s'annoncent par leur chemin réel - « Plus d'outils → <nom> ».
+    from app.services.capacites import acces_principal
+
+    for capacite in capacites():
+        principal = acces_principal(capacite["id"])
+        if principal and principal.get("binding", {}).get("registre") == "tiroir":
+            lignes.append(f"- Plus d'outils → {texte(capacite, 'nom')}")
+
     lignes += [
         f'- {{action: produire {fmt} "sujet du document"}}'
         for fmt in sorted(PRODUCE_SKILLS)

@@ -78,8 +78,42 @@ ERROR_MESSAGES = {
     ErrorCode.FILE_TOO_LARGE: "Le fichier est trop volumineux ({size} Mo). Limite: {limit} Mo.",
     ErrorCode.FILE_PARSE_FAILED: "Impossible de lire le fichier {filename}. Format non supporté ou fichier corrompu.",
     ErrorCode.VALIDATION_ERROR: "Données invalides: {details}",
-    ErrorCode.UNKNOWN_ERROR: "Une erreur inattendue s'est produite. Détails techniques: {error}",
+    # Lot C (0.48) : le cas inconnu ne réinjecte JAMAIS le message technique -
+    # il va aux logs, pas à l'écran.
+    ErrorCode.UNKNOWN_ERROR: "Une erreur inattendue s'est produite. Réessaie ; si le problème persiste, redémarre l'application.",
 }
+
+
+class ErreurPourEcran(RuntimeError):
+    """Un RuntimeError dont le message est ÉCRIT POUR L'UTILISATEUR.
+
+    Revue 0.48 (F5) : la frontière transforme toute exception non marquée
+    en message générique - les messages métier intentionnels du Board
+    (« Mode souverain indisponible... ») portent cette marque pour
+    traverser tels quels. Hérite de RuntimeError : les appelants et tests
+    existants qui attrapent RuntimeError restent valides.
+    """
+
+
+def message_pour_ecran(exc: BaseException, ou: str | None = None) -> str:
+    """La frontière d'erreurs utilisateur (lot C, 0.48).
+
+    À la limite de l'écran (SSE, notification, HTTP, task.error), seuls les
+    messages LOCALISÉS passent : un TheresError livre son user_message ;
+    toute autre exception devient un message générique français - son texte
+    technique reste aux logs de l'appelant, jamais devant l'utilisateur.
+
+    `ou` : complément lisible (« pendant la délibération »), pour situer
+    l'échec sans exposer le détail.
+    """
+    if isinstance(exc, TheresError):
+        return exc.user_message
+    if isinstance(exc, ErreurPourEcran):
+        return str(exc)
+    generique = ERROR_MESSAGES[ErrorCode.UNKNOWN_ERROR]
+    if ou:
+        return f"Une erreur s'est produite {ou}. Réessaie ; si le problème persiste, redémarre l'application."
+    return generique
 
 
 class TheresError(Exception):

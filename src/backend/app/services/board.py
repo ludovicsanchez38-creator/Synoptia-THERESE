@@ -8,8 +8,9 @@ Persistance SQLite pour les décisions.
 import asyncio
 import json
 import logging
+import os
 from collections.abc import Awaitable, Callable
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 from uuid import uuid4
 
 from app.models.board import (
@@ -23,6 +24,7 @@ from app.models.board import (
     BoardSynthesis,
 )
 from app.models.entities import BoardDecisionDB
+from app.services.error_handler import ErreurPourEcran
 from app.services.llm import (
     LLMProvider,
     get_llm_service,
@@ -30,12 +32,162 @@ from app.services.llm import (
     load_therese_md,
 )
 from app.services.llm import Message as LLMMessage
+from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import WebSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# Sonde de dérive du catalogue (lot A2, 0.48)
+#
+# Le frontier de chaque fournisseur est un choix ÉDITORIAL relevé en doc ;
+# la sonde vérifie seulement qu'il existe ENCORE dans la liste /models du
+# fournisseur. Dérive = frontier ABSENT de la liste. Endpoint indisponible
+# = PAS une dérive (drapeau inchangé, re-tentative le lendemain). JAMAIS
+# de bascule de modèle : l'information remonte, la décision reste
+# éditoriale. État au niveau MODULE : BoardService est recréé à chaque
+# requête (patron des registres 0.47).
+# ============================================================
+
+#: fournisseur -> None (non sondé) | False (frontier vérifié) | True (absent)
+_etat_catalogue: dict[str, bool | None] = {}
+_date_derniere_sonde: str | None = None
+_verrou_sonde = asyncio.Lock()
+
+#: Plancher de sortie d'un conseiller cloud à effort max : le raisonnement
+#: décompte du plafond, 4096 pouvait rendre un avis vide (panel 0.48).
+PLANCHER_MAX_TOKENS_CONSEILLER = 16000
+
+#: fournisseur -> (URL /models, mode d'authentification)
+_SONDES: dict[str, tuple[str, str]] = {
+    "openai": ("https://api.openai.com/v1/models", "bearer"),
+    "grok": ("https://api.x.ai/v1/models", "bearer"),
+    "mistral": ("https://api.mistral.ai/v1/models", "bearer"),
+    "anthropic": ("https://api.anthropic.com/v1/models", "x-api-key"),
+    "gemini": (
+        "https://generativelanguage.googleapis.com/v1beta/models", "query-key"
+    ),
+}
+
+
+def _cle_configuree(fournisseur: str) -> str | None:
+    import os
+
+    from app.services.llm import _get_api_key_from_db
+    from app.services.modeles_catalogue import CATALOGUE
+
+    try:
+        cle = _get_api_key_from_db(fournisseur)
+        if cle:
+            return str(cle)
+    except Exception:  # noqa: BLE001 - la sonde ne casse jamais le Board
+        pass
+    for var in CATALOGUE[fournisseur].env_vars:
+        cle = os.getenv(var)
+        if cle:
+            return cle
+    return None
+
+
+def _ids_de_la_reponse(fournisseur: str, corps: dict[str, Any]) -> set[str]:
+    if fournisseur == "gemini":
+        # {"models": [{"name": "models/gemini-..."}]} - comparer le nom court
+        return {
+            str(m.get("name", "")).removeprefix("models/")
+            for m in corps.get("models", [])
+        }
+    return {str(m.get("id", "")) for m in corps.get("data", [])}
+
+
+async def _sonder_un(fournisseur: str, cle: str, client: Any) -> None:
+    url, mode = _SONDES[fournisseur]
+    try:
+        # Panel 0.48 : les endpoints paginent (Anthropic limit défaut 20,
+        # Gemini pageSize défaut 50) - sans page large, un frontier présent
+        # mais hors première page serait déclaré en dérive à tort.
+        if mode == "bearer":
+            reponse = await client.get(
+                url, headers={"Authorization": f"Bearer {cle}"}, timeout=5.0
+            )
+        elif mode == "x-api-key":
+            reponse = await client.get(
+                url,
+                headers={"x-api-key": cle, "anthropic-version": "2023-06-01"},
+                params={"limit": 1000},
+                timeout=5.0,
+            )
+        else:  # query-key (Gemini)
+            reponse = await client.get(
+                url, params={"key": cle, "pageSize": 1000}, timeout=5.0
+            )
+        reponse.raise_for_status()
+        ids = _ids_de_la_reponse(fournisseur, reponse.json())
+    except Exception as e:  # noqa: BLE001 - indisponible = PAS une dérive
+        logger.info("Sonde catalogue %s indisponible : %s", fournisseur, e)
+        return
+    modele = frontier(fournisseur)
+    if not modele:
+        return
+    _etat_catalogue[fournisseur] = modele not in ids
+    if _etat_catalogue[fournisseur]:
+        logger.warning(
+            "Dérive catalogue : %s n'expose plus %s", fournisseur, modele
+        )
+
+
+async def sonder_catalogue(client: Any = None) -> None:
+    """Sonde les fournisseurs à clé configurée - au plus une fois par jour.
+
+    Sondes PARALLÈLES, timeout global 6 s : jamais cinq timeouts en série
+    avant le premier chunk d'une délibération.
+    """
+    global _date_derniere_sonde
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    aujourd_hui = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
+    async with _verrou_sonde:
+        if _date_derniere_sonde == aujourd_hui:
+            return
+        cibles = {
+            nom: cle
+            for nom in _SONDES
+            if (cle := _cle_configuree(nom))
+        }
+        # La date se pose même sans cible : re-tentative demain, pas en boucle.
+        _date_derniere_sonde = aujourd_hui
+        if not cibles:
+            return
+        if client is None:
+            from app.services.http_client import get_http_client
+
+            client = await get_http_client()
+        try:
+            async with asyncio.timeout(6.0):
+                await asyncio.gather(
+                    *(
+                        _sonder_un(nom, cle, client)
+                        for nom, cle in cibles.items()
+                    ),
+                    return_exceptions=True,
+                )
+        except TimeoutError:
+            logger.info("Sonde catalogue : timeout global (6 s)")
+
+
+def derives_connues() -> dict[str, bool]:
+    """Les fournisseurs dont le frontier est ABSENT de leur liste."""
+    return {nom: True for nom, etat in _etat_catalogue.items() if etat is True}
+
+
+def etat_catalogue(fournisseur: str | None) -> bool | None:
+    """None = non sondé, False = vérifié présent, True = absent (dérive)."""
+    if not fournisseur:
+        return None
+    return _etat_catalogue.get(fournisseur)
 
 
 def validate_advisor_providers() -> bool:
@@ -212,6 +364,20 @@ class BoardService:
         default_llm = None if is_sovereign else get_llm_service()
         advisors = request.advisors or list(AdvisorRole)
 
+        # A2 (0.48) : la sonde de dérive du catalogue - au plus une fois par
+        # jour, fournisseurs à clé configurée seulement. Une dérive connue
+        # s'annonce en tête ; JAMAIS de bascule de modèle. Panel 0.48 : en
+        # mode SOUVERAIN, aucune requête cloud - la sonde ne sert qu'aux
+        # overrides frontier, qui ne s'appliquent qu'en cloud.
+        if not is_sovereign and os.environ.get("THERESE_SONDE_CATALOGUE", "on") != "off":
+            await sonder_catalogue()
+        derives = derives_connues()
+        if derives:
+            yield BoardDeliberationChunk(
+                type="catalogue_status",
+                content=json.dumps({"providers": derives}),
+            )
+
         # --- Recherche web (cloud uniquement) ---
         web_search_results = ""
         if not is_sovereign:
@@ -263,7 +429,7 @@ class BoardService:
                 if not ollama_llm:
                     ollama_llm = get_llm_service_for_provider("ollama")
                 if not ollama_llm:
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         "Mode souverain indisponible : aucun service Ollama local utilisable."
                     )
                 llm_service = ollama_llm
@@ -287,7 +453,7 @@ class BoardService:
                 full_content = ""
                 usage_sink: dict = {}
                 try:
-                    async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+                    async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
                         full_content += chunk
                         yield BoardDeliberationChunk(
                             type="advisor_chunk",
@@ -299,7 +465,7 @@ class BoardService:
                         )
                 except Exception as e:
                     logger.error(f"Sovereign advisor {config['name']} error: {e}")
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
                     ) from e
 
@@ -334,7 +500,7 @@ class BoardService:
             # --- MODE CLOUD : parallèle multi-providers ---
             # PRE-LOAD all LLM services BEFORE parallel execution (avoid SQLite concurrency issues)
             if default_llm is None:
-                raise RuntimeError("Aucun service LLM cloud disponible.")
+                raise ErreurPourEcran("Aucun service LLM cloud disponible.")
             advisor_services: dict[AdvisorRole, tuple] = {}
             for role in advisors:
                 config = ADVISOR_CONFIG[role]
@@ -342,7 +508,43 @@ class BoardService:
                 advisor_llm = None
                 actual_provider = default_llm.config.provider.value
                 if preferred_provider:
-                    advisor_llm = get_llm_service_for_provider(preferred_provider)
+                    # Revue 0.48 (F3) : circuit ouvert = repli EXPLICITE sur le
+                    # service principal (actual_provider vrai), jamais de
+                    # bascule cachée au sein du flux d'un conseiller.
+                    from app.services.circuit_breaker import get_circuit_breaker
+
+                    if not get_circuit_breaker().is_available(preferred_provider):
+                        logger.warning(
+                            "Board : circuit %s ouvert - repli explicite sur "
+                            "le service principal", preferred_provider,
+                        )
+                        advisor_llm = None
+                    else:
+                        # 0.48 : chaque conseiller cloud reçoit le FRONTIER de
+                        # son fournisseur, l'effort max et le max_tokens
+                        # recommandé - quelles que soient les préférences.
+                        modele_frontier = frontier(preferred_provider)
+                        # Panel 0.48 : à effort MAX, les tokens de
+                        # raisonnement décomptent du plafond de sortie
+                        # (OpenAI max_completion_tokens, Gemini thoughts) -
+                        # le défaut 4096 pouvait rendre un avis vide sans
+                        # erreur. Plancher Board explicite quand le
+                        # catalogue n'a pas de recommandation sourcée.
+                        recommande = (
+                            max_tokens_recommande(modele_frontier)
+                            if modele_frontier else None
+                        )
+                        advisor_llm = get_llm_service_for_provider(
+                            preferred_provider,
+                            model_override=modele_frontier,
+                            effort_override="max",
+                            max_tokens_override=(
+                                recommande
+                                if recommande is not None
+                                else PLANCHER_MAX_TOKENS_CONSEILLER
+                            ),
+                            bascule_circuit=False,
+                        )
                     if advisor_llm:
                         actual_provider = preferred_provider
                         logger.info(f"Advisor {config['name']} using {preferred_provider}")
@@ -392,7 +594,7 @@ class BoardService:
                     # l'UI montre tous les conseillers « en réflexion » pendant
                     # que les appels s'étalent.
                     async with provider_semaphores[actual_provider]:
-                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
                             full_content += chunk
                             await chunk_queue.put(BoardDeliberationChunk(
                                 type="advisor_chunk",
@@ -404,7 +606,7 @@ class BoardService:
                             ))
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
-                    raise RuntimeError(
+                    raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a pas pu terminer son avis."
                     ) from e
 
@@ -472,8 +674,14 @@ class BoardService:
                 if isinstance(result, BaseException)
             ]
             if advisor_errors:
-                raise RuntimeError(
-                    "La délibération est incomplète : au moins un conseiller a échoué."
+                from app.services.error_handler import message_pour_ecran
+
+                # Revue 0.48 p2 (F2) : le message PRÉCIS du conseiller
+                # (« Le conseiller X n'a pas pu terminer son avis ») survit -
+                # le générique seul privait l'utilisateur de la cause.
+                raise ErreurPourEcran(
+                    "La délibération est incomplète : "
+                    + message_pour_ecran(advisor_errors[0])
                 ) from advisor_errors[0]
             opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
 
@@ -486,7 +694,7 @@ class BoardService:
             synth_model = (request.ollama_models or {}).get("synthesis", default_ollama_model)
             ollama_synth = get_llm_service_for_provider("ollama", model_override=synth_model)
             if not ollama_synth:
-                raise RuntimeError(
+                raise ErreurPourEcran(
                     "Mode souverain indisponible : la synthèse Ollama locale ne peut pas démarrer."
                 )
             synthesis_llm = ollama_synth
@@ -499,7 +707,7 @@ class BoardService:
         decision_id = decision_id or str(uuid4())
         logger.info(f"Saving board decision {decision_id} (mode={request.mode.value}) to SQLite...")
         if not self._session:
-            raise RuntimeError("La décision ne peut pas être sauvegardée sans session locale.")
+            raise ErreurPourEcran("La décision ne peut pas être sauvegardée sans session locale.")
 
         # Fence (0.47) : une demande d'arrêt posée AVANT le commit gagne -
         # aucune décision à moitié voulue ne se sauve. Après le commit, done
@@ -579,7 +787,7 @@ class BoardService:
                 await session.rollback()
             except Exception as rollback_error:
                 logger.debug("Rollback apres erreur save: %s", rollback_error)
-            raise RuntimeError("La décision n'a pas pu être sauvegardée localement.") from e
+            raise ErreurPourEcran("La décision n'a pas pu être sauvegardée localement.") from e
         # Passe 3 de revue (P3-7) : le commit a RÉUSSI - la vérification
         # est une ceinture, sa panne ne requalifie pas un commit abouti.
         # Seule une relecture qui aboutit ET ne trouve rien est un échec.
@@ -598,7 +806,7 @@ class BoardService:
             )
             return
         if introuvable:
-            raise RuntimeError("La décision sauvegardée est introuvable.")
+            raise ErreurPourEcran("La décision sauvegardée est introuvable.")
         logger.info(f"Board decision saved: {decision_id}")
 
     async def _generate_synthesis(
@@ -650,7 +858,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         # Generate synthesis
         full_response = ""
         usage_sink: dict = {}
-        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
             full_response += chunk
         self._last_synthesis_usage = self._track_usage(
             llm_service,
@@ -676,7 +884,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         except Exception as e:
             logger.error(f"Failed to parse synthesis JSON: {e}")
             logger.error(f"Raw response: {full_response}")
-            raise RuntimeError("La synthèse du Board est invalide et ne sera pas sauvegardée.") from e
+            raise ErreurPourEcran("La synthèse du Board est invalide et ne sera pas sauvegardée.") from e
 
     async def get_decision(self, decision_id: str) -> BoardDecision | None:
         """Récupère une décision par son ID depuis SQLite."""

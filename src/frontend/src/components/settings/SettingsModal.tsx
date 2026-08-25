@@ -34,7 +34,7 @@ interface SettingsModalProps {
 
 type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
 
-const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: boolean }[] = [
+export const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: boolean }[] = [
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'ai', label: 'IA', icon: Cpu },
   { id: 'services', label: 'Services', icon: Layers },

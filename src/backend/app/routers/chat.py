@@ -34,6 +34,7 @@ from app.services.contexte_execution import ContexteExecution
 from app.services.entity_extractor import (
     get_entity_extractor,
 )
+from app.services.error_handler import message_pour_ecran
 from app.services.file_parser import extract_text
 from app.services.indexation import IndexationAbandonnee
 from app.services.llm import (
@@ -1633,8 +1634,9 @@ async def send_message(
         async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_sink):
             assistant_content += chunk
     except Exception as e:
-        logger.error(f"LLM error: {e}")
-        assistant_content = f"Désolée, une erreur s'est produite: {str(e)}"
+        logger.error(f"LLM error: {e}", exc_info=True)
+        # Revue 0.48 p2 (F1) : le message persiste en base et part à l'écran.
+        assistant_content = f"Désolée : {message_pour_ecran(e, ou='pendant la génération')}"
 
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.
@@ -2249,6 +2251,8 @@ async def _do_stream_response(
         )
         yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
     tool_calls_collected: list[ToolCall] = []
+    # 0.48 : content brut du tour (mode reasoning Mistral), a rejouer tel quel
+    assistant_brut_collected: list[Any] | None = None
     max_tool_iterations = 5  # Prevent infinite tool loops
     # Usage réel (dette 14/06/2026) : accumulé sur TOUS les tours d'outils (un
     # tour = un appel API = son propre usage). "estimated" passe à True dès
@@ -2280,6 +2284,8 @@ async def _do_stream_response(
 
             elif event.type == "tool_call" and event.tool_call:
                 tool_calls_collected.append(event.tool_call)
+                if event.assistant_content_brut is not None:
+                    assistant_brut_collected = event.assistant_content_brut
 
             elif event.type == "done":
                 if event.input_tokens is not None and event.output_tokens is not None:
@@ -2304,6 +2310,7 @@ async def _do_stream_response(
                         usage_totals=usage_totals,
                         tool_outcomes=tool_outcomes,
                         contexte=contexte,
+                        assistant_content_brut=assistant_brut_collected,
                     ):
                         if continued_event.startswith("data:"):
                             # Parse the content to accumulate full response
@@ -2348,10 +2355,13 @@ async def _do_stream_response(
         await _persister_message_partiel(conversation_id, full_content, llm_service)
         raise
     except Exception as e:
-        logger.error(f"LLM streaming error: {e}")
+        logger.error(f"LLM streaming error: {e}", exc_info=True)
+        # Revue 0.48 (F4) : jamais str(e) brut dans un chunk SSE destiné à
+        # l'écran - le détail vit dans les logs ci-dessus.
+        message_erreur = message_pour_ecran(e, ou="pendant la génération")
         error_data = StreamChunk(
             type="error",
-            content=f"Erreur de generation: {str(e)}",
+            content=message_erreur,
             conversation_id=conversation_id,
         )
         yield f"data: {json.dumps(error_data.model_dump())}\n\n"
@@ -2360,7 +2370,7 @@ async def _do_stream_response(
             err_msg = Message(
                 conversation_id=conversation_id,
                 role="assistant",
-                content=full_content or f"⚠️ Erreur de génération: {str(e)}",
+                content=full_content or f"⚠️ {message_erreur}",
                 model=llm_service.config.model if llm_service else "unknown",
             )
             session.add(err_msg)
@@ -2628,6 +2638,7 @@ async def _execute_tools_and_continue(
     usage_totals: dict | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
+    assistant_content_brut: list[Any] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -2945,6 +2956,7 @@ async def _execute_tools_and_continue(
 
     # Continue conversation with tool results
     new_tool_calls: list[ToolCall] = []
+    new_assistant_brut: list[Any] | None = None
     continued_content = ""
 
     async for event in llm_service.continue_with_tool_results(
@@ -2954,6 +2966,9 @@ async def _execute_tools_and_continue(
         tool_results,
         tools,
         prior_turns=prior_turns,
+        # 0.48 : content BRUT du tour courant (liste de chunks reasoning
+        # Mistral), rejoue tel quel dans le message assistant a tool_calls
+        assistant_content_brut=assistant_content_brut,
     ):
         if event.type == "text" and event.content:
             continued_content += event.content
@@ -2966,6 +2981,8 @@ async def _execute_tools_and_continue(
 
         elif event.type == "tool_call" and event.tool_call:
             new_tool_calls.append(event.tool_call)
+            if event.assistant_content_brut is not None:
+                new_assistant_brut = event.assistant_content_brut
 
         elif event.type == "done":
             if usage_totals is not None:
@@ -3002,6 +3019,7 @@ async def _execute_tools_and_continue(
                     # Le tour qui vient de se jouer rejoint l'historique :
                     # le prochain continue_with_tool_results rejouera TOUS
                     # les tours dans l'ordre avant le nouveau.
+                    assistant_content_brut=new_assistant_brut,
                     prior_turns=[
                         *(prior_turns or []),
                         ToolTurn(
@@ -3022,6 +3040,7 @@ async def _execute_tools_and_continue(
                                 )
                                 for tr in tool_results
                             ],
+                            assistant_content_brut=assistant_content_brut,
                         ),
                     ],
                 ):

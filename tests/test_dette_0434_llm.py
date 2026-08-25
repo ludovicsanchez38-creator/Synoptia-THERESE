@@ -67,17 +67,21 @@ class TestQwenSeConfigureDeBoutEnBout:
         assert fournisseur.url_effective() == ADRESSE_ESPACE + "/chat/completions"
 
     def test_stream_appelle_url_effective(self):
-        """Le contrat de câblage : stream() doit passer par url_effective(),
-        sinon la configuration reste décorative."""
+        """Le contrat de câblage : la requête doit passer par url_effective(),
+        sinon la configuration reste décorative. Depuis 0.48 l'appel réseau
+        vit dans _stream_request (extrait pour le repli Grok) - le contrat
+        se vérifie sur le POINT D'ÉMISSION, pas sur le délégant."""
         import inspect
 
         from app.services.providers.openai import OpenAIProvider
 
-        source = inspect.getsource(OpenAIProvider.stream)
+        source = inspect.getsource(OpenAIProvider._stream_request)
         assert "url_effective()" in source, (
-            "OpenAIProvider.stream doit appeler self.url_effective() : "
+            "OpenAIProvider._stream_request doit appeler self.url_effective() : "
             "API_URL en dur rend base_url décoratif pour tous les héritiers"
         )
+        # Et stream() délègue bien à ce point d'émission unique.
+        assert "_stream_request" in inspect.getsource(OpenAIProvider.stream)
 
 
 class TestLeCatalogueEstServiParLeBackend:

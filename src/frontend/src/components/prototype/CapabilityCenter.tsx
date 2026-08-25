@@ -168,13 +168,13 @@ export const capabilities: CapabilityItem[] = [
   },
 
   {
-    id: 'contacts-memory', group: 'business', title: 'Contacts et mémoire', icon: Users, scenario: 'memory',
+    id: 'contacts-memory', group: 'business', title: 'Contacts', icon: Users, scenario: 'memory',
     description: 'Retrouver les personnes, notes et éléments de contexte sans chercher dans plusieurs modules.',
     features: ['Recherche hybride', 'Scopes', 'Extraction d’entités'], keywords: ['contact', 'mémoire', 'notes'],
     prompt: 'Retrouve tout ce que je sais sur cette personne et résume la relation.',
   },
   {
-    id: 'crm', group: 'business', title: 'Pipeline commercial', icon: UserCheck,
+    id: 'crm', group: 'business', title: 'Pipeline', icon: UserCheck,
     description: 'Suivre prospects, activités et étapes commerciales depuis la conversation.',
     features: ['Scoring', 'Pipeline', 'Activités'], keywords: ['crm', 'prospect', 'opportunité'],
     prompt: 'Analyse mon pipeline et indique les opportunités à faire avancer.', destination: { kind: 'view', view: 'crm' },
@@ -199,7 +199,7 @@ export const capabilities: CapabilityItem[] = [
   },
 
   {
-    id: 'document-workshop', group: 'create', title: 'Atelier documentaire', icon: FileText,
+    id: 'document-workshop', group: 'create', title: 'Rédiger un document', icon: FileText,
     description: 'Construire propositions, dossiers et rapports structurés avec un canevas éditable.',
     features: ['Trame', 'Sections', 'Réécriture'], keywords: ['document', 'rapport', 'proposition'],
     prompt: 'Aide-moi à construire un document structuré à partir de mes sources.', destination: { kind: 'view', view: 'documents' },
@@ -213,7 +213,7 @@ export const capabilities: CapabilityItem[] = [
   {
     id: 'images', group: 'create', title: 'Images', icon: Image,
     description: 'Générer un visuel, choisir le moteur et retrouver l’historique des créations.',
-    features: ['Génération confirmée', 'Choix du provider', 'Historique réel'], keywords: ['visuel', 'photo', 'illustration'],
+    features: ['Génération confirmée', 'Choix du moteur', 'Historique réel'], keywords: ['visuel', 'photo', 'illustration'],
     prompt: 'Crée un visuel à partir de cette idée et respecte mon contexte de marque.', destination: { kind: 'images' },
   },
   {
@@ -236,13 +236,13 @@ export const capabilities: CapabilityItem[] = [
     prompt: 'Fais une recherche actuelle et cite précisément les sources utilisées.', destination: { kind: 'prompt' },
   },
   {
-    id: 'files-rag', group: 'decide', title: 'Fichiers et connaissances', icon: HardDrive,
+    id: 'files-rag', group: 'decide', title: 'Fichiers', icon: HardDrive,
     description: 'Indexer et interroger les documents locaux avec recherche sémantique.',
     features: ['Indexation', 'RAG', 'PDF/DOCX/Texte'], keywords: ['fichier', 'pdf', 'indexation'],
     prompt: 'Analyse mes fichiers locaux sur ce sujet et relie les informations utiles.', destination: { kind: 'view', view: 'files' },
   },
   {
-    id: 'decision-board', group: 'decide', title: 'Board de décision', icon: Gavel, scenario: 'board',
+    id: 'decision-board', group: 'decide', title: 'Décision', icon: Gavel, scenario: 'board',
     description: 'Faire confronter cinq regards avant de prendre une décision importante.',
     features: ['5 conseillers', 'Consensus', 'Divergences'], keywords: ['board', 'décision', 'conseillers'],
     prompt: 'Convoque le Board pour analyser cette décision et expliciter les divergences.',
@@ -267,13 +267,13 @@ export const capabilities: CapabilityItem[] = [
     prompt: 'Prépare une action automatisée pour ce besoin et demande ma validation avant exécution.', destination: { kind: 'action', action: 'actions.open' },
   },
   {
-    id: 'agents', group: 'automate', title: 'Atelier d’agents', icon: Bot, scenario: 'atelier',
+    id: 'agents', group: 'automate', title: 'Améliorer THÉRÈSE', icon: Bot, scenario: 'atelier',
     description: 'Confier une mission cadrée à Katia et Zézette avec revue avant application.',
     features: ['Missions', 'Plan', 'Revue de code'], keywords: ['katia', 'zézette', 'agent'],
     prompt: 'Transforme ce besoin en mission cadrée pour l’Atelier et montre-moi le plan.',
   },
   {
-    id: 'mcp', group: 'automate', title: 'Connecteurs MCP', icon: Plug,
+    id: 'mcp', group: 'automate', title: 'Connecteurs', icon: Plug,
     description: 'Accéder à des outils et services externes sans multiplier les interfaces.',
     features: ['Serveurs', 'Presets', 'Outils'], keywords: ['mcp', 'connecteur', 'notion', 'slack'],
     prompt: 'Trouve le connecteur adapté à ce besoin et explique les permissions nécessaires.', destination: { kind: 'action', action: 'settings.open', settingsTab: 'tools' },
@@ -286,9 +286,9 @@ export const capabilities: CapabilityItem[] = [
   },
 
   {
-    id: 'providers', group: 'control', title: 'Modèles et providers', icon: SlidersHorizontal,
-    description: 'Laisser Thérèse choisir le bon modèle ou imposer un provider pour un usage.',
-    features: ['Multi-LLM', 'Ollama local', 'Fallback'], keywords: ['claude', 'gpt', 'gemini', 'mistral'],
+    id: 'providers', group: 'control', title: 'Services d’IA', icon: SlidersHorizontal,
+    description: 'Laisser Thérèse choisir le bon modèle ou imposer un service d’IA pour un usage.',
+    features: ['Plusieurs services d’IA', 'Ollama local', 'Fallback'], keywords: ['claude', 'gpt', 'gemini', 'mistral'],
     prompt: 'Montre-moi quel modèle est utilisé pour chaque usage et pourquoi.', destination: { kind: 'action', action: 'settings.open', settingsTab: 'ai' },
   },
   {
@@ -594,7 +594,7 @@ export function TrustCenter({
         </div>
         <div className="p-2">
           <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Données métier conservées localement ; secrets protégés par le trousseau système." />
-          <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Provider et modèle configurés dans les réglages, avec option locale via Ollama." />
+          <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Service d’IA et modèle configurés dans les Paramètres, avec option locale via Ollama." />
           <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="Les parcours raccordés indiquent leur destination et demandent une confirmation avant l’effet externe." />
           <TrustRow icon={<Gauge className="h-3.5 w-3.5" />} title="Coûts et limites" value="Seules les consommations réellement mesurées sont présentées comme telles." />
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />

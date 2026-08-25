@@ -12,7 +12,7 @@ import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from app.services.circuit_breaker import get_circuit_breaker
 from app.services.context import ContextWindow
@@ -403,9 +403,18 @@ INTERDIT : les tableaux markdown (| col | col |) dans les récaps.
 AUTORISÉ : les listes à puces (- point clé : valeur).
 {therese_md}"""
 
-    def __init__(self, config: LLMConfig | None = None):
+    def __init__(
+        self,
+        config: LLMConfig | None = None,
+        bascule_circuit: bool = True,
+    ):
         self.config = config or self._default_config()
         self._provider = None
+
+        # Revue 0.48 (F3) : le Board refuse la bascule silencieuse du
+        # circuit breaker - son repli est EXPLICITE (service principal,
+        # actual_provider vrai). Le chat garde la bascule automatique.
+        self.bascule_circuit = bascule_circuit
 
     def _get_system_prompt_with_identity(self) -> str:
         """Get system prompt with user identity injected."""
@@ -487,22 +496,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         logger.info(f"LLM preferences from DB: provider={selected_provider}, model={selected_model}")
 
-        # Provider configs: (enum, default_model, context_window)
+        # 0.48 : la table DÉRIVE du catalogue neutre (tête de liste =
+        # frontier) - plus aucun modèle codé en dur qui périme en silence.
+        from app.services.modeles_catalogue import CATALOGUE
+
         provider_configs = {
-            "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-8", 200000),
-            "openai": (LLMProvider.OPENAI, "gpt-5.5", 200000),
-            "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", 1000000),
-            "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", 256000),
-            "grok": (LLMProvider.GROK, "grok-4.3", 131072),
-            "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
-            "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", 200000),
-            "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", 128000),
-            "glm": (LLMProvider.GLM, "glm-5.3", 200000),
-            "kimi": (LLMProvider.KIMI, "kimi-k3", 1000000),
-            "qwen": (LLMProvider.QWEN, "qwen3.8-max", 1000000),
-            "minimax": (LLMProvider.MINIMAX, "MiniMax-M3", 200000),
-            "infomaniak": (LLMProvider.INFOMANIAK, "mix", 128000),
-            "ollama": (LLMProvider.OLLAMA, "mistral-nemo", 32000),
+            nom: (fiche.provider, fiche.modeles[0], fiche.context_window)
+            for nom, fiche in CATALOGUE.items()
         }
 
         # If user selected a provider, use it
@@ -519,22 +519,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
             api_key = _get_api_key_from_db(selected_provider)
             if not api_key:
-                env_map = {
-                    "anthropic": "ANTHROPIC_API_KEY",
-                    "openai": "OPENAI_API_KEY",
-                    "gemini": "GEMINI_API_KEY",
-                    "mistral": "MISTRAL_API_KEY",
-                    "grok": "XAI_API_KEY",
-                    "openrouter": "OPENROUTER_API_KEY",
-                    "perplexity": "PERPLEXITY_API_KEY",
-                    "deepseek": "DEEPSEEK_API_KEY",
-                    "glm": "GLM_API_KEY",
-                    "kimi": "KIMI_API_KEY",
-                    "qwen": "QWEN_API_KEY",
-                    "minimax": "MINIMAX_API_KEY",
-                    "infomaniak": "INFOMANIAK_API_KEY",
-                }
-                api_key = os.getenv(env_map.get(selected_provider, ""))
+                # Panel 0.48 : les variables d'env viennent du catalogue -
+                # la table en dur ignorait GOOGLE_API_KEY (alternative Gemini).
+                for env_var in CATALOGUE[selected_provider].env_vars:
+                    api_key = os.getenv(env_var)
+                    if api_key:
+                        break
 
             if api_key:
                 # Adresse personnalisée par fournisseur (dette 0.43.4) : sans
@@ -548,34 +538,41 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # Fallback: first provider with a valid key
         anthropic_key = _get_api_key_from_db("anthropic") or os.getenv("ANTHROPIC_API_KEY")
         openai_key = _get_api_key_from_db("openai") or os.getenv("OPENAI_API_KEY")
-        gemini_key = _get_api_key_from_db("gemini") or os.getenv("GEMINI_API_KEY")
+        gemini_key = (
+            _get_api_key_from_db("gemini")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("GOOGLE_API_KEY")
+        )
         mistral_key = _get_api_key_from_db("mistral") or os.getenv("MISTRAL_API_KEY")
 
-        if anthropic_key:
-            return LLMConfig(LLMProvider.ANTHROPIC, "claude-opus-4-8", api_key=anthropic_key, context_window=200000)
-        elif openai_key:
-            return LLMConfig(LLMProvider.OPENAI, "gpt-5.5", api_key=openai_key, context_window=200000)
-        elif gemini_key:
-            return LLMConfig(LLMProvider.GEMINI, "gemini-3.1-pro-preview", api_key=gemini_key, context_window=1000000)
-        elif mistral_key:
-            return LLMConfig(LLMProvider.MISTRAL, "mistral-large-latest", api_key=mistral_key, context_window=256000)
-        else:
-            # BUG #69 v0.11.5 : ne PAS retomber silencieusement sur Ollama quand
-            # l utilisateur a explicitement choisi un provider cloud. Sinon il
-            # voit "Ollama non disponible" alors qu il a configure OpenRouter,
-            # ce qui est un faux diagnostic trompeur.
-            if selected_provider and selected_provider != "ollama" and selected_provider in provider_configs:
-                provider_enum, default_model, ctx_window = provider_configs[selected_provider]
-                model = selected_model or default_model
-                logger.warning(
-                    f"Aucune cle API trouvee pour {selected_provider}. "
-                    "Retour de la config sans cle - l'appel API echouera avec un message "
-                    f"explicite sur le provider selectionne ({selected_provider})."
+        # 0.48 : le repli par clé sert le frontier du catalogue.
+        for nom, cle in (
+            ("anthropic", anthropic_key),
+            ("openai", openai_key),
+            ("gemini", gemini_key),
+            ("mistral", mistral_key),
+        ):
+            if cle:
+                provider_enum, modele, ctx_window = provider_configs[nom]
+                return LLMConfig(
+                    provider_enum, modele, api_key=cle, context_window=ctx_window
                 )
-                return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
-            fallback_model = selected_model or detect_default_ollama_model()
-            logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
-            return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url="http://localhost:11434", context_window=32000)
+        # BUG #69 v0.11.5 : ne PAS retomber silencieusement sur Ollama quand
+        # l utilisateur a explicitement choisi un provider cloud. Sinon il
+        # voit "Ollama non disponible" alors qu il a configure OpenRouter,
+        # ce qui est un faux diagnostic trompeur.
+        if selected_provider and selected_provider != "ollama" and selected_provider in provider_configs:
+            provider_enum, default_model, ctx_window = provider_configs[selected_provider]
+            model = selected_model or default_model
+            logger.warning(
+                f"Aucune cle API trouvee pour {selected_provider}. "
+                "Retour de la config sans cle - l'appel API echouera avec un message "
+                f"explicite sur le provider selectionne ({selected_provider})."
+            )
+            return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
+        fallback_model = selected_model or detect_default_ollama_model()
+        logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
+        return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url="http://localhost:11434", context_window=32000)
 
     async def _get_client(self):
         """Get shared HTTP client from global pool."""
@@ -625,16 +622,23 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         2. Autres providers avec clé API valide
         3. Ollama local (toujours disponible en dernier recours)
         """
+        from app.services.modeles_catalogue import CATALOGUE
         from app.services.providers import LLMConfig, LLMProvider
 
+        # 0.48 : modèle/contexte dérivés du catalogue (frontier). L'ORDRE de
+        # priorité reste un choix local : il ne suit pas l'ordre du catalogue.
+        _ordre_repli = (
+            "anthropic", "openai", "gemini", "mistral",
+            "grok", "openrouter", "deepseek",
+        )
         fallback_candidates = [
-            ("anthropic", LLMProvider.ANTHROPIC, "claude-opus-4-8", 200000),
-            ("openai", LLMProvider.OPENAI, "gpt-5.5", 200000),
-            ("gemini", LLMProvider.GEMINI, "gemini-3.1-pro-preview", 1000000),
-            ("mistral", LLMProvider.MISTRAL, "mistral-large-latest", 256000),
-            ("grok", LLMProvider.GROK, "grok-4.3", 131072),
-            ("openrouter", LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", 200000),
-            ("deepseek", LLMProvider.DEEPSEEK, "deepseek-v4-pro", 128000),
+            (
+                nom,
+                CATALOGUE[nom].provider,
+                CATALOGUE[nom].modeles[0],
+                CATALOGUE[nom].context_window,
+            )
+            for nom in _ordre_repli
         ]
 
         current_provider_name = self.config.provider.value
@@ -647,16 +651,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
             api_key = _get_api_key_from_db(name)
             if not api_key:
-                env_map = {
-                    "anthropic": "ANTHROPIC_API_KEY",
-                    "openai": "OPENAI_API_KEY",
-                    "gemini": "GEMINI_API_KEY",
-                    "mistral": "MISTRAL_API_KEY",
-                    "grok": "XAI_API_KEY",
-                    "openrouter": "OPENROUTER_API_KEY",
-                    "deepseek": "DEEPSEEK_API_KEY",
-                }
-                api_key = os.getenv(env_map.get(name, ""))
+                for env_var in CATALOGUE[name].env_vars:
+                    api_key = os.getenv(env_var)
+                    if api_key:
+                        break
 
             if api_key:
                 fallbacks.append(
@@ -694,6 +692,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         current_name = self.config.provider.value
 
         if cb.is_available(current_name):
+            return self.config
+
+        # Revue 0.48 (F3) : sans bascule autorisée, on tente le fournisseur
+        # d'origine même circuit ouvert - l'échec remonte proprement et le
+        # repli reste une décision VISIBLE de l'appelant (Board).
+        if not self.bascule_circuit:
+            logger.info(
+                "Circuit breaker: %s indisponible, bascule refusée par "
+                "l'appelant - tentative sur le fournisseur d'origine",
+                current_name,
+            )
             return self.config
 
         # Provider principal indisponible - chercher un fallback
@@ -747,7 +756,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         if memory_context:
             full_system += f"\n\n## Contexte mémoire:\n{memory_context}"
 
-        max_msg_tokens = self.config.context_window - 4096
+        # 0.48 : la réserve de sortie suit la config effective (64k pour un
+        # conseiller opus-5 du Board), 4096 par défaut - plus de constante.
+        max_msg_tokens = self.config.context_window - self.config.max_tokens
         context = ContextWindow(
             messages=messages.copy(),
             system_prompt=full_system,
@@ -783,7 +794,20 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             if event.type == "text" and event.content:
                 yield event.content
             elif raise_on_error and event.type == "error":
-                raise RuntimeError(event.content or "Erreur du fournisseur LLM")
+                # Panel 0.48 : lever ICI ferme le générateur amont AVANT sa
+                # comptabilité post-boucle - l'outage doit donc se compter
+                # avant le raise, sinon le circuit du fournisseur ne s'ouvre
+                # jamais depuis ce chemin (le repli explicite du Board ne
+                # s'enclencherait jamais). Et le content est désormais garanti
+                # « écrit pour l'écran » (frontière providers) : ErreurPourEcran
+                # le fait traverser message_pour_ecran au lieu du générique.
+                if _is_provider_outage(event.content):
+                    get_circuit_breaker().record_failure(
+                        self.config.provider.value, (event.content or "")[:200]
+                    )
+                from app.services.error_handler import ErreurPourEcran
+
+                raise ErreurPourEcran(event.content or "Erreur du fournisseur LLM")
             elif event.type == "done" and usage_sink is not None:
                 if event.input_tokens is not None:
                     usage_sink["input_tokens"] = event.input_tokens
@@ -885,6 +909,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         await self._ensure_provider()
@@ -917,6 +942,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             tool_results,
             tools,
             prior_turns=prior_turns,
+            assistant_content_brut=assistant_content_brut,
         ):
             if event.type == "error" and _is_provider_outage(event.content):
                 had_error = True
@@ -1009,24 +1035,35 @@ def invalidate_llm_service() -> None:
     _llm_service = None
 
 
-def get_llm_service_for_provider(provider_name: str, model_override: str | None = None) -> LLMService | None:
-    """Get LLM service for a specific provider if configured."""
+def get_llm_service_for_provider(
+    provider_name: str,
+    model_override: str | None = None,
+    effort_override: str | None = None,
+    max_tokens_override: int | None = None,
+    bascule_circuit: bool = True,
+) -> LLMService | None:
+    """Get LLM service for a specific provider if configured.
+
+    0.48 : les overrides EXPLICITES du Board - modèle (frontier), effort
+    (« max », résolu par le catalogue à la construction de LLMConfig) et
+    max_tokens (recommandation du catalogue). Défauts None = comportement
+    chat intact.
+    """
     provider_name = provider_name.lower()
 
+    # 0.48 : la table DÉRIVE du catalogue neutre - la tête de liste est le
+    # frontier du fournisseur, plus aucun modèle codé en dur ici.
+    from app.services.modeles_catalogue import CATALOGUE
+
     provider_configs = {
-        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-8", "ANTHROPIC_API_KEY", 200000),
-        "openai": (LLMProvider.OPENAI, "gpt-5.5", "OPENAI_API_KEY", 200000),
-        "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
-        "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
-        "grok": (LLMProvider.GROK, "grok-4.3", "XAI_API_KEY", 131072),
-        "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),
-        "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", "PERPLEXITY_API_KEY", 200000),
-        "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", "DEEPSEEK_API_KEY", 128000),
-        "glm": (LLMProvider.GLM, "glm-5.3", "GLM_API_KEY", 200000),
-        "kimi": (LLMProvider.KIMI, "kimi-k3", "KIMI_API_KEY", 1000000),
-        "qwen": (LLMProvider.QWEN, "qwen3.8-max", "QWEN_API_KEY", 1000000),
-        "minimax": (LLMProvider.MINIMAX, "MiniMax-M3", "MINIMAX_API_KEY", 200000),
-        "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
+        nom: (
+            fiche.provider,
+            fiche.modeles[0],
+            (list(fiche.env_vars) if len(fiche.env_vars) > 1
+             else (fiche.env_vars[0] if fiche.env_vars else None)),
+            fiche.context_window,
+        )
+        for nom, fiche in CATALOGUE.items()
     }
 
     if provider_name not in provider_configs:
@@ -1093,9 +1130,12 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
         api_key=api_key,
         base_url=base_url,
         context_window=context_window,
+        effort=effort_override,
     )
+    if max_tokens_override is not None:
+        config.max_tokens = max_tokens_override
 
-    return LLMService(config)
+    return LLMService(config, bascule_circuit=bascule_circuit)
 
 
 # ---------------------------------------------------------------------------

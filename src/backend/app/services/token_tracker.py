@@ -18,24 +18,37 @@ logger = logging.getLogger(__name__)
 
 TOKEN_PRICES = {
     # Anthropic (juin 2026) - USD / 1M tokens
+    # Frontiers 0.48, relevés aux sources officielles le 25/08/2026
+    # (platform.claude.com/docs, developers.openai.com, ai.google.dev,
+    # docs.mistral.ai/inference/pricing, docs.x.ai) - panel de revue :
+    # un frontier absent d'ici affiche un coût menti à 0,00 EUR.
+    "claude-opus-5": {"input": 5.00, "output": 25.00},
     "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     # OpenAI (juin 2026)
+    "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
+    "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
+    "gpt-5.6-luna": {"input": 0.20, "output": 1.20},
     "gpt-5.5": {"input": 5.00, "output": 30.00},
     "gpt-5.5-pro": {"input": 30.00, "output": 180.00},
     "gpt-5.4": {"input": 2.50, "output": 15.00},
     "gpt-5.4-mini": {"input": 0.75, "output": 4.50},
     "gpt-5.3-codex": {"input": 1.75, "output": 14.00},
     # Gemini (juin 2026)
+    # Tarif en vigueur jusqu'au 31/12/2026 (puis 1.50/7.50 annoncés)
+    "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
     "gemini-3.1-pro-preview": {"input": 2.00, "output": 12.00},
     "gemini-3.5-flash": {"input": 1.50, "output": 9.00},
     "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
     # Mistral (alias evergreen)
+    "mistral-medium-3-5": {"input": 1.50, "output": 7.50},
     "mistral-large-latest": {"input": 2.00, "output": 6.00},
     "codestral-latest": {"input": 0.30, "output": 0.90},
     "mistral-small-latest": {"input": 0.20, "output": 0.60},
     # Grok (juin 2026)
+    # < 200k tokens de prompt (le cas Board/chat)
+    "grok-4.6": {"input": 2.00, "output": 6.00},
     "grok-4.3": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-non-reasoning": {"input": 1.25, "output": 2.50},

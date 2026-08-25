@@ -247,7 +247,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
     expect(screen.getByTestId('shell-background-activities')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mes priorités du jour' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retrouver' }));
     expect(activityHarness.cancelAtelier).not.toHaveBeenCalled();
     expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
   });

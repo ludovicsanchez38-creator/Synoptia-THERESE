@@ -178,7 +178,20 @@ class DeepSeekProvider(BaseProvider):
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
             logger.error(f"DeepSeek streaming error: {e}")
-            yield StreamEvent(type="error", content=str(e))
+            # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
+            # relayé à l'écran - le détail vit dans le log ci-dessus. La forme
+            # dit la CLASSE d'erreur : une panne de transport ouvre le circuit
+            # (_is_provider_outage matche « réseau »), un bug local jamais.
+            if isinstance(e, httpx.TransportError):
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur réseau vers le service d'IA ({type(e).__name__})",
+                )
+            else:
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur interne du service d'IA ({type(e).__name__})",
+                )
 
     async def continue_with_tool_results(
         self,
@@ -189,6 +202,7 @@ class DeepSeekProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue DeepSeek conversation with tool results."""
         messages = list(messages)  # copie

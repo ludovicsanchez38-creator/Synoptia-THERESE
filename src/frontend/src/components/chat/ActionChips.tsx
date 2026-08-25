@@ -7,22 +7,7 @@
  * (allowlist backend), le LLM n'est sollicité que pour rédiger le contenu
  * des documents produits.
  */
-import { Mail, Users, FileText, FileSpreadsheet } from 'lucide-react';
-
-const CHIPS = [
-  { label: "Ouvrir l'email", insert: '{action: ouvrir email}', Icon: Mail },
-  { label: 'Ouvrir le CRM', insert: '{action: ouvrir crm}', Icon: Users },
-  {
-    label: 'Document Word',
-    insert: '{action: produire docx "sujet du document"}',
-    Icon: FileText,
-  },
-  {
-    label: 'Tableur Excel',
-    insert: '{action: produire xlsx "sujet du tableur"}',
-    Icon: FileSpreadsheet,
-  },
-] as const;
+import { CHIPS } from './actionChipsData';
 
 export function ActionChips({ onInsert }: { onInsert: (text: string) => void }) {
   return (

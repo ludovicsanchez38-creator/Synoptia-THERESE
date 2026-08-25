@@ -31,18 +31,14 @@ ANTHROPIC_VERSION = "2023-06-01"
 _NO_SAMPLING_PREFIXES = (
     "claude-fable-5",
     "claude-sonnet-5",
+    "claude-opus-5",
     "claude-opus-4-7",
     "claude-opus-4-8",
 )
 
-# Modeles qui acceptent output_config.effort (low/medium/high/max) - verifie
-# le 10/07/2026 : Fable 5, Sonnet 5/4.6, Opus 4.5+ ; Haiku 4.5 le REFUSE.
-_EFFORT_PREFIXES = (
-    "claude-fable-5",
-    "claude-sonnet-5",
-    "claude-sonnet-4-6",
-    "claude-opus-4-",
-)
+# 0.48 : la table _EFFORT_PREFIXES a disparu - la politique d'effort vit
+# au catalogue (services/modeles_catalogue.py), resolue a la construction
+# de LLMConfig (effort_resolu).
 
 
 class AnthropicProvider(BaseProvider):
@@ -65,8 +61,8 @@ class AnthropicProvider(BaseProvider):
         }
         if not self.config.model.startswith(_NO_SAMPLING_PREFIXES):
             request_body["temperature"] = self.config.temperature
-        if self.config.effort and self.config.model.startswith(_EFFORT_PREFIXES):
-            request_body["output_config"] = {"effort": self.config.effort}
+        if self.config.effort_resolu:
+            request_body["output_config"] = {"effort": self.config.effort_resolu}
         if anthropic_tools:
             request_body["tools"] = anthropic_tools
         return request_body
@@ -201,7 +197,20 @@ class AnthropicProvider(BaseProvider):
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Anthropic streaming error: {e}")
-            yield StreamEvent(type="error", content=str(e))
+            # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
+            # relayé à l'écran - le détail vit dans le log ci-dessus. La forme
+            # dit la CLASSE d'erreur : une panne de transport ouvre le circuit
+            # (_is_provider_outage matche « réseau »), un bug local jamais.
+            if isinstance(e, httpx.TransportError):
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur réseau vers le service d'IA ({type(e).__name__})",
+                )
+            else:
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur interne du service d'IA ({type(e).__name__})",
+                )
 
     async def continue_with_tool_results(
         self,
@@ -212,6 +221,7 @@ class AnthropicProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue Anthropic conversation with tool results."""
         messages = list(messages)  # Copy

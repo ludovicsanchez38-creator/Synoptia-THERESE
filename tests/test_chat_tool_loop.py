@@ -22,7 +22,7 @@ async def test_recursion_accumule_les_tours_dans_prior_turns(client):
 
         async def continue_with_tool_results(
             self, context, assistant_content, tool_calls, tool_results,
-            tools, prior_turns=None,
+            tools, prior_turns=None, assistant_content_brut=None,
         ):
             captured_prior_turns.append(list(prior_turns or []))
             FakeLLMService.call_count += 1
@@ -105,7 +105,8 @@ async def test_tool_outcomes_accumule_les_resultats_reels(client):
 
     class FakeLLMService:
         async def continue_with_tool_results(
-            self, context, assistant_content, tool_calls, tool_results, tools, prior_turns=None
+            self, context, assistant_content, tool_calls, tool_results, tools, prior_turns=None,
+            assistant_content_brut=None,
         ):
             # Le modele ne produit AUCUN texte (cas Nemotron gratuit).
             yield StreamEvent(type="done", stop_reason="end_turn")

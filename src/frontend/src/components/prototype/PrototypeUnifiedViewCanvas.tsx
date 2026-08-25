@@ -17,15 +17,15 @@ const DocumentsList = lazy(() => import('../documents/DocumentsList').then((modu
 
 export const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
   home: 'Accueil et alertes',
-  memory: 'Contacts et mémoire',
-  crm: 'Pipeline commercial',
+  memory: 'Contacts',
+  crm: 'Pipeline',
   email: 'Email',
   calendar: 'Agenda',
   tasks: 'Tâches',
   invoices: 'Devis et factures',
-  files: 'Fichiers et connaissances',
+  files: 'Fichiers',
   projects: 'Projets',
-  documents: 'Atelier documentaire',
+  documents: 'Documents',
 };
 
 export function PrototypeUnifiedViewCanvas({

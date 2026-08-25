@@ -43,7 +43,7 @@ def _faux_llm(morceaux=("étape faite",), lent: asyncio.Event | None = None):
         def prepare_context(self, messages, system_prompt=None, memory_context=None):
             return type("Ctx", (), {"messages": messages})()
 
-        async def stream_response(self, _context):
+        async def stream_response(self, _context, raise_on_error=False):
             if lent is not None:
                 await lent.wait()
             for morceau in morceaux:
@@ -172,7 +172,11 @@ class TestLeRunEstUnTraitement:
         assert await _attendre(
             lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.ERROR
         )
-        assert "panne" in (ActionRunner.get_task(task.task_id).error or "")
+        # Revue 0.48 (F4) : l'erreur consignée est LISIBLE, jamais le brut -
+        # « contexte local en panne » vit dans les logs, pas à l'écran.
+        erreur = ActionRunner.get_task(task.task_id).error or ""
+        assert erreur, "une erreur lisible doit être consignée"
+        assert "contexte local en panne" not in erreur
 
         for _ in range(50):
             traitement = await _traitement_action(task.task_id)
@@ -201,7 +205,7 @@ class TestLeRunEstUnTraitement:
             def prepare_context(self, messages, **_k):
                 return type("Ctx", (), {"messages": messages})()
 
-            async def stream_response(self, _context):
+            async def stream_response(self, _context, raise_on_error=False):
                 etapes_lancees["n"] += 1
                 yield "jamais"
 

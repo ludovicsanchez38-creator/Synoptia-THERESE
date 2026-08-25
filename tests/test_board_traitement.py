@@ -47,7 +47,7 @@ class FauxLLM:
     def prepare_context(self, messages, system_prompt=None):
         return messages, system_prompt
 
-    async def stream_response(self, context, usage_sink=None):
+    async def stream_response(self, context, usage_sink=None, raise_on_error=False):
         if self.avant_flux is not None:
             await self.avant_flux()
         yield self.reponses.pop(0)

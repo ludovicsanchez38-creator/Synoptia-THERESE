@@ -11,7 +11,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import type { TodayDashboard } from '../../services/api/dashboard';
+import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
 import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
@@ -48,10 +48,16 @@ export function TodayDashboardCard({
   resource,
   onRetry,
   onOpenView,
+  setup = null,
+  onSetupEmail,
 }: {
   resource: ReadResource<TodayDashboard>;
   onRetry: () => void;
   onOpenView: (view: AppView) => void;
+  /** B1 (0.48) : l'état vide dit la vérité - sans compte email, le brief
+      ne peut rien préparer. La coque charge le SetupStatus et le passe. */
+  setup?: SetupStatus | null;
+  onSetupEmail?: () => void;
 }) {
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
   const visibleItems = items.slice(0, 6);
@@ -119,11 +125,26 @@ export function TodayDashboardCard({
         </StateShell>
       ) : items.length === 0 ? (
         <StateShell>
-          <div className="text-center" data-testid="today-dashboard-empty">
-            <CheckCircle2 className="mx-auto h-6 w-6 text-success" />
-            <p className="mt-2 text-sm font-semibold text-text">Rien d’urgent pour le moment</p>
-            <p className="mt-1 text-xs text-text-muted">Aucune relance, échéance ou rencontre à enjeu n’est remontée.</p>
-          </div>
+          {setup !== null && setup.has_email === false ? (
+            <div className="text-center" data-testid="today-dashboard-setup-email">
+              <Mail className="mx-auto h-6 w-6 text-accent" />
+              <p className="mt-2 text-sm font-semibold text-text">Branche tes mails pour que je te prépare la journée</p>
+              <p className="mt-1 text-xs text-text-muted">Sans boîte connectée, le brief ne voit ni messages à traiter ni relances.</p>
+              <button
+                type="button"
+                onClick={onSetupEmail}
+                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"
+              >
+                Brancher mes mails
+              </button>
+            </div>
+          ) : (
+            <div className="text-center" data-testid="today-dashboard-empty">
+              <CheckCircle2 className="mx-auto h-6 w-6 text-success" />
+              <p className="mt-2 text-sm font-semibold text-text">Rien d’urgent pour le moment</p>
+              <p className="mt-1 text-xs text-text-muted">Aucune relance, échéance ou rencontre à enjeu n’est remontée.</p>
+            </div>
+          )}
         </StateShell>
       ) : (
         <div className="divide-y divide-border">

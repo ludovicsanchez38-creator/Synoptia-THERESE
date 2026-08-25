@@ -12,6 +12,7 @@ from typing import Any, AsyncGenerator
 
 from app.services.agents.config import AgentConfig
 from app.services.agents.tools import AgentToolExecutor
+from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +197,19 @@ class AgentRuntime:
                                 }
                             )
                         elif event.type == "error":
-                            yield AgentEvent(type="error", content=event.content or "Erreur LLM")
+                            # Revue 0.48 (F4) : le content provider peut être
+                            # un str(e) brut - le détail va aux logs.
+                            logger.error(
+                                "Agent %s : erreur provider : %s",
+                                self.config.id, event.content,
+                            )
+                            yield AgentEvent(
+                                type="error",
+                                content=message_pour_ecran(
+                                    RuntimeError(event.content or "Erreur LLM"),
+                                    ou="pendant la mission de l'agent",
+                                ),
+                            )
                             return
                 else:
                     async for chunk in llm_service.stream_response(context):
@@ -205,7 +218,10 @@ class AgentRuntime:
 
             except Exception as e:
                 logger.error(f"Agent {self.config.id} erreur LLM: {e}", exc_info=True)
-                yield AgentEvent(type="error", content=f"Erreur LLM : {e}")
+                yield AgentEvent(
+                    type="error",
+                    content=message_pour_ecran(e, ou="pendant la mission de l'agent"),
+                )
                 return
 
             # Pas d'appels d'outils → fin de la boucle

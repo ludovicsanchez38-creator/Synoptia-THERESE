@@ -28,7 +28,7 @@ class FakeLLM:
     def prepare_context(self, messages, system_prompt=None):
         return messages, system_prompt
 
-    async def stream_response(self, context, usage_sink=None):
+    async def stream_response(self, context, usage_sink=None, raise_on_error=False):
         response = self.responses[self.calls]
         self.calls += 1
         yield response
@@ -129,7 +129,7 @@ async def test_closing_stream_cancels_advisor_tasks(monkeypatch):
         def prepare_context(self, messages, system_prompt=None):
             return messages, system_prompt
 
-        async def stream_response(self, context, usage_sink=None):
+        async def stream_response(self, context, usage_sink=None, raise_on_error=False):
             try:
                 await asyncio.Event().wait()
                 yield "inaccessible"
