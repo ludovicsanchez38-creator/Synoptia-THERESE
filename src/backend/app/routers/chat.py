@@ -204,6 +204,53 @@ def _parse_file_commands(message: str) -> list[tuple[str, str]]:
     return commands
 
 
+# Passe 2 de revue (P2-6) : rattrapages de périmètre en vol (détachés).
+_rattrapages_en_cours: set["asyncio.Task[None]"] = set()
+
+
+async def _rattraper_perimetre(
+    file_id: str, nom: str, scope: str, scope_id: str | None
+) -> None:
+    """Rattrape le périmètre d'un document déjà indexé (BUG-165) - geste
+    complet et insensible à l'annulation du chat qui l'a déclenché.
+
+    L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
+    périmètre que la recherche n'appliquait pas encore : en cas d'échec,
+    la base affirme le statu quo (document visible dans le périmètre
+    général), jamais une fuite nouvelle.
+    """
+    from app.models.database import get_session_context as _ctx
+
+    try:
+        await run_in_threadpool(
+            get_qdrant_service().definir_perimetre_entite,
+            file_id, scope, scope_id,
+        )
+    except Exception:
+        logger.warning(
+            "Périmètre non appliqué à l'index pour %s : le document reste "
+            "dans son périmètre actuel plutôt que d'être annoncé cloisonné "
+            "sans l'être", nom, exc_info=True,
+        )
+        return
+    try:
+        async with _ctx() as session:
+            ligne = (await session.execute(
+                select(FileMetadata).where(FileMetadata.id == file_id)
+            )).scalar_one_or_none()
+            if ligne is None:
+                return
+            ligne.scope = scope
+            ligne.scope_id = scope_id
+            ligne.scope_provisoire = False
+            await session.commit()
+    except Exception:
+        logger.warning(
+            "Périmètre appliqué à l'index mais pas consigné en base pour "
+            "%s", nom, exc_info=True,
+        )
+
+
 async def _get_file_context(
     file_path: str,
     session: AsyncSession,
@@ -273,29 +320,18 @@ async def _get_file_context(
             # un effet métier local, il respecte la promesse du fencing.
             and not (contexte is not None and contexte.annulation_observee())
         ):
-            # L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
-            # périmètre que la recherche n'appliquait pas encore : en cas
-            # d'échec, la base affirmait « ce document appartient au projet »
-            # pendant que ses fragments restaient visibles partout. Ici, un
-            # échec laisse le document là où il était — visible dans le
-            # périmètre général, ce qui est le statu quo, jamais une fuite
-            # nouvelle.
-            try:
-                await run_in_threadpool(
-                    get_qdrant_service().definir_perimetre_entite,
-                    existing.id, scope, scope_id,
-                )
-            except Exception:
-                logger.warning(
-                    "Périmètre non appliqué à l'index pour %s : le document "
-                    "reste dans son périmètre actuel plutôt que d'être annoncé "
-                    "cloisonné sans l'être", path.name, exc_info=True,
-                )
-            else:
-                existing.scope = scope
-                existing.scope_id = scope_id
-                existing.scope_provisoire = False
-                await session.commit()
+            # Passe 2 de revue (P2-6) : le geste part en tâche DÉTACHÉE avec
+            # sa propre session - une annulation en vol (pendant le thread
+            # Qdrant) coupait la coroutine entre les deux écritures et
+            # laissait les vecteurs re-périmétrés avec une base restée
+            # globale. Détaché, le geste finit les DEUX côtés ou aucun.
+            rattrapage = asyncio.create_task(
+                _rattraper_perimetre(existing.id, path.name, scope, scope_id)
+            )
+            _rattrapages_en_cours.add(rattrapage)
+            rattrapage.add_done_callback(_rattrapages_en_cours.discard)
+            await asyncio.shield(rattrapage)
+            await session.refresh(existing)
 
         # Index if not already done
         if not existing:
@@ -1742,7 +1778,7 @@ async def _stream_response(
         while True:
             prochain = asyncio.ensure_future(producteur.__anext__())
             surveillance = asyncio.ensure_future(
-                _attendre_annulation(contexte_execution)
+                _attendre_annulation(contexte_execution, conversation_id)
             )
             termines, _ = await asyncio.wait(
                 {prochain, surveillance}, return_when=asyncio.FIRST_COMPLETED
@@ -1765,6 +1801,13 @@ async def _stream_response(
             try:
                 chunk = prochain.result()
             except StopAsyncIteration:
+                return
+            except IndexationAbandonnee:
+                # Passe 2 de revue (P2-9) : l'abandon d'une indexation de
+                # pièce jointe est une ANNULATION, pas une panne de stream -
+                # le client reçoit un cancelled propre.
+                etat_generation["etat"] = EtatTacheTraitement.CANCELLED
+                yield f"data: {json.dumps({'type': 'cancelled', 'content': ''})}\n\n"
                 return
 
             # Une génération qui produit encore n'est pas orpheline : sans ce
@@ -1877,10 +1920,22 @@ async def _persister_message_partiel(
 
 
 async def _attendre_annulation(
-    contexte: ContexteExecution, intervalle_s: float = 0.05
+    contexte: ContexteExecution,
+    conversation_id: str | None = None,
+    intervalle_s: float = 0.05,
 ) -> None:
-    """Se résout dès que l'annulation de CETTE génération est demandée."""
+    """Se résout dès que l'annulation de CETTE génération est demandée.
+
+    Passe 2 de revue (P2-11) : rafraîchit aussi le timestamp - une
+    génération vivante mais silencieuse (outil long) restait purgeable par
+    _cleanup_stale_generations après 5 minutes.
+    """
     while not contexte.annulation_observee():
+        if (
+            conversation_id is not None
+            and _active_generations.get(conversation_id) is contexte
+        ):
+            _generation_timestamps[conversation_id] = time.monotonic()
         await asyncio.sleep(intervalle_s)
 
 

@@ -122,15 +122,14 @@ async def _executer_avec_suivi(
                 f"Indexation de {label} annulée avant démarrage"
             )
         except Exception:
+            # Passe 2 de revue (P2-2) : ne PAS clore en failed - l'indexation
+            # va peut-être réussir, et la clôture normale posera done depuis
+            # queued. Le prix : pas d'adaptateur, donc pas d'annulation par
+            # le panneau pour ce run (le hoquet du suivi est déjà anormal).
             logger.warning(
                 "Suivi en panne au démarrage pour %s : indexation sans "
-                "suivi", label, exc_info=True,
+                "annulation possible", label, exc_info=True,
             )
-            with contextlib.suppress(Exception):
-                await handle.terminer(
-                    EtatTacheTraitement.FAILED, error="suivi en panne"
-                )
-            handle = None
 
     try:
         reponse = await executer(_abandonnee)
@@ -154,8 +153,12 @@ async def _executer_avec_suivi(
                 )
         raise
     if handle is not None:
-        try:
+        # Passe 2 de revue (P2-1) : progresser et terminer ne partagent pas
+        # leur sort - une panne du premier ne doit pas laisser la ligne
+        # running après une indexation réussie.
+        with contextlib.suppress(Exception):
             await handle.progresser(progress=1.0)
+        try:
             await handle.terminer(EtatTacheTraitement.DONE)
         except Exception:
             logger.warning(
@@ -395,26 +398,42 @@ async def upload_file(
     # le nouveau contenu soit prêt (l'inverse de l'invariant N1). Déposer un
     # fichier DANS un projet est un geste explicite : périmètre voulu.
     dest_path = therese_dir / file.filename
+    temporaire = dest_path.with_name(dest_path.name + ".therese-tmp")
 
-    def _copier_sur_disque() -> None:
+    def _copier_vers_temporaire() -> None:
+        with temporaire.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+    def _remplacer() -> None:
         # Écriture ATOMIQUE : une erreur de copie ne doit jamais tronquer le
         # fichier en place pendant que son index reste servi (revue jalon).
-        temporaire = dest_path.with_name(dest_path.name + ".therese-tmp")
-        try:
-            with temporaire.open("wb") as f:
-                shutil.copyfileobj(file.file, f)
-            os.replace(temporaire, dest_path)
-        finally:
-            temporaire.unlink(missing_ok=True)
+        os.replace(temporaire, dest_path)
 
-    async def _deposer() -> None:
-        try:
-            await run_in_threadpool(_copier_sur_disque)
-        except Exception as e:
-            logger.error(f"Erreur sauvegarde fichier : {e}")
-            raise HTTPException(
-                status_code=500, detail="Erreur lors de la sauvegarde du fichier"
-            )
+    def _deposer_avec_abandon(abandonnee):
+        async def _deposer() -> None:
+            try:
+                await run_in_threadpool(_copier_vers_temporaire)
+                # Passe 2 de revue (P2-8) : le VRAI point de non-retour est
+                # os.replace. La copie d'un gros fichier est longue - un
+                # arrêt posé pendant doit préserver la version en place.
+                if abandonnee is not None and await abandonnee():
+                    raise IndexationAbandonnee(
+                        f"Dépôt de {dest_path.name} abandonné avant le "
+                        "remplacement"
+                    )
+                await run_in_threadpool(_remplacer)
+            except IndexationAbandonnee:
+                raise
+            except Exception as e:
+                logger.error(f"Erreur sauvegarde fichier : {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Erreur lors de la sauvegarde du fichier",
+                )
+            finally:
+                temporaire.unlink(missing_ok=True)
+
+        return _deposer
 
     try:
         return await _executer_avec_suivi(
@@ -423,7 +442,7 @@ async def upload_file(
             project_id=project_id,
             est_deconnecte=http_request.is_disconnected,
             executer=lambda abandonnee: remplacer_puis_indexer(
-                str(dest_path), _deposer,
+                str(dest_path), _deposer_avec_abandon(abandonnee),
                 est_abandonnee=abandonnee,
                 scope="project", scope_id=project_id,
             ),

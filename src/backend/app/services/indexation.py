@@ -345,6 +345,63 @@ def _copier_si_conforme(source: Path, sha256_attendu: str) -> Path | None:
     return copie
 
 
+# Passe 2 de revue (P2-7) : gestes d'écriture détachés (référence forte).
+_ecritures_en_cours: set["asyncio.Task[tuple[int, datetime]]"] = set()
+
+
+async def _lancer_le_geste(
+    file_id: str,
+    file_name: str,
+    items: list[dict[str, Any]],
+    reindexation: bool,
+    figer_perimetre: bool,
+) -> tuple[int, datetime]:
+    geste = asyncio.create_task(_ecrire_et_consigner(
+        file_id, file_name, items, reindexation, figer_perimetre
+    ))
+    _ecritures_en_cours.add(geste)
+    geste.add_done_callback(_ecritures_en_cours.discard)
+    return await asyncio.shield(geste)
+
+
+async def _ecrire_et_consigner(
+    file_id: str,
+    file_name: str,
+    items: list[dict[str, Any]],
+    reindexation: bool,
+    figer_perimetre: bool,
+) -> tuple[int, datetime]:
+    """Le geste d'écriture COMPLET : suppression de l'ancien index,
+    écriture du nouveau, consignation en base.
+
+    Passe 2 de revue (P2-7) : les écritures Qdrant tournent dans des
+    threads - annuler la coroutine appelante ne les arrête pas. Ce geste
+    s'exécute en tâche détachée (sous shield) : il finit les DEUX côtés
+    ou consigne l'échec, jamais un état à moitié.
+    """
+    if reindexation:
+        await get_qdrant_service().async_delete_by_entity(file_id)
+    chunk_count = 0
+    if items:
+        try:
+            await get_qdrant_service().async_add_memories(items)
+        except Exception:
+            # Les anciens fragments viennent d'être retirés : l'index est
+            # vide. Le consigner avant de propager, sinon la base
+            # promettrait un contenu introuvable.
+            await _consigner_resultat(file_id, 0, datetime.now(UTC))
+            raise
+        logger.info(f"Indexed {len(items)} chunks for file {file_name}")
+        chunk_count = len(items)
+    else:
+        logger.warning(f"No text extracted for {file_name}")
+    indexed_at = datetime.now(UTC)
+    await _consigner_resultat(
+        file_id, chunk_count, indexed_at, figer_perimetre=figer_perimetre
+    )
+    return chunk_count, indexed_at
+
+
 async def _indexer_apres_verifications(
     file_path: Path,
     est_abandonnee: Callable[[], Awaitable[bool]] | None,
@@ -443,7 +500,6 @@ async def _indexer_apres_verifications(
     await _verifier_abandon()
     chunk_count = chunk_count_existant
     indexed_at = indexed_at_existant
-    ecriture_faite = False
 
     if text_content:
         chunks = await chunk_text_async(text_content, chunk_size=1000, overlap=200)
@@ -461,35 +517,14 @@ async def _indexer_apres_verifications(
                 # L'attente du sémaphore peut durer : re-consulter l'abandon
                 # juste avant d'écrire (finding F1 resté ouvert).
                 await _verifier_abandon()
-                if reindexation:
-                    await get_qdrant_service().async_delete_by_entity(file_id)
-                try:
-                    await get_qdrant_service().async_add_memories(items)
-                except Exception:
-                    # Les anciens fragments viennent d'être retirés :
-                    # l'index est vide. Le consigner avant de propager,
-                    # sinon la base promettrait un contenu introuvable.
-                    await _consigner_resultat(file_id, 0, datetime.now(UTC))
-                    raise
-                logger.info(f"Indexed {len(chunks)} chunks for file {file_name}")
-                chunk_count = len(chunks)
-                indexed_at = datetime.now(UTC)
-                ecriture_faite = True
+                chunk_count, indexed_at = await _lancer_le_geste(
+                    file_id, file_name, items, reindexation, _perimetre_a_figer
+                )
     else:
         # Contenu vide : l'abandon a déjà été consulté après l'extraction
         # (une demande retirée n'efface rien - 3e passe de revue 0.45).
-        logger.warning(f"No text extracted from {file_path}")
-        if reindexation:
-            await get_qdrant_service().async_delete_by_entity(file_id)
-        chunk_count = 0
-        indexed_at = datetime.now(UTC)
-        ecriture_faite = True
-
-    # 3. Transaction COURTE : consigner le résultat. Rien à écrire si la
-    # demande a été abandonnée : l'état précédent reste la vérité.
-    if ecriture_faite:
-        await _consigner_resultat(
-            file_id, chunk_count, indexed_at, figer_perimetre=_perimetre_a_figer
+        chunk_count, indexed_at = await _lancer_le_geste(
+            file_id, file_name, [], reindexation, _perimetre_a_figer
         )
 
     return FileResponse(

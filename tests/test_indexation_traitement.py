@@ -403,6 +403,10 @@ class TestLeSecondPanel:
             "recommencer l'utilisateur pour rien"
         )
         qdrant_factice.async_add_memories.assert_called()
+        # Passe 2 de revue (P2-1) : progresser et terminer ne partagent pas
+        # leur sort - la ligne doit finir done, pas running fantôme.
+        lignes = await _traitements_indexation()
+        assert lignes and lignes[0].state == EtatTache.DONE
 
     @pytest.mark.asyncio
     async def test_une_panne_du_demarrage_du_suivi_n_empeche_pas_d_indexer(
@@ -424,6 +428,14 @@ class TestLeSecondPanel:
         )
         assert reponse.status_code == 200
         qdrant_factice.async_add_memories.assert_called()
+        # Passe 2 de revue (P2-2) : le suivi qui a raté son départ ne doit
+        # pas afficher « échec » pour une indexation réussie - la clôture
+        # normale pose done depuis queued.
+        lignes = await _traitements_indexation()
+        assert lignes and lignes[0].state == EtatTache.DONE, (
+            f"la ligne dit « {lignes[0].state if lignes else '?'} » pour "
+            "une indexation qui a réussi"
+        )
 
     @pytest.mark.asyncio
     async def test_une_panne_de_la_cloture_cancelled_garde_le_409(
@@ -476,4 +488,72 @@ class TestLeSecondPanel:
         assert reponse.chunk_count > 0
         qdrant_factice.async_add_memories.assert_called(), (
             "après le point de non-retour, l'index doit suivre le disque"
+        )
+
+
+    @pytest.mark.asyncio
+    async def test_p28_l_arret_pendant_la_copie_empeche_le_remplacement(
+        self, client, qdrant_factice, monkeypatch
+    ):
+        """Passe 2 (P2-8) : le vrai point de non-retour est os.replace, pas
+        l'entrée dans le dépôt. Un arrêt posé pendant la copie (longue sur
+        un gros fichier) doit préserver la version en place."""
+        import io
+        import shutil as shutil_module
+
+        from app.routers import files as surface
+
+        resp = await client.post(
+            "/api/memory/projects", json={"name": "Chantier copie"}
+        )
+        projet_id = resp.json()["id"]
+        resp = await client.post(
+            "/api/files/upload",
+            files={"file": ("piece.txt", io.BytesIO(b"VERSION UN"), "text/plain")},
+            data={"project_id": projet_id},
+        )
+        assert resp.status_code == 200
+        chemin = Path(resp.json()["path"])
+        assert chemin.read_bytes() == b"VERSION UN"
+
+        copie_originale = shutil_module.copyfileobj
+
+        def copie_pendant_laquelle_on_annule(src, dst, *a, **k):
+            copie_originale(src, dst, *a, **k)
+            # l'utilisateur clique Arrêter pendant la (longue) copie :
+            # l'évènement du panneau est posé par l'adaptateur
+            surface._arrets_de_test_p28.set()
+
+        monkeypatch.setattr(
+            surface.shutil, "copyfileobj", copie_pendant_laquelle_on_annule
+        )
+
+        # brancher l'évènement de l'enveloppe pour ce test : on passe par
+        # la route réelle, l'arrêt vient du traitement durable
+        import asyncio as asyncio_module
+
+        surface._arrets_de_test_p28 = asyncio_module.Event()
+        vrai_executer = surface._executer_avec_suivi
+
+        async def executer_espionne(**kwargs):
+            vraie_cb = kwargs["est_deconnecte"]
+
+            async def deconnecte_ou_arret_test() -> bool:
+                if surface._arrets_de_test_p28.is_set():
+                    return True
+                return bool(vraie_cb and await vraie_cb())
+
+            kwargs["est_deconnecte"] = deconnecte_ou_arret_test
+            return await vrai_executer(**kwargs)
+
+        monkeypatch.setattr(surface, "_executer_avec_suivi", executer_espionne)
+
+        resp = await client.post(
+            "/api/files/upload",
+            files={"file": ("piece.txt", io.BytesIO(b"VERSION DEUX"), "text/plain")},
+            data={"project_id": projet_id},
+        )
+        assert resp.status_code == 409, resp.text
+        assert chemin.read_bytes() == b"VERSION UN", (
+            "os.replace a eu lieu alors que l'arrêt était posé pendant la copie"
         )

@@ -437,3 +437,70 @@ class TestLaDeconnexionSousAnyio:
             f"ligne restée « {ligne.state} » : le nettoyage a été coupé par "
             "l'annulation level-triggered - board fantôme jusqu'au redémarrage"
         )
+
+
+class TestLaSessionDeLaPersistance:
+    @pytest.mark.asyncio
+    async def test_p24_la_persistance_survit_a_la_fermeture_de_la_route(
+        self, client, board_rapide, monkeypatch
+    ):
+        """Passe 2 (P2-4) : la persistance détachée roulait sur la session
+        de la route - la déconnexion sortait du `async with` et fermait la
+        session PENDANT le commit protégé. La persistance doit posséder sa
+        propre session."""
+        import anyio
+        from app.models.board import BoardRequest
+        from app.routers import board as board_router
+        from app.services.board import BoardService
+
+        persistance_commencee = asyncio.Event()
+        porte = asyncio.Event()
+        originale = BoardService._persister_decision
+
+        async def persistance_gated(self, *a, **k):
+            persistance_commencee.set()
+            await porte.wait()
+            await originale(self, *a, **k)
+
+        monkeypatch.setattr(
+            BoardService, "_persister_decision", persistance_gated
+        )
+
+        reponse = await board_router.deliberate(BoardRequest(**REQUETE))
+
+        async with anyio.create_task_group() as tg:
+            async def watcher():
+                await persistance_commencee.wait()
+                tg.cancel_scope.cancel()  # le client disparaît PENDANT le commit
+
+            async def consommer():
+                async for _chunk in reponse.body_iterator:
+                    pass
+
+            tg.start_soon(watcher)
+            tg.start_soon(consommer)
+
+        porte.set()  # le commit protégé peut maintenant s'exécuter
+
+        decision_la = False
+        for _ in range(100):
+            if await _decision_existe():
+                decision_la = True
+                break
+            await asyncio.sleep(0.05)
+        assert decision_la, (
+            "le commit protégé a échoué : il roulait sur la session fermée "
+            "de la route"
+        )
+        ligne = None
+        for _ in range(100):
+            ligne = await _traitement_board()
+            if ligne is not None and ligne.state in (
+                EtatTache.DONE, EtatTache.CANCELLED, EtatTache.FAILED
+            ):
+                break
+            await asyncio.sleep(0.05)
+        assert ligne is not None and ligne.state == EtatTache.DONE, (
+            f"ligne « {ligne.state if ligne else '?'} » : la décision existe, "
+            "done doit gagner"
+        )

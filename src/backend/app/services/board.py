@@ -536,12 +536,28 @@ class BoardService:
         opinions: list[AdvisorOpinion],
         synthesis: BoardSynthesis,
     ) -> None:
-        """Le commit de la décision - corps historique, extrait tel quel."""
-        session = self._session
-        if session is None:
-            raise RuntimeError(
-                "La décision ne peut pas être sauvegardée sans session locale."
+        """Le commit de la décision.
+
+        Passe 2 de revue (P2-4) : session NEUVE, possédée par CE geste. La
+        session de la route appartient à son `async with` - une déconnexion
+        du client la ferme pendant que la persistance détachée tourne
+        encore. Même patron que le message partiel du chat.
+        """
+        from app.models.database import get_session_context
+
+        async with get_session_context() as session:
+            await self._commettre_decision(
+                session, decision_id, request, opinions, synthesis
             )
+
+    async def _commettre_decision(
+        self,
+        session,
+        decision_id: str,
+        request: BoardRequest,
+        opinions: list[AdvisorOpinion],
+        synthesis: BoardSynthesis,
+    ) -> None:
         try:
             db_decision = BoardDecisionDB(
                 id=decision_id,
@@ -557,7 +573,12 @@ class BoardService:
             )
             session.add(db_decision)
             await session.commit()
-            if await self.get_decision(decision_id) is None:
+            from sqlmodel import select as _select
+
+            relu = await session.execute(
+                _select(BoardDecisionDB).where(BoardDecisionDB.id == decision_id)
+            )
+            if relu.scalars().first() is None:
                 raise RuntimeError("La décision sauvegardée est introuvable.")
             logger.info(f"Board decision saved: {decision_id}")
         except Exception as e:

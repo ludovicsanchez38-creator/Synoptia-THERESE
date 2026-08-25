@@ -80,6 +80,17 @@ async def test_persistence_failure_never_emits_done(monkeypatch):
     })
     llm = FakeLLM(["Avis mesuré.", synthesis])
     session = FailingCommitSession()
+    # 0.47 (P2-4) : la persistance possède sa PROPRE session - l'échec de
+    # commit s'injecte donc dans le geste, plus par le constructeur.
+    import contextlib as _contextlib
+
+    @_contextlib.asynccontextmanager
+    async def _session_qui_echoue():
+        yield session
+
+    monkeypatch.setattr(
+        "app.models.database.get_session_context", _session_qui_echoue
+    )
     monkeypatch.setattr(board_module, "get_llm_service", lambda: llm)
     monkeypatch.setattr(board_module, "get_llm_service_for_provider", lambda *args, **kwargs: llm)
     monkeypatch.setattr(board_module, "_get_user_context", lambda: "")

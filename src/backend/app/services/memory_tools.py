@@ -437,6 +437,11 @@ async def execute_create_contact(
         # un contact « annulé » apparaissait après coup.
         with contextlib.suppress(Exception):
             await session.rollback()
+        # P2-3 : l'upsert threadé peut aboutir APRÈS ce rollback - purger
+        # le vecteur du contact fantôme en tâche détachée.
+        with contextlib.suppress(Exception):
+            if contact.id:
+                _compenser_vecteur_orphelin(contact.id)
         raise
     except Exception as e:
         logger.error(f"Failed to create contact via tool: {e}")
@@ -555,6 +560,9 @@ async def execute_create_project(
         # Même contrat que le contact (second panel de revue).
         with contextlib.suppress(Exception):
             await session.rollback()
+        with contextlib.suppress(Exception):
+            if project.id:
+                _compenser_vecteur_orphelin(project.id)
         raise
     except Exception as e:
         logger.error(f"Failed to create project via tool: {e}")
@@ -772,3 +780,21 @@ async def execute_memory_tool(
 
 
 MEMORY_TOOL_NAMES = {"create_contact", "create_project", "read_contact"}
+
+# Passe 2 de revue (P2-3) : l'upsert Qdrant tourne dans un thread - annuler
+# l'await ne l'arrête pas. Après le rollback SQLite d'une annulation en vol,
+# une purge DÉTACHÉE efface le vecteur potentiellement orphelin (best-effort,
+# après un délai laissant le thread finir son écriture).
+_DELAI_COMPENSATION_S = 1.0
+_compensations_en_cours: set["asyncio.Task[None]"] = set()
+
+
+def _compenser_vecteur_orphelin(entity_id: str) -> None:
+    async def _purger() -> None:
+        await asyncio.sleep(_DELAI_COMPENSATION_S)
+        with contextlib.suppress(Exception):
+            await get_qdrant_service().async_delete_by_entity(entity_id)
+
+    tache = asyncio.create_task(_purger())
+    _compensations_en_cours.add(tache)
+    tache.add_done_callback(_compensations_en_cours.discard)

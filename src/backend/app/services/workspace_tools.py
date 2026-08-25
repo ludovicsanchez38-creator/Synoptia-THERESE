@@ -5,8 +5,11 @@ Provides email and calendar tools that the LLM can call
 during conversation to interact with user's connected accounts.
 """
 
+import asyncio
+import contextlib
 import logging
 from contextvars import ContextVar
+from pathlib import Path
 from typing import Any
 
 from app.services.contexte_execution import ContexteExecution
@@ -288,6 +291,9 @@ WORKSPACE_TOOLS = [
 # (avant : detection d'intention fragile -> aucun fichier produit / faux lien).
 _DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro"}
 
+# Passe 2 de revue (P2-5) : gestes de génération détachés (référence forte).
+_generations_en_cours: set["asyncio.Task[str]"] = set()
+
 WORKSPACE_TOOL_NAMES = {t["function"]["name"] for t in WORKSPACE_TOOLS}
 
 
@@ -441,12 +447,30 @@ async def _generate_document(
 
     try:
         registry = get_skills_registry()
-        resp = await registry.execute(
-            skill_id,
-            SkillExecuteRequest(prompt=title or content[:120], title=title),
-            content,
-        )
-        if resp.success:
+
+        async def _executer_le_skill() -> str:
+            # Passe 2 de revue (P2-5) : le skill écrit via thread et
+            # sous-processus - annuler la coroutine ne l'arrête pas. Le
+            # geste part DÉTACHÉ : il obtient le résultat, et si
+            # l'annulation a été posée entre-temps, il RETIRE le fichier
+            # produit au lieu de laisser un orphelin sans carte.
+            resp = await registry.execute(
+                skill_id,
+                SkillExecuteRequest(prompt=title or content[:120], title=title),
+                content,
+            )
+            if not resp.success:
+                return f"Échec de génération du document : {resp.error}"
+            if contexte is not None and contexte.annulation_observee():
+                with contextlib.suppress(Exception):
+                    if resp.file_name:
+                        (Path(registry.output_dir) / resp.file_name).unlink(
+                            missing_ok=True
+                        )
+                return (
+                    "Génération interrompue : le document produit a été "
+                    "retiré."
+                )
             record_generated_file({
                 "skill_id": skill_id,
                 "file_id": resp.file_id,
@@ -460,7 +484,14 @@ async def _generate_document(
                 f"Document {fmt.upper()} généré : {resp.file_name}. "
                 f"Téléchargement : {resp.download_url}"
             )
-        return f"Échec de génération du document : {resp.error}"
+
+        geste = asyncio.create_task(_executer_le_skill())
+        _generations_en_cours.add(geste)
+        geste.add_done_callback(_generations_en_cours.discard)
+        return await asyncio.shield(geste)
+    except asyncio.CancelledError:
+        # Le geste détaché finit et compense lui-même.
+        raise
     except Exception as e:  # pragma: no cover - dépend du sandbox skills
         return f"Erreur lors de la génération du document : {e}"
 

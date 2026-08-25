@@ -227,13 +227,16 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       return;
     }
 
-    // Annuler une éventuelle délibération précédente - par le chemin
-    // canonique aussi (second panel : un abort seul laissait le backend
-    // délibérer et sauvegarder dans le vide).
+    // Annuler une éventuelle délibération précédente. Passe 2 de revue
+    // (P2-10) : couper le transport TOUT DE SUITE - attendre le chemin
+    // canonique laissait l'ancien flux muter les états du nouveau run.
+    // Le canonique part en parallèle (idempotent côté backend, et la
+    // déconnexion seule est déjà résolue proprement par le nettoyage
+    // détaché du routeur).
     if (abortRef.current) {
-      void annulerDeliberation(
-        processingTaskIdRef.current, couperTransport(abortRef),
-      );
+      const ancienTraitement = processingTaskIdRef.current;
+      couperTransport(abortRef)();
+      void annulerDeliberation(ancienTraitement, () => {});
     }
     const controller = new AbortController();
     abortRef.current = controller;
@@ -340,12 +343,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
           case 'done':
             receivedDone = true;
             setIsComplete(true);
-            abortRef.current = null;
+            if (abortRef.current === controller) abortRef.current = null;
             break;
 
           case 'error':
             setRunError(chunk.content || 'Le Board a rencontré une erreur.');
-            abortRef.current = null;
+            if (abortRef.current === controller) abortRef.current = null;
             return;
         }
       }

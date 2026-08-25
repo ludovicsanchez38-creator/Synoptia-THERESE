@@ -376,6 +376,10 @@ class TestLaFenetreDEnrolement:
             "la demande est posée durablement et sera rejouée à "
             "l'enrôlement : la refuser en 400 est un mensonge"
         )
+        # Passe 2 de revue : la demande doit être DURABLE (pas seulement en
+        # mémoire) - c'est elle que lier_adaptateur rejouera.
+        relu = await _traitement_action(task.task_id)
+        assert relu.state == EtatTache.CANCEL_REQUESTED
 
         porte.set()
         assert await _attendre(
