@@ -292,7 +292,7 @@ WORKSPACE_TOOLS = [
 _DOC_SKILL_IDS = {"docx": "docx-pro", "pptx": "pptx-pro", "xlsx": "xlsx-pro"}
 
 # Passe 2 de revue (P2-5) : gestes de génération détachés (référence forte).
-_generations_en_cours: set["asyncio.Task[str]"] = set()
+_generations_en_cours: set["asyncio.Task[Any]"] = set()
 
 WORKSPACE_TOOL_NAMES = {t["function"]["name"] for t in WORKSPACE_TOOLS}
 
@@ -448,52 +448,76 @@ async def _generate_document(
     try:
         registry = get_skills_registry()
 
-        async def _executer_le_skill() -> str:
-            # Passe 2 de revue (P2-5) : le skill écrit via thread et
-            # sous-processus - annuler la coroutine ne l'arrête pas. Le
-            # geste part DÉTACHÉ : il obtient le résultat, et si
-            # l'annulation a été posée entre-temps, il RETIRE le fichier
-            # produit au lieu de laisser un orphelin sans carte.
-            resp = await registry.execute(
-                skill_id,
-                SkillExecuteRequest(prompt=title or content[:120], title=title),
-                content,
-            )
-            if not resp.success:
-                return f"Échec de génération du document : {resp.error}"
-            if contexte is not None and contexte.annulation_observee():
-                with contextlib.suppress(Exception):
-                    if resp.file_name:
-                        (Path(registry.output_dir) / resp.file_name).unlink(
-                            missing_ok=True
-                        )
-                return (
-                    "Génération interrompue : le document produit a été "
-                    "retiré."
-                )
-            record_generated_file({
-                "skill_id": skill_id,
-                "file_id": resp.file_id,
-                "file_name": resp.file_name,
-                "file_size": resp.file_size,
-                "download_url": resp.download_url,
-                "format": fmt,
-                "local_dir": str(registry.output_dir),
-            })
-            return (
-                f"Document {fmt.upper()} généré : {resp.file_name}. "
-                f"Téléchargement : {resp.download_url}"
-            )
-
-        geste = asyncio.create_task(_executer_le_skill())
+        # Passe 2/3 de revue (P2-5, P3-4) : le skill écrit via thread et
+        # sous-processus - annuler la coroutine ne l'arrête pas. Le geste
+        # part DÉTACHÉ ; le POST-TRAITEMENT (carte ou retrait) appartient
+        # au porteur s'il est vivant, et à une continuation détachée s'il
+        # est mort (déconnexion réelle : aucun token posé, mais le fichier
+        # produit dans un flux mort ne doit ni rester ni faire une carte).
+        geste = asyncio.create_task(registry.execute(
+            skill_id,
+            SkillExecuteRequest(prompt=title or content[:120], title=title),
+            content,
+        ))
         _generations_en_cours.add(geste)
         geste.add_done_callback(_generations_en_cours.discard)
-        return await asyncio.shield(geste)
+        try:
+            resp = await asyncio.shield(geste)
+        except asyncio.CancelledError:
+            continuation = asyncio.create_task(
+                _retirer_document_orphelin(geste, Path(registry.output_dir))
+            )
+            _generations_en_cours.add(continuation)
+            continuation.add_done_callback(_generations_en_cours.discard)
+            raise
+        if not resp.success:
+            return f"Échec de génération du document : {resp.error}"
+        if contexte is not None and contexte.annulation_observee():
+            with contextlib.suppress(Exception):
+                if resp.file_name:
+                    (Path(registry.output_dir) / resp.file_name).unlink(
+                        missing_ok=True
+                    )
+            return (
+                "Génération interrompue : le document produit a été retiré."
+            )
+        record_generated_file({
+            "skill_id": skill_id,
+            "file_id": resp.file_id,
+            "file_name": resp.file_name,
+            "file_size": resp.file_size,
+            "download_url": resp.download_url,
+            "format": fmt,
+            "local_dir": str(registry.output_dir),
+        })
+        return (
+            f"Document {fmt.upper()} généré : {resp.file_name}. "
+            f"Téléchargement : {resp.download_url}"
+        )
     except asyncio.CancelledError:
-        # Le geste détaché finit et compense lui-même.
         raise
     except Exception as e:  # pragma: no cover - dépend du sandbox skills
         return f"Erreur lors de la génération du document : {e}"
+
+
+async def _retirer_document_orphelin(
+    geste: "asyncio.Task[Any]", dossier: Path
+) -> None:
+    """Le porteur est mort : un document qui aboutit après lui n'a plus
+    personne pour le montrer - le retirer, aucune carte (passe 3, P3-4)."""
+    resultats = await asyncio.gather(geste, return_exceptions=True)
+    resp = resultats[0]
+    with contextlib.suppress(Exception):
+        if (
+            not isinstance(resp, BaseException)
+            and getattr(resp, "success", False)
+            and getattr(resp, "file_name", None)
+        ):
+            (dossier / resp.file_name).unlink(missing_ok=True)
+            logger.info(
+                "Document %s retiré : produit après la mort du flux qui "
+                "l'avait demandé", resp.file_name,
+            )
 
 
 async def _get_email_provider(session: AsyncSession):

@@ -275,16 +275,16 @@ class TestLaMatriceDAnnulation:
     ):
         from app.services.board import BoardService
 
-        get_decision_reelle = BoardService.get_decision
+        commettre_reelle = BoardService._commettre_decision
 
-        async def verification_puis_arret(self, decision_id):
-            decision = await get_decision_reelle(self, decision_id)
-            if decision is not None:
-                # la demande d'arrêt arrive juste APRÈS le commit
-                await _demander_arret_du_board()
-            return decision
+        async def commit_puis_arret(self, session, *a, **k):
+            await commettre_reelle(self, session, *a, **k)
+            # la demande d'arrêt arrive juste APRÈS le commit
+            await _demander_arret_du_board()
 
-        monkeypatch.setattr(BoardService, "get_decision", verification_puis_arret)
+        monkeypatch.setattr(
+            BoardService, "_commettre_decision", commit_puis_arret
+        )
 
         reponse = await client.post("/api/board/deliberate", json=REQUETE)
         evenements = _evenements(reponse.text)
@@ -504,3 +504,36 @@ class TestLaSessionDeLaPersistance:
             f"ligne « {ligne.state if ligne else '?'} » : la décision existe, "
             "done doit gagner"
         )
+
+
+class TestLaPasse3Board:
+    @pytest.mark.asyncio
+    async def test_p37_une_panne_de_verification_apres_commit_reste_done(
+        self, client, board_rapide, monkeypatch
+    ):
+        """Passe 3 (P3-7) : commit réussi + SELECT de vérification en panne
+        était requalifié en échec - la décision existait avec un traitement
+        failed. Après un commit réussi, done gagne."""
+        from app.services.board import BoardService
+
+        originale = BoardService._commettre_decision
+
+        async def commit_puis_verification_en_panne(self, session, *a, **k):
+            await originale(self, session, *a, **k)
+            raise RuntimeError("SELECT de vérification en panne")
+
+        monkeypatch.setattr(
+            BoardService, "_commettre_decision",
+            commit_puis_verification_en_panne,
+        )
+
+        reponse = await client.post("/api/board/deliberate", json=REQUETE)
+        evenements = _evenements(reponse.text)
+
+        assert await _decision_existe(), "le commit a réellement eu lieu"
+        ligne = await _traitement_board()
+        assert ligne.state == EtatTache.DONE, (
+            f"ligne « {ligne.state} » : une panne de la VÉRIFICATION a été "
+            "requalifiée en échec alors que la décision existe"
+        )
+        assert any(e["type"] == "done" for e in evenements)

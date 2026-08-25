@@ -6,7 +6,6 @@ to directly add entities to the memory system during conversation.
 """
 
 import asyncio
-import contextlib
 import json
 import logging
 import unicodedata
@@ -360,92 +359,96 @@ async def execute_create_contact(
                        "l'utilisateur a arrêté la génération.",
         }, ensure_ascii=False)
 
-    try:
-        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
-        contact = Contact(
-            first_name=first_name or None,
-            last_name=last_name or None,
-            company=company,
-            email=email,
-            phone=arguments.get("phone"),
-            notes=arguments.get("notes"),
-            last_interaction=datetime.now(UTC),
-            # Une entité créée depuis le chat appartient à son dossier, ou à
-            # défaut à SA conversation — jamais publiée partout par défaut.
-            scope=_perimetre_creation[0],
-            scope_id=_perimetre_creation[1],
-        )
-        session.add(contact)
-        await session.flush()
+    # Passe 3 de revue (P3-3) : le geste d'écriture possède SA session et
+    # part détaché - annulé en vol, il finit ENTIER (ligne + vecteur) ou
+    # s'interrompt proprement (rollback de sa propre session), jamais à
+    # moitié. La session de la requête ne porte plus l'écriture : son
+    # teardown ne peut plus committer un contact « annulé », et plus
+    # aucune purge compensatoire à délai n'est nécessaire.
+    async def _geste_contact() -> str:
+        from app.models.database import get_session_context as _ctx
 
-        # Re-check du fence (revue jalon, F6) : une annulation posée pendant
-        # le flush laissait un contact ENTIER se créer (SQLite + Qdrant).
-        # Avant l'écriture vectorielle : rollback, zéro effet.
-        if contexte is not None and contexte.annulation_observee():
-            await session.rollback()
+        _perimetre_creation = _perimetre_de_creation(
+            scope, scope_id, conversation_id
+        )
+        async with _ctx() as session_geste:
+            contact = Contact(
+                first_name=first_name or None,
+                last_name=last_name or None,
+                company=company,
+                email=email,
+                phone=arguments.get("phone"),
+                notes=arguments.get("notes"),
+                last_interaction=datetime.now(UTC),
+                # Une entité créée depuis le chat appartient à son dossier,
+                # ou à défaut à SA conversation — jamais publiée partout.
+                scope=_perimetre_creation[0],
+                scope_id=_perimetre_creation[1],
+            )
+            session_geste.add(contact)
+            await session_geste.flush()
+
+            # Re-check du fence (revue jalon, F6) : une annulation posée
+            # pendant le flush ne doit rien créer - rollback, zéro effet.
+            if contexte is not None and contexte.annulation_observee():
+                await session_geste.rollback()
+                return json.dumps({
+                    "success": False,
+                    "interrupted": True,
+                    "message": "Création du contact interrompue avant "
+                               "écriture : l'utilisateur a arrêté la "
+                               "génération.",
+                }, ensure_ascii=False)
+
+            # Index in Qdrant
+            try:
+                qdrant = get_qdrant_service()
+                text_parts = [f"Contact: {contact.display_name}"]
+                if contact.company:
+                    text_parts.append(f"Entreprise: {contact.company}")
+                if contact.email:
+                    text_parts.append(f"Email: {contact.email}")
+                if contact.phone:
+                    text_parts.append(f"Tel: {contact.phone}")
+                if contact.notes:
+                    text_parts.append(f"Notes: {contact.notes}")
+
+                await qdrant.async_add_memory(
+                    text="\n".join(text_parts),
+                    memory_type="contact",
+                    entity_id=contact.id,
+                    metadata={
+                        "name": contact.display_name,
+                        "company": contact.company,
+                        "email": contact.email,
+                        # Même périmètre que la ligne SQL : sinon le RAG
+                        # contourne la cloison de `read_contact`.
+                        "scope": contact.scope or "global",
+                        "scope_id": contact.scope_id,
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to embed new contact in Qdrant: {e}")
+
+            await session_geste.commit()
+
+            logger.info(
+                f"Created contact via tool: {contact.display_name} "
+                f"({contact.id})"
+            )
             return json.dumps({
-                "success": False,
-                "interrupted": True,
-                "message": "Création du contact interrompue avant écriture : "
-                           "l'utilisateur a arrêté la génération.",
+                "success": True,
+                "contact_id": contact.id,
+                "display_name": contact.display_name,
+                "message": f"Contact '{contact.display_name}' créé avec succès.",
             }, ensure_ascii=False)
 
-        # Index in Qdrant
-        try:
-            qdrant = get_qdrant_service()
-            text_parts = [f"Contact: {contact.display_name}"]
-            if contact.company:
-                text_parts.append(f"Entreprise: {contact.company}")
-            if contact.email:
-                text_parts.append(f"Email: {contact.email}")
-            if contact.phone:
-                text_parts.append(f"Tel: {contact.phone}")
-            if contact.notes:
-                text_parts.append(f"Notes: {contact.notes}")
-
-            await qdrant.async_add_memory(
-                text="\n".join(text_parts),
-                memory_type="contact",
-                entity_id=contact.id,
-                metadata={
-                    "name": contact.display_name,
-                    "company": contact.company,
-                    "email": contact.email,
-                    # Même périmètre que la ligne SQL : sinon le RAG contourne
-                    # la cloison de `read_contact`.
-                    "scope": contact.scope or "global",
-                    "scope_id": contact.scope_id,
-                },
-            )
-        except Exception as e:
-            logger.warning(f"Failed to embed new contact in Qdrant: {e}")
-
-        await session.commit()
-
-        logger.info(f"Created contact via tool: {contact.display_name} ({contact.id})")
-        return json.dumps({
-            "success": True,
-            "contact_id": contact.id,
-            "display_name": contact.display_name,
-            "message": f"Contact '{contact.display_name}' créé avec succès.",
-        }, ensure_ascii=False)
-
+    try:
+        return await _proteger_le_geste(_geste_contact())
     except asyncio.CancelledError:
-        # Second panel de revue : le wrapper J1b annule la coroutine en
-        # plein vol (attente Qdrant). Sans rollback ICI, l'écriture flushée
-        # restait pendante et le teardown de `get_session` la committait -
-        # un contact « annulé » apparaissait après coup.
-        with contextlib.suppress(Exception):
-            await session.rollback()
-        # P2-3 : l'upsert threadé peut aboutir APRÈS ce rollback - purger
-        # le vecteur du contact fantôme en tâche détachée.
-        with contextlib.suppress(Exception):
-            if contact.id:
-                _compenser_vecteur_orphelin(contact.id)
         raise
     except Exception as e:
         logger.error(f"Failed to create contact via tool: {e}")
-        await session.rollback()
         return json.dumps({
             "error": f"Échec de la création du contact: {str(e)}",
         }, ensure_ascii=False)
@@ -496,77 +499,81 @@ async def execute_create_project(
                        "l'utilisateur a arrêté la génération.",
         }, ensure_ascii=False)
 
-    try:
-        _perimetre_creation = _perimetre_de_creation(scope, scope_id, conversation_id)
-        project = Project(
-            name=name,
-            description=arguments.get("description"),
-            status=arguments.get("status", "active"),
-            budget=arguments.get("budget"),
-            # Même règle que les contacts.
-            scope=_perimetre_creation[0],
-            scope_id=_perimetre_creation[1],
-        )
-        session.add(project)
-        await session.flush()
+    # Passe 3 de revue (P3-3) : même patron que le contact - le geste
+    # possède sa session et part détaché.
+    async def _geste_projet() -> str:
+        from app.models.database import get_session_context as _ctx
 
-        # Re-check du fence (revue jalon, F6) - même contrat que le contact.
-        if contexte is not None and contexte.annulation_observee():
-            await session.rollback()
+        _perimetre_creation = _perimetre_de_creation(
+            scope, scope_id, conversation_id
+        )
+        async with _ctx() as session_geste:
+            project = Project(
+                name=name,
+                description=arguments.get("description"),
+                status=arguments.get("status", "active"),
+                budget=arguments.get("budget"),
+                # Même règle que les contacts.
+                scope=_perimetre_creation[0],
+                scope_id=_perimetre_creation[1],
+            )
+            session_geste.add(project)
+            await session_geste.flush()
+
+            # Re-check du fence (revue jalon, F6) - même contrat que le
+            # contact.
+            if contexte is not None and contexte.annulation_observee():
+                await session_geste.rollback()
+                return json.dumps({
+                    "success": False,
+                    "interrupted": True,
+                    "message": "Création du projet interrompue avant "
+                               "écriture : l'utilisateur a arrêté la "
+                               "génération.",
+                }, ensure_ascii=False)
+
+            # Index in Qdrant
+            try:
+                qdrant = get_qdrant_service()
+                text_parts = [f"Projet: {project.name}"]
+                if project.description:
+                    text_parts.append(f"Description: {project.description}")
+                if project.status:
+                    text_parts.append(f"Statut: {project.status}")
+                if project.budget:
+                    text_parts.append(f"Budget: {project.budget} EUR")
+
+                await qdrant.async_add_memory(
+                    text="\n".join(text_parts),
+                    memory_type="project",
+                    entity_id=project.id,
+                    metadata={
+                        "name": project.name,
+                        "status": project.status,
+                        "budget": project.budget,
+                        "scope": project.scope or "global",
+                        "scope_id": project.scope_id,
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to embed new project in Qdrant: {e}")
+
+            await session_geste.commit()
+
+            logger.info(f"Created project via tool: {project.name} ({project.id})")
             return json.dumps({
-                "success": False,
-                "interrupted": True,
-                "message": "Création du projet interrompue avant écriture : "
-                           "l'utilisateur a arrêté la génération.",
+                "success": True,
+                "project_id": project.id,
+                "name": project.name,
+                "message": f"Projet '{project.name}' créé avec succès.",
             }, ensure_ascii=False)
 
-        # Index in Qdrant
-        try:
-            qdrant = get_qdrant_service()
-            text_parts = [f"Projet: {project.name}"]
-            if project.description:
-                text_parts.append(f"Description: {project.description}")
-            if project.status:
-                text_parts.append(f"Statut: {project.status}")
-            if project.budget:
-                text_parts.append(f"Budget: {project.budget} EUR")
-
-            await qdrant.async_add_memory(
-                text="\n".join(text_parts),
-                memory_type="project",
-                entity_id=project.id,
-                metadata={
-                    "name": project.name,
-                    "status": project.status,
-                    "budget": project.budget,
-                    "scope": project.scope or "global",
-                    "scope_id": project.scope_id,
-                },
-            )
-        except Exception as e:
-            logger.warning(f"Failed to embed new project in Qdrant: {e}")
-
-        await session.commit()
-
-        logger.info(f"Created project via tool: {project.name} ({project.id})")
-        return json.dumps({
-            "success": True,
-            "project_id": project.id,
-            "name": project.name,
-            "message": f"Projet '{project.name}' créé avec succès.",
-        }, ensure_ascii=False)
-
+    try:
+        return await _proteger_le_geste(_geste_projet())
     except asyncio.CancelledError:
-        # Même contrat que le contact (second panel de revue).
-        with contextlib.suppress(Exception):
-            await session.rollback()
-        with contextlib.suppress(Exception):
-            if project.id:
-                _compenser_vecteur_orphelin(project.id)
         raise
     except Exception as e:
         logger.error(f"Failed to create project via tool: {e}")
-        await session.rollback()
         return json.dumps({
             "error": f"Échec de la création du projet: {str(e)}",
         }, ensure_ascii=False)
@@ -781,20 +788,23 @@ async def execute_memory_tool(
 
 MEMORY_TOOL_NAMES = {"create_contact", "create_project", "read_contact"}
 
-# Passe 2 de revue (P2-3) : l'upsert Qdrant tourne dans un thread - annuler
-# l'await ne l'arrête pas. Après le rollback SQLite d'une annulation en vol,
-# une purge DÉTACHÉE efface le vecteur potentiellement orphelin (best-effort,
-# après un délai laissant le thread finir son écriture).
-_DELAI_COMPENSATION_S = 1.0
-_compensations_en_cours: set["asyncio.Task[None]"] = set()
+# Passe 3 de revue (P3-3) : gestes d'écriture détachés (référence forte).
+# Le geste possède sa session : annulé en vol, il finit entier ou
+# s'interrompt proprement - aucun vecteur orphelin, aucune purge à délai.
+_gestes_en_cours: set["asyncio.Task[str]"] = set()
 
 
-def _compenser_vecteur_orphelin(entity_id: str) -> None:
-    async def _purger() -> None:
-        await asyncio.sleep(_DELAI_COMPENSATION_S)
-        with contextlib.suppress(Exception):
-            await get_qdrant_service().async_delete_by_entity(entity_id)
+def _consommer_issue_geste(geste: "asyncio.Task[str]") -> None:
+    _gestes_en_cours.discard(geste)
+    if not geste.cancelled() and geste.exception() is not None:
+        logger.warning(
+            "Geste de création détaché terminé en échec",
+            exc_info=geste.exception(),
+        )
 
-    tache = asyncio.create_task(_purger())
-    _compensations_en_cours.add(tache)
-    tache.add_done_callback(_compensations_en_cours.discard)
+
+async def _proteger_le_geste(coro: "Any") -> str:
+    geste: "asyncio.Task[str]" = asyncio.create_task(coro)
+    _gestes_en_cours.add(geste)
+    geste.add_done_callback(_consommer_issue_geste)
+    return await asyncio.shield(geste)

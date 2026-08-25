@@ -573,14 +573,6 @@ class BoardService:
             )
             session.add(db_decision)
             await session.commit()
-            from sqlmodel import select as _select
-
-            relu = await session.execute(
-                _select(BoardDecisionDB).where(BoardDecisionDB.id == decision_id)
-            )
-            if relu.scalars().first() is None:
-                raise RuntimeError("La décision sauvegardée est introuvable.")
-            logger.info(f"Board decision saved: {decision_id}")
         except Exception as e:
             logger.error(f"Failed to save board decision: {e}", exc_info=True)
             try:
@@ -588,6 +580,26 @@ class BoardService:
             except Exception as rollback_error:
                 logger.debug("Rollback apres erreur save: %s", rollback_error)
             raise RuntimeError("La décision n'a pas pu être sauvegardée localement.") from e
+        # Passe 3 de revue (P3-7) : le commit a RÉUSSI - la vérification
+        # est une ceinture, sa panne ne requalifie pas un commit abouti.
+        # Seule une relecture qui aboutit ET ne trouve rien est un échec.
+        try:
+            from sqlmodel import select as _select
+
+            relu = await session.execute(
+                _select(BoardDecisionDB).where(BoardDecisionDB.id == decision_id)
+            )
+            introuvable = relu.scalars().first() is None
+        except Exception:
+            logger.warning(
+                "Vérification post-commit impossible pour %s : le commit a "
+                "abouti, la décision est réputée sauvegardée", decision_id,
+                exc_info=True,
+            )
+            return
+        if introuvable:
+            raise RuntimeError("La décision sauvegardée est introuvable.")
+        logger.info(f"Board decision saved: {decision_id}")
 
     async def _generate_synthesis(
         self,

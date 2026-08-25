@@ -216,12 +216,20 @@ async def index_payload(
     if not file_path.is_file():
         raise HTTPException(status_code=400, detail="Path is not a file")
 
-    async with _verrou_de_chemin(str(file_path)):
-        return await _indexer_sous_verrou(
-            file_path, est_abandonnee, scope, scope_id, perimetre_provisoire,
-            sha256_attendu=sha256_attendu,
-            file_id_attendu=file_id_attendu,
-        )
+    # Passe 3 de revue (P3-1) : le geste détaché POSSÈDE le verrou de
+    # chemin. Détacher seulement l'écriture laissait le porteur annulé
+    # libérer le verrou pendant que le geste écrivait encore - une demande
+    # B entrait et entrelaçait ses écritures avec celles de A.
+    async def _geste() -> FileResponse:
+        async with _verrou_de_chemin(str(file_path)):
+            return await _indexer_sous_verrou(
+                file_path, est_abandonnee, scope, scope_id,
+                perimetre_provisoire,
+                sha256_attendu=sha256_attendu,
+                file_id_attendu=file_id_attendu,
+            )
+
+    return await _proteger_le_geste(_geste())
 
 
 async def remplacer_puis_indexer(
@@ -240,23 +248,28 @@ async def remplacer_puis_indexer(
     pouvait lire un contenu à moitié écrit. Le dépôt entre dans la section
     critique, et l'indexation qui suit est le même cœur que la route.
     """
-    async with _verrou_de_chemin(chemin):
-        # Revue jalon (F4) : consulter l'abandon AVANT le dépôt - os.replace
-        # est le premier effet durable de ce chemin, remplacer le fichier
-        # d'un utilisateur qui vient d'annuler perdait sa version en place.
-        if est_abandonnee is not None and await est_abandonnee():
-            raise IndexationAbandonnee(
-                f"Indexation de {Path(chemin).name} abandonnée avant le dépôt"
+    # Passe 3 de revue (P3-1/P3-6) : tout le geste (dépôt + extraction +
+    # écriture) est détaché et possède le verrou - une annulation dure du
+    # porteur après os.replace n'ampute plus l'indexation de la version
+    # réellement en place.
+    async def _geste() -> FileResponse:
+        async with _verrou_de_chemin(chemin):
+            # Revue jalon (F4) : consulter l'abandon AVANT le dépôt -
+            # os.replace est le premier effet durable de ce chemin.
+            if est_abandonnee is not None and await est_abandonnee():
+                raise IndexationAbandonnee(
+                    f"Indexation de {Path(chemin).name} abandonnée avant "
+                    "le dépôt"
+                )
+            await deposer()
+            # Second panel de revue : le dépôt est le POINT DE NON-RETOUR.
+            # Après lui, l'indexation va au bout ; la demande d'arrêt
+            # tardive se résout au terminer du producteur (contrat 0.46).
+            return await _indexer_sous_verrou(
+                Path(chemin), None, scope, scope_id, perimetre_provisoire
             )
-        await deposer()
-        # Second panel de revue : le dépôt est le POINT DE NON-RETOUR. Un
-        # abandon honoré après os.replace laissait trois vérités (disque v2,
-        # fiche v2, index v1) : mieux vaut finir d'indexer la version
-        # réellement en place. La demande d'arrêt tardive se résout au
-        # terminer du producteur (done écrase cancel_requested, contrat 0.46).
-        return await _indexer_sous_verrou(
-            Path(chemin), None, scope, scope_id, perimetre_provisoire
-        )
+
+    return await _proteger_le_geste(_geste())
 
 
 async def _indexer_sous_verrou(
@@ -345,22 +358,30 @@ def _copier_si_conforme(source: Path, sha256_attendu: str) -> Path | None:
     return copie
 
 
-# Passe 2 de revue (P2-7) : gestes d'écriture détachés (référence forte).
-_ecritures_en_cours: set["asyncio.Task[tuple[int, datetime]]"] = set()
+# Gestes d'indexation détachés (référence forte). Passe 3 (P3-1) : le
+# geste inclut le verrou de chemin - il survit à l'annulation du porteur
+# et aucune demande concurrente ne peut s'intercaler.
+_gestes_en_cours: set["asyncio.Task[FileResponse]"] = set()
 
 
-async def _lancer_le_geste(
-    file_id: str,
-    file_name: str,
-    items: list[dict[str, Any]],
-    reindexation: bool,
-    figer_perimetre: bool,
-) -> tuple[int, datetime]:
-    geste = asyncio.create_task(_ecrire_et_consigner(
-        file_id, file_name, items, reindexation, figer_perimetre
-    ))
-    _ecritures_en_cours.add(geste)
-    geste.add_done_callback(_ecritures_en_cours.discard)
+def _consommer_issue(geste: "asyncio.Task[FileResponse]") -> None:
+    _gestes_en_cours.discard(geste)
+    if geste.cancelled():
+        return
+    issue = geste.exception()
+    if issue is not None and not isinstance(
+        issue,
+        (IndexationAbandonnee, ContenuModifieDepuisLePlan, ConflitDePerimetre),
+    ):
+        logger.warning(
+            "Geste d'indexation détaché terminé en échec", exc_info=issue
+        )
+
+
+async def _proteger_le_geste(coro: "Any") -> FileResponse:
+    geste: "asyncio.Task[FileResponse]" = asyncio.create_task(coro)
+    _gestes_en_cours.add(geste)
+    geste.add_done_callback(_consommer_issue)
     return await asyncio.shield(geste)
 
 
@@ -517,13 +538,13 @@ async def _indexer_apres_verifications(
                 # L'attente du sémaphore peut durer : re-consulter l'abandon
                 # juste avant d'écrire (finding F1 resté ouvert).
                 await _verifier_abandon()
-                chunk_count, indexed_at = await _lancer_le_geste(
+                chunk_count, indexed_at = await _ecrire_et_consigner(
                     file_id, file_name, items, reindexation, _perimetre_a_figer
                 )
     else:
         # Contenu vide : l'abandon a déjà été consulté après l'extraction
         # (une demande retirée n'efface rien - 3e passe de revue 0.45).
-        chunk_count, indexed_at = await _lancer_le_geste(
+        chunk_count, indexed_at = await _ecrire_et_consigner(
             file_id, file_name, [], reindexation, _perimetre_a_figer
         )
 

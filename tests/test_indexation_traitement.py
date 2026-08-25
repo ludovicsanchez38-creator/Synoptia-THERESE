@@ -557,3 +557,174 @@ class TestLeSecondPanel:
         assert chemin.read_bytes() == b"VERSION UN", (
             "os.replace a eu lieu alors que l'arrêt était posé pendant la copie"
         )
+
+
+class TestLaPasse3:
+    @pytest.mark.asyncio
+    async def test_p31_le_verrou_est_tenu_jusqu_au_bout_du_geste(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Passe 3 (P3-1) : le porteur annulé libérait le verrou de chemin
+        pendant que le geste détaché écrivait encore - une demande B
+        pouvait entrelacer ses écritures avec celles de A (index mélangé).
+        Le geste doit POSSÉDER le verrou jusqu'à sa fin."""
+        import contextlib as _ctx
+
+        from app.services import indexation
+
+        porte = asyncio.Event()
+        ecriture_commencee = asyncio.Event()
+        journal: list[str] = []
+
+        class QdrantJournal:
+            async def async_delete_by_entity(self, _eid):
+                journal.append("delete")
+
+            async def async_add_memories(self, items):
+                if not ecriture_commencee.is_set():
+                    ecriture_commencee.set()
+                    journal.append("A:debut")
+                    await porte.wait()
+                    journal.append("A:fin")
+                else:
+                    journal.append("B")
+
+        monkeypatch.setattr(
+            indexation, "get_qdrant_service", lambda: QdrantJournal()
+        )
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte")
+
+        tache_a = asyncio.create_task(indexation.index_payload(str(fichier_texte)))
+        await asyncio.wait_for(ecriture_commencee.wait(), timeout=5)
+        tache_a.cancel()
+        with _ctx.suppress(asyncio.CancelledError):
+            await tache_a
+
+        # B se présente sur le MÊME chemin pendant que le geste A écrit encore
+        tache_b = asyncio.create_task(indexation.index_payload(str(fichier_texte)))
+        await asyncio.sleep(0.3)
+        assert not tache_b.done(), (
+            "B est entré dans la section critique pendant que le geste A "
+            "écrivait encore : le verrou a été libéré avec le porteur"
+        )
+
+        porte.set()
+        await asyncio.wait_for(tache_b, timeout=10)
+        assert journal.index("A:fin") < journal.index("B"), (
+            "les écritures de B se sont intercalées dans le geste A"
+        )
+
+    @pytest.mark.asyncio
+    async def test_p36_l_annulation_apres_le_depot_n_ampute_pas_l_indexation(
+        self, client, qdrant_factice, tmp_path, monkeypatch
+    ):
+        """Passe 3 (P3-6) : après os.replace, l'extraction restait dans le
+        porteur annulable - un cancel dur laissait disque v2 / index v1.
+        Toute la section post-dépôt doit survivre au porteur."""
+        import contextlib as _ctx
+
+        from app.models.database import get_session_context
+        from app.models.entities import FileMetadata
+        from app.services import indexation
+
+        fichier = tmp_path / "piece.txt"
+        fichier.write_text("VERSION UN", encoding="utf-8")
+        await indexation.index_payload(str(fichier))
+
+        extraction_commencee = asyncio.Event()
+        porte = asyncio.Event()
+
+        def extraction_lente(_p):
+            # sync, appelée via extract_text_async/threadpool
+            return "VERSION DEUX EXTRAITE"
+
+        async def extraction_async_lente(_p):
+            extraction_commencee.set()
+            await porte.wait()
+            return "VERSION DEUX EXTRAITE"
+
+        monkeypatch.setattr(
+            indexation, "extract_text_async", extraction_async_lente
+        )
+
+        async def deposer():
+            fichier.write_text("VERSION DEUX", encoding="utf-8")
+
+        porteur = asyncio.create_task(indexation.remplacer_puis_indexer(
+            str(fichier), deposer,
+        ))
+        await asyncio.wait_for(extraction_commencee.wait(), timeout=5)
+        porteur.cancel()  # annulation DURE après le point de non-retour
+        with _ctx.suppress(asyncio.CancelledError):
+            await porteur
+        porte.set()
+
+        # l'index doit suivre le disque (v2), pas rester amputé sur v1
+        ligne = None
+        for _ in range(100):
+            async with get_session_context() as session:
+                ligne = (await session.execute(
+                    select(FileMetadata).where(
+                        FileMetadata.path == str(fichier.resolve())
+                    )
+                )).scalar_one_or_none()
+            if ligne is not None and ligne.chunk_count:
+                derniers = qdrant_factice.async_add_memories.call_args
+                if derniers and "VERSION DEUX" in str(derniers):
+                    break
+            await asyncio.sleep(0.05)
+        derniers = qdrant_factice.async_add_memories.call_args
+        assert derniers and "VERSION DEUX" in str(derniers), (
+            "le disque porte v2 mais l'index sert toujours v1 : le geste "
+            "post-dépôt est mort avec le porteur"
+        )
+
+    @pytest.mark.asyncio
+    async def test_p31b_l_enveloppe_cloture_meme_si_son_porteur_meurt(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Passe 3 (P3-1b) : le porteur de /index annulé (déconnexion dure)
+        pendant le geste - le geste réussit mais la ligne restait running.
+        Une clôture détachée doit poser l'état final."""
+        import contextlib as _ctx
+
+        from app.routers import files as surface
+        from app.services import indexation
+
+        porte = asyncio.Event()
+        ecriture_commencee = asyncio.Event()
+
+        class QdrantGate:
+            async def async_delete_by_entity(self, _eid):
+                return None
+
+            async def async_add_memories(self, items):
+                ecriture_commencee.set()
+                await porte.wait()
+
+        monkeypatch.setattr(
+            indexation, "get_qdrant_service", lambda: QdrantGate()
+        )
+        monkeypatch.setattr(indexation, "extract_text", lambda _p: "texte")
+
+        porteur = asyncio.create_task(
+            surface.indexer_avec_suivi(str(fichier_texte))
+        )
+        await asyncio.wait_for(ecriture_commencee.wait(), timeout=5)
+        porteur.cancel()
+        with _ctx.suppress(asyncio.CancelledError):
+            await porteur
+        porte.set()
+
+        ligne = None
+        for _ in range(100):
+            lignes = await _traitements_indexation()
+            if lignes and lignes[0].state == EtatTache.DONE:
+                ligne = lignes[0]
+                break
+            await asyncio.sleep(0.05)
+        assert ligne is not None and ligne.state == EtatTache.DONE, (
+            "le geste a réussi mais la ligne reste "
+            f"« {lignes[0].state if lignes else '?'} » : porteur mort = "
+            "plus personne pour clore"
+        )

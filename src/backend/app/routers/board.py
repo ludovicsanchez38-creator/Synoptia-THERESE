@@ -245,11 +245,19 @@ async def deliberate(
                 elif tache.exception() is not None:
                     erreur = tache.exception()
                     logger.error("Board deliberation error", exc_info=erreur)
-                    if handle is not None:
-                        await handle.terminer(
-                            EtatTache.FAILED, error=str(erreur)[:200]
-                        )
-                    yield _sse({"type": "error", "content": str(erreur)})
+                    if await _decision_sauvee():
+                        # Passe 3 (P3-7) : le commit a abouti avant la panne
+                        # (ex. vérification en échec) - done gagne, le
+                        # client doit apprendre que sa décision existe.
+                        if handle is not None:
+                            await handle.terminer(EtatTache.DONE)
+                        yield _sse({"type": "done", "content": decision_id})
+                    else:
+                        if handle is not None:
+                            await handle.terminer(
+                                EtatTache.FAILED, error=str(erreur)[:200]
+                            )
+                        yield _sse({"type": "error", "content": str(erreur)})
                 else:
                     if handle is not None:
                         await handle.progresser(progress=1.0)

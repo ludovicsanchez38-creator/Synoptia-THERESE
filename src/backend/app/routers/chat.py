@@ -10,6 +10,7 @@ import json
 import logging
 import re
 import time
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 from app.models.database import get_session
@@ -209,10 +210,15 @@ _rattrapages_en_cours: set["asyncio.Task[None]"] = set()
 
 
 async def _rattraper_perimetre(
-    file_id: str, nom: str, scope: str, scope_id: str | None
+    file_id: str, chemin: str, scope: str, scope_id: str | None
 ) -> None:
     """Rattrape le périmètre d'un document déjà indexé (BUG-165) - geste
     complet et insensible à l'annulation du chat qui l'a déclenché.
+
+    Passe 3 de revue (P3-2) : SOUS le verrou de chemin, avec REVALIDATION -
+    deux conversations pouvaient lire « provisoire » toutes les deux et
+    rattraper vers deux projets différents (SQLite disait A, Qdrant servait
+    B). Le premier gagne, le second constate et ne touche à rien.
 
     L'INDEX D'ABORD, la base ensuite. L'ordre inverse annonçait un
     périmètre que la recherche n'appliquait pas encore : en cas d'échec,
@@ -220,35 +226,45 @@ async def _rattraper_perimetre(
     général), jamais une fuite nouvelle.
     """
     from app.models.database import get_session_context as _ctx
+    from app.services.indexation import _verrou_de_chemin
 
-    try:
-        await run_in_threadpool(
-            get_qdrant_service().definir_perimetre_entite,
-            file_id, scope, scope_id,
-        )
-    except Exception:
-        logger.warning(
-            "Périmètre non appliqué à l'index pour %s : le document reste "
-            "dans son périmètre actuel plutôt que d'être annoncé cloisonné "
-            "sans l'être", nom, exc_info=True,
-        )
-        return
-    try:
+    nom = Path(chemin).name
+    async with _verrou_de_chemin(chemin):
         async with _ctx() as session:
             ligne = (await session.execute(
                 select(FileMetadata).where(FileMetadata.id == file_id)
             )).scalar_one_or_none()
-            if ligne is None:
+            if ligne is None or not ligne.scope_provisoire:
+                # Déjà rattrapé (ou disparu) : ne rien réécrire.
                 return
-            ligne.scope = scope
-            ligne.scope_id = scope_id
-            ligne.scope_provisoire = False
-            await session.commit()
-    except Exception:
-        logger.warning(
-            "Périmètre appliqué à l'index mais pas consigné en base pour "
-            "%s", nom, exc_info=True,
-        )
+        try:
+            await run_in_threadpool(
+                get_qdrant_service().definir_perimetre_entite,
+                file_id, scope, scope_id,
+            )
+        except Exception:
+            logger.warning(
+                "Périmètre non appliqué à l'index pour %s : le document "
+                "reste dans son périmètre actuel plutôt que d'être annoncé "
+                "cloisonné sans l'être", nom, exc_info=True,
+            )
+            return
+        try:
+            async with _ctx() as session:
+                ligne = (await session.execute(
+                    select(FileMetadata).where(FileMetadata.id == file_id)
+                )).scalar_one_or_none()
+                if ligne is None:
+                    return
+                ligne.scope = scope
+                ligne.scope_id = scope_id
+                ligne.scope_provisoire = False
+                await session.commit()
+        except Exception:
+            logger.warning(
+                "Périmètre appliqué à l'index mais pas consigné en base "
+                "pour %s", nom, exc_info=True,
+            )
 
 
 async def _get_file_context(
@@ -326,7 +342,7 @@ async def _get_file_context(
             # laissait les vecteurs re-périmétrés avec une base restée
             # globale. Détaché, le geste finit les DEUX côtés ou aucun.
             rattrapage = asyncio.create_task(
-                _rattraper_perimetre(existing.id, path.name, scope, scope_id)
+                _rattraper_perimetre(existing.id, str(path), scope, scope_id)
             )
             _rattrapages_en_cours.add(rattrapage)
             rattrapage.add_done_callback(_rattrapages_en_cours.discard)

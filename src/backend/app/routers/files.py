@@ -23,6 +23,7 @@ from app.services.indexation import (
     index_payload,
     remplacer_puis_indexer,
 )
+from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -107,6 +108,7 @@ async def _executer_avec_suivi(
     # Second panel de revue : le suivi est un TÉMOIN, jamais un acteur.
     # Une panne du suivi (SQLite occupée) ne doit ni empêcher d'indexer,
     # ni transformer un succès en 500, ni un 409 d'annulation en panne.
+    suivi_bancal = False
     if handle is not None:
         try:
             await handle.demarrer()
@@ -123,16 +125,32 @@ async def _executer_avec_suivi(
             )
         except Exception:
             # Passe 2 de revue (P2-2) : ne PAS clore en failed - l'indexation
-            # va peut-être réussir, et la clôture normale posera done depuis
-            # queued. Le prix : pas d'adaptateur, donc pas d'annulation par
-            # le panneau pour ce run (le hoquet du suivi est déjà anormal).
+            # va peut-être réussir. Passe 3 (P3-5) : la clôture RETENTE
+            # demarrer avant done, pour que la ligne dise la vérité.
+            suivi_bancal = True
             logger.warning(
                 "Suivi en panne au démarrage pour %s : indexation sans "
                 "annulation possible", label, exc_info=True,
             )
 
     try:
-        reponse = await executer(_abandonnee)
+        travail: "asyncio.Task[FileResponse]" = asyncio.ensure_future(
+            executer(_abandonnee)
+        )
+        _travaux_en_cours.add(travail)
+        travail.add_done_callback(_travaux_en_cours.discard)
+        reponse = await asyncio.shield(travail)
+    except asyncio.CancelledError:
+        # Passe 3 (P3-1b) : le porteur meurt (déconnexion dure) mais le
+        # geste continue - une clôture DÉTACHÉE pose l'état final d'après
+        # son issue réelle, sinon la ligne restait running à jamais.
+        if handle is not None:
+            cloture = asyncio.create_task(
+                _clore_apres_porteur_mort(travail, handle, label, suivi_bancal)
+            )
+            _travaux_en_cours.add(cloture)
+            cloture.add_done_callback(_travaux_en_cours.discard)
+        raise
     except IndexationAbandonnee:
         if handle is not None:
             with contextlib.suppress(Exception):
@@ -153,19 +171,76 @@ async def _executer_avec_suivi(
                 )
         raise
     if handle is not None:
-        # Passe 2 de revue (P2-1) : progresser et terminer ne partagent pas
-        # leur sort - une panne du premier ne doit pas laisser la ligne
-        # running après une indexation réussie.
-        with contextlib.suppress(Exception):
-            await handle.progresser(progress=1.0)
-        try:
-            await handle.terminer(EtatTacheTraitement.DONE)
-        except Exception:
-            logger.warning(
-                "Clôture du suivi impossible pour %s : l'indexation a "
-                "pourtant réussi", label, exc_info=True,
-            )
+        await _clore_succes(handle, label, suivi_bancal)
     return reponse
+
+
+# Travaux d'indexation et clôtures détachés (références fortes).
+_travaux_en_cours: set["asyncio.Task[object]"] = set()
+
+
+async def _clore_succes(
+    handle: "TraitementHandle", label: str, suivi_bancal: bool
+) -> None:
+    """Clôture d'une indexation réussie - la ligne doit dire la vérité.
+
+    Passe 3 (P3-5) : si le démarrage du suivi avait raté (ligne restée
+    queued), demander_arret a pu la clore cancelled entre-temps - retenter
+    demarrer expose ce cas : la ligne est alors ANNOTÉE plutôt que de
+    mentir en silence.
+    """
+    if suivi_bancal:
+        from app.services import traitements
+
+        try:
+            await handle.demarrer()
+        except traitements.AnnuleAvantDemarrage:
+            with contextlib.suppress(Exception):
+                await handle.progresser(
+                    step="indexée malgré l'arrêt demandé (suivi dégradé "
+                    "au démarrage)",
+                    progress=1.0,
+                )
+            logger.warning(
+                "La ligne de %s dit « annulé » mais l'indexation a réussi "
+                "(suivi dégradé au démarrage) - annotée", label,
+            )
+            return
+        except Exception:
+            logger.debug("Retry demarrer impossible pour %s", label)
+    # Passe 2 de revue (P2-1) : progresser et terminer ne partagent pas
+    # leur sort.
+    with contextlib.suppress(Exception):
+        await handle.progresser(progress=1.0)
+    try:
+        await handle.terminer(EtatTacheTraitement.DONE)
+    except Exception:
+        logger.warning(
+            "Clôture du suivi impossible pour %s : l'indexation a "
+            "pourtant réussi", label, exc_info=True,
+        )
+
+
+async def _clore_apres_porteur_mort(
+    travail: "asyncio.Task[FileResponse]",
+    handle: "TraitementHandle",
+    label: str,
+    suivi_bancal: bool,
+) -> None:
+    """Le porteur HTTP est mort : attendre l'issue réelle du geste et la
+    consigner - done, cancelled ou failed, jamais running fantôme."""
+    resultats = await asyncio.gather(travail, return_exceptions=True)
+    issue = resultats[0]
+    if isinstance(issue, IndexationAbandonnee):
+        with contextlib.suppress(Exception):
+            await handle.terminer(EtatTacheTraitement.CANCELLED)
+    elif isinstance(issue, BaseException):
+        with contextlib.suppress(Exception):
+            await handle.terminer(
+                EtatTacheTraitement.FAILED, error=str(issue)[:200]
+            )
+    else:
+        await _clore_succes(handle, label, suivi_bancal)
 
 
 async def indexer_avec_suivi(

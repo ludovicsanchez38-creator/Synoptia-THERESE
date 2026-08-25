@@ -419,14 +419,18 @@ class TestLesFenetresDeLaRevue:
         qdrant = AsyncMock()
         monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
 
+        # P3-3 : le geste possède SA session - gater le flush au niveau de
+        # la classe pour poser l'annulation dans le geste lui-même.
+        from sqlalchemy.ext.asyncio import AsyncSession as _AS
+
+        flush_originale = _AS.flush
+
+        async def flush_puis_annulation(self):
+            await flush_originale(self)
+            contexte.demander_arret()
+
+        monkeypatch.setattr(_AS, "flush", flush_puis_annulation)
         async with get_session_context() as session:
-            flush_originale = session.flush
-
-            async def flush_puis_annulation():
-                await flush_originale()
-                contexte.demander_arret()
-
-            session.flush = flush_puis_annulation
             resultat = json.loads(await memory_tools.execute_create_contact(
                 {"first_name": "Zoe", "last_name": "Flush"},
                 session,
@@ -452,14 +456,16 @@ class TestLesFenetresDeLaRevue:
         qdrant = AsyncMock()
         monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
 
+        from sqlalchemy.ext.asyncio import AsyncSession as _AS
+
+        flush_originale = _AS.flush
+
+        async def flush_puis_annulation(self):
+            await flush_originale(self)
+            contexte.demander_arret()
+
+        monkeypatch.setattr(_AS, "flush", flush_puis_annulation)
         async with get_session_context() as session:
-            flush_originale = session.flush
-
-            async def flush_puis_annulation():
-                await flush_originale()
-                contexte.demander_arret()
-
-            session.flush = flush_puis_annulation
             resultat = json.loads(await memory_tools.execute_create_project(
                 {"name": "Chantier Flush"},
                 session,
@@ -573,94 +579,6 @@ class TestLesFenetresDeLaRevue:
 class TestLeSecondPanel:
     """Second panel de revue (vérification interne multi-agents) : les
     chemins que ni la matrice ni la première passe ne couvraient."""
-
-    @pytest.mark.asyncio
-    async def test_annulation_en_vol_pendant_qdrant_rollback_avant_le_teardown(
-        self, client, monkeypatch
-    ):
-        """Le wrapper J1b annule la coroutine de l'outil par CancelledError.
-        Tombée entre flush et commit (attente Qdrant), elle sautait le
-        rollback (except Exception) - et le teardown de `get_session`
-        committait l'écriture « annulée » à la fin de la requête."""
-        import asyncio
-        import contextlib
-
-        from app.models.database import get_session_context
-        from app.models.entities import Contact
-        from app.services import memory_tools
-        from app.services.contexte_execution import ContexteExecution
-
-        qdrant_commence = asyncio.Event()
-
-        class QdrantBloquant:
-            async def async_add_memory(self, **_k):
-                qdrant_commence.set()
-                await asyncio.sleep(3600)
-
-        monkeypatch.setattr(
-            memory_tools, "get_qdrant_service", lambda: QdrantBloquant()
-        )
-
-        async with get_session_context() as session:
-            tache = asyncio.create_task(memory_tools.execute_create_contact(
-                {"first_name": "Jean", "last_name": "EnVol"},
-                session,
-                contexte=ContexteExecution(generation_id="gen-vol"),
-            ))
-            await asyncio.wait_for(qdrant_commence.wait(), timeout=5)
-            tache.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await tache
-            # le teardown de la dépendance get_session commit sur sortie
-            # propre : rejouer exactement ce geste
-            await session.commit()
-
-        async with get_session_context() as session:
-            lignes = (await session.execute(select(Contact))).scalars().all()
-        assert lignes == [], (
-            "l'écriture flushée a été commitée par le teardown alors que "
-            "l'outil venait d'être annulé en vol"
-        )
-
-    @pytest.mark.asyncio
-    async def test_p23_le_vecteur_orphelin_est_compense_apres_annulation_en_vol(
-        self, client, monkeypatch
-    ):
-        """Passe 2 (P2-3) : l'upsert Qdrant tourne dans un thread - annuler
-        l'await ne l'arrête pas. Après le rollback SQLite, le vecteur du
-        contact fantôme peut exister : une compensation détachée doit le
-        purger."""
-        import asyncio
-        import contextlib
-
-        from app.models.database import get_session_context
-        from app.services import memory_tools
-        from app.services.contexte_execution import ContexteExecution
-
-        qdrant = AsyncMock()
-        qdrant.async_add_memory.side_effect = asyncio.CancelledError()
-        monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
-        # pas d'attente réelle dans la compensation de test
-        monkeypatch.setattr(memory_tools, "_DELAI_COMPENSATION_S", 0.0, raising=False)
-
-        async with get_session_context() as session:
-            with pytest.raises(asyncio.CancelledError):
-                await memory_tools.execute_create_contact(
-                    {"first_name": "Ada", "last_name": "Orpheline"},
-                    session,
-                    contexte=ContexteExecution(generation_id="gen-orphelin"),
-                )
-
-        for _ in range(100):
-            if qdrant.async_delete_by_entity.called:
-                break
-            await asyncio.sleep(0.05)
-        qdrant.async_delete_by_entity.assert_called(), (
-            "aucune compensation : le vecteur du contact annulé reste dans "
-            "l'index et le RAG peut servir un fantôme"
-        )
-        with contextlib.suppress(Exception):
-            pass
 
     @pytest.mark.asyncio
     async def test_p29_l_abandon_du_fallback_finit_en_chunk_cancelled(
@@ -893,9 +811,14 @@ class TestLeSecondPanel:
                 await tache
             porte.set()
 
+            # attendre que le travail interne ait réellement produit le
+            # fichier, PUIS que la compensation le retire (sans ce premier
+            # temps, la boucle breakait sur un fichier pas encore créé)
             for _ in range(100):
-                if not fichier_produit.exists() and not cartes:
+                if FauxRegistry.travail is not None and FauxRegistry.travail.done():
                     break
+                await asyncio.sleep(0.05)
+            for _ in range(100):
                 if not fichier_produit.exists():
                     break
                 await asyncio.sleep(0.05)
@@ -963,3 +886,196 @@ class TestLeSecondPanel:
             "l'écriture vectorielle a eu lieu mais la consignation a été "
             "coupée par l'annulation : la fiche ment sur l'index"
         )
+
+
+class TestLaPasse3:
+    @pytest.mark.asyncio
+    async def test_p32_deux_rattrapages_concurrents_un_seul_s_applique(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Passe 3 (P3-2) : sans verrou ni revalidation, deux chats
+        pouvaient rattraper le même document vers DEUX projets - SQLite
+        disait A, Qdrant servait B. Le second doit constater que le
+        périmètre n'est plus provisoire et ne rien faire."""
+        from app.models.database import get_session_context
+        from app.models.entities import FileMetadata
+        from app.routers import chat as module
+
+        appels: list = []
+
+        class QdrantCompteur:
+            def definir_perimetre_entite(self, entity_id, scope, scope_id):
+                appels.append((scope, scope_id))
+
+        monkeypatch.setattr(module, "get_qdrant_service", lambda: QdrantCompteur())
+
+        async with get_session_context() as session:
+            session.add(FileMetadata(
+                path=str(fichier_texte.resolve()),
+                name=fichier_texte.name,
+                extension=".txt", size=10, mime_type="text/plain",
+                scope="global", scope_id=None, scope_provisoire=True,
+            ))
+            await session.commit()
+            ligne = (await session.execute(
+                select(FileMetadata).where(
+                    FileMetadata.path == str(fichier_texte.resolve())
+                )
+            )).scalar_one()
+            file_id = ligne.id
+
+        await asyncio.gather(
+            module._rattraper_perimetre(
+                file_id, str(fichier_texte.resolve()), "project", "projet-A"
+            ),
+            module._rattraper_perimetre(
+                file_id, str(fichier_texte.resolve()), "project", "projet-B"
+            ),
+        )
+
+        assert len(appels) == 1, (
+            f"les deux rattrapages ont écrit ({appels}) : cloisonnement "
+            "incohérent possible entre SQLite et Qdrant"
+        )
+        async with get_session_context() as session:
+            ligne = (await session.execute(
+                select(FileMetadata).where(FileMetadata.id == file_id)
+            )).scalar_one()
+        assert (ligne.scope, ligne.scope_id) == ("project", appels[0][1]), (
+            "SQLite et Qdrant ne racontent pas le même périmètre"
+        )
+
+    @pytest.mark.asyncio
+    async def test_p33_l_annulation_en_vol_laisse_un_contact_entier(
+        self, client, monkeypatch
+    ):
+        """Passe 3 (P3-3) : le geste contact possède sa session - annulé en
+        vol pendant Qdrant, il FINIT (ligne + vecteur), au lieu du couple
+        rollback + purge à délai qui laissait un vecteur orphelin si le
+        thread finissait après la purge."""
+        import contextlib as _ctx
+
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        porte = asyncio.Event()
+        ecriture_commencee = asyncio.Event()
+        vecteurs: list = []
+
+        class QdrantGate:
+            async def async_add_memory(self, **kwargs):
+                ecriture_commencee.set()
+                await porte.wait()
+                vecteurs.append(kwargs)
+
+        monkeypatch.setattr(
+            memory_tools, "get_qdrant_service", lambda: QdrantGate()
+        )
+
+        async with get_session_context() as session:
+            porteur = asyncio.create_task(memory_tools.execute_create_contact(
+                {"first_name": "Nina", "last_name": "Entiere"},
+                session,
+                contexte=ContexteExecution(generation_id="gen-entier"),
+            ))
+            await asyncio.wait_for(ecriture_commencee.wait(), timeout=5)
+            porteur.cancel()
+            with _ctx.suppress(asyncio.CancelledError):
+                await porteur
+            porte.set()
+            # le teardown de get_session committe la session de REQUÊTE :
+            # elle ne doit plus porter l'écriture
+            await asyncio.sleep(0.2)
+            await session.commit()
+
+        lignes = None
+        for _ in range(100):
+            async with get_session_context() as s2:
+                lignes = (await s2.execute(select(Contact))).scalars().all()
+            if lignes and vecteurs:
+                break
+            await asyncio.sleep(0.05)
+        assert lignes and len(lignes) == 1, (
+            "le geste est mort avec le porteur : contact à moitié créé ou absent"
+        )
+        assert vecteurs, "le vecteur n'a jamais été écrit"
+
+    @pytest.mark.asyncio
+    async def test_p34_la_deconnexion_dure_retire_aussi_le_document(
+        self, client, tmp_path, monkeypatch
+    ):
+        """Passe 3 (P3-4) : une déconnexion réelle ne pose PAS le token -
+        le document produit après la mort du porteur restait sur disque
+        sans carte. La compensation doit se déclencher sur la mort du
+        porteur, pas sur le token."""
+        import contextlib as _ctx
+
+        from app.services import workspace_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-deco")
+        porte = asyncio.Event()
+        execution_commencee = asyncio.Event()
+        fichier_produit = tmp_path / "rapport.docx"
+
+        class FauxRegistry:
+            output_dir = tmp_path
+            travail = None
+
+            async def execute(self, _skill_id, _req, _content):
+                execution_commencee.set()
+
+                async def _travail():
+                    await porte.wait()
+                    fichier_produit.write_bytes(b"contenu")
+                    from app.services.skills.base import SkillExecuteResponse
+
+                    return SkillExecuteResponse(
+                        success=True, file_id="f-2", file_name="rapport.docx",
+                        file_size=7, download_url="/api/files/generated/f-2",
+                    )
+
+                FauxRegistry.travail = asyncio.create_task(_travail())
+                return await asyncio.shield(FauxRegistry.travail)
+
+        monkeypatch.setattr(
+            "app.services.skills.get_skills_registry", lambda: FauxRegistry()
+        )
+        cartes: list = []
+        monkeypatch.setattr(
+            workspace_tools, "record_generated_file",
+            lambda d: cartes.append(d),
+        )
+
+        from app.models.database import get_session_context
+
+        async with get_session_context() as session:
+            porteur = asyncio.create_task(workspace_tools.execute_workspace_tool(
+                "generate_document",
+                {"format": "docx", "content": "Rapport", "title": "Deco"},
+                session,
+                contexte=contexte,
+            ))
+            await asyncio.wait_for(execution_commencee.wait(), timeout=5)
+            # déconnexion DURE : aucun token posé, juste la mort du porteur
+            porteur.cancel()
+            with _ctx.suppress(asyncio.CancelledError):
+                await porteur
+            porte.set()
+
+            for _ in range(100):
+                if FauxRegistry.travail is not None and FauxRegistry.travail.done():
+                    break
+                await asyncio.sleep(0.05)
+            for _ in range(100):
+                if not fichier_produit.exists():
+                    break
+                await asyncio.sleep(0.05)
+
+        assert not fichier_produit.exists(), (
+            "le document produit après la mort du porteur reste sur disque "
+            "sans carte : personne ne le montrera jamais"
+        )
+        assert cartes == [], "aucune carte ne doit partir dans un flux mort"
