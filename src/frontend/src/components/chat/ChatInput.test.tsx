@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from '../../stores/chatStore';
@@ -90,7 +91,7 @@ describe('ChatInput sans modèle', () => {
       available_models: ['gemma4-tia:latest'], available: true,
     });
     render(<ChatInput />);
-    await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
 
     fireEvent.click(screen.getByRole('button', { name: 'Simuler erreur dictée' }));
 
@@ -105,7 +106,7 @@ describe('ChatInput sans modèle', () => {
       available_models: ['gemma4-tia:latest'], available: true,
     });
     render(<ChatInput />);
-    await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
     expect(screen.getByText(/nouvelle ligne/)).toBeInTheDocument();
     expect(screen.getByText(/commandes/)).toBeInTheDocument();
 
@@ -122,7 +123,7 @@ describe('ChatInput sans modèle', () => {
       yield { type: 'done' };
     })());
     render(<ChatInput />);
-    const input = await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    const input = await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
     fireEvent.change(input, { target: { value: 'Résume ce dossier' } });
 
     fireEvent.click(screen.getByTestId('chat-send-btn'));
@@ -150,7 +151,7 @@ describe('ChatInput sans modèle', () => {
     });
     apiMocks.indexFile.mockRejectedValueOnce(new Error('Index corrompu'));
     const { container } = render(<ChatInput />);
-    const messageInput = await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    const messageInput = await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['contenu'], 'audit.pdf', { type: 'application/pdf' })] } });
 
@@ -197,7 +198,7 @@ describe('ChatInput sans modèle', () => {
     })());
 
     const { container } = render(<ChatInput />);
-    const input = await screen.findByPlaceholderText("Comment puis-je t'aider ?");
+    const input = await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [new File(['contenu'], 'preuve.pdf', { type: 'application/pdf' })] } });
     expect(await screen.findByText('Prêt')).toBeInTheDocument();

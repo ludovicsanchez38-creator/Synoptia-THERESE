@@ -30,6 +30,7 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
+import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
   CLOUD_CONSENT_REVOKED_EVENT,
@@ -1285,7 +1286,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                       ? 'Choisis d’abord un modèle dans les réglages IA'
                       : isOffline
                         ? 'En attente de connexion...'
-                        : "Comment puis-je t'aider ?"
+                        : PLACEHOLDER_COMPOSEUR
             }
             disabled={isDisabled}
             rows={MIN_ROWS}

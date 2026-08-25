@@ -67,3 +67,48 @@ describe('TodayDashboardCard', () => {
     expect(screen.getByTestId('today-dashboard-empty')).toBeInTheDocument();
   });
 });
+
+describe('L’état vide honnête (B1, 0.48)', () => {
+  const setup = (has_email: boolean) => ({
+    has_calendar: true,
+    has_email,
+    billing_complete: true,
+    has_llm_key: true,
+  });
+
+  it('sans compte email : invite à brancher les mails, avec le bouton', () => {
+    const onSetupEmail = vi.fn();
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard() }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+        setup={setup(false)}
+        onSetupEmail={onSetupEmail}
+      />,
+    );
+
+    expect(
+      screen.getByText('Branche tes mails pour que je te prépare la journée'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Brancher mes mails' }));
+    expect(onSetupEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('branché et vide : le message positif réel', () => {
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard() }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+        setup={setup(true)}
+        onSetupEmail={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Rien d’urgent pour le moment')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Branche tes mails pour que je te prépare la journée'),
+    ).toBeNull();
+  });
+});

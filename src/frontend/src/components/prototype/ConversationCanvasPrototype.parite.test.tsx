@@ -487,7 +487,7 @@ describe('Entrées du tiroir (B0)', () => {
     render(<ConversationCanvasPrototype />);
 
     // Le chemin complet du tiroir : porte du rail → carte → envoi.
-    fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
     // La carte vit dans le groupe « Automatiser » - le Centre ouvre sur un autre
     fireEvent.click(await screen.findByRole('tab', { name: /Automatisation/ }));
     fireEvent.click(await screen.findByRole('button', { name: /Connecteurs/ }));
