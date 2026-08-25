@@ -1013,20 +1013,19 @@ def get_llm_service_for_provider(provider_name: str, model_override: str | None 
     """Get LLM service for a specific provider if configured."""
     provider_name = provider_name.lower()
 
+    # 0.48 : la table DÉRIVE du catalogue neutre - la tête de liste est le
+    # frontier du fournisseur, plus aucun modèle codé en dur ici.
+    from app.services.modeles_catalogue import CATALOGUE
+
     provider_configs = {
-        "anthropic": (LLMProvider.ANTHROPIC, "claude-opus-4-8", "ANTHROPIC_API_KEY", 200000),
-        "openai": (LLMProvider.OPENAI, "gpt-5.5", "OPENAI_API_KEY", 200000),
-        "gemini": (LLMProvider.GEMINI, "gemini-3.1-pro-preview", ["GEMINI_API_KEY", "GOOGLE_API_KEY"], 1000000),
-        "mistral": (LLMProvider.MISTRAL, "mistral-large-latest", "MISTRAL_API_KEY", 256000),
-        "grok": (LLMProvider.GROK, "grok-4.3", "XAI_API_KEY", 131072),
-        "openrouter": (LLMProvider.OPENROUTER, "anthropic/claude-sonnet-4-6", "OPENROUTER_API_KEY", 200000),
-        "perplexity": (LLMProvider.PERPLEXITY, "sonar-pro", "PERPLEXITY_API_KEY", 200000),
-        "deepseek": (LLMProvider.DEEPSEEK, "deepseek-v4-pro", "DEEPSEEK_API_KEY", 128000),
-        "glm": (LLMProvider.GLM, "glm-5.3", "GLM_API_KEY", 200000),
-        "kimi": (LLMProvider.KIMI, "kimi-k3", "KIMI_API_KEY", 1000000),
-        "qwen": (LLMProvider.QWEN, "qwen3.8-max", "QWEN_API_KEY", 1000000),
-        "minimax": (LLMProvider.MINIMAX, "MiniMax-M3", "MINIMAX_API_KEY", 200000),
-        "ollama": (LLMProvider.OLLAMA, "mistral-nemo", None, 32000),
+        nom: (
+            fiche.provider,
+            fiche.modeles[0],
+            (list(fiche.env_vars) if len(fiche.env_vars) > 1
+             else (fiche.env_vars[0] if fiche.env_vars else None)),
+            fiche.context_window,
+        )
+        for nom, fiche in CATALOGUE.items()
     }
 
     if provider_name not in provider_configs:
