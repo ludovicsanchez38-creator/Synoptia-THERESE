@@ -46,9 +46,15 @@ class TestContexteFichierNonBloquant:
                 return None
 
         faux = FauxQdrant()
+        # 0.47 : le fallback délègue au cœur (`indexation.index_payload`) -
+        # l'invariant hors-thread se vérifie donc sur les fonctions du cœur,
+        # l'extraction du contexte texte restant celle de chat.py.
+        from app.services import indexation
+
         monkeypatch.setattr(chat_router, "extract_text", extraction_tracee)
-        monkeypatch.setattr(chat_router, "chunk_text", decoupage_trace)
-        monkeypatch.setattr(chat_router, "get_qdrant_service", lambda: faux)
+        monkeypatch.setattr(indexation, "extract_text", extraction_tracee)
+        monkeypatch.setattr(indexation, "chunk_text", decoupage_trace)
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: faux)
 
         contexte, erreur = await chat_router._get_file_context(str(document), db_session)
 

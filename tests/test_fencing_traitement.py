@@ -1,0 +1,308 @@
+"""Phase 4 du chantier 0.47 - Fencing : un contexte d'exécution, pas un
+drapeau partagé.
+
+Promesse écrite du design V2.1 : « aucun nouvel effet MÉTIER local après
+observation de l'annulation » - la consignation du traitement et le message
+partiel sont explicitement exclus.
+
+Contrats :
+- `ContexteExecution` (generation_id + token) est l'AUTORITÉ : un unique
+  token par génération alimente le flux, l'adaptateur canonique, le
+  fallback d'indexation et les outils ; `_active_generations` n'est plus
+  qu'une table conversation→contexte courant (compat lecture) ;
+- registre déclaratif : chaque outil du dispatcher est classé
+  read_only | local_mutation | external_mutation - un outil non classé
+  est un test rouge ;
+- les trois mutateurs locaux immédiats (create_contact, create_project,
+  generate_document) consultent le fence JUSTE AVANT leur premier effet
+  durable : annulation observée = « interrompu avant écriture », zéro
+  effet SQLite, zéro effet Qdrant, zéro fichier ;
+- le fallback d'indexation du chat est raccordé au même cœur
+  (`index_payload`) et au même signal (le token de SA génération).
+"""
+
+import json
+from pathlib import Path
+from unittest.mock import AsyncMock
+
+import pytest
+from sqlmodel import select
+
+
+@pytest.fixture
+def fichier_texte(tmp_path: Path) -> Path:
+    fichier = tmp_path / "note-client.txt"
+    fichier.write_text("contenu " * 100, encoding="utf-8")
+    return fichier
+
+
+class TestLeRegistreDeclaratif:
+    def test_chaque_outil_du_dispatcher_est_classe(self):
+        from app.services.contexte_execution import CLASSIFICATION_DES_OUTILS
+        from app.services.memory_tools import MEMORY_TOOLS
+        from app.services.workspace_tools import WORKSPACE_TOOLS
+
+        integres = {"web_search", "browser_navigate"}
+        noms = (
+            {t["function"]["name"] for t in MEMORY_TOOLS}
+            | {t["function"]["name"] for t in WORKSPACE_TOOLS}
+            | integres
+        )
+
+        non_classes = sorted(noms - set(CLASSIFICATION_DES_OUTILS))
+        assert non_classes == [], (
+            f"outils sans classe d'effet : {non_classes} - un outil non "
+            "classé échappe au raisonnement d'annulation"
+        )
+
+    def test_les_classes_encodent_les_decisions_du_design(self):
+        from app.services.contexte_execution import (
+            CLASSIFICATION_DES_OUTILS,
+            LECTURE_SEULE,
+            MUTATION_EXTERNE,
+            MUTATION_LOCALE,
+            classe_de,
+        )
+
+        assert CLASSIFICATION_DES_OUTILS["create_contact"] == MUTATION_LOCALE
+        assert CLASSIFICATION_DES_OUTILS["create_project"] == MUTATION_LOCALE
+        assert CLASSIFICATION_DES_OUTILS["generate_document"] == MUTATION_LOCALE
+        assert CLASSIFICATION_DES_OUTILS["read_contact"] == LECTURE_SEULE
+        assert CLASSIFICATION_DES_OUTILS["send_email"] == MUTATION_EXTERNE
+        # Un outil MCP inconnu est externe par nature : dans le doute, la
+        # classe la plus prudente.
+        assert classe_de("mcp__inconnu__outil") == MUTATION_EXTERNE
+
+
+class TestLeTokenEstLAutorite:
+    def test_deux_generations_chevauchees_ne_se_fencent_pas(self):
+        """Le drapeau historique était indexé par conversation : annuler
+        pouvait fencer la MAUVAISE génération. Le token est par génération."""
+        from app.routers import chat as chat_router
+
+        conversation = "conv-chevauchement"
+        try:
+            ctx1 = chat_router._register_generation(conversation, "gen-1")
+            ctx2 = chat_router._register_generation(conversation, "gen-2")
+
+            assert chat_router._cancel_generation(conversation) is True
+
+            assert ctx2.annulation_observee() is True
+            assert ctx1.annulation_observee() is False, (
+                "la génération remplacée garde SON token : l'annulation vise "
+                "la génération courante, jamais l'ancienne"
+            )
+            # Compat lecture : le drapeau par conversation lit le token courant.
+            assert chat_router._is_cancelled(conversation) is True
+        finally:
+            chat_router._active_generations.pop(conversation, None)
+
+
+class TestLaFenceDesMutateursLocaux:
+    @pytest.mark.asyncio
+    async def test_create_contact_interrompu_avant_toute_ecriture(
+        self, client, monkeypatch
+    ):
+        """Barrière : l'annulation arrive PENDANT l'outil (dedup en cours),
+        avant le premier effet durable - zéro ligne, zéro vecteur."""
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-fence")
+        qdrant = AsyncMock()
+        monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
+
+        async def dedup_pendant_laquelle_on_annule(*_a, **_k):
+            contexte.demander_arret()
+            return None
+
+        monkeypatch.setattr(
+            memory_tools, "_find_existing_contact",
+            dedup_pendant_laquelle_on_annule,
+        )
+
+        async with get_session_context() as session:
+            resultat = json.loads(await memory_tools.execute_create_contact(
+                {"first_name": "Ada", "last_name": "Fence"},
+                session,
+                contexte=contexte,
+            ))
+
+        assert resultat.get("interrupted") is True
+        assert not resultat.get("contact_id")
+
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Contact))).scalars().all()
+        assert lignes == [], "aucun contact ne doit naître après l'annulation"
+        qdrant.async_add_memory.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_create_contact_sans_annulation_ecrit_vraiment(
+        self, client, monkeypatch
+    ):
+        """Garde-fou du harnais : sans annulation, le MÊME chemin écrit."""
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        monkeypatch.setattr(
+            memory_tools, "get_qdrant_service", lambda: AsyncMock()
+        )
+
+        async with get_session_context() as session:
+            resultat = json.loads(await memory_tools.execute_create_contact(
+                {"first_name": "Ada", "last_name": "Temoin"},
+                session,
+                contexte=ContexteExecution(generation_id="gen-temoin"),
+            ))
+
+        assert resultat.get("success") is True
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Contact))).scalars().all()
+        assert len(lignes) == 1
+
+    @pytest.mark.asyncio
+    async def test_create_project_interrompu_avant_toute_ecriture(
+        self, client, monkeypatch
+    ):
+        from app.models.database import get_session_context
+        from app.models.entities import Project
+        from app.services import memory_tools
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-fence")
+        qdrant = AsyncMock()
+        monkeypatch.setattr(memory_tools, "get_qdrant_service", lambda: qdrant)
+
+        async def dedup_pendant_laquelle_on_annule(*_a, **_k):
+            contexte.demander_arret()
+            return None
+
+        monkeypatch.setattr(
+            memory_tools, "_find_existing_project",
+            dedup_pendant_laquelle_on_annule,
+        )
+
+        async with get_session_context() as session:
+            resultat = json.loads(await memory_tools.execute_create_project(
+                {"name": "Chantier Fence"},
+                session,
+                contexte=contexte,
+            ))
+
+        assert resultat.get("interrupted") is True
+        async with get_session_context() as session:
+            lignes = (await session.execute(select(Project))).scalars().all()
+        assert lignes == []
+        qdrant.async_add_memory.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_generate_document_interrompu_avant_le_disque(
+        self, client, monkeypatch
+    ):
+        """`generate_document` écrit via le registre de skills : annulation
+        observée = le registre n'est JAMAIS invoqué, aucun fichier."""
+        from app.models.database import get_session_context
+        from app.services.contexte_execution import ContexteExecution
+        from app.services.workspace_tools import execute_workspace_tool
+
+        registre = AsyncMock()
+        monkeypatch.setattr(
+            "app.services.skills.get_skills_registry", lambda: registre
+        )
+
+        contexte = ContexteExecution(generation_id="gen-fence")
+        contexte.demander_arret()
+
+        async with get_session_context() as session:
+            resultat = await execute_workspace_tool(
+                "generate_document",
+                {"format": "docx", "content": "Rapport", "title": "Essai"},
+                session,
+                contexte=contexte,
+            )
+
+        assert "interromp" in resultat.lower()
+        registre.execute.assert_not_called()
+
+
+class TestLeFallbackChatEstRaccorde:
+    @pytest.mark.asyncio
+    async def test_le_fallback_passe_par_le_coeur(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Le corps historique 500/50 dupliquait le cœur : un fichier neuf
+        joint au chat doit passer par `index_payload` (verrou, invariant N1,
+        périmètre) avec un signal d'abandon branché."""
+        from app.models.database import get_session_context
+        from app.routers import chat as module
+        from app.services import indexation
+
+        appels: list[dict] = []
+
+        async def coeur_espionne(path, est_abandonnee=None, **kwargs):
+            appels.append({"path": path, "signal": est_abandonnee})
+            from datetime import UTC, datetime
+
+            from app.models.schemas import FileResponse
+
+            return FileResponse(
+                id="f-1", path=path, name=Path(path).name, extension=".txt",
+                size=1, mime_type="text/plain", chunk_count=1,
+                indexed_at=datetime.now(UTC), created_at=datetime.now(UTC),
+                scope="global", scope_id=None,
+            )
+
+        monkeypatch.setattr(indexation, "index_payload", coeur_espionne)
+        monkeypatch.setattr(
+            module, "extract_text", lambda _p: "du texte", raising=False
+        )
+
+        async with get_session_context() as session:
+            contexte_txt, erreur = await module._get_file_context(
+                str(fichier_texte), session
+            )
+
+        assert erreur is None
+        assert len(appels) == 1, "le fallback doit déléguer au cœur"
+        assert appels[0]["signal"] is not None, (
+            "le cœur doit recevoir le signal d'abandon de la génération"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_signal_de_generation_interrompt_le_fallback(
+        self, client, fichier_texte, monkeypatch
+    ):
+        """Token posé pendant l'extraction : IndexationAbandonnee se propage
+        (phase 2) et RIEN n'est écrit - ni métadonnée, ni vecteur."""
+        from app.models.database import get_session_context
+        from app.routers import chat as module
+        from app.services import indexation
+        from app.services.contexte_execution import ContexteExecution
+
+        contexte = ContexteExecution(generation_id="gen-fallback")
+        qdrant = AsyncMock()
+        monkeypatch.setattr(indexation, "get_qdrant_service", lambda: qdrant)
+
+        def extraction_pendant_laquelle_on_annule(_p):
+            contexte.demander_arret()
+            return "texte extrait"
+
+        monkeypatch.setattr(
+            indexation, "extract_text", extraction_pendant_laquelle_on_annule
+        )
+        monkeypatch.setattr(
+            module, "extract_text",
+            extraction_pendant_laquelle_on_annule, raising=False,
+        )
+
+        async with get_session_context() as session:
+            with pytest.raises(indexation.IndexationAbandonnee):
+                await module._get_file_context(
+                    str(fichier_texte), session, contexte=contexte
+                )
+
+        qdrant.async_add_memories.assert_not_called()

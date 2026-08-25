@@ -9,6 +9,7 @@ import logging
 from contextvars import ContextVar
 from typing import Any
 
+from app.services.contexte_execution import ContexteExecution
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -298,6 +299,7 @@ async def execute_workspace_tool(
     tool_name: str,
     arguments: dict[str, Any],
     session: AsyncSession,
+    contexte: ContexteExecution | None = None,
 ) -> str:
     """Execute a workspace tool and return the result as string."""
     if tool_name == "read_emails":
@@ -313,7 +315,7 @@ async def execute_workspace_tool(
     elif tool_name == "create_calendar_event":
         return await _create_calendar_event(arguments, session)
     elif tool_name == "generate_document":
-        return await _generate_document(arguments, session)
+        return await _generate_document(arguments, session, contexte=contexte)
     elif tool_name == "search_invoices":
         return await _search_invoices(arguments, session)
     else:
@@ -404,7 +406,11 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     return f"{len(rows)} document(s) trouvé(s) :\n{listing}{guidance}"
 
 
-async def _generate_document(args: dict, session: AsyncSession) -> str:
+async def _generate_document(
+    args: dict,
+    session: AsyncSession,
+    contexte: ContexteExecution | None = None,
+) -> str:
     """Génère un vrai fichier Office via le registre de skills (P8).
 
     Avant : le chat « bluffait » un faux lien faute de routage fiable. Désormais
@@ -423,6 +429,16 @@ async def _generate_document(args: dict, session: AsyncSession) -> str:
         return "Aucun contenu fourni : impossible de generer le document."
 
     title = args.get("title")
+
+    # Fence 0.47 : le premier effet durable est le fichier que le skill
+    # écrit sur le disque - annulation observée = le registre n'est jamais
+    # invoqué, aucun fichier.
+    if contexte is not None and contexte.annulation_observee():
+        return (
+            "Génération du document interrompue avant écriture : "
+            "l'utilisateur a arrêté la génération."
+        )
+
     try:
         registry = get_skills_registry()
         resp = await registry.execute(

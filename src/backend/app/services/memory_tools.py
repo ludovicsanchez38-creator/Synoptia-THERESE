@@ -13,6 +13,7 @@ from difflib import SequenceMatcher
 from typing import Any
 
 from app.models.entities import Contact, Project
+from app.services.contexte_execution import ContexteExecution
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -311,6 +312,7 @@ async def execute_create_contact(
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> str:
     """
     Execute the create_contact tool.
@@ -342,6 +344,18 @@ async def execute_create_contact(
             "display_name": existing.display_name,
             "already_existed": True,
             "message": f"Contact '{existing.display_name}' existe déjà, je le réutilise.",
+        }, ensure_ascii=False)
+
+    # Fence 0.47 : JUSTE AVANT le premier effet durable (session.add puis
+    # Qdrant). Annulation observée = zéro effet - un « interrompu » après un
+    # add laisserait une écriture pendante commitée plus tard par la session
+    # du chat.
+    if contexte is not None and contexte.annulation_observee():
+        return json.dumps({
+            "success": False,
+            "interrupted": True,
+            "message": "Création du contact interrompue avant écriture : "
+                       "l'utilisateur a arrêté la génération.",
         }, ensure_ascii=False)
 
     try:
@@ -416,6 +430,7 @@ async def execute_create_project(
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> str:
     """
     Execute the create_project tool.
@@ -442,6 +457,16 @@ async def execute_create_project(
             "name": existing.name,
             "already_existed": True,
             "message": f"Projet '{existing.name}' existe déjà, je le réutilise.",
+        }, ensure_ascii=False)
+
+    # Fence 0.47 : même contrat que create_contact - aucun nouvel effet
+    # métier local après observation de l'annulation.
+    if contexte is not None and contexte.annulation_observee():
+        return json.dumps({
+            "success": False,
+            "interrupted": True,
+            "message": "Création du projet interrompue avant écriture : "
+                       "l'utilisateur a arrêté la génération.",
         }, ensure_ascii=False)
 
     try:
@@ -682,6 +707,7 @@ async def execute_memory_tool(
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
+    contexte: ContexteExecution | None = None,
 ) -> str:
     """
     Route memory tool execution to the correct handler.
@@ -692,12 +718,12 @@ async def execute_memory_tool(
     if tool_name == "create_contact":
         return await execute_create_contact(
             arguments, session, scope=scope, scope_id=scope_id,
-            conversation_id=conversation_id,
+            conversation_id=conversation_id, contexte=contexte,
         )
     elif tool_name == "create_project":
         return await execute_create_project(
             arguments, session, scope=scope, scope_id=scope_id,
-            conversation_id=conversation_id,
+            conversation_id=conversation_id, contexte=contexte,
         )
     elif tool_name == "read_contact":
         return await execute_read_contact(

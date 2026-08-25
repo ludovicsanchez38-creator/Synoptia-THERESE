@@ -296,9 +296,10 @@ class TestLeFallbackChat:
         async def abandon(*_a, **_k):
             raise IndexationAbandonnee("arrêt demandé")
 
-        monkeypatch.setattr(
-            module, "_indexer_piece_jointe_sous_verrou", abandon
-        )
+        # 0.47 : le fallback délègue au cœur - c'est LUI qui lève.
+        from app.services import indexation
+
+        monkeypatch.setattr(indexation, "index_payload", abandon)
         monkeypatch.setattr(
             module, "extract_text", lambda _p: "du texte", raising=False
         )
