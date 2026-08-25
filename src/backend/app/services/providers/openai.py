@@ -97,6 +97,120 @@ class OpenAIProvider(BaseProvider):
 
         return request_body
 
+    async def _stream_request(
+        self, request_body: dict[str, Any]
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """UNE tentative de streaming sur le corps donné (0.48).
+
+        Laisse remonter httpx.HTTPStatusError : c'est le point d'accroche
+        du repli Grok (rejeu du corps sans reasoning_effort sur un 400).
+        La gestion d'erreurs vit dans stream().
+        """
+        async with self.client.stream(
+            "POST",
+            self.url_effective(),
+            headers={
+                "Authorization": f"Bearer {self.config.api_key}",
+                "Content-Type": "application/json",
+            },
+            json=request_body,
+        ) as response:
+            response.raise_for_status()
+
+            # Track tool calls being built
+            tool_calls: dict[int, dict[str, Any]] = {}
+            # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
+            # include_usage) arrive APRÈS le chunk finish_reason, choices vide.
+            # On mémorise stop_reason et on n'émet "done" qu'à la toute fin
+            # (chunk usage ou [DONE]) pour ne pas le manquer.
+            pending_stop_reason: str | None = None
+            input_tokens: int | None = None
+            output_tokens: int | None = None
+            # Garde de robustesse : si la connexion se coupe après
+            # finish_reason mais avant [DONE]/le chunk usage, il faut
+            # quand même émettre "done" (sinon chat.py reste bloqué en
+            # attente indéfiniment de ce signal).
+            done_emitted = False
+
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    data = line[6:]
+                    if data.strip() == "[DONE]":
+                        yield StreamEvent(
+                            type="done",
+                            stop_reason=pending_stop_reason or "stop",
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                        )
+                        done_emitted = True
+                        break
+                    try:
+                        event = json.loads(data)
+                        if usage := event.get("usage"):
+                            input_tokens = usage.get("prompt_tokens", input_tokens)
+                            output_tokens = usage.get("completion_tokens", output_tokens)
+                        choices = event.get("choices", [])
+                        if choices:
+                            delta = choices[0].get("delta", {})
+                            finish_reason = choices[0].get("finish_reason")
+
+                            # Handle text content
+                            if content := delta.get("content"):
+                                yield StreamEvent(type="text", content=content)
+
+                            # Handle tool calls
+                            if tool_call_deltas := delta.get("tool_calls"):
+                                for tc_delta in tool_call_deltas:
+                                    idx = tc_delta.get("index", 0)
+
+                                    if idx not in tool_calls:
+                                        tool_calls[idx] = {
+                                            "id": tc_delta.get("id", ""),
+                                            "name": "",
+                                            "arguments": "",
+                                        }
+
+                                    if func := tc_delta.get("function"):
+                                        if name := func.get("name"):
+                                            tool_calls[idx]["name"] = name
+                                        if args := func.get("arguments"):
+                                            tool_calls[idx]["arguments"] += args
+
+                            # Check if done
+                            if finish_reason == "tool_calls":
+                                # Emit all collected tool calls
+                                for tc in tool_calls.values():
+                                    try:
+                                        arguments = json.loads(tc["arguments"]) if tc["arguments"] else {}
+                                    except json.JSONDecodeError:
+                                        arguments = {}
+
+                                    yield StreamEvent(
+                                        type="tool_call",
+                                        tool_call=ToolCall(
+                                            id=tc["id"],
+                                            name=tc["name"],
+                                            arguments=arguments,
+                                        ),
+                                    )
+                                pending_stop_reason = "tool_calls"
+
+                            elif finish_reason == "stop":
+                                pending_stop_reason = "stop"
+
+                    except json.JSONDecodeError:
+                        continue
+
+        # Filet : le flux s'est terminé sans jamais voir [DONE] (coupure
+        # après finish_reason, ou pas de finish_reason explicite du tout).
+        if not done_emitted:
+            yield StreamEvent(
+                type="done",
+                stop_reason=pending_stop_reason or "stop",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
     async def stream(
         self,
         system_prompt: str | None,
@@ -107,111 +221,8 @@ class OpenAIProvider(BaseProvider):
         request_body = self._build_request_body(messages, tools)
 
         try:
-            async with self.client.stream(
-                "POST",
-                self.url_effective(),
-                headers={
-                    "Authorization": f"Bearer {self.config.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=request_body,
-            ) as response:
-                response.raise_for_status()
-
-                # Track tool calls being built
-                tool_calls: dict[int, dict] = {}
-                # Usage réel (dette 14/06/2026) : le chunk usage (stream_options.
-                # include_usage) arrive APRÈS le chunk finish_reason, choices vide.
-                # On mémorise stop_reason et on n'émet "done" qu'à la toute fin
-                # (chunk usage ou [DONE]) pour ne pas le manquer.
-                pending_stop_reason: str | None = None
-                input_tokens: int | None = None
-                output_tokens: int | None = None
-                # Garde de robustesse : si la connexion se coupe après
-                # finish_reason mais avant [DONE]/le chunk usage, il faut
-                # quand même émettre "done" (sinon chat.py reste bloqué en
-                # attente indéfiniment de ce signal).
-                done_emitted = False
-
-                async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        data = line[6:]
-                        if data.strip() == "[DONE]":
-                            yield StreamEvent(
-                                type="done",
-                                stop_reason=pending_stop_reason or "stop",
-                                input_tokens=input_tokens,
-                                output_tokens=output_tokens,
-                            )
-                            done_emitted = True
-                            break
-                        try:
-                            event = json.loads(data)
-                            if usage := event.get("usage"):
-                                input_tokens = usage.get("prompt_tokens", input_tokens)
-                                output_tokens = usage.get("completion_tokens", output_tokens)
-                            choices = event.get("choices", [])
-                            if choices:
-                                delta = choices[0].get("delta", {})
-                                finish_reason = choices[0].get("finish_reason")
-
-                                # Handle text content
-                                if content := delta.get("content"):
-                                    yield StreamEvent(type="text", content=content)
-
-                                # Handle tool calls
-                                if tool_call_deltas := delta.get("tool_calls"):
-                                    for tc_delta in tool_call_deltas:
-                                        idx = tc_delta.get("index", 0)
-
-                                        if idx not in tool_calls:
-                                            tool_calls[idx] = {
-                                                "id": tc_delta.get("id", ""),
-                                                "name": "",
-                                                "arguments": "",
-                                            }
-
-                                        if func := tc_delta.get("function"):
-                                            if name := func.get("name"):
-                                                tool_calls[idx]["name"] = name
-                                            if args := func.get("arguments"):
-                                                tool_calls[idx]["arguments"] += args
-
-                                # Check if done
-                                if finish_reason == "tool_calls":
-                                    # Emit all collected tool calls
-                                    for tc in tool_calls.values():
-                                        try:
-                                            arguments = json.loads(tc["arguments"]) if tc["arguments"] else {}
-                                        except json.JSONDecodeError:
-                                            arguments = {}
-
-                                        yield StreamEvent(
-                                            type="tool_call",
-                                            tool_call=ToolCall(
-                                                id=tc["id"],
-                                                name=tc["name"],
-                                                arguments=arguments,
-                                            ),
-                                        )
-                                    pending_stop_reason = "tool_calls"
-
-                                elif finish_reason == "stop":
-                                    pending_stop_reason = "stop"
-
-                        except json.JSONDecodeError:
-                            continue
-
-            # Filet : le flux s'est terminé sans jamais voir [DONE] (coupure
-            # après finish_reason, ou pas de finish_reason explicite du tout).
-            if not done_emitted:
-                yield StreamEvent(
-                    type="done",
-                    stop_reason=pending_stop_reason or "stop",
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                )
-
+            async for event in self._stream_request(request_body):
+                yield event
         except httpx.HTTPStatusError as e:
             logger.error(f"{type(self).__name__} API error: {e.response.status_code}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
@@ -228,7 +239,7 @@ class OpenAIProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list | None" = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue OpenAI conversation with tool results."""
         messages = list(messages)  # copie

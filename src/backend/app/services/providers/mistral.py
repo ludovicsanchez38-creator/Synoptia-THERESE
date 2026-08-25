@@ -12,7 +12,7 @@ re-stream). Cette implementation est alignee sur openai.py.
 
 import json
 import logging
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 import httpx
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 
-def normaliser_content(content: "str | list | None") -> str:
+def normaliser_content(content: "str | list[Any] | None") -> str:
     """Normalise le content Mistral pour l'AFFICHAGE (0.48).
 
     En mode reasoning, l'API rend une LISTE de chunks (thinking + text) au
@@ -116,7 +116,7 @@ class MistralProvider(BaseProvider):
                 # tool_calls en cours de construction, indexes par position
                 tool_calls: dict[int, dict] = {}
 
-                brut_du_tour: list = []
+                brut_du_tour: list[Any] = []
                 tour_en_chunks = False
                 async for line in response.aiter_lines():
                     if not line.startswith("data: "):
@@ -231,7 +231,7 @@ class MistralProvider(BaseProvider):
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list | None" = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Renvoie les resultats d'outils a Mistral et re-stream la reponse finale.
 

@@ -2250,7 +2250,7 @@ async def _do_stream_response(
         yield f"data: {json.dumps(preamble_chunk.model_dump())}\n\n"
     tool_calls_collected: list[ToolCall] = []
     # 0.48 : content brut du tour (mode reasoning Mistral), a rejouer tel quel
-    assistant_brut_collected: list | None = None
+    assistant_brut_collected: list[Any] | None = None
     max_tool_iterations = 5  # Prevent infinite tool loops
     # Usage réel (dette 14/06/2026) : accumulé sur TOUS les tours d'outils (un
     # tour = un appel API = son propre usage). "estimated" passe à True dès
@@ -2633,7 +2633,7 @@ async def _execute_tools_and_continue(
     usage_totals: dict | None = None,
     tool_outcomes: list[tuple[str, str, bool]] | None = None,
     contexte: ContexteExecution | None = None,
-    assistant_content_brut: list | None = None,
+    assistant_content_brut: list[Any] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     Execute MCP tools and continue the conversation.
@@ -2951,7 +2951,7 @@ async def _execute_tools_and_continue(
 
     # Continue conversation with tool results
     new_tool_calls: list[ToolCall] = []
-    new_assistant_brut: list | None = None
+    new_assistant_brut: list[Any] | None = None
     continued_content = ""
 
     async for event in llm_service.continue_with_tool_results(

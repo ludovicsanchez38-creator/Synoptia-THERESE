@@ -296,7 +296,7 @@ def resoudre_effort(
         return None
     if fiche.effort is None:
         return None
-    if fiche.effort == TEL_QUEL:
+    if not isinstance(fiche.effort, dict):  # TEL_QUEL
         return effort_demande
     return fiche.effort.get(effort_demande)
 

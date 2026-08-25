@@ -12,7 +12,7 @@ import os
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from app.services.circuit_breaker import get_circuit_breaker
 from app.services.context import ContextWindow
@@ -885,7 +885,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tool_results: list[ToolResult],
         tools: list[dict] | None = None,
         prior_turns: list[ToolTurn] | None = None,
-        assistant_content_brut: "list | None" = None,
+        assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
         await self._ensure_provider()
