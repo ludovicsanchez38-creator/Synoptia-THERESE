@@ -441,7 +441,7 @@ class BoardService:
                 full_content = ""
                 usage_sink: dict = {}
                 try:
-                    async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+                    async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
                         full_content += chunk
                         yield BoardDeliberationChunk(
                             type="advisor_chunk",
@@ -571,7 +571,7 @@ class BoardService:
                     # l'UI montre tous les conseillers « en réflexion » pendant
                     # que les appels s'étalent.
                     async with provider_semaphores[actual_provider]:
-                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+                        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
                             full_content += chunk
                             await chunk_queue.put(BoardDeliberationChunk(
                                 type="advisor_chunk",
@@ -651,8 +651,14 @@ class BoardService:
                 if isinstance(result, BaseException)
             ]
             if advisor_errors:
+                from app.services.error_handler import message_pour_ecran
+
+                # Revue 0.48 p2 (F2) : le message PRÉCIS du conseiller
+                # (« Le conseiller X n'a pas pu terminer son avis ») survit -
+                # le générique seul privait l'utilisateur de la cause.
                 raise ErreurPourEcran(
-                    "La délibération est incomplète : au moins un conseiller a échoué."
+                    "La délibération est incomplète : "
+                    + message_pour_ecran(advisor_errors[0])
                 ) from advisor_errors[0]
             opinions = [opinions_dict[role] for role in advisors if role in opinions_dict]
 
@@ -829,7 +835,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après."""
         # Generate synthesis
         full_response = ""
         usage_sink: dict = {}
-        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink):
+        async for chunk in llm_service.stream_response(context, usage_sink=usage_sink, raise_on_error=True):
             full_response += chunk
         self._last_synthesis_usage = self._track_usage(
             llm_service,

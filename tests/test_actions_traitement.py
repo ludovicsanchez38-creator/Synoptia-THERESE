@@ -43,7 +43,7 @@ def _faux_llm(morceaux=("étape faite",), lent: asyncio.Event | None = None):
         def prepare_context(self, messages, system_prompt=None, memory_context=None):
             return type("Ctx", (), {"messages": messages})()
 
-        async def stream_response(self, _context):
+        async def stream_response(self, _context, raise_on_error=False):
             if lent is not None:
                 await lent.wait()
             for morceau in morceaux:
@@ -205,7 +205,7 @@ class TestLeRunEstUnTraitement:
             def prepare_context(self, messages, **_k):
                 return type("Ctx", (), {"messages": messages})()
 
-            async def stream_response(self, _context):
+            async def stream_response(self, _context, raise_on_error=False):
                 etapes_lancees["n"] += 1
                 yield "jamais"
 

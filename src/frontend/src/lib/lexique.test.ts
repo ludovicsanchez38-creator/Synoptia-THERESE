@@ -17,6 +17,7 @@ import { SHORTCUT_GROUPS } from '../components/chat/ShortcutsModal';
 import { SLASH_COMMANDS } from '../components/chat/SlashCommandsMenu';
 import { viewLabels } from '../components/prototype/PrototypeUnifiedViewCanvas';
 import { TEXTES_ONBOARDING } from '../components/onboarding/textes';
+import { CHIPS as CHIPS_ACTIONS } from '../components/chat/ActionChips';
 import { ALL_TABS } from '../components/settings/SettingsModal';
 
 /**
@@ -111,6 +112,26 @@ describe('Aucun terme technique dans les registres de textes', () => {
       ]),
     ];
     expect(violations(textes)).toEqual([]);
+  });
+
+  it('les affordances du chat insèrent les cibles du lexique', () => {
+    // Revue 0.48 p2 (F4) : les puces et le menu / annonçaient encore
+    // « ouvrir crm », « ouvrir mémoire », « ouvrir calendrier »,
+    // « ouvrir facturation » - alias tolérés au parseur, jamais annoncés.
+    const inserts = [
+      ...CHIPS_ACTIONS.map((c) => c.insert),
+      ...SLASH_COMMANDS.map((c) => c.prefix),
+    ].filter((texte): texte is string => Boolean(texte));
+    const anciens = [
+      'ouvrir crm', 'ouvrir mémoire', 'ouvrir memoire',
+      'ouvrir calendrier', 'ouvrir facturation',
+    ];
+    const fautifs = inserts.filter((texte) =>
+      anciens.some((ancien) => texte.includes(ancien)),
+    );
+    expect(fautifs).toEqual([]);
+    expect(inserts).toContain('{action: ouvrir pipeline}');
+    expect(inserts).toContain('{action: ouvrir agenda}');
   });
 
   it('les libellés de vues', () => {

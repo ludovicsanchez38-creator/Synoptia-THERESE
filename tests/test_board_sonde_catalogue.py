@@ -177,7 +177,7 @@ class TestLeChunkCatalogueStatus:
             def prepare_context(self, messages, system_prompt=None):
                 return messages, system_prompt
 
-            async def stream_response(self, context, usage_sink=None):
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
                 self.calls += 1
                 yield response

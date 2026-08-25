@@ -228,3 +228,142 @@ class TestLesMessagesIntentionnelsTraversent:
         assert "raise RuntimeError(" not in source, (
             "un message intentionnel du Board serait masqué par la frontière"
         )
+
+
+class TestLesProvidersNEmettentPasLeBrut:
+    """Revue 0.48 passe 2 (F1) : le catch générique des providers émettait
+    content=str(e) - la fuite remontait telle quelle au SSE du chat, au
+    Board et à l'Atelier. La forme construite « API error: NNN » reste ;
+    le str(e) va aux logs, l'évènement porte une forme sobre."""
+
+    def test_aucun_provider_n_emet_str_e(self):
+        import inspect
+
+        from app.services.providers import (
+            anthropic, deepseek, gemini, infomaniak, mistral,
+            ollama, openai, openrouter, perplexity,
+        )
+
+        fautifs = []
+        for module in (anthropic, deepseek, gemini, infomaniak, mistral,
+                       ollama, openai, openrouter, perplexity):
+            if "content=str(e)" in inspect.getsource(module):
+                fautifs.append(module.__name__)
+        assert fautifs == [], f"providers émettant str(e) brut : {fautifs}"
+
+    @pytest.mark.asyncio
+    async def test_un_crash_local_ne_fuit_pas_dans_l_event(self, monkeypatch):
+        import httpx
+
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.openai import OpenAIProvider
+
+        provider = OpenAIProvider(
+            LLMConfig(provider=LLMProvider.OPENAI, model="gpt-5.6-sol", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+
+        def stream_qui_crash(*a, **k):
+            raise RuntimeError("sk-secret /Users/ludo/interne")
+
+        monkeypatch.setattr(provider.client, "stream", stream_qui_crash)
+        events = [e async for e in provider.stream(None, [{"role": "user", "content": "x"}], None)]
+        erreurs = [e for e in events if e.type == "error"]
+        assert erreurs, "un évènement d'erreur doit être émis"
+        assert all("sk-secret" not in (e.content or "") for e in erreurs)
+        assert all("/Users/ludo" not in (e.content or "") for e in erreurs)
+
+    def test_les_sites_chat_et_agents_sont_fermes(self):
+        import inspect
+
+        from app.routers import agents as agents_router
+        from app.routers import chat as chat_router
+
+        assert "s'est produite: {str(e)}" not in inspect.getsource(chat_router)
+        source_agents = inspect.getsource(agents_router)
+        assert 'content=f"Erreur : {e}"' not in source_agents
+
+
+class TestLeBoardNAvalePlusLesErreursDeFlux:
+    """Revue 0.48 passe 2 (F2) : stream_response ignorait les
+    StreamEvent(error) par défaut - un circuit ouvert entre le
+    préchargement et l'appel donnait un avis VIDE validé, synthétisé et
+    sauvegardé. Le Board exige désormais raise_on_error, et l'échec d'un
+    conseiller garde son message précis dans l'erreur finale."""
+
+    @pytest.mark.asyncio
+    async def test_un_avis_en_erreur_n_est_jamais_valide_vide(self, monkeypatch):
+        import contextlib
+        from types import SimpleNamespace
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.llm import LLMProvider
+
+        class LLMEnPanne:
+            config = SimpleNamespace(provider=LLMProvider.OPENAI, model="modele-test")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
+                # Le contrat : le Board DOIT demander raise_on_error
+                assert raise_on_error is True, (
+                    "le Board doit exiger raise_on_error=True - sans lui, un "
+                    "StreamEvent(error) donne un avis vide validé"
+                )
+                raise RuntimeError("API error: 503")
+                yield  # pragma: no cover
+
+        class FakeSession:
+            def add(self, _v):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _v):
+                pass
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: LLMEnPanne())
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider", lambda *a, **k: LLMEnPanne()
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.ANALYST],
+        )
+        chunks = []
+        erreur_finale = None
+        try:
+            async for c in service.deliberate(request):
+                chunks.append(c)
+        except Exception as e:  # noqa: BLE001
+            erreur_finale = e
+
+        # Jamais un advisor_done vide suivi d'un done
+        types = [c.type for c in chunks]
+        assert "done" not in types
+        assert erreur_finale is not None
+        # Le message précis du conseiller survit dans l'erreur finale
+        assert "L'Analyste" in str(erreur_finale)

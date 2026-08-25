@@ -1634,8 +1634,9 @@ async def send_message(
         async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_sink):
             assistant_content += chunk
     except Exception as e:
-        logger.error(f"LLM error: {e}")
-        assistant_content = f"Désolée, une erreur s'est produite: {str(e)}"
+        logger.error(f"LLM error: {e}", exc_info=True)
+        # Revue 0.48 p2 (F1) : le message persiste en base et part à l'écran.
+        assistant_content = f"Désolée : {message_pour_ecran(e, ou='pendant la génération')}"
 
     # F-11 : post-processing - convertir les tableaux Markdown résiduels en
     # listes à puces pour les récaps lisibles.

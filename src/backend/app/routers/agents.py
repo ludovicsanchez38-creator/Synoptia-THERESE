@@ -36,6 +36,7 @@ from app.models.schemas_agents import (
 )
 from app.services.agents.git_service import GitService
 from app.services.agents.swarm import SwarmOrchestrator
+from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -589,7 +590,7 @@ async def spawn_agent(request: SpawnAgentRequest):
             error_chunk = AgentStreamChunk(
                 type="error",
                 agent=profile["id"],
-                content=f"Erreur inattendue : {e}",
+                content=message_pour_ecran(e, ou="pendant la mission de l'agent"),
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
 

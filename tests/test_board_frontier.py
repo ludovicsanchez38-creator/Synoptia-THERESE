@@ -146,7 +146,7 @@ class TestLeBoardPrechargeEnFrontier:
             def prepare_context(self, messages, system_prompt=None):
                 return messages, system_prompt
 
-            async def stream_response(self, context, usage_sink=None):
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
                 self.calls += 1
                 yield response
@@ -323,7 +323,7 @@ class TestLeBoardNeBasculePasEnSilence:
             def prepare_context(self, messages, system_prompt=None):
                 return messages, system_prompt
 
-            async def stream_response(self, context, usage_sink=None):
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
                 response = self.responses[min(self.calls, len(self.responses) - 1)]
                 self.calls += 1
                 yield response
@@ -380,3 +380,37 @@ class TestLeBoardNeBasculePasEnSilence:
         }
         assert providers_annonces == {"openai"}
         cb.reset()
+
+
+class TestLeTrimNeVidePasLaDemande:
+    """Revue 0.48 p2 (F3) : la coupe ne gardait que le DÉBUT (une question
+    placée après un long collage disparaissait) et un budget déjà épuisé
+    par le prompt système remplaçait toute la demande par la seule marque."""
+
+    def test_une_question_en_fin_de_collage_survit(self):
+        from app.services.context import ContextWindow
+        from app.services.providers.base import Message
+
+        contenu = ("x" * 40000) + "\nQUESTION-FINALE : que retenir ?"
+        context = ContextWindow(
+            messages=[Message(role="user", content=contenu)],
+            system_prompt="s",
+            max_tokens=1000,
+        ).trim_to_fit()
+
+        assert context.total_tokens() <= 1000
+        assert "QUESTION-FINALE" in context.messages[0].content
+        assert context.messages[0].content.startswith("xxx")
+
+    def test_budget_epuise_ne_vide_pas_le_message(self):
+        from app.services.context import ContextWindow
+        from app.services.providers.base import Message
+
+        context = ContextWindow(
+            messages=[Message(role="user", content="ma vraie question")],
+            system_prompt="p" * 4000,  # ~1000 tokens : budget déjà dépassé
+            max_tokens=100,
+        ).trim_to_fit()
+
+        # Mieux vaut un refus PROPRE de l'API qu'une demande vidée en silence
+        assert context.messages[0].content == "ma vraie question"

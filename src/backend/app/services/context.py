@@ -39,18 +39,28 @@ class ContextWindow:
             # Always keep the system prompt and last user message
             # Remove oldest non-system messages
             self.messages.pop(0)
-        # Revue 0.48 (F2) : quand il ne reste qu'UN message et qu'il déborde
-        # encore (le Board met question + contexte + résultats web dans un
-        # seul message), tronquer son CONTENU au budget restant - sinon la
-        # requête part hors limite et échoue au lieu d'être bornée.
+        # Revue 0.48 (F2, durci p2/F3) : quand il ne reste qu'UN message et
+        # qu'il déborde encore (le Board met question + contexte + résultats
+        # web dans un seul message), tronquer son CONTENU au budget - en
+        # préservant le DÉBUT ET LA FIN (une question placée après un long
+        # collage survit), la marque au point de coupe. Budget déjà épuisé
+        # par le prompt système : ne PAS vider la demande - un refus propre
+        # de l'API vaut mieux qu'une question disparue en silence.
         if self.messages and self.total_tokens() > self.max_tokens:
             dernier = self.messages[-1]
             hors_dernier = self.total_tokens() - self.estimate_tokens(dernier.content)
             budget_tokens = self.max_tokens - hors_dernier - self.estimate_tokens(
                 self._MARQUE_TRONCATURE
             )
-            budget_chars = max(budget_tokens, 0) * 4
-            dernier.content = dernier.content[:budget_chars] + self._MARQUE_TRONCATURE
+            budget_chars = budget_tokens * 4
+            if budget_chars > 0:
+                tete = budget_chars // 2
+                queue = budget_chars - tete
+                dernier.content = (
+                    dernier.content[:tete]
+                    + self._MARQUE_TRONCATURE
+                    + dernier.content[-queue:]
+                )
         return self
 
     def to_anthropic_format(self) -> tuple[str | None, list[dict]]:

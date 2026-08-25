@@ -9,9 +9,9 @@
  */
 import { Mail, Users, FileText, FileSpreadsheet } from 'lucide-react';
 
-const CHIPS = [
+export const CHIPS = [
   { label: "Ouvrir l'email", insert: '{action: ouvrir email}', Icon: Mail },
-  { label: 'Ouvrir le CRM', insert: '{action: ouvrir crm}', Icon: Users },
+  { label: 'Ouvrir le Pipeline', insert: '{action: ouvrir pipeline}', Icon: Users },
   {
     label: 'Document Word',
     insert: '{action: produire docx "sujet du document"}',

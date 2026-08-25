@@ -265,7 +265,12 @@ class OpenRouterProvider(BaseProvider):
                     yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
         except Exception as e:
             logger.error(f"OpenRouter streaming error: {e}")
-            yield StreamEvent(type="error", content=str(e))
+            # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
+            # relayé à l'écran - le détail vit dans le log ci-dessus.
+            yield StreamEvent(
+                type="error",
+                content=f"Erreur de connexion au service d'IA ({type(e).__name__})",
+            )
 
     async def continue_with_tool_results(
         self,
