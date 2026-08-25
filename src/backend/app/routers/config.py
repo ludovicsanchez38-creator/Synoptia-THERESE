@@ -992,15 +992,10 @@ async def _available_models_for(provider_value: str) -> list[str]:
     elif provider_value == "deepseek":
         available_models = modeles_ordonnes("deepseek")
     elif provider_value == "openrouter":
-        # OpenRouter : fetch dynamique des modèles disponibles
-        fallback_models = [
-            "anthropic/claude-sonnet-4-6",
-            "anthropic/claude-opus-4-8",
-            "openai/gpt-5.5",
-            "google/gemini-3.1-pro",
-            "google/gemini-3.5-flash",
-            "meta-llama/llama-4-maverick",
-        ]
+        # OpenRouter : fetch dynamique des modèles disponibles ; le repli
+        # dérive du catalogue (panel 0.48 : la copie en dur divergeait en
+        # silence au relevé suivant).
+        fallback_models = list(modeles_ordonnes("openrouter"))
         try:
             from app.services.llm import _get_api_key_from_db
             or_key = _get_api_key_from_db("openrouter") or os.environ.get("OPENROUTER_API_KEY", "")

@@ -163,6 +163,37 @@ describe('Le lexique impose un mot par chose (table RULES-DESIGN.md)', () => {
     expect(titres['files-rag']).toBe('Fichiers');
   });
 
+  it('les raccourcis parlent le lexique (panel 0.48)', () => {
+    const descriptions = SHORTCUT_GROUPS.flatMap((g) =>
+      g.shortcuts.map((s) => s.description),
+    );
+    // Les destinations sous leur nom d'écran, pas l'ancien
+    expect(descriptions).toContain('Contacts');
+    expect(descriptions).toContain('Pipeline');
+    expect(descriptions).toContain('Devis et factures');
+    expect(descriptions).toContain('Agenda');
+    expect(descriptions).toContain('Améliorer THÉRÈSE');
+    for (const ancien of [
+      'Panneau mémoire', 'CRM Pipeline', 'Factures',
+      'Calendrier (Google Calendar)', 'Atelier (agents IA)',
+      'Rechercher en mémoire',
+    ]) {
+      expect(descriptions, `« ${ancien} » doit suivre le lexique`).not.toContain(ancien);
+    }
+  });
+
+  it('la palette dit « Contacts », plus « mémoire » (panel 0.48)', () => {
+    const memorySearch = APP_ACTIONS.find((a) => a.id === 'memory.search');
+    const memoryOpen = APP_ACTIONS.find((a) => a.id === 'memory.open');
+    expect(memorySearch?.label).not.toMatch(/mémoire/i);
+    expect(memoryOpen?.description).not.toMatch(/mémoire/i);
+  });
+
+  it('le menu / décrit la vue Documents, pas l’ancien nom d’atelier', () => {
+    const cmd = SLASH_COMMANDS.find((c) => c.prefix === '{action: ouvrir documents}');
+    expect(cmd?.description).not.toMatch(/Atelier documentaire/);
+  });
+
   it('la navigation dit « Décision », jamais « Board » en libellé', () => {
     const board = APP_ACTIONS.find((a) => a.id === 'board.open');
     expect(board?.label).toBe('Décision');

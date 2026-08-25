@@ -161,7 +161,7 @@ class ImageGeneratorService:
             raise TheresError(
                 ErrorCode.API_AUTH_FAILED,
                 "cle image absente",
-                user_message="Clé API OpenAI (Image) non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.",
+                user_message="Clé API OpenAI (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
         client = OpenAI(api_key=api_key)
@@ -237,7 +237,7 @@ class ImageGeneratorService:
             raise TheresError(
                 ErrorCode.API_AUTH_FAILED,
                 "cle image absente",
-                user_message="Clé API Gemini (Image) non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.",
+                user_message="Clé API Gemini (Image) non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
         client = genai.Client(api_key=api_key)
@@ -309,7 +309,7 @@ class ImageGeneratorService:
             raise TheresError(
                 ErrorCode.API_AUTH_FAILED,
                 "cle image absente",
-                user_message="Clé API Fal non configurée. Ajoutez-la dans Paramètres > LLM > Génération d'images.",
+                user_message="Clé API Fal non configurée. Ajoutez-la dans Paramètres > IA.",
             )
 
         client = await get_http_client()

@@ -229,7 +229,7 @@
       "famille": "quotidien",
       "textes": {
         "fr-FR": {
-          "nom": "Réglages",
+          "nom": "Paramètres",
           "quoi": "Choisir son modèle d'IA, connecter ses comptes, régler la confidentialité et l'accessibilité."
         }
       },

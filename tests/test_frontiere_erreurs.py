@@ -8,7 +8,6 @@ localisés passent - jamais str(e) brut. Le technique va aux logs.
 import pytest
 
 
-
 class TestLeMessagePourEcran:
     def test_therese_error_passe_son_message_utilisateur(self):
         from app.services.error_handler import (
@@ -240,8 +239,15 @@ class TestLesProvidersNEmettentPasLeBrut:
         import inspect
 
         from app.services.providers import (
-            anthropic, deepseek, gemini, infomaniak, mistral,
-            ollama, openai, openrouter, perplexity,
+            anthropic,
+            deepseek,
+            gemini,
+            infomaniak,
+            mistral,
+            ollama,
+            openai,
+            openrouter,
+            perplexity,
         )
 
         fautifs = []
@@ -254,7 +260,6 @@ class TestLesProvidersNEmettentPasLeBrut:
     @pytest.mark.asyncio
     async def test_un_crash_local_ne_fuit_pas_dans_l_event(self, monkeypatch):
         import httpx
-
         from app.services.providers.base import LLMConfig, LLMProvider
         from app.services.providers.openai import OpenAIProvider
 
@@ -381,7 +386,6 @@ class TestLaFormeSobreResteDetectable:
     @pytest.mark.asyncio
     async def test_une_panne_reseau_ouvre_toujours_le_circuit(self, monkeypatch):
         import httpx
-
         from app.services.llm import _is_provider_outage
         from app.services.providers.base import LLMConfig, LLMProvider
         from app.services.providers.openai import OpenAIProvider
@@ -407,7 +411,6 @@ class TestLaFormeSobreResteDetectable:
     @pytest.mark.asyncio
     async def test_un_bug_local_n_ouvre_pas_le_circuit(self, monkeypatch):
         import httpx
-
         from app.services.llm import _is_provider_outage
         from app.services.providers.base import LLMConfig, LLMProvider
         from app.services.providers.openai import OpenAIProvider
@@ -426,4 +429,115 @@ class TestLaFormeSobreResteDetectable:
         assert erreurs
         assert not _is_provider_outage(erreurs[0].content), (
             "un bug applicatif local ne doit pas ouvrir le circuit"
+        )
+
+
+class TestPanel048GroupeA:
+    """Panel interne 0.48 (remplace la passe Soso 3) - groupe comportement."""
+
+    @pytest.mark.asyncio
+    async def test_raise_on_error_compte_l_outage_avant_de_lever(self, monkeypatch):
+        """[majeur] Le RuntimeError levé au premier StreamEvent(error)
+        fermait le générateur AVANT sa comptabilité post-boucle : le circuit
+        du fournisseur ne s'ouvrait jamais depuis le trafic Board - le repli
+        explicite (F3 p1) ne s'enclenchait donc jamais."""
+        from unittest.mock import AsyncMock
+
+        from app.services.circuit_breaker import get_circuit_breaker
+        from app.services.context import ContextWindow
+        from app.services.llm import LLMService
+        from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
+
+        cb = get_circuit_breaker()
+        cb.reset()
+
+        class ProviderEnPanne:
+            async def stream(self, system_prompt, messages, tools, **kwargs):
+                yield StreamEvent(type="error", content="API error: 503")
+
+        service = LLMService(
+            LLMConfig(provider=LLMProvider.OPENAI, model="gpt-5.6-sol", api_key="k")
+        )
+        service._ensure_provider = AsyncMock()
+        service._resolve_with_circuit_breaker = lambda: service.config
+        service._provider = ProviderEnPanne()
+
+        context = ContextWindow(messages=[], system_prompt="s")
+        with pytest.raises(RuntimeError):
+            async for _ in service.stream_response(context, raise_on_error=True):
+                pass
+
+        circuit = cb._get_circuit("openai")
+        assert circuit.total_failures >= 1, (
+            "l'outage doit se compter AVANT le raise, sinon le circuit "
+            "ne s'ouvre jamais depuis ce chemin"
+        )
+        cb.reset()
+
+    @pytest.mark.asyncio
+    async def test_raise_on_error_leve_un_message_pour_ecran(self, monkeypatch):
+        """[moyen] Le RuntimeError nu passait au générique via
+        message_pour_ecran : les messages actionnables (BUG-040 Ollama,
+        « API error: 429 ») étaient perdus en non-stream et à l'Atelier."""
+        from unittest.mock import AsyncMock
+
+        from app.services.context import ContextWindow
+        from app.services.error_handler import ErreurPourEcran, message_pour_ecran
+        from app.services.llm import LLMService
+        from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
+
+        class ProviderModeleAbsent:
+            async def stream(self, system_prompt, messages, tools, **kwargs):
+                yield StreamEvent(
+                    type="error",
+                    content="Le modèle 'x' n'est pas installé dans Ollama. Lance 'ollama pull x'.",
+                )
+
+        service = LLMService(
+            LLMConfig(provider=LLMProvider.OLLAMA, model="x", base_url="http://h")
+        )
+        service._ensure_provider = AsyncMock()
+        service._resolve_with_circuit_breaker = lambda: service.config
+        service._provider = ProviderModeleAbsent()
+
+        context = ContextWindow(messages=[], system_prompt="s")
+        with pytest.raises(ErreurPourEcran) as excinfo:
+            async for _ in service.stream_response(context, raise_on_error=True):
+                pass
+        assert "ollama pull x" in message_pour_ecran(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_ollama_ne_fuit_plus_str_e(self, monkeypatch):
+        """[moyen] Le catch générique d'ollama émettait « Erreur Ollama:
+        {str(e)} » - le provider des utilisateurs souverains, le plus exposé
+        en alpha, était le seul à fuir encore."""
+        import httpx
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.ollama import OllamaProvider
+
+        provider = OllamaProvider(
+            LLMConfig(provider=LLMProvider.OLLAMA, model="m", base_url="http://h"),
+            client=httpx.AsyncClient(),
+        )
+
+        def stream_qui_fuit(*a, **k):
+            raise RuntimeError("sk-secret /Users/ludo/interne")
+
+        monkeypatch.setattr(provider.client, "stream", stream_qui_fuit)
+        events = [e async for e in provider.stream(None, [{"role": "user", "content": "x"}], None)]
+        erreurs = [e for e in events if e.type == "error"]
+        assert erreurs
+        assert all("sk-secret" not in (e.content or "") for e in erreurs)
+
+    def test_deep_research_et_documents_sans_str_e(self):
+        """[mineur] Deux émetteurs d'écran restaient hors frontière."""
+        import inspect
+
+        from app.routers import documents as documents_router
+        from app.services import deep_research
+
+        assert "La synthèse a échoué : {e}" not in inspect.getsource(deep_research)
+        assert (
+            "Erreur du fournisseur IA pendant la rédaction : {exc}"
+            not in inspect.getsource(documents_router)
         )

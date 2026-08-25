@@ -43,6 +43,7 @@ from app.services.document_orchestrator import (
     parse_draft_output,
     parse_outline_response,
 )
+from app.services.error_handler import message_pour_ecran
 from app.services.llm import Message, get_llm_service
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -360,7 +361,7 @@ async def _draft_stream(
                 target.id,
                 exc,
             )
-            message = f"Erreur du fournisseur IA pendant la rédaction : {exc}"
+            message = message_pour_ecran(exc, ou="pendant la rédaction")
             yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
             return
 

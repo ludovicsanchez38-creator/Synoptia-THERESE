@@ -204,13 +204,21 @@ class TestLeBoardPrechargeEnFrontier:
             (a[0] if a else k.get("provider_name")): k for a, k in appels
         }
         assert "anthropic" in par_provider and "openai" in par_provider
+        from app.services.board import PLANCHER_MAX_TOKENS_CONSEILLER
+
         for provider_name, kwargs in par_provider.items():
             attendu = frontier(provider_name)
             assert kwargs.get("model_override") == attendu, (
                 f"{provider_name} : model_override={kwargs.get('model_override')}"
             )
             assert kwargs.get("effort_override") == "max"
-            assert kwargs.get("max_tokens_override") == max_tokens_recommande(attendu)
+            # Panel 0.48 : recommandation du catalogue si sourcée, sinon le
+            # plancher Board (effort max : le raisonnement décompte du plafond,
+            # 4096 pouvait rendre un avis vide).
+            recommande = max_tokens_recommande(attendu)
+            assert kwargs.get("max_tokens_override") == (
+                recommande if recommande is not None else PLANCHER_MAX_TOKENS_CONSEILLER
+            )
         # claude-opus-5 porte un max_tokens recommandé (64k, doc officielle)
         assert par_provider["anthropic"]["max_tokens_override"] == 64000
 

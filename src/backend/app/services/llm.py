@@ -519,22 +519,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
             api_key = _get_api_key_from_db(selected_provider)
             if not api_key:
-                env_map = {
-                    "anthropic": "ANTHROPIC_API_KEY",
-                    "openai": "OPENAI_API_KEY",
-                    "gemini": "GEMINI_API_KEY",
-                    "mistral": "MISTRAL_API_KEY",
-                    "grok": "XAI_API_KEY",
-                    "openrouter": "OPENROUTER_API_KEY",
-                    "perplexity": "PERPLEXITY_API_KEY",
-                    "deepseek": "DEEPSEEK_API_KEY",
-                    "glm": "GLM_API_KEY",
-                    "kimi": "KIMI_API_KEY",
-                    "qwen": "QWEN_API_KEY",
-                    "minimax": "MINIMAX_API_KEY",
-                    "infomaniak": "INFOMANIAK_API_KEY",
-                }
-                api_key = os.getenv(env_map.get(selected_provider, ""))
+                # Panel 0.48 : les variables d'env viennent du catalogue -
+                # la table en dur ignorait GOOGLE_API_KEY (alternative Gemini).
+                for env_var in CATALOGUE[selected_provider].env_vars:
+                    api_key = os.getenv(env_var)
+                    if api_key:
+                        break
 
             if api_key:
                 # Adresse personnalisée par fournisseur (dette 0.43.4) : sans
@@ -548,7 +538,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # Fallback: first provider with a valid key
         anthropic_key = _get_api_key_from_db("anthropic") or os.getenv("ANTHROPIC_API_KEY")
         openai_key = _get_api_key_from_db("openai") or os.getenv("OPENAI_API_KEY")
-        gemini_key = _get_api_key_from_db("gemini") or os.getenv("GEMINI_API_KEY")
+        gemini_key = (
+            _get_api_key_from_db("gemini")
+            or os.getenv("GEMINI_API_KEY")
+            or os.getenv("GOOGLE_API_KEY")
+        )
         mistral_key = _get_api_key_from_db("mistral") or os.getenv("MISTRAL_API_KEY")
 
         # 0.48 : le repli par clé sert le frontier du catalogue.
@@ -800,7 +794,20 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             if event.type == "text" and event.content:
                 yield event.content
             elif raise_on_error and event.type == "error":
-                raise RuntimeError(event.content or "Erreur du fournisseur LLM")
+                # Panel 0.48 : lever ICI ferme le générateur amont AVANT sa
+                # comptabilité post-boucle - l'outage doit donc se compter
+                # avant le raise, sinon le circuit du fournisseur ne s'ouvre
+                # jamais depuis ce chemin (le repli explicite du Board ne
+                # s'enclencherait jamais). Et le content est désormais garanti
+                # « écrit pour l'écran » (frontière providers) : ErreurPourEcran
+                # le fait traverser message_pour_ecran au lieu du générique.
+                if _is_provider_outage(event.content):
+                    get_circuit_breaker().record_failure(
+                        self.config.provider.value, (event.content or "")[:200]
+                    )
+                from app.services.error_handler import ErreurPourEcran
+
+                raise ErreurPourEcran(event.content or "Erreur du fournisseur LLM")
             elif event.type == "done" and usage_sink is not None:
                 if event.input_tokens is not None:
                     usage_sink["input_tokens"] = event.input_tokens

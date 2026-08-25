@@ -47,7 +47,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
     });
     setSummaryUnavailable([
       profileResult.status === 'rejected' ? 'Profil' : null,
-      llmResult.status === 'rejected' ? 'LLM' : null,
+      llmResult.status === 'rejected' ? 'Service d’IA' : null,
       workingDirResult.status === 'rejected' ? 'Dossier de travail' : null,
     ].filter((label): label is string => Boolean(label)));
     setLoading(false);
@@ -85,12 +85,12 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
       // ou Ollama opérationnel), pas la simple existence d'un provider par
       // défaut : sinon « Configurer plus tard » affichait quand même une coche
       // verte et openai/gpt-5.5 (faux succès, finding Codex 16/07).
-      title: 'LLM',
+      title: 'Service d’IA',
       value: summary.llmConfig?.available
         ? `${summary.llmConfig.provider} / ${summary.llmConfig.model.split('-').slice(0, 2).join('-')}`
         : 'À configurer',
       configured: !!summary.llmConfig?.available,
-      unavailable: summaryUnavailable.includes('LLM'),
+      unavailable: summaryUnavailable.includes('Service d’IA'),
     },
     {
       icon: FolderOpen,

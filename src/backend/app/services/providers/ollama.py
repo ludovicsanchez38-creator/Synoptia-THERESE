@@ -312,16 +312,23 @@ class OllamaProvider(BaseProvider):
         # Note : httpx.ReadTimeout ne peut pas être levé avec read=None (timeout désactivé)
         # Le catch ReadTimeout a été retiré — l'arrêt de génération se fait via AbortController
         except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Ollama streaming error: {error_msg}")
-            yield StreamEvent(
-                type="error",
-                content=(
-                    f"Erreur Ollama: {error_msg}"
-                    if error_msg
-                    else "Erreur inattendue avec Ollama. Vérifie que le service est lancé."
-                ),
-            )
+            logger.error(f"Ollama streaming error: {e}")
+            # Panel 0.48 : jamais str(e) brut vers l'écran - même frontière
+            # que les 8 providers cloud. La classe d'erreur pilote le circuit
+            # breaker (« réseau » = outage), un bug local ne l'ouvre jamais.
+            if isinstance(e, httpx.TransportError):
+                yield StreamEvent(
+                    type="error",
+                    content=(
+                        f"Erreur réseau vers Ollama ({type(e).__name__}). "
+                        "Vérifie que le service est lancé."
+                    ),
+                )
+            else:
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur interne du service d'IA ({type(e).__name__})",
+                )
 
     async def continue_with_tool_results(
         self,

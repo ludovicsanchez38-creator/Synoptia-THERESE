@@ -161,7 +161,9 @@ class TestDraftSectionStream:
             "app.services.llm.LLMService.stream_response",
             new=_fake_stream_response(
                 ["Premier fragment rédigé. ", "Second fragment rédigé."],
-                then_raise=RuntimeError("panne du fournisseur"),
+                then_raise=__import__(
+                    "app.services.error_handler", fromlist=["ErreurPourEcran"]
+                ).ErreurPourEcran("panne du fournisseur"),
             ),
         ):
             response = await client.post(

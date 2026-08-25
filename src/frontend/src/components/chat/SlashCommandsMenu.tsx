@@ -85,7 +85,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: 'ouvrir-documents',
     name: 'ouvrir documents',
-    description: "Ouvrir l'Atelier documentaire (action locale, sans IA)",
+    description: 'Ouvrir les Documents (action locale, sans IA)',
     icon: <FileText className="w-4 h-4" />,
     prefix: '{action: ouvrir documents}',
     actionId: 'documents.open',

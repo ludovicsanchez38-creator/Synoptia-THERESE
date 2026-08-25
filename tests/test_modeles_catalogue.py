@@ -263,3 +263,22 @@ class TestLaCompletudeDuCatalogue:
         config = LLMService()._default_config()
         assert config.provider.value == "infomaniak"
         assert config.model == "mix"
+
+
+class TestLesFrontiersSontTarifes:
+    """Panel 0.48 : les 5 frontiers que le Board force étaient absents de
+    TOKEN_PRICES → coût 0,00 € pour l'appel le plus cher de l'app. Prix
+    relevés aux sources officielles le 25/08/2026."""
+
+    def test_chaque_frontier_du_board_a_un_prix(self):
+        from app.services.modeles_catalogue import frontier
+        from app.services.token_tracker import TOKEN_PRICES
+
+        sans_prix = []
+        for fournisseur in ("anthropic", "openai", "gemini", "mistral", "grok"):
+            modele = frontier(fournisseur)
+            if modele not in TOKEN_PRICES:
+                sans_prix.append(modele)
+        assert sans_prix == [], (
+            f"frontiers sans tarif (coût menti à 0,00 €) : {sans_prix}"
+        )

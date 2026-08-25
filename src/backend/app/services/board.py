@@ -57,6 +57,10 @@ _etat_catalogue: dict[str, bool | None] = {}
 _date_derniere_sonde: str | None = None
 _verrou_sonde = asyncio.Lock()
 
+#: Plancher de sortie d'un conseiller cloud à effort max : le raisonnement
+#: décompte du plafond, 4096 pouvait rendre un avis vide (panel 0.48).
+PLANCHER_MAX_TOKENS_CONSEILLER = 16000
+
 #: fournisseur -> (URL /models, mode d'authentification)
 _SONDES: dict[str, tuple[str, str]] = {
     "openai": ("https://api.openai.com/v1/models", "bearer"),
@@ -101,6 +105,9 @@ def _ids_de_la_reponse(fournisseur: str, corps: dict[str, Any]) -> set[str]:
 async def _sonder_un(fournisseur: str, cle: str, client: Any) -> None:
     url, mode = _SONDES[fournisseur]
     try:
+        # Panel 0.48 : les endpoints paginent (Anthropic limit défaut 20,
+        # Gemini pageSize défaut 50) - sans page large, un frontier présent
+        # mais hors première page serait déclaré en dérive à tort.
         if mode == "bearer":
             reponse = await client.get(
                 url, headers={"Authorization": f"Bearer {cle}"}, timeout=5.0
@@ -109,10 +116,13 @@ async def _sonder_un(fournisseur: str, cle: str, client: Any) -> None:
             reponse = await client.get(
                 url,
                 headers={"x-api-key": cle, "anthropic-version": "2023-06-01"},
+                params={"limit": 1000},
                 timeout=5.0,
             )
         else:  # query-key (Gemini)
-            reponse = await client.get(url, params={"key": cle}, timeout=5.0)
+            reponse = await client.get(
+                url, params={"key": cle, "pageSize": 1000}, timeout=5.0
+            )
         reponse.raise_for_status()
         ids = _ids_de_la_reponse(fournisseur, reponse.json())
     except Exception as e:  # noqa: BLE001 - indisponible = PAS une dérive
@@ -356,8 +366,10 @@ class BoardService:
 
         # A2 (0.48) : la sonde de dérive du catalogue - au plus une fois par
         # jour, fournisseurs à clé configurée seulement. Une dérive connue
-        # s'annonce en tête ; JAMAIS de bascule de modèle.
-        if os.environ.get("THERESE_SONDE_CATALOGUE", "on") != "off":
+        # s'annonce en tête ; JAMAIS de bascule de modèle. Panel 0.48 : en
+        # mode SOUVERAIN, aucune requête cloud - la sonde ne sert qu'aux
+        # overrides frontier, qui ne s'appliquent qu'en cloud.
+        if not is_sovereign and os.environ.get("THERESE_SONDE_CATALOGUE", "on") != "off":
             await sonder_catalogue()
         derives = derives_connues()
         if derives:
@@ -512,13 +524,24 @@ class BoardService:
                         # son fournisseur, l'effort max et le max_tokens
                         # recommandé - quelles que soient les préférences.
                         modele_frontier = frontier(preferred_provider)
+                        # Panel 0.48 : à effort MAX, les tokens de
+                        # raisonnement décomptent du plafond de sortie
+                        # (OpenAI max_completion_tokens, Gemini thoughts) -
+                        # le défaut 4096 pouvait rendre un avis vide sans
+                        # erreur. Plancher Board explicite quand le
+                        # catalogue n'a pas de recommandation sourcée.
+                        recommande = (
+                            max_tokens_recommande(modele_frontier)
+                            if modele_frontier else None
+                        )
                         advisor_llm = get_llm_service_for_provider(
                             preferred_provider,
                             model_override=modele_frontier,
                             effort_override="max",
                             max_tokens_override=(
-                                max_tokens_recommande(modele_frontier)
-                                if modele_frontier else None
+                                recommande
+                                if recommande is not None
+                                else PLANCHER_MAX_TOKENS_CONSEILLER
                             ),
                             bascule_circuit=False,
                         )

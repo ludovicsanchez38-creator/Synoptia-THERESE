@@ -14,6 +14,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import AsyncGenerator
 
+from app.services.error_handler import message_pour_ecran
 from app.services.web_search import SearchResponse, get_web_search_service
 
 logger = logging.getLogger(__name__)
@@ -275,7 +276,7 @@ async def deep_research(
         logger.error(f"Erreur synthèse deep-research : {e}")
         yield ResearchProgress(
             type="error",
-            content=f"La synthèse a échoué : {e}",
+            content=message_pour_ecran(e, ou="pendant la synthèse de la recherche"),
             sources=all_sources,
         )
         return
