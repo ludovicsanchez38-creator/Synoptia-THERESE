@@ -90,3 +90,12 @@ describe('TraitementsPanel', () => {
     expect(screen.getByText(/50\s?%/)).toBeInTheDocument();
   });
 });
+
+describe('Le lexique « Travaux » (lot C, 0.48)', () => {
+  it('le panneau s’intitule « Travaux récents » et parle de travaux', () => {
+    useProcessingTasksStore.setState({ traitements: [], erreur: null });
+    render(<TraitementsPanel />);
+    expect(screen.getByRole('heading', { name: 'Travaux récents' })).toBeInTheDocument();
+    expect(screen.getByText('Aucun travail récent.')).toBeInTheDocument();
+  });
+});

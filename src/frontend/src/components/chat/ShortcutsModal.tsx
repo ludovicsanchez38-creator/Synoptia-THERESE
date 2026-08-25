@@ -40,7 +40,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Core Features',
     shortcuts: [
-      { keys: '⌘ + D', description: 'Board de décision' },
+      { keys: '⌘ + D', description: 'Décision' },
       { keys: '⌘ + E', description: 'Email (Gmail)' },
       { keys: '⌘ + T', description: 'Tâches (Kanban)' },
       { keys: '⌘ + I', description: 'Factures' },

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
+import { TEXTES_ONBOARDING } from './textes';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
@@ -259,8 +260,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           <Cpu className="w-5 h-5 text-accent-cyan" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-text">Choisis ton LLM</h2>
-          <p className="text-sm text-text-muted">Configure le modèle d'IA à utiliser</p>
+          <h2 className="text-xl font-semibold text-text">{TEXTES_ONBOARDING.choixServiceIA.titre}</h2>
+          <p className="text-sm text-text-muted">{TEXTES_ONBOARDING.choixServiceIA.sousTitre}</p>
         </div>
       </div>
 

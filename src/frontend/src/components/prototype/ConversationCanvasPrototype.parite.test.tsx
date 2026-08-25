@@ -490,7 +490,7 @@ describe('Entrées du tiroir (B0)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Aide' }));
     // La carte vit dans le groupe « Automatiser » - le Centre ouvre sur un autre
     fireEvent.click(await screen.findByRole('tab', { name: /Automatisation/ }));
-    fireEvent.click(await screen.findByRole('button', { name: /Connecteurs MCP/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Connecteurs/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Ouvrir le parcours réel' }));
 
     await waitFor(() => {

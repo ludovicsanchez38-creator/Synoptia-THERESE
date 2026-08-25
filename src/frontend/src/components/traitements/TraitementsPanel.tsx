@@ -32,14 +32,14 @@ export function TraitementsPanel() {
     <div
       className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[90vw] rounded-[10px] border border-border bg-surface p-3 shadow-lg"
       role="dialog"
-      aria-label="Traitements en cours"
+      aria-label="Travaux en cours"
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text">Traitements</h3>
+        <h3 className="text-sm font-semibold text-text">Travaux récents</h3>
         <button
           type="button"
           onClick={fermer}
-          aria-label="Fermer les traitements"
+          aria-label="Fermer les travaux"
           className="text-text-muted hover:text-text"
         >
           <X className="h-4 w-4" />
@@ -51,7 +51,7 @@ export function TraitementsPanel() {
       )}
 
       {traitements.length === 0 && !erreur && (
-        <p className="text-xs text-text-muted">Aucun traitement récent.</p>
+        <p className="text-xs text-text-muted">Aucun travail récent.</p>
       )}
 
       <ul className="max-h-80 space-y-2 overflow-y-auto">

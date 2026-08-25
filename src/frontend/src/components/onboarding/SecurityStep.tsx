@@ -14,6 +14,7 @@ import {
 import { cn } from '../../lib/utils';
 import { grantCloudConsent } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
+import { TEXTES_ONBOARDING } from './textes';
 
 interface SecurityStepProps {
   provider: LLMProvider | null;
@@ -28,38 +29,23 @@ interface RiskItem {
   severity: 'high' | 'medium' | 'low';
 }
 
-const RISKS: RiskItem[] = [
-  {
-    icon: Cloud,
-    title: 'LLMs Cloud',
-    description: 'Tes messages sont envoyés aux serveurs des providers (Anthropic, OpenAI, Gemini...). Ne partage jamais de données sensibles (mots de passe, secrets, données clients).',
-    severity: 'high',
-  },
-  {
-    icon: Terminal,
-    title: 'Serveurs MCP',
-    description: 'Les tools MCP peuvent exécuter des commandes, lire et écrire des fichiers sur ta machine. Active uniquement les serveurs de confiance.',
-    severity: 'high',
-  },
-  {
-    icon: FolderOpen,
-    title: 'Accès fichiers',
-    description: 'THÉRÈSE peut lire tes fichiers locaux pour le contexte. Les fichiers indexés sont stockés localement dans Qdrant.',
-    severity: 'medium',
-  },
-  {
-    icon: Globe,
-    title: 'Recherche Web',
-    description: 'Les recherches sont envoyées à DuckDuckGo ou Google (selon le provider). Tes requêtes peuvent être tracées.',
-    severity: 'low',
-  },
-  {
-    icon: Mic,
-    title: 'Transcription vocale',
-    description: 'L\'audio est envoyé à Groq pour transcription. Ne dicte pas d\'informations confidentielles.',
-    severity: 'medium',
-  },
-];
+// Lot C (0.48) : les textes vivent au registre (textes.ts), les icônes ici.
+const ICONES_RISQUES = {
+  cloud: Cloud,
+  connecteurs: Terminal,
+  fichiers: FolderOpen,
+  web: Globe,
+  voix: Mic,
+} as const;
+
+const RISKS: RiskItem[] = TEXTES_ONBOARDING.risques.map((risque) => ({
+  icon: ICONES_RISQUES[risque.id],
+  title: risque.title,
+  description: risque.description,
+  severity: risque.severity,
+}));
+
+
 
 const severityColors = {
   high: 'text-error bg-[var(--color-error-tint)] border-error/40',

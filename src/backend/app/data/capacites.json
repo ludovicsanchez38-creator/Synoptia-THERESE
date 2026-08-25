@@ -27,7 +27,7 @@
       "famille": "quotidien",
       "textes": {
         "fr-FR": {
-          "nom": "Contacts et mémoire",
+          "nom": "Contacts",
           "quoi": "Retrouver les personnes enregistrées, leurs notes et le contexte mémorisé au fil des conversations."
         }
       },
@@ -48,7 +48,7 @@
       "famille": "developper",
       "textes": {
         "fr-FR": {
-          "nom": "Pipeline commercial",
+          "nom": "Pipeline",
           "quoi": "Suivre prospects et opportunités par étape, avec leur score de potentiel et leur historique."
         }
       },
@@ -160,7 +160,7 @@
       "famille": "documents",
       "textes": {
         "fr-FR": {
-          "nom": "Fichiers et connaissances",
+          "nom": "Fichiers",
           "quoi": "Parcourir ses dossiers et indexer des documents pour que THÉRÈSE puisse s'y référer ensuite."
         }
       },
@@ -205,7 +205,7 @@
       "famille": "documents",
       "textes": {
         "fr-FR": {
-          "nom": "Atelier documentaire",
+          "nom": "Documents",
           "quoi": "Construire un document structuré section par section : trame, rédaction guidée, pistes à creuser, export Word."
         }
       },
@@ -288,7 +288,7 @@
       "textes": {
         "fr-FR": {
           "nom": "Connecteurs",
-          "quoi": "Brancher des outils et services externes (MCP)."
+          "quoi": "Brancher des outils et services externes."
         }
       },
       "maturite": "complete",
