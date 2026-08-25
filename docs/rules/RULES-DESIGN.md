@@ -376,6 +376,7 @@ STABLES : seul le libellé d'écran change.
 | Board | Décision (libellés de navigation et titres seulement - le mot reste libre dans le texte courant) |
 | LLM / provider | Service d'IA |
 | MCP | Connecteurs |
+| Réglages / settings | Paramètres (le bouton permanent, l'action, le manifeste - un seul mot) |
 
 **Interdits à l'écran standard** (comparés sur les registres, pas le texte
 libre) : sidecar, fencing, Qdrant, generation_id, tools, BYOK, LLM, MCP,

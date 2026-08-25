@@ -143,6 +143,11 @@ describe('Aucun terme technique dans les registres de textes', () => {
 });
 
 describe('Le lexique impose un mot par chose (table RULES-DESIGN.md)', () => {
+  it('un seul mot pour les réglages : « Paramètres »', () => {
+    const reglages = CAPACITES.find((c) => c.id === 'reglages');
+    expect(reglages?.textes['fr-FR'].nom).toBe('Paramètres');
+  });
+
   it('les vues portent leur nom d’écran', () => {
     expect(viewLabels.memory).toBe('Contacts');
     expect(viewLabels.crm).toBe('Pipeline');

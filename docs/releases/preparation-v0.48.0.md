@@ -72,6 +72,13 @@ ToolsPanel, BoardPanel, images).
 ## Reste avant release
 
 1. Recharger les crédits Codex (Ludo) → passe Soso finale sur le diff.
+   Le prompt de cette passe DOIT nommer : (a) les chemins d'erreur du
+   Board de bout en bout (dimension jamais balayée - sceptique du panel
+   bloqué par un garde-fou) ; (b) les deux findings ui-etabli-sonde
+   (plancher max_tokens conseillers, sonde coupée en souverain) fermés
+   sans vérification adversariale (leurs réfuteurs ont sauté avec la
+   limite de session) ; (c) les remédiations du panel elles-mêmes comme
+   cibles de régression (motif confirmé trois fois dans la session).
 2. GO explicite de Ludo → `/release-therese` (le « go dès le GO de Soso »
    valait pour la 0.47 seulement).
 
