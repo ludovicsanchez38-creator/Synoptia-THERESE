@@ -74,9 +74,9 @@ class OllamaProvider(BaseProvider):
         # US-009 : /api/chat accepte les tools au format OpenAI (type=function)
         if tools and model not in _MODELS_WITHOUT_TOOLS:
             request_body["tools"] = tools
-        if self.config.effort and model not in _MODELS_WITHOUT_THINK:
+        if self.config.effort_resolu and model not in _MODELS_WITHOUT_THINK:
             request_body["think"] = (
-                "high" if self.config.effort == "max" else self.config.effort
+                "high" if self.config.effort_resolu == "max" else self.config.effort_resolu
             )
         return request_body
 

@@ -50,6 +50,11 @@ class MistralProvider(BaseProvider):
         if tools:
             request_body["tools"] = tools
             request_body["tool_choice"] = "auto"
+        # 0.48 : effort RESOLU par le catalogue (page Reasoning Mistral :
+        # seuls high/none documentes pour medium-3-5 ; les autres modeles
+        # ne recoivent rien).
+        if self.config.effort_resolu:
+            request_body["reasoning_effort"] = self.config.effort_resolu
         return request_body
 
     async def stream(

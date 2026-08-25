@@ -126,6 +126,33 @@ def _message_has_payload(msg: dict) -> bool:
 class GeminiProvider(BaseProvider):
     """Google Gemini API provider."""
 
+    def _build_request_body(
+        self,
+        messages: list[dict[str, Any]],
+        system_prompt: str | None,
+        tools: list[dict[str, Any]] | None,
+    ) -> dict[str, Any]:
+        """Corps generateContent - extrait pour être testable (0.48)."""
+        request_body: dict[str, Any] = {
+            "contents": messages,
+            "generationConfig": {
+                "maxOutputTokens": self.config.max_tokens,
+                "temperature": self.config.temperature,
+            },
+        }
+        # 0.48 : niveau de raisonnement RESOLU par le catalogue (Gemini 3+
+        # seulement - erreur API sur les 2.x -, valeurs MAJUSCULES sur
+        # generateContent, jamais combine a thinkingBudget).
+        if self.config.effort_resolu:
+            request_body["generationConfig"]["thinkingConfig"] = {
+                "thinkingLevel": self.config.effort_resolu
+            }
+        if system_prompt:
+            request_body["systemInstruction"] = {
+                "parts": [{"text": system_prompt}]
+            }
+        return request_body
+
     async def stream(
         self,
         system_prompt: str | None,
@@ -155,19 +182,9 @@ class GeminiProvider(BaseProvider):
                 yield StreamEvent(type="error", content="Aucun message valide à envoyer")
                 return
 
-            request_body: dict[str, Any] = {
-                "contents": filtered_messages,
-                "generationConfig": {
-                    "maxOutputTokens": self.config.max_tokens,
-                    "temperature": self.config.temperature,
-                },
-            }
-
-            # Add system instruction if present
-            if system_prompt:
-                request_body["systemInstruction"] = {
-                    "parts": [{"text": system_prompt}]
-                }
+            request_body = self._build_request_body(
+                filtered_messages, system_prompt, None
+            )
 
             # US-009 : function calling + grounding.
             # - tools fournis -> functionDeclarations (format officiel).

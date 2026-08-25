@@ -76,10 +76,23 @@ class LLMConfig:
     api_key: str | None = None
     base_url: str | None = None
     # Effort de raisonnement (chantier 10/07/2026) : None = Auto (rien
-    # d'envoye, defaut serveur). Valeurs normalisees low/medium/high/max,
-    # traduites par provider et envoyees SEULEMENT aux modeles au support
-    # verifie (voir tests/test_provider_effort.py).
+    # d'envoye, defaut serveur). Valeurs normalisees low/medium/high/max.
     effort: str | None = None
+    # 0.48 : la valeur REELLEMENT emise, resolue par le catalogue a la
+    # CONSTRUCTION (resoudre_effort est ainsi appele par tout chemin de
+    # creation - helper, config par defaut, POST /config/llm, replis -
+    # sans qu'aucun site ne puisse l'oublier). Les providers emettent ce
+    # champ dans leur syntaxe, sans table locale.
+    effort_resolu: str | None = None
+
+    def __post_init__(self) -> None:
+        # Import local : modeles_catalogue importe LLMProvider d'ici -
+        # l'import module-niveau serait un cycle.
+        from app.services.modeles_catalogue import resoudre_effort
+
+        self.effort_resolu = resoudre_effort(
+            self.model, self.effort, self.provider.value
+        )
 
 
 @dataclass
