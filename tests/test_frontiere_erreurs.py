@@ -367,3 +367,63 @@ class TestLeBoardNAvalePlusLesErreursDeFlux:
         assert erreur_finale is not None
         # Le message précis du conseiller survit dans l'erreur finale
         assert "L'Analyste" in str(erreur_finale)
+
+
+class TestLaFormeSobreResteDetectable:
+    """Auto-contrôle post-p2 : la forme sobre « Erreur de connexion au
+    service d'IA (ConnectError) » ne matchait AUCUN marker de
+    _is_provider_outage (« connection » anglais ≠ « connexion » français) -
+    le circuit breaker devenait aveugle aux pannes réseau. La forme dit
+    désormais la CLASSE d'erreur : transport réseau (outage) vs interne
+    (jamais un motif d'ouverture de circuit - plus conservateur qu'avant,
+    où un str(e) local contenant « connection » ouvrait le circuit à tort)."""
+
+    @pytest.mark.asyncio
+    async def test_une_panne_reseau_ouvre_toujours_le_circuit(self, monkeypatch):
+        import httpx
+
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.openai import OpenAIProvider
+
+        provider = OpenAIProvider(
+            LLMConfig(provider=LLMProvider.OPENAI, model="gpt-5.6-sol", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+
+        def stream_reseau_mort(*a, **k):
+            raise httpx.ConnectError("connexion refusée vers 10.0.0.1")
+
+        monkeypatch.setattr(provider.client, "stream", stream_reseau_mort)
+        events = [e async for e in provider.stream(None, [{"role": "user", "content": "x"}], None)]
+        erreurs = [e for e in events if e.type == "error"]
+        assert erreurs
+        assert _is_provider_outage(erreurs[0].content), (
+            f"panne réseau non reconnue comme outage : {erreurs[0].content!r}"
+        )
+        # Et toujours aucune fuite du detail
+        assert "10.0.0.1" not in (erreurs[0].content or "")
+
+    @pytest.mark.asyncio
+    async def test_un_bug_local_n_ouvre_pas_le_circuit(self, monkeypatch):
+        import httpx
+
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.openai import OpenAIProvider
+
+        provider = OpenAIProvider(
+            LLMConfig(provider=LLMProvider.OPENAI, model="gpt-5.6-sol", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+
+        def stream_bug_local(*a, **k):
+            raise ValueError("bug applicatif avec connection dans le texte")
+
+        monkeypatch.setattr(provider.client, "stream", stream_bug_local)
+        events = [e async for e in provider.stream(None, [{"role": "user", "content": "x"}], None)]
+        erreurs = [e for e in events if e.type == "error"]
+        assert erreurs
+        assert not _is_provider_outage(erreurs[0].content), (
+            "un bug applicatif local ne doit pas ouvrir le circuit"
+        )

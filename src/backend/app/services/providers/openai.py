@@ -229,11 +229,19 @@ class OpenAIProvider(BaseProvider):
         except Exception as e:
             logger.error(f"{type(self).__name__} streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
-            # relayé à l'écran - le détail vit dans le log ci-dessus.
-            yield StreamEvent(
-                type="error",
-                content=f"Erreur de connexion au service d'IA ({type(e).__name__})",
-            )
+            # relayé à l'écran - le détail vit dans le log ci-dessus. La forme
+            # dit la CLASSE d'erreur : une panne de transport ouvre le circuit
+            # (_is_provider_outage matche « réseau »), un bug local jamais.
+            if isinstance(e, httpx.TransportError):
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur réseau vers le service d'IA ({type(e).__name__})",
+                )
+            else:
+                yield StreamEvent(
+                    type="error",
+                    content=f"Erreur interne du service d'IA ({type(e).__name__})",
+                )
 
     async def continue_with_tool_results(
         self,
