@@ -17,7 +17,7 @@ import { SHORTCUT_GROUPS } from '../components/chat/ShortcutsModal';
 import { SLASH_COMMANDS } from '../components/chat/SlashCommandsMenu';
 import { viewLabels } from '../components/prototype/PrototypeUnifiedViewCanvas';
 import { TEXTES_ONBOARDING } from '../components/onboarding/textes';
-import { CHIPS as CHIPS_ACTIONS } from '../components/chat/ActionChips';
+import { CHIPS as CHIPS_ACTIONS } from '../components/chat/actionChipsData';
 import { ALL_TABS } from '../components/settings/SettingsModal';
 
 /**
