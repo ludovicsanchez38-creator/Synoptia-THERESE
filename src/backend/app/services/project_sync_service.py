@@ -50,10 +50,12 @@ def _volume_id(chemin: Path) -> int:
 
     BUG-172 (Windows) : `st_dev` y est le volume serial, un entier non
     signé qui peut dépasser 2^63-1 - le commit explosait en OverflowError.
-    Le masque est DÉTERMINISTE : appliqué à l'écriture comme à la
-    comparaison, le témoin « le volume a changé » reste fiable.
+    Conversion BIJECTIVE non signé -> signé 64 bits (complément à deux) :
+    tous les bits sont conservés, deux volumes distincts restent distincts
+    (P5-3), et la valeur tient dans l'INTEGER SQLite.
     """
-    return chemin.stat().st_dev & 0x7FFF_FFFF_FFFF_FFFF
+    brut = chemin.stat().st_dev & 0xFFFF_FFFF_FFFF_FFFF
+    return brut - 0x1_0000_0000_0000_0000 if brut > 0x7FFF_FFFF_FFFF_FFFF else brut
 
 
 class ErreurRacine(Exception):

@@ -142,8 +142,23 @@ async def _executer_avec_suivi(
         _travailler_et_clore(executer, _abandonnee, handle, label, suivi_bancal)
     )
     _travaux_en_cours.add(superviseur)
-    superviseur.add_done_callback(_travaux_en_cours.discard)
+    superviseur.add_done_callback(_consommer_issue_superviseur)
     return await asyncio.shield(superviseur)
+
+
+def _consommer_issue_superviseur(superviseur: "asyncio.Task[object]") -> None:
+    """P5-2 : quand le porteur est mort, plus personne n'attend le
+    superviseur - consommer son exception (l'état durable est déjà posé)."""
+    _travaux_en_cours.discard(superviseur)
+    if superviseur.cancelled():
+        return
+    issue = superviseur.exception()
+    if issue is not None and not isinstance(
+        issue, (IndexationAbandonnee, HTTPException)
+    ):
+        logger.warning(
+            "Superviseur d'indexation terminé en échec", exc_info=issue
+        )
 
 
 async def _travailler_et_clore(

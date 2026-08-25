@@ -72,12 +72,20 @@ INDEX_SEMAPHORE = asyncio.Semaphore(MAX_INDEXATIONS_SIMULTANEES)
 _verrous_par_chemin: dict[str, list[Any]] = {}
 
 
+def _chemin_canonique(chemin: str) -> Path:
+    """Répertoires résolus, nom terminal non suivi (P4-1 + P5-1)."""
+    p = Path(chemin)
+    return p.parent.resolve() / p.name
+
+
 @asynccontextmanager
 async def _verrou_de_chemin(chemin: str) -> AsyncIterator[None]:
     # Passe 4 de revue (P4-1) : la clé est le chemin CANONIQUE - un alias
-    # (relatif, symlink) contournait la sérialisation par chemin et deux
-    # écritures pouvaient s'entrelacer sur le même fichier physique.
-    chemin = str(Path(chemin).resolve())
+    # (relatif, dossier symlinké) contournait la sérialisation par chemin.
+    # Passe 5 (P5-1) : les RÉPERTOIRES sont résolus mais le nom terminal
+    # n'est PAS suivi - os.replace sur un lien terminal remplace le lien
+    # lui-même, son identité est le chemin du lien, pas son ancienne cible.
+    chemin = str(_chemin_canonique(chemin))
     entree = _verrous_par_chemin.get(chemin)
     if entree is None:
         entree = [asyncio.Lock(), 0]
@@ -256,9 +264,10 @@ async def remplacer_puis_indexer(
     # écriture) est détaché et possède le verrou - une annulation dure du
     # porteur après os.replace n'ampute plus l'indexation de la version
     # réellement en place.
-    # P4-1 : même identité de chemin que la route d'indexation - la
-    # métadonnée et le verrou vivent sous le chemin canonique.
-    chemin_canonique = Path(chemin).resolve()
+    # P4-1/P5-1 : même identité de chemin que le verrou - répertoires
+    # résolus, nom terminal non suivi : après os.replace, CE chemin est le
+    # fichier réellement déposé (l'ancienne cible d'un lien ne l'est plus).
+    chemin_canonique = _chemin_canonique(chemin)
 
     async def _geste() -> FileResponse:
         async with _verrou_de_chemin(str(chemin_canonique)):

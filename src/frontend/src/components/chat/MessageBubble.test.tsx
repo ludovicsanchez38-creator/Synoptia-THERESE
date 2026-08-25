@@ -354,3 +354,19 @@ describe('BUG-173 : lien de téléchargement markdown redirigé vers le save nat
     });
   });
 });
+
+describe('P5-4 : la redirection ne capture pas les liens externes', () => {
+  it('laisse un lien web externe contenant le motif partir en externe', () => {
+    downloadSkillFileMock.mockClear();
+    const message = makeMessage({
+      content:
+        'Voir la [doc](https://docs.example.com/api/skills/download/guide-2026)',
+    });
+    render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'doc' });
+    expect(lien.getAttribute('target')).toBe('_blank');
+    fireEvent.click(lien);
+    expect(downloadSkillFileMock).not.toHaveBeenCalled();
+  });
+});

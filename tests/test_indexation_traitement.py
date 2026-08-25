@@ -842,3 +842,46 @@ class TestLaPasse4:
             f"ligne « {lignes[0].state if lignes else '?'} » : l'annulation "
             "pendant la clôture a laissé zéro terminaison"
         )
+
+    @pytest.mark.asyncio
+    async def test_p51_le_depot_sur_un_lien_terminal_indexe_le_depose(
+        self, client, tmp_path, monkeypatch
+    ):
+        """Passe 5 (P5-1) : os.replace sur un LIEN terminal remplace le
+        lien par un vrai fichier - l'indexeur lisait l'ancienne CIBLE du
+        lien (résolue avant dépôt) : succès mensonger, disque et index
+        divergents. L'identité canonique ne suit pas le lien terminal."""
+        from app.services import indexation
+
+        cible = tmp_path / "cible.txt"
+        cible.write_text("ANCIENNE-CIBLE", encoding="utf-8")
+        alias = tmp_path / "alias.txt"
+        alias.symlink_to(cible)
+
+        lectures: list[str] = []
+
+        def extraction_espionne(p):
+            contenu = Path(p).read_text(encoding="utf-8")
+            lectures.append(contenu)
+            return contenu
+
+        monkeypatch.setattr(indexation, "extract_text", extraction_espionne)
+        from unittest.mock import AsyncMock
+
+        monkeypatch.setattr(
+            indexation, "get_qdrant_service", lambda: AsyncMock()
+        )
+
+        async def deposer():
+            import os
+
+            temporaire = tmp_path / "alias.txt.tmp"
+            temporaire.write_text("NOUVEL-UPLOAD", encoding="utf-8")
+            os.replace(temporaire, alias)
+
+        await indexation.remplacer_puis_indexer(str(alias), deposer)
+
+        assert lectures and lectures[-1] == "NOUVEL-UPLOAD", (
+            f"l'indexeur a lu {lectures} : l'ancienne cible du lien au "
+            "lieu du fichier réellement déposé"
+        )

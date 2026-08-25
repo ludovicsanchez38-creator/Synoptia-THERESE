@@ -674,3 +674,26 @@ class TestBug172VolumeWindows:
         # masque des deux côtés de la comparaison)
         plan = await svc.preparer_plan(projet)
         assert plan.nb_indexer == 2
+
+    @pytest.mark.asyncio
+    async def test_p53_deux_volumes_distincts_restent_distincts(self, client):
+        """Passe 5 (P5-3) : le masque écrasait le bit de poids fort - deux
+        volumes distincts pouvaient devenir identiques et rater un vrai
+        débranchement. La conversion doit être BIJECTIVE sur 64 bits."""
+        from pathlib import Path
+        from unittest.mock import MagicMock
+
+        from app.services import project_sync_service as svc
+
+        def temoin(st_dev):
+            chemin = MagicMock(spec=Path)
+            chemin.stat.return_value = MagicMock(st_dev=st_dev)
+            return svc._volume_id(chemin)
+
+        assert temoin(0x0000000000001234) != temoin(0x8000000000001234), (
+            "deux volumes distincts donnent le même témoin : un vrai "
+            "débranchement passerait inaperçu"
+        )
+        # et toujours dans les bornes de l'INTEGER signé SQLite
+        for v in (0, 2**64 - 30, 2**63, 2**63 - 1):
+            assert -(2**63) <= temoin(v) <= 2**63 - 1
