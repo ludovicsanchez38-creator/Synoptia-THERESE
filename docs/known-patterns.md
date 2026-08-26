@@ -175,3 +175,38 @@ Le workflow Release émet une annotation : `actions/checkout@v4`,
 `setup-node@v4`, `setup-python@v5`, `sccache-action@v0.0.7` tournent sur Node 20.
 Non bloquant au 14/06 mais à mettre à jour avant le 16/06/2026 (sinon
 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` puis suppression Node 20 le 16/09/2026).
+
+## Une remédiation de finding introduit sa propre régression (26/08/2026)
+Motif observé 7 fois sur le jalon 0.48 puis **5 fois sur le seul hotfix
+0.48.1** : la forme sobre des erreurs a rendu le circuit breaker aveugle aux
+pannes réseau ; `raise_on_error=True` a court-circuité `record_failure` ; la
+scission du hook de focus a volé le focus au resize puis cassé la
+restauration ; l'exclusion des modales de l'isolation a faussé l'ordre
+d'empilement ; la promotion des messages provider a ouvert une fuite du corps
+des réponses à l'écran. Un correctif se relit comme « la ligne fautive est
+réparée » alors qu'il change un comportement dont d'autres chemins dépendaient.
+**Traiter chaque vague de remédiation comme du code neuf** : test rouge, gates
+complets après CHAQUE vague, et une passe de revue sur le diff de remédiation.
+Ne jamais clore un chantier sur la vague qui ferme les derniers findings.
+
+## L'ordre de déclaration des effets React EST un contrat (26/08/2026)
+React nettoie les effets dans leur ordre de déclaration. Un effet qui pose
+`inert` sur une zone doit donc être déclaré AVANT celui qui restaure le focus,
+sinon le focus revient dans une zone encore inerte et le navigateur le jette.
+Découvert par régression pendant le hotfix 0.48.1 (`useDialogFocusTrap`, quatre
+effets ordonnés : capture + focus initial / isolation / restauration / clavier).
+Un commentaire au-dessus de chaque effet rappelle pourquoi l'ordre compte.
+
+## Un z-index ne compte que sur un élément positionné (26/08/2026)
+Sur `position: static`, un `z-index` n'a **aucun** effet visuel. Un calcul de
+z-order qui remonte les ancêtres en prenant le premier z-index numérique
+rencontré se trompe : il faut ignorer les ancêtres statiques. Trouvé en
+auto-contrôle sur le hotfix 0.48.1, après que la revue avait déjà invalidé une
+première hypothèse (« l'ordre d'ouverture donne l'ordre d'empilement », faux).
+Le z-order réel = z-index effectif d'un élément positionné, puis ordre du DOM.
+
+## jsdom n'implémente pas `inert` (26/08/2026)
+Un test vitest ne peut pas prouver qu'une zone est réellement inerte : jsdom
+pose l'attribut sans en appliquer la sémantique (clics, focus et scroll
+continuent de fonctionner). Les tests vérifient donc la POSE de l'attribut sur
+les bons nœuds ; la vérification du comportement réel demande un navigateur.
