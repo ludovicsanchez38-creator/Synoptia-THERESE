@@ -171,12 +171,15 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
   const pendingRef = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
   // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
+  // Revue passe 2 : le clavier reste À LA PAGE en toutes circonstances -
+  // le rail et l'en-tête sont actifs, un piège les rendrait inatteignables,
+  // et un réarmement au redimensionnement volerait Escape à une modale.
   const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(dialogRef, {
     active: true,
     onEscape: onClose,
     isolateBackground: estCouvrant,
-    piegeClavier: estCouvrant,
+    piegeClavier: false,
   });
   const activeInfo = useMemo(() => CALCULATORS.find((item) => item.id === active) ?? CALCULATORS[0], [active]);
 

@@ -61,12 +61,15 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLElement>(null);
   const confirmationRef = useRef<HTMLDivElement>(null);
   // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
+  // Revue passe 2 : le clavier reste À LA PAGE en toutes circonstances -
+  // le rail et l'en-tête sont actifs, un piège les rendrait inatteignables,
+  // et un réarmement au redimensionnement volerait Escape à une modale.
   const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(dialogRef, {
     active: true,
     onEscape: onClose,
     isolateBackground: estCouvrant,
-    piegeClavier: estCouvrant,
+    piegeClavier: false,
   });
 
   // La confirmation d'une action payante remplace le bouton en bas de la colonne

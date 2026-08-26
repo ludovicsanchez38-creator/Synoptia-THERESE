@@ -57,6 +57,16 @@ _etat_catalogue: dict[str, bool | None] = {}
 _date_derniere_sonde: str | None = None
 _verrou_sonde = asyncio.Lock()
 
+def contenu_exploitable(texte: str | None) -> bool:
+    """Un avis doit porter du SENS, pas seulement des caractères.
+
+    Revue Soso passe 2 (finding 3) : « ... », « --- » ou « ?! » survivent à
+    `strip()` et passaient donc pour un avis valide, synthétisé et sauvegardé.
+    On exige au moins un caractère alphanumérique.
+    """
+    return any(caractere.isalnum() for caractere in (texte or ""))
+
+
 #: Plancher de sortie d'un conseiller cloud à effort max : le raisonnement
 #: décompte du plafond, 4096 pouvait rendre un avis vide (panel 0.48).
 PLANCHER_MAX_TOKENS_CONSEILLER = 16000
@@ -471,7 +481,7 @@ class BoardService:
 
                 # Revue Soso S2-1 : même garde qu'en cloud - un flux sans texte
                 # n'est pas un avis (le modèle local peut terminer à vide).
-                if not full_content.strip():
+                if not contenu_exploitable(full_content):
                     raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a rien répondu."
                     )
@@ -639,7 +649,7 @@ class BoardService:
                 # évènements error. Un flux qui se termine SANS texte (budget
                 # de sortie consommé, [DONE] immédiat) donnait un avis VIDE
                 # validé, synthétisé et sauvegardé.
-                if not full_content.strip():
+                if not contenu_exploitable(full_content):
                     raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a rien répondu."
                     )

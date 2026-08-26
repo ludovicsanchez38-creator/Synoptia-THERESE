@@ -541,3 +541,113 @@ class TestPanel048GroupeA:
             "Erreur du fournisseur IA pendant la rédaction : {exc}"
             not in inspect.getsource(documents_router)
         )
+
+
+class TestRevueSosoPasse2:
+    """Passe 2 de la revue du hotfix 0.48.1 (findings 3, 4, 6)."""
+
+    def test_f3_un_avis_de_ponctuation_seule_ne_passe_pas(self):
+        """« ... », « --- », « ?! » survivent à strip() mais ne disent rien :
+        la garde doit exiger du contenu SÉMANTIQUE."""
+        from app.services.board import contenu_exploitable
+
+        assert contenu_exploitable("Un vrai avis mesuré.") is True
+        assert contenu_exploitable("42") is True
+        for vide_de_sens in ("", "   ", "\n\t ", "...", "---", "?!", "  ***  "):
+            assert contenu_exploitable(vide_de_sens) is False, vide_de_sens
+
+    @pytest.mark.asyncio
+    async def test_f4_une_cle_gemini_invalide_reste_actionnable(self, monkeypatch):
+        """400/401 « API key not valid » devenait « API error: 400 » : ni
+        actionnable pour l'utilisateur, ni reconnu comme panne. Le corps brut
+        du fournisseur ne doit pas fuir POUR AUTANT."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int, corps: bytes):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return corps
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-3.7-flash", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        # 400 clé invalide : message actionnable, sans corps brut
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(400, b'{"error":{"message":"API key not valid trace-77"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-77" not in contenu
+        assert "clé" in contenu.lower() and "api" in contenu.lower()
+        assert _is_provider_outage(contenu), "une clé invalide doit ouvrir le circuit"
+
+        # 5xx : panne technique, message sobre
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(500, b'{"error":{"message":"Internal trace-99"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-99" not in contenu
+        assert _is_provider_outage(contenu)
+
+        # 400 applicatif (pas d'authentification) : PAS une panne du fournisseur
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(400, b'{"error":{"message":"Invalid function name trace-11"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-11" not in contenu
+        assert not _is_provider_outage(contenu)
+
+    @pytest.mark.asyncio
+    async def test_f6_le_suivi_qui_echoue_ne_propage_pas(self):
+        """Test COMPORTEMENTAL du helper (l'ancien vérifiait juste un nom)."""
+        from app.models.processing import EtatTache
+        from app.routers.board import _terminer_sans_masquer
+
+        class HandleQuiCasse:
+            id = "tache-1"
+            appels: list = []
+
+            async def terminer(self, etat, error=None):
+                HandleQuiCasse.appels.append((etat, error))
+                raise RuntimeError("base verrouillée")
+
+        handle = HandleQuiCasse()
+        # Ne lève pas, quel que soit l'état terminal demandé
+        await _terminer_sans_masquer(handle, EtatTache.FAILED, error="cause métier")
+        await _terminer_sans_masquer(handle, EtatTache.DONE)
+        await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
+        assert len(HandleQuiCasse.appels) == 3
+        # handle absent : sans effet
+        await _terminer_sans_masquer(None, EtatTache.DONE)
+
+    def test_f5_le_contrat_des_prix_annonce_la_bonne_devise(self, client):
+        """/api/escalation/prices annonçait « EUR » sur des tarifs relevés en
+        USD : une valeur métier fausse, pas un simple nom de champ."""
+        reponse = client.get("/api/escalation/prices")
+        assert reponse.status_code == 200
+        assert reponse.json()["currency"] == "USD"

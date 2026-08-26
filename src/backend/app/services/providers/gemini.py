@@ -111,6 +111,30 @@ def _tools_to_function_declarations(tools: list[dict]) -> list[dict]:
     return declarations
 
 
+def _message_erreur_http(status_code: int, corps: str) -> str:
+    """Message d'écran pour une réponse HTTP en échec de Gemini.
+
+    Le corps sert au DIAGNOSTIC (jamais à l'affichage) : Google renvoie 400
+    pour une clé invalide, or ce cas doit rester actionnable et compter comme
+    panne au circuit breaker. Les formulations reprennent celles de
+    `error_handler.ERROR_MESSAGES` pour que `_is_provider_outage` les classe.
+    """
+    corps_bas = (corps or "").lower()
+    authentification = (
+        status_code in (401, 403)
+        or "api key not valid" in corps_bas
+        or "api_key_invalid" in corps_bas
+        or "permission" in corps_bas and status_code == 403
+    )
+    if authentification:
+        return "Clé API Gemini invalide ou expirée. Vérifie tes paramètres."
+    if status_code == 429:
+        return "Trop de requêtes envoyées. Attends quelques instants avant de réessayer."
+    if status_code >= 500:
+        return f"API error: {status_code}"
+    return f"Requête refusée par le service d'IA ({status_code})."
+
+
 def _message_has_payload(msg: dict) -> bool:
     """Un message Gemini est exploitable s'il a du texte non vide OU un
     functionCall/functionResponse (US-009 : l'ancien filtre texte-seulement
@@ -227,12 +251,16 @@ class GeminiProvider(BaseProvider):
                     error_body = await response.aread()
                     error_text = error_body.decode()
                     logger.error(f"Gemini API {response.status_code}: {error_text}")
-                    # Revue Soso S2-3 : sans le code HTTP, _is_provider_outage
-                    # ne voit pas la panne (le circuit ne s'ouvre jamais) et le
-                    # message BRUT du fournisseur partait à l'écran.
+                    # Revue Soso S2-3 puis passe 2 (finding 4) : le corps du
+                    # fournisseur ne part JAMAIS à l'écran, mais il sert au
+                    # diagnostic - une clé invalide doit rester actionnable et
+                    # reconnue comme panne, une erreur applicative ne doit pas
+                    # ouvrir le circuit.
                     yield StreamEvent(
                         type="error",
-                        content=f"API error: {response.status_code}",
+                        content=_message_erreur_http(
+                            response.status_code, error_text
+                        ),
                     )
                     return
                 has_tool_calls = False

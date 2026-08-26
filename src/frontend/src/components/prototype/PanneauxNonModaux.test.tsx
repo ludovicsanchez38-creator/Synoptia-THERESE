@@ -149,18 +149,24 @@ describe('Revue Soso du hotfix - findings S1', () => {
     expect(screen.getByTestId('coque-colonne-principale').hasAttribute('inert')).toBe(true);
   });
 
-  it('S1-3 : un panneau sans piège clavier ne s’inscrit pas dans la pile des pièges', async () => {
+  it('S1-3 : un panneau ne s’inscrit JAMAIS dans la pile des pièges', async () => {
+    // Passe 2 (findings 1 et 2) : même en petit écran, piéger le clavier
+    // rendait le rail et l'en-tête - présentés comme actifs - inatteignables
+    // au clavier, et le réarmement au redimensionnement volait Escape à une
+    // modale ouverte par-dessus. Un panneau ne pilote jamais le clavier.
     const { trapStackTaille } = await import('../../hooks/useDialogFocusTrap');
-    poserLargeurEcran(true);
+    poserLargeurEcran(false);
     window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
     render(<ConversationCanvasPrototype />);
     await waitFor(() => {
       expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
     });
 
-    // Côte à côte : aucun piège actif, donc rien dans la pile - sinon une
-    // modale ouverte par-dessus se ferait voler Escape au redimensionnement.
     expect(trapStackTaille()).toBe(0);
+    // ...et le rail reste atteignable au clavier (aucun piège ne le boucle)
+    const porteDuTiroir = screen.getByRole('button', { name: 'Plus d’outils' });
+    porteDuTiroir.focus();
+    expect(document.activeElement).toBe(porteDuTiroir);
   });
 });
 
