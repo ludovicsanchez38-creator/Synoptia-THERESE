@@ -93,11 +93,18 @@ interface DialogFocusTrapOptions {
   onEscape?: () => void;
   /** Isole le reste de l'application avec inert + aria-hidden. */
   isolateBackground?: boolean;
+  /**
+   * Hotfix 0.48.1 : false pour un panneau CÔTE À CÔTE - focus initial et
+   * restauration conservés, mais ni piégeage de Tab (l'utilisateur doit
+   * pouvoir tabuler vers la colonne principale) ni capture d'Escape (la
+   * cascade de la coque s'en charge). Défaut true = comportement modal.
+   */
+  piegeClavier?: boolean;
 }
 
 export function useDialogFocusTrap(
   ref: RefObject<HTMLElement | null>,
-  { active, onEscape, isolateBackground = false }: DialogFocusTrapOptions
+  { active, onEscape, isolateBackground = false, piegeClavier = true }: DialogFocusTrapOptions
 ): void {
   // Lire onEscape via un ref : son identité ne doit pas réarmer le piège
   const onEscapeRef = useRef<(() => void) | undefined>(onEscape);
@@ -130,6 +137,8 @@ export function useDialogFocusTrap(
     }
 
     function handleKeyDown(e: KeyboardEvent) {
+      // Panneau côte à côte : le clavier appartient à toute la page.
+      if (!piegeClavier) return;
       // Seule la modale du dessus pilote le clavier
       if (!isTopmost()) return;
 
@@ -176,5 +185,5 @@ export function useDialogFocusTrap(
     };
     // hasEscape (booléen stable) plutôt que onEscape (identité instable) :
     // l'effet ne se réarme pas à chaque rendu du parent.
-  }, [active, hasEscape, isolateBackground, ref]);
+  }, [active, hasEscape, isolateBackground, piegeClavier, ref]);
 }

@@ -38,10 +38,18 @@ export function PrototypeUnifiedViewCanvas({
   const openNewContact = usePanelStore((state) => state.openNewContact);
   const openEditContact = usePanelStore((state) => state.openEditContact);
   const dialogRef = useRef<HTMLElement>(null);
-  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
+  // Hotfix 0.48.1 : une vue embarquée est TOUJOURS côte à côte (flex-1) -
+  // jamais une modale. Focus initial et restauration conservés, mais ni
+  // isolation du fond ni piégeage clavier : la colonne principale reste
+  // vivante et Tab peut y revenir. Échap est géré par la cascade de la coque.
+  useDialogFocusTrap(dialogRef, {
+    active: true,
+    isolateBackground: false,
+    piegeClavier: false,
+  });
 
   return (
-    <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="prototype-unified-view-title" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg" data-testid="prototype-unified-view" data-view={view}>
+    <section ref={dialogRef} role="region" aria-labelledby="prototype-unified-view-title" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg" data-testid="prototype-unified-view" data-view={view}>
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
         <button type="button" onClick={onClose} aria-label="Revenir à la conversation unifiée" className="flex items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-xs font-medium text-text-muted hover:bg-surface-elevated hover:text-text">
           <ArrowLeft className="h-4 w-4" />

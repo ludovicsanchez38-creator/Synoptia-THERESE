@@ -19,6 +19,7 @@ import {
   type FollowUpStatus,
 } from '../../services/api/follow-ups';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { usePanneauModal } from '../../hooks/usePanneauModal';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 
 const FILTERS: Array<{ id: 'all' | FollowUpStatus; label: string }> = [
@@ -55,7 +56,14 @@ export function FollowUpsWorkspaceCanvas({
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLElement>(null);
-  useDialogFocusTrap(dialogRef, { active: true, onEscape: onClose, isolateBackground: true });
+  // Hotfix 0.48.1 : modal seulement quand le panneau couvre l'écran.
+  const estModal = usePanneauModal();
+  useDialogFocusTrap(dialogRef, {
+    active: true,
+    onEscape: onClose,
+    isolateBackground: estModal,
+    piegeClavier: estModal,
+  });
 
   async function refresh() {
     setLoading(true);
@@ -117,7 +125,7 @@ export function FollowUpsWorkspaceCanvas({
   }
 
   return (
-    <aside ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="follow-ups-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[58%] xl:min-w-[680px]" data-testid="follow-ups-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-modal={estModal || undefined} aria-labelledby="follow-ups-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[58%] xl:min-w-[680px]" data-testid="follow-ups-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--color-warning-tint)] text-warning shadow-[2px_2px_0_var(--btn-shadow-color)]"><Bell className="h-4 w-4" /></span>

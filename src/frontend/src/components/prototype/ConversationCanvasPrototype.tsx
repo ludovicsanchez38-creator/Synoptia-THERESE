@@ -106,6 +106,8 @@ import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { usePanneauModal } from '../../hooks/usePanneauModal';
+import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
@@ -284,13 +286,20 @@ function ContextCanvas({
 }) {
   const dialogRef = useRef<HTMLElement>(null);
   const isPresent = useIsPresent();
-  useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
+  // Hotfix 0.48.1 : modal seulement quand le panneau couvre l'écran.
+  const estModal = usePanneauModal();
+  useDialogFocusTrap(dialogRef, {
+    active: isPresent,
+    onEscape: onClose,
+    isolateBackground: estModal,
+    piegeClavier: estModal,
+  });
 
   return (
     <motion.aside
       ref={dialogRef}
       role="dialog"
-      aria-modal="true"
+      aria-modal={estModal || undefined}
       aria-labelledby="prototype-context-canvas-title"
       tabIndex={-1}
       initial={{ x: 32, opacity: 0 }}
@@ -1015,6 +1024,12 @@ export function ConversationCanvasPrototype() {
     onOpenKatiaNewTask: openAtelierPanel,
   });
 
+  // Hotfix 0.48.1 : un panneau latéral est ouvert ET couvre l'écran ?
+  const panneauModal = usePanneauModal();
+  const panneauLateralOuvert =
+    calculatorOpen || deliverablesOpen || imagesOpen || followUpsOpen || voiceOpen
+    || (canvasOpen && scenario !== 'today');
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -1379,7 +1394,7 @@ export function ConversationCanvasPrototype() {
             ) : embeddedView ? (
               <PrototypeUnifiedViewCanvas view={embeddedView} onClose={collapseEmbeddedView} />
             ) : (
-            <section className="relative flex min-w-0 flex-1 flex-col bg-bg">
+            <section data-testid="coque-colonne-principale" className="relative flex min-w-0 flex-1 flex-col bg-bg">
               <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
@@ -1690,6 +1705,10 @@ export function ConversationCanvasPrototype() {
               </div>
             </section>
             )}
+
+            {/* Hotfix 0.48.1 : quand un panneau devient modal (petit écran),
+                le fond isolé doit se VOIR - sinon l'app paraît figée. */}
+            {panneauModal && panneauLateralOuvert && <VoilePanneau />}
 
             <AnimatePresence>
               {calculatorOpen ? (
