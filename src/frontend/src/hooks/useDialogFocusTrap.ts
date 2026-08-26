@@ -70,6 +70,21 @@ function restoreElement(element: HTMLElement): void {
 const SELECTEUR_MODALE = '[role="dialog"][aria-modal="true"]';
 
 /**
+ * Pile des dialogues et panneaux OUVERTS, dans leur ordre d'ouverture.
+ *
+ * Revue passe 6 (F1) : épargner « toute modale » ne suffit pas - il faut
+ * savoir laquelle est AU-DESSUS. Une modale ouverte AVANT est dessous : elle
+ * doit être isolée comme le reste du fond.
+ */
+const pileDialogues: HTMLElement[] = [];
+
+/** Les dialogues ouverts APRÈS celui-ci, donc au-dessus de lui. */
+function dialoguesAuDessus(dialog: HTMLElement): HTMLElement[] {
+  const rang = pileDialogues.indexOf(dialog);
+  return rang === -1 ? [] : pileDialogues.slice(rang + 1);
+}
+
+/**
  * Isole tout ce qui entoure le dialogue, et rend la liste RÉELLEMENT isolée.
  *
  * Revue passe 5 (F1) : une vraie modale ouverte PAR-DESSUS est rendue à côté
@@ -82,6 +97,7 @@ function isolateOutsideDialog(dialog: HTMLElement): {
   restaurer: () => void;
 } {
   const isolated: HTMLElement[] = [];
+  const auDessus = dialoguesAuDessus(dialog);
   let branch: HTMLElement = dialog;
   let parent = branch.parentElement;
 
@@ -89,7 +105,9 @@ function isolateOutsideDialog(dialog: HTMLElement): {
     for (const sibling of Array.from(parent.children)) {
       if (!(sibling instanceof HTMLElement) || sibling === branch) continue;
       if (sibling.matches('[data-dialog-backdrop], [data-dialog-allow]')) continue;
-      if (sibling.matches(SELECTEUR_MODALE) || sibling.querySelector(SELECTEUR_MODALE)) {
+      // Épargner uniquement ce qui est réellement AU-DESSUS (passe 6, F1) :
+      // une modale ouverte avant celle-ci est dessous, donc à isoler.
+      if (auDessus.some((ouvert) => sibling === ouvert || sibling.contains(ouvert))) {
         continue;
       }
       isolateElement(sibling);
@@ -153,12 +171,20 @@ export function useDialogFocusTrap(
     const dialog = ref.current;
     if (!dialog) return;
 
+    // Passe 6 (F1) : l'ordre d'ouverture EST l'ordre d'empilement.
+    pileDialogues.push(dialog);
+
     if (!dialog.contains(document.activeElement)) {
       declencheurRef.current = document.activeElement as HTMLElement | null;
       const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
       const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
       (prefere ?? premier ?? dialog).focus();
     }
+
+    return () => {
+      const rang = pileDialogues.indexOf(dialog);
+      if (rang !== -1) pileDialogues.splice(rang, 1);
+    };
   }, [active, ref]);
 
   // 2. Isolation du fond - se réarme librement au changement de largeur.

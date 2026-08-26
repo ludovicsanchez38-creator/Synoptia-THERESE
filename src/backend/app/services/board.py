@@ -473,6 +473,9 @@ class BoardService:
                             provider=actual_provider,
                             content=chunk,
                         )
+                except ErreurPourEcran as e:
+                    logger.error(f"Sovereign advisor {config['name']} : {e}")
+                    raise ErreurPourEcran(f"{config['name']} : {e}") from e
                 except Exception as e:
                     logger.error(f"Sovereign advisor {config['name']} error: {e}")
                     raise ErreurPourEcran(
@@ -621,6 +624,13 @@ class BoardService:
                                 provider=actual_provider,
                                 content=chunk,
                             ))
+                except ErreurPourEcran as e:
+                    # Passe 6 (F2) : ce message est DÉJÀ écrit pour l'écran
+                    # (frontière posée à la source des providers) - le
+                    # remplacer par un générique privait l'utilisateur de la
+                    # cause et de l'action corrective.
+                    logger.error(f"Opinion {config['name']} : {e}")
+                    raise ErreurPourEcran(f"{config['name']} : {e}") from e
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
                     raise ErreurPourEcran(

@@ -394,3 +394,51 @@ describe('Revue Soso passe 5 - l’isolation d’un panneau ne déborde pas', ()
     expect(document.activeElement).toBe(porteDuTiroir);
   });
 });
+
+describe('Revue Soso passe 6 - l’isolation respecte l’ordre d’empilement', () => {
+  it('P6-F1 : une modale isolante rend inerte la modale ouverte AVANT elle', async () => {
+    const { useDialogFocusTrap } = await import('../../hooks/useDialogFocusTrap');
+    const { useRef } = await import('react');
+
+    function Dialogue({
+      ouvert,
+      testid,
+      isole,
+    }: {
+      ouvert: boolean;
+      testid: string;
+      isole: boolean;
+    }) {
+      const ref = useRef<HTMLDivElement>(null);
+      useDialogFocusTrap(ref, { active: ouvert, isolateBackground: isole });
+      return ouvert ? (
+        <div ref={ref} role="dialog" aria-modal="true" data-testid={testid}>
+          <button type="button">{testid}</button>
+        </div>
+      ) : null;
+    }
+
+    function Page({ second }: { second: boolean }) {
+      return (
+        <div>
+          {/* Ouverte en premier : elle est DESSOUS */}
+          <Dialogue ouvert testid="raccourcis" isole={false} />
+          {/* Ouverte ensuite : elle est DESSUS et isole le reste */}
+          <Dialogue ouvert={second} testid="parametres" isole />
+        </div>
+      );
+    }
+
+    const { rerender } = render(<Page second={false} />);
+    await waitFor(() => expect(screen.getByTestId('raccourcis')).toBeInTheDocument());
+
+    rerender(<Page second />);
+    await waitFor(() => expect(screen.getByTestId('parametres')).toBeInTheDocument());
+
+    // La modale du DESSOUS doit être isolée par celle du dessus
+    const dessous = screen.getByTestId('raccourcis');
+    expect(dessous.closest('[inert]')).not.toBeNull();
+    // ...et celle du dessus reste vivante
+    expect(screen.getByTestId('parametres').closest('[inert]')).toBeNull();
+  });
+});

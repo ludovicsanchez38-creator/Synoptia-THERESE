@@ -12,7 +12,7 @@ from typing import Any, AsyncGenerator
 
 from app.services.agents.config import AgentConfig
 from app.services.agents.tools import AgentToolExecutor
-from app.services.error_handler import message_pour_ecran
+from app.services.error_handler import ErreurPourEcran, message_pour_ecran
 
 logger = logging.getLogger(__name__)
 
@@ -203,10 +203,14 @@ class AgentRuntime:
                                 "Agent %s : erreur provider : %s",
                                 self.config.id, event.content,
                             )
+                            # Passe 6 (F3) : depuis que la frontière est posée
+                            # À LA SOURCE (les 9 providers + Ollama), ce contenu
+                            # est écrit pour l'écran - le remplacer par un
+                            # générique perdait l'action corrective.
                             yield AgentEvent(
                                 type="error",
                                 content=message_pour_ecran(
-                                    RuntimeError(event.content or "Erreur LLM"),
+                                    ErreurPourEcran(event.content or "Erreur LLM"),
                                     ou="pendant la mission de l'agent",
                                 ),
                             )

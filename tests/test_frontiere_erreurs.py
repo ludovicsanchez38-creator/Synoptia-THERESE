@@ -827,3 +827,93 @@ class TestRevueSosoPasse2:
         assert not _is_provider_outage(message_403), (
             "un modèle non autorisé ne doit pas couper tout le fournisseur"
         )
+
+    @pytest.mark.asyncio
+    async def test_p6_le_message_actionnable_survit_au_board(self, monkeypatch):
+        """Passe 6 (F2) : le message d'un provider - déjà écrit POUR l'écran
+        depuis que la frontière est posée à la source - était écrasé par
+        « Le conseiller X n'a pas pu terminer son avis » : l'utilisateur
+        perdait la cause ET l'action corrective."""
+        import contextlib
+        from types import SimpleNamespace
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.error_handler import ErreurPourEcran
+        from app.services.llm import LLMProvider
+
+        MESSAGE = (
+            "Ton accès à ce modèle Gemini est restreint. "
+            "Vérifie tes droits ou choisis un autre modèle."
+        )
+
+        class LLMRestreint:
+            config = SimpleNamespace(provider=LLMProvider.GEMINI, model="tunedModels/x")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
+                raise ErreurPourEcran(MESSAGE)
+                yield  # pragma: no cover
+
+        class FakeSession:
+            def add(self, _v):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _v):
+                pass
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: LLMRestreint())
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider", lambda *a, **k: LLMRestreint()
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.ANALYST],
+        )
+        erreur = None
+        try:
+            async for _ in service.deliberate(request):
+                pass
+        except Exception as e:  # noqa: BLE001
+            erreur = e
+
+        assert erreur is not None
+        assert "choisis un autre modèle" in str(erreur), str(erreur)
+
+    def test_p6_l_atelier_ne_remplace_pas_le_message_du_provider(self):
+        """Passe 6 (F3) : l'Atelier enveloppait le contenu dans un RuntimeError
+        nu, donc message_pour_ecran le remplaçait par le générique. Depuis que
+        la frontière est posée À LA SOURCE (tous les providers), ce contenu est
+        sûr : il doit traverser."""
+        import inspect
+
+        from app.services.agents import runtime
+
+        source = inspect.getsource(runtime)
+        assert 'RuntimeError(event.content or "Erreur LLM")' not in source
+        assert "ErreurPourEcran" in source
