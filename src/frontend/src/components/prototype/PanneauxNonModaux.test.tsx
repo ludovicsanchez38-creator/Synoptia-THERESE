@@ -314,3 +314,83 @@ describe('Revue Soso passe 4 - ordre de nettoyage du focus', () => {
     expect(isoleAuMomentDuFocus).toBe(false);
   });
 });
+
+describe('Revue Soso passe 5 - l’isolation d’un panneau ne déborde pas', () => {
+  beforeEach(reinitialiser);
+
+  it('P5-F1 : un panneau couvrant n’isole pas une modale ouverte par-dessus', async () => {
+    const auditeurs: Array<() => void> = [];
+    let coteACote = true;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      get matches() {
+        return query.includes('min-width: 1280px') ? coteACote : false;
+      },
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: (_evt: string, cb: () => void) => auditeurs.push(cb),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => {
+      expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
+    });
+
+    // Une VRAIE modale s'ouvre par-dessus le panneau
+    await act(async () => { runAction('shortcuts.open'); });
+    const modale = await waitFor(() => {
+      const n = document.querySelector('[role="dialog"][aria-modal="true"]');
+      expect(n).toBeTruthy();
+      return n as HTMLElement;
+    });
+
+    // ...puis la fenêtre passe sous le seuil : le panneau devient couvrant
+    await act(async () => {
+      coteACote = false;
+      auditeurs.forEach((cb) => cb());
+    });
+
+    // Le panneau ne doit ni isoler la modale, ni lui voler le focus
+    expect(modale.closest('[inert]')).toBeNull();
+    expect(modale.getAttribute('aria-hidden')).not.toBe('true');
+    expect(modale.contains(document.activeElement)).toBe(true);
+  });
+
+  it('P5-F2 : un focus sur le rail (non isolé) n’est pas transféré', async () => {
+    const auditeurs: Array<() => void> = [];
+    let coteACote = true;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      get matches() {
+        return query.includes('min-width: 1280px') ? coteACote : false;
+      },
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: (_evt: string, cb: () => void) => auditeurs.push(cb),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => {
+      expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
+    });
+
+    // Le rail porte data-dialog-allow : il reste utilisable, donc le focus y reste
+    const porteDuTiroir = screen.getByRole('button', { name: 'Plus d’outils' });
+    porteDuTiroir.focus();
+
+    await act(async () => {
+      coteACote = false;
+      auditeurs.forEach((cb) => cb());
+    });
+
+    expect(document.activeElement).toBe(porteDuTiroir);
+  });
+});

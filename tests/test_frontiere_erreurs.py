@@ -773,3 +773,57 @@ class TestRevueSosoPasse2:
         )
         assert "EUR" not in sans_noms_de_champs
         assert "euros" not in sans_noms_de_champs.lower()
+
+    @pytest.mark.asyncio
+    async def test_p5_f3_403_gemini_nest_pas_une_cle_invalide(self, monkeypatch):
+        """Passe 5 (F3) : Google distingue 401 (clé absente/invalide) et 403
+        (clé VALIDE sans droit sur la ressource - modèle personnalisé). Tout
+        traduire en « clé invalide » donnait un faux diagnostic ET ouvrait le
+        circuit du fournisseur entier pour un simple modèle non autorisé."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return b'{"error":{"message":"detail interne trace-88"}}'
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="tunedModels/x", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        # 401 : la clé elle-même - panne du fournisseur
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: reponse(401))
+        events = [e async for e in provider.stream(None, messages, None)]
+        message_401 = next(e.content for e in events if e.type == "error")
+        assert "clé" in message_401.lower()
+        assert _is_provider_outage(message_401)
+
+        # 403 : droits sur CE modèle - ni « clé invalide », ni circuit ouvert
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: reponse(403))
+        events = [e async for e in provider.stream(None, messages, None)]
+        message_403 = next(e.content for e in events if e.type == "error")
+        assert "trace-88" not in message_403
+        assert "invalide" not in message_403.lower()
+        assert "modèle" in message_403.lower()
+        assert not _is_provider_outage(message_403), (
+            "un modèle non autorisé ne doit pas couper tout le fournisseur"
+        )

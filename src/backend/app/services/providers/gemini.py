@@ -120,13 +120,21 @@ def _message_erreur_http(status_code: int, corps: str) -> str:
     `error_handler.ERROR_MESSAGES` pour que `_is_provider_outage` les classe.
     """
     corps_bas = (corps or "").lower()
-    authentification = (
-        status_code in (401, 403)
+    # Passe 5 (F3) : Google DISTINGUE 401 (clé absente, invalide ou expirée)
+    # et 403 (clé valide, sans droit sur CETTE ressource - typiquement un
+    # modèle personnalisé). Confondre les deux donnait un faux diagnostic et
+    # ouvrait le circuit du fournisseur entier pour un simple modèle.
+    if status_code == 403:
+        return (
+            "Ton accès à ce modèle Gemini est restreint. "
+            "Vérifie tes droits ou choisis un autre modèle."
+        )
+    cle_en_cause = (
+        status_code == 401
         or "api key not valid" in corps_bas
         or "api_key_invalid" in corps_bas
-        or "permission" in corps_bas and status_code == 403
     )
-    if authentification:
+    if cle_en_cause:
         return "Clé API Gemini invalide ou expirée. Vérifie tes paramètres."
     if status_code == 429:
         return "Trop de requêtes envoyées. Attends quelques instants avant de réessayer."

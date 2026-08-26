@@ -67,7 +67,20 @@ function restoreElement(element: HTMLElement): void {
   isolatedElements.delete(element);
 }
 
-function isolateOutsideDialog(dialog: HTMLElement): () => void {
+const SELECTEUR_MODALE = '[role="dialog"][aria-modal="true"]';
+
+/**
+ * Isole tout ce qui entoure le dialogue, et rend la liste RÉELLEMENT isolée.
+ *
+ * Revue passe 5 (F1) : une vraie modale ouverte PAR-DESSUS est rendue à côté
+ * de la coque ; un panneau qui devient couvrant l'isolait donc elle aussi -
+ * elle se retrouvait inerte et sans focus possible. Ce qui porte `aria-modal`
+ * est au-dessus par définition : on ne l'isole jamais.
+ */
+function isolateOutsideDialog(dialog: HTMLElement): {
+  isoles: HTMLElement[];
+  restaurer: () => void;
+} {
   const isolated: HTMLElement[] = [];
   let branch: HTMLElement = dialog;
   let parent = branch.parentElement;
@@ -76,6 +89,9 @@ function isolateOutsideDialog(dialog: HTMLElement): () => void {
     for (const sibling of Array.from(parent.children)) {
       if (!(sibling instanceof HTMLElement) || sibling === branch) continue;
       if (sibling.matches('[data-dialog-backdrop], [data-dialog-allow]')) continue;
+      if (sibling.matches(SELECTEUR_MODALE) || sibling.querySelector(SELECTEUR_MODALE)) {
+        continue;
+      }
       isolateElement(sibling);
       isolated.push(sibling);
     }
@@ -83,7 +99,10 @@ function isolateOutsideDialog(dialog: HTMLElement): () => void {
     parent = parent.parentElement;
   }
 
-  return () => isolated.reverse().forEach(restoreElement);
+  return {
+    isoles: isolated,
+    restaurer: () => isolated.reverse().forEach(restoreElement),
+  };
 }
 
 interface DialogFocusTrapOptions {
@@ -148,11 +167,16 @@ export function useDialogFocusTrap(
     const dialog = ref.current;
     if (!dialog) return;
 
-    const restaurer = isolateOutsideDialog(dialog);
+    const { isoles, restaurer } = isolateOutsideDialog(dialog);
     // Passe 4 (F1) : si le focus se trouvait dans la zone qu'on vient d'isoler
     // (l'utilisateur écrivait quand la fenêtre est passée sous le seuil), il
     // DOIT suivre - sinon le champ paraît actif mais la frappe se perd.
-    if (!dialog.contains(document.activeElement)) {
+    // Passe 5 (F2) : SEULEMENT dans ce cas - le rail et l'en-tête restent
+    // utilisables (data-dialog-allow), une modale au-dessus garde son focus.
+    const focusDansUneZoneIsolee = isoles.some((element) =>
+      element.contains(document.activeElement),
+    );
+    if (focusDansUneZoneIsolee) {
       const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
       const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
       (prefere ?? premier ?? dialog).focus();
