@@ -67,8 +67,6 @@ function restoreElement(element: HTMLElement): void {
   isolatedElements.delete(element);
 }
 
-const SELECTEUR_MODALE = '[role="dialog"][aria-modal="true"]';
-
 /**
  * Pile des dialogues et panneaux OUVERTS, dans leur ordre d'ouverture.
  *
