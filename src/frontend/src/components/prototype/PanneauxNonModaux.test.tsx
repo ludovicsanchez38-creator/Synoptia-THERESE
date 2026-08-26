@@ -442,3 +442,35 @@ describe('Revue Soso passe 6 - l’isolation respecte l’ordre d’empilement',
     expect(screen.getByTestId('parametres').closest('[inert]')).toBeNull();
   });
 });
+
+describe('Auto-contrôle - le z-order suit les règles du navigateur', () => {
+  it('un z-index sur un élément non positionné n’a aucun effet', async () => {
+    const { useDialogFocusTrap } = await import('../../hooks/useDialogFocusTrap');
+    const { useRef } = await import('react');
+
+    function Page() {
+      const ref = useRef<HTMLDivElement>(null);
+      useDialogFocusTrap(ref, { active: true, isolateBackground: true });
+      return (
+        <div>
+          {/* z-index élevé MAIS position static : sans effet visuel, donc
+              cette surface est bien derrière et doit être isolée. */}
+          <div
+            data-testid="faux-dessus"
+            style={{ position: 'static', zIndex: 999 }}
+          >
+            <div role="dialog">Décor</div>
+          </div>
+          <div ref={ref} role="dialog" aria-modal="true" style={{ position: 'fixed', zIndex: 70 }}>
+            <button type="button">Vraie modale</button>
+          </div>
+        </div>
+      );
+    }
+
+    render(<Page />);
+    await waitFor(() => {
+      expect(screen.getByTestId('faux-dessus').closest('[inert]')).not.toBeNull();
+    });
+  });
+});

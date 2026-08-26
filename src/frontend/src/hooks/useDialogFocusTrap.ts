@@ -78,15 +78,18 @@ function restoreElement(element: HTMLElement): void {
 function estAuDessus(candidat: HTMLElement, reference: HTMLElement): boolean {
   const z = (element: HTMLElement): number => {
     for (let noeud: HTMLElement | null = element; noeud; noeud = noeud.parentElement) {
-      const brut = window.getComputedStyle(noeud).zIndex;
-      const valeur = Number.parseInt(brut, 10);
+      const style = window.getComputedStyle(noeud);
+      // Un z-index ne compte que sur un élément POSITIONNÉ : sur `static` il
+      // n'établit aucun contexte d'empilement et n'a donc aucun effet visuel.
+      if (style.position === 'static') continue;
+      const valeur = Number.parseInt(style.zIndex, 10);
       if (!Number.isNaN(valeur)) return valeur;
     }
     return 0;
   };
 
-  const zCandidat = z(candidat);
   const zReference = z(reference);
+  const zCandidat = z(candidat);
   if (zCandidat !== zReference) return zCandidat > zReference;
   // z-index égal (ou indisponible) : le dernier peint gagne, donc l'ordre DOM.
   return Boolean(
