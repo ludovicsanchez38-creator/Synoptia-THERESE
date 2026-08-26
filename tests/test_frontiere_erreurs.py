@@ -925,7 +925,6 @@ class TestRevueSosoPasse2:
         sûrs » était fausse : OpenRouter et Ollama recopiaient encore le corps
         de la réponse (chemin local, identifiant, message sans limite)."""
         import httpx
-
         from app.services.providers.base import LLMConfig, LLMProvider
         from app.services.providers.ollama import OllamaProvider
         from app.services.providers.openrouter import OpenRouterProvider
