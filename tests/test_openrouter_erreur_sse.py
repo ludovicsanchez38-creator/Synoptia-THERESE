@@ -115,3 +115,86 @@ class TestLeMessageDuFournisseurNAtteintPasLEcran:
         assert SECRET not in message
         assert ".therese" not in message
         assert "sk-abc123" not in message
+
+
+class _ReponseHTTP:
+    """Panne AVANT le premier octet du flux : le chemin HTTP, pas le SSE."""
+
+    def __init__(self, status: int):
+        self.status_code = status
+        self.headers: dict = {}
+
+    def raise_for_status(self):
+        import httpx
+
+        raise httpx.HTTPStatusError(
+            f"HTTP {self.status_code}",
+            request=httpx.Request("POST", "https://openrouter.ai/x"),
+            response=self,  # type: ignore[arg-type]
+        )
+
+    async def aread(self):
+        return json.dumps({"error": {"message": SECRET}}).encode()
+
+    async def aiter_lines(self):
+        return
+        yield  # pragma: no cover
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+
+class _ClientHTTP:
+    def __init__(self, status: int):
+        self._status = status
+
+    def stream(self, *a, **k):
+        return _ReponseHTTP(self._status)
+
+
+async def _erreur_http(status: int) -> str:
+    provider = OpenRouterProvider(
+        LLMConfig(provider=LLMProvider.OPENROUTER, model="x/y", api_key="k"),
+        client=_ClientHTTP(status),
+    )
+    events = await _collect(provider.stream(None, [{"role": "user", "content": "x"}]))
+    erreurs = [e for e in events if e.type == "error"]
+    assert erreurs, f"aucune erreur émise pour un HTTP {status}"
+    return erreurs[0].content or ""
+
+
+class TestLesPannesAvantLeFluxComptentAussi:
+    """Une panne peut survenir AVANT le premier token, pas seulement dedans.
+
+    Le premier correctif n'avait classé que les erreurs injectées dans le
+    flux SSE. Le chemin HTTP produisait « Erreur API OpenRouter (503) » —
+    une formulation française que la détection de panne, qui cherche la
+    forme anglaise, ne reconnaît pas. Un service indisponible n'était donc
+    jamais compté, et le fournisseur de secours ne prenait pas le relais.
+    """
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", [408, 500, 502, 503])
+    async def test_une_panne_http_est_comptee(self, status: int):
+        message = await _erreur_http(status)
+
+        assert _is_provider_outage(message), (
+            f"panne HTTP {status} ignorée par le circuit breaker : {message!r}"
+        )
+        assert SECRET not in message
+
+    @pytest.mark.asyncio
+    async def test_les_messages_actionnables_du_chemin_http_survivent(self):
+        """401/402/429 ont leurs propres textes : ne pas les écraser."""
+        assert "Clé API" in await _erreur_http(401)
+        assert "openrouter.ai" in await _erreur_http(402)
+        assert "Patiente" in await _erreur_http(429)
+
+    @pytest.mark.asyncio
+    async def test_une_erreur_de_requete_n_ouvre_pas_le_circuit(self):
+        message = await _erreur_http(400)
+
+        assert not _is_provider_outage(message)

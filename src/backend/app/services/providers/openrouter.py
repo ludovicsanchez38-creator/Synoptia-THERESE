@@ -314,10 +314,15 @@ class OpenRouterProvider(BaseProvider):
             elif status == 429:
                 yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patiente quelques secondes.")
             else:
-                if api_error_msg:
-                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
-                else:
-                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
+                # Les deux branches d'origine produisaient le MÊME texte, et
+                # ce texte - « Erreur API OpenRouter (503) » - n'était reconnu
+                # par aucun marqueur de panne : la détection cherche la forme
+                # anglaise. Un service indisponible n'était donc jamais compté
+                # et le fournisseur de secours ne prenait pas le relais. Le
+                # helper produit la forme classée, la même que pour le flux.
+                yield StreamEvent(
+                    type="error", content=_message_erreur_sse(status, None)
+                )
         except Exception as e:
             logger.error(f"OpenRouter streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
