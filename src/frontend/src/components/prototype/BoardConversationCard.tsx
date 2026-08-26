@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { formaterCout } from '../../lib/coutAffiche';
 import {
   AlertCircle,
   CheckCircle2,
@@ -250,7 +251,7 @@ function DecisionDetail({ decision }: { decision: BoardDecisionDetail }) {
           <section key={opinion.role} className="rounded-[12px] border border-border bg-surface p-3">
             <div className="flex items-center gap-2">
               <CharacterPortrait index={advisorPortraits[opinion.role]} className="h-8 w-8 rounded-[8px] border border-text" />
-              <div className="min-w-0 flex-1"><strong className="block text-xs text-text">{opinion.name}</strong>{(opinion.provider || opinion.model) && <span className="block truncate text-xs text-text-muted">{opinion.provider || 'provider inconnu'} · {opinion.model || 'modèle non mesuré'}{typeof opinion.cost_eur === 'number' ? ` · ${opinion.cost_eur.toFixed(4)} €` : ''}</span>}</div>
+              <div className="min-w-0 flex-1"><strong className="block text-xs text-text">{opinion.name}</strong>{(opinion.provider || opinion.model) && <span className="block truncate text-xs text-text-muted">{opinion.provider || 'provider inconnu'} · {opinion.model || 'modèle non mesuré'}{typeof opinion.cost_eur === 'number' ? ` · ${formaterCout(opinion.cost_eur, 4)}` : ''}</span>}</div>
             </div>
             <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{opinion.content}</p>
           </section>
@@ -258,7 +259,7 @@ function DecisionDetail({ decision }: { decision: BoardDecisionDetail }) {
       </div>
       <SynthesisView synthesis={decision.synthesis} />
       {decision.web_sources && decision.web_sources.length > 0 && <section className="rounded-[12px] border border-border bg-surface p-4"><h4 className="text-xs font-bold text-text">Sources web consultées</h4><div className="mt-3 space-y-2">{decision.web_sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="flex items-start gap-2 rounded-[9px] bg-surface-2 p-3 text-xs text-text hover:text-[var(--k4)]"><ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span><strong className="block">{source.title || source.url}</strong>{source.snippet && <span className="mt-1 block text-xs leading-4 text-text-muted">{source.snippet}</span>}</span></a>)}</div></section>}
-      {decision.synthesis_usage && (decision.synthesis_usage.provider || decision.synthesis_usage.model) && <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs text-accent">Synthèse : {decision.synthesis_usage.provider || 'provider inconnu'} · {decision.synthesis_usage.model || 'modèle non mesuré'}{typeof decision.synthesis_usage.cost_eur === 'number' ? ` · ${decision.synthesis_usage.cost_eur.toFixed(4)} €` : ''}</div>}
+      {decision.synthesis_usage && (decision.synthesis_usage.provider || decision.synthesis_usage.model) && <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs text-accent">Synthèse : {decision.synthesis_usage.provider || 'provider inconnu'} · {decision.synthesis_usage.model || 'modèle non mesuré'}{typeof decision.synthesis_usage.cost_eur === 'number' ? ` · ${formaterCout(decision.synthesis_usage.cost_eur, 4)}` : ''}</div>}
     </div>
   );
 }

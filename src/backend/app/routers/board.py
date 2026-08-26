@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from app.models.board import (
     ADVISOR_CONFIG,
@@ -25,6 +26,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+if TYPE_CHECKING:  # import différé ailleurs dans le fichier (style local)
+    from app.models.processing import EtatTache
+
 logger = logging.getLogger(__name__)
 
 # Second panel de revue : les nettoyages après déconnexion partent dans des
@@ -33,6 +37,29 @@ logger = logging.getLogger(__name__)
 _nettoyages_en_cours: set["asyncio.Task[None]"] = set()
 
 router = APIRouter()
+
+async def _terminer_sans_masquer(
+    handle: TraitementHandle | None,
+    etat: "EtatTache",
+    *,
+    error: str | None = None,
+) -> None:
+    """Revue Soso S2-2 : `terminer()` commite et peut lever (base verrouillée).
+
+    Sur un chemin d'échec, cette exception faisait perdre le message métier
+    déjà préparé : le client voyait « flux interrompu » au lieu de la cause.
+    Le suivi est un TÉMOIN, jamais un acteur - son échec va au log.
+    """
+    if handle is None:
+        return
+    try:
+        await handle.terminer(etat, error=error)
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            "Suivi du traitement %s non terminé (%s) : %s", handle.id, etat, e,
+            exc_info=True,
+        )
+
 
 
 @router.get("/advisors", response_model=list[AdvisorInfo])
@@ -101,9 +128,9 @@ async def _clore_apres_deconnexion(
         return
     try:
         if await decision_sauvee():
-            await handle.terminer(EtatTache.DONE)
+            await _terminer_sans_masquer(handle, EtatTache.DONE)
         else:
-            await handle.terminer(EtatTache.CANCELLED)
+            await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
     except Exception:
         logger.warning(
             "Clôture après déconnexion impossible pour le Board",
@@ -211,7 +238,7 @@ async def deliberate(
                     tache.cancel()
                     await asyncio.gather(tache, return_exceptions=True)
                     message = message_pour_ecran(e, ou="pendant la délibération")
-                    await handle.terminer(EtatTache.FAILED, error=message[:200])
+                    await _terminer_sans_masquer(handle, EtatTache.FAILED, error=message[:200])
                     yield _sse({"type": "error", "content": message})
                     return
 
@@ -241,11 +268,11 @@ async def deliberate(
                         # un cancel_requested tardif se résout en done
                         # (contrat 0.46) - et le client doit l'apprendre.
                         if handle is not None:
-                            await handle.terminer(EtatTache.DONE)
+                            await _terminer_sans_masquer(handle, EtatTache.DONE)
                         yield _sse({"type": "done", "content": decision_id})
                     else:
                         if handle is not None:
-                            await handle.terminer(EtatTache.CANCELLED)
+                            await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
                         yield _sse({"type": "cancelled", "content": ""})
                 elif tache.exception() is not None:
                     erreur = tache.exception()
@@ -255,21 +282,21 @@ async def deliberate(
                         # (ex. vérification en échec) - done gagne, le
                         # client doit apprendre que sa décision existe.
                         if handle is not None:
-                            await handle.terminer(EtatTache.DONE)
+                            await _terminer_sans_masquer(handle, EtatTache.DONE)
                         yield _sse({"type": "done", "content": decision_id})
                     else:
                         message = message_pour_ecran(
                             erreur, ou="pendant la délibération"
                         )
                         if handle is not None:
-                            await handle.terminer(
+                            await _terminer_sans_masquer(handle,
                                 EtatTache.FAILED, error=message[:200]
                             )
                         yield _sse({"type": "error", "content": message})
                 else:
                     if handle is not None:
                         await handle.progresser(progress=1.0)
-                        await handle.terminer(EtatTache.DONE)
+                        await _terminer_sans_masquer(handle, EtatTache.DONE)
             except (GeneratorExit, asyncio.CancelledError):
                 # Déconnexion du client : pas de partiel - une décision à
                 # moitié délibérée ne se sauve pas. Si le commit avait déjà

@@ -121,8 +121,14 @@ class OpenRouterProvider(BaseProvider):
                             if "error" in event:
                                 err = event["error"]
                                 err_msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+                                # Passe 7 (F2) : le message du fournisseur peut
+                                # porter un chemin local ou un identifiant - il
+                                # reste au LOG, l'écran reçoit une forme sobre.
                                 logger.error(f"OpenRouter SSE error: {err_msg}")
-                                yield StreamEvent(type="error", content=f"Erreur OpenRouter : {err_msg}")
+                                yield StreamEvent(
+                                    type="error",
+                                    content="Le service OpenRouter a signalé une erreur.",
+                                )
                                 stream_finished = True
                                 break
 
@@ -247,7 +253,7 @@ class OpenRouterProvider(BaseProvider):
                 if api_error_msg:
                     yield StreamEvent(
                         type="error",
-                        content=f"OpenRouter a refusé la requête (403) : {api_error_msg}. "
+                        content="OpenRouter a refusé la requête (403). "
                         "Vérifie tes crédits sur openrouter.ai/settings/billing ou choisis un modèle gratuit (:free).",
                     )
                 else:
@@ -260,7 +266,7 @@ class OpenRouterProvider(BaseProvider):
                 yield StreamEvent(type="error", content="Trop de requêtes OpenRouter. Patiente quelques secondes.")
             else:
                 if api_error_msg:
-                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status}) : {api_error_msg}")
+                    yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
                 else:
                     yield StreamEvent(type="error", content=f"Erreur API OpenRouter ({status})")
         except Exception as e:

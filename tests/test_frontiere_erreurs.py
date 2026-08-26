@@ -541,3 +541,446 @@ class TestPanel048GroupeA:
             "Erreur du fournisseur IA pendant la rédaction : {exc}"
             not in inspect.getsource(documents_router)
         )
+
+
+class TestRevueSosoPasse2:
+    """Passe 2 de la revue du hotfix 0.48.1 (findings 3, 4, 6)."""
+
+    def test_f3_un_avis_de_ponctuation_seule_ne_passe_pas(self):
+        """« ... », « --- », « ?! » survivent à strip() mais ne disent rien :
+        la garde doit exiger du contenu SÉMANTIQUE."""
+        from app.services.board import contenu_exploitable
+
+        assert contenu_exploitable("Un vrai avis mesuré.") is True
+        assert contenu_exploitable("42") is True
+        for vide_de_sens in ("", "   ", "\n\t ", "...", "---", "?!", "  ***  "):
+            assert contenu_exploitable(vide_de_sens) is False, vide_de_sens
+
+    @pytest.mark.asyncio
+    async def test_f4_une_cle_gemini_invalide_reste_actionnable(self, monkeypatch):
+        """400/401 « API key not valid » devenait « API error: 400 » : ni
+        actionnable pour l'utilisateur, ni reconnu comme panne. Le corps brut
+        du fournisseur ne doit pas fuir POUR AUTANT."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int, corps: bytes):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return corps
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-3.7-flash", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        # 400 clé invalide : message actionnable, sans corps brut
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(400, b'{"error":{"message":"API key not valid trace-77"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-77" not in contenu
+        assert "clé" in contenu.lower() and "api" in contenu.lower()
+        assert _is_provider_outage(contenu), "une clé invalide doit ouvrir le circuit"
+
+        # 5xx : panne technique, message sobre
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(500, b'{"error":{"message":"Internal trace-99"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-99" not in contenu
+        assert _is_provider_outage(contenu)
+
+        # 400 applicatif (pas d'authentification) : PAS une panne du fournisseur
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(400, b'{"error":{"message":"Invalid function name trace-11"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-11" not in contenu
+        assert not _is_provider_outage(contenu)
+
+    @pytest.mark.asyncio
+    async def test_f6_le_suivi_qui_echoue_ne_propage_pas(self):
+        """Test COMPORTEMENTAL du helper (l'ancien vérifiait juste un nom)."""
+        from app.models.processing import EtatTache
+        from app.routers.board import _terminer_sans_masquer
+
+        class HandleQuiCasse:
+            id = "tache-1"
+            appels: list = []
+
+            async def terminer(self, etat, error=None):
+                HandleQuiCasse.appels.append((etat, error))
+                raise RuntimeError("base verrouillée")
+
+        handle = HandleQuiCasse()
+        # Ne lève pas, quel que soit l'état terminal demandé
+        await _terminer_sans_masquer(handle, EtatTache.FAILED, error="cause métier")
+        await _terminer_sans_masquer(handle, EtatTache.DONE)
+        await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
+        assert len(HandleQuiCasse.appels) == 3
+        # handle absent : sans effet
+        await _terminer_sans_masquer(None, EtatTache.DONE)
+
+    def test_f5_le_contrat_des_prix_annonce_la_bonne_devise(self, client):
+        """/api/escalation/prices annonçait « EUR » sur des tarifs relevés en
+        USD : une valeur métier fausse, pas un simple nom de champ."""
+        reponse = client.get("/api/escalation/prices")
+        assert reponse.status_code == 200
+        assert reponse.json()["currency"] == "USD"
+
+    def test_p3_f2_les_alertes_de_budget_disent_la_bonne_devise(self):
+        """Passe 3 (finding 2) : les messages d'alerte annonçaient « EUR »
+        sur des montants calculés à partir de tarifs USD."""
+        import inspect
+
+        from app.services import token_tracker
+
+        source = inspect.getsource(token_tracker)
+        assert "EUR " not in source.replace("cost_eur", "").replace(
+            "budget_eur", ""
+        ), "un message d'alerte annonce encore des euros"
+
+    @pytest.mark.asyncio
+    async def test_p3_f3_un_modele_gemini_inconnu_est_actionnable(self, monkeypatch):
+        """404 « model not found » : l'utilisateur doit savoir qu'il s'agit du
+        modèle choisi - sans que le circuit s'ouvre (ce n'est pas une panne)."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        class FauxResponse:
+            status_code = 404
+
+            async def aread(self):
+                return b'{"error":{"message":"models/gemini-x is not found trace-55"}}'
+
+            async def aiter_lines(self):
+                if False:
+                    yield ""
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return None
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-x", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: FauxResponse())
+        events = [
+            e async for e in provider.stream(
+                None, [{"role": "user", "parts": [{"text": "x"}]}], None
+            )
+        ]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-55" not in contenu
+        assert "modèle" in contenu.lower()
+        assert not _is_provider_outage(contenu), (
+            "un modèle mal choisi ne doit pas ouvrir le circuit du fournisseur"
+        )
+
+    @pytest.mark.asyncio
+    async def test_p4_f3_un_400_parlant_de_modele_ne_ment_pas(self, monkeypatch):
+        """Passe 4 (F3) : « Invalid function name for model X » (400) donnait
+        « modèle introuvable » - une fausse piste de correction."""
+        import httpx
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int, corps: bytes):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return corps
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-3.7-flash", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        for corps in (
+            b'{"error":{"message":"Invalid function name for model X"}}',
+            b'{"error":{"message":"Function get_weather not found"}}',
+        ):
+            monkeypatch.setattr(
+                provider.client, "stream", lambda *a, _c=corps, **k: reponse(400, _c)
+            )
+            events = [e async for e in provider.stream(None, messages, None)]
+            contenu = next(e.content for e in events if e.type == "error")
+            assert "introuvable" not in contenu.lower(), contenu
+
+        # Le vrai 404 « modèle » reste actionnable
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(404, b'{"error":{"message":"models/x is not found"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "modèle" in contenu.lower()
+
+    def test_p4_f4_le_tracker_ne_parle_plus_d_euros(self):
+        """Passe 4 (F4) : le journal écrivait encore « (0.0123 EUR) » - de quoi
+        tromper un diagnostic support. Le test précédent cherchait « EUR »
+        suivi d'un espace et ratait « EUR) » et « EUR. »."""
+        import inspect
+
+        from app.services import token_tracker
+
+        source = inspect.getsource(token_tracker)
+        sans_noms_de_champs = (
+            source.replace("cost_eur", "").replace("budget_eur", "")
+        )
+        assert "EUR" not in sans_noms_de_champs
+        assert "euros" not in sans_noms_de_champs.lower()
+
+    @pytest.mark.asyncio
+    async def test_p5_f3_403_gemini_nest_pas_une_cle_invalide(self, monkeypatch):
+        """Passe 5 (F3) : Google distingue 401 (clé absente/invalide) et 403
+        (clé VALIDE sans droit sur la ressource - modèle personnalisé). Tout
+        traduire en « clé invalide » donnait un faux diagnostic ET ouvrait le
+        circuit du fournisseur entier pour un simple modèle non autorisé."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return b'{"error":{"message":"detail interne trace-88"}}'
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="tunedModels/x", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        # 401 : la clé elle-même - panne du fournisseur
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: reponse(401))
+        events = [e async for e in provider.stream(None, messages, None)]
+        message_401 = next(e.content for e in events if e.type == "error")
+        assert "clé" in message_401.lower()
+        assert _is_provider_outage(message_401)
+
+        # 403 : droits sur CE modèle - ni « clé invalide », ni circuit ouvert
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: reponse(403))
+        events = [e async for e in provider.stream(None, messages, None)]
+        message_403 = next(e.content for e in events if e.type == "error")
+        assert "trace-88" not in message_403
+        assert "invalide" not in message_403.lower()
+        assert "modèle" in message_403.lower()
+        assert not _is_provider_outage(message_403), (
+            "un modèle non autorisé ne doit pas couper tout le fournisseur"
+        )
+
+    @pytest.mark.asyncio
+    async def test_p6_le_message_actionnable_survit_au_board(self, monkeypatch):
+        """Passe 6 (F2) : le message d'un provider - déjà écrit POUR l'écran
+        depuis que la frontière est posée à la source - était écrasé par
+        « Le conseiller X n'a pas pu terminer son avis » : l'utilisateur
+        perdait la cause ET l'action corrective."""
+        import contextlib
+        from types import SimpleNamespace
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.error_handler import ErreurPourEcran
+        from app.services.llm import LLMProvider
+
+        MESSAGE = (
+            "Ton accès à ce modèle Gemini est restreint. "
+            "Vérifie tes droits ou choisis un autre modèle."
+        )
+
+        class LLMRestreint:
+            config = SimpleNamespace(provider=LLMProvider.GEMINI, model="tunedModels/x")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
+                raise ErreurPourEcran(MESSAGE)
+                yield  # pragma: no cover
+
+        class FakeSession:
+            def add(self, _v):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _v):
+                pass
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: LLMRestreint())
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider", lambda *a, **k: LLMRestreint()
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.ANALYST],
+        )
+        erreur = None
+        try:
+            async for _ in service.deliberate(request):
+                pass
+        except Exception as e:  # noqa: BLE001
+            erreur = e
+
+        assert erreur is not None
+        assert "choisis un autre modèle" in str(erreur), str(erreur)
+
+    def test_p6_l_atelier_ne_remplace_pas_le_message_du_provider(self):
+        """Passe 6 (F3) : l'Atelier enveloppait le contenu dans un RuntimeError
+        nu, donc message_pour_ecran le remplaçait par le générique. Depuis que
+        la frontière est posée À LA SOURCE (tous les providers), ce contenu est
+        sûr : il doit traverser."""
+        import inspect
+
+        from app.services.agents import runtime
+
+        source = inspect.getsource(runtime)
+        assert 'RuntimeError(event.content or "Erreur LLM")' not in source
+        assert "ErreurPourEcran" in source
+
+    @pytest.mark.asyncio
+    async def test_p7_f2_openrouter_et_ollama_ne_relaient_pas_le_detail(self, monkeypatch):
+        """Passe 7 (F2) : le Board et l'Atelier promeuvent le contenu d'erreur
+        d'un provider en message d'écran. La garantie « tous les providers sont
+        sûrs » était fausse : OpenRouter et Ollama recopiaient encore le corps
+        de la réponse (chemin local, identifiant, message sans limite)."""
+        import httpx
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.ollama import OllamaProvider
+        from app.services.providers.openrouter import OpenRouterProvider
+
+        SECRET = "/Users/ludo/.therese/cle-sk-123 trace-interne"
+
+        def flux(lignes):
+            class FauxResponse:
+                status_code = 200
+
+                def raise_for_status(self):
+                    return None
+
+                async def aiter_lines(self):
+                    for ligne in lignes:
+                        yield ligne
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        # OpenRouter : erreur transmise DANS le flux SSE
+        openrouter = OpenRouterProvider(
+            LLMConfig(
+                provider=LLMProvider.OPENROUTER, model="anthropic/claude-sonnet-4-6",
+                api_key="k",
+            ),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(
+            openrouter.client, "stream",
+            lambda *a, **k: flux(['data: {"error": {"message": "' + SECRET + '"}}']),
+        )
+        events = [
+            e async for e in openrouter.stream(None, [{"role": "user", "content": "x"}], None)
+        ]
+        for event in events:
+            if event.type == "error":
+                assert SECRET not in (event.content or ""), event.content
+
+        # Ollama : erreur transmise DANS le flux
+        ollama = OllamaProvider(
+            LLMConfig(provider=LLMProvider.OLLAMA, model="m", base_url="http://h"),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(
+            ollama.client, "stream",
+            lambda *a, **k: flux(['{"error": "' + SECRET + '"}']),
+        )
+        events = [
+            e async for e in ollama.stream(None, [{"role": "user", "content": "x"}], None)
+        ]
+        for event in events:
+            if event.type == "error":
+                assert SECRET not in (event.content or ""), event.content

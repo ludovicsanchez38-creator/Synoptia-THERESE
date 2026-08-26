@@ -2,6 +2,7 @@
 // Usage quotidien/mensuel, limites configurables, budget (US-ESC-01 à US-ESC-05)
 
 import { useState, useEffect } from 'react';
+import { formaterCout, UNITE_COUT } from '../../lib/coutAffiche';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
@@ -95,7 +96,7 @@ export function LimitsTab() {
             </div>
             <div className="p-3 bg-background/40 rounded-lg border border-border/30">
               <p className="text-xl font-bold text-text">
-                {status.daily_usage.cost_eur.toFixed(2)} €
+                {formaterCout(status.daily_usage.cost_eur)}
               </p>
               <p className="text-xs text-text-muted">Coût</p>
             </div>
@@ -131,7 +132,7 @@ export function LimitsTab() {
             </div>
             <div className="p-3 bg-background/40 rounded-lg border border-border/30">
               <p className="text-xl font-bold text-text">
-                {status.monthly_usage.cost_eur.toFixed(2)} €
+                {formaterCout(status.monthly_usage.cost_eur)}
               </p>
               <p className="text-xs text-text-muted">Coût total</p>
             </div>
@@ -139,7 +140,7 @@ export function LimitsTab() {
           {/* Progression du budget */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-text-muted">
-              <span>Budget mensuel ({limits?.monthly_budget_eur || 50} €)</span>
+              <span>Budget mensuel ({limits?.monthly_budget_eur || 50} {UNITE_COUT})</span>
               <span>{monthlyBudgetPercent.toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-background rounded-full overflow-hidden">
@@ -200,7 +201,11 @@ export function LimitsTab() {
               />
             </div>
             <div>
-              <label htmlFor="settings-limit-budget" className="text-xs text-text-muted mb-1 block">Budget mensuel (€)</label>
+              <label htmlFor="settings-limit-budget" className="text-xs text-text-muted mb-1 block">Budget mensuel ({UNITE_COUT})</label>
+              <p className="text-xs text-text-muted mb-1">
+                Les tarifs des services d'IA sont publiés en dollars : ton
+                budget et les coûts affichés sont donc exprimés en {UNITE_COUT}.
+              </p>
               <input
                 id="settings-limit-budget"
                 type="number"

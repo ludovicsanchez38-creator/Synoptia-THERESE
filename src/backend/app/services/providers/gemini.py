@@ -111,6 +111,49 @@ def _tools_to_function_declarations(tools: list[dict]) -> list[dict]:
     return declarations
 
 
+def _message_erreur_http(status_code: int, corps: str) -> str:
+    """Message d'écran pour une réponse HTTP en échec de Gemini.
+
+    Le corps sert au DIAGNOSTIC (jamais à l'affichage) : Google renvoie 400
+    pour une clé invalide, or ce cas doit rester actionnable et compter comme
+    panne au circuit breaker. Les formulations reprennent celles de
+    `error_handler.ERROR_MESSAGES` pour que `_is_provider_outage` les classe.
+    """
+    corps_bas = (corps or "").lower()
+    # Passe 5 (F3) : Google DISTINGUE 401 (clé absente, invalide ou expirée)
+    # et 403 (clé valide, sans droit sur CETTE ressource - typiquement un
+    # modèle personnalisé). Confondre les deux donnait un faux diagnostic et
+    # ouvrait le circuit du fournisseur entier pour un simple modèle.
+    if status_code == 403:
+        return (
+            "Ton accès à ce modèle Gemini est restreint. "
+            "Vérifie tes droits ou choisis un autre modèle."
+        )
+    cle_en_cause = (
+        status_code == 401
+        or "api key not valid" in corps_bas
+        or "api_key_invalid" in corps_bas
+    )
+    if cle_en_cause:
+        return "Clé API Gemini invalide ou expirée. Vérifie tes paramètres."
+    if status_code == 429:
+        return "Trop de requêtes envoyées. Attends quelques instants avant de réessayer."
+    if status_code >= 500:
+        return f"API error: {status_code}"
+    # Passe 3 (finding 3) : Google rend 404 quand le MODÈLE n'existe pas -
+    # « requête refusée » ne dit pas quoi corriger. Ce n'est pas une panne du
+    # fournisseur : le circuit ne doit pas s'ouvrir.
+    # Passe 4 (F3) : sur le STATUT seul - un 400 « Invalid function name for
+    # model X » parle d'un outil, pas du modèle choisi ; envoyer l'utilisateur
+    # changer de modèle serait une fausse piste.
+    if status_code == 404:
+        return (
+            "Le modèle demandé est introuvable chez le fournisseur. "
+            "Choisis-en un autre dans les Paramètres."
+        )
+    return f"Requête refusée par le service d'IA ({status_code})."
+
+
 def _message_has_payload(msg: dict) -> bool:
     """Un message Gemini est exploitable s'il a du texte non vide OU un
     functionCall/functionResponse (US-009 : l'ancien filtre texte-seulement
@@ -227,13 +270,17 @@ class GeminiProvider(BaseProvider):
                     error_body = await response.aread()
                     error_text = error_body.decode()
                     logger.error(f"Gemini API {response.status_code}: {error_text}")
-                    # Parse error message for user-friendly display
-                    try:
-                        error_json = json.loads(error_text)
-                        error_msg = error_json.get("error", {}).get("message", error_text)
-                    except json.JSONDecodeError:
-                        error_msg = error_text[:200]
-                    yield StreamEvent(type="error", content=f"Gemini: {error_msg}")
+                    # Revue Soso S2-3 puis passe 2 (finding 4) : le corps du
+                    # fournisseur ne part JAMAIS à l'écran, mais il sert au
+                    # diagnostic - une clé invalide doit rester actionnable et
+                    # reconnue comme panne, une erreur applicative ne doit pas
+                    # ouvrir le circuit.
+                    yield StreamEvent(
+                        type="error",
+                        content=_message_erreur_http(
+                            response.status_code, error_text
+                        ),
+                    )
                     return
                 has_tool_calls = False
                 tool_call_index = 0

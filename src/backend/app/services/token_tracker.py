@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Token Pricing (per 1M tokens, January 2026)
+# Token Pricing (USD per 1M tokens, January 2026)
 # ============================================================
 
 TOKEN_PRICES = {
@@ -21,7 +21,7 @@ TOKEN_PRICES = {
     # Frontiers 0.48, relevés aux sources officielles le 25/08/2026
     # (platform.claude.com/docs, developers.openai.com, ai.google.dev,
     # docs.mistral.ai/inference/pricing, docs.x.ai) - panel de revue :
-    # un frontier absent d'ici affiche un coût menti à 0,00 EUR.
+    # un frontier absent d'ici affiche un coût menti à 0,00.
     "claude-opus-5": {"input": 5.00, "output": 25.00},
     "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
@@ -77,7 +77,8 @@ class TokenLimits:
     daily_input_limit: int = 500000  # 500K tokens/day
     daily_output_limit: int = 100000  # 100K tokens/day
 
-    # Monthly budget (in EUR)
+    # Plafond mensuel, en USD (tarifs fournisseurs en dollars ; le nom du
+    # champ reste historique - dette de renommage actée en 0.48.1)
     monthly_budget_eur: float = 50.0
 
     # Warnings
@@ -221,7 +222,9 @@ class TokenTracker:
         """
         Estimate cost for a request (US-ESC-02).
 
-        Returns cost in EUR.
+        Returns cost in USD (tarifs relevés en dollars chez tous les
+        fournisseurs - le nom `cost_eur` des champs reste historique, cf.
+        revue Soso 0.48.1 finding S2-4).
         """
         prices = TOKEN_PRICES.get(model)
         if prices is None and "/" in model:
@@ -276,7 +279,7 @@ class TokenTracker:
 
         logger.info(
             f"[TOKEN] Recorded: {input_tokens} in / {output_tokens} out "
-            f"({cost:.4f} EUR) - {model}"
+            f"({cost:.4f} USD) - {model}"
         )
 
         return record
@@ -333,14 +336,14 @@ class TokenTracker:
 
             if budget_pct >= 100:
                 result["errors"].append(
-                    f"Budget mensuel atteint: {projected_month_cost:.2f} EUR "
-                    f"(budget: {self._limits.monthly_budget_eur:.2f} EUR)"
+                    f"Budget mensuel atteint: {projected_month_cost:.2f} USD "
+                    f"(budget: {self._limits.monthly_budget_eur:.2f} USD)"
                 )
                 result["allowed"] = False
             elif budget_pct >= self._limits.warn_at_percentage:
                 result["warnings"].append(
                     f"Budget mensuel: {budget_pct:.0f}% "
-                    f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} EUR)"
+                    f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} USD)"
                 )
 
         return result

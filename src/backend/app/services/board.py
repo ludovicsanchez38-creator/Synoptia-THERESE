@@ -57,6 +57,16 @@ _etat_catalogue: dict[str, bool | None] = {}
 _date_derniere_sonde: str | None = None
 _verrou_sonde = asyncio.Lock()
 
+def contenu_exploitable(texte: str | None) -> bool:
+    """Un avis doit porter du SENS, pas seulement des caractères.
+
+    Revue Soso passe 2 (finding 3) : « ... », « --- » ou « ?! » survivent à
+    `strip()` et passaient donc pour un avis valide, synthétisé et sauvegardé.
+    On exige au moins un caractère alphanumérique.
+    """
+    return any(caractere.isalnum() for caractere in (texte or ""))
+
+
 #: Plancher de sortie d'un conseiller cloud à effort max : le raisonnement
 #: décompte du plafond, 4096 pouvait rendre un avis vide (panel 0.48).
 PLANCHER_MAX_TOKENS_CONSEILLER = 16000
@@ -463,11 +473,21 @@ class BoardService:
                             provider=actual_provider,
                             content=chunk,
                         )
+                except ErreurPourEcran as e:
+                    logger.error(f"Sovereign advisor {config['name']} : {e}")
+                    raise ErreurPourEcran(f"{config['name']} : {e}") from e
                 except Exception as e:
                     logger.error(f"Sovereign advisor {config['name']} error: {e}")
                     raise ErreurPourEcran(
                         f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
                     ) from e
+
+                # Revue Soso S2-1 : même garde qu'en cloud - un flux sans texte
+                # n'est pas un avis (le modèle local peut terminer à vide).
+                if not contenu_exploitable(full_content):
+                    raise ErreurPourEcran(
+                        f"Le conseiller {config['name']} n'a rien répondu."
+                    )
 
                 usage = self._track_usage(
                     llm_service,
@@ -604,6 +624,13 @@ class BoardService:
                                 provider=actual_provider,
                                 content=chunk,
                             ))
+                except ErreurPourEcran as e:
+                    # Passe 6 (F2) : ce message est DÉJÀ écrit pour l'écran
+                    # (frontière posée à la source des providers) - le
+                    # remplacer par un générique privait l'utilisateur de la
+                    # cause et de l'action corrective.
+                    logger.error(f"Opinion {config['name']} : {e}")
+                    raise ErreurPourEcran(f"{config['name']} : {e}") from e
                 except Exception as e:
                     logger.error(f"Error getting opinion from {config['name']}: {e}")
                     raise ErreurPourEcran(
@@ -627,6 +654,15 @@ class BoardService:
                     output_tokens=int(usage.get("output_tokens") or 0),
                     cost_eur=float(usage.get("cost_eur") or 0.0),
                 )
+
+                # Revue Soso S2-1 : raise_on_error ne couvre que les
+                # évènements error. Un flux qui se termine SANS texte (budget
+                # de sortie consommé, [DONE] immédiat) donnait un avis VIDE
+                # validé, synthétisé et sauvegardé.
+                if not contenu_exploitable(full_content):
+                    raise ErreurPourEcran(
+                        f"Le conseiller {config['name']} n'a rien répondu."
+                    )
 
                 await chunk_queue.put(BoardDeliberationChunk(
                     type="advisor_done",

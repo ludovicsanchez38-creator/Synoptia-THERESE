@@ -212,8 +212,7 @@ class OllamaProvider(BaseProvider):
                         yield StreamEvent(
                             type="error",
                             content=(
-                                f"Ollama a rencontré une erreur interne (HTTP 500).{ram_hint} "
-                                f"Détail : {detail}"
+                                f"Ollama a rencontré une erreur interne (HTTP 500).{ram_hint}"
                             ),
                         )
                         return
@@ -242,9 +241,12 @@ class OllamaProvider(BaseProvider):
                                 output_tokens = ec
                             # Vérifier si Ollama renvoie une erreur dans le flux
                             if error_msg := event.get("error"):
+                                # Passe 7 (F2) : le détail du fournisseur reste
+                                # au log, l'écran reçoit une forme sobre.
+                                logger.error("Ollama (%s) erreur de flux : %s", model, error_msg)
                                 yield StreamEvent(
                                     type="error",
-                                    content=f"Ollama ({model}): {error_msg}",
+                                    content=f"Ollama ({model}) a signalé une erreur.",
                                 )
                                 return
                             message = event.get("message", {})

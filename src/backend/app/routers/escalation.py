@@ -39,7 +39,7 @@ async def estimate_cost(request: CostEstimateRequest):
     """
     Estimate cost for a request.
 
-    Returns estimated cost in EUR.
+    Returns estimated cost in USD (tarifs fournisseurs en dollars).
     """
     tracker = get_token_tracker()
     cost = tracker.estimate_cost(
@@ -73,7 +73,10 @@ async def get_token_prices():
             "output_per_1k": prices["output"] / 1000,
         }
 
-    return {"prices": formatted, "currency": "EUR"}
+    # Revue Soso passe 2 (finding 5) : les tarifs de TOKEN_PRICES sont relevés
+    # en USD chez tous les fournisseurs - annoncer « EUR » était une valeur
+    # métier FAUSSE (et non un simple nom de champ historique).
+    return {"prices": formatted, "currency": "USD"}
 
 
 # ============================================================
