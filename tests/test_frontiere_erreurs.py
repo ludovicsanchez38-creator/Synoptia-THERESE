@@ -917,3 +917,71 @@ class TestRevueSosoPasse2:
         source = inspect.getsource(runtime)
         assert 'RuntimeError(event.content or "Erreur LLM")' not in source
         assert "ErreurPourEcran" in source
+
+    @pytest.mark.asyncio
+    async def test_p7_f2_openrouter_et_ollama_ne_relaient_pas_le_detail(self, monkeypatch):
+        """Passe 7 (F2) : le Board et l'Atelier promeuvent le contenu d'erreur
+        d'un provider en message d'écran. La garantie « tous les providers sont
+        sûrs » était fausse : OpenRouter et Ollama recopiaient encore le corps
+        de la réponse (chemin local, identifiant, message sans limite)."""
+        import httpx
+
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.ollama import OllamaProvider
+        from app.services.providers.openrouter import OpenRouterProvider
+
+        SECRET = "/Users/ludo/.therese/cle-sk-123 trace-interne"
+
+        def flux(lignes):
+            class FauxResponse:
+                status_code = 200
+
+                def raise_for_status(self):
+                    return None
+
+                async def aiter_lines(self):
+                    for ligne in lignes:
+                        yield ligne
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        # OpenRouter : erreur transmise DANS le flux SSE
+        openrouter = OpenRouterProvider(
+            LLMConfig(
+                provider=LLMProvider.OPENROUTER, model="anthropic/claude-sonnet-4-6",
+                api_key="k",
+            ),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(
+            openrouter.client, "stream",
+            lambda *a, **k: flux(['data: {"error": {"message": "' + SECRET + '"}}']),
+        )
+        events = [
+            e async for e in openrouter.stream(None, [{"role": "user", "content": "x"}], None)
+        ]
+        for event in events:
+            if event.type == "error":
+                assert SECRET not in (event.content or ""), event.content
+
+        # Ollama : erreur transmise DANS le flux
+        ollama = OllamaProvider(
+            LLMConfig(provider=LLMProvider.OLLAMA, model="m", base_url="http://h"),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(
+            ollama.client, "stream",
+            lambda *a, **k: flux(['{"error": "' + SECRET + '"}']),
+        )
+        events = [
+            e async for e in ollama.stream(None, [{"role": "user", "content": "x"}], None)
+        ]
+        for event in events:
+            if event.type == "error":
+                assert SECRET not in (event.content or ""), event.content

@@ -68,18 +68,30 @@ function restoreElement(element: HTMLElement): void {
 }
 
 /**
- * Pile des dialogues et panneaux OUVERTS, dans leur ordre d'ouverture.
+ * Un élément est-il visuellement AU-DESSUS d'un autre ?
  *
- * Revue passe 6 (F1) : épargner « toute modale » ne suffit pas - il faut
- * savoir laquelle est AU-DESSUS. Une modale ouverte AVANT est dessous : elle
- * doit être isolée comme le reste du fond.
+ * Revue passe 7 (F1) : l'ordre d'OUVERTURE ne dit rien de l'ordre VISUEL -
+ * une modale ouverte en second peut être rendue derrière. Ce qui fait foi,
+ * c'est le z-index effectif, puis l'ordre du DOM à z-index égal (règle de
+ * peinture du navigateur).
  */
-const pileDialogues: HTMLElement[] = [];
+function estAuDessus(candidat: HTMLElement, reference: HTMLElement): boolean {
+  const z = (element: HTMLElement): number => {
+    for (let noeud: HTMLElement | null = element; noeud; noeud = noeud.parentElement) {
+      const brut = window.getComputedStyle(noeud).zIndex;
+      const valeur = Number.parseInt(brut, 10);
+      if (!Number.isNaN(valeur)) return valeur;
+    }
+    return 0;
+  };
 
-/** Les dialogues ouverts APRÈS celui-ci, donc au-dessus de lui. */
-function dialoguesAuDessus(dialog: HTMLElement): HTMLElement[] {
-  const rang = pileDialogues.indexOf(dialog);
-  return rang === -1 ? [] : pileDialogues.slice(rang + 1);
+  const zCandidat = z(candidat);
+  const zReference = z(reference);
+  if (zCandidat !== zReference) return zCandidat > zReference;
+  // z-index égal (ou indisponible) : le dernier peint gagne, donc l'ordre DOM.
+  return Boolean(
+    reference.compareDocumentPosition(candidat) & Node.DOCUMENT_POSITION_FOLLOWING,
+  );
 }
 
 /**
@@ -95,7 +107,6 @@ function isolateOutsideDialog(dialog: HTMLElement): {
   restaurer: () => void;
 } {
   const isolated: HTMLElement[] = [];
-  const auDessus = dialoguesAuDessus(dialog);
   let branch: HTMLElement = dialog;
   let parent = branch.parentElement;
 
@@ -103,9 +114,13 @@ function isolateOutsideDialog(dialog: HTMLElement): {
     for (const sibling of Array.from(parent.children)) {
       if (!(sibling instanceof HTMLElement) || sibling === branch) continue;
       if (sibling.matches('[data-dialog-backdrop], [data-dialog-allow]')) continue;
-      // Épargner uniquement ce qui est réellement AU-DESSUS (passe 6, F1) :
-      // une modale ouverte avant celle-ci est dessous, donc à isoler.
-      if (auDessus.some((ouvert) => sibling === ouvert || sibling.contains(ouvert))) {
+      // Épargner uniquement ce qui est VISUELLEMENT au-dessus (passe 7, F1) :
+      // une surface rendue derrière doit être isolée comme le reste du fond.
+      const dialoguesDuFrere: HTMLElement[] = [
+        ...(sibling.matches('[role="dialog"]') ? [sibling] : []),
+        ...Array.from(sibling.querySelectorAll<HTMLElement>('[role="dialog"]')),
+      ];
+      if (dialoguesDuFrere.some((autre) => estAuDessus(autre, dialog))) {
         continue;
       }
       isolateElement(sibling);
@@ -169,20 +184,12 @@ export function useDialogFocusTrap(
     const dialog = ref.current;
     if (!dialog) return;
 
-    // Passe 6 (F1) : l'ordre d'ouverture EST l'ordre d'empilement.
-    pileDialogues.push(dialog);
-
     if (!dialog.contains(document.activeElement)) {
       declencheurRef.current = document.activeElement as HTMLElement | null;
       const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
       const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
       (prefere ?? premier ?? dialog).focus();
     }
-
-    return () => {
-      const rang = pileDialogues.indexOf(dialog);
-      if (rang !== -1) pileDialogues.splice(rang, 1);
-    };
   }, [active, ref]);
 
   // 2. Isolation du fond - se réarme librement au changement de largeur.
