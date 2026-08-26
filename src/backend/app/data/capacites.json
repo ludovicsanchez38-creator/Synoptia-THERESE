@@ -256,6 +256,7 @@
       "maturite": "complete",
       "audience": "tous",
       "entrees": [
+        "board.etabli",
         "board.tiroir"
       ],
       "exigences": [],
@@ -698,6 +699,18 @@
       }
     },
     {
+      "id": "board.etabli",
+      "capacites": [
+        "board"
+      ],
+      "type": "scenario",
+      "binding": {
+        "registre": "scenario",
+        "scenarioId": "board"
+      },
+      "principal": true
+    },
+    {
       "id": "board.tiroir",
       "capacites": [
         "board"
@@ -706,8 +719,7 @@
       "binding": {
         "registre": "tiroir",
         "carte": "decision-board"
-      },
-      "principal": true
+      }
     },
     {
       "id": "atelier-agents.tiroir",

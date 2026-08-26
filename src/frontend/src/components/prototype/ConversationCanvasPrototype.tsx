@@ -15,7 +15,6 @@ import {
   HelpCircle,
   PanelRightClose,
   Plus,
-  Receipt,
   Search,
   Settings,
   ShieldCheck,
@@ -108,7 +107,7 @@ import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
-import { ACTIONS_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
+import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -415,9 +414,16 @@ function CommandPalette({
   const visibleCapabilities = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
+      // Les parcours sont listés juste au-dessus : une capacité qui mène au
+      // même scénario ferait doublon dans la même palette, et deux entrées
+      // pour une seule destination font douter qu'elles soient identiques.
+      // Le cas préexistait pour Email, Contacts et Devis et factures ; la
+      // puce « Décider » en aurait ajouté un quatrième.
+      const dejaEnParcours = new Set<string>(ACTIONS_ETABLI.map((a) => a.id));
       return featuredCapabilities
         .map((id) => capabilities.find((item) => item.id === id))
-        .filter((item): item is CapabilityItem => Boolean(item));
+        .filter((item): item is CapabilityItem => Boolean(item))
+        .filter((item) => !item.scenario || !dejaEnParcours.has(item.scenario));
     }
     return capabilities
       .filter((item) =>
@@ -521,15 +527,13 @@ function CommandPalette({
                   className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
                 >
                   <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-[8px] bg-accent-tint text-accent">
-                    {action.id === 'memory' ? (
-                      <Users className="h-4 w-4" />
-                    ) : action.id === 'email' ? (
-                      <Mail className="h-4 w-4" />
-                    ) : action.id === 'meeting' ? (
-                      <Calendar className="h-4 w-4" />
-                    ) : (
-                      <Receipt className="h-4 w-4" />
-                    )}
+                    {(() => {
+                      // Table exhaustive plutôt qu'une cascade : la branche
+                      // fourre-tout d'avant donnait l'icône de la facture à
+                      // toute action nouvelle, sans rien casser.
+                      const Icone = ICONES_ETABLI[action.id];
+                      return <Icone className="h-4 w-4" />;
+                    })()}
                   </span>
                   <span className="flex-1">
                     <span className="block text-sm font-semibold text-text">{action.label}</span>

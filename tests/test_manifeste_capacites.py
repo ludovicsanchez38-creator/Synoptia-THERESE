@@ -531,17 +531,57 @@ class TestLeTiroirEstDeclare:
         manquantes = set(self.ATTENDUES) - ids
         assert manquantes == set(), f"capacités absentes du manifeste : {manquantes}"
 
-    def test_leur_acces_principal_est_le_tiroir(self):
+    def test_chacune_a_sa_carte_au_tiroir(self):
+        """L'invariant B0 : une capacité du tiroir a SA carte, toujours.
+
+        La formulation d'origine exigeait que le tiroir soit leur accès
+        PRINCIPAL. Trop fort : le 26/08/2026 « Décider » a gagné une puce
+        à l'accueil sans quitter le tiroir. Ce qui doit rester vrai, c'est
+        que la carte existe et pointe au bon endroit — sinon le chemin du
+        tiroir est mort, et c'est cela que B0 protégeait.
+        """
+        from app.services.capacites import points_entree
+
+        entrees = points_entree()
+        for capacite_id, carte in self.ATTENDUES.items():
+            tiroir = [
+                p
+                for p in entrees
+                if capacite_id in p["capacites"]
+                and p["binding"].get("registre") == "tiroir"
+            ]
+            assert len(tiroir) == 1, (
+                f"{capacite_id} : {len(tiroir)} entrée(s) de tiroir, attendu 1"
+            )
+            assert tiroir[0]["binding"]["carte"] == carte
+
+    def test_le_board_est_au_tiroir_mais_s_atteint_d_abord_par_l_accueil(self):
+        """Le seul écart au motif, et il est délibéré (26/08/2026).
+
+        Le Board reste rangé au tiroir, mais son chemin le plus court est
+        la puce « Décider » de l'accueil. C'est ce que l'accès principal
+        déclare, et c'est ce que /aide annonce.
+        """
         from app.services.capacites import acces_principal
 
-        for capacite_id, carte in self.ATTENDUES.items():
+        principal = acces_principal("board")
+
+        assert principal is not None
+        assert principal["binding"]["registre"] == "scenario"
+        assert principal["binding"]["scenarioId"] == "board"
+
+    def test_les_cinq_autres_gardent_le_tiroir_pour_acces_principal(self):
+        from app.services.capacites import acces_principal
+
+        for capacite_id in self.ATTENDUES:
+            if capacite_id == "board":
+                continue
             principal = acces_principal(capacite_id)
             assert principal is not None, f"{capacite_id} : aucun accès principal"
-            binding = principal["binding"]
-            assert binding["registre"] == "tiroir", (
-                f"{capacite_id} : accès principal {binding['registre']}, attendu tiroir"
+            assert principal["binding"]["registre"] == "tiroir", (
+                f"{capacite_id} : accès principal devenu "
+                f"{principal['binding']['registre']}"
             )
-            assert binding["carte"] == carte
 
     def test_un_binding_tiroir_sans_carte_est_invalide(self):
         from app.services.capacites import _structure_valide

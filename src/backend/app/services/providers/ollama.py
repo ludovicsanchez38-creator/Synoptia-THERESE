@@ -216,9 +216,17 @@ class OllamaProvider(BaseProvider):
                             ),
                         )
                         return
+                    # Le corps d'Ollama porte typiquement un chemin de la
+                    # machine : il reste au journal (ligne ci-dessus), l'écran
+                    # ne reçoit que le statut. Les cas actionnables (modèle
+                    # absent, mémoire) sont traités au-dessus et gardent leur
+                    # texte utile.
                     yield StreamEvent(
                         type="error",
-                        content=f"Erreur Ollama (HTTP {status}): {detail}",
+                        content=(
+                            f"Ollama a refusé la requête (HTTP {status}). "
+                            "Le détail est dans le journal de l'application."
+                        ),
                     )
                     return
 

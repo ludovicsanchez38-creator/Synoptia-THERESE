@@ -337,14 +337,21 @@ def available_actions_text() -> str:
             lignes.append(f"- {{action: ouvrir {cible}}} — {nom}")
         else:
             lignes.append(f"- {{action: ouvrir {cible}}}")
-    # B0 (0.48) : les capacités dont l'accès principal est le tiroir
-    # s'annoncent par leur chemin réel - « Plus d'outils → <nom> ».
+    # B0 (0.48) : une capacité s'annonce par son chemin RÉEL, celui que son
+    # accès principal désigne. Le tiroir n'est plus le seul : depuis le
+    # 26/08/2026 le Board a une puce à l'accueil, et une aide qui enverrait
+    # encore au tiroir ferait faire un détour. Le libellé de la porte suit
+    # donc le registre de l'accès principal.
     from app.services.capacites import acces_principal
+
+    PORTES = {"tiroir": "Plus d'outils", "scenario": "Accueil"}
 
     for capacite in capacites():
         principal = acces_principal(capacite["id"])
-        if principal and principal.get("binding", {}).get("registre") == "tiroir":
-            lignes.append(f"- Plus d'outils → {texte(capacite, 'nom')}")
+        registre = (principal or {}).get("binding", {}).get("registre")
+        porte = PORTES.get(registre or "")
+        if porte:
+            lignes.append(f"- {porte} → {texte(capacite, 'nom')}")
 
     lignes += [
         f'- {{action: produire {fmt} "sujet du document"}}'
