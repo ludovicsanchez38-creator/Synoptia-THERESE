@@ -113,11 +113,7 @@ class TraitementHandle:
             ligne = await _ligne(session, self.id)
         return ligne is not None and ligne.state == EtatTache.CANCEL_REQUESTED
 
-    async def terminer(self, etat: str, *, error: str | None = None) -> None:
-        """SEUL le producteur pose l'état terminal, après son nettoyage réel."""
-        assert etat in EtatTache.terminaux(), etat
-        task_registry.retirer(self.id)
-        _demandes_en_attente.discard(self.id)
+    async def _ecrire_etat_terminal(self, etat: str, *, error: str | None) -> None:
         async with get_session_context() as session:
             await session.execute(
                 update(ProcessingTask)
@@ -130,6 +126,26 @@ class TraitementHandle:
                 )
             )
             await session.commit()
+
+    async def terminer(self, etat: str, *, error: str | None = None) -> None:
+        """SEUL le producteur pose l'état terminal, après son nettoyage réel.
+
+        L'ÉCRITURE D'ABORD, le retrait ensuite. L'ordre inverse paraissait
+        anodin et ne l'est pas : SQLite est mono-écrivain (`busy_timeout`
+        5 s), donc le commit peut échouer. Le registre étant déjà vidé, la
+        ligne restait `running` avec `can_cancel` faux - une tâche affichée
+        comme active que plus personne ne pouvait arrêter, et qu'une demande
+        d'annulation figeait en `cancel_requested` pour toujours.
+
+        En écrivant d'abord, un échec laisse la tâche exactement dans l'état
+        où elle était : encore annulable. L'exception remonte (le Board la
+        traite avec `_terminer_sans_masquer`, qui préserve le message métier
+        sans masquer le fait que la ligne n'a pas été fermée).
+        """
+        assert etat in EtatTache.terminaux(), etat
+        await self._ecrire_etat_terminal(etat, error=error)
+        task_registry.retirer(self.id)
+        _demandes_en_attente.discard(self.id)
 
 
 async def creer_traitement(

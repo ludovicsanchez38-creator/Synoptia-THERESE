@@ -171,7 +171,7 @@ describe('Revue Soso du hotfix - findings S1', () => {
 });
 
 describe('Revue Soso du hotfix - S1-2 : pas de contrôle tabbable sous un panneau opaque', () => {
-  it('les six panneaux latéraux passent côte à côte au seuil xl', async () => {
+  it('les cinq canevas de travail passent côte à côte au seuil xl', async () => {
     const sources = await Promise.all(
       [
         'ImagesWorkspaceCanvas',
@@ -189,6 +189,31 @@ describe('Revue Soso du hotfix - S1-2 : pas de contrôle tabbable sous un pannea
       .filter(([, code]) => !code.includes('xl:relative'))
       .map(([nom]) => nom);
     expect(sansCoteACote).toEqual([]);
+  });
+
+  /**
+   * Le SIXIÈME panneau — le canevas de contexte — vit dans
+   * `ConversationCanvasPrototype.tsx`, pas dans un fichier à lui. Le test
+   * ci-dessus s'intitulait « les six panneaux » et n'en chargeait que cinq :
+   * lui retirer `xl:relative` serait passé inaperçu. Contrôle post-release
+   * des 0.48.x. Ici on vérifie le RENDU plutôt que le source — un panneau
+   * qui a la classe mais ne s'affiche pas ne prouverait rien.
+   */
+  it('le canevas de contexte aussi, et c’est vérifié sur le rendu', async () => {
+    reinitialiser();
+    poserLargeurEcran(true);
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+
+    const panneau = await waitFor(() => {
+      const noeud = document.querySelector(
+        '[aria-labelledby="prototype-context-canvas-title"]',
+      );
+      expect(noeud).toBeTruthy();
+      return noeud as HTMLElement;
+    });
+
+    expect(panneau.className).toContain('xl:relative');
   });
 });
 

@@ -166,6 +166,16 @@ def _message_has_payload(msg: dict) -> bool:
     return False
 
 
+# Familles Gemini qui IGNORENT les paramètres de sampling. Google (guide de
+# migration Gemini 3) : « Strip temperature, top_p, and top_k from generation
+# configs. » Ils ne sont pas rejetés - ils sont acceptés puis ignorés -, mais
+# une température sous 1.0 y est explicitement déconseillée : « may lead to
+# unexpected behavior, such as looping or degraded performance, particularly
+# in complex mathematical or reasoning tasks ». Le Board délibère en effort
+# maximal sur gemini-3.7-flash : le cas exact. Vérifié en doc le 26/08/2026.
+_SANS_SAMPLING = ("gemini-3",)
+
+
 class GeminiProvider(BaseProvider):
     """Google Gemini API provider."""
 
@@ -176,12 +186,14 @@ class GeminiProvider(BaseProvider):
         tools: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
         """Corps generateContent - extrait pour être testable (0.48)."""
+        generation_config: dict[str, Any] = {
+            "maxOutputTokens": self.config.max_tokens,
+        }
+        if not self.config.model.startswith(_SANS_SAMPLING):
+            generation_config["temperature"] = self.config.temperature
         request_body: dict[str, Any] = {
             "contents": messages,
-            "generationConfig": {
-                "maxOutputTokens": self.config.max_tokens,
-                "temperature": self.config.temperature,
-            },
+            "generationConfig": generation_config,
         }
         # 0.48 : niveau de raisonnement RESOLU par le catalogue (Gemini 3+
         # seulement - erreur API sur les 2.x -, valeurs MAJUSCULES sur
@@ -322,6 +334,11 @@ class GeminiProvider(BaseProvider):
                                                 id=call_id,
                                                 name=name,
                                                 arguments=fc.get("args") or {},
+                                                # Champ du PART, à côté de
+                                                # functionCall (pas dedans).
+                                                signature_raisonnement=part.get(
+                                                    "thoughtSignature"
+                                                ),
                                             ),
                                         )
                                         tool_call_index += 1
@@ -407,7 +424,14 @@ class GeminiProvider(BaseProvider):
             fc: dict[str, Any] = {"name": _sanitize_function_name(tc.name), "args": tc.arguments or {}}
             if tc.id and not tc.id.startswith(_SYNTHETIC_ID_PREFIX):
                 fc["id"] = tc.id
-            model_parts.append({"functionCall": fc})
+            part: dict[str, Any] = {"functionCall": fc}
+            # Gemini 3 REFUSE (400) un tour d'outils dont la signature de
+            # raisonnement manque. On rejoue celle qu'on a reçue, sur le part
+            # qui la portait - jamais un champ inventé quand il n'y en a pas
+            # (Gemini 2.x n'en émet aucune).
+            if tc.signature_raisonnement:
+                part["thoughtSignature"] = tc.signature_raisonnement
+            model_parts.append(part)
         contents.append({"role": "model", "parts": model_parts})
 
         calls_by_id = {tc.id: tc for tc in tool_calls}

@@ -109,6 +109,13 @@ class ToolCall:
     id: str
     name: str
     arguments: dict[str, Any]
+    #: Gemini 3 : signature de raisonnement reçue AVEC l'appel, à renvoyer
+    #: telle quelle au tour suivant. « You must pass back thought signatures
+    #: during function calling, otherwise you will get a validation error
+    #: (4xx) » — sans elle, tout usage d'outil casse au second tour. Seul le
+    #: premier appel d'une étape en porte une ; None pour tous les autres
+    #: fournisseurs et pour Gemini 2.x.
+    signature_raisonnement: str | None = None
 
 
 @dataclass

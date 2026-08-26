@@ -24,6 +24,38 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
+def _message_erreur_sse(code: int | None, error_type: str | None) -> str:
+    """Traduit une erreur SSE OpenRouter en message CLASSÉ, sans son corps.
+
+    Deux exigences opposées, toutes deux obligatoires :
+
+    - le `message` du fournisseur ne doit jamais atteindre l'écran (il peut
+      porter un chemin local ou un fragment de clé) ;
+    - la CLASSE de l'erreur doit y arriver intacte, sinon `_is_provider_outage`
+      ne reconnaît rien et le circuit breaker cesse de compter les pannes.
+
+    La passe 7 des 0.48.x avait satisfait la première en cassant la seconde :
+    tout devenait « Le service OpenRouter a signalé une erreur. », qu'aucun
+    marqueur ne reconnaît. Le vocabulaire ci-dessous est celui du chemin HTTP
+    du même fournisseur, et « API error: {code} » est la forme que le circuit
+    breaker sait lire pour les 5xx (même contrat que Gemini).
+    """
+    marqueur = (error_type or "").lower()
+    if code == 401 or "auth" in marqueur or "key" in marqueur:
+        return "Clé API OpenRouter invalide ou expirée."
+    if code == 402 or "credit" in marqueur or "insufficient" in marqueur:
+        return "Crédit OpenRouter insuffisant. Recharge ton compte sur openrouter.ai."
+    if code == 429 or "rate_limit" in marqueur:
+        return "Trop de requêtes OpenRouter. Patiente quelques secondes."
+    if code is not None and code >= 500:
+        return f"Le service OpenRouter est momentanément indisponible (API error: {code})."
+    if code is not None:
+        # Erreur de requête : basculer de fournisseur n'aiderait pas, donc
+        # aucun marqueur de panne ici - c'est délibéré.
+        return f"OpenRouter a refusé la requête ({code})."
+    return "OpenRouter a signalé une erreur pendant la réponse."
+
+
 class OpenRouterProvider(BaseProvider):
     """OpenRouter API provider (OpenAI-compatible, 200+ modèles)."""
 
@@ -120,14 +152,22 @@ class OpenRouterProvider(BaseProvider):
                             # OpenRouter peut renvoyer une erreur dans le flux SSE
                             if "error" in event:
                                 err = event["error"]
-                                err_msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
-                                # Passe 7 (F2) : le message du fournisseur peut
-                                # porter un chemin local ou un identifiant - il
-                                # reste au LOG, l'écran reçoit une forme sobre.
+                                est_dict = isinstance(err, dict)
+                                err_msg = err.get("message", str(err)) if est_dict else str(err)
+                                code = err.get("code") if est_dict else None
+                                error_type = None
+                                if est_dict and isinstance(err.get("metadata"), dict):
+                                    error_type = err["metadata"].get("error_type")
+                                # Le message du fournisseur peut porter un
+                                # chemin local ou un identifiant : il reste au
+                                # LOG. Seule sa CLASSE va à l'écran.
                                 logger.error(f"OpenRouter SSE error: {err_msg}")
                                 yield StreamEvent(
                                     type="error",
-                                    content="Le service OpenRouter a signalé une erreur.",
+                                    content=_message_erreur_sse(
+                                        code if isinstance(code, int) else None,
+                                        error_type if isinstance(error_type, str) else None,
+                                    ),
                                 )
                                 stream_finished = True
                                 break
