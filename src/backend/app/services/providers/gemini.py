@@ -135,7 +135,10 @@ def _message_erreur_http(status_code: int, corps: str) -> str:
     # Passe 3 (finding 3) : Google rend 404 quand le MODÈLE n'existe pas -
     # « requête refusée » ne dit pas quoi corriger. Ce n'est pas une panne du
     # fournisseur : le circuit ne doit pas s'ouvrir.
-    if status_code == 404 or "not found" in corps_bas or "model" in corps_bas:
+    # Passe 4 (F3) : sur le STATUT seul - un 400 « Invalid function name for
+    # model X » parle d'un outil, pas du modèle choisi ; envoyer l'utilisateur
+    # changer de modèle serait une fausse piste.
+    if status_code == 404:
         return (
             "Le modèle demandé est introuvable chez le fournisseur. "
             "Choisis-en un autre dans les Paramètres."

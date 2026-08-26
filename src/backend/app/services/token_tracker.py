@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Token Pricing (per 1M tokens, January 2026)
+# Token Pricing (USD per 1M tokens, January 2026)
 # ============================================================
 
 TOKEN_PRICES = {
@@ -21,7 +21,7 @@ TOKEN_PRICES = {
     # Frontiers 0.48, relevés aux sources officielles le 25/08/2026
     # (platform.claude.com/docs, developers.openai.com, ai.google.dev,
     # docs.mistral.ai/inference/pricing, docs.x.ai) - panel de revue :
-    # un frontier absent d'ici affiche un coût menti à 0,00 EUR.
+    # un frontier absent d'ici affiche un coût menti à 0,00.
     "claude-opus-5": {"input": 5.00, "output": 25.00},
     "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
@@ -77,7 +77,8 @@ class TokenLimits:
     daily_input_limit: int = 500000  # 500K tokens/day
     daily_output_limit: int = 100000  # 100K tokens/day
 
-    # Monthly budget (in EUR)
+    # Plafond mensuel, en USD (tarifs fournisseurs en dollars ; le nom du
+    # champ reste historique - dette de renommage actée en 0.48.1)
     monthly_budget_eur: float = 50.0
 
     # Warnings
@@ -278,7 +279,7 @@ class TokenTracker:
 
         logger.info(
             f"[TOKEN] Recorded: {input_tokens} in / {output_tokens} out "
-            f"({cost:.4f} EUR) - {model}"
+            f"({cost:.4f} USD) - {model}"
         )
 
         return record

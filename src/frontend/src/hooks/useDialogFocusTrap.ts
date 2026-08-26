@@ -121,26 +121,25 @@ export function useDialogFocusTrap(
   // largeur (isolateBackground) réarmait aussi le cycle focus initial +
   // restauration : la saisie en cours perdait le focus au profit du titre.
 
-  // 1. Focus initial + restauration - ne dépend QUE de l'ouverture.
+  // L'ordre de DÉCLARATION compte : React nettoie les effets dans cet ordre.
+  // Il faut donc que l'isolation soit retirée AVANT que le focus revienne au
+  // déclencheur (passe 4, F2 : un focus() sur un élément encore `inert` est
+  // ignoré par le navigateur et le focus finit sur BODY).
+  const declencheurRef = useRef<HTMLElement | null>(null);
+
+  // 1. Mémoriser le déclencheur, puis poser le focus initial dans le dialogue.
+  //    La capture doit précéder tout déplacement de focus.
   useEffect(() => {
     if (!active) return;
     const dialog = ref.current;
     if (!dialog) return;
 
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    // Ne pas voler le focus s'il est déjà dans le dialogue (autoFocus d'un champ)
     if (!dialog.contains(document.activeElement)) {
-      const preferred = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
-      const firstFocusable = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-      (preferred ?? firstFocusable ?? dialog).focus();
+      declencheurRef.current = document.activeElement as HTMLElement | null;
+      const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
+      const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (prefere ?? premier ?? dialog).focus();
     }
-
-    return () => {
-      // WCAG : rendre le focus à l'élément qui a ouvert la modale
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        previouslyFocused.focus();
-      }
-    };
   }, [active, ref]);
 
   // 2. Isolation du fond - se réarme librement au changement de largeur.
@@ -148,10 +147,34 @@ export function useDialogFocusTrap(
     if (!active || !isolateBackground) return;
     const dialog = ref.current;
     if (!dialog) return;
-    return isolateOutsideDialog(dialog);
+
+    const restaurer = isolateOutsideDialog(dialog);
+    // Passe 4 (F1) : si le focus se trouvait dans la zone qu'on vient d'isoler
+    // (l'utilisateur écrivait quand la fenêtre est passée sous le seuil), il
+    // DOIT suivre - sinon le champ paraît actif mais la frappe se perd.
+    if (!dialog.contains(document.activeElement)) {
+      const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
+      const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (prefere ?? premier ?? dialog).focus();
+    }
+    return restaurer;
   }, [active, isolateBackground, ref]);
 
-  // 3. Pilotage du clavier (Tab bouclé, Escape) - modales seulement.
+  // 3. Restauration du focus - DÉCLARÉE APRÈS l'isolation, donc nettoyée
+  //    après elle : le déclencheur n'est plus `inert` quand on le refocalise.
+  useEffect(() => {
+    if (!active) return;
+    return () => {
+      const declencheur = declencheurRef.current;
+      declencheurRef.current = null;
+      // WCAG : rendre le focus à l'élément qui a ouvert la modale
+      if (declencheur && document.contains(declencheur)) {
+        declencheur.focus();
+      }
+    };
+  }, [active]);
+
+  // 4. Pilotage du clavier (Tab bouclé, Escape) - modales seulement.
   useEffect(() => {
     if (!active || !piegeClavier) return;
     const dialog = ref.current;

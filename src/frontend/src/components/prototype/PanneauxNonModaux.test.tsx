@@ -195,9 +195,11 @@ describe('Revue Soso du hotfix - S1-2 : pas de contrôle tabbable sous un pannea
 describe('Revue Soso passe 3 - le redimensionnement ne vole pas le focus', () => {
   beforeEach(reinitialiser);
 
-  it('changer de largeur ne ramène pas le focus au titre du panneau', async () => {
-    // Passe 3 (finding 1) : franchir 1280 px réarmait l'effet du focus trap
-    // (restauration + focus initial) - la saisie en cours perdait le focus.
+  it('quand le panneau devient couvrant, le focus quitte la zone isolée', async () => {
+    // Passe 3 (F1) : franchir 1280 px réarmait tout le cycle de focus.
+    // Passe 4 (F1) : la correction laissait le focus dans une zone devenue
+    // `inert` - le champ paraissait actif mais la frappe se perdait. Le focus
+    // doit SUIVRE : il entre dans le panneau, seule zone encore utilisable.
     const auditeurs: Array<() => void> = [];
     let coteACote = true;
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -231,6 +233,84 @@ describe('Revue Soso passe 3 - le redimensionnement ne vole pas le focus', () =>
       auditeurs.forEach((cb) => cb());
     });
 
-    expect(document.activeElement).toBe(composeur);
+    const panneau = document.querySelector(
+      '[aria-labelledby="prototype-context-canvas-title"]',
+    ) as HTMLElement;
+    expect(panneau.contains(document.activeElement)).toBe(true);
+    expect(document.activeElement).not.toBe(composeur);
+  });
+
+  it('le focus ne reste jamais dans une zone isolée (passe 4, F1)', async () => {
+    const auditeurs: Array<() => void> = [];
+    let coteACote = true;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      get matches() {
+        return query.includes('min-width: 1280px') ? coteACote : false;
+      },
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: (_evt: string, cb: () => void) => auditeurs.push(cb),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => {
+      expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
+    });
+
+    screen.getByPlaceholderText('Demande à Thérèse d’organiser, créer ou agir…').focus();
+    await act(async () => {
+      coteACote = false;
+      auditeurs.forEach((cb) => cb());
+    });
+
+    expect((document.activeElement as HTMLElement)?.closest('[inert]')).toBeNull();
+  });
+});
+
+describe('Revue Soso passe 4 - ordre de nettoyage du focus', () => {
+  it('P4-F2 : le déclencheur n’est plus isolé quand le focus lui revient', async () => {
+    const { useDialogFocusTrap } = await import('../../hooks/useDialogFocusTrap');
+    const { useRef } = await import('react');
+
+    let isoleAuMomentDuFocus: boolean | null = null;
+
+    function Modale({ ouverte }: { ouverte: boolean }) {
+      const ref = useRef<HTMLDivElement>(null);
+      useDialogFocusTrap(ref, { active: ouverte, isolateBackground: true });
+      return ouverte ? (
+        <div ref={ref} data-testid="modale">
+          <button type="button">Dans la modale</button>
+        </div>
+      ) : null;
+    }
+
+    function Page({ ouverte }: { ouverte: boolean }) {
+      return (
+        <div>
+          <button type="button" data-testid="declencheur">Ouvrir</button>
+          <Modale ouverte={ouverte} />
+        </div>
+      );
+    }
+
+    const { rerender } = render(<Page ouverte={false} />);
+    const declencheur = screen.getByTestId('declencheur');
+    declencheur.focus();
+    // On observe l'état d'isolation AU MOMENT où le focus lui est rendu :
+    // dans un vrai navigateur, focus() sur un élément `inert` est ignoré.
+    declencheur.focus = () => {
+      isoleAuMomentDuFocus = declencheur.closest('[inert]') !== null;
+    };
+
+    rerender(<Page ouverte />);
+    await waitFor(() => expect(screen.getByTestId('modale')).toBeInTheDocument());
+    rerender(<Page ouverte={false} />);
+
+    expect(isoleAuMomentDuFocus).toBe(false);
   });
 });

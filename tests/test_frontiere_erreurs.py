@@ -705,3 +705,71 @@ class TestRevueSosoPasse2:
         assert not _is_provider_outage(contenu), (
             "un modèle mal choisi ne doit pas ouvrir le circuit du fournisseur"
         )
+
+    @pytest.mark.asyncio
+    async def test_p4_f3_un_400_parlant_de_modele_ne_ment_pas(self, monkeypatch):
+        """Passe 4 (F3) : « Invalid function name for model X » (400) donnait
+        « modèle introuvable » - une fausse piste de correction."""
+        import httpx
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        def reponse(code: int, corps: bytes):
+            class FauxResponse:
+                status_code = code
+
+                async def aread(self):
+                    return corps
+
+                async def aiter_lines(self):
+                    if False:
+                        yield ""
+
+                async def __aenter__(self):
+                    return self
+
+                async def __aexit__(self, *a):
+                    return None
+
+            return FauxResponse()
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-3.7-flash", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+
+        for corps in (
+            b'{"error":{"message":"Invalid function name for model X"}}',
+            b'{"error":{"message":"Function get_weather not found"}}',
+        ):
+            monkeypatch.setattr(
+                provider.client, "stream", lambda *a, _c=corps, **k: reponse(400, _c)
+            )
+            events = [e async for e in provider.stream(None, messages, None)]
+            contenu = next(e.content for e in events if e.type == "error")
+            assert "introuvable" not in contenu.lower(), contenu
+
+        # Le vrai 404 « modèle » reste actionnable
+        monkeypatch.setattr(
+            provider.client, "stream",
+            lambda *a, **k: reponse(404, b'{"error":{"message":"models/x is not found"}}'),
+        )
+        events = [e async for e in provider.stream(None, messages, None)]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "modèle" in contenu.lower()
+
+    def test_p4_f4_le_tracker_ne_parle_plus_d_euros(self):
+        """Passe 4 (F4) : le journal écrivait encore « (0.0123 EUR) » - de quoi
+        tromper un diagnostic support. Le test précédent cherchait « EUR »
+        suivi d'un espace et ratait « EUR) » et « EUR. »."""
+        import inspect
+
+        from app.services import token_tracker
+
+        source = inspect.getsource(token_tracker)
+        sans_noms_de_champs = (
+            source.replace("cost_eur", "").replace("budget_eur", "")
+        )
+        assert "EUR" not in sans_noms_de_champs
+        assert "euros" not in sans_noms_de_champs.lower()
