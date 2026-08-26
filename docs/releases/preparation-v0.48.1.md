@@ -51,7 +51,7 @@ accessibilité 0.40) - pas une régression de la 0.48.
 - Le Board et l'Atelier **écrasaient les messages actionnables** des
   providers par des génériques.
 
-## Revue - 8 passes, 28 findings fermés
+## Revue - 8 passes, 29 défauts fermés (28 findings Soso + 1 auto-contrôle)
 
 | Passe | Verdict | Findings | Nature |
 |---|---|---|---|
