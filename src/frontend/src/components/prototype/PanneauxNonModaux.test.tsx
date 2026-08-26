@@ -123,3 +123,65 @@ describe('Un panneau latéral n’isole que s’il couvre l’écran', () => {
     expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
   });
 });
+
+describe('Revue Soso du hotfix - findings S1', () => {
+  beforeEach(reinitialiser);
+
+  it('S1-1 : aucun panneau ne se déclare modal, car le rail reste vivant', async () => {
+    // Le rail et l'en-tête portent `data-dialog-allow` : ils restent
+    // cliquables PAR CHOIX PRODUIT (navigation permanente). Un panneau qui
+    // laisse une partie de l'écran interactive n'est donc jamais une modale
+    // au sens ARIA - il isole seulement la zone qu'il RECOUVRE.
+    poserLargeurEcran(false);
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    const panneau = await waitFor(() => {
+      const n = document.querySelector('[aria-labelledby="prototype-context-canvas-title"]');
+      expect(n).toBeTruthy();
+      return n as HTMLElement;
+    });
+
+    expect(panneau.getAttribute('aria-modal')).toBeNull();
+    // Le rail reste atteignable : il n'est ni inerte ni masqué
+    const porteDuTiroir = screen.getByRole('button', { name: 'Plus d’outils' });
+    expect(porteDuTiroir.closest('[inert]')).toBeNull();
+    // ...et la zone recouverte, elle, est bien isolée
+    expect(screen.getByTestId('coque-colonne-principale').hasAttribute('inert')).toBe(true);
+  });
+
+  it('S1-3 : un panneau sans piège clavier ne s’inscrit pas dans la pile des pièges', async () => {
+    const { trapStackTaille } = await import('../../hooks/useDialogFocusTrap');
+    poserLargeurEcran(true);
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => {
+      expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
+    });
+
+    // Côte à côte : aucun piège actif, donc rien dans la pile - sinon une
+    // modale ouverte par-dessus se ferait voler Escape au redimensionnement.
+    expect(trapStackTaille()).toBe(0);
+  });
+});
+
+describe('Revue Soso du hotfix - S1-2 : pas de contrôle tabbable sous un panneau opaque', () => {
+  it('les six panneaux latéraux passent côte à côte au seuil xl', async () => {
+    const sources = await Promise.all(
+      [
+        'ImagesWorkspaceCanvas',
+        'VoiceWorkspaceCanvas',
+        'FollowUpsWorkspaceCanvas',
+        'DeliverablesWorkspaceCanvas',
+        'CalculatorWorkspaceCanvas',
+      ].map(async (nom) => {
+        const module = await import(`./${nom}.tsx?raw`);
+        return [nom, module.default as string] as const;
+      }),
+    );
+
+    const sansCoteACote = sources
+      .filter(([, code]) => !code.includes('xl:relative'))
+      .map(([nom]) => nom);
+    expect(sansCoteACote).toEqual([]);
+  });
+});

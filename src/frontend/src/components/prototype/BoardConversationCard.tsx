@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { formaterCout } from '../../lib/coutAffiche';
 import {
   AlertCircle,
   CheckCircle2,
@@ -250,7 +251,7 @@ function DecisionDetail({ decision }: { decision: BoardDecisionDetail }) {
           <section key={opinion.role} className="rounded-[12px] border border-border bg-surface p-3">
             <div className="flex items-center gap-2">
               <CharacterPortrait index={advisorPortraits[opinion.role]} className="h-8 w-8 rounded-[8px] border border-text" />
-              <div className="min-w-0 flex-1"><strong className="block text-xs text-text">{opinion.name}</strong>{(opinion.provider || opinion.model) && <span className="block truncate text-xs text-text-muted">{opinion.provider || 'provider inconnu'} · {opinion.model || 'modèle non mesuré'}{typeof opinion.cost_eur === 'number' ? ` · ${opinion.cost_eur.toFixed(4)} €` : ''}</span>}</div>
+              <div className="min-w-0 flex-1"><strong className="block text-xs text-text">{opinion.name}</strong>{(opinion.provider || opinion.model) && <span className="block truncate text-xs text-text-muted">{opinion.provider || 'provider inconnu'} · {opinion.model || 'modèle non mesuré'}{typeof opinion.cost_eur === 'number' ? ` · ${formaterCout(opinion.cost_eur, 4)}` : ''}</span>}</div>
             </div>
             <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{opinion.content}</p>
           </section>

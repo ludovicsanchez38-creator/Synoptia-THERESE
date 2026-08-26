@@ -2,10 +2,15 @@
  * Hotfix 0.48.1 - un panneau latéral n'est modal que s'il couvre l'écran.
  *
  * Les panneaux de la coque (contexte de scénario, outils, vues embarquées)
- * sont côte à côte au-delà du seuil `xl` de Tailwind, et plein écran en
- * dessous. Le comportement modal (isolation du fond, piégeage du clavier)
- * ne vaut que dans le second cas : sinon il tue la colonne principale, que
+ * sont côte à côte au-delà du seuil `xl` de Tailwind, et RECOUVRENT la zone
+ * principale en dessous. L'isolation du fond et le piégeage du clavier ne
+ * valent que dans le second cas : sinon ils tuent la colonne principale, que
  * l'utilisateur voit pourtant à côté (bug signalé le 25/08).
+ *
+ * Revue Soso (S1-1) : « couvrant » n'est PAS « modal ». Le rail et l'en-tête
+ * restent volontairement actifs (navigation permanente, `data-dialog-allow`) ;
+ * un panneau ne peut donc jamais porter `aria-modal` sans mentir. Il isole la
+ * zone qu'il recouvre, rien de plus.
  */
 import { useEffect, useState } from 'react';
 
@@ -21,14 +26,14 @@ function estCoteACote(): boolean {
   return window.matchMedia(REQUETE).matches;
 }
 
-/** true quand le panneau couvre l'écran : il doit alors se comporter en modale. */
-export function usePanneauModal(): boolean {
-  const [modal, setModal] = useState(() => !estCoteACote());
+/** true quand le panneau RECOUVRE la zone principale (sous le seuil xl). */
+export function usePanneauCouvrant(): boolean {
+  const [couvrant, setCouvrant] = useState(() => !estCoteACote());
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mq = window.matchMedia(REQUETE);
-    const surChangement = () => setModal(!mq.matches);
+    const surChangement = () => setCouvrant(!mq.matches);
     surChangement();
     // Safari < 14 n'a que addListener ; le mock de tests expose les deux.
     if (typeof mq.addEventListener === 'function') {
@@ -39,5 +44,5 @@ export function usePanneauModal(): boolean {
     return () => mq.removeListener?.(surChangement);
   }, []);
 
-  return modal;
+  return couvrant;
 }

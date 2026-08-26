@@ -102,6 +102,11 @@ interface DialogFocusTrapOptions {
   piegeClavier?: boolean;
 }
 
+/** Sonde de test : combien de pièges clavier sont actifs (revue Soso S1-3). */
+export function trapStackTaille(): number {
+  return trapStack.length;
+}
+
 export function useDialogFocusTrap(
   ref: RefObject<HTMLElement | null>,
   { active, onEscape, isolateBackground = false, piegeClavier = true }: DialogFocusTrapOptions
@@ -118,7 +123,11 @@ export function useDialogFocusTrap(
     if (!dialog) return;
 
     const trapId = Symbol('dialog-trap');
-    trapStack.push(trapId);
+    // Revue Soso S1-3 : un panneau côte à côte ne pilote pas le clavier - il
+    // ne doit donc PAS entrer dans la pile. Sinon un réarmement (changement de
+    // largeur) le place au-dessus d'une modale ouverte entre-temps et lui vole
+    // Escape.
+    if (piegeClavier) trapStack.push(trapId);
     const restoreIsolation = isolateBackground ? isolateOutsideDialog(dialog) : () => undefined;
 
     // Mémoriser l'élément déclencheur pour lui rendre le focus à la fermeture

@@ -469,6 +469,13 @@ class BoardService:
                         f"Le conseiller {config['name']} n'a pas pu répondre via Ollama."
                     ) from e
 
+                # Revue Soso S2-1 : même garde qu'en cloud - un flux sans texte
+                # n'est pas un avis (le modèle local peut terminer à vide).
+                if not full_content.strip():
+                    raise ErreurPourEcran(
+                        f"Le conseiller {config['name']} n'a rien répondu."
+                    )
+
                 usage = self._track_usage(
                     llm_service,
                     advisor_system + context_msg,
@@ -627,6 +634,15 @@ class BoardService:
                     output_tokens=int(usage.get("output_tokens") or 0),
                     cost_eur=float(usage.get("cost_eur") or 0.0),
                 )
+
+                # Revue Soso S2-1 : raise_on_error ne couvre que les
+                # évènements error. Un flux qui se termine SANS texte (budget
+                # de sortie consommé, [DONE] immédiat) donnait un avis VIDE
+                # validé, synthétisé et sauvegardé.
+                if not full_content.strip():
+                    raise ErreurPourEcran(
+                        f"Le conseiller {config['name']} n'a rien répondu."
+                    )
 
                 await chunk_queue.put(BoardDeliberationChunk(
                     type="advisor_done",

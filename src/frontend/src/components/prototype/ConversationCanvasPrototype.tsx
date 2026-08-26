@@ -106,7 +106,7 @@ import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { usePanneauModal } from '../../hooks/usePanneauModal';
+import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
@@ -286,20 +286,19 @@ function ContextCanvas({
 }) {
   const dialogRef = useRef<HTMLElement>(null);
   const isPresent = useIsPresent();
-  // Hotfix 0.48.1 : modal seulement quand le panneau couvre l'écran.
-  const estModal = usePanneauModal();
+  // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
+  const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(dialogRef, {
     active: isPresent,
     onEscape: onClose,
-    isolateBackground: estModal,
-    piegeClavier: estModal,
+    isolateBackground: estCouvrant,
+    piegeClavier: estCouvrant,
   });
 
   return (
     <motion.aside
       ref={dialogRef}
       role="dialog"
-      aria-modal={estModal || undefined}
       aria-labelledby="prototype-context-canvas-title"
       tabIndex={-1}
       initial={{ x: 32, opacity: 0 }}
@@ -1024,8 +1023,8 @@ export function ConversationCanvasPrototype() {
     onOpenKatiaNewTask: openAtelierPanel,
   });
 
-  // Hotfix 0.48.1 : un panneau latéral est ouvert ET couvre l'écran ?
-  const panneauModal = usePanneauModal();
+  // Hotfix 0.48.1 : un panneau latéral est ouvert ET recouvre la zone ?
+  const panneauCouvrant = usePanneauCouvrant();
   const panneauLateralOuvert =
     calculatorOpen || deliverablesOpen || imagesOpen || followUpsOpen || voiceOpen
     || (canvasOpen && scenario !== 'today');
@@ -1708,7 +1707,7 @@ export function ConversationCanvasPrototype() {
 
             {/* Hotfix 0.48.1 : quand un panneau devient modal (petit écran),
                 le fond isolé doit se VOIR - sinon l'app paraît figée. */}
-            {panneauModal && panneauLateralOuvert && <VoilePanneau />}
+            {panneauCouvrant && panneauLateralOuvert && <VoilePanneau />}
 
             <AnimatePresence>
               {calculatorOpen ? (

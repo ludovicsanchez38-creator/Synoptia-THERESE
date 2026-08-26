@@ -422,3 +422,143 @@ class TestLeTrimNeVidePasLaDemande:
 
         # Mieux vaut un refus PROPRE de l'API qu'une demande vidée en silence
         assert context.messages[0].content == "ma vraie question"
+
+
+class TestRevueSosoS2:
+    """Contrôle post-release 0.48 (passe Soso du 25/08 au soir)."""
+
+    @pytest.mark.asyncio
+    async def test_s2_1_un_avis_vide_ne_passe_jamais_pour_termine(self, monkeypatch):
+        """raise_on_error ne couvre que les évènements error : un flux qui se
+        termine SANS texte (budget consommé, [DONE] immédiat) produisait un
+        AdvisorOpinion vide, synthétisé et sauvegardé comme un avis."""
+        import contextlib
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.llm import LLMProvider
+
+        class LLMMuet:
+            config = SimpleNamespace(provider=LLMProvider.OPENAI, model="modele-test")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
+                # Aucun chunk : le fournisseur termine sans rien dire.
+                return
+                yield  # pragma: no cover
+
+        class FakeSession:
+            def add(self, _v):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _v):
+                pass
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: LLMMuet())
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider", lambda *a, **k: LLMMuet()
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.ANALYST],
+        )
+        chunks = []
+        erreur = None
+        try:
+            async for c in service.deliberate(request):
+                chunks.append(c)
+        except Exception as e:  # noqa: BLE001
+            erreur = e
+
+        vides = [
+            c for c in chunks
+            if c.type == "advisor_done" and not (c.content or "").strip()
+        ]
+        assert vides == [], "un avis VIDE a été validé comme terminé"
+        assert "done" not in [c.type for c in chunks]
+        assert erreur is not None
+        assert "L'Analyste" in str(erreur)
+
+    def test_s2_2_le_message_metier_part_meme_si_le_suivi_echoue(self):
+        """handle.terminer() commite et peut lever : il ne doit jamais
+        empêcher l'émission du chunk d'erreur destiné à l'utilisateur."""
+        import inspect
+
+        from app.routers import board as board_router
+
+        source = inspect.getsource(board_router)
+        # Chaque terminer() d'un chemin d'échec est protégé
+        assert "_terminer_sans_masquer" in source, (
+            "les terminer() des chemins d'échec doivent passer par un helper "
+            "qui absorbe l'échec du suivi"
+        )
+
+    @pytest.mark.asyncio
+    async def test_s2_3_un_5xx_gemini_ouvre_le_circuit(self, monkeypatch):
+        """La branche manuelle status_code != 200 retirait le code HTTP :
+        _is_provider_outage ne voyait plus la panne (et le message brut du
+        fournisseur partait à l'écran)."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-3.7-flash", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+
+        class FauxResponse:
+            status_code = 500
+
+            async def aread(self):
+                return (
+                    b'{"error":{"message":"Internal error encountered. '
+                    b'trace-id 42 interne"}}'
+                )
+
+            async def aiter_lines(self):
+                if False:
+                    yield ""
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return None
+
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: FauxResponse())
+        # Format Gemini : parts[], pas content (sinon le provider sort avant l'appel)
+        messages = [{"role": "user", "parts": [{"text": "x"}]}]
+        events = [e async for e in provider.stream(None, messages, None)]
+        erreurs = [e for e in events if e.type == "error"]
+        assert erreurs
+        assert _is_provider_outage(erreurs[0].content), (
+            f"5xx non reconnu comme panne : {erreurs[0].content!r}"
+        )
+        assert "trace-id 42" not in (erreurs[0].content or "")

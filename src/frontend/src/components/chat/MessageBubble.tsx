@@ -1,4 +1,5 @@
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { formaterCout } from '../../lib/coutAffiche';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 // US-010 : sans remark-gfm, react-markdown ne parse pas les tableaux GFM
@@ -649,7 +650,7 @@ export const MessageBubble = memo(function MessageBubble({
                 <span>
                   {message.usage.input_tokens + message.usage.output_tokens} tokens
                   {message.usage.cost_eur > 0 && (
-                    <> - {message.usage.cost_eur.toFixed(4)} EUR</>
+                    <> - {formaterCout(message.usage.cost_eur, 4)}</>
                   )}
                 </span>
               </div>

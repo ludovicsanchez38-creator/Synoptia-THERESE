@@ -23,7 +23,7 @@ import {
   usePrototypeDeliverablesProjects,
 } from './usePrototypeDeliverablesData';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { usePanneauModal } from '../../hooks/usePanneauModal';
+import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 
 type DeliverableStatus = 'all' | 'a_faire' | 'en_cours' | 'en_revision' | 'valide';
@@ -135,13 +135,13 @@ export function DeliverablesWorkspaceCanvas({
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<DeliverableStatus>('all');
   const dialogRef = useRef<HTMLElement>(null);
-  // Hotfix 0.48.1 : modal seulement quand le panneau couvre l'écran.
-  const estModal = usePanneauModal();
+  // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
+  const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(dialogRef, {
     active: true,
     onEscape: onClose,
-    isolateBackground: estModal,
-    piegeClavier: estModal,
+    isolateBackground: estCouvrant,
+    piegeClavier: estCouvrant,
   });
 
   useEffect(() => {
@@ -187,7 +187,7 @@ export function DeliverablesWorkspaceCanvas({
           : selectedProject?.status || 'Statut inconnu';
 
   return (
-    <aside ref={dialogRef} role="dialog" aria-modal={estModal || undefined} aria-labelledby="deliverables-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-labelledby="deliverables-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
       <button type="button" onClick={onClose} aria-label="Fermer le suivi client" className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted shadow-sm hover:text-text"><PanelRightClose className="h-4 w-4" /></button>
       <header className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><FileCheck2 className="h-3.5 w-3.5" />Lecture locale unifiée</div>

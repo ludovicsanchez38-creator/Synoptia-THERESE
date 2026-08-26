@@ -18,7 +18,7 @@ import {
   type VoiceLocalStatus,
 } from '../../services/api/voice';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { usePanneauModal } from '../../hooks/usePanneauModal';
+import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 
 function readableSize(bytes: number): string {
   if (bytes < 1_048_576) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
@@ -46,13 +46,13 @@ export function VoiceWorkspaceCanvas({
   const [statusError, setStatusError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
-  // Hotfix 0.48.1 : modal seulement quand le panneau couvre l'écran.
-  const estModal = usePanneauModal();
+  // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
+  const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(dialogRef, {
     active: true,
     onEscape: onClose,
-    isolateBackground: estModal,
-    piegeClavier: estModal,
+    isolateBackground: estCouvrant,
+    piegeClavier: estCouvrant,
   });
 
   const loadStatus = useCallback(async () => {
@@ -127,7 +127,7 @@ export function VoiceWorkspaceCanvas({
   }
 
   return (
-    <aside ref={dialogRef} role="dialog" aria-modal={estModal || undefined} aria-labelledby="voice-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] xl:w-[62%] xl:min-w-[720px]" data-testid="voice-workspace-canvas">
+    <aside ref={dialogRef} role="dialog" aria-labelledby="voice-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[62%] xl:min-w-[720px] xl:shadow-none" data-testid="voice-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3"><span className="grid h-9 w-9 place-items-center rounded-[10px] border border-text bg-[var(--k4bg)] text-[var(--k4)] shadow-[2px_2px_0_var(--btn-ink)]"><Mic className="h-4 w-4" /></span><div><h2 id="voice-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Voix et transcription</h2><p className="mt-0.5 text-xs text-text-muted">Importer un enregistrement, le transcrire, puis poursuivre dans le chat.</p></div></div>
         <button type="button" onClick={onClose} aria-label="Fermer l’espace Voix" className="absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-[9px] border border-border bg-surface text-text-muted"><PanelRightClose className="h-4 w-4" /></button>

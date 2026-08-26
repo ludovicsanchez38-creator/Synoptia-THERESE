@@ -227,13 +227,13 @@ class GeminiProvider(BaseProvider):
                     error_body = await response.aread()
                     error_text = error_body.decode()
                     logger.error(f"Gemini API {response.status_code}: {error_text}")
-                    # Parse error message for user-friendly display
-                    try:
-                        error_json = json.loads(error_text)
-                        error_msg = error_json.get("error", {}).get("message", error_text)
-                    except json.JSONDecodeError:
-                        error_msg = error_text[:200]
-                    yield StreamEvent(type="error", content=f"Gemini: {error_msg}")
+                    # Revue Soso S2-3 : sans le code HTTP, _is_provider_outage
+                    # ne voit pas la panne (le circuit ne s'ouvre jamais) et le
+                    # message BRUT du fournisseur partait à l'écran.
+                    yield StreamEvent(
+                        type="error",
+                        content=f"API error: {response.status_code}",
+                    )
                     return
                 has_tool_calls = False
                 tool_call_index = 0
