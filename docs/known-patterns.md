@@ -210,3 +210,33 @@ Un test vitest ne peut pas prouver qu'une zone est réellement inerte : jsdom
 pose l'attribut sans en appliquer la sémantique (clics, focus et scroll
 continuent de fonctionner). Les tests vérifient donc la POSE de l'attribut sur
 les bons nœuds ; la vérification du comportement réel demande un navigateur.
+
+## Une correction d'ordre ne suffit pas s'il reste un await entre (26/08/2026)
+Corrigé une fois : `terminer()` retirait l'adaptateur du registre AVANT
+d'écrire l'état terminal, donc un commit en échec laissait une tâche active
+et inannulable. La correction (écrire d'abord) a ouvert la faille inverse :
+sortir du contexte de session EST un `await`, et une demande d'arrêt passée
+dans cette fenêtre coupait un producteur déjà terminé, en répondant
+« arrêté » alors que la base disait `done`. **En asyncio, deux opérations ne
+sont solidaires que s'il n'y a AUCUN point d'attente entre elles** : le
+retrait vit désormais collé au `await session.commit()`, à l'intérieur du
+`async with`. Le remonter d'un cran rouvre la fenêtre.
+
+## Un message d'erreur français n'est pas reconnu par une détection anglaise (26/08/2026)
+`_is_provider_outage()` cherche « API error: {code} » et des marqueurs. Le
+chemin HTTP d'OpenRouter produisait « Erreur API OpenRouter (503) » : jamais
+reconnu, donc jamais compté, donc pas de repli sur un autre fournisseur. Même
+piège sur les formes sobres introduites pour fermer une fuite : assainir un
+message casse sa CLASSIFICATION si l'on ne vérifie pas que la détection le
+reconnaît encore. **Tout message d'erreur destiné au circuit breaker doit
+être testé à travers `_is_provider_outage`, pas relu à l'œil.**
+
+## Gemini 3 : la thought signature est obligatoire au rejeu (26/08/2026)
+Un modèle Gemini 3 refuse (400) un tour d'outils dont la `thoughtSignature`
+manque - « you must pass back thought signatures during function calling ».
+C'est un champ du PART, à côté de `functionCall`, et seul le PREMIER appel
+d'une étape la porte. La jeter casse tout usage d'outil au SECOND tour, sans
+rien casser au premier : le bug est invisible sur un test à un seul tour.
+En revanche `temperature` n'est PAS rejetée par Gemini 3, elle est acceptée
+puis ignorée - un guide de migration qui dit « strip X » ne dit pas que X
+provoque une erreur. Vérifier la conséquence, pas seulement la consigne.
