@@ -202,6 +202,10 @@ export function LimitsTab() {
             </div>
             <div>
               <label htmlFor="settings-limit-budget" className="text-xs text-text-muted mb-1 block">Budget mensuel ({UNITE_COUT})</label>
+              <p className="text-xs text-text-muted mb-1">
+                Les tarifs des services d'IA sont publiés en dollars : ton
+                budget et les coûts affichés sont donc exprimés en {UNITE_COUT}.
+              </p>
               <input
                 id="settings-limit-budget"
                 type="number"

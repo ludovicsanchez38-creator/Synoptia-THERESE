@@ -116,38 +116,58 @@ export function useDialogFocusTrap(
   onEscapeRef.current = onEscape;
   const hasEscape = Boolean(onEscape);
 
+  // Revue Soso passe 3 (finding 1) : TROIS responsabilités, TROIS effets aux
+  // dépendances propres. Réunies dans un seul effet, un simple changement de
+  // largeur (isolateBackground) réarmait aussi le cycle focus initial +
+  // restauration : la saisie en cours perdait le focus au profit du titre.
+
+  // 1. Focus initial + restauration - ne dépend QUE de l'ouverture.
   useEffect(() => {
     if (!active) return;
-
     const dialog = ref.current;
     if (!dialog) return;
 
-    const trapId = Symbol('dialog-trap');
-    // Revue Soso S1-3 : un panneau côte à côte ne pilote pas le clavier - il
-    // ne doit donc PAS entrer dans la pile. Sinon un réarmement (changement de
-    // largeur) le place au-dessus d'une modale ouverte entre-temps et lui vole
-    // Escape.
-    if (piegeClavier) trapStack.push(trapId);
-    const restoreIsolation = isolateBackground ? isolateOutsideDialog(dialog) : () => undefined;
-
-    // Mémoriser l'élément déclencheur pour lui rendre le focus à la fermeture
     const previouslyFocused = document.activeElement as HTMLElement | null;
-
-    // Focus initial : ne pas voler le focus s'il est déjà dans le dialogue
-    // (ex : autoFocus posé par la modale sur un champ précis)
+    // Ne pas voler le focus s'il est déjà dans le dialogue (autoFocus d'un champ)
     if (!dialog.contains(document.activeElement)) {
       const preferred = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
       const firstFocusable = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
       (preferred ?? firstFocusable ?? dialog).focus();
     }
 
+    return () => {
+      // WCAG : rendre le focus à l'élément qui a ouvert la modale
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [active, ref]);
+
+  // 2. Isolation du fond - se réarme librement au changement de largeur.
+  useEffect(() => {
+    if (!active || !isolateBackground) return;
+    const dialog = ref.current;
+    if (!dialog) return;
+    return isolateOutsideDialog(dialog);
+  }, [active, isolateBackground, ref]);
+
+  // 3. Pilotage du clavier (Tab bouclé, Escape) - modales seulement.
+  useEffect(() => {
+    if (!active || !piegeClavier) return;
+    const dialog = ref.current;
+    if (!dialog) return;
+
+    const trapId = Symbol('dialog-trap');
+    // Revue Soso S1-3 : un panneau côte à côte ne pilote pas le clavier - il
+    // n'entre donc pas dans la pile. Sinon un réarmement le place au-dessus
+    // d'une modale ouverte entre-temps et lui vole Escape.
+    trapStack.push(trapId);
+
     function isTopmost(): boolean {
       return trapStack[trapStack.length - 1] === trapId;
     }
 
     function handleKeyDown(e: KeyboardEvent) {
-      // Panneau côte à côte : le clavier appartient à toute la page.
-      if (!piegeClavier) return;
       // Seule la modale du dessus pilote le clavier
       if (!isTopmost()) return;
 
@@ -186,13 +206,8 @@ export function useDialogFocusTrap(
       document.removeEventListener('keydown', handleKeyDown);
       const idx = trapStack.indexOf(trapId);
       if (idx !== -1) trapStack.splice(idx, 1);
-      restoreIsolation();
-      // WCAG : restaurer le focus à l'élément qui a ouvert la modale
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        previouslyFocused.focus();
-      }
     };
     // hasEscape (booléen stable) plutôt que onEscape (identité instable) :
     // l'effet ne se réarme pas à chaque rendu du parent.
-  }, [active, hasEscape, isolateBackground, piegeClavier, ref]);
+  }, [active, hasEscape, piegeClavier, ref]);
 }

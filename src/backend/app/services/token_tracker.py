@@ -221,7 +221,9 @@ class TokenTracker:
         """
         Estimate cost for a request (US-ESC-02).
 
-        Returns cost in EUR.
+        Returns cost in USD (tarifs relevés en dollars chez tous les
+        fournisseurs - le nom `cost_eur` des champs reste historique, cf.
+        revue Soso 0.48.1 finding S2-4).
         """
         prices = TOKEN_PRICES.get(model)
         if prices is None and "/" in model:
@@ -333,14 +335,14 @@ class TokenTracker:
 
             if budget_pct >= 100:
                 result["errors"].append(
-                    f"Budget mensuel atteint: {projected_month_cost:.2f} EUR "
-                    f"(budget: {self._limits.monthly_budget_eur:.2f} EUR)"
+                    f"Budget mensuel atteint: {projected_month_cost:.2f} USD "
+                    f"(budget: {self._limits.monthly_budget_eur:.2f} USD)"
                 )
                 result["allowed"] = False
             elif budget_pct >= self._limits.warn_at_percentage:
                 result["warnings"].append(
                     f"Budget mensuel: {budget_pct:.0f}% "
-                    f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} EUR)"
+                    f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} USD)"
                 )
 
         return result

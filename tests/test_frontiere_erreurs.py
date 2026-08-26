@@ -651,3 +651,57 @@ class TestRevueSosoPasse2:
         reponse = client.get("/api/escalation/prices")
         assert reponse.status_code == 200
         assert reponse.json()["currency"] == "USD"
+
+    def test_p3_f2_les_alertes_de_budget_disent_la_bonne_devise(self):
+        """Passe 3 (finding 2) : les messages d'alerte annonçaient « EUR »
+        sur des montants calculés à partir de tarifs USD."""
+        import inspect
+
+        from app.services import token_tracker
+
+        source = inspect.getsource(token_tracker)
+        assert "EUR " not in source.replace("cost_eur", "").replace(
+            "budget_eur", ""
+        ), "un message d'alerte annonce encore des euros"
+
+    @pytest.mark.asyncio
+    async def test_p3_f3_un_modele_gemini_inconnu_est_actionnable(self, monkeypatch):
+        """404 « model not found » : l'utilisateur doit savoir qu'il s'agit du
+        modèle choisi - sans que le circuit s'ouvre (ce n'est pas une panne)."""
+        import httpx
+        from app.services.llm import _is_provider_outage
+        from app.services.providers.base import LLMConfig, LLMProvider
+        from app.services.providers.gemini import GeminiProvider
+
+        class FauxResponse:
+            status_code = 404
+
+            async def aread(self):
+                return b'{"error":{"message":"models/gemini-x is not found trace-55"}}'
+
+            async def aiter_lines(self):
+                if False:
+                    yield ""
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *a):
+                return None
+
+        provider = GeminiProvider(
+            LLMConfig(provider=LLMProvider.GEMINI, model="gemini-x", api_key="k"),
+            client=httpx.AsyncClient(),
+        )
+        monkeypatch.setattr(provider.client, "stream", lambda *a, **k: FauxResponse())
+        events = [
+            e async for e in provider.stream(
+                None, [{"role": "user", "parts": [{"text": "x"}]}], None
+            )
+        ]
+        contenu = next(e.content for e in events if e.type == "error")
+        assert "trace-55" not in contenu
+        assert "modèle" in contenu.lower()
+        assert not _is_provider_outage(contenu), (
+            "un modèle mal choisi ne doit pas ouvrir le circuit du fournisseur"
+        )

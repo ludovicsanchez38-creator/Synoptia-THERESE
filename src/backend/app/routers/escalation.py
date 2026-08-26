@@ -39,7 +39,7 @@ async def estimate_cost(request: CostEstimateRequest):
     """
     Estimate cost for a request.
 
-    Returns estimated cost in EUR.
+    Returns estimated cost in USD (tarifs fournisseurs en dollars).
     """
     tracker = get_token_tracker()
     cost = tracker.estimate_cost(

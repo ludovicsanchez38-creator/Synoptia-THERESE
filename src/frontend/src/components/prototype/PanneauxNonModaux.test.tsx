@@ -191,3 +191,46 @@ describe('Revue Soso du hotfix - S1-2 : pas de contrôle tabbable sous un pannea
     expect(sansCoteACote).toEqual([]);
   });
 });
+
+describe('Revue Soso passe 3 - le redimensionnement ne vole pas le focus', () => {
+  beforeEach(reinitialiser);
+
+  it('changer de largeur ne ramène pas le focus au titre du panneau', async () => {
+    // Passe 3 (finding 1) : franchir 1280 px réarmait l'effet du focus trap
+    // (restauration + focus initial) - la saisie en cours perdait le focus.
+    const auditeurs: Array<() => void> = [];
+    let coteACote = true;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      // getter : le mock doit SUIVRE la largeur, pas la figer à la création
+      get matches() {
+        return query.includes('min-width: 1280px') ? coteACote : false;
+      },
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: (_evt: string, cb: () => void) => auditeurs.push(cb),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+
+    window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=meeting');
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => {
+      expect(document.querySelector('[aria-labelledby="prototype-context-canvas-title"]')).toBeTruthy();
+    });
+
+    // L'utilisateur travaille dans le composeur
+    const composeur = screen.getByPlaceholderText('Demande à Thérèse d’organiser, créer ou agir…');
+    composeur.focus();
+    expect(document.activeElement).toBe(composeur);
+
+    // La fenêtre passe sous le seuil : le panneau devient couvrant
+    await act(async () => {
+      coteACote = false;
+      auditeurs.forEach((cb) => cb());
+    });
+
+    expect(document.activeElement).toBe(composeur);
+  });
+});

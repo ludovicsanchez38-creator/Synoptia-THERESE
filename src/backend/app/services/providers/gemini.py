@@ -132,6 +132,14 @@ def _message_erreur_http(status_code: int, corps: str) -> str:
         return "Trop de requêtes envoyées. Attends quelques instants avant de réessayer."
     if status_code >= 500:
         return f"API error: {status_code}"
+    # Passe 3 (finding 3) : Google rend 404 quand le MODÈLE n'existe pas -
+    # « requête refusée » ne dit pas quoi corriger. Ce n'est pas une panne du
+    # fournisseur : le circuit ne doit pas s'ouvrir.
+    if status_code == 404 or "not found" in corps_bas or "model" in corps_bas:
+        return (
+            "Le modèle demandé est introuvable chez le fournisseur. "
+            "Choisis-en un autre dans les Paramètres."
+        )
     return f"Requête refusée par le service d'IA ({status_code})."
 
 
