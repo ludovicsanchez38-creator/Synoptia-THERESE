@@ -1,0 +1,103 @@
+# Préparation v0.48.2-alpha - contrôle post-release + « Décider »
+
+> Branche `fix/0.48.2-gemini-et-controle`. Deux sujets : la cinquième puce de
+> l'établi demandée par Ludo, et le contrôle post-release des 0.48.x qui
+> n'avait pas pu être tenu (crédits de revue épuisés au moment des releases).
+
+## Ce que le contrôle a trouvé
+
+La passe de contrôle a rendu **NO-GO deux fois**. Sur onze findings au total,
+**neuf ont été retenus après contre-vérification**, deux écartés avec leur
+raison.
+
+### Le bloquant n'était pas celui annoncé
+
+La revue désignait comme bloquant le fait d'envoyer `temperature` à
+Gemini 3.7 : « l'appel est rejeté, toute la délibération échoue ». Vérifié en
+doc et sur le forum Google : le paramètre est **accepté puis ignoré**, la
+requête retourne 200. Le finding a été déclassé.
+
+Le vrai bloquant était le suivant sur sa liste : **Gemini 3 exige qu'on lui
+renvoie la `thoughtSignature`** reçue avec un appel d'outil, sinon il répond
+400. Notre code la jetait purement. Tout usage d'outil sur un modèle Gemini 3
+- mail, agenda, recherche, facture - cassait au second tour, et le sélecteur
+propose `gemini-3.7-flash` en tête.
+
+### Les neuf défauts fermés
+
+| Défaut | Ce que vivait l'utilisateur |
+|---|---|
+| `thoughtSignature` jetée | tout outil cassait au 2e tour sur Gemini 3 |
+| `temperature` envoyée aux Gemini 3 | boucles et dégradation en raisonnement, ce que Google déconseille explicitement sous 1.0 - le Board délibère en effort maximal |
+| erreurs SSE OpenRouter non classées | un 429 ne comptait plus comme panne ; après un début de réponse, l'appel comptait comme un **succès** |
+| timeouts OpenRouter non classés | idem, sur la panne la plus banale |
+| corps Ollama recopié sur les statuts non traités | chemin de fichier local à l'écran |
+| retrait du registre avant l'écriture terminale | tâche affichée active que personne ne pouvait annuler |
+| **fenêtre entre le commit et le retrait** | un arrêt coupait un traitement déjà terminé, en répondant « arrêté » alors que la base disait `done` |
+| doublons dans la palette | Email, Contacts et Devis et factures faisaient déjà doublon avec Écrire, Retrouver et Facturer |
+| trou de couverture sur le 6e panneau | lui retirer `xl:relative` serait passé inaperçu |
+
+### Les deux écartés, et pourquoi
+
+- **`temperature` rejetée par Gemini 3** : non. Accepté et ignoré (vérifié en
+  doc + forum). Le paramètre a quand même été retiré, pour la vraie raison.
+- **Corps bruts dans les journaux** : les clés au format réel sont masquées
+  (vérifié sur `sk-proj-…` et `sk-or-v1-…`). Le fragment cité était un
+  factice trop court. Et vider le journal du détail supprimerait le
+  diagnostic que la frontière d'erreurs y envoie exprès.
+
+La revue a confirmé elle-même ces deux retraits à la passe suivante.
+
+## « Décider », la cinquième puce
+
+Demandée par Ludo en regardant l'accueil : le Board était la capacité la plus
+distinctive du produit et la seule qu'on ne voyait pas sans ouvrir un tiroir.
+Quatre verbes d'exécution, aucun geste de recul.
+
+Trois conséquences tenues, pas seulement la puce :
+
+- la palette choisissait son icône par une cascade dont la branche finale
+  servait de fourre-tout - « Décider » y aurait hérité **silencieusement** de
+  l'icône de la facture. Table exhaustive : un id sans icône ne compile plus ;
+- le manifeste déclarait le tiroir comme SEULE entrée du Board. Il déclare
+  maintenant les deux, l'accueil en accès principal ;
+- `/aide` envoyait donc au chemin le plus long. Le libellé de la porte suit
+  désormais le registre de l'accès principal.
+
+## Le motif de la session
+
+**Six fois** sur ce chantier, une remédiation a introduit sa propre
+régression - dont deux fois d'affilée sur la même fonction, `terminer()` :
+écrire avant de retirer corrigeait la tâche fantôme et ouvrait une course
+entre le commit et le retrait. Consigné dans `docs/known-patterns.md`.
+
+Deux erreurs de raisonnement de ma part ont aussi été corrigées : le rapport
+de la 0.48.1 affirmait `role="region"` sur les six panneaux (faux, seul le
+canevas de vue unifiée a changé), et « les cinq sites de fuite sont fermés »
+(il en restait un).
+
+## Gates
+
+| Gate | Résultat |
+|---|---|
+| pytest (hors e2e) | 2274 verts, 0 échec |
+| vitest | 895 verts, 142 fichiers |
+| mypy fresh | 1001 (= main) |
+| ruff / tsc / eslint | propres (eslint 27/27) |
+
+Chaque correctif a été saboté puis restauré par remplacement inverse, pour
+vérifier que son test l'attrape.
+
+## Dette
+
+- [ ] **Rôle ARIA des six panneaux** : ils restent `role="dialog"` sans
+  `aria-modal`. `region` serait plus juste, mais `useDialogFocusTrap` repère
+  par `[role="dialog"]` les surfaces à épargner, et jsdom n'implémente pas
+  `inert` : le changement ne se prouve pas sans navigateur, sur un mécanisme
+  déjà cassé cinq fois par ses propres correctifs.
+- [ ] **Capacités fréquentes réduites à quatre entrées** après le filtrage des
+  doublons. Choix éditorial à trancher : compléter la liste ou la laisser.
+- [ ] Renommage `cost_eur` / `monthly_budget_eur` / `estimated_cost_eur` en USD.
+- [ ] Budget mensuel non converti (dit en dollars, aucun taux inventé).
+- [ ] Trou jumeau du circuit breaker sur le chemin chat stream (préexistant).
+- [ ] Validation réelle de Mistral reasoning.
