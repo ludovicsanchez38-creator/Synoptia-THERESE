@@ -28,6 +28,58 @@ async def _traitement(**kw):
     )
 
 
+class TestAucuneFenetreEntreLEtatTerminalEtLeRetrait:
+    """Écrire d'abord ne suffit pas : il faut qu'il n'y ait RIEN entre.
+
+    Deuxième régression de la même fonction, trouvée par la passe suivante.
+    Sortir du contexte de session est un `await` : la coroutine peut y être
+    suspendue APRÈS le commit et AVANT le retrait du registre. Une demande
+    d'arrêt qui passe dans cette fenêtre trouve l'adaptateur encore inscrit
+    et coupe un producteur déjà terminé — le client lit « arrêté » pendant
+    que la base dit `done`.
+
+    En asyncio, une coroutine ne rend la main qu'à un point d'attente. Le
+    retrait doit donc suivre le commit SANS await intercalé.
+    """
+
+    @pytest.mark.asyncio
+    async def test_le_registre_est_vide_avant_meme_la_sortie_de_session(
+        self, client, monkeypatch
+    ):
+        from app.services import traitements
+
+        handle = await _traitement()
+        await handle.demarrer()
+        await handle.lier_adaptateur(AdaptateurEspion())
+
+        vivante_a_la_sortie: list[bool] = []
+        vrai_contexte = traitements.get_session_context
+
+        def contexte_observe(*a, **k):
+            gestionnaire = vrai_contexte(*a, **k)
+
+            class _Observe:
+                async def __aenter__(self):
+                    return await gestionnaire.__aenter__()
+
+                async def __aexit__(self, *exc):
+                    vivante_a_la_sortie.append(
+                        traitements.task_registry.est_vivante(handle.id)
+                    )
+                    return await gestionnaire.__aexit__(*exc)
+
+            return _Observe()
+
+        monkeypatch.setattr(traitements, "get_session_context", contexte_observe)
+
+        await handle.terminer(EtatTache.DONE)
+
+        assert vivante_a_la_sortie and not vivante_a_la_sortie[-1], (
+            "l'adaptateur est encore inscrit à la sortie de la session : une "
+            "demande d'arrêt peut couper un traitement déjà terminé"
+        )
+
+
 class TestUneEcritureQuiEchoueNeLaissePasDeFantome:
     @pytest.mark.asyncio
     async def test_l_etat_terminal_est_ecrit_avant_le_retrait_du_registre(

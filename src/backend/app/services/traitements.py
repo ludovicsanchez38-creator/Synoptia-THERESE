@@ -126,6 +126,16 @@ class TraitementHandle:
                 )
             )
             await session.commit()
+            # Le retrait vit ICI, collé au commit, et c'est la seule place
+            # correcte. En asyncio une coroutine ne rend la main qu'à un
+            # point d'attente : entre le retour de `commit()` et ces deux
+            # lignes, il n'y en a aucun, donc aucune demande d'arrêt ne peut
+            # s'intercaler. Le remonter d'un cran (après le `async with`)
+            # rouvre la fenêtre - sortir du contexte EST un await, et une
+            # demande passée là couperait un producteur déjà terminé, en
+            # répondant « arrêté » alors que la base dit `done`.
+            task_registry.retirer(self.id)
+            _demandes_en_attente.discard(self.id)
 
     async def terminer(self, etat: str, *, error: str | None = None) -> None:
         """SEUL le producteur pose l'état terminal, après son nettoyage réel.
@@ -144,8 +154,6 @@ class TraitementHandle:
         """
         assert etat in EtatTache.terminaux(), etat
         await self._ecrire_etat_terminal(etat, error=error)
-        task_registry.retirer(self.id)
-        _demandes_en_attente.discard(self.id)
 
 
 async def creer_traitement(

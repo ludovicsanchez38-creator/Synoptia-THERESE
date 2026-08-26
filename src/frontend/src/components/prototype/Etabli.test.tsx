@@ -154,3 +154,69 @@ describe('L’accueil est un établi', () => {
     expect(bloc.textContent).not.toContain('Mes priorités du jour');
   });
 });
+
+describe('La palette de commandes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, '', '/?interface=conversation-canvas');
+    useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
+    usePanelStore.setState({
+      showSettings: false, requestedSettingsTab: null, showSaveCommand: false,
+      showContactModal: false, showProjectModal: false, showBoardPanel: false,
+      showShortcuts: false, showPromptLibrary: false, showCommandPalette: false,
+      showConversationSidebar: false,
+    });
+    _clearEscapeHandlers();
+    useNavigationStore.setState({ activeView: 'chat', history: [] });
+    usePersonalisationStore.setState({ skipDashboard: false });
+  });
+
+  async function ouvrir(): Promise<HTMLElement> {
+    render(<ConversationCanvasPrototype />);
+    // La palette vit dans un état local de la coque : elle s'ouvre par son
+    // raccourci, pas par le store des panneaux.
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'k', metaKey: true, ctrlKey: true });
+    });
+    return await screen.findByRole('listbox', { name: 'Résultats' });
+  }
+
+  /**
+   * Le test de `ICONES_ETABLI` vérifie la table, pas le rendu : la palette
+   * pourrait revenir à sa cascade de ternaires et afficher un reçu pour
+   * « Décider » sans qu'un test bronche. Ici on regarde ce qui est dessiné.
+   */
+  it('dessine l’icône propre de « Décider », pas celle de la facture', async () => {
+    const liste = await ouvrir();
+
+    const option = Array.from(liste.querySelectorAll('button')).find((b) =>
+      b.textContent?.startsWith('Décider'),
+    );
+    expect(option, 'l’option « Décider » est absente de la palette').toBeTruthy();
+    expect(option!.querySelector('svg')?.getAttribute('class')).toContain('lucide-gavel');
+  });
+
+  /**
+   * La palette listait les parcours PUIS les capacités fréquentes, sans voir
+   * qu'elles mènent parfois au même endroit : « Écrire »/Email,
+   * « Retrouver »/Contacts et « Facturer »/Devis et factures faisaient déjà
+   * doublon avant que « Décider »/Décision n'en ajoute un quatrième.
+   * Proposer deux fois la même destination fait douter qu'elles soient
+   * identiques.
+   */
+  it('ne propose jamais deux fois la même destination', async () => {
+    const liste = await ouvrir();
+
+    const libelles = Array.from(liste.querySelectorAll('button'))
+      .map((b) => b.textContent || '');
+    const doublons = ['Décision', 'Email', 'Contacts', 'Devis et factures'].filter(
+      (titre) =>
+        libelles.some((l) => l.startsWith(titre)) &&
+        libelles.some((l) =>
+          ACTIONS_ETABLI.some((a) => l.startsWith(a.label)),
+        ),
+    ).filter((titre) => libelles.some((l) => l.startsWith(titre)));
+
+    expect(doublons).toEqual([]);
+  });
+});

@@ -70,6 +70,33 @@ class TestLaClasseDeLErreurSurvit:
         assert _is_provider_outage(message)
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "code,error_type",
+        [
+            (408, None),
+            (None, "timeout"),
+            (None, "provider_overloaded"),
+            (None, "provider_unavailable"),
+            (503, "server"),
+        ],
+    )
+    async def test_les_pannes_typees_comptent_aussi(
+        self, code: int | None, error_type: str | None
+    ):
+        """OpenRouter classe ses pannes par `metadata.error_type`, pas que par code.
+
+        Premier jet du helper : seuls 401/402/429/5xx étaient reconnus. Un
+        timeout - la panne la plus banale - retombait sur « requête refusée »,
+        que le circuit breaker ignore. Pire qu'un simple oubli : après un
+        début de réponse en texte, l'appel comptait comme un SUCCÈS.
+        """
+        message = await _erreur_sse(code or 400, error_type)
+
+        assert _is_provider_outage(message), (
+            f"panne non comptée ({code}/{error_type}) : {message!r}"
+        )
+
+    @pytest.mark.asyncio
     async def test_une_erreur_applicative_n_ouvre_pas_le_circuit(self):
         """Un 400 est une erreur de requête : basculer de fournisseur n'aide pas."""
         message = await _erreur_sse(400)

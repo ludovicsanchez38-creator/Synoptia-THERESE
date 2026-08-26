@@ -47,6 +47,15 @@ def _message_erreur_sse(code: int | None, error_type: str | None) -> str:
         return "Crédit OpenRouter insuffisant. Recharge ton compte sur openrouter.ai."
     if code == 429 or "rate_limit" in marqueur:
         return "Trop de requêtes OpenRouter. Patiente quelques secondes."
+    # OpenRouter classe ses pannes par `metadata.error_type` autant que par
+    # code. Le premier jet ne regardait que les codes : un timeout - la panne
+    # la plus banale - retombait sur « requête refusée », que le circuit
+    # breaker ignore. Après un début de réponse en texte, l'appel comptait
+    # même comme un SUCCÈS.
+    if code == 408 or "timeout" in marqueur:
+        return "Le service OpenRouter n'a pas répondu à temps (timeout)."
+    if "overloaded" in marqueur or "unavailable" in marqueur or marqueur == "server":
+        return "Le service OpenRouter est momentanément indisponible (API error: 503)."
     if code is not None and code >= 500:
         return f"Le service OpenRouter est momentanément indisponible (API error: {code})."
     if code is not None:

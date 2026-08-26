@@ -414,9 +414,16 @@ function CommandPalette({
   const visibleCapabilities = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
+      // Les parcours sont listés juste au-dessus : une capacité qui mène au
+      // même scénario ferait doublon dans la même palette, et deux entrées
+      // pour une seule destination font douter qu'elles soient identiques.
+      // Le cas préexistait pour Email, Contacts et Devis et factures ; la
+      // puce « Décider » en aurait ajouté un quatrième.
+      const dejaEnParcours = new Set<string>(ACTIONS_ETABLI.map((a) => a.id));
       return featuredCapabilities
         .map((id) => capabilities.find((item) => item.id === id))
-        .filter((item): item is CapabilityItem => Boolean(item));
+        .filter((item): item is CapabilityItem => Boolean(item))
+        .filter((item) => !item.scenario || !dejaEnParcours.has(item.scenario));
     }
     return capabilities
       .filter((item) =>
