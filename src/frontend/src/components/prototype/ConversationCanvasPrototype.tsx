@@ -1101,6 +1101,9 @@ export function ConversationCanvasPrototype() {
     onToggleTasksPanel: () => openEmbeddedView('tasks'),
     onToggleInvoicesPanel: () => openEmbeddedView('invoices'),
     onToggleCRMPanel: () => openEmbeddedView('crm'),
+    // Entrée 6 : le gestionnaire avait sa branche, la coque ne la remplissait
+    // jamais. La fiche des raccourcis annonçait un groupe Fichiers vide.
+    onOpenFile: () => openEmbeddedView('files'),
     onNewContact: () => usePanelStore.getState().openNewContact(),
     onNewProject: () => usePanelStore.getState().openNewProject(),
     onOpenSettings: () => openSettings('profile'),
@@ -1404,8 +1407,12 @@ export function ConversationCanvasPrototype() {
         <div className="relative flex min-h-0 flex-1">
           <nav data-dialog-allow aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
             <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Rechercher" onClick={() => openConversationDrawer('search')}><Search className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Historique" onClick={() => openConversationDrawer('history')}><History className="h-[18px] w-[18px]" /></IconButton>
+            {/* Entrée 4 : deux boutons ouvraient le même tiroir, où `surface` ne
+                change que le focus initial. Et « Rechercher » ici ne cherchait
+                que dans les titres de conversation, jamais dans les mails, les
+                fichiers ou les contacts, contrairement à ce que la loupe
+                laissait croire. Le mot reste à la palette, qui indexe tout. */}
+            <IconButton label="Conversations" onClick={() => openConversationDrawer('search')}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             {/* BUG-159 : accès permanent aux Paramètres, au-dessus de l'aide
                 (demande Dr_logic) - ils n'étaient joignables que par la palette
@@ -1624,13 +1631,16 @@ export function ConversationCanvasPrototype() {
                   )}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="mr-1 text-xs font-medium text-text-muted">Sources</span>
-                    {scenario === 'today' ? (
-                      <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Dashboard local" />
-                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Lecture seule" />
-                      </>
-                    ) : scenario === 'memory' ? (
+                    {/* Entrée 3 : sur le brief, la carte affiche déjà ses
+                        « Sources réelles », conditionnées aux données
+                        chargées. Cette rangée-ci, écrite en dur, disait la
+                        même chose deux centimètres plus bas. Les autres
+                        parcours gardent la leur : elles ne se répètent pas,
+                        elles disent ce que CE parcours peut faire. */}
+                    {scenario !== 'today' && (
+                      <span className="mr-1 text-xs font-medium text-text-muted">Sources</span>
+                    )}
+                    {scenario === 'today' ? null : scenario === 'memory' ? (
                       <>
                         <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Mémoire locale" />
                         <SourceChip icon={<Users className="h-3 w-3" />} label="Contacts réels" />

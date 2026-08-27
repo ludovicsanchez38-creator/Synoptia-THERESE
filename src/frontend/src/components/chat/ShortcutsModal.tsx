@@ -60,6 +60,9 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Fichiers',
     shortcuts: [
+      // Entrée 6 : ce groupe était déclaré VIDE, et le raccourci qu'il aurait
+      // dû annoncer n'était branché nulle part. Les deux se répondaient.
+      { keys: '⌘ + O', description: 'Ouvrir les Fichiers' },
     ],
   },
 ];

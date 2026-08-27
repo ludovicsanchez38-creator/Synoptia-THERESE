@@ -330,17 +330,6 @@ function countForGroup(groupId: CapabilityGroupId) {
   return capabilities.filter((item) => item.group === groupId).length;
 }
 
-function FeaturePills({ features }: { features: string[] }) {
-  return (
-    <div className="mt-3 flex flex-wrap gap-1.5">
-      {features.map((feature) => (
-        <span key={feature} className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold text-text-muted">
-          {feature}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 export function CapabilityCenter({
   onClose,
@@ -516,7 +505,6 @@ export function CapabilityCenter({
                             <span className="mt-1 block text-xs leading-5 text-text-muted">{capability.description}</span>
                           </span>
                         </div>
-                        <FeaturePills features={capability.features} />
                       </button>
                     );
                   })}

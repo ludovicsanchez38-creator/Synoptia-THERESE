@@ -169,7 +169,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(composer).toHaveFocus();
   });
 
-  it('le + du rail crée directement une conversation sans rouvrir un tiroir (fin du double +), recherche et historique vont au tiroir', () => {
+  it('le + du rail crée directement une conversation sans rouvrir un tiroir (fin du double +), et un seul bouton mène aux conversations', () => {
     render(<ConversationCanvasPrototype />);
     const navigation = within(screen.getByRole('navigation', { name: 'Navigation principale' }));
 
@@ -179,12 +179,15 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(screen.getByTestId('prototype-chat-surface')).toBeInTheDocument();
     expect(screen.queryByTestId('prototype-conversation-drawer')).not.toBeInTheDocument();
 
-    fireEvent.click(navigation.getByRole('button', { name: 'Rechercher' }));
+    // Entrée 4 (28/08) : les deux boutons « Rechercher » et « Historique »
+    // ouvraient le MÊME tiroir, où la surface ne changeait que le focus
+    // initial. Un seul subsiste. « Rechercher » reste dans l'en-tête, où il
+    // désigne la palette — celle-là indexe tout, contrairement à la loupe du
+    // rail qui ne filtrait que des titres de conversation.
+    fireEvent.click(navigation.getByRole('button', { name: 'Conversations' }));
     expect(screen.getByLabelText('Rechercher une conversation')).toHaveFocus();
     expect(screen.queryByRole('dialog', { name: 'Rechercher dans Thérèse' })).not.toBeInTheDocument();
-
-    fireEvent.click(navigation.getByRole('button', { name: 'Historique' }));
-    expect(screen.getByLabelText('Historique des conversations')).toHaveFocus();
+    expect(navigation.queryByRole('button', { name: 'Historique' })).toBeNull();
   });
 
   it('propage le thème et le contraste sur la racine de la coque et garde le fond du composeur tokenisé', () => {
