@@ -92,3 +92,24 @@ def test_la_consigne_utile_de_bug_148_est_conservee():
     assert "piece jointe" in ligne or "pièce jointe" in ligne, (
         "la consigne sur l'envoi en pièce jointe impossible a disparu"
     )
+
+
+# ---------------------------------------------------------------------------
+# D6, suite : le catalogue de fichiers doit être ANNONCÉ.
+#
+# Un outil que le modèle ignore n'existe pas. C'est précisément ce qui a fait
+# durer le manque : trois signalements, et à chaque fois le modèle répondait
+# qu'il n'avait pas d'outil — ce qui était vrai.
+# ---------------------------------------------------------------------------
+
+
+def test_le_catalogue_de_fichiers_est_annonce_au_modele():
+    annonces = " ".join(annonce for _c, annonce in _bloc_capacites())
+    assert "**search_files**" in annonces
+    assert "**read_file**" in annonces
+
+
+def test_le_catalogue_dit_sa_frontiere_avec_la_facturation():
+    """Sans frontière, le modèle retombe sur search_invoices — c'était D6."""
+    ligne = _ligne_de_capacite("search_files").lower()
+    assert "facture" in ligne, "la capacité doit dire ce qu'elle ne couvre pas"

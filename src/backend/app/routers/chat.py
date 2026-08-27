@@ -2324,6 +2324,10 @@ async def _do_stream_response(
             capabilities += "- **create_calendar_event** : Creer un evenement dans le calendrier.\n"
         if "search_invoices" in tool_names:
             capabilities += "- **search_invoices** : Retrouver une facture, un devis ou un avoir LOCAL par sa reference (ex: FACT-2026-001) ou par client. Utilise-le des qu'une facture ou un devis est mentionne, AU LIEU de dire que tu ne peux pas les chercher, et ne propose JAMAIS de recreer un document existant. Il ne couvre QUE la facturation : ne l'utilise pas pour des fichiers ou des documents indexes. L'envoi d'une facture en piece jointe par email est IMPOSSIBLE pour le moment : n'utilise pas send_email pour ca, oriente vers la vue Facturation.\n"
+        if "search_files" in tool_names:
+            capabilities += "- **search_files** : Retrouver les FICHIERS INDEXES consultables dans cette conversation (dossier synchronise d'un projet, fichiers de la memoire, pieces jointes). Utilise-le des que l'utilisateur parle de ses fichiers ou de ses documents indexes, AU LIEU de dire que tu ne peux pas les chercher. Il ne couvre PAS les factures et devis (c'est search_invoices) ni les documents rediges dans l'atelier Documents. Si la reponse contient 'hors_perimetre', des fichiers existent dans des projets que cette conversation ne consulte pas : dis-le et propose de rattacher la conversation au projet avec le selecteur en haut du chat.\n"
+        if "read_file" in tool_names:
+            capabilities += "- **read_file** : Lire le contenu d'un fichier indexe trouve par search_files, un seul par appel. Utilise-le des qu'on te demande ce qu'il y a DANS un fichier. S'il refuse, le fichier n'est pas consultable ici : ne devine JAMAIS son contenu.\n"
         if "read_contact" in tool_names:
             capabilities += "- **read_contact** : Lire la fiche complete d'un contact (coordonnees, notes, stage, score, interactions). Utilise-le AU LIEU d'inventer le contexte client.\n"
         if "generate_document" in tool_names:
