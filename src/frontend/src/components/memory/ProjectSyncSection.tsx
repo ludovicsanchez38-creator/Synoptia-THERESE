@@ -17,6 +17,31 @@ interface Props {
   projectId: string;
 }
 
+/**
+ * Ce que l'écran dit d'un échec (D4, D5).
+ *
+ * Le composant affichait `e.message` brut : « Délai de 30000 ms dépassé » est
+ * du jargon, il ne dit ni ce qui s'est passé ni quoi faire. Les refus du
+ * serveur, eux, portent des messages écrits pour l'utilisateur (« cette racine
+ * appartient déjà à un autre projet ») : ceux-là passent tels quels.
+ *
+ * On lit le NOM de l'erreur, jamais son texte : parser une chaîne pour deviner
+ * une cause casse à la première reformulation.
+ */
+function messageDEchec(e: unknown, action: string): string {
+  const nom = (e as { name?: string } | null)?.name;
+  if (nom === 'TimeoutError') {
+    return (
+      'Le dossier met trop de temps à répondre. Cela arrive sur un disque '
+      + 'réseau ou quand un antivirus analyse le dossier. Vérifie que le '
+      + 'dossier est accessible, puis réessaie : si le serveur a fini entre '
+      + 'temps, l’état ci-dessus est déjà à jour.'
+    );
+  }
+  if (nom === 'AbortError') return 'Opération interrompue.';
+  return e instanceof Error ? e.message : action;
+}
+
 export function ProjectSyncSection({ projectId }: Props) {
   const [etat, setEtat] = useState<api.SyncEtat | null>(null);
   const [plan, setPlan] = useState<api.SyncPlan | null>(null);
@@ -51,7 +76,11 @@ export function ProjectSyncSection({ projectId }: Props) {
       setChemin('');
       await charger();
     } catch (e) {
-      setErreur(e instanceof Error ? e.message : "Impossible d'attacher ce dossier");
+      setErreur(messageDEchec(e, "Impossible d'attacher ce dossier"));
+      // Quand le client abandonne, le serveur poursuit : la racine peut être
+      // posée alors qu'on affiche un échec. On relit l'état plutôt que de
+      // laisser l'écran mentir.
+      await charger().catch(() => undefined);
     } finally {
       setOccupe(null);
     }
@@ -59,10 +88,16 @@ export function ProjectSyncSection({ projectId }: Props) {
 
   const delier = async () => {
     setOccupe('racine');
+    setErreur(null);
     try {
       await api.retirerRacineSync(projectId);
       setPlan(null);
       await charger();
+    } catch (e) {
+      // D4 : sans catch, l'échec partait en promesse rejetée et l'écran
+      // gardait un dossier que le serveur n'avait pas délié.
+      setErreur(messageDEchec(e, 'Impossible de délier ce dossier'));
+      await charger().catch(() => undefined);
     } finally {
       setOccupe(null);
     }
@@ -78,7 +113,7 @@ export function ProjectSyncSection({ projectId }: Props) {
       await charger();
     } catch (e) {
       setErreur(
-        e instanceof Error ? e.message : 'Aucun plan produit, réessaie.',
+        messageDEchec(e, 'Aucun plan produit, réessaie.'),
       );
     } finally {
       setOccupe(null);

@@ -164,3 +164,91 @@ describe('ProjectSyncSection - le suivi d’apply ne ment jamais', () => {
     vi.useRealTimers();
   });
 });
+
+// ---------------------------------------------------------------------------
+// D4 et D5 (Dr_logic, 25 et 27/08) : ce que l'écran dit quand ça rate.
+//
+// « la synchro de dossier me donne un message peu explicite », puis « il y a
+// un délai sur la synchronisation ? ». Le composant affichait `e.message`
+// brut : « Délai de 30000 ms dépassé » est du jargon, et il ne dit ni ce qui
+// s'est passé, ni quoi faire.
+//
+// Pire : quand le client abandonne, le serveur poursuit. La racine peut être
+// posée alors que l'écran annonce un échec. Il faut donc relire l'état après
+// un échec, sans quoi l'écran ment.
+// ---------------------------------------------------------------------------
+
+function erreurDeDelai(): Error {
+  const e = new Error('Délai de 30000 ms dépassé');
+  e.name = 'TimeoutError';
+  return e;
+}
+
+describe('D4/D5 : un échec d’attache s’explique et relit l’état', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMocks.etatSync.mockResolvedValue({
+      racine: null, generation: null, dernier_plan: null, run: null,
+    });
+    apiMocks.journalSync.mockResolvedValue([]);
+  });
+
+  it('traduit le délai dépassé au lieu d’afficher le jargon', async () => {
+    apiMocks.definirRacineSync.mockRejectedValue(erreurDeDelai());
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+
+    const champ = screen.getByPlaceholderText(/Documents/i);
+    fireEvent.change(champ, { target: { value: 'D:\\site' } });
+    fireEvent.click(screen.getByRole('button', { name: /attacher/i }));
+
+    const message = await screen.findByRole('alert');
+    expect(message.textContent).not.toContain('30000');
+    expect(message.textContent?.toLowerCase()).toMatch(/temps|délai|long/);
+    // Et il dit quoi faire.
+    expect(message.textContent?.toLowerCase()).toMatch(/réessa|vérifi|patient/);
+  });
+
+  it('relit l’état après un échec — le serveur a pu réussir sans nous', async () => {
+    apiMocks.definirRacineSync.mockRejectedValue(erreurDeDelai());
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+    const appelsAvant = apiMocks.etatSync.mock.calls.length;
+
+    const champ = screen.getByPlaceholderText(/Documents/i);
+    fireEvent.change(champ, { target: { value: 'D:\\site' } });
+    fireEvent.click(screen.getByRole('button', { name: /attacher/i }));
+
+    await waitFor(() =>
+      expect(apiMocks.etatSync.mock.calls.length).toBeGreaterThan(appelsAvant)
+    );
+  });
+
+  it('un refus du serveur garde son explication', async () => {
+    const refus = new Error('Cette racine appartient déjà à un autre projet.');
+    apiMocks.definirRacineSync.mockRejectedValue(refus);
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+
+    const champ = screen.getByPlaceholderText(/Documents/i);
+    fireEvent.change(champ, { target: { value: 'D:\\site' } });
+    fireEvent.click(screen.getByRole('button', { name: /attacher/i }));
+
+    const message = await screen.findByRole('alert');
+    expect(message.textContent).toContain('appartient déjà');
+  });
+
+  it('délier signale son échec au lieu de rester muet', async () => {
+    apiMocks.etatSync.mockResolvedValue({
+      racine: 'D:\\site', generation: 1, dernier_plan: null, run: null,
+    });
+    apiMocks.retirerRacineSync.mockRejectedValue(new Error('Le serveur a refusé.'));
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+
+    fireEvent.click(await screen.findByRole('button', { name: /Délier/i }));
+
+    const message = await screen.findByRole('alert');
+    expect(message.textContent).toContain('refusé');
+  });
+});
