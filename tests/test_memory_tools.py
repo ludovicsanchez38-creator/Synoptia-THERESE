@@ -137,3 +137,64 @@ async def test_read_contact_zero_resultat_sans_proche_reste_propre(db_session):
     assert r["found"] is False
     assert r.get("suggestions", []) == []
     assert "Aucun contact" in r["message"]
+
+
+# ============================================================
+# D3 (Dr_logic, 27/08) : « Thérèse semble ne pas savoir retrouver un
+# correspondant à partir de l'adresse email ».
+# read_contact ne comparait que prénom, nom, nom affiché et société. Une
+# adresse e-mail — souvent la seule chose qu'on a sous la main quand on lit un
+# message — ne retrouvait donc personne, alors que la fiche existe.
+# ============================================================
+
+
+@pytest.mark.asyncio
+async def test_read_contact_retrouve_par_adresse_email(db_session):
+    db_session.add(
+        Contact(first_name="Paul", last_name="Rivière", email="p.riviere@forge.fr")
+    )
+    await db_session.commit()
+
+    r = json.loads(
+        await execute_read_contact({"query": "p.riviere@forge.fr"}, db_session)
+    )
+
+    assert r["found"] is True
+    assert r["contacts"][0]["display_name"] == "Paul Rivière"
+
+
+@pytest.mark.asyncio
+async def test_read_contact_par_email_insensible_a_la_casse(db_session):
+    db_session.add(Contact(first_name="Paul", last_name="Rivière", email="p.riviere@forge.fr"))
+    await db_session.commit()
+
+    r = json.loads(
+        await execute_read_contact({"query": "P.Riviere@Forge.FR"}, db_session)
+    )
+
+    assert r["found"] is True
+
+
+@pytest.mark.asyncio
+async def test_read_contact_par_domaine_trouve_les_correspondants(db_session):
+    """Un fragment d'adresse reste une recherche utile (tous les gens de la maison)."""
+    db_session.add(Contact(first_name="Paul", last_name="Rivière", email="p.riviere@forge.fr"))
+    db_session.add(Contact(first_name="Anne", last_name="Colin", email="a.colin@forge.fr"))
+    db_session.add(Contact(first_name="Luc", last_name="Marin", email="luc@ailleurs.fr"))
+    await db_session.commit()
+
+    r = json.loads(await execute_read_contact({"query": "@forge.fr"}, db_session))
+
+    assert r["found"] is True
+    assert {c["display_name"] for c in r["contacts"]} == {"Paul Rivière", "Anne Colin"}
+
+
+@pytest.mark.asyncio
+async def test_un_contact_sans_email_ne_repond_pas_a_toutes_les_recherches(db_session):
+    """Garde-fou : un champ vide ne doit jamais devenir un joker."""
+    db_session.add(Contact(first_name="Paul", last_name="Rivière"))
+    await db_session.commit()
+
+    r = json.loads(await execute_read_contact({"query": "inconnu@nulle-part.fr"}, db_session))
+
+    assert r["found"] is False

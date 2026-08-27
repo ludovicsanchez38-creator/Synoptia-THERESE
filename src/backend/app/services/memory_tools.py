@@ -114,14 +114,17 @@ READ_CONTACT_TOOL = {
             "(coordonnees, notes, stage commercial, score, source, dernieres interactions). "
             "Utilise CET OUTIL plutot que d'inventer quand l'utilisateur demande le contexte, "
             "le suivi, les notes ou l'historique d'une personne ou d'une entreprise. "
-            "Recherche par nom, prenom ou entreprise."
+            "Recherche par nom, prenom, entreprise ou ADRESSE EMAIL "
+            "(l'adresse d'un expediteur suffit a retrouver sa fiche)."
         ),
         "parameters": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Nom, prenom ou entreprise du contact a retrouver",
+                    "description": (
+                        "Nom, prenom, entreprise ou adresse email du contact a retrouver"
+                    ),
                 },
             },
             "required": ["query"],
@@ -652,7 +655,7 @@ async def execute_read_contact(
     query = (arguments.get("query") or "").strip()
     if not query:
         return json.dumps(
-            {"error": "Indique un nom, prénom ou entreprise à rechercher"},
+            {"error": "Indique un nom, prénom, entreprise ou e-mail à rechercher"},
             ensure_ascii=False,
         )
 
@@ -674,6 +677,10 @@ async def execute_read_contact(
         or q in _fold(c.last_name or "")
         or q in _fold(c.display_name or "")
         or q in _fold(c.company or "")
+        # D3 (Dr_logic, 27/08) : l'adresse e-mail est souvent la seule prise
+        # qu'on ait sur quelqu'un — en lisant un message, en préparant une
+        # réponse. Sans elle, la fiche existait sans être trouvable.
+        or q in _fold(c.email or "")
     ]
 
     if not matches:
