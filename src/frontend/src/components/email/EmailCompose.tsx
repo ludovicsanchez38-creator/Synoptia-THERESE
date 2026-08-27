@@ -264,6 +264,7 @@ export function EmailCompose() {
         {/* Body */}
         <div className="flex-1 overflow-hidden">
           <textarea
+            aria-label="Corps du message"
             value={draftBody}
             onChange={(e) => setDraftBody(e.target.value)}
             placeholder="Écris ton message..."

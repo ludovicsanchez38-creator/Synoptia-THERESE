@@ -34,13 +34,23 @@ const COUVERTS = [
   'prototype/InvoiceConversationCard.tsx',
 ];
 
-/** Un champ nommé porte un id (relié par un label), ou un aria-label. */
+/**
+ * Un champ nommé porte un `id` (relié par un label), ou un `aria-label`.
+ *
+ * Le détecteur couvre `input`, `textarea` ET `select` : la première version
+ * ne regardait que `input`, et trois champs anonymes des écrans « couverts »
+ * passaient donc au vert — le corps d'un mail, un modèle de prompt, un
+ * sélecteur de contact.
+ *
+ * `id=` est cherché avec sa frontière gauche : sans elle, `data-id=` était
+ * accepté comme un identifiant, et un champ anonyme passait pour nommé.
+ */
 function champsAnonymes(source: string): string[] {
   const anonymes: string[] = [];
-  const balises = source.match(/<input\b[^>]*>/gs) ?? [];
+  const balises = source.match(/<(?:input|textarea|select)\b[^>]*>/gs) ?? [];
   for (const balise of balises) {
-    if (/type="(checkbox|radio|file)"/.test(balise)) continue;
-    if (/\bid=/.test(balise) || /aria-label/.test(balise)) continue;
+    if (/type="(checkbox|radio|file|hidden)"/.test(balise)) continue;
+    if (/(?<![-\w])id=/.test(balise) || /aria-label/.test(balise)) continue;
     anonymes.push(balise.replace(/\s+/g, ' ').slice(0, 70));
   }
   return anonymes;

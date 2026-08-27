@@ -129,10 +129,10 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
 
       {/* Template */}
       <div>
-        <label className="block text-xs font-medium text-text-muted mb-1">
+        <label htmlFor="rfccapture-template-de-prompt" className="block text-xs font-medium text-text-muted mb-1">
           Template de prompt <span className="text-text-muted/50">(utilise {'{{placeholders}}'} pour les variables)</span>
         </label>
-        <textarea
+        <textarea id="rfccapture-template-de-prompt"
           value={data.prompt_template}
           onChange={(e) => updateField('prompt_template', e.target.value)}
           placeholder="Rédige un email à {{destinataire}} à propos de {{sujet}}. Ton : {{ton}}."

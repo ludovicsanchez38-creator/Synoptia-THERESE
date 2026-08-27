@@ -350,11 +350,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Contact link */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted flex items-center gap-2">
+                <label htmlFor="projectmodal-contact-associe" className="text-sm text-text-muted flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   Contact associé
                 </label>
-                <select
+                <select id="projectmodal-contact-associe"
                   value={formData.contact_id}
                   onChange={(e) => handleChange('contact_id', e.target.value)}
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
