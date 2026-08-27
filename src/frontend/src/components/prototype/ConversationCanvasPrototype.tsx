@@ -108,6 +108,7 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
+import { actionsAuRepos } from '../../lib/paletteAuRepos';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -433,14 +434,24 @@ function CommandPalette({
   }, [query]);
   const visibleActions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return [];
+    if (!normalized) {
+      // Entrée 1 : la palette rendait une liste vide tant qu'on n'avait rien
+      // tapé, alors que des destinations câblées attendaient. Elle suggère
+      // maintenant celles qu'aucune autre section n'annonce déjà — les
+      // parcours et les capacités sont listés juste au-dessus.
+      return actionsAuRepos(
+        getActions(),
+        ACTIONS_ETABLI.map((a) => a.id),
+        visibleCapabilities.map((c) => c.id),
+      );
+    }
     return getActions().filter((action) =>
       [action.label, action.description || '', ...(action.keywords || [])]
         .join(' ')
         .toLowerCase()
         .includes(normalized),
     ).slice(0, 6);
-  }, [query]);
+  }, [query, visibleCapabilities]);
   const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;
   const optionCount = scenarioCount + visibleCapabilities.length + visibleActions.length;
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
