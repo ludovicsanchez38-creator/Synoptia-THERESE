@@ -348,3 +348,48 @@ class TestLireUnFichier:
         )
 
         assert r["found"] is False
+
+
+class TestLesAccentsEtLePoids:
+    """Relevé par la relecture : deux pièges d'usage réel."""
+
+    @pytest.mark.asyncio
+    async def test_un_nom_accentue_se_retrouve_sans_accent(self, db_session):
+        """`lower()` de SQLite est ASCII : « École.pdf » restait introuvable.
+
+        Personne ne tape les accents d'un nom de fichier, et surtout pas la
+        majuscule accentuée.
+        """
+        await _fichier(db_session, nom="École-Élémentaire.pdf")
+
+        r = await _chercher(db_session, "ecole elementaire")
+
+        assert [d["nom"] for d in r["documents"]] == ["École-Élémentaire.pdf"]
+
+    @pytest.mark.asyncio
+    async def test_un_fichier_trop_lourd_est_refuse_avant_d_etre_lu(
+        self, db_session, tmp_path
+    ):
+        """Lire quarante mégaoctets pour en garder dix mille caractères.
+
+        La taille est connue en base : la refuser AVANT l'extraction évite de
+        parser un PDF entier pour jeter presque tout — et évite le gel que D5
+        vient de corriger ailleurs.
+        """
+        page = tmp_path / "enorme.pdf"
+        page.write_text("x" * 100, encoding="utf-8")
+        fichier = FileMetadata(
+            path=str(page), name="enorme.pdf", extension=".pdf",
+            size=60 * 1024 * 1024, chunk_count=5, scope="global",
+        )
+        db_session.add(fichier)
+        await db_session.commit()
+
+        r = json.loads(
+            await execute_memory_tool("read_file", {"file_id": fichier.id}, db_session)
+        )
+
+        assert r["found"] is False
+        # Le message de la garde, pas celui de l'échec d'extraction : sans
+        # cette distinction, le test passait même la garde retirée.
+        assert "trop volumineux pour être lu ici" in r["message"]

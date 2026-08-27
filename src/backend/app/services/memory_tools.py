@@ -258,11 +258,11 @@ def _cloison_projets(
             (Project.scope == "conversation") & (Project.scope_id == conversation_id),
         )
     if scope == "project" and scope_id:
-        return requete.where(generaux).where(
+        return requete.where(
             or_(generaux, (Project.scope == "project") & (Project.scope_id == scope_id))
         )
     if scope == "global":
-        return requete
+        return requete.where(generaux)
     if scope == "all":
         # Transversal explicite : tous les projets et les documents généraux,
         # MAIS pas les souvenirs privés d'autres conversations.
@@ -914,8 +914,24 @@ _SEPARATEURS_DE_NOM = ("-", "_", " ")
 _PLAFOND_CATALOGUE = 25
 
 
+# `lower()` de SQLite ne connaît que l'ASCII : « École.pdf » y reste « École ».
+# On replie donc les accents des deux côtés, sur la liste de ce qu'on croise
+# vraiment dans des noms de fichiers français. Les majuscules accentuées sont
+# listées explicitement, puisque `lower()` ne les abaisse pas non plus.
+_ACCENTS = {
+    "à": "a", "â": "a", "ä": "a", "á": "a", "ã": "a",
+    "é": "e", "è": "e", "ê": "e", "ë": "e",
+    "î": "i", "ï": "i", "í": "i",
+    "ô": "o", "ö": "o", "ó": "o", "õ": "o",
+    "ù": "u", "û": "u", "ü": "u", "ú": "u",
+    "ç": "c", "ñ": "n", "ÿ": "y",
+}
+
+
 def _cle_de_nom(valeur: str) -> str:
     resultat = valeur.lower()
+    for accentue, simple in _ACCENTS.items():
+        resultat = resultat.replace(accentue, simple)
     for separateur in _SEPARATEURS_DE_NOM:
         resultat = resultat.replace(separateur, "")
     return resultat
@@ -928,6 +944,9 @@ def _cle_sql_du_nom() -> Any:
     brut ferait retomber « fichier index » derrière trois cents homonymes.
     """
     expression: Any = func.lower(FileMetadata.name)
+    for accentue, simple in _ACCENTS.items():
+        expression = func.replace(expression, accentue, simple)
+        expression = func.replace(expression, accentue.upper(), simple)
     for separateur in _SEPARATEURS_DE_NOM:
         expression = func.replace(expression, separateur, "")
     return expression
@@ -983,11 +1002,18 @@ async def _chemin_lisible(session: AsyncSession, fichier: FileMetadata) -> str:
     resultat = await session.execute(
         select(ProjectSyncRoot).where(ProjectSyncRoot.detachee == False)  # noqa: E712
     )
+    # `is_relative_to` compare des chaînes : sans résolution, un chemin stocké
+    # avec un lien symbolique ou une casse différente retombe sur le basename
+    # alors que le fichier est bien sous la racine.
     chemin = Path(fichier.path)
     for racine in resultat.scalars().all():
         base = Path(racine.racine)
-        if chemin.is_relative_to(base):
-            return str(chemin.relative_to(base))
+        for candidat, reference in ((chemin, base), (chemin.resolve(), base.resolve())):
+            try:
+                if candidat.is_relative_to(reference):
+                    return str(candidat.relative_to(reference))
+            except OSError:
+                continue
     return str(fichier.name)
 
 
@@ -1084,6 +1110,8 @@ _REFUS_LECTURE = (
 )
 
 _PLAFOND_LECTURE = 10_000
+# Au-delà, l'extraction coûte plus que ce qu'elle rapporte.
+_POIDS_MAXIMAL_LECTURE = 20 * 1024 * 1024
 
 
 async def execute_read_file(
@@ -1115,8 +1143,25 @@ async def execute_read_file(
             {"found": False, "message": _REFUS_LECTURE}, ensure_ascii=False
         )
 
+    # La taille est connue en base : refuser AVANT d'extraire évite de parser
+    # quarante mégaoctets pour en garder dix mille caractères — et évite le gel
+    # que la synchronisation vient de corriger ailleurs.
+    if fichier.size and fichier.size > _POIDS_MAXIMAL_LECTURE:
+        return json.dumps(
+            {
+                "found": False,
+                "nom": fichier.name,
+                "message": (
+                    "Ce fichier est trop volumineux pour être lu ici. Demande "
+                    "à l'utilisateur ce qu'il cherche dedans plutôt que d'en "
+                    "deviner le contenu."
+                ),
+            },
+            ensure_ascii=False,
+        )
+
     chemin = Path(fichier.path)
-    if not chemin.is_file():
+    if not await asyncio.to_thread(chemin.is_file):
         return json.dumps(
             {
                 "found": False,

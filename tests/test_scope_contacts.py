@@ -207,6 +207,48 @@ class TestLaCreationNeDivulguePasUnHomonyme:
         )
 
 
+    @pytest.mark.asyncio
+    async def test_une_conversation_libre_ne_voit_pas_les_projets_d_un_dossier(
+        self, db_session
+    ):
+        """La branche `global` de la cloison projets n'était couverte par rien.
+
+        C'est le régime par DÉFAUT : une conversation non rattachée résout son
+        périmètre à `("global", None)`. Sans filtre, créer « Chantier
+        confidentiel » depuis n'importe quelle conversation retrouvait le
+        projet d'un dossier client, rendait son identifiant, et refusait la
+        création — la fuite exacte que cette fonction existe pour empêcher.
+
+        Écrit après l'avoir cassée pour de bon : un remplacement inverse mal
+        ciblé avait remis `return requete`, et aucun test ne s'en est aperçu.
+        """
+        from app.models.entities import Project
+        from app.services.memory_tools import execute_memory_tool
+
+        db_session.add(
+            Project(
+                id="projet-secret", name="Chantier confidentiel",
+                scope="project", scope_id="projet-a",
+            )
+        )
+        await db_session.commit()
+
+        resultat = await execute_memory_tool(
+            "create_project",
+            {"name": "Chantier confidentiel"},
+            db_session,
+            scope="global",
+        )
+
+        assert "projet-secret" not in resultat, (
+            "l'identifiant d'un projet d'un dossier client est divulgué à une "
+            "conversation qui n'y est pas rattachée"
+        )
+        assert not json.loads(resultat).get("already_existed"), (
+            "la création est refusée à cause d'un homonyme invisible"
+        )
+
+
 class TestLeBridgeMCPNEstPasUnePorteDerobee:
     """Le bridge MCP expose des routes GLOBALES (`list_contacts`,
     `get_contact`, `search_memory`). C'est légitime : il sert les sessions
