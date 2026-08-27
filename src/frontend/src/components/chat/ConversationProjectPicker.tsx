@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FolderTree } from 'lucide-react';
 
 import { listProjects, setConversationProject } from '../../services/api';
+import { useStatusStore } from '../../stores/statusStore';
 
 interface ProjetAffichable {
   id: string;
@@ -79,6 +80,19 @@ export function ConversationProjectPicker({
         // Rétablir l'affichage : laisser une sélection que le serveur n'a pas
         // enregistrée ferait croire à un cloisonnement inexistant.
         setSelection(precedent);
+        // D6 : le rétablissement était MUET. L'utilisateur voyait son choix
+        // revenir tout seul à « Documents généraux » et n'apprenait jamais que
+        // les documents de son projet restaient hors de portée. Une
+        // conversation neuve n'existe en base qu'au premier message : c'est le
+        // cas d'échec le plus fréquent, et le plus déroutant.
+        useStatusStore.getState().addNotification({
+          type: 'warning',
+          title: 'Documents du projet non rattachés',
+          message:
+            'Le rattachement n’a pas été enregistré : cette conversation consulte '
+            + 'toujours les documents généraux. Envoie un premier message, puis '
+            + 'choisis à nouveau ton projet.',
+        });
       } finally {
         setEnCours(false);
       }

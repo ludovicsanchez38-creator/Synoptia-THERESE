@@ -144,3 +144,72 @@ describe('ConversationProjectPicker', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// D6 (Dr_logic, 27/08) — le rattachement qui se défait tout seul.
+//
+// Une conversation neuve n'existe pas en base tant que le premier message n'a
+// pas été envoyé : son identifiant est local. Choisir un projet avant cela
+// répond 404, et le composant remettait la sélection précédente SANS RIEN
+// DIRE. L'utilisateur voit son choix revenir à « Documents généraux » et
+// n'apprend jamais que ses documents de projet restent hors de portée.
+//
+// Le rétablissement est juste — laisser une sélection que le serveur n'a pas
+// enregistrée ferait croire à un cloisonnement inexistant. C'est le silence
+// qui ne l'est pas.
+// ---------------------------------------------------------------------------
+
+const statusMocks = vi.hoisted(() => ({ addNotification: vi.fn() }));
+vi.mock('../../stores/statusStore', () => ({
+  useStatusStore: { getState: () => ({ addNotification: statusMocks.addNotification }) },
+}));
+
+describe('D6 : un rattachement qui échoue le dit', () => {
+  beforeEach(() => {
+    statusMocks.addNotification.mockClear();
+    // Le rejet posé par le test précédent survivrait sinon à ce describe.
+    apiMocks.setConversationProject.mockReset();
+    apiMocks.setConversationProject.mockResolvedValue({
+      project_id: 'projet-a',
+      memory_scope: 'project',
+    });
+    apiMocks.listProjects.mockResolvedValue([
+      { id: 'projet-a', name: 'Client Alpha' },
+      { id: 'projet-b', name: 'Client Beta' },
+    ]);
+  });
+
+  it('prévient quand le serveur refuse le rattachement', async () => {
+    apiMocks.setConversationProject.mockRejectedValue(new Error('404'));
+    const { container } = render(
+      <ConversationProjectPicker conversationId="conv-locale" projectId={null} />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(statusMocks.addNotification).toHaveBeenCalled();
+    });
+    const arg = statusMocks.addNotification.mock.calls[0][0];
+    expect(arg.type).toBe('warning');
+    // Le message doit dire ce qui est en jeu : les documents du projet.
+    expect(`${arg.title} ${arg.message}`.toLowerCase()).toMatch(/document|projet/);
+  });
+
+  it('ne prévient de rien quand le rattachement réussit', async () => {
+    const { container } = render(
+      <ConversationProjectPicker conversationId="conv-1" projectId={null} />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => expect(apiMocks.setConversationProject).toHaveBeenCalled());
+    expect(statusMocks.addNotification).not.toHaveBeenCalled();
+  });
+});
