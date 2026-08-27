@@ -729,6 +729,11 @@ export function ConversationCanvasPrototype() {
     resetRun: resetAtelierRun,
   } = usePrototypeAtelierData(scenario === 'atelier');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /* L'heure du contenu affiché, figée à son apparition : une horloge qui
+     défile attirerait l'œil sans rien apprendre de plus. */
+  const [heureDAffichage] = useState(() =>
+    new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+  );
   const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
@@ -1484,7 +1489,11 @@ export function ConversationCanvasPrototype() {
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-text-muted">
                     <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-text" />
                     THÉRÈSE
-                    <span className="font-normal">· maintenant</span>
+                    {/* « maintenant » était écrit en dur : il ne changeait
+                        jamais et n'apprenait donc rien, tout en occupant une
+                        place permanente. Une heure réelle dit de quand date
+                        ce qu'on lit. */}
+                    <span className="font-normal">· {heureDAffichage}</span>
                   </div>
 
                   {scenario === 'today' ? (
