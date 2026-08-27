@@ -5,6 +5,9 @@
  * ouvre une conversation, on veut y travailler. Jusqu'ici le geste répondait
  * 404 et se défaisait en silence.
  */
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({
@@ -16,6 +19,7 @@ vi.mock('../services/api', () => api);
 import {
   ConversationEphemereError,
   assurerConversationPersistee,
+  attendrePersistance,
   rattacherAUnProjet,
 } from './rattachementConversation';
 import { useChatStore } from '../stores/chatStore';
@@ -128,5 +132,65 @@ describe('Le store retrouve la conversation après le changement d’identifiant
     // Personne ne correspond : le store resterait sans projet, en contradiction
     // avec le serveur. C'est exactement ce que le correctif évite.
     expect(useChatStore.getState().conversations[0].projectId).toBeUndefined();
+  });
+});
+
+describe('Un envoi attend le rattachement en vol', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.setConversationProject.mockResolvedValue({ project_id: 'projet-a', memory_scope: 'project' });
+  });
+
+  // Relevé par la relecture : pendant le rattachement, le sélecteur est
+  // désactivé mais PAS le composeur. Un envoi parti au même instant part sans
+  // identifiant, le backend crée une SECONDE conversation, et l'utilisateur se
+  // retrouve avec un doublon dont l'une porte son projet et l'autre son
+  // message. L'envoi doit donc attendre que la persistance soit finie.
+  it('attendrePersistance ne rend la main qu’une fois la conversation posée', async () => {
+    poserConversation({});
+    let liberer: (v: { id: string; title: string }) => void = () => undefined;
+    api.createConversation.mockReturnValue(
+      new Promise((resolve) => {
+        liberer = resolve;
+      })
+    );
+
+    const rattachement = rattacherAUnProjet('conv-locale', 'projet-a', 'project');
+    let attenteFinie = false;
+    const attente = attendrePersistance().then(() => {
+      attenteFinie = true;
+    });
+
+    // Tant que la création n'a pas répondu, l'envoi patiente.
+    await Promise.resolve();
+    expect(attenteFinie).toBe(false);
+
+    liberer({ id: 'conv-serveur', title: 'Nouvelle conversation' });
+    await rattachement;
+    await attente;
+
+    expect(attenteFinie).toBe(true);
+    expect(useChatStore.getState().conversations[0].id).toBe('conv-serveur');
+  });
+
+  it('rend la main aussitôt quand rien n’est en vol', async () => {
+    poserConversation({ synced: true });
+    await attendrePersistance();
+  });
+
+  it('ne reste pas bloqué si la persistance échoue', async () => {
+    poserConversation({});
+    api.createConversation.mockRejectedValue(new Error('réseau'));
+
+    await expect(rattacherAUnProjet('conv-locale', 'projet-a', 'project')).rejects.toThrow();
+    await attendrePersistance();
+  });
+
+  it('est réellement attendue avant un envoi', () => {
+    const source = readFileSync(
+      path.join(__dirname, '..', 'components', 'chat', 'ChatInput.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('attendrePersistance');
   });
 });

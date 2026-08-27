@@ -24,6 +24,8 @@ import {
   type VariablesPreview,
 } from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
+import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
+import { attendrePersistance } from '../../lib/rattachementConversation';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
@@ -600,6 +602,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // reste valide).
     let pendingClientAction: StreamChunk | null = null;
     try {
+      // Un rattachement de projet peut être en train de persister CETTE
+      // conversation : partir sans attendre enverrait le message sans
+      // identifiant, le backend en créerait une seconde, et le projet
+      // resterait sur celle que plus personne n'affiche.
+      await attendrePersistance();
       // Only send conversation_id if it's synced with backend
       const conversation = currentConversation();
       const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
@@ -622,9 +629,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         // Capture the backend conversation ID from the first chunk
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
-          // Update local conversation ID if it was auto-created by the store
-          if (currentConversationId && currentConversationId !== backendConversationId) {
-            updateConversationId(currentConversationId, backendConversationId);
+          // Une conversation persistée entre-temps (rattachement d'un projet)
+          // a DÉJÀ son identité serveur : l'écraser laisserait le projet sur
+          // une conversation que plus personne n'affiche.
+          const dejaEnregistree = Boolean(
+            useChatStore
+              .getState()
+              .conversations.find((c) => c.id === currentConversationId)?.synced
+          );
+          if (
+            doitAdopterIdentiteServeur(
+              currentConversationId,
+              backendConversationId,
+              dejaEnregistree
+            )
+          ) {
+            updateConversationId(currentConversationId!, backendConversationId);
           }
         }
 
@@ -813,6 +833,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     let backendConversationId: string | null = null;
 
     try {
+      await attendrePersistance();
       const conversation = currentConversation();
       const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
 
@@ -827,8 +848,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       for await (const chunk of stream) {
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
-          if (currentConversationId && currentConversationId !== backendConversationId) {
-            updateConversationId(currentConversationId, backendConversationId);
+          const dejaEnregistree = Boolean(
+            useChatStore
+              .getState()
+              .conversations.find((c) => c.id === currentConversationId)?.synced
+          );
+          if (
+            doitAdopterIdentiteServeur(
+              currentConversationId,
+              backendConversationId,
+              dejaEnregistree
+            )
+          ) {
+            updateConversationId(currentConversationId!, backendConversationId);
           }
         }
 

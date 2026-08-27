@@ -21,6 +21,23 @@
 import { createConversation, setConversationProject } from '../services/api';
 import { useChatStore } from '../stores/chatStore';
 
+/**
+ * La persistance en vol, s'il y en a une.
+ *
+ * Un envoi parti pendant un rattachement n'aurait pas encore d'identifiant à
+ * transmettre : le backend en créerait une SECONDE, et l'utilisateur se
+ * retrouverait avec un doublon dont l'une porte son projet et l'autre son
+ * message. Le composeur attend donc ici.
+ */
+let persistanceEnVol: Promise<unknown> | null = null;
+
+/** Rend la main quand plus aucune conversation n'est en cours d'enregistrement. */
+export async function attendrePersistance(): Promise<void> {
+  // Un échec de persistance ne doit pas bloquer l'envoi : il a déjà été
+  // signalé à l'utilisateur là où il s'est produit.
+  await persistanceEnVol?.catch(() => undefined);
+}
+
 export class ConversationEphemereError extends Error {
   constructor() {
     super('Une conversation éphémère ne peut pas être rattachée à un projet.');
@@ -39,9 +56,15 @@ export async function assurerConversationPersistee(conversationId: string): Prom
   if (conversation.synced) return conversationId;
   if (conversation.ephemeral) throw new ConversationEphemereError();
 
-  const creee = await createConversation(conversation.title);
-  etat.updateConversationId(conversationId, creee.id);
-  return creee.id;
+  const creation = createConversation(conversation.title);
+  persistanceEnVol = creation;
+  try {
+    const creee = await creation;
+    etat.updateConversationId(conversationId, creee.id);
+    return creee.id;
+  } finally {
+    if (persistanceEnVol === creation) persistanceEnVol = null;
+  }
 }
 
 /** Rattache la conversation à un projet, en la persistant d'abord si nécessaire. */
