@@ -272,7 +272,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <span className="text-sm text-error">{error}</span>
                 </div>

@@ -275,7 +275,7 @@ export function EventForm() {
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {error && (
-          <div className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error">{error}</p>
           </div>
         )}
