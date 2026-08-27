@@ -38,3 +38,57 @@ def test_chaque_outil_annonce_est_conditionne_a_sa_propre_presence():
     assert not manquants, "outils promis sans vérifier leur présence : " + "; ".join(
         manquants
     )
+
+
+# ---------------------------------------------------------------------------
+# D6 (Dr_logic, 27/08) : « les documents indexés » fait partir Thérèse sur des
+# factures.
+#
+# BUG-148 (juillet) corrigeait un vrai défaut : « envoie la facture
+# FACT-2026-001 » finissait en « je n'ai pas d'outil de recherche pour les
+# documents locaux », et le modèle proposait de RECRÉER la facture. Pour
+# l'empêcher, on lui a ordonné d'utiliser search_invoices « AU LIEU de dire
+# que tu ne peux pas chercher les documents locaux ».
+#
+# Sauf que la phrase du modèle était exacte : il n'a toujours aucun outil pour
+# les documents indexés. L'ordre a débordé de son domaine, et il envoie
+# désormais vers les factures quiconque parle de ses documents. La description
+# de l'outil, elle, est correctement bornée aux factures et devis.
+#
+# Une capacité ne revendique que le domaine de son outil.
+# ---------------------------------------------------------------------------
+
+DOMAINES_ETRANGERS = (
+    "les documents locaux",
+    "les documents indexés",
+    "les documents indexes",
+    "tes documents",
+    "les fichiers locaux",
+)
+
+
+def _ligne_de_capacite(outil: str) -> str:
+    for _condition, annonce in _bloc_capacites():
+        if f"**{outil}**" in annonce:
+            return annonce
+    raise AssertionError(f"capacité {outil} introuvable")
+
+
+def test_la_recherche_de_factures_ne_revendique_pas_tous_les_documents():
+    ligne = _ligne_de_capacite("search_invoices").lower()
+    debordements = [d for d in DOMAINES_ETRANGERS if d in ligne]
+    assert not debordements, (
+        "la capacité search_invoices revendique un domaine qui n'est pas le sien : "
+        + ", ".join(debordements)
+    )
+
+
+def test_la_consigne_utile_de_bug_148_est_conservee():
+    """Ne pas jeter le correctif de juillet en corrigeant son débordement."""
+    ligne = _ligne_de_capacite("search_invoices").lower()
+    assert "recreer" in ligne or "recréer" in ligne, (
+        "la consigne « ne propose JAMAIS de recréer un document existant » a disparu"
+    )
+    assert "piece jointe" in ligne or "pièce jointe" in ligne, (
+        "la consigne sur l'envoi en pièce jointe impossible a disparu"
+    )
