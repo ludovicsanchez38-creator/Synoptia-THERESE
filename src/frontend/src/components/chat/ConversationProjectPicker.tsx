@@ -21,7 +21,17 @@ interface ConversationProjectPickerProps {
   conversationId: string;
   projectId: string | null;
   memoryScope?: string;
-  onProjectChange?: (projectId: string | null, memoryScope: string) => void;
+  /**
+   * Le troisième argument est l'identifiant que le SERVEUR connaît : il
+   * change quand une conversation locale vient d'être persistée pour être
+   * rattachée. Écrire sur l'ancien laisserait le store croire qu'aucun
+   * projet n'est rattaché — un affichage qui ment sur la cloison.
+   */
+  onProjectChange?: (
+    projectId: string | null,
+    memoryScope: string,
+    conversationId: string
+  ) => void;
 }
 
 /**
@@ -81,8 +91,12 @@ export function ConversationProjectPicker({
         // D6 : une conversation neuve n'existe qu'en local jusqu'à son premier
         // message. Rattacher un projet la persiste d'abord, au lieu de répondre
         // 404 au moment précis où l'on vient d'indexer un dossier.
-        await rattacherAUnProjet(conversationId, cible, politique);
-        onProjectChange?.(cible, politique);
+        const identifiantServeur = await rattacherAUnProjet(
+          conversationId,
+          cible,
+          politique
+        );
+        onProjectChange?.(cible, politique, identifiantServeur);
       } catch (erreur) {
         // Rétablir l'affichage : laisser une sélection que le serveur n'a pas
         // enregistrée ferait croire à un cloisonnement inexistant.
@@ -110,8 +124,7 @@ export function ConversationProjectPicker({
           title: 'Documents du projet non rattachés',
           message:
             'Le rattachement n’a pas été enregistré : cette conversation consulte '
-            + 'toujours les documents généraux. Envoie un premier message, puis '
-            + 'choisis à nouveau ton projet.',
+            + 'toujours les documents généraux. Réessaie dans un instant.',
         });
       } finally {
         setEnCours(false);

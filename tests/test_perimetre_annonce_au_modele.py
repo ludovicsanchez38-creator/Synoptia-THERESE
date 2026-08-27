@@ -124,3 +124,64 @@ async def test_un_fichier_dont_lindexation_a_echoue_ne_compte_pas(
     )
 
     assert contexte is None
+
+
+@pytest.mark.asyncio
+async def test_un_perimetre_illisible_ne_fait_pas_tomber_le_chat(
+    db_session, monkeypatch
+):
+    """Relevé par la relecture : `scope` était affecté DANS le try et lu dehors.
+
+    Un échec de lecture du périmètre partait alors en UnboundLocalError, et
+    c'est tout le message qui tombait — pour une mention accessoire.
+    """
+    async def _explose(*args, **kwargs):
+        raise RuntimeError("base illisible")
+
+    monkeypatch.setattr("app.routers.chat._perimetre_de_conversation", _explose)
+
+    contexte = await _get_memory_context(
+        "les documents indexés",
+        conversation_id=await _conversation_non_rattachee(db_session),
+        session=db_session,
+    )
+
+    assert contexte is None
+
+
+@pytest.mark.asyncio
+async def test_pas_de_mention_quand_la_conversation_est_rattachee(
+    db_session, monkeypatch
+):
+    """Rattachée à son projet, elle consulte ses documents : rien à signaler."""
+    async def _rien(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(
+        "app.services.qdrant.get_qdrant_service",
+        lambda: type("Q", (), {"async_search": staticmethod(_rien)})(),
+    )
+
+    from app.models.entities import Project
+
+    projet = Project(name="Site egrenne")
+    db_session.add(projet)
+    await db_session.commit()
+
+    conversation = Conversation(title="Avec projet", project_id=projet.id)
+    db_session.add(conversation)
+    db_session.add(
+        FileMetadata(
+            path="/d/i.html", name="i.html", extension="html", size=1,
+            chunk_count=3, scope="project", scope_id=projet.id,
+        )
+    )
+    await db_session.commit()
+
+    contexte = await _get_memory_context(
+        "les documents indexés",
+        conversation_id=conversation.id,
+        session=db_session,
+    )
+
+    assert contexte is None

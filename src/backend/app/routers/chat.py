@@ -687,6 +687,10 @@ async def _get_memory_context(
     Returns formatted context string or None if no relevant memories found.
     """
     context_parts: list[str] = []
+    # Affecté avant le try : il est relu plus bas, hors de sa portée. Un
+    # périmètre illisible ne doit pas faire tomber tout le message pour une
+    # mention accessoire (relevé par la relecture adversariale).
+    scope: str | None = None
     try:
         scope, scope_id = await _perimetre_de_conversation(conversation_id, session)
         qdrant = get_qdrant_service()

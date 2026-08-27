@@ -78,7 +78,8 @@ describe('ConversationProjectPicker', () => {
       );
     });
     await waitFor(() =>
-      expect(surChangement).toHaveBeenCalledWith('projet-a', 'project')
+      // Troisième argument (D6) : l'identifiant que le serveur connaît.
+      expect(surChangement).toHaveBeenCalledWith('projet-a', 'project', 'conv-1')
     );
   });
 
@@ -308,5 +309,93 @@ describe('D6 : le rattachement marche avant le premier message', () => {
     const arg = statusMocks.addNotification.mock.calls[0][0];
     expect(`${arg.title} ${arg.message}`.toLowerCase()).toContain('éphémère');
     expect(apiMocks.createConversation).not.toHaveBeenCalled();
+  });
+});
+
+
+// Relevé par la relecture adversariale : après la persistance, l'identifiant
+// de la conversation change. Prévenir le parent avec l'ANCIEN identifiant
+// laissait le store sur `projectId: null` alors que le serveur, lui, était
+// rattaché. L'affichage local masquait le mensonge jusqu'à ce qu'on revienne
+// sur la conversation — et un affichage qui ment sur la cloison est
+// exactement ce que ce composant existe pour empêcher.
+describe('D6 : le parent est prévenu avec l’identifiant que le serveur connaît', () => {
+  beforeEach(() => {
+    statusMocks.addNotification.mockClear();
+    apiMocks.createConversation.mockReset();
+    apiMocks.createConversation.mockResolvedValue({
+      id: 'conv-serveur',
+      title: 'Nouvelle conversation',
+    });
+    apiMocks.setConversationProject.mockReset();
+    apiMocks.setConversationProject.mockResolvedValue({
+      project_id: 'projet-a',
+      memory_scope: 'project',
+    });
+    apiMocks.listProjects.mockResolvedValue([{ id: 'projet-a', name: 'Client Alpha' }]);
+    useChatStore.setState({
+      conversations: [
+        {
+          id: 'conv-locale',
+          title: 'Nouvelle conversation',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          synced: false,
+        },
+      ] as never,
+      currentConversationId: 'conv-locale',
+    });
+  });
+
+  it('annonce le nouvel identifiant après persistance', async () => {
+    const onProjectChange = vi.fn();
+    const { container } = render(
+      <ConversationProjectPicker
+        conversationId="conv-locale"
+        projectId={null}
+        onProjectChange={onProjectChange}
+      />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => expect(onProjectChange).toHaveBeenCalled());
+    expect(onProjectChange).toHaveBeenCalledWith('projet-a', 'project', 'conv-serveur');
+  });
+
+  it('annonce l’identifiant inchangé quand rien n’a été persisté', async () => {
+    useChatStore.setState({
+      conversations: [
+        {
+          id: 'conv-1',
+          title: 'Déjà enregistrée',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          synced: true,
+        },
+      ] as never,
+      currentConversationId: 'conv-1',
+    });
+    const onProjectChange = vi.fn();
+    const { container } = render(
+      <ConversationProjectPicker
+        conversationId="conv-1"
+        projectId={null}
+        onProjectChange={onProjectChange}
+      />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => expect(onProjectChange).toHaveBeenCalled());
+    expect(onProjectChange).toHaveBeenCalledWith('projet-a', 'project', 'conv-1');
   });
 });

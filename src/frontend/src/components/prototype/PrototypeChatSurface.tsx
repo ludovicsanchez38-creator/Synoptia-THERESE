@@ -57,8 +57,12 @@ export function PrototypeChatSurface({
             conversationId={conversation.id}
             projectId={conversation.projectId ?? null}
             memoryScope={conversation.memoryScope ?? 'global'}
-            onProjectChange={(projectId, memoryScope) =>
-              setConversationProjectId(conversation.id, projectId, memoryScope)
+            /* L'identifiant vient du picker, jamais de la closure : une
+               conversation locale persistée pour être rattachée en change, et
+               écrire sur l'ancien laisserait l'en-tête annoncer « Documents
+               généraux » alors que le serveur cloisonne sur le projet. */
+            onProjectChange={(projectId, memoryScope, conversationId) =>
+              setConversationProjectId(conversationId, projectId, memoryScope)
             }
           />
         )}
