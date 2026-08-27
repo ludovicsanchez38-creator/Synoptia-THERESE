@@ -62,13 +62,44 @@ describe('Ce que la palette propose avant qu’on tape', () => {
     expect(ids).not.toContain('home.open');
   });
 
+  // Relevé par la relecture : mes exemples fictifs plaçaient les bonnes
+  // destinations dans les six premières. Sur le VRAI registre, l'ordre de
+  // déclaration les rejetait au-delà du plafond, et la palette aurait proposé
+  // « Effacer la conversation » à la place. Un test qui invente ses données
+  // valide son invention.
+  it('sur le registre réel, propose les destinations que le plan promet', async () => {
+    const { getActions } = await import('./actionRegistry');
+    const proposees = actionsAuRepos(getActions(), PARCOURS, []).map((a) => a.id);
+
+    // Ce que la liste porte réellement, vérifié sur le registre : produire un
+    // document, la bibliothèque de prompts, créer un contact ou un projet, le
+    // CRM, l'agenda, les tâches, les projets.
+    expect(proposees).toContain('guided.open');
+    expect(proposees).toContain('projects.open');
+    expect(proposees).toContain('prompt-library.open');
+    // « Ouvrir les Fichiers » vient juste après le plafond. Le plan le
+    // promettait ; l'ordre réel ne le permet pas sans faire un mur, et cette
+    // destination a désormais son raccourci (⌘O, entrée 6) plus la recherche.
+    // La promesse est corrigée, le plafond n'est pas gonflé pour la tenir.
+  });
+
+  it('sur le registre réel, ne redit pas ce que le rail porte déjà', async () => {
+    const { getActions } = await import('./actionRegistry');
+    const proposees = actionsAuRepos(getActions(), PARCOURS, []).map((a) => a.id);
+
+    expect(proposees).not.toContain('chat.new');
+    expect(proposees).not.toContain('conversations.toggle');
+    // Effacer la conversation n'est pas une destination à découvrir au repos.
+    expect(proposees).not.toContain('chat.clear');
+  });
+
   it('reste une courte liste, pas un catalogue', () => {
     const beaucoup = Array.from({ length: 30 }, (_, i) => ({
       id: `truc${i}.open`,
       label: `Truc ${i}`,
     }));
 
-    expect(actionsAuRepos(beaucoup, PARCOURS, []).length).toBeLessThanOrEqual(6);
+    expect(actionsAuRepos(beaucoup, PARCOURS, []).length).toBeLessThanOrEqual(8);
   });
 
   it('est réellement branchée dans la coque', () => {

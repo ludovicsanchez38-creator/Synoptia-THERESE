@@ -153,9 +153,16 @@ déroutant ; un item qui ouvre son objet, toujours, ne l'est pas.
 > chemin, et le trouver demande de dérouler la coque, pas d'ajouter une
 > condition.
 >
-> Le contrat d'écran, lui, est acquis et vérifié : sous le seuil, le canevas
-> doit céder la place, sinon le chat s'ouvrirait sous un voile. Le test qui
-> l'exprimait passait déjà.
+> Le contrat d'écran reste acquis sur le papier : sous le seuil, le canevas
+> doit céder la place, sinon le chat s'ouvrirait sous un voile.
+>
+> **Seconde correction, après relecture** : j'avais laissé la moitié du
+> changement en place (la fermeture devenue conditionnelle) sous une étiquette
+> « reporté ». Un entre-deux n'est pas un report : sur grand écran, ouvrir une
+> conversation laissait le canevas collé à elle, sans qu'aucun test ne le
+> couvre. La fermeture inconditionnelle est rétablie. Et le diagnostic de cette
+> entrée est faux : le canevas n'est PAS prisonnier de la branche accueil, il
+> est déjà rendu à part. La reprise devra partir de là.
 >
 > À reprendre seul, dans une session dédiée, avec la recette visuelle. Forcer
 > un refactor de la coque la plus critique en fin de lot aurait été le

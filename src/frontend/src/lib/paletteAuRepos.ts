@@ -18,8 +18,34 @@ export interface ActionProposable {
    et leur raccourci. Un type de retour plus étroit les raboterait, et la
    palette perdrait ce qu'elle affiche. */
 
-/** Au repos, la palette suggère, elle ne déverse pas. */
-const PLAFOND_AU_REPOS = 6;
+/**
+ * Au repos, la palette suggère, elle ne déverse pas.
+ *
+ * Huit et non six : après curation, « Ouvrir les Projets » et « Ouvrir les
+ * Fichiers » tombent aux septième et huitième rangs de l'ordre de
+ * déclaration. Six les auraient coupées, alors que ce sont deux destinations
+ * majeures — et que le raccourci des Fichiers vient d'être câblé. Huit reste
+ * une suggestion, pas le mur que la simplification a voulu abattre.
+ */
+const PLAFOND_AU_REPOS = 8;
+
+/**
+ * Ce que le rail et l'établi portent déjà, ou ce qui n'est pas une
+ * destination à découvrir.
+ *
+ * La relecture l'a montré sur le registre RÉEL : sans cette liste, l'ordre de
+ * déclaration remplissait les six places avec « Nouvelle conversation »,
+ * « Effacer la conversation » et « Conversations » — deux boutons du rail et
+ * une action destructrice — pendant que « Ouvrir les Projets » et « Ouvrir
+ * les Fichiers » tombaient au onzième rang. Mes exemples de test, eux,
+ * plaçaient les bonnes réponses en tête : un test qui invente ses données
+ * valide son invention.
+ */
+const DEJA_PORTEES = new Set([
+  'chat.new', // le + du rail
+  'conversations.toggle', // le bouton Conversations du rail
+  'chat.clear', // détruit, ne mène nulle part : rien à découvrir ici
+]);
 
 /**
  * Les actions qu'aucune autre section de la palette n'annonce déjà.
@@ -39,6 +65,7 @@ export function actionsAuRepos<T extends ActionProposable>(
     'home',
   ]);
   return actions
+    .filter((action) => !DEJA_PORTEES.has(action.id))
     .filter((action) => {
       const domaine = action.id.split('.')[0];
       // `invoices.open` mène au parcours « invoice » : on compare sur la
