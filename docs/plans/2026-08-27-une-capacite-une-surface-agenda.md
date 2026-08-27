@@ -1,5 +1,23 @@
 # Une capacité, une surface — premier cas : l'Agenda
 
+> **CE DESIGN EST INVALIDÉ (27/08/2026, revue Soso : NO-GO).**
+> Sa prémisse est fausse : `MeetingConversationCard` n'est pas un Agenda
+> compact, c'est une capacité **Agenda + CRM** (rapprochement des
+> participants avec les contacts, historique, points à vérifier, note CRM
+> confirmée) que `EventDetail` ne fait pas du tout — zéro occurrence de CRM.
+> Fusionner aurait SUPPRIMÉ une capacité métier.
+>
+> Pire : `CalendarPanel` lit les calendriers SANS `createDefault: false`,
+> donc le backend en crée un à la lecture. Brancher la surface compacte
+> dessus aurait réintroduit BUG-143 — exactement ce que ce document
+> prétendait protéger.
+>
+> Le principe « une capacité, une surface » reste bon, et garder la vue
+> complète comme socle aussi. C'est le choix de l'Agenda comme premier cas
+> et la table des « six doublons » qui étaient faux.
+>
+> Conservé pour mémoire. Suite : voir le document de diagnostic révisé.
+
 > Design du 27/08/2026, à challenger AVANT toute ligne de code.
 > Origine : Ludo, en regardant l'app — « il y a trop d'interfaces ».
 
