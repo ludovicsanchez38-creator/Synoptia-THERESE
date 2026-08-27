@@ -352,7 +352,7 @@ export function AgentChat() {
       {/* Input (only if session is running) */}
       {activeSession.status === "running" && (
         <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-          <textarea
+          <textarea aria-label="Message à l’agent"
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}

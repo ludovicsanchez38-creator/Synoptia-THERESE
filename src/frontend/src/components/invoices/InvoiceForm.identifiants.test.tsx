@@ -38,7 +38,7 @@ const FACTURE = {
 describe('Les identifiants d’une liste de lignes restent uniques', () => {
   it('aucun identifiant n’est porté deux fois', () => {
     const { container } = render(
-      <InvoiceForm isOpen invoice={FACTURE} onClose={vi.fn()} onSaved={vi.fn()} />,
+      <InvoiceForm invoice={FACTURE} onClose={vi.fn()} onSave={vi.fn()} />,
     );
 
     const ids = [...container.querySelectorAll('[id]')].map((n) => n.id);
@@ -49,7 +49,7 @@ describe('Les identifiants d’une liste de lignes restent uniques', () => {
 
   it('chaque label renvoie à un champ qui existe vraiment', () => {
     const { container } = render(
-      <InvoiceForm isOpen invoice={FACTURE} onClose={vi.fn()} onSaved={vi.fn()} />,
+      <InvoiceForm invoice={FACTURE} onClose={vi.fn()} onSave={vi.fn()} />,
     );
 
     const orphelins = [...container.querySelectorAll('label[for]')]

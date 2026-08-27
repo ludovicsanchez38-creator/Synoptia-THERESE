@@ -161,7 +161,7 @@ export function AdvisorArcLayout({
 
               {/* Ollama model selector (sovereign mode) */}
               {mode === 'sovereign' && ollamaModels.length > 0 && (
-                <select
+                <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
                   className="mt-1.5 w-full text-[10px] px-1.5 py-1 bg-surface border border-border/50 rounded text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
@@ -212,7 +212,7 @@ export function AdvisorArcLayout({
               </span>
 
               {mode === 'sovereign' && ollamaModels.length > 0 && (
-                <select
+                <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
                   className="mt-1 w-full text-[9px] px-1 py-0.5 bg-surface border border-border/50 rounded text-text-muted"

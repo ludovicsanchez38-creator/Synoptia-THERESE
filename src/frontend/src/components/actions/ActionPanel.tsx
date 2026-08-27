@@ -157,7 +157,7 @@ function ParamsForm({
               {param.required && <span className="text-error ml-1">*</span>}
             </label>
             {param.type === 'select' ? (
-              <select
+              <select aria-label={param.label}
                 value={values[param.id] || ''}
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, [param.id]: e.target.value }))
@@ -176,7 +176,7 @@ function ParamsForm({
                 ))}
               </select>
             ) : (
-              <input
+              <input aria-label={param.label}
                 type="text"
                 value={values[param.id] || ''}
                 onChange={(e) =>

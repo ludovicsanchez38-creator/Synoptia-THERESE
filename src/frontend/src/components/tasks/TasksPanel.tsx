@@ -186,7 +186,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
   const tasksFilters = showFilters ? (
     <div className="px-6 py-3 border-b border-border/30 flex items-center gap-4">
-      <select
+      <select aria-label="Filtrer par statut"
         value={filterStatus || ''}
         onChange={(e) => setFilterStatus(e.target.value || null)}
         className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -198,7 +198,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <option value="cancelled">Annulé</option>
       </select>
 
-      <select
+      <select aria-label="Filtrer par priorité"
         value={filterPriority || ''}
         onChange={(e) => setFilterPriority(e.target.value || null)}
         className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -211,7 +211,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       </select>
 
       {projects.length > 0 && (
-        <select
+        <select aria-label="Filtrer par projet"
           value={filterProjectId || ''}
           onChange={(e) => setFilterProjectId(e.target.value || null)}
           className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -224,7 +224,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       )}
 
       {availableTags.length > 0 && (
-        <select
+        <select aria-label="Filtrer par étiquette"
           value={filterTag || ''}
           onChange={(e) => setFilterTag(e.target.value || null)}
           className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"

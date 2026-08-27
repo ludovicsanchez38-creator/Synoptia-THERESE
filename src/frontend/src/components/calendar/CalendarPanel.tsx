@@ -445,7 +445,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           Cause : stacking context bas (body overflow:hidden + conteneur sans z-index).
           Fix : wrapper relative z-[100] force le dropdown au-dessus de toute la pile CSS. */}
       <div className={`relative ${Z_LAYER.ONBOARDING}`}>
-        <select
+        <select aria-label="Calendrier affiché"
           value={currentCalendarId || ''}
           onChange={(e) => setCurrentCalendar(e.target.value)}
           className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"

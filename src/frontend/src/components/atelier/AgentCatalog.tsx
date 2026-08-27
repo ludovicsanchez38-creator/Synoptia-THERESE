@@ -217,7 +217,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
         <div className="mb-4 space-y-2">
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
             <Brain size={14} className="shrink-0 text-cyan-400" />
-            <select
+            <select aria-label="Modèle de l’agent"
               value={selectedModel}
               onChange={(e) => {
                 setSelectedModel(e.target.value);
@@ -248,7 +248,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
             <span className="shrink-0 text-[10px] text-cyan-400/70">OR</span>
-            <input
+            <input aria-label="Modèle personnalisé"
               type="text"
               value={customModel}
               onChange={(e) => {

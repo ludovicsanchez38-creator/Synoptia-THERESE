@@ -253,7 +253,7 @@ export function ResponseGeneratorModal({
                 <label className="block text-sm font-medium text-text mb-2">
                   Brouillon
                 </label>
-                <textarea
+                <textarea aria-label="Brouillon de réponse"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   disabled={isGenerating}

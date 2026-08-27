@@ -549,7 +549,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         </div>
       )}
       <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-        <textarea
+        <textarea aria-label="Message à l’agent"
           ref={inputRef}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}

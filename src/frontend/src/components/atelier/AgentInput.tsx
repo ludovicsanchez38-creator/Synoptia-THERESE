@@ -35,7 +35,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
 
   return (
     <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-      <textarea
+      <textarea aria-label="Message à l’agent"
         ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}

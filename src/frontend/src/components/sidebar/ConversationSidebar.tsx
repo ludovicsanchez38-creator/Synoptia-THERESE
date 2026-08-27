@@ -168,7 +168,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
             <div className="p-3 border-b border-border/30">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input
+                <input aria-label="Rechercher une conversation"
                   type="text"
                   placeholder="Rechercher..."
                   value={searchQuery}
@@ -402,7 +402,7 @@ function ConversationItem({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <input
+            <input aria-label="Renommer la conversation"
               ref={inputRef}
               type="text"
               value={editValue}

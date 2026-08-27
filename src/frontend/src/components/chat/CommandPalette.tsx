@@ -204,7 +204,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="w-5 h-5 text-text-muted flex-shrink-0" />
-          <input
+          <input aria-label="Rechercher une commande"
             ref={inputRef}
             type="text"
             value={query}

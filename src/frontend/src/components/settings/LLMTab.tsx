@@ -517,7 +517,7 @@ function ModelSelector({
             Saisis l'identifiant exact du modèle tel qu'il apparait dans l'API du fournisseur.
           </p>
           <div className="flex gap-2">
-            <input
+            <input aria-label="Identifiant du modèle personnalisé"
               type="text"
               value={customModelId}
               onChange={(e) => setCustomModelId(e.target.value)}

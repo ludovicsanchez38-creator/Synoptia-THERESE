@@ -124,7 +124,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
         'focus-within:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
         'transition-all duration-200'
       )}>
-        <textarea
+        <textarea aria-label="Consigne"
           ref={textareaRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}

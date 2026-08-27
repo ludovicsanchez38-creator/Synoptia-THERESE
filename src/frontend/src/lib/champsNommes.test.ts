@@ -47,13 +47,43 @@ const COUVERTS = [
  */
 function champsAnonymes(source: string): string[] {
   const anonymes: string[] = [];
-  const balises = source.match(/<(?:input|textarea|select)\b[^>]*>/gs) ?? [];
-  for (const balise of balises) {
+  for (const balise of balisesDeChamp(source)) {
     if (/type="(checkbox|radio|file|hidden)"/.test(balise)) continue;
     if (/(?<![-\w])id=/.test(balise) || /aria-label/.test(balise)) continue;
     anonymes.push(balise.replace(/\s+/g, ' ').slice(0, 70));
   }
   return anonymes;
+}
+
+/**
+ * Découpe les balises de champ en tenant compte des accolades JSX.
+ *
+ * Un `<input[^>]*>` naïf s'arrête au PREMIER `>` — or `onChange={(e) => …}`
+ * en contient un. La balise était donc tronquée avant son `aria-label`, et
+ * un champ correctement nommé était compté comme anonyme. Le défaut marche
+ * aussi dans l'autre sens : il suffit qu'une flèche précède l'attribut
+ * `id` pour qu'un champ anonyme passe pour nommé.
+ */
+function balisesDeChamp(source: string): string[] {
+  const balises: string[] = [];
+  // Les commentaires parlent parfois de `<input>` : les compter reviendrait
+  // à exiger un nom accessible sur une phrase.
+  source = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const debut = /<(input|textarea|select)\b/g;
+  let m: RegExpExecArray | null;
+  while ((m = debut.exec(source)) !== null) {
+    let profondeur = 0;
+    let i = m.index;
+    for (; i < source.length; i += 1) {
+      const c = source[i];
+      if (c === '{') profondeur += 1;
+      else if (c === '}') profondeur -= 1;
+      else if (c === '>' && profondeur === 0) break;
+    }
+    balises.push(source.slice(m.index, i + 1));
+    debut.lastIndex = i;
+  }
+  return balises;
 }
 
 describe('Les champs de saisie ont tous un nom', () => {

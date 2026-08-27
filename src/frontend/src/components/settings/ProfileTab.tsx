@@ -160,7 +160,7 @@ export function ProfileTab({
                   <span className="ml-2 text-text-muted">Chargement...</span>
                 </div>
               ) : (
-                <textarea
+                <textarea aria-label="Contenu du profil THERESE.md"
                   value={mdContent}
                   onChange={(e) => {
                     setMdContent(e.target.value);

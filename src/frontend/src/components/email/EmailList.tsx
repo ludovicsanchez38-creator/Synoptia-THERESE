@@ -270,7 +270,7 @@ export function EmailList({ accountId }: EmailListProps) {
       <div className="p-4 border-b border-border/30">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
+          <input aria-label="Rechercher dans les messages"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

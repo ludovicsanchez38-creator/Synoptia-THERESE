@@ -86,7 +86,7 @@ export function NewTaskDialog() {
           <label className="mb-2 block text-xs font-medium text-text-muted">
             Que veux-tu que Katia fasse ?
           </label>
-          <textarea
+          <textarea aria-label="Instruction de la mission"
             ref={textareaRef}
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}

@@ -606,7 +606,7 @@ export function PrivacyTab() {
             <label className="text-xs font-medium text-text-muted block mb-2">
               Durée de rétention : <span className="text-accent-cyan font-semibold">{purgeMonths} mois</span>
             </label>
-            <input
+            <input aria-label="Ancienneté des données à purger, en mois"
               type="range"
               min={12}
               max={60}

@@ -559,7 +559,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         <label className="block text-sm font-medium text-text mb-2">
                           Ta question stratégique
                         </label>
-                        <textarea
+                        <textarea aria-label="Question soumise au Board"
                           ref={textareaRef}
                           value={question}
                           onChange={(e) => { setQuestion(e.target.value); setConfirmationOpen(false); setRunError(null); }}
@@ -579,7 +579,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         <label className="block text-sm font-medium text-text mb-2">
                           Contexte (optionnel)
                         </label>
-                        <textarea
+                        <textarea aria-label="Contexte de la décision"
                           value={context}
                           onChange={(e) => { setContext(e.target.value); setConfirmationOpen(false); }}
                           placeholder="Informations supplémentaires sur ta situation..."

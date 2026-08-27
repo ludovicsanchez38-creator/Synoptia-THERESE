@@ -225,7 +225,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                 </div>
 
                 <div className="relative">
-                  <input
+                  <input aria-label="Valeur de la variable"
                     type={show ? 'text' : 'password'}
                     value={value}
                     onChange={(e) => handleValueChange(envVar, e.target.value)}

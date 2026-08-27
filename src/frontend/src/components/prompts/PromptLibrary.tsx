@@ -352,7 +352,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       <div className="px-5 py-3 border-b border-border/20">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
+          <input aria-label="Rechercher un prompt"
             ref={searchInputRef}
             type="text"
             value={searchQuery}

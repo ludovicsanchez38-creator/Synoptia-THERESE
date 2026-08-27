@@ -195,7 +195,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
       {/* Input */}
       <div className="p-3 border-t border-border">
         <div className="flex items-end gap-2">
-          <textarea
+          <textarea aria-label="Message"
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
