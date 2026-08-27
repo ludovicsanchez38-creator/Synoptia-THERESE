@@ -1,4 +1,7 @@
-# Les onze améliorations d'usage — plan d'exécution
+# Les améliorations d'usage — plan d'exécution
+
+> Dix entrées retenues sur onze : la cinquième est sortie après relecture,
+> son diagnostic ne tenait pas.
 
 Issu de l'audit à trois voix du 27/08 (Grok, Codex, trois agents internes sur
 des angles séparés, puis arbitrage). Objectif posé par Ludo, mot pour mot :
@@ -61,22 +64,31 @@ parcours (« Brouillon confirmé, aucun envoi », « Écriture confirmée »,
 « Worktree isolé ») sont distinctes et disent chacune ce que ce parcours peut
 faire. Elles restent.
 
-### 4. Un seul bouton « Conversations » dans le rail
+### 4. Un seul bouton dans le rail, là où « Rechercher » et « Historique » ouvrent le même tiroir
 
-Deux boutons (`ConversationCanvasPrototype.tsx:1393-1394`) ouvrent le même
-tiroir : `surface` ne change que le focus initial. Et la loupe du rail ne
+Vérifié : les deux boutons s'appellent bien « Rechercher » et « Historique »
+(`ConversationCanvasPrototype.tsx:1393-1394`), et `surface` ne change que le
+focus initial. Et la loupe du rail ne
 cherche que dans les titres de conversation, ce que son icône ne dit pas —
 elle ne fouille ni les mails, ni les fichiers, ni les contacts. Le mot
 « Rechercher » reste à la palette, qui, elle, indexe tout.
 
-### 5. L'historique des actions revient au démarrage
+### 5. ~~L'historique des actions revient au démarrage~~ — SORTIE DU LOT
 
-`services/api/actions.ts:91` : `fetchTasks` existe et n'a **aucun appelant**.
-Un rapport lancé hier est sur le disque et introuvable.
+**Le diagnostic était faux, et la relecture l'a montré.** `fetchTasks` n'a
+effectivement aucun appelant (`services/api/actions.ts:91`), mais
+`ActionRunner._tasks` est un dictionnaire **en mémoire**
+(`action_agents.py:428`). Au redémarrage du sidecar, la liste est vide :
+brancher cet appel au démarrage ne ramènerait rien. Un rapport d'hier n'est pas
+« sur le disque et introuvable » par cette voie.
 
-Piège à ne pas rater : ne pas relancer le sondage sur des tâches terminées, et
-traiter le statut `running` orphelin d'une session morte — sinon on réhydrate
-une tâche qui tournera pour l'éternité.
+Ce qui survit vraiment, c'est `ProcessingTask` en base, déjà affiché par
+l'indicateur de travaux. Réhydrater l'un sans l'autre dupliquerait ce panneau
+ou afficherait une tâche éternelle.
+
+C'est la même erreur que les trois idées déjà écartées : un fait local exact,
+une cause inventée. L'entrée sort du lot ; un historique durable des actions
+est un chantier de persistance, pas un appel d'API oublié. Consigné en dette.
 
 ### 6. ⌘O cesse d'être une touche morte
 
@@ -108,9 +120,28 @@ racine du module sans transmettre l'objet en cours
 
 **C'est un chantier par vue, pas une destination à préciser.** Les panneaux
 gardent leur sélection en état interne ; seul le CRM lit déjà une sélection
-depuis un store. Avertissement de l'arbitrage : **ne pas livrer la seule
-tranche CRM** — un brief où un item ouvre la fiche pendant qu'un autre ouvre la
-boîte entière serait plus déroutant qu'un brief uniformément grossier.
+depuis un store.
+
+La relecture a exigé cette table avant la première ligne, et elle a raison :
+sans elle, le premier item relance force un choix au milieu du travail.
+
+| Ce qu'on clique | Où ça mène | L'identifiant est-il disponible ? |
+|---|---|---|
+| Événement du jour | canevas Rendez-vous | oui, le canevas sait déjà ouvrir un événement |
+| Facture impayée | canevas Facturation | oui, même chose |
+| Prospect dormant | vue CRM, fiche ouverte | oui, le CRM lit déjà une sélection depuis son store |
+| Tâche | vue Tâches, tâche ouverte | à vérifier, pas de canevas |
+| Relance en retard | vue E-mail, message ouvert | **non : le DTO ne le porte pas** |
+
+Le dernier cas impose un préalable backend : `dashboard.py:336` connaît
+`follow_up.email_message_id` et ne le met pas dans la réponse, qui n'expose que
+l'objet, l'expéditeur et le contact. Une ligne à ajouter, sans quoi « ouvrir
+l'objet » sur une relance n'a rien à ouvrir.
+
+La règle qui rend le lot cohérent n'est pas « tout mène à un canevas », c'est
+**« un clic mène toujours à l'objet, dans la surface qui sait l'afficher »**.
+Un item qui ouvre une fiche pendant qu'un autre ouvre une liste serait
+déroutant ; un item qui ouvre son objet, toujours, ne l'est pas.
 
 ### 9. Le chat ne ferme plus le canevas qu'il commente
 
@@ -118,8 +149,20 @@ boîte entière serait plus déroutant qu'un brief uniformément grossier.
 Poser une question sur le mail affiché coûte aujourd'hui : perdre le mail,
 poser la question, fermer le chat, refaire « Écrire », recliquer le message.
 
-Les deux surfaces coexistent déjà dans le JSX. Le voile de la 0.48.1
-(`usePanneauCouvrant`) traite le cas de l'écran étroit.
+Nuance apportée par la relecture, et elle compte : `chatOpen` est un ternaire
+qui **remplace** la colonne principale. Garder le canevas ne pose donc pas le
+chat à côté de l'accueil, mais le chat à côté du canevas — l'accueil disparaît
+de toute façon. C'est ce qu'on veut ici, mais il fallait le dire.
+
+**Contrat d'écran étroit, tranché** : sous le seuil `xl`, le canevas recouvre
+la colonne et l'isole (voile 0.48.1). Poser le chat dessous reviendrait à
+ouvrir un chat invisible. Donc **sous le seuil, on continue de fermer le
+canevas** ; au-dessus, les deux vivent côte à côte. Deux assertions distinctes
+dans les tests, à 1280 et à 1279 pixels.
+
+À traiter aussi : `chooseScenario` appelle encore `fermerLeChat()`, et les
+autres `setCanvasOpen(false)` (`:907`, `:1065`, `:1171`, `:1825`) doivent être
+passés en revue un par un — seul celui d'`openChat` tombe.
 
 ### 10. « Écrire » ouvre un brouillon, comme « Facturer » ouvre un devis
 
@@ -130,8 +173,14 @@ quand ses sœurs ont leur bouton de création sur la carte.
 
 Réserve de l'arbitrage : `EmailConversationCard` ne sait générer un brouillon
 qu'à partir d'un message **reçu**. Composer depuis zéro vers un destinataire
-n'existe pas encore — c'est ce qu'il faut construire, et c'est ce qui fait
-passer cette entrée de « petite » à « moyenne ».
+n'existe pas encore.
+
+**Tranché : brouillon seulement, pas d'envoi.** Réutiliser `EmailCompose` tel
+quel ajouterait l'envoi dans une surface qui promet « brouillon confirmé, aucun
+envoi » — le canevas perdrait la garantie qu'il affiche. On construit donc le
+pendant exact de `selectedInvoiceId === 'new-devis'` : un
+`selectedEmailTarget === 'new-message'` qui monte une carte de rédaction sans
+envoi, avec sa sortie vers la vue E-mail pour expédier.
 
 ### 11. L'accueil fantôme disparaît
 
@@ -145,12 +194,40 @@ se déplace sur le brief, elle ne s'efface pas. Les actions rapides et les
 conversations récentes doublonnent le rail et le tiroir, mais cela se prouve
 avant de retirer.
 
-## Ordre d'exécution
+## Ordre d'exécution, corrigé par la relecture
 
-Le premier train dans l'ordre 1 à 7, chacun autonome et livrable seul. Puis 2
-avant 10 (le devis hérite avant que la fiche contact ne propose « Facturer »),
-et 9 avant 8 (garder le canevas ouvert change ce que « ouvrir l'objet »
-signifie).
+**11 avant 1.** `home.open` figure encore au registre des actions : la palette
+l'afficherait juste avant que l'entrée 11 ne retire sa destination.
+
+**Puis 1, 2, 3, 4, 6, 7**, chacun autonome et livrable seul. L'entrée 5 est
+sortie du lot.
+
+**Puis 9, puis 8.** Non pas parce que le premier change le sens du second — la
+relecture a montré que `openEmbeddedView` ferme le canevas de toute façon —
+mais parce que le contrat d'écran tranché en 9 décide de ce qu'un item du brief
+peut ouvrir sans se recouvrir lui-même.
+
+**Puis 10**, qui n'a aucune dépendance envers 2 : la fausse dépendance annoncée
+dans la première version confondait « Écrire ouvre un brouillon » avec « la
+fiche contact propose Facturer ». Si le composeur doit hériter du contact, c'est
+le même patron que 2, en parallèle, pas à la suite.
+
+## Les tests à figer avant le premier correctif
+
+Un par entrée, écrits avant le code, sabotés après.
+
+| Entrée | Ce que le test doit tenir |
+|---|---|
+| 1 | Palette ouverte, requête vide : les actions promises sont là, et l'établi n'est pas affiché deux fois |
+| 2 | Contact sélectionné, passage à Facturer : le client est prérempli, et reste modifiable |
+| 3 | Sur le parcours du jour seulement : une seule rangée de sources. Les autres parcours gardent la leur |
+| 4 | Un seul bouton dans le rail, et le tiroir s'ouvre avec son champ prêt |
+| 6 | ⌘O ouvre les Fichiers, et la fiche des raccourcis n'a plus de groupe vide |
+| 7 | « imap » trouve encore sa carte, et les puces ne sont plus dans le document |
+| 8 | Chaque type d'item du brief ouvre son objet ; celui qui n'a pas d'identifiant est traité, pas oublié |
+| 9 | Chat ouvert depuis un e-mail affiché : l'e-mail est encore là à 1280 px, il a cédé la place à 1279 px |
+| 10 | « Écrire » mène à une rédaction, et cette surface ne peut pas envoyer |
+| 11 | La mise en route est montée sur le brief, et plus aucune navigation ne vise l'accueil fantôme |
 
 ## Ce que ce plan ne fait pas
 
