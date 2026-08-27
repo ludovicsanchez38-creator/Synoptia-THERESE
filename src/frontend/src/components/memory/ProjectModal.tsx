@@ -49,6 +49,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Un fichier joint ne part plus au premier clic : on retient lequel est
+  // visé, et l'appel réseau n'existe qu'au clic de confirmation. Bandeau EN
+  // LIGNE, comme pour la suppression du projet juste en dessous : superposer
+  // une boîte ferait fermer CETTE modale par Échap.
+  const [fichierASupprimer, setFichierASupprimer] = useState<api.FileMetadata | null>(null);
+  const boutonSuppressionRef = useRef<HTMLButtonElement | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [projectFiles, setProjectFiles] = useState<api.FileMetadata[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -101,13 +107,23 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
   }, [project]);
 
-  async function handleDeleteFile(fileId: string) {
+  async function confirmerSuppressionFichier() {
+    const cible = fichierASupprimer;
+    if (!cible) return;
     try {
-      await api.deleteFile(fileId);
-      setProjectFiles((prev) => prev.filter((f) => f.id !== fileId));
+      await api.deleteFile(cible.id);
+      setProjectFiles((prev) => prev.filter((f) => f.id !== cible.id));
+      setFichierASupprimer(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur suppression fichier');
     }
+  }
+
+  function renoncerSuppressionFichier() {
+    setFichierASupprimer(null);
+    // Le focus revient d'où il venait : sans cela, il retombe sur le corps de
+    // la modale et l'on perd sa place dans la liste.
+    boutonSuppressionRef.current?.focus();
   }
 
   function getFileIcon(ext: string) {
@@ -400,9 +416,14 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                           <span className="flex-1 text-sm text-text truncate">{f.name}</span>
                           <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
                           <button
-                            onClick={() => handleDeleteFile(f.id)}
-                            className="p-1 rounded hover:bg-red-500/10 text-text-muted hover:text-red-400 transition-colors"
-                            title="Supprimer"
+                            type="button"
+                            onClick={(event) => {
+                              boutonSuppressionRef.current = event.currentTarget;
+                              setFichierASupprimer(f);
+                            }}
+                            className="p-1 rounded hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                            aria-label={`Supprimer le fichier ${f.name}`}
+                            title={`Supprimer le fichier ${f.name}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -451,6 +472,34 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                   <span className="text-sm text-red-400">{error}</span>
+                </div>
+              )}
+
+              {/* Suppression d'un fichier joint : confirmation en ligne */}
+              {fichierASupprimer && (
+                <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-error font-medium">
+                      Supprimer « {fichierASupprimer.name} » ?
+                    </p>
+                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {/* Pas « Annuler » : le formulaire en a déjà un, et deux
+                        boutons du même nom à l'écran ne disent pas ce qu'ils
+                        annulent - ni à l'œil, ni au lecteur d'écran. */}
+                    <Button variant="ghost" size="sm" onClick={renoncerSuppressionFichier}>
+                      Conserver le fichier
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={confirmerSuppressionFichier}
+                    >
+                      Supprimer définitivement
+                    </Button>
+                  </div>
                 </div>
               )}
 
