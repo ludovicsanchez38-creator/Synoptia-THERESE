@@ -73,7 +73,7 @@ describe('L’état vide honnête (B1, 0.48)', () => {
     has_calendar: true,
     has_email,
     billing_complete: true,
-    has_llm_key: true,
+    has_llm_key: true, indisponibles: []
   });
 
   it('sans compte email : invite à brancher les mails, avec le bouton', () => {

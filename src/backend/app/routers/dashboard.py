@@ -123,33 +123,28 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
     et si son profil de facturation est complet.
     Permet d'afficher un guide de mise en route contextuel.
     """
-    has_calendar = False
+    indisponibles: list[str] = []
+
     try:
-        result = await session.execute(select(Calendar.id).limit(1))
-        has_calendar = result.scalar() is not None
+        has_calendar = await _lire_a_un_calendrier(session)
     except Exception as e:
         logger.warning(f"Erreur lecture calendrier (setup-status): {e}")
+        has_calendar = False
+        indisponibles.append("calendrier")
 
-    has_email = False
     try:
-        result = await session.execute(select(EmailAccount.id).limit(1))
-        has_email = result.scalar() is not None
+        has_email = await _lire_a_un_compte_email(session)
     except Exception as e:
         logger.warning(f"Erreur lecture compte email (setup-status): {e}")
+        has_email = False
+        indisponibles.append("email")
 
-    billing_complete = False
     try:
-        profile = get_cached_profile()
-        if profile is None:
-            # Cache vide après un démarrage avec profil chiffré : lecture de
-            # secours en session (déchiffre et répare le cache au passage).
-            from app.services.user_profile import get_user_profile
-
-            profile = await get_user_profile(session)
-        if profile is not None:
-            billing_complete = profile.is_billing_complete()
+        billing_complete = await _lire_facturation_complete(session)
     except Exception as e:
         logger.warning(f"Erreur lecture profil facturation (setup-status): {e}")
+        billing_complete = False
+        indisponibles.append("facturation")
 
     has_llm_key = await _has_any_llm_key(session)
 
@@ -158,7 +153,33 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
         "has_email": has_email,
         "billing_complete": billing_complete,
         "has_llm_key": has_llm_key,
+        # Ce qu'on n'a PAS PU vérifier, nommément. Sans cette liste, un échec
+        # de lecture sortait en `False`, indistinguable d'un « non configuré » :
+        # l'écran demandait alors de connecter un calendrier DÉJÀ connecté, et
+        # l'utilisateur allait réparer ce qui n'était pas cassé.
+        "indisponibles": indisponibles,
     }
+
+
+async def _lire_a_un_calendrier(session: AsyncSession) -> bool:
+    result = await session.execute(select(Calendar.id).limit(1))
+    return result.scalar() is not None
+
+
+async def _lire_a_un_compte_email(session: AsyncSession) -> bool:
+    result = await session.execute(select(EmailAccount.id).limit(1))
+    return result.scalar() is not None
+
+
+async def _lire_facturation_complete(session: AsyncSession) -> bool:
+    profile = get_cached_profile()
+    if profile is None:
+        # Cache vide après un démarrage avec profil chiffré : lecture de
+        # secours en session (déchiffre et répare le cache au passage).
+        from app.services.user_profile import get_user_profile
+
+        profile = await get_user_profile(session)
+    return profile.is_billing_complete() if profile is not None else False
 
 
 @router.get("/today")
