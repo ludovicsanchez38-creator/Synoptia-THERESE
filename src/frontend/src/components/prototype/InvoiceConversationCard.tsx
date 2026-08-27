@@ -124,7 +124,7 @@ export function InvoiceWorkspaceCard({
             <Receipt className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="invoice-workspace-title" className="text-sm font-semibold text-text">Devis et factures</h2>
+            <h2 id="invoice-workspace-title" className="text-sm font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready' ? `${resource.data.invoices.length} document${resource.data.invoices.length > 1 ? 's' : ''} enregistré${resource.data.invoices.length > 1 ? 's' : ''}` : 'Lecture de la facturation locale'}
             </p>
@@ -159,7 +159,7 @@ export function InvoiceWorkspaceCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir Facturation</button>
+              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Gérer mes devis et factures</button>
             </div>
           </div>
         </StateShell>

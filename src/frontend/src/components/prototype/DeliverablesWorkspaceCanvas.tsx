@@ -203,7 +203,7 @@ export function DeliverablesWorkspaceCanvas({
       ) : projectsResource.status === 'error' ? (
         <div className="m-auto max-w-sm px-6 text-center"><AlertCircle className="mx-auto h-8 w-8 text-warning" /><h3 className="mt-3 text-sm font-bold text-text">Suivi indisponible</h3><p className="mt-1 text-xs leading-5 text-text-muted">{projectsResource.error}</p><button type="button" onClick={() => void refreshProjects()} className="mt-4 inline-flex items-center gap-2 rounded-[9px] bg-text px-4 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button></div>
       ) : projectsResource.data.length === 0 ? (
-        <div className="m-auto max-w-sm px-6 text-center"><BriefcaseBusiness className="mx-auto h-9 w-9 text-text-muted" /><h3 className="mt-3 text-sm font-bold text-text">Aucun projet enregistré</h3><p className="mt-1 text-xs leading-5 text-text-muted">Les livrables sont rattachés à un projet réel. Crée d’abord le projet dans la vue Projets.</p><button type="button" onClick={onOpenProjects} className="mt-4 rounded-[9px] bg-text px-4 py-2 text-xs font-semibold text-white">Ouvrir Projets</button></div>
+        <div className="m-auto max-w-sm px-6 text-center"><BriefcaseBusiness className="mx-auto h-9 w-9 text-text-muted" /><h3 className="mt-3 text-sm font-bold text-text">Aucun projet enregistré</h3><p className="mt-1 text-xs leading-5 text-text-muted">Les livrables sont rattachés à un projet réel. Crée d’abord le projet dans la vue Projets.</p><button type="button" onClick={onOpenProjects} className="mt-4 rounded-[9px] bg-text px-4 py-2 text-xs font-semibold text-white">Gérer mes projets</button></div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
           {projectLimitReached && <div role="status" className="mb-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2 text-xs leading-5 text-warning">Les 200 projets les plus récents sont affichés. Ouvre Projets pour consulter un projet plus ancien.</div>}
@@ -230,7 +230,7 @@ export function DeliverablesWorkspaceCanvas({
           </>}
 
           <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Lecture seule depuis Projets, CRM, Tâches et Facturation. Aucune validation, suppression ou synchronisation n’est déclenchée ici.</div>
-          <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onOpenProjects} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Ouvrir Projets</button><button type="button" onClick={onOpenInvoices} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Ouvrir Facturation</button></div>
+          <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onOpenProjects} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Gérer mes projets</button><button type="button" onClick={onOpenInvoices} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Gérer mes devis et factures</button></div>
         </div>
       )}
     </aside>

@@ -81,7 +81,7 @@ export function BoardHistoryCard({
         <div className="flex items-center gap-2.5">
           <CharacterPortrait index={1} className="h-9 w-9 rounded-[9px] border border-text" />
           <div>
-            <h2 id="board-history-title" className="text-sm font-semibold text-text">Board de décision</h2>
+            <h2 id="board-history-title" className="text-sm font-semibold text-text">Décision</h2>
             <p className="text-xs text-text-muted">{resource.status === 'ready' ? `${resource.data.decisions.length} décision${resource.data.decisions.length > 1 ? 's' : ''} enregistrée${resource.data.decisions.length > 1 ? 's' : ''}` : 'Lecture de l’historique local'}</p>
           </div>
         </div>

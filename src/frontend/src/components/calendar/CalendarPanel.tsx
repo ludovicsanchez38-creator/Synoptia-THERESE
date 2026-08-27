@@ -358,7 +358,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           <CalendarIcon className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Calendrier</h2>
+          <h2 className="text-lg font-semibold text-text">Agenda</h2>
           {currentAccount && (
             <p className="text-sm text-text-muted">{currentAccount.email}</p>
           )}

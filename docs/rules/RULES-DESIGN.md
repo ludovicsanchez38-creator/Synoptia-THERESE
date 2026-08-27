@@ -361,6 +361,14 @@ les registres de textes exportés (Centre de capacités, manifeste, actions,
 raccourcis, commandes slash, vues, onboarding). Les ids internes restent
 STABLES : seul le libellé d'écran change.
 
+**Depuis le 27/08/2026, un second test couvre les TITRES de panneaux** :
+`lexiqueTitres.test.ts`. Le premier vérifiait que chaque chose porte UN nom,
+mais seulement sur les registres ; les titres `<h1>/<h2>/<h3>` y échappaient
+et quatre y avaient dérivé (« Calendrier » pour l'Agenda, « Facturation »
+pour Devis et factures, « Board de décision », « Atelier de code »). Le même
+objet s'appelait donc Agenda dans le tiroir et Calendrier une fois ouvert -
+une des causes du « trop d'interfaces » signalé par Ludo.
+
 | Interne (id stable, inchangé) | À l'écran |
 |---|---|
 | memory | Contacts |

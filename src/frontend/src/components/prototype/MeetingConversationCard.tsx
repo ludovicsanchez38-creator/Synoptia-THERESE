@@ -98,7 +98,7 @@ export function MeetingAgendaCard({
             <Calendar className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="meeting-agenda-title" className="text-sm font-semibold text-text">Prochains rendez-vous</h2>
+            <h2 id="meeting-agenda-title" className="text-sm font-semibold text-text">Préparer un rendez-vous</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.events.length} événement${resource.data.events.length > 1 ? 's' : ''} sur 90 jours`
@@ -127,7 +127,7 @@ export function MeetingAgendaCard({
             <p className="mt-1 text-xs text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
               <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir Agenda</button>
+              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
             </div>
           </div>
         </StateShell>
@@ -192,7 +192,7 @@ function CalendarProvisioning({
         <p>Impossible de préparer un calendrier pour le moment.</p>
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={runEnsure} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir l’Agenda</button>
+          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
         </div>
       </div>
     );
@@ -458,7 +458,7 @@ export function MeetingWorkspaceCanvas({
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>
 
-      <div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="w-full rounded-[10px] border border-border px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-2">Ouvrir l’Agenda complet pour modifier ou supprimer</button></div>
+      <div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="w-full rounded-[10px] border border-border px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-2">Voir tout mon agenda pour modifier ou supprimer</button></div>
     </div>
   );
 }

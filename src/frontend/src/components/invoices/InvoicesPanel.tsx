@@ -165,7 +165,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <FileText className="w-5 h-5 text-accent-cyan" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Facturation</h2>
+          <h2 className="text-lg font-semibold text-text">Devis et factures</h2>
           <p className="text-sm text-text-muted">{filteredInvoices.length} document{filteredInvoices.length > 1 ? 's' : ''}</p>
         </div>
       </div>
