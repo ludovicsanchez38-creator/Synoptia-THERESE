@@ -640,7 +640,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   <div key={index} className="p-4 rounded-lg bg-bg border border-border/50 space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
-                        <input
+                        <input aria-label="Description de la ligne"
                           type="text"
                           placeholder="Description"
                           value={line.description}
@@ -666,8 +666,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
                     <div className="grid grid-cols-4 gap-3">
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">Quantite</label>
-                        <input
+                        <label htmlFor="invoiceform-quantite" className="block text-xs text-text-muted mb-1">Quantite</label>
+                        <input id="invoiceform-quantite"
                           aria-label={`Quantité ligne ${index + 1}`}
                           type="text"
                           inputMode="decimal"
@@ -702,8 +702,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       </div>
 
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">TVA</label>
-                        <select
+                        <label htmlFor="invoiceform-tva" className="block text-xs text-text-muted mb-1">TVA</label>
+                        <select id="invoiceform-tva"
                           value={line.tva_rate}
                           onChange={(e) => updateLine(index, 'tva_rate', parseFloat(e.target.value))}
                           className={cn(

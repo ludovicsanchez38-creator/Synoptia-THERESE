@@ -78,8 +78,8 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
 
       {/* Nom */}
       <div>
-        <label className="block text-xs font-medium text-text-muted mb-1">Nom (slug)</label>
-        <input
+        <label htmlFor="rfccapture-nom-slug" className="block text-xs font-medium text-text-muted mb-1">Nom (slug)</label>
+        <input id="rfccapture-nom-slug"
           type="text"
           value={data.name}
           onChange={(e) => updateField('name', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
@@ -90,8 +90,8 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
 
       {/* Description */}
       <div>
-        <label className="block text-xs font-medium text-text-muted mb-1">Description</label>
-        <input
+        <label htmlFor="rfccapture-description" className="block text-xs font-medium text-text-muted mb-1">Description</label>
+        <input id="rfccapture-description"
           type="text"
           value={data.description}
           onChange={(e) => updateField('description', e.target.value)}
@@ -103,8 +103,8 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
       {/* Icône + Catégorie */}
       <div className="flex gap-3">
         <div className="w-20">
-          <label className="block text-xs font-medium text-text-muted mb-1">Icône</label>
-          <input
+          <label htmlFor="rfccapture-icone" className="block text-xs font-medium text-text-muted mb-1">Icône</label>
+          <input id="rfccapture-icone"
             type="text"
             value={data.icon}
             onChange={(e) => updateField('icon', e.target.value.slice(0, 4))}
@@ -114,8 +114,8 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs font-medium text-text-muted mb-1">Catégorie</label>
-          <select
+          <label htmlFor="rfccapture-categorie" className="block text-xs font-medium text-text-muted mb-1">Catégorie</label>
+          <select id="rfccapture-categorie"
             value={data.category}
             onChange={(e) => updateField('category', e.target.value)}
             className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"

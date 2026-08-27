@@ -433,14 +433,14 @@ function DevisDraftForm({
               <label className="text-xs text-text-muted">Prénom
                 <input id="devis-contact-first-name" aria-label="Prénom du nouveau contact" aria-invalid={Boolean(contactError)} aria-describedby={contactError ? 'devis-contact-error' : undefined} value={contactForm.firstName} onChange={(event) => { setContactForm((current) => ({ ...current, firstName: event.target.value })); setContactError(null); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text" />
               </label>
-              <label className="text-xs text-text-muted">Nom
-                <input aria-label="Nom du nouveau contact" value={contactForm.lastName} onChange={(event) => setContactForm((current) => ({ ...current, lastName: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              <label htmlFor="invoiceconversationcard-nom" className="text-xs text-text-muted">Nom
+                <input id="invoiceconversationcard-nom" aria-label="Nom du nouveau contact" value={contactForm.lastName} onChange={(event) => setContactForm((current) => ({ ...current, lastName: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
-              <label className="text-xs text-text-muted">Entreprise
-                <input aria-label="Entreprise du nouveau contact" value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              <label htmlFor="invoiceconversationcard-entreprise" className="text-xs text-text-muted">Entreprise
+                <input id="invoiceconversationcard-entreprise" aria-label="Entreprise du nouveau contact" value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
-              <label className="text-xs text-text-muted">Email
-                <input aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              <label htmlFor="invoiceconversationcard-email" className="text-xs text-text-muted">Email
+                <input id="invoiceconversationcard-email" aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
             </div>
             {contactError && <p id="devis-contact-error" className="mt-3 text-sm font-semibold text-error" role="alert">{contactError}</p>}
@@ -500,8 +500,8 @@ function DevisDraftForm({
           <label className="text-xs text-text-muted">Échéance
             <input id="devis-due-date" aria-label="Échéance du devis" aria-invalid={errorFieldId === 'devis-due-date'} aria-describedby={errorFieldId === 'devis-due-date' ? 'devis-form-error' : undefined} type="date" value={dueDate} onChange={(event) => { invalidateDraft(); setDueDate(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border px-2.5 py-2 text-sm text-text" />
           </label>
-          <label className="text-xs text-text-muted">Devise
-            <select aria-label="Devise du devis" value={currency} onChange={(event) => { invalidateDraft(); setCurrency(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text">
+          <label htmlFor="invoiceconversationcard-devise" className="text-xs text-text-muted">Devise
+            <select id="invoiceconversationcard-devise" aria-label="Devise du devis" value={currency} onChange={(event) => { invalidateDraft(); setCurrency(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text">
               {['EUR', 'CHF', 'USD', 'GBP', 'CAD'].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
@@ -536,8 +536,8 @@ function DevisDraftForm({
             </div>
           ))}
         </div>
-        <label className="mt-3 block text-xs text-text-muted">Notes
-          <textarea aria-label="Notes du devis" value={notes} onChange={(event) => { invalidateDraft(); setNotes(event.target.value); }} className="mt-1.5 h-20 w-full resize-y rounded-[8px] border border-border p-2.5 text-sm text-text" />
+        <label htmlFor="invoiceconversationcard-notes" className="mt-3 block text-xs text-text-muted">Notes
+          <textarea id="invoiceconversationcard-notes" aria-label="Notes du devis" value={notes} onChange={(event) => { invalidateDraft(); setNotes(event.target.value); }} className="mt-1.5 h-20 w-full resize-y rounded-[8px] border border-border p-2.5 text-sm text-text" />
         </label>
         <div className="mt-3 rounded-[10px] bg-bg p-3 text-right text-xs text-text-muted">
           HT {formatMoney(totals.ht, currency)} · TVA {formatMoney(totals.tax, currency)}

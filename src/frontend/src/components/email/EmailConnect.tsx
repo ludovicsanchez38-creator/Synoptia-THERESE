@@ -95,8 +95,8 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
         {/* Form */}
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-text-muted mb-2 block">ID client</label>
-            <input
+            <label htmlFor="emailconnect-id-client" className="text-sm text-text-muted mb-2 block">ID client</label>
+            <input id="emailconnect-id-client"
               type="text"
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
@@ -107,8 +107,8 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
           </div>
 
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Code secret du client</label>
-            <input
+            <label htmlFor="emailconnect-code-secret-du-client" className="text-sm text-text-muted mb-2 block">Code secret du client</label>
+            <input id="emailconnect-code-secret-du-client"
               type="password"
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}

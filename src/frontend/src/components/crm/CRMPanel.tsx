@@ -421,8 +421,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
           )}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Prénom *</label>
-              <input
+              <label htmlFor="crmpanel-prenom" className="block text-xs text-text-muted mb-1">Prénom *</label>
+              <input id="crmpanel-prenom"
                 type="text"
                 value={form.first_name}
                 onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
@@ -431,8 +431,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               />
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Nom</label>
-              <input
+              <label htmlFor="crmpanel-nom" className="block text-xs text-text-muted mb-1">Nom</label>
+              <input id="crmpanel-nom"
                 type="text"
                 value={form.last_name || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
@@ -442,8 +442,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">Entreprise</label>
-            <input
+            <label htmlFor="crmpanel-entreprise" className="block text-xs text-text-muted mb-1">Entreprise</label>
+            <input id="crmpanel-entreprise"
               type="text"
               value={form.company || ''}
               onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
@@ -453,8 +453,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Email</label>
-              <input
+              <label htmlFor="crmpanel-email" className="block text-xs text-text-muted mb-1">Email</label>
+              <input id="crmpanel-email"
                 type="email"
                 value={form.email || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
@@ -462,8 +462,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               />
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Téléphone</label>
-              <input
+              <label htmlFor="crmpanel-telephone" className="block text-xs text-text-muted mb-1">Téléphone</label>
+              <input id="crmpanel-telephone"
                 type="tel"
                 value={form.phone || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
@@ -474,8 +474,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-text-muted mb-1">Source</label>
-              <input
+              <label htmlFor="crmpanel-source" className="block text-xs text-text-muted mb-1">Source</label>
+              <input id="crmpanel-source"
                 type="text"
                 value={form.source || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))}
@@ -484,8 +484,8 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               />
             </div>
             <div>
-              <label className="block text-xs text-text-muted mb-1">Stage</label>
-              <select
+              <label htmlFor="crmpanel-stage" className="block text-xs text-text-muted mb-1">Stage</label>
+              <select id="crmpanel-stage"
                 value={form.stage}
                 onChange={(e) => setForm(prev => ({ ...prev, stage: e.target.value }))}
                 className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
@@ -797,8 +797,8 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">Titre *</label>
-            <input
+            <label htmlFor="crmpanel-titre" className="block text-xs text-text-muted mb-1">Titre *</label>
+            <input id="crmpanel-titre"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -809,8 +809,8 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">Description</label>
-            <textarea
+            <label htmlFor="crmpanel-description" className="block text-xs text-text-muted mb-1">Description</label>
+            <textarea id="crmpanel-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Détails de l'activité..."

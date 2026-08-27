@@ -647,8 +647,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-text-muted mb-1 block">Nom</label>
-                  <input
+                  <label htmlFor="toolspanel-nom" className="text-xs text-text-muted mb-1 block">Nom</label>
+                  <input id="toolspanel-nom"
                     type="text"
                     value={newServer.name}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, name: e.target.value }))}
@@ -657,8 +657,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-text-muted mb-1 block">Commande</label>
-                  <input
+                  <label htmlFor="toolspanel-commande" className="text-xs text-text-muted mb-1 block">Commande</label>
+                  <input id="toolspanel-commande"
                     type="text"
                     value={newServer.command}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, command: e.target.value }))}
@@ -669,8 +669,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               </div>
 
               <div>
-                <label className="text-xs text-text-muted mb-1 block">Arguments (séparés par espaces)</label>
-                <input
+                <label htmlFor="toolspanel-arguments-separes-par-espace" className="text-xs text-text-muted mb-1 block">Arguments (séparés par espaces)</label>
+                <input id="toolspanel-arguments-separes-par-espace"
                   type="text"
                   value={newServer.args}
                   onChange={(e) => setNewServer((prev) => ({ ...prev, args: e.target.value }))}

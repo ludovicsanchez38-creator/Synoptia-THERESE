@@ -483,8 +483,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           Cette action est <strong>irréversible</strong>. Toutes les données personnelles seront remplacées par [ANONYMISE].
                         </p>
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-text mb-1">Raison de l'anonymisation *</label>
-                          <input
+                          <label htmlFor="memorypanel-raison-de-l-anonymisation" className="block text-sm font-medium text-text mb-1">Raison de l'anonymisation *</label>
+                          <input id="memorypanel-raison-de-l-anonymisation"
                             type="text"
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}

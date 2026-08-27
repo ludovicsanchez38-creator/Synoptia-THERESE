@@ -200,7 +200,7 @@ export function EmailCompose() {
         <div className="px-6 py-3 border-b border-border/30">
           <div className="flex items-center gap-3">
             <label className="text-sm text-text-muted w-16">À</label>
-            <input
+            <input aria-label="Destinataire"
               type="text"
               value={toInput}
               onChange={(e) => setToInput(e.target.value)}
@@ -222,8 +222,8 @@ export function EmailCompose() {
           <>
             <div className="px-6 py-3 border-b border-border/30">
               <div className="flex items-center gap-3">
-                <label className="text-sm text-text-muted w-16">Cc</label>
-                <input
+                <label htmlFor="emailcompose-cc" className="text-sm text-text-muted w-16">Cc</label>
+                <input id="emailcompose-cc"
                   type="text"
                   value={ccInput}
                   onChange={(e) => setCcInput(e.target.value)}
@@ -234,8 +234,8 @@ export function EmailCompose() {
             </div>
             <div className="px-6 py-3 border-b border-border/30">
               <div className="flex items-center gap-3">
-                <label className="text-sm text-text-muted w-16">Cci</label>
-                <input
+                <label htmlFor="emailcompose-cci" className="text-sm text-text-muted w-16">Cci</label>
+                <input id="emailcompose-cci"
                   type="text"
                   value={bccInput}
                   onChange={(e) => setBccInput(e.target.value)}
@@ -250,8 +250,8 @@ export function EmailCompose() {
         {/* Subject */}
         <div className="px-6 py-3 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <label className="text-sm text-text-muted w-16">Objet</label>
-            <input
+            <label htmlFor="emailcompose-objet" className="text-sm text-text-muted w-16">Objet</label>
+            <input id="emailcompose-objet"
               type="text"
               value={draftSubject}
               onChange={(e) => setDraftSubject(e.target.value)}

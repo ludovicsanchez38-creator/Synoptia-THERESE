@@ -358,7 +358,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             {existingSheets.length > 3 && (
               <div className="mb-2 flex items-center gap-2">
                 <Search className="w-4 h-4 text-text-muted" />
-                <input
+                <input aria-label="Rechercher une feuille"
                   type="text"
                   value={sheetSearch}
                   onChange={(e) => setSheetSearch(e.target.value)}
@@ -411,7 +411,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         )}
 
         <div className="flex gap-2">
-          <input
+          <input aria-label="Identifiant de la feuille Google Sheets"
             type="text"
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
@@ -527,8 +527,8 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           )}
           <div className="space-y-2">
             <div>
-              <label className="text-xs text-text-muted">ID client</label>
-              <input
+              <label htmlFor="crmsyncpanel-id-client" className="text-xs text-text-muted">ID client</label>
+              <input id="crmsyncpanel-id-client"
                 type="text"
                 value={clientIdInput}
                 onChange={(e) => setClientIdInput(e.target.value)}
@@ -537,8 +537,8 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-text-muted">Code secret du client</label>
-              <input
+              <label htmlFor="crmsyncpanel-code-secret-du-client" className="text-xs text-text-muted">Code secret du client</label>
+              <input id="crmsyncpanel-code-secret-du-client"
                 type="password"
                 value={clientSecretInput}
                 onChange={(e) => setClientSecretInput(e.target.value)}

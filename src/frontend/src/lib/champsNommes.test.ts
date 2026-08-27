@@ -24,6 +24,14 @@ const COUVERTS = [
   'memory/ContactModal.tsx',
   'tasks/TaskForm.tsx',
   'memory/ProjectModal.tsx',
+  'crm/CRMPanel.tsx',
+  'email/EmailCompose.tsx',
+  'email/EmailConnect.tsx',
+  'invoices/InvoiceForm.tsx',
+  'rfc/RFCCapture.tsx',
+  'settings/CRMSyncPanel.tsx',
+  'settings/ToolsPanel.tsx',
+  'prototype/InvoiceConversationCard.tsx',
 ];
 
 /** Un champ nommé porte un id (relié par un label), ou un aria-label. */
