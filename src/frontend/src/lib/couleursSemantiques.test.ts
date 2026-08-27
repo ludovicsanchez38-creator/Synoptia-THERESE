@@ -30,10 +30,22 @@ const BANNIES: { motif: RegExp; nom: string; token: string }[] = [
   { motif: /\bborder-red-\d{3}\b/, nom: 'border-red-*', token: 'border-error/40' },
 ];
 
+/**
+ * La seule exception, et elle est nommée : la ligne de l'heure actuelle du
+ * calendrier. Son rouge n'est PAS un état d'erreur — c'est le repère
+ * temporel que tous les agendas emploient. Le convertir en `bg-error` a
+ * fait tomber un test de régression qui exigeait ce rouge, et il avait
+ * raison : lire ce trait comme une alerte serait un contresens.
+ *
+ * Une exception nommée vaut mieux qu'une règle fausse.
+ */
+const EXCEPTIONS = new Set(['calendar/CalendarView.tsx']);
+
 describe('Les couleurs d’état suivent le thème', () => {
   it.each(BANNIES)('plus aucun $nom : le thème a $token', ({ motif, token }) => {
     const fautifs = Object.entries(SOURCES)
       .filter(([chemin]) => !chemin.includes('.test.'))
+      .filter(([chemin]) => !EXCEPTIONS.has(chemin.replace('../components/', '')))
       .filter(([, source]) =>
         source.split('\n').some((ligne) => motif.test(ligne)),
       )
