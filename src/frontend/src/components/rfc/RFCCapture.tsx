@@ -143,7 +143,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
 
       {/* Erreur */}
       {error && (
-        <div className="px-3 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error">
+        <div role="alert" className="px-3 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error">
           {error}
         </div>
       )}

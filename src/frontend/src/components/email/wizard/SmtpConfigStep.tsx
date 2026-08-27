@@ -358,7 +358,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
 
       {/* Error */}
       {error && (
-        <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="p-3 bg-error/10 border border-error/20 rounded-lg">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-error mt-0.5 shrink-0" />
             <span className="text-sm text-error">{error}</span>

@@ -492,7 +492,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     <>
       {/* Error */}
       {error && !needsReauth && (
-        <div className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
           <p className="text-sm text-error">{error}</p>
         </div>
       )}

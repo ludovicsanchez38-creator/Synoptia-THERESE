@@ -211,7 +211,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
               </div>
 
               {formError && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
                   <span className="text-sm text-error">{formError}</span>
                 </div>
               )}

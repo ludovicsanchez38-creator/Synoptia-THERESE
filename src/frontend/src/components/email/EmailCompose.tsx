@@ -295,7 +295,7 @@ export function EmailCompose() {
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30">
         {error && (
-          <div className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <div role="alert" className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
             <p className="text-sm text-error">{error}</p>
           </div>
         )}

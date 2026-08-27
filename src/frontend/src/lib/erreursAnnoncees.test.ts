@@ -1,47 +1,63 @@
 /**
  * Un échec silencieux n'existe que pour l'œil.
  *
- * Le socle P3 du plan visait « chargement, erreur, état vide ». Le bandeau
- * d'erreur qui s'affiche après une action - sauvegarde refusée, suppression
- * impossible - apparaît dans le DOM sans rien annoncer : un lecteur d'écran
- * ne le lit pas, et la personne croit son enregistrement passé.
+ * Socle P3 du plan, volet « erreur ». Le bandeau qui s'affiche après une
+ * action refusée - enregistrement impossible, connexion perdue - entrait dans
+ * le DOM sans rien annoncer : un lecteur d'écran ne le lit pas, et la personne
+ * croit son enregistrement passé.
  *
- * La règle porte sur le bandeau conditionné à un état d'erreur (`{error && …}`)
- * dans les formulaires où l'on agit. Les variantes de style (un bouton rouge)
- * ne sont pas concernées, et un bandeau déjà annoncé par un parent non plus.
+ * La règle balaie TOUTE l'application plutôt qu'une liste de fichiers : une
+ * liste se périme au premier écran ajouté, et c'est exactement ainsi que la
+ * dérive revient. Elle ne vise que le bandeau conditionné à un état d'erreur ;
+ * une variante de style rouge (un bouton) n'est pas un message.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const FORMULAIRES = [
-  'components/tasks/TaskForm.tsx',
-  'components/calendar/EventForm.tsx',
-  'components/memory/ContactModal.tsx',
-  'components/memory/ProjectModal.tsx',
-  'components/guided/CreateCommandForm.tsx',
-];
+const RACINE = path.join(__dirname, '..');
+const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?/;
+const FOND_ERREUR = /bg-error\/10|bg-red-500\/10/;
 
-/** Les blocs `{error && (` … et la balise ouvrante qui suit. */
-function bandeauxDErreur(code: string): string[] {
-  const lignes = code.split('\n');
-  const bandeaux: string[] = [];
-  lignes.forEach((ligne, i) => {
-    if (!/\{\s*error\s*&&\s*\(/.test(ligne)) return;
-    const suivante = lignes.slice(i + 1, i + 3).join(' ');
-    if (suivante.includes('bg-error/10')) bandeaux.push(suivante);
+function fichiersSources(dossier: string): string[] {
+  return readdirSync(dossier).flatMap((entree) => {
+    const complet = path.join(dossier, entree);
+    if (statSync(complet).isDirectory()) return fichiersSources(complet);
+    if (!entree.endsWith('.tsx')) return [];
+    if (entree.includes('.test.') || entree.includes(' 2.')) return [];
+    return [complet];
   });
-  return bandeaux;
+}
+
+/** Les bandeaux d'erreur muets, en « chemin:ligne ». */
+function bandeauxMuets(): string[] {
+  const muets: string[] = [];
+  for (const fichier of fichiersSources(path.join(RACINE, 'components'))) {
+    const lignes = readFileSync(fichier, 'utf8').split('\n');
+    lignes.forEach((ligne, i) => {
+      if (!CONDITION.test(ligne)) return;
+      for (let j = i + 1; j < Math.min(i + 3, lignes.length); j += 1) {
+        if (!FOND_ERREUR.test(lignes[j])) continue;
+        if (!/role="alert"|aria-live=/.test(lignes[j])) {
+          muets.push(`${path.relative(RACINE, fichier)}:${j + 1}`);
+        }
+        break;
+      }
+    });
+  }
+  return muets;
 }
 
 describe('Une erreur affichée après une action est annoncée', () => {
-  it.each(FORMULAIRES)('%s annonce son échec', (fichier) => {
-    const code = readFileSync(path.join(__dirname, '..', fichier), 'utf8');
-    const bandeaux = bandeauxDErreur(code);
-    expect(bandeaux.length, `${fichier} : aucun bandeau d'erreur repéré`).toBeGreaterThan(0);
-    for (const bandeau of bandeaux) {
-      expect(bandeau, `${fichier} : bandeau muet`).toMatch(/role="alert"|aria-live=/);
-    }
+  it('aucun bandeau d’erreur n’entre muet dans la page', () => {
+    expect(bandeauxMuets()).toEqual([]);
+  });
+
+  it('la règle trouve bien des bandeaux à surveiller (sinon elle ne prouve rien)', () => {
+    const annonces = fichiersSources(path.join(RACINE, 'components')).filter((f) =>
+      /role="alert"/.test(readFileSync(f, 'utf8')),
+    );
+    expect(annonces.length).toBeGreaterThan(10);
   });
 });

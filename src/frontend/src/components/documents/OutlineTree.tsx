@@ -139,7 +139,7 @@ export function OutlineTree({
       </div>
 
       {error && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-xs text-error">
+        <div role="alert" className="mx-3 mt-2 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-xs text-error">
           {error}
         </div>
       )}

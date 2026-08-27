@@ -213,7 +213,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const crmContent = (
     <div className="flex-1 overflow-auto p-6">
       {error && (
-        <div className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
           <p className="text-sm text-error">{error}</p>
         </div>
       )}
@@ -415,7 +415,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
               <p className="text-sm text-error">{formError}</p>
             </div>
           )}
@@ -767,7 +767,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {activityError && (
-            <div className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
               <p className="text-sm text-error">{activityError}</p>
             </div>
           )}

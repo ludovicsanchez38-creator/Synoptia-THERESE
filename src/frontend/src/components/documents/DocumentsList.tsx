@@ -231,7 +231,7 @@ export function DocumentsList() {
         </div>
 
         {error && (
-          <div className="mb-4 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-sm text-error">
+          <div role="alert" className="mb-4 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-sm text-error">
             {error}
           </div>
         )}

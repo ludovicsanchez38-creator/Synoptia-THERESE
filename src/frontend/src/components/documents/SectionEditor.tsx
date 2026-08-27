@@ -273,7 +273,7 @@ export function SectionEditor({
 
       {/* Erreur causale + Reprendre */}
       {error && (
-        <div className="mx-5 mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 shrink-0">
+        <div role="alert" className="mx-5 mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 shrink-0">
           <span className="flex items-center gap-2 text-sm text-error min-w-0">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span className="truncate">{error}</span>

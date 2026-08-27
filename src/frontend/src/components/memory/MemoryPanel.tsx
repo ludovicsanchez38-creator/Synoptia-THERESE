@@ -379,7 +379,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       Les projets et fichiers associés seront aussi supprimés.
                     </p>
                     {deleteError && (
-                      <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-lg">
+                      <div role="alert" className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-lg">
                         <AlertCircle className="w-4 h-4 text-error shrink-0" />
                         <span className="text-sm text-error">{deleteError}</span>
                       </div>
