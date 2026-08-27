@@ -13,10 +13,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConversationProjectPicker } from './ConversationProjectPicker';
+import { useChatStore } from '../../stores/chatStore';
 
 const apiMocks = vi.hoisted(() => ({
   listProjects: vi.fn(),
   setConversationProject: vi.fn(),
+  createConversation: vi.fn(),
 }));
 
 vi.mock('../../services/api', () => apiMocks);
@@ -211,5 +213,100 @@ describe('D6 : un rattachement qui échoue le dit', () => {
 
     await waitFor(() => expect(apiMocks.setConversationProject).toHaveBeenCalled());
     expect(statusMocks.addNotification).not.toHaveBeenCalled();
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// D6 : rattacher avant le premier message.
+//
+// C'est le moment où l'on en a besoin : on vient d'indexer un dossier, on
+// ouvre une conversation, on veut y travailler. La conversation n'existe alors
+// qu'en local, et le rattachement répondait 404.
+// ---------------------------------------------------------------------------
+
+describe('D6 : le rattachement marche avant le premier message', () => {
+  beforeEach(() => {
+    statusMocks.addNotification.mockClear();
+    apiMocks.createConversation.mockReset();
+    apiMocks.createConversation.mockResolvedValue({
+      id: 'conv-serveur',
+      title: 'Nouvelle conversation',
+    });
+    apiMocks.setConversationProject.mockReset();
+    apiMocks.setConversationProject.mockResolvedValue({
+      project_id: 'projet-a',
+      memory_scope: 'project',
+    });
+    apiMocks.listProjects.mockResolvedValue([
+      { id: 'projet-a', name: 'Client Alpha' },
+      { id: 'projet-b', name: 'Client Beta' },
+    ]);
+    useChatStore.setState({
+      conversations: [
+        {
+          id: 'conv-locale',
+          title: 'Nouvelle conversation',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          synced: false,
+        },
+      ] as never,
+      currentConversationId: 'conv-locale',
+    });
+  });
+
+  it('persiste la conversation au lieu d’échouer, et la sélection tient', async () => {
+    const { container } = render(
+      <ConversationProjectPicker conversationId="conv-locale" projectId={null} />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(apiMocks.setConversationProject).toHaveBeenCalledWith(
+        'conv-serveur',
+        'projet-a',
+        'project'
+      );
+    });
+    // Le choix reste affiché : c'est tout l'enjeu, il se défaisait avant.
+    await waitFor(() => expect(select.value).toBe('projet-a'));
+    expect(statusMocks.addNotification).not.toHaveBeenCalled();
+  });
+
+  it('refuse une conversation éphémère en expliquant pourquoi', async () => {
+    useChatStore.setState({
+      conversations: [
+        {
+          id: 'conv-ephemere',
+          title: 'Conversation éphémère',
+          messages: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          synced: false,
+          ephemeral: true,
+        },
+      ] as never,
+      currentConversationId: 'conv-ephemere',
+    });
+
+    const { container } = render(
+      <ConversationProjectPicker conversationId="conv-ephemere" projectId={null} />
+    );
+    await waitFor(() => expect(apiMocks.listProjects).toHaveBeenCalled());
+
+    const select = container.querySelector('select') as HTMLSelectElement;
+    select.value = 'projet-a';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await waitFor(() => expect(statusMocks.addNotification).toHaveBeenCalled());
+    const arg = statusMocks.addNotification.mock.calls[0][0];
+    expect(`${arg.title} ${arg.message}`.toLowerCase()).toContain('éphémère');
+    expect(apiMocks.createConversation).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FolderTree } from 'lucide-react';
 
-import { listProjects, setConversationProject } from '../../services/api';
+import { listProjects } from '../../services/api';
+import {
+  ConversationEphemereError,
+  rattacherAUnProjet,
+} from '../../lib/rattachementConversation';
 import { useStatusStore } from '../../stores/statusStore';
 
 interface ProjetAffichable {
@@ -74,12 +78,28 @@ export function ConversationProjectPicker({
       setSelection(valeur);
       setEnCours(true);
       try {
-        await setConversationProject(conversationId, cible, politique);
+        // D6 : une conversation neuve n'existe qu'en local jusqu'à son premier
+        // message. Rattacher un projet la persiste d'abord, au lieu de répondre
+        // 404 au moment précis où l'on vient d'indexer un dossier.
+        await rattacherAUnProjet(conversationId, cible, politique);
         onProjectChange?.(cible, politique);
-      } catch {
+      } catch (erreur) {
         // Rétablir l'affichage : laisser une sélection que le serveur n'a pas
         // enregistrée ferait croire à un cloisonnement inexistant.
         setSelection(precedent);
+        if (erreur instanceof ConversationEphemereError) {
+          // Une conversation éphémère ne doit pas devenir une conversation
+          // ordinaire dans le dos de l'utilisateur : on refuse en le disant.
+          useStatusStore.getState().addNotification({
+            type: 'warning',
+            title: 'Conversation éphémère',
+            message:
+              'Une conversation éphémère n’est pas enregistrée : elle ne peut pas '
+              + 'être rattachée à un projet. Ouvre une conversation ordinaire pour '
+              + 'consulter les documents de ce dossier.',
+          });
+          return;
+        }
         // D6 : le rétablissement était MUET. L'utilisateur voyait son choix
         // revenir tout seul à « Documents généraux » et n'apprenait jamais que
         // les documents de son projet restaient hors de portée. Une
