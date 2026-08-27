@@ -112,3 +112,117 @@ describe('L’état vide honnête (B1, 0.48)', () => {
     ).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Entrée 11 du plan du 28/08 : la mise en route sortait de l'accueil fantôme.
+//
+// La liste complète de ce qui reste à brancher — clé IA, agenda, messagerie,
+// profil de facturation — ne vivait que dans `HomeView`, un second accueil
+// derrière le vrai, joignable uniquement par « Voir les autres ». Le brief, lui,
+// ne parlait que des mails.
+//
+// L'inventaire de parité a montré que c'est le SEUL bloc de cet écran qui
+// n'existe nulle part ailleurs : le retirer sans le déplacer aurait fait
+// perdre la mise en route.
+// ---------------------------------------------------------------------------
+
+describe('Entrée 11 : ce qui reste à brancher se voit sur le brief', () => {
+  it('annonce toutes les étapes manquantes, pas seulement les mails', () => {
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard() }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+        setup={{
+          has_llm_key: false,
+          has_calendar: false,
+          has_email: false,
+          billing_complete: false,
+          indisponibles: [],
+        }}
+        onSetupEmail={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Configurer une clé IA/)).toBeInTheDocument();
+    expect(screen.getByText(/Connecter ton agenda/)).toBeInTheDocument();
+    expect(screen.getByText(/Compléter le profil de facturation/)).toBeInTheDocument();
+  });
+
+  it('tout est branché : la liste disparaît, le brief reprend sa place', () => {
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard() }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+        setup={{
+          has_llm_key: true,
+          has_calendar: true,
+          has_email: true,
+          billing_complete: true,
+          indisponibles: [],
+        }}
+        onSetupEmail={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/Configurer une clé IA/)).toBeNull();
+    expect(screen.getByText('Rien d’urgent pour le moment')).toBeInTheDocument();
+  });
+})
+
+describe('Entrée 11b : plus aucune sortie vers l’accueil fantôme', () => {
+  it('le trop-plein se déroule sur place au lieu de changer d’écran', () => {
+    const onOpenView = vi.fn();
+    const beaucoup = dashboard({
+      urgent_tasks: Array.from({ length: 9 }, (_, i) => ({
+        id: `t${i}`, title: `Tâche ${i}`, due_date: '2026-07-13', priority: 'high', status: 'todo',
+      })) as never,
+      summary: { events_count: 0, tasks_count: 9, follow_ups_count: 0, invoices_count: 0, prospects_count: 0 },
+    });
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: beaucoup }}
+        onRetry={vi.fn()}
+        onOpenView={onOpenView}
+        setup={{
+          has_llm_key: true,
+          has_calendar: true,
+          has_email: true,
+          billing_complete: true,
+          indisponibles: [],
+        }}
+        onSetupEmail={vi.fn()}
+      />,
+    );
+
+    const deroule = screen.getByRole('button', { name: /autres éléments/ });
+    fireEvent.click(deroule);
+
+    // Le trop-plein s'affiche ici : on ne quitte pas le brief pour le lire.
+    expect(onOpenView).not.toHaveBeenCalled();
+    expect(screen.getByText('Tâche 8')).toBeInTheDocument();
+  });
+
+  it('l’erreur ne propose plus d’ouvrir l’accueil depuis l’accueil', () => {
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'error', error: 'panne', data: null }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+        setup={{
+          has_llm_key: true,
+          has_calendar: true,
+          has_email: true,
+          billing_complete: true,
+          indisponibles: [],
+        }}
+        onSetupEmail={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Ouvrir l’accueil' })).toBeNull();
+    // Ce qui reste utile en cas de panne : réessayer.
+    expect(screen.getByRole('button', { name: /Réessayer/ })).toBeInTheDocument();
+  });
+});

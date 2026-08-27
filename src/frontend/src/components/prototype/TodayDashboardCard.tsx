@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AlertCircle,
   Calendar,
@@ -15,6 +16,7 @@ import type { AppView } from '../../stores/navigationStore';
 import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
+import { SetupChecklist } from '../home/SetupChecklist';
 
 const attentionIcons = {
   event: Calendar,
@@ -60,7 +62,10 @@ export function TodayDashboardCard({
   onSetupEmail?: () => void;
 }) {
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
-  const visibleItems = items.slice(0, 6);
+  // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
+  // que sur un autre écran.
+  const [toutAfficher, setToutAfficher] = useState(false);
+  const visibleItems = toutAfficher ? items : items.slice(0, 6);
 
   return (
     <section
@@ -113,13 +118,6 @@ export function TodayDashboardCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <button
-                type="button"
-                onClick={() => onOpenView('home')}
-                className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text"
-              >
-                Ouvrir l’accueil
-              </button>
             </div>
           </div>
         </StateShell>
@@ -145,6 +143,21 @@ export function TodayDashboardCard({
               <CheckCircle2 className="mx-auto h-6 w-6 text-success" />
               <p className="mt-2 text-sm font-semibold text-text">Rien d’urgent pour le moment</p>
               <p className="mt-1 text-xs text-text-muted">Aucune relance, échéance ou rencontre à enjeu n’est remontée.</p>
+            </div>
+          )}
+          {/* Entrée 11 : ce qui reste à brancher se voyait uniquement sur un
+              second accueil, joignable par « Voir les autres ». La liste vient
+              ici, à l'endroit qui constate le vide qu'elle explique.
+              L'étape messagerie est masquée quand le message dédié ci-dessus
+              la porte déjà : deux invitations pour le même geste en valent
+              zéro. La liste se cache d'elle-même quand tout est branché. */}
+          {setup !== null && (
+            <div className="mt-4">
+              <SetupChecklist
+                status={
+                  setup.has_email === false ? { ...setup, has_email: true } : setup
+                }
+              />
             </div>
           )}
         </StateShell>
@@ -180,7 +193,10 @@ export function TodayDashboardCard({
           {items.length > visibleItems.length && (
             <button
               type="button"
-              onClick={() => onOpenView('home')}
+              /* Entrée 11b : ce bouton menait à un second accueil pour lire la
+                 suite d'une liste qu'on a déjà sous les yeux. Elle se déroule
+                 ici. */
+              onClick={() => setToutAfficher(true)}
               className="w-full px-4 py-3 text-center text-xs font-semibold text-accent hover:bg-surface-2"
             >
               Voir les {items.length - visibleItems.length} autres éléments
