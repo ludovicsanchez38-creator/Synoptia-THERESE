@@ -12,9 +12,9 @@ le MÊME dossier ne change rien : ce doit être sans effet.
 Changer de dossier, en revanche, doit toujours incrémenter — un ancien plan
 partiel ne doit jamais redevenir compatible (revue jalon, B1).
 """
-import pytest
 from pathlib import Path
 
+import pytest
 from app.services import project_sync_service as svc
 
 

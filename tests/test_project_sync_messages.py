@@ -10,10 +10,9 @@ routeur de synchro recopiait encore l'exception dans le `detail` — un
 traceback SQLite ou un `OverflowError` serait parti droit à l'utilisateur.
 """
 import pytest
-from fastapi import HTTPException
-
 from app.routers import project_sync
 from app.services import project_sync_service as svc
+from fastapi import HTTPException
 
 
 @pytest.mark.asyncio

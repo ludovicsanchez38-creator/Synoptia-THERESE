@@ -17,7 +17,6 @@ import asyncio
 import time
 
 import pytest
-
 from app.services import project_sync_service as svc
 
 

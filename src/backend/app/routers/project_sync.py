@@ -11,10 +11,10 @@ import logging
 from typing import Any
 
 from app.services import project_sync_service as svc
+from app.services.error_handler import message_pour_ecran
 from app.services.project_sync import ErreurDeScan
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 
