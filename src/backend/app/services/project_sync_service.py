@@ -167,6 +167,15 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
             await session.refresh(root)
             return root
 
+        # D5 : réattacher le MÊME dossier encore actif est sans effet. Quand le
+        # client abandonne au bout de ses trente secondes, le serveur poursuit
+        # et pose la racine ; l'utilisateur relance, et cette relance
+        # incrémentait la génération — invalidant en silence le plan qu'il
+        # venait de préparer. Une racine déliée, elle, avance toujours : le
+        # dossier a pu changer sans que personne ne l'observe.
+        if actuelle.racine == str(racine) and not actuelle.detachee:
+            return actuelle
+
         # Remplacement OU ré-attachement d'une racine déliée : la génération
         # ne repart JAMAIS - un ancien plan partiel de génération 1
         # redeviendrait compatible (revue jalon, B1).
