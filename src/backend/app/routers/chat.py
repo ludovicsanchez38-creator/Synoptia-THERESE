@@ -62,6 +62,7 @@ from app.services.slash_commands import (
 )
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
+    empreinte_action,
     pop_pending,
     register_pending,
     requires_confirmation,
@@ -2685,6 +2686,11 @@ async def _execute_tools_and_continue(
     # les modèles faibles - re-émet send_email en boucle et empile plusieurs
     # cartes de confirmation quasi identiques.
     sensitive_pending = False
+    # D1 : `sensitive_pending` ne protège que la récursion. Dans CE tour, un
+    # modèle qui répète send_email empilait une carte par appel pour un seul
+    # envoi. On mémorise l'identité des actions déjà mises en attente ; une
+    # empreinte incalculable (None) laisse toujours passer la carte.
+    empreintes_en_attente: set[str] = set()
 
     for tc in allowed_calls:
         # Finding 3, troisième passe de revue : la boucle d'outils ignorait
@@ -2727,6 +2733,26 @@ async def _execute_tools_and_continue(
                 f"(NON exécuté) - args: {tc.arguments}"
             )
             sensitive_pending = True
+            empreinte = empreinte_action(tc.name, pending_arguments)
+            if empreinte is not None and empreinte in empreintes_en_attente:
+                logger.info(
+                    f"{tc.name} déjà en attente de confirmation dans ce tour : "
+                    "pas de seconde carte pour la même action."
+                )
+                tool_results.append(ToolResult(
+                    tool_call_id=tc.id,
+                    result=(
+                        "Cette action exacte attend DÉJÀ la validation de "
+                        "l'utilisateur. Ne la redemande pas."
+                    ),
+                    is_error=False,
+                ))
+                exec_records.append(
+                    (tc.name, "déjà en attente de confirmation utilisateur", False)
+                )
+                continue
+            if empreinte is not None:
+                empreintes_en_attente.add(empreinte)
             confirmation_id = register_pending(tc.name, pending_arguments)
             confirm_chunk = StreamChunk(
                 type="confirmation_required",

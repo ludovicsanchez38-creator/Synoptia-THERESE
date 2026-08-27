@@ -187,3 +187,132 @@ async def test_send_email_mcp_namespace_non_execute_sans_confirmation(monkeypatc
         "therese__send_email",
         {"to": "x@y.fr", "subject": "S", "body": "B"},
     )
+
+
+# ---------------------------------------------------------------------------
+# D1 (Dr_logic, 27/08) : « demande d'envoi d'un email, j'ai une double
+# confirmation ? »
+#
+# Le garde BUG-121 (`sensitive_pending`) ne bloque QUE la récursion. Dans le
+# tour courant, `for tc in allowed_calls` émet une carte par appel : un modèle
+# qui répète send_email dans un même tour empile des cartes pour un seul envoi.
+# Deux envois RÉELLEMENT différents doivent, eux, garder deux cartes — une
+# confirmation d'envoi est une garantie, jamais un confort.
+# ---------------------------------------------------------------------------
+
+
+def _cartes(chunks):
+    return [c for c in chunks if c.get("type") == "confirmation_required"]
+
+
+@pytest.mark.asyncio
+async def test_deux_send_email_identiques_dans_un_tour_une_seule_carte(monkeypatch):
+    async def _jamais(*args, **kwargs):  # pragma: no cover - ne doit pas être appelé
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    args = {"to": "x@y.fr", "subject": "Sujet", "body": "Corps"}
+    appels = [
+        ToolCall(id="t1", name="send_email", arguments=dict(args)),
+        ToolCall(id="t2", name="send_email", arguments=dict(args)),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    assert len(_cartes(_parse_chunks(raw))) == 1
+
+
+@pytest.mark.asyncio
+async def test_variantes_du_meme_envoi_ne_font_quune_carte(monkeypatch):
+    """BUG-121 a observé des arguments hallucinés (`body` vs `content`).
+
+    La casse du destinataire, les espaces et l'alias du corps ne font pas deux
+    envois : c'est le même e-mail réémis.
+    """
+    async def _jamais(*args, **kwargs):  # pragma: no cover
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    appels = [
+        ToolCall(
+            id="t1",
+            name="send_email",
+            arguments={"to": "X@Y.fr ", "subject": "Sujet ", "body": "Corps"},
+        ),
+        ToolCall(
+            id="t2",
+            name="send_email",
+            arguments={"to": "x@y.fr", "subject": "Sujet", "content": "Corps"},
+        ),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    assert len(_cartes(_parse_chunks(raw))) == 1
+
+
+@pytest.mark.asyncio
+async def test_deux_destinataires_differents_gardent_deux_cartes(monkeypatch):
+    """Le fail-safe : jamais fusionner deux envois distincts en une seule carte."""
+    async def _jamais(*args, **kwargs):  # pragma: no cover
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    appels = [
+        ToolCall(
+            id="t1",
+            name="send_email",
+            arguments={"to": "alice@y.fr", "subject": "Sujet", "body": "Corps"},
+        ),
+        ToolCall(
+            id="t2",
+            name="send_email",
+            arguments={"to": "bob@y.fr", "subject": "Sujet", "body": "Corps"},
+        ),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    cartes = _cartes(_parse_chunks(raw))
+    assert len(cartes) == 2
+    assert {c["confirmation"]["arguments"]["to"] for c in cartes} == {
+        "alice@y.fr",
+        "bob@y.fr",
+    }
+
+
+@pytest.mark.asyncio
+async def test_destinataire_absent_emet_quand_meme_la_carte(monkeypatch):
+    """Fail-open : une empreinte incalculable ne doit jamais avaler une carte."""
+    async def _jamais(*args, **kwargs):  # pragma: no cover
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    appels = [
+        ToolCall(id="t1", name="send_email", arguments={"subject": "A"}),
+        ToolCall(id="t2", name="send_email", arguments={"subject": "B"}),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    assert len(_cartes(_parse_chunks(raw))) == 2
