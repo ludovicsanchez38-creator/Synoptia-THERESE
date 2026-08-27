@@ -6,11 +6,12 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserPlus, FolderPlus, Check, X, Loader2 } from 'lucide-react';
+import { UserPlus, FolderPlus, Check, X } from 'lucide-react';
 import type { ExtractedContact, ExtractedProject } from '../../services/api';
 import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { useChatStore } from '../../stores/chatStore';
+import { Spinner } from '../ui/Spinner';
 
 interface EntitySuggestionProps {
   contacts: ExtractedContact[];
@@ -79,7 +80,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
         <span className="text-xs text-text-muted/60">{confidencePercent}%</span>
 
         {status === 'saving' ? (
-          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+          <Spinner taille="bouton" className="text-cyan-400" />
         ) : (
           <>
             <button
@@ -91,7 +92,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
             </button>
             <button
               onClick={handleIgnore}
-              className="p-1 rounded hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
+              className="p-1 rounded hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Ignorer"
             >
               <X className="w-4 h-4" />

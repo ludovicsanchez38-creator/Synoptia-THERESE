@@ -230,7 +230,7 @@ export function AgentChat() {
           {activeSession.status === "running" && (
             <button
               onClick={() => cancelSession(activeSessionId)}
-              className="rounded p-1 text-red-400/70 transition hover:bg-red-500/10 hover:text-red-400"
+              className="rounded p-1 text-error/70 transition hover:bg-error/10 hover:text-error"
               title="Annuler la session"
               aria-label="Annuler la session"
             >

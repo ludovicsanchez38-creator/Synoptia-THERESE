@@ -4,7 +4,6 @@ import {
   Image,
   Download,
   Check,
-  Loader2,
   X,
   RefreshCw,
   Sparkles,
@@ -13,6 +12,7 @@ import {
 import type { ImageProvider } from './actionData';
 import { cn } from '../../lib/utils';
 import { fetchImageObjectUrl } from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export type ImageGenerationStatus = 'idle' | 'generating' | 'success' | 'error';
 
@@ -157,7 +157,7 @@ export function ImageGenerationPanel({
                   exit={{ opacity: 0, scale: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center"
                 >
-                  <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />
+                  <Spinner taille="bouton" className="text-accent-cyan" />
                 </motion.div>
               )}
               {status === 'success' && (
@@ -177,7 +177,7 @@ export function ImageGenerationPanel({
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0 }}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-error flex items-center justify-center"
                 >
                   <X className="w-3.5 h-3.5 text-white" />
                 </motion.div>
@@ -220,7 +220,7 @@ export function ImageGenerationPanel({
             {/* Loading placeholder */}
             {!imageLoaded && !imageError && (
               <div className="w-full h-48 flex items-center justify-center bg-surface-2">
-                <Loader2 className="w-8 h-8 text-text-muted animate-spin" />
+                <Spinner taille="zone" className="text-text-muted" />
               </div>
             )}
 

@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import {
   Calculator,
   ChevronRight,
-  Loader2,
   PanelRightClose,
   ShieldCheck,
 } from 'lucide-react';
@@ -21,6 +20,7 @@ import {
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { Spinner } from '../ui/Spinner';
 
 type CalculatorId = 'roi' | 'ice' | 'rice' | 'npv' | 'break-even';
 type CalculatorResult =
@@ -308,7 +308,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
             {active === 'break-even' && <><InputField inputId="calculator-fixed-costs" invalid={errorFieldId === 'calculator-fixed-costs'} label="Coûts fixes" value={values.fixedCosts} onChange={(value) => update('fixedCosts', value)} suffix="€" min={0} /><InputField inputId="calculator-variable-cost" invalid={errorFieldId === 'calculator-variable-cost'} label="Coût variable par unité" value={values.variableCost} onChange={(value) => update('variableCost', value)} suffix="€" min={0} /><InputField inputId="calculator-price" invalid={errorFieldId === 'calculator-price'} label="Prix de vente par unité" value={values.price} onChange={(value) => update('price', value)} suffix="€" min={0} /></>}
           </fieldset>
           {error && <div id="calculator-form-error" role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-sm leading-5 text-error">{error}</div>}
-          <button type="button" disabled={pending} onClick={() => void calculate()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{pending && <Loader2 className="h-4 w-4 animate-spin" />}Calculer avec le moteur local</button>
+          <button type="button" disabled={pending} onClick={() => void calculate()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{pending && <Spinner taille="bouton" />}Calculer avec le moteur local</button>
           <div className="sr-only" role="progressbar" aria-label="Progression du calcul" aria-valuemin={0} aria-valuemax={1} aria-valuenow={result ? 1 : 0} aria-valuetext={pending ? 'Calcul en cours' : result ? 'Calcul terminé' : 'Calcul non lancé'} />
         </section>
 

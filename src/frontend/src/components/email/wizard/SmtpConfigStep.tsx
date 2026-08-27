@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Check,
   AlertCircle,
-  Loader2,
   Server,
   Plug,
   Eye,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
+import { Spinner } from '../../ui/Spinner';
 
 interface SmtpConfigStepProps {
   onBack: () => void;
@@ -358,10 +358,10 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
 
       {/* Error */}
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
-            <span className="text-sm text-red-400">{error}</span>
+            <AlertCircle className="w-4 h-4 text-error mt-0.5 shrink-0" />
+            <span className="text-sm text-error">{error}</span>
           </div>
         </div>
       )}
@@ -372,17 +372,17 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           className={`p-3 rounded-lg border ${
             testResult.success
               ? 'bg-green-500/10 border-green-500/20'
-              : 'bg-red-500/10 border-red-500/20'
+              : 'bg-error/10 border-error/20'
           }`}
         >
           <div className="flex items-center gap-2">
             {testResult.success ? (
               <Check className="w-4 h-4 text-green-400" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-red-400" />
+              <AlertCircle className="w-4 h-4 text-error" />
             )}
             <span
-              className={`text-sm ${testResult.success ? 'text-green-400' : 'text-red-400'}`}
+              className={`text-sm ${testResult.success ? 'text-green-400' : 'text-error'}`}
             >
               {testResult.message}
             </span>
@@ -405,7 +405,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             disabled={!canTest || testing}
           >
             {testing ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              <Spinner taille="bouton" className="mr-1" />
             ) : (
               <Plug className="w-4 h-4 mr-1" />
             )}
@@ -419,7 +419,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             disabled={!canSave || saving}
           >
             {saving ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              <Spinner taille="bouton" className="mr-1" />
             ) : (
               <ArrowRight className="w-4 h-4 mr-1" />
             )}

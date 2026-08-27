@@ -153,9 +153,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             filteredCommands[selectedIndex].action();
           }
           break;
-        // Échap : géré par la pile unifiée (resolveEscape, L7), pas localement.
+        // Échap : géré par la pile unifiée (cascade de la coque), pas localement.
         // Sinon course : la palette (onKeyDown élément, tire avant le handler
-        // global window) se fermerait, et resolveEscape ferait un retour de vue.
+        // global window) se fermerait, et cascade Échap de la coque ferait un retour de vue.
       }
     },
     [filteredCommands, selectedIndex]

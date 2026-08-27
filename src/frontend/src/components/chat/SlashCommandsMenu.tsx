@@ -312,7 +312,7 @@ export function SlashCommandsMenu({
             onSelect(filteredCommands[selectedIndex]);
           }
           break;
-        // Échap : géré par la pile unifiée (resolveEscape via escapeStack, correctif
+        // Échap : géré par la pile unifiée (cascade Échap de la coque via escapeStack, correctif
         // KO Syn 1.3) ; ne plus le traiter ici sinon il ferme aussi la sidebar.
       }
     },
@@ -324,7 +324,7 @@ export function SlashCommandsMenu({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Le menu slash s'inscrit sur la pile d'Échap : Échap le ferme via resolveEscape
+  // Le menu slash s'inscrit sur la pile d'Échap : Échap le ferme via cascade Échap de la coque
   // sans effet de bord (sidebar) — correctif KO Syn 1.3.
   useEffect(() => {
     if (!isOpen) return;

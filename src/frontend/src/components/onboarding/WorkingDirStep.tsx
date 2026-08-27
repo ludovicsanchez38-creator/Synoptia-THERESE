@@ -6,10 +6,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FolderOpen, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { FolderOpen, Check, AlertCircle } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 interface WorkingDirStepProps {
   onNext: () => void;
@@ -60,7 +61,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -141,7 +142,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
           >
             {saving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner taille="bouton" className="mr-2" />
                 Sélection...
               </>
             ) : (

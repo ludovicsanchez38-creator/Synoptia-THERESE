@@ -6,12 +6,13 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { Star, Paperclip, Loader2, Search, Trash2 } from 'lucide-react';
+import { Star, Paperclip, Search, Trash2 } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import * as api from '../../services/api';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { mapEmailList } from '../prototype/emailReadModels';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
+import { Spinner } from '../ui/Spinner';
 
 interface EmailListProps {
   accountId: string;
@@ -289,23 +290,23 @@ export function EmailList({ accountId }: EmailListProps) {
         {/* Indicateur de rafraîchissement */}
         {refreshing && (
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-accent-cyan/10 backdrop-blur-sm border-b border-accent-cyan/20">
-            <Loader2 className="w-4 h-4 animate-spin text-accent-cyan mr-2" />
+            <Spinner taille="bouton" className="text-accent-cyan mr-2" />
             <span className="text-sm font-medium text-accent-cyan">Mise à jour des messages...</span>
           </div>
         )}
         {/* BUG-061: Erreur non-bloquante quand on a du cache */}
         {error && messages.length > 0 && (
-          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-red-500/10 backdrop-blur-sm border-b border-red-500/20">
-            <span className="text-sm font-medium text-red-400">{error}</span>
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-error/10 backdrop-blur-sm border-b border-error/20">
+            <span className="text-sm font-medium text-error">{error}</span>
           </div>
         )}
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan" />
           </div>
         ) : error && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-error">{error}</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -356,7 +357,7 @@ export function EmailList({ accountId }: EmailListProps) {
                       role="button"
                       title="Supprimer"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-red-400 transition-colors" />
+                      <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-error transition-colors" />
                     </span>
                   </div>
 

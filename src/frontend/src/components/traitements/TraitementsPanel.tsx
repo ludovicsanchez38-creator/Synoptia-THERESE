@@ -6,10 +6,11 @@
  * « Arrêt demandé - fin de l'étape en cours ». Jamais un arrêt annoncé
  * pendant que le travail continue.
  */
-import { Loader2, Square, X } from 'lucide-react';
+import { Square, X } from 'lucide-react';
 
 import type { Traitement } from '../../services/api';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
+import { Spinner } from '../ui/Spinner';
 
 const LIBELLES_ETAT: Record<Traitement['state'], string> = {
   queued: 'En file',
@@ -67,7 +68,7 @@ export function TraitementsPanel() {
             >
               <div className="flex items-center gap-2">
                 {enCours && !arretDemande && (
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />
+                  <Spinner taille="ligne" className="shrink-0 text-accent" />
                 )}
                 <span className="flex-1 truncate text-xs font-medium text-text">
                   {t.label}

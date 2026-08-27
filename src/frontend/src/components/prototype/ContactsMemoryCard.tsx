@@ -3,7 +3,6 @@ import {
   AlertCircle,
   ChevronRight,
   ExternalLink,
-  Loader2,
   Mail,
   RefreshCw,
   Search,
@@ -17,6 +16,7 @@ import {
   selectRecentContacts,
 } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 const EMPTY_CONTACTS: Contact[] = [];
 
@@ -43,7 +43,7 @@ function EmptyContacts({ onOpenClassic }: { onOpenClassic: () => void }) {
           onClick={onOpenClassic}
           className="mt-4 rounded-[9px] border border-text bg-text px-3 py-2 text-xs font-semibold text-white"
         >
-          Ouvrir la mémoire
+          Gérer mes contacts
         </button>
       </div>
     </div>
@@ -75,7 +75,7 @@ export function ContactsMemoryCard({
             <Users className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="contacts-memory-title" className="text-sm font-semibold text-text">Contacts et mémoire</h2>
+            <h2 id="contacts-memory-title" className="text-base font-semibold text-text">Contacts et mémoire</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.length} contact${resource.data.length > 1 ? 's' : ''} dans la mémoire locale`
@@ -94,7 +94,7 @@ export function ContactsMemoryCard({
 
       {resource.status === 'loading' ? (
         <div className="flex min-h-44 items-center justify-center gap-2 px-5 py-8 text-sm text-text-muted" role="status">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-[var(--k4)]" />
           Je consulte ta mémoire…
         </div>
       ) : resource.status === 'error' ? (
@@ -184,7 +184,7 @@ export function ContactsMemoryCanvas({
 
       {resource.status === 'loading' ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-[var(--k4)]" />
           Chargement de la mémoire…
         </div>
       ) : resource.status === 'error' ? (
@@ -287,7 +287,7 @@ export function ContactsMemoryCanvas({
           className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-4 py-3 text-sm font-semibold text-white"
         >
           <ExternalLink className="h-4 w-4" />
-          Ouvrir la mémoire complète
+          Gérer mes contacts
         </button>
       </div>
     </div>

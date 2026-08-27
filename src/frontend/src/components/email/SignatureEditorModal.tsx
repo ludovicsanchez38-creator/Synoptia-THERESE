@@ -10,17 +10,18 @@
  * re-sanitise via nh3 au PUT (double filet, source de vérité).
  *
  * Échap : la modale s'inscrit sur la pile Échap unifiée (escapeStack) pour se
- * fermer sans laisser resolveEscape éjecter la vue email (cf. KO revue produit).
+ * fermer sans laisser cascade Échap de la coque éjecter la vue email (cf. KO revue produit).
  */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { X, Mail, Loader2, Check } from 'lucide-react';
+import { X, Mail, Check } from 'lucide-react';
 import { getEmailSignature, updateEmailSignature } from '../../services/api/email';
 import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { Spinner } from '../ui/Spinner';
 
 interface SignatureEditorModalProps {
   accountId: string;
@@ -153,7 +154,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
 
           {loading ? (
             <div className="flex items-center justify-center py-12 text-text-muted">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Chargement...
+              <Spinner taille="zone" className="mr-2" /> Chargement...
             </div>
           ) : (
             <>
@@ -185,7 +186,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
               </div>
 
               {notice && <p className="mt-3 text-sm text-yellow-300">{notice}</p>}
-              {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+              {error && <p className="mt-3 text-sm text-error">{error}</p>}
 
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
@@ -200,7 +201,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                   className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Spinner taille="bouton" />
                   ) : saved ? (
                     <Check className="w-4 h-4" />
                   ) : null}

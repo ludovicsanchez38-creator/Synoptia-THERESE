@@ -181,6 +181,10 @@ class TestSetupStatus:
             "has_email": False,
             "billing_complete": False,
             "has_llm_key": False,
+            # Rien n'est configuré, mais tout a PU être vérifié : la liste est
+            # vide. C'est ce qui distingue « pas encore branché » de « on n'a
+            # pas pu savoir » (27/08/2026).
+            "indisponibles": [],
         }
 
     @pytest.mark.asyncio

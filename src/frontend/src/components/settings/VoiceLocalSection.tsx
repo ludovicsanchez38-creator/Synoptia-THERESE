@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Mic } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
   getVoiceLocalPreference,
@@ -17,6 +17,7 @@ import {
   setVoiceLocalPreferred,
   type VoiceLocalStatus,
 } from '../../services/api/voice';
+import { Spinner } from '../ui/Spinner';
 
 export function VoiceLocalSection() {
   const [status, setStatus] = useState<VoiceLocalStatus | null>(null);
@@ -109,7 +110,7 @@ export function VoiceLocalSection() {
         </p>
       ) : status.setup.state === 'running' ? (
         <div className="flex items-center gap-2 text-sm text-text-muted">
-          <Loader2 className="w-4 h-4 animate-spin text-accent-cyan" />
+          <Spinner taille="bouton" className="text-accent-cyan" />
           {status.setup.step || 'Téléchargement en cours...'}
         </div>
       ) : status.ready ? (

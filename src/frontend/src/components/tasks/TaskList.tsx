@@ -12,6 +12,7 @@ import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { Button } from '../ui/Button';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -64,16 +65,42 @@ export function TaskList() {
   }
 
   const priorityColors = {
-    urgent: 'text-red-400',
+    urgent: 'text-error',
     high: 'text-orange-400',
     medium: 'text-blue-400',
     low: 'text-text-muted',
   };
 
   if (filteredTasks.length === 0) {
+    /* Un écran vide est le moment où l'on a le PLUS besoin d'être guidé :
+       c'est souvent la première fois qu'on l'ouvre. « Aucune tâche » seul au
+       milieu constatait le vide sans proposer d'en sortir - le bouton de
+       création existait, mais dans la barre du haut, loin du regard. */
+    const filtre = searchQuery.trim();
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-text-muted">Aucune tâche</p>
+      <div className="flex h-full items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <CheckCircle2 className="mx-auto h-9 w-9 text-text-muted" />
+          <p className="mt-3 text-base font-semibold text-text">
+            {filtre ? 'Aucune tâche ne correspond' : 'Aucune tâche pour l’instant'}
+          </p>
+          <p className="mt-1 text-sm leading-5 text-text-muted">
+            {filtre
+              ? `Rien ne correspond à « ${filtre} ». Essaie un autre mot, ou crée cette tâche.`
+              : 'Note ce que tu ne veux pas oublier : Thérèse le gardera avec le reste de ton contexte.'}
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setCurrentTask(null);
+              setIsTaskFormOpen(true);
+            }}
+          >
+            Créer une tâche
+          </Button>
+        </div>
       </div>
     );
   }
@@ -125,7 +152,7 @@ export function TaskList() {
                       {task.status === 'in_progress' && (
                         <Clock className="w-4 h-4 text-blue-400" />
                       )}
-                      {isOverdue && <AlertCircle className="w-4 h-4 text-red-400" />}
+                      {isOverdue && <AlertCircle className="w-4 h-4 text-error" />}
                       <span
                         className={`text-xs font-medium ${
                           priorityColors[task.priority as keyof typeof priorityColors]
@@ -153,7 +180,7 @@ export function TaskList() {
                       {task.due_date && (
                         <span
                           className={`text-xs ${
-                            isOverdue ? 'text-red-400 font-medium' : 'text-text-muted'
+                            isOverdue ? 'text-error font-medium' : 'text-text-muted'
                           }`}
                         >
                           {new Date(task.due_date).toLocaleDateString('fr-FR', {
@@ -182,10 +209,10 @@ export function TaskList() {
                     {/* Delete Button */}
                     <button
                       onClick={(e) => handleDelete(task.id, e)}
-                      className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                      className="p-1 hover:bg-error/20 rounded transition-colors"
                       title="Supprimer"
                     >
-                      <Trash2 className="w-4 h-4 text-text-muted hover:text-red-400" />
+                      <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
                     </button>
                   </div>
                 </div>

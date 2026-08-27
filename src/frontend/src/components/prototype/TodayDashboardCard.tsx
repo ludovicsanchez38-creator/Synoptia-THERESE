@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ListTodo,
-  Loader2,
   Mail,
   Receipt,
   RefreshCw,
@@ -15,6 +14,7 @@ import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
 import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 const attentionIcons = {
   event: Calendar,
@@ -74,7 +74,7 @@ export function TodayDashboardCard({
             <Sparkles className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="today-dashboard-title" className="text-sm font-semibold text-text">{todayBriefTitle(items.length)}</h2>
+            <h2 id="today-dashboard-title" className="text-base font-semibold text-text">{todayBriefTitle(items.length)}</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
@@ -94,7 +94,7 @@ export function TodayDashboardCard({
       {resource.status === 'loading' ? (
         <StateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <Spinner taille="bouton" className="text-accent" />
             Je rassemble ta journée…
           </div>
         </StateShell>
@@ -133,7 +133,9 @@ export function TodayDashboardCard({
               <button
                 type="button"
                 onClick={onSetupEmail}
-                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"
+                /* L'action qui sort de l'état vide : elle mérite mieux que
+                   la taille des métadonnées qui l'entourent. */
+                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-sm font-semibold text-white"
               >
                 Brancher mes mails
               </button>

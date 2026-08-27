@@ -65,7 +65,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           // Normal state
           !error && 'border-border focus:ring-cyan-400 focus:border-cyan-400/50',
           // Error state
-          error && 'border-red-500/50 focus:ring-red-400 focus:border-red-400/50',
+          error && 'border-error/50 focus:ring-red-400 focus:border-error/50',
           // Auto resize
           autoResize ? 'resize-none overflow-hidden' : 'resize-y',
           className

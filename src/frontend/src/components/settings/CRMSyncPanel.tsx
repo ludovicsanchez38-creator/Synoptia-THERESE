@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { RefreshCw, Link2, Check, AlertCircle, Loader2, ExternalLink, Cloud, Key, Upload, List, Search } from 'lucide-react';
+import { RefreshCw, Link2, Check, AlertCircle, ExternalLink, Cloud, Key, Upload, List, Search } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 interface CRMSyncPanelProps {
   onSyncComplete?: () => void;
@@ -273,7 +274,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -326,7 +327,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             className="flex items-center gap-2"
           >
             {loadingSheets ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Spinner taille="bouton" />
             ) : (
               <List className="w-4 h-4" />
             )}
@@ -477,7 +478,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           className="w-full mt-2"
         >
           {connecting ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <Spinner taille="bouton" className="mr-2" />
           ) : (
             <ExternalLink className="w-4 h-4 mr-2" />
           )}
@@ -554,7 +555,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
               disabled={credentialsSaving || !clientIdInput.trim() || !clientSecretInput.trim()}
               className="flex-1"
             >
-              {credentialsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enregistrer'}
+              {credentialsSaving ? <Spinner taille="bouton" /> : 'Enregistrer'}
             </Button>
             <Button
               variant="ghost"
@@ -609,7 +610,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       >
         {syncing ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <Spinner taille="bouton" className="mr-2" />
             Synchronisation en cours...
           </>
         ) : (

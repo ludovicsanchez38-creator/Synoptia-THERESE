@@ -458,7 +458,11 @@ function WeekView({
               />
             ))}
 
-            {/* Ligne rouge heure actuelle */}
+            {/* Ligne rouge de l'heure actuelle. Ce rouge N'EST PAS un état
+                d'erreur : c'est le repère temporel que tous les agendas
+                emploient, et le lire comme une alerte serait un contresens.
+                Il échappe donc volontairement aux tokens sémantiques, et le
+                test des couleurs le nomme comme exception. */}
             {nowLineTop !== null && (
               <div
                 className="absolute left-0 right-0 z-20 pointer-events-none"
@@ -693,7 +697,11 @@ function DayView({
               />
             ))}
 
-            {/* Ligne rouge heure actuelle */}
+            {/* Ligne rouge de l'heure actuelle. Ce rouge N'EST PAS un état
+                d'erreur : c'est le repère temporel que tous les agendas
+                emploient, et le lire comme une alerte serait un contresens.
+                Il échappe donc volontairement aux tokens sémantiques, et le
+                test des couleurs le nomme comme exception. */}
             {nowLineTop !== null && (
               <div
                 className="absolute left-0 right-0 z-20 pointer-events-none"
@@ -702,7 +710,7 @@ function DayView({
                 <div className="relative flex items-center">
                   <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
                   <div className="flex-1 h-px bg-red-500" />
-                  <span className="text-xs font-medium text-red-400 ml-2">
+                  <span className="text-xs font-medium text-error ml-2">
                     {String(currentHour).padStart(2, '0')}:{String(currentMinute).padStart(2, '0')}
                   </span>
                 </div>

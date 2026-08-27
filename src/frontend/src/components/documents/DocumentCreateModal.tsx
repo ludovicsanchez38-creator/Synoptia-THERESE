@@ -8,7 +8,7 @@
  * mute qu'après succès - anti-faux-succès, cf. commentaire du store D1).
  */
 import { useEffect, useRef, useState } from 'react';
-import { X, FileText, Loader2, Briefcase } from 'lucide-react';
+import { X, FileText, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -16,6 +16,7 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useDocumentStore } from '../../stores/documentStore';
 import { listProjects, type Project } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 interface DocumentCreateModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
   const [formError, setFormError] = useState<string | null>(null);
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape / escapeStack du parent).
+  // Échap reste géré par la pile unifiée (cascade Échap de la coque / escapeStack du parent).
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 
@@ -203,7 +204,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                 )}
                 {loadingProjects && (
                   <p className="text-xs text-text-muted flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Spinner taille="ligne" />
                     Chargement des projets...
                   </p>
                 )}
@@ -224,7 +225,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
               <Button variant="primary" onClick={handleSubmit} disabled={saving}>
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner taille="bouton" className="mr-2" />
                     Création...
                   </>
                 ) : (

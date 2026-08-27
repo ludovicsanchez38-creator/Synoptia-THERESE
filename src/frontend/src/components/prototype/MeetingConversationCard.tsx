@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Clock3,
   FileText,
-  Loader2,
   MapPin,
   Plus,
   RefreshCw,
@@ -21,6 +20,7 @@ import {
   type MeetingEventContext,
   type MeetingWorkspaceData,
 } from './usePrototypeMeetingData';
+import { Spinner } from '../ui/Spinner';
 
 export type MeetingTarget = string | 'new-event' | null;
 
@@ -98,7 +98,7 @@ export function MeetingAgendaCard({
             <Calendar className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="meeting-agenda-title" className="text-sm font-semibold text-text">Prochains rendez-vous</h2>
+            <h2 id="meeting-agenda-title" className="text-base font-semibold text-text">Préparer un rendez-vous</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.events.length} événement${resource.data.events.length > 1 ? 's' : ''} sur 90 jours`
@@ -118,7 +118,7 @@ export function MeetingAgendaCard({
       </div>
 
       {resource.status === 'loading' ? (
-        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je consulte l’agenda…</div></StateShell>
+        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Spinner taille="bouton" className="text-[var(--k3)]" />Je consulte l’agenda…</div></StateShell>
       ) : resource.status === 'error' ? (
         <StateShell>
           <div className="max-w-sm text-center" data-testid="meeting-agenda-error">
@@ -127,7 +127,7 @@ export function MeetingAgendaCard({
             <p className="mt-1 text-xs text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
               <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir Agenda</button>
+              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
             </div>
           </div>
         </StateShell>
@@ -192,7 +192,7 @@ function CalendarProvisioning({
         <p>Impossible de préparer un calendrier pour le moment.</p>
         <div className="mt-3 flex gap-2">
           <button type="button" onClick={runEnsure} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir l’Agenda</button>
+          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
         </div>
       </div>
     );
@@ -200,7 +200,7 @@ function CalendarProvisioning({
 
   return (
     <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted" role="status" data-testid="meeting-calendar-provisioning">
-      <Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je prépare ton calendrier local…
+      <Spinner taille="bouton" className="text-[var(--k3)]" />Je prépare ton calendrier local…
     </div>
   );
 }
@@ -297,7 +297,7 @@ function NewEventForm({
           <div className="mt-3 flex gap-2">
             <button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error">Annuler</button>
             <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button>
-            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Confirmer la création</button>
+            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{pending && <Spinner taille="ligne" />}Confirmer la création</button>
           </div>
         </div>
       )}
@@ -397,7 +397,7 @@ function EventPreparation({
           ) : (
             <div className="mt-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3">
               <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
-              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">{pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Confirmer l’ajout</button></div>
+              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
             </div>
           )}
           {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
@@ -447,18 +447,18 @@ export function MeetingWorkspaceCanvas({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Chargement de l’agenda…</div>
+        {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Chargement de l’agenda…</div>
           : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
             : target === 'new-event' ? (resource.data.calendars.length === 0
               ? <CalendarProvisioning onEnsure={onEnsureCalendar} onOpenClassic={onOpenClassic} />
               : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
-              : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin text-[var(--k3)]" />Je rassemble le contexte exact…</div>
+              : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Je rassemble le contexte exact…</div>
                 : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
                   : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>
 
-      <div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="w-full rounded-[10px] border border-border px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-2">Ouvrir l’Agenda complet pour modifier ou supprimer</button></div>
+      <div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="w-full rounded-[10px] border border-border px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-2">Voir tout mon agenda pour modifier ou supprimer</button></div>
     </div>
   );
 }

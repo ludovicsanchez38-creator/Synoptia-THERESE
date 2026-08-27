@@ -5,10 +5,11 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 /**
  * Types pour les champs de formulaire
@@ -105,7 +106,7 @@ export function DynamicSkillForm({
                 className="block text-sm font-medium text-text mb-1.5"
               >
                 {field.label}
-                {field.required && <span className="text-red-400 ml-1">*</span>}
+                {field.required && <span className="text-error ml-1">*</span>}
               </label>
 
               {/* Text input */}
@@ -197,7 +198,7 @@ export function DynamicSkillForm({
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner taille="bouton" className="mr-2" />
                 Génération...
               </>
             ) : (

@@ -14,7 +14,6 @@ import {
   Trash2,
   Mail,
   ChevronLeft,
-  Loader2,
   Sparkles,
   Bell,
   CalendarClock,
@@ -26,6 +25,7 @@ import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
+import { Spinner } from '../ui/Spinner';
 
 interface EmailDetailProps {
   accountId: string;
@@ -238,7 +238,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   if (_loading) {
     return (
       <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -320,7 +320,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {bodyLoading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" /> Chargement du message…
+            <Spinner taille="zone" className="text-accent-cyan" /> Chargement du message…
           </div>
         ) : message.body_html ? (
           (() => {
@@ -365,8 +365,8 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Erreur suppression */}
       {trashError && (
-        <div className="mx-6 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg shrink-0">
-          <p className="text-xs text-red-300">{trashError}</p>
+        <div className="mx-6 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg shrink-0">
+          <p className="text-xs text-error">{trashError}</p>
         </div>
       )}
 
@@ -388,7 +388,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
               <input aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
             </label>
           </div>
-          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
+          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Spinner taille="ligne" className="mr-1.5" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
         </div>
       )}
 

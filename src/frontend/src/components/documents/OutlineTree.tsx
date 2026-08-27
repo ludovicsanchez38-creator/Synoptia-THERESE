@@ -15,7 +15,7 @@
  * CLAUDE.md pour TaskKanban.tsx).
  */
 import { useMemo, useState } from 'react';
-import { GripVertical, Loader2, Plus, Sparkles } from 'lucide-react';
+import { GripVertical, Plus, Sparkles } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -32,6 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../ui/Button';
 import type { DocumentSection, SectionCreateRequest, SectionsReorderItem } from '../../services/api/documents';
 import { computeReorderPayload } from './reorderPayload';
+import { Spinner } from '../ui/Spinner';
 
 // =============================================================================
 // STATUTS (tags carrés theme-aware)
@@ -204,7 +205,7 @@ export function OutlineTree({
             <p className="text-xs text-text-muted">Aucune section pour l&apos;instant.</p>
             <Button variant="secondary" size="sm" onClick={onGenerateOutline} disabled={isLoading}>
               {isLoading ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Spinner taille="bouton" className="mr-1.5" />
               ) : (
                 <Sparkles className="w-4 h-4 mr-1.5" />
               )}

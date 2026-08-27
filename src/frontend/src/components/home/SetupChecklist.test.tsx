@@ -6,7 +6,7 @@ describe('SetupChecklist', () => {
   it('ne rend rien quand tout est branché', () => {
     const { container } = render(
       <SetupChecklist
-        status={{ has_calendar: true, has_email: true, billing_complete: true, has_llm_key: true }}
+        status={{ has_calendar: true, has_email: true, billing_complete: true, has_llm_key: true, indisponibles: [] }}
       />
     );
     expect(container.firstChild).toBeNull();
@@ -15,7 +15,7 @@ describe('SetupChecklist', () => {
   it('affiche seulement les étapes non faites', () => {
     const { queryByText } = render(
       <SetupChecklist
-        status={{ has_calendar: false, has_email: true, billing_complete: false, has_llm_key: true }}
+        status={{ has_calendar: false, has_email: true, billing_complete: false, has_llm_key: true, indisponibles: [] }}
       />
     );
     expect(queryByText('Connecter ton agenda')).toBeTruthy();
@@ -26,7 +26,7 @@ describe('SetupChecklist', () => {
   it('US-012 : sans clé LLM, la checklist rappelle cette étape', () => {
     const { queryByText } = render(
       <SetupChecklist
-        status={{ has_calendar: true, has_email: true, billing_complete: true, has_llm_key: false }}
+        status={{ has_calendar: true, has_email: true, billing_complete: true, has_llm_key: false, indisponibles: [] }}
       />
     );
     expect(queryByText('Configurer une clé IA (ou Ollama)')).toBeTruthy();

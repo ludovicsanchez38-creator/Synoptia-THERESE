@@ -4,7 +4,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { Z_LAYER } from '../../styles/z-layers';
 import {
   ExternalActionConfirmationContext,
@@ -12,6 +12,7 @@ import {
   type ExternalAction,
   type RequestExternalAction,
 } from './useExternalActionConfirmation';
+import { Spinner } from '../ui/Spinner';
 
 interface PendingExternalAction extends ExternalActionPreview {
   run: ExternalAction;
@@ -106,7 +107,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
                 disabled={busy}
                 className="inline-flex items-center gap-2 rounded-[8px] bg-text px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {busy && <Spinner taille="bouton" />}
                 {pending.confirmLabel}
               </button>
             </div>

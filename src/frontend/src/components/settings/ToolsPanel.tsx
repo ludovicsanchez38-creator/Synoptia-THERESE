@@ -8,7 +8,6 @@ import {
   Trash2,
   Check,
   AlertCircle,
-  Loader2,
   ChevronDown,
   ChevronRight,
   Download,
@@ -31,6 +30,7 @@ import { Button } from '../ui/Button';
 import { EnvVarModal } from './EnvVarModal';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 // ============================================================
 // PresetCategory - Groupe de presets avec header repliable
@@ -154,7 +154,7 @@ function PresetCategory({
                             <ExternalLink className="w-3 h-3 text-text-muted hover:text-accent-cyan" />
                           </a>
                         )}
-                        {isInstalling && <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />}
+                        {isInstalling && <Spinner taille="bouton" className="text-accent-cyan" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
                           <span title="Installé mais inactif - cliquer pour démarrer">
@@ -475,7 +475,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -699,7 +699,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     onClick={handleAddServer}
                     disabled={addingServer || !newServer.name.trim() || !newServer.command.trim()}
                   >
-                    {addingServer ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ajouter'}
+                    {addingServer ? <Spinner taille="bouton" /> : 'Ajouter'}
                   </Button>
                 </div>
               </div>

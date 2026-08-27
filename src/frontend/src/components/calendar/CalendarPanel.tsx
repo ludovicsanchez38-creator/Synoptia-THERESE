@@ -17,7 +17,6 @@ import {
   ChevronRight,
   AlertTriangle,
   ExternalLink,
-  Loader2,
   Download,
 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
@@ -30,6 +29,7 @@ import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 interface CalendarPanelProps {
   isOpen?: boolean;
@@ -358,7 +358,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           <CalendarIcon className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Calendrier</h2>
+          <h2 className="text-lg font-semibold text-text">Agenda</h2>
           {currentAccount && (
             <p className="text-sm text-text-muted">{currentAccount.email}</p>
           )}
@@ -475,7 +475,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       >
         {reauthing ? (
           <>
-            <Loader2 className="w-3 h-3 animate-spin mr-2" />
+            <Spinner taille="ligne" className="mr-2" />
             En attente...
           </>
         ) : (
@@ -492,8 +492,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     <>
       {/* Error */}
       {error && !needsReauth && (
-        <div className="mx-6 mt-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <p className="text-sm text-error">{error}</p>
         </div>
       )}
 

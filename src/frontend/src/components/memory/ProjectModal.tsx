@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Briefcase, Loader2, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { X, Briefcase, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -7,6 +7,7 @@ import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { ProjectSyncSection } from './ProjectSyncSection';
+import { Spinner } from '../ui/Spinner';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -49,6 +50,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Un fichier joint ne part plus au premier clic : on retient lequel est
+  // visé, et l'appel réseau n'existe qu'au clic de confirmation. Bandeau EN
+  // LIGNE, comme pour la suppression du projet juste en dessous : superposer
+  // une boîte ferait fermer CETTE modale par Échap.
+  const [fichierASupprimer, setFichierASupprimer] = useState<api.FileMetadata | null>(null);
+  const boutonSuppressionRef = useRef<HTMLButtonElement | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [projectFiles, setProjectFiles] = useState<api.FileMetadata[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -57,7 +64,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const isEditing = !!project;
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape L7 ou escapeStack du parent).
+  // Échap reste géré par la cascade de la coque, ou par l'escapeStack du parent.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 
@@ -101,13 +108,23 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
   }, [project]);
 
-  async function handleDeleteFile(fileId: string) {
+  async function confirmerSuppressionFichier() {
+    const cible = fichierASupprimer;
+    if (!cible) return;
     try {
-      await api.deleteFile(fileId);
-      setProjectFiles((prev) => prev.filter((f) => f.id !== fileId));
+      await api.deleteFile(cible.id);
+      setProjectFiles((prev) => prev.filter((f) => f.id !== cible.id));
+      setFichierASupprimer(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur suppression fichier');
     }
+  }
+
+  function renoncerSuppressionFichier() {
+    setFichierASupprimer(null);
+    // Le focus revient d'où il venait : sans cela, il retombe sur le corps de
+    // la modale et l'on perd sa place dans la liste.
+    boutonSuppressionRef.current?.focus();
   }
 
   function getFileIcon(ext: string) {
@@ -151,6 +168,14 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
     setError(null);
     setShowDeleteConfirm(false);
+    // La cible d'une suppression ne survit PAS au changement de projet. Sans
+    // cette ligne, viser un fichier dans le projet A sans confirmer, puis
+    // ouvrir le projet B, y faisait réapparaître la question — et confirmer
+    // supprimait alors un fichier de A depuis B. Une confirmation qui survit à
+    // son contexte donne l'accord de l'utilisateur à autre chose que ce qu'il
+    // a vu.
+    setFichierASupprimer(null);
+    boutonSuppressionRef.current = null;
   }, [isOpen, project]);
 
   function handleChange(field: keyof FormData, value: string) {
@@ -279,7 +304,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               {/* Name */}
               <div className="space-y-2">
                 <label className="text-sm text-text-muted">
-                  Nom du projet <span className="text-red-400">*</span>
+                  Nom du projet <span className="text-error">*</span>
                 </label>
                 <input
                   type="text"
@@ -344,7 +369,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 </select>
                 {loadingContacts && (
                   <p className="text-xs text-text-muted flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Spinner taille="ligne" />
                     Chargement des contacts...
                   </p>
                 )}
@@ -400,9 +425,14 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                           <span className="flex-1 text-sm text-text truncate">{f.name}</span>
                           <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
                           <button
-                            onClick={() => handleDeleteFile(f.id)}
-                            className="p-1 rounded hover:bg-red-500/10 text-text-muted hover:text-red-400 transition-colors"
-                            title="Supprimer"
+                            type="button"
+                            onClick={(event) => {
+                              boutonSuppressionRef.current = event.currentTarget;
+                              setFichierASupprimer(f);
+                            }}
+                            className="p-1 rounded hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                            aria-label={`Supprimer le fichier ${f.name}`}
+                            title={`Supprimer le fichier ${f.name}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -426,7 +456,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     disabled={uploadingFile}
                   >
                     {uploadingFile ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Upload en cours...</>
+                      <><Spinner taille="bouton" className="mr-2" />Upload en cours...</>
                     ) : (
                       <><Upload className="w-4 h-4 mr-2" />Ajouter un fichier (.md, .xlsx, .pdf, .docx)</>
                     )}
@@ -448,19 +478,47 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <span className="text-sm text-red-400">{error}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <span className="text-sm text-error">{error}</span>
+                </div>
+              )}
+
+              {/* Suppression d'un fichier joint : confirmation en ligne */}
+              {fichierASupprimer && (
+                <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-error font-medium">
+                      Supprimer « {fichierASupprimer.name} » ?
+                    </p>
+                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {/* Pas « Annuler » : le formulaire en a déjà un, et deux
+                        boutons du même nom à l'écran ne disent pas ce qu'ils
+                        annulent - ni à l'œil, ni au lecteur d'écran. */}
+                    <Button variant="ghost" size="sm" onClick={renoncerSuppressionFichier}>
+                      Conserver le fichier
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={confirmerSuppressionFichier}
+                    >
+                      Supprimer définitivement
+                    </Button>
+                  </div>
                 </div>
               )}
 
               {/* Delete confirmation */}
               {showDeleteConfirm && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm text-red-400 font-medium">Supprimer ce projet ?</p>
-                    <p className="text-xs text-red-400/70">Cette action est irréversible.</p>
+                    <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
+                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -476,7 +534,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       onClick={handleDelete}
                       disabled={deleting}
                     >
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Supprimer'}
+                      {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
                     </Button>
                   </div>
                 </div>
@@ -489,7 +547,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 {isEditing && !showDeleteConfirm && (
                   <Button
                     variant="ghost"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -508,7 +566,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner taille="bouton" className="mr-2" />
                       Enregistrement...
                     </>
                   ) : isEditing ? (

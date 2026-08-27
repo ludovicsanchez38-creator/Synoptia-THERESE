@@ -298,8 +298,10 @@ describe('Gate de parité par source d’action', () => {
     it('branche Échap sur la pile unifiée', async () => {
       // Deux versions creuses avant celle-ci. La première cherchait le mot
       // « Escape » dans le fichier source. La seconde vérifiait que
-      // `resolveEscape` est bien une fonction et créait un espion jamais
-      // utilisé — ce qui ne prouve rien non plus (relevé par Soso).
+      // l'ancienne `resolveEscape` était bien une fonction, et créait un
+      // espion jamais utilisé — ce qui ne prouve rien non plus (relevé par
+      // Soso). Cette fonction a été retirée le 27/08/2026 : elle n'avait plus
+      // aucun appelant.
       //
       // Ce qui compte : la coque doit consommer Échap DANS L'ORDRE de la pile
       // unifiée. Un handler poussé sur la pile partagée est le plus récent :
@@ -486,12 +488,14 @@ describe('Entrées du tiroir (B0)', () => {
   it('la carte Connecteurs mène aux réglages, onglet outils, par son chemin réel', async () => {
     render(<ConversationCanvasPrototype />);
 
-    // Le chemin complet du tiroir : porte du rail → carte → envoi.
+    // Le chemin complet du tiroir : porte du rail → carte. Le troisième geste
+    // — « Ouvrir le parcours réel » — a disparu le 27/08/2026 : la carte
+    // déclare sa destination, le clic l'ouvre. Il n'y avait aucune raison de
+    // demander une confirmation pour aller quelque part.
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
     // La carte vit dans le groupe « Automatiser » - le Centre ouvre sur un autre
     fireEvent.click(await screen.findByRole('tab', { name: /Automatisation/ }));
     fireEvent.click(await screen.findByRole('button', { name: /Connecteurs/ }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Ouvrir le parcours réel' }));
 
     await waitFor(() => {
       const etat = usePanelStore.getState();

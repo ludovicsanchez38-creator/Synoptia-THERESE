@@ -3729,16 +3729,26 @@ class TestL6_ContactScopeRoundtrip:
 class TestL7_UnifiedEscape:
     """L7 : une seule pile Échap/retour (resolveEscape), plus de piles concurrentes."""
 
-    RESOLVE_ESCAPE = FRONTEND / "lib" / "resolveEscape.ts"
     COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
     VUES_EMBARQUEES = FRONTEND / "components" / "prototype" / "PrototypeUnifiedViewCanvas.tsx"
     PANEL_STORE = FRONTEND / "stores" / "panelStore.ts"
 
-    def test_resolve_escape_handles_view_return(self):
-        content = self.RESOLVE_ESCAPE.read_text(encoding="utf-8")
-        assert "export function resolveEscape" in content
-        assert "goBack" in content, "resolveEscape doit gérer le retour de vue (coeur L7)"
-        assert "activeView" in content
+    def test_echap_ramene_en_arriere_depuis_une_vue(self):
+        """Le cœur de L7, reporté sur son lieu réel (27/08/2026).
+
+        Cette garantie portait sur `lib/resolveEscape.ts`, qui se déclarait
+        autorité unique d'Échap. Ce fichier n'avait plus AUCUN appelant : la
+        garantie était donc vérifiée sur du code mort, pendant que le vrai
+        comportement vivait ailleurs sans être protégé. Il a été retiré, et
+        c'est la cascade de la coque qui porte le contrat.
+        """
+        content = self.COQUE.read_text(encoding="utf-8")
+        assert "consommeEchapUnifie" in content, (
+            "la coque doit exposer sa cascade Échap"
+        )
+        assert "collapseEmbeddedView" in content, (
+            "Échap doit ramener en arrière depuis une vue embarquée (coeur L7)"
+        )
 
     def test_la_coque_gere_echap(self):
         """La coque a sa propre cascade Échap (unification prévue en J0b bis)."""
@@ -3748,7 +3758,7 @@ class TestL7_UnifiedEscape:
     def test_panelstore_handle_escape_removed(self):
         content = self.PANEL_STORE.read_text(encoding="utf-8")
         assert "handleEscape" not in content, (
-            "panelStore.handleEscape doit être supprimé (remplacé par resolveEscape)"
+            "panelStore.handleEscape doit être supprimé (remplacé par la cascade de la coque)"
         )
 
 
@@ -3823,15 +3833,17 @@ class TestSynKO_NavFixes:
     """Correctifs des KO trouvés par Syn (2e regard navigateur adversarial)."""
 
     ESCAPE_STACK = FRONTEND / "lib" / "escapeStack.ts"
-    RESOLVE_ESCAPE = FRONTEND / "lib" / "resolveEscape.ts"
+    COQUE = FRONTEND / "components" / "prototype" / "ConversationCanvasPrototype.tsx"
     MEMORY_PANEL = FRONTEND / "components" / "memory" / "MemoryPanel.tsx"
     SLASH_MENU = FRONTEND / "components" / "chat" / "SlashCommandsMenu.tsx"
     PANEL_CONTAINER = FRONTEND / "components" / "chat" / "PanelContainer.tsx"
     REGISTRY = FRONTEND / "lib" / "actionRegistry.ts"
 
-    def test_escape_stack_used_by_resolve_escape(self):
-        # KO 1.1/1.2/1.3 : les overlays internes de vue interceptent Échap d'abord.
-        assert "runTopEscapeHandler" in self.RESOLVE_ESCAPE.read_text(encoding="utf-8")
+    def test_la_pile_d_overlays_passe_avant_tout(self):
+        # KO 1.1/1.2/1.3 : les overlays internes de vue interceptent Échap
+        # d'abord. Garantie reportée de `resolveEscape` (retiré, sans appelant)
+        # vers la cascade de la coque, qui l'applique réellement.
+        assert "runTopEscapeHandler" in self.COQUE.read_text(encoding="utf-8")
         assert "pushEscapeHandler" in self.ESCAPE_STACK.read_text(encoding="utf-8")
 
     def test_memory_modals_register_escape(self):

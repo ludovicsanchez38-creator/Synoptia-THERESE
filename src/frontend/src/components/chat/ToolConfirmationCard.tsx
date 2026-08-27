@@ -1,6 +1,6 @@
 /** Confirmation humaine des mutations préparées par le chat. */
 import { useState, type ReactNode } from 'react';
-import { Calendar, Check, Loader2, Mail, Send, X } from 'lucide-react';
+import { Calendar, Check, Mail, Send, X } from 'lucide-react';
 import {
   useToolConfirmationStore,
   type PendingConfirmation,
@@ -8,6 +8,7 @@ import {
 import { confirmTool } from '../../services/api/chat';
 import { useChatStore } from '../../stores/chatStore';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 export function ToolConfirmationCard() {
   const pending = useToolConfirmationStore((state) => state.pending);
@@ -101,7 +102,7 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
       {isCalendar ? <CalendarDetails confirmation={confirmation} /> : <EmailDetails confirmation={confirmation} />}
       <div className="flex gap-2">
         <Button variant="primary" size="sm" onClick={() => void handle(true)} disabled={busy !== null}>
-          {busy === 'approve' ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : <Send className="mr-1 h-4 w-4" />}
+          {busy === 'approve' ? <Spinner taille="bouton" className="mr-1" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : <Send className="mr-1 h-4 w-4" />}
           {isCalendar ? 'Créer' : 'Envoyer'}
         </Button>
         <Button variant="ghost" size="sm" onClick={() => void handle(false)} disabled={busy !== null}>

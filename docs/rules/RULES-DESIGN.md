@@ -361,6 +361,14 @@ les registres de textes exportés (Centre de capacités, manifeste, actions,
 raccourcis, commandes slash, vues, onboarding). Les ids internes restent
 STABLES : seul le libellé d'écran change.
 
+**Depuis le 27/08/2026, un second test couvre les TITRES de panneaux** :
+`lexiqueTitres.test.ts`. Le premier vérifiait que chaque chose porte UN nom,
+mais seulement sur les registres ; les titres `<h1>/<h2>/<h3>` y échappaient
+et quatre y avaient dérivé (« Calendrier » pour l'Agenda, « Facturation »
+pour Devis et factures, « Board de décision », « Atelier de code »). Le même
+objet s'appelait donc Agenda dans le tiroir et Calendrier une fois ouvert -
+une des causes du « trop d'interfaces » signalé par Ludo.
+
 | Interne (id stable, inchangé) | À l'écran |
 |---|---|
 | memory | Contacts |
@@ -386,3 +394,30 @@ provider.
 `message_pour_ecran`) : à la limite de l'écran (SSE, notification, HTTP,
 `task.error`), seuls les messages localisés passent - jamais `str(e)` brut.
 Le technique va aux logs.
+
+## 14. Hiérarchie typographique - constat du 27/08/2026, chantier ouvert
+
+Mesure sur les quatre surfaces les plus chargées (coque, tiroir, composeur,
+Paramètres), 88 déclarations de taille :
+
+| Taille | Part |
+|---|---|
+| `text-xs` (12 px) | **71 %** |
+| `text-sm` (14 px) | 26 % |
+| `text-lg` / `text-xl` | 2 déclarations au total |
+
+L'échelle est écrasée sur deux niveaux, et 12 px est la taille que la charte
+réserve aux métadonnées. Conséquence : l'œil n'a aucun point d'entrée, tout
+se vaut, et la densité paraît plus forte qu'elle ne l'est.
+
+**Pourquoi ce n'est pas corrigé dans le même lot que le reste** : rétablir
+les niveaux intermédiaires touche une soixantaine de déclarations et ne se
+vérifie que par l'œil. Les tests unitaires ne rendent pas de pixels, et le
+projet impose d'inspecter un visuel avant de le présenter. Ce chantier
+demande donc une recette dans l'application packagée, écran par écran, avec
+Ludo - pas un script.
+
+Les autres points de densité relevés le même jour (29 éléments interactifs
+sur l'écran par défaut dont 13 de navigation, 90 puces de vocabulaire
+technique dans le tiroir, réassurances permanentes) relèvent du même
+traitement : mesurables ici, arbitrables seulement à l'écran.

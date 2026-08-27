@@ -2,9 +2,10 @@
 // Métriques streaming, gestion mémoire, économie d'énergie (US-PERF-01 à US-PERF-05)
 
 import { useState, useEffect } from 'react';
-import { Check, AlertCircle, Loader2, Gauge } from 'lucide-react';
+import { Check, AlertCircle, Gauge } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function PerformanceTab() {
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export function PerformanceTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -132,7 +133,7 @@ export function PerformanceTab() {
               disabled={cleaningUp}
             >
               {cleaningUp ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Spinner taille="bouton" />
               ) : (
                 'Nettoyer'
               )}

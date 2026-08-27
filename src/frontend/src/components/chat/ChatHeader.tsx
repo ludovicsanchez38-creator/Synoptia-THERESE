@@ -73,7 +73,7 @@ export function ChatHeader({
           <div className="flex items-center gap-2">
             <button
               onClick={handleClose}
-              className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+              className="w-3 h-3 rounded-full bg-error hover:bg-error transition-colors"
               title="Fermer"
             />
             <button
@@ -267,7 +267,7 @@ export function ChatHeader({
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-red-500 rounded transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-error rounded transition-colors"
               title="Fermer"
             >
               <span className="text-xs leading-none">✕</span>

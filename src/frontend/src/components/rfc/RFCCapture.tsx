@@ -7,8 +7,9 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 interface RFCCaptureData {
   name: string;
@@ -156,7 +157,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           className="flex items-center gap-2"
         >
           {isSaving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner taille="bouton" />
           ) : (
             <Save className="w-4 h-4" />
           )}

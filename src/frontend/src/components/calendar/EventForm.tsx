@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import { ChevronLeft, Save } from 'lucide-react';
 import { localDateKey } from '../../lib/civilDate';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
@@ -15,6 +15,7 @@ import { useGuardedAction } from '../../hooks/useGuardedAction';
 import { Button } from '../ui/Button';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function EventForm() {
   const requestExternalAction = useExternalActionConfirmation();
@@ -259,7 +260,7 @@ export function EventForm() {
         <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
           {saving ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Spinner taille="bouton" className="mr-2" />
               Enregistrement...
             </>
           ) : (
@@ -274,8 +275,8 @@ export function EventForm() {
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {error && (
-          <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <p className="text-sm text-error">{error}</p>
           </div>
         )}
 

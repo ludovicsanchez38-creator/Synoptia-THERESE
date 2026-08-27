@@ -6,7 +6,7 @@ import {
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
-import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings, Loader2 } from 'lucide-react';
+import { AlertCircle, Send, Square, Paperclip, X, Cpu, Search, Settings } from 'lucide-react';
 import { useActionsStore } from '../../stores/actionsStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -40,6 +40,7 @@ import {
 } from '../../lib/consent';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { Spinner } from '../ui/Spinner';
 
 const MIN_ROWS = 2;
 const MAX_ROWS = 12;
@@ -1127,7 +1128,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 }`}
               >
                 {file.indexStatus === 'indexing' && (
-                  <Loader2 data-testid="index-spinner" className="h-3 w-3 animate-spin" aria-hidden="true" />
+                  <Spinner taille="ligne" data-testid="index-spinner" />
                 )}
                 {file.indexStatus === 'ready' ? 'Prêt' : file.indexStatus === 'error' ? 'Échec' : 'Indexation en cours'}
               </span>

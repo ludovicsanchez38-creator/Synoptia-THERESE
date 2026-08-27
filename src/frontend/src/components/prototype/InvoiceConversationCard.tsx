@@ -6,7 +6,6 @@ import {
   ExternalLink,
   FilePlus2,
   FileText,
-  Loader2,
   Plus,
   Receipt,
   RefreshCw,
@@ -17,6 +16,7 @@ import {
 import type { Contact, CreateInvoiceRequest, Invoice } from '../../services/api';
 import type { InvoiceWorkspaceData } from './usePrototypeInvoiceData';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 type InvoiceSelection = string | 'new-devis' | null;
 
@@ -124,7 +124,7 @@ export function InvoiceWorkspaceCard({
             <Receipt className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="invoice-workspace-title" className="text-sm font-semibold text-text">Devis et factures</h2>
+            <h2 id="invoice-workspace-title" className="text-base font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready' ? `${resource.data.invoices.length} document${resource.data.invoices.length > 1 ? 's' : ''} enregistré${resource.data.invoices.length > 1 ? 's' : ''}` : 'Lecture de la facturation locale'}
             </p>
@@ -144,7 +144,7 @@ export function InvoiceWorkspaceCard({
       {resource.status === 'loading' ? (
         <StateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Loader2 className="h-4 w-4 animate-spin text-warning" />
+            <Spinner taille="bouton" className="text-warning" />
             Je consulte les documents…
           </div>
         </StateShell>
@@ -159,7 +159,7 @@ export function InvoiceWorkspaceCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir Facturation</button>
+              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Gérer mes devis et factures</button>
             </div>
           </div>
         </StateShell>
@@ -446,7 +446,7 @@ function DevisDraftForm({
             {contactError && <p id="devis-contact-error" className="mt-3 text-sm font-semibold text-error" role="alert">{contactError}</p>}
             <div className="mt-4 flex justify-end">
               <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">
-                {contactSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                {contactSaving ? <Spinner taille="ligne" /> : <Plus className="h-3.5 w-3.5" />}
                 {contactSaving ? 'Création du contact…' : 'Créer et continuer le devis'}
               </button>
             </div>
@@ -610,13 +610,13 @@ export function InvoiceWorkspaceCanvas({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         {resource.status === 'loading' ? (
-          <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement de la facturation…</div></StateShell>
+          <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement de la facturation…</div></StateShell>
         ) : resource.status === 'error' ? (
           <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
         ) : selection === 'new-devis' ? (
           <DevisDraftForm data={resource.data} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
         ) : !invoiceResource || invoiceResource.status === 'loading' ? (
-          <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement du document…</div></StateShell>
+          <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement du document…</div></StateShell>
         ) : invoiceResource.status === 'error' ? (
           <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{invoiceResource.error}</p><button type="button" onClick={onRetryInvoice} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
         ) : invoiceResource.status === 'ready' ? (
@@ -627,7 +627,7 @@ export function InvoiceWorkspaceCanvas({
       </div>
 
       <div className="border-t border-border bg-surface p-4">
-        <button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Ouvrir la facturation complète</button>
+        <button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Gérer mes devis et factures</button>
       </div>
     </div>
   );

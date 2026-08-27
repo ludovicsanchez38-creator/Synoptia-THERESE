@@ -11,7 +11,7 @@
  * `DocumentWorkspace` - il gère son propre cycle de vie de fermeture
  * (`closeDocument()` du store, appelé avant `onBack`).
  *
- * Échap : NE PAS ajouter d'écouteur clavier local - `resolveEscape` gère
+ * Échap : NE PAS ajouter d'écouteur clavier local - `cascade Échap de la coque` gère
  * déjà le retour de vue (content-swap) et la pile pushEscapeHandler gère
  * la modale de création (comme ProjectsPanel pour ProjectModal).
  *
@@ -27,13 +27,14 @@
  * correctement au premier rendu.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileText, Loader2, Plus } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { useDocumentStore } from '../../stores/documentStore';
 import type { DocumentResponse } from '../../services/api/documents';
 import { Button } from '../ui/Button';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { DocumentCreateModal } from './DocumentCreateModal';
 import { DocumentWorkspace } from './DocumentWorkspace';
+import { Spinner } from '../ui/Spinner';
 
 // =============================================================================
 // PROGRESSION
@@ -238,7 +239,7 @@ export function DocumentsList() {
         {/* Contenu */}
         {isLoading && documents.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan" />
             Chargement des documents...
           </div>
         ) : documents.length === 0 ? (

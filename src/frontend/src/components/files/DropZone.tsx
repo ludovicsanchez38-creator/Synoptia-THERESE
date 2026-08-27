@@ -183,8 +183,8 @@ export function FileChip({
         <button
           onClick={onRemove}
           className={cn(
-            'flex-shrink-0 p-0.5 rounded hover:bg-red-500/20',
-            'text-text-muted hover:text-red-400 transition-colors'
+            'flex-shrink-0 p-0.5 rounded hover:bg-error/20',
+            'text-text-muted hover:text-error transition-colors'
           )}
           title="Retirer"
         >

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Loader2,
   BarChart3,
   Target,
   Flame,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { AdvisorRole } from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 // Icons for each advisor role
 const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
@@ -126,7 +126,7 @@ export function AdvisorCard({
           </span>
         )}
         {isLoading && (
-          <Loader2 className="w-4 h-4 animate-spin text-text-muted" />
+          <Spinner taille="bouton" className="text-text-muted" />
         )}
       </div>
 

@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Loader2, Briefcase } from 'lucide-react';
+import { Plus, Briefcase } from 'lucide-react';
 import * as api from '../../services/api';
 import type { Project } from '../../services/api';
 import { Button } from '../ui/Button';
@@ -16,6 +16,7 @@ import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
+import { Spinner } from '../ui/Spinner';
 
 export function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -53,7 +54,7 @@ export function ProjectsPanel() {
   }, [load]);
 
   // F1 (revue) : nos overlays sont en state local (non pilotés par panelStore), donc
-  // invisibles pour resolveEscape → Échap éjectait la vue SOUS la modale. On les
+  // invisibles pour cascade Échap de la coque → Échap éjectait la vue SOUS la modale. On les
   // enregistre sur la pile Échap unifiée (LIFO) tant qu'ils sont ouverts.
   useEffect(() => {
     if (!deleteTarget) return;
@@ -138,7 +139,7 @@ export function ProjectsPanel() {
         {/* Contenu */}
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" /> Chargement des projets…
+            <Spinner taille="zone" className="text-accent-cyan" /> Chargement des projets…
           </div>
         ) : error ? (
           <div className="py-10 text-center">

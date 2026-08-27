@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { X, User, Trash2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -7,6 +7,7 @@ import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { Spinner } from '../ui/Spinner';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   const isEditing = !!contact;
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  // Échap reste géré par la cascade de la coque (ConversationCanvasPrototype) via le store.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 
@@ -271,19 +272,19 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <span className="text-sm text-red-400">{error}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <span className="text-sm text-error">{error}</span>
                 </div>
               )}
 
               {/* Delete confirmation */}
               {showDeleteConfirm && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm text-red-400 font-medium">Supprimer ce contact ?</p>
-                    <p className="text-xs text-red-400/70">Cette action est irréversible.</p>
+                    <p className="text-sm text-error font-medium">Supprimer ce contact ?</p>
+                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -299,7 +300,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                       onClick={handleDelete}
                       disabled={deleting}
                     >
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Supprimer'}
+                      {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
                     </Button>
                   </div>
                 </div>
@@ -312,7 +313,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 {isEditing && !showDeleteConfirm && (
                   <Button
                     variant="ghost"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -331,7 +332,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner taille="bouton" className="mr-2" />
                       Enregistrement...
                     </>
                   ) : isEditing ? (

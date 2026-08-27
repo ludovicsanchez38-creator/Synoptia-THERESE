@@ -9,7 +9,7 @@ const formatConfig: Record<FileFormat, { icon: typeof FileText; color: string; l
   pptx: { icon: Presentation, color: 'text-orange-400 bg-orange-400/20', label: 'PPTX' },
   xlsx: { icon: Table, color: 'text-green-400 bg-green-400/20', label: 'XLSX' },
   html: { icon: FileText, color: 'text-cyan-400 bg-cyan-400/20', label: 'HTML' },
-  pdf: { icon: FileText, color: 'text-red-400 bg-red-400/20', label: 'PDF' },
+  pdf: { icon: FileText, color: 'text-error bg-error/20', label: 'PDF' },
 };
 
 interface SubOptionsPanelProps {

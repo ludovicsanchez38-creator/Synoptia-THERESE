@@ -15,12 +15,12 @@ import {
   Clock,
   Users,
   Repeat,
-  Loader2,
-} from 'lucide-react';
+  } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function EventDetail() {
   const { events, currentEventId, setCurrentEvent, setIsEventFormOpen, removeEvent } =
@@ -88,7 +88,7 @@ export function EventDetail() {
             </Button>
             <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleting}>
               {deleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Spinner taille="bouton" />
               ) : (
                 <Trash2 className="w-4 h-4" />
               )}
@@ -104,7 +104,7 @@ export function EventDetail() {
             className={`inline-block px-2 py-1 text-xs rounded ${
               event.status === 'tentative'
                 ? 'bg-yellow-500/10 text-warning'
-                : 'bg-red-500/10 text-red-400'
+                : 'bg-error/10 text-error'
             }`}
           >
             {event.status === 'tentative' ? 'Provisoire' : 'Annulé'}

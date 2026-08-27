@@ -10,7 +10,6 @@ import {
   Folder,
   HardDrive,
   History,
-  Loader2,
   Mail,
   HelpCircle,
   PanelRightClose,
@@ -56,6 +55,7 @@ import { DeliverablesWorkspaceCanvas } from './DeliverablesWorkspaceCanvas';
 import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
 import { FollowUpsWorkspaceCanvas } from './FollowUpsWorkspaceCanvas';
 import { VoiceWorkspaceCanvas } from './VoiceWorkspaceCanvas';
+import { Spinner } from '../ui/Spinner';
 import {
   PrototypeConversationDrawer,
   type PrototypeConversationDrawerSurface,
@@ -611,9 +611,27 @@ function CommandPalette({
 
 
 /**
- * Overlays de la pile unifiée, dans l'ordre de `resolveEscape` mais SANS son
+ * Overlays de la pile unifiée, dans l'ordre de `cascade Échap de la coque` mais SANS son
  * retour de vue final : la coque enchaîne ensuite sur ses propres surfaces.
  * Retourne vrai si Échap a été consommé ici.
+ */
+/**
+ * L'AUTORITÉ d'Échap pour toute l'application, avec la cascade de l'effet
+ * clavier plus bas dans ce fichier.
+ *
+ * Il exista un `lib/cascade Échap de la coque.ts` qui se déclarait « UNE seule autorité
+ * pour la touche Échap ». Il n'avait plus AUCUN appelant, alors que quatorze
+ * composants lui déléguaient par commentaire : Échap ne marchait plus que par
+ * l'ordre de cette cascade, que personne ne pouvait vérifier depuis les
+ * composants qui le subissaient. Ses onze branches étant toutes couvertes ici
+ * — et sept d'entre elles ne pouvant PAS l'être ailleurs, puisqu'elles portent
+ * sur des états locaux de la coque que les stores ne voient pas —, il a été
+ * retiré le 27/08/2026 plutôt que rebranché.
+ *
+ * Deux moitiés, dans cet ordre : ici les overlays portés par les STORES, puis
+ * dans l'effet clavier les surfaces LOCALES (palette, tiroir, centre de
+ * confiance, chat, vue embarquée, panneaux). Une surface nouvelle doit
+ * s'inscrire dans l'une des deux — il n'y a pas de troisième endroit.
  */
 function consommeEchapUnifie(): boolean {
   if (runTopEscapeHandler()) return true;
@@ -711,6 +729,11 @@ export function ConversationCanvasPrototype() {
     resetRun: resetAtelierRun,
   } = usePrototypeAtelierData(scenario === 'atelier');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /* L'heure du contenu affiché, figée à son apparition : une horloge qui
+     défile attirerait l'œil sans rien apprendre de plus. */
+  const [heureDAffichage] = useState(() =>
+    new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+  );
   const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
@@ -761,7 +784,14 @@ export function ConversationCanvasPrototype() {
     return true;
   }, []);
 
-  const closeConversationDrawer = useCallback(() => setDrawerOpen(false), []);
+  const closeConversationDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    // Le store reste la définition de l'action « Conversations » : le tenir
+    // d'accord avec l'écran évite qu'un geste local et la commande divergent.
+    if (usePanelStoreDirect.getState().showConversationSidebar) {
+      usePanelStoreDirect.getState().closeConversationSidebar();
+    }
+  }, []);
   const closeCommandPalette = useCallback(() => setCommandOpen(false), []);
   const closeCapabilityCenter = useCallback(() => setCapabilityCenterOpen(false), []);
   const closeTrustCenter = useCallback(() => setTrustCenterOpen(false), []);
@@ -778,6 +808,27 @@ export function ConversationCanvasPrototype() {
     if (drawerOpen) closeConversationDrawer();
     else openConversationDrawer('history');
   }, [closeConversationDrawer, drawerOpen, openConversationDrawer]);
+
+  // Même patron que le pont J0a des vues, pour la même raison. L'action
+  // « Conversations » (raccourci B, palette ⌘K) bascule
+  // `showConversationSidebar` dans le panelStore ; la coque, elle, a son
+  // propre tiroir en état local. La commande basculait donc un booléen que
+  // personne n'affichait : un geste annoncé, exécuté sans erreur, et sans le
+  // moindre effet visible.
+  const tiroirDemande = usePanelStore((state) => state.showConversationSidebar);
+  const dernierTiroirRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (dernierTiroirRef.current === null) {
+      dernierTiroirRef.current = tiroirDemande;
+      return;
+    }
+    if (dernierTiroirRef.current === tiroirDemande) return;
+    dernierTiroirRef.current = tiroirDemande;
+    if (tiroirDemande) openConversationDrawer('history');
+    else closeConversationDrawer();
+    // openConversationDrawer est recréé à chaque rendu : l'inclure bouclerait.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiroirDemande]);
 
   useEffect(() => {
     let active = true;
@@ -875,14 +926,22 @@ export function ConversationCanvasPrototype() {
   // commandes déterministes - doit devenir visible ici. Sans cet abonnement,
   // ces gestes changeaient un état que la coque n'observait pas.
   const viewDemandee = useNavigationStore((state) => state.activeView);
-  const derniereVueRef = useRef<AppView | null>(null);
+  // La référence part de la vue COURANTE, pas de `null`.
+  //
+  // `null` servait ici de sentinelle « effet pas encore initialisé ». Depuis
+  // que `null` est aussi une valeur métier légitime — « aucune vue, la coque
+  // montre son accueil » —, les deux sens sont entrés en collision : la
+  // PREMIÈRE navigation depuis l'accueil était prise pour l'initialisation et
+  // avalée. L'écran restait sur l'accueil pendant que le store disait autre
+  // chose, pour tout geste qui appelle seulement `setView` (actions rapides de
+  // l'accueil, « Tout voir » de l'agenda, raccourcis de mise en route).
+  //
+  // Partir de la valeur courante donne le même « ne rien forcer au montage »
+  // sans avoir besoin d'une valeur réservée.
+  const derniereVueRef = useRef<AppView | null>(viewDemandee);
   useEffect(() => {
-    // Au montage, ne rien forcer : la coque a son propre écran d'accueil et
-    // n'ouvre le chat que sur un geste. Seuls les CHANGEMENTS de vue comptent.
-    if (derniereVueRef.current === null) {
-      derniereVueRef.current = viewDemandee;
-      return;
-    }
+    // Seuls les CHANGEMENTS de vue comptent : au montage, la référence vaut
+    // déjà la vue courante, donc rien ne se déclenche.
     if (derniereVueRef.current === viewDemandee) return;
     // La référence n'avance QUE si la navigation aboutit. Refusée pendant un
     // flux, la demande resterait sinon perdue : `activeView` n'ayant pas
@@ -890,6 +949,13 @@ export function ConversationCanvasPrototype() {
     // en dépendance : la demande en attente est rejouée dès que le flux finit.
     if (isStreaming) return;
     derniereVueRef.current = viewDemandee;
+    if (viewDemandee === null) {
+      // Retour à l'accueil : le store ne désigne plus aucune vue, l'écran
+      // doit suivre. Sans cette branche, fermer par le store laissait la
+      // dernière vue affichée - l'écran et la pile divergeaient à nouveau.
+      setEmbeddedView(null);
+      return;
+    }
     if (viewDemandee === 'chat') {
       if (!chatOpen) openChat();
       return;
@@ -1103,58 +1169,55 @@ export function ConversationCanvasPrototype() {
       return;
     }
     setCanvasOpen(false);
+    // La destination est DÉCLARÉE dans la carte : l'ouvrir au clic, plutôt
+    // que d'attendre une validation du composeur que rien n'annonce. Le
+    // premier geste suffit là où il en fallait deux.
+    //
+    // Frontière : seules les destinations de NAVIGATION s'ouvrent ainsi. Une
+    // carte de type `prompt` propose un texte à relire et à corriger avant
+    // envoi — cette étape est une fonctionnalité, pas un frottement, et la
+    // supprimer enverrait un message que personne n'a validé.
+    if (capability.destination && capability.destination.kind !== 'prompt') {
+      ouvrirDestination(capability.destination);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
     setComposerValue(capability.prompt);
   }
 
-  function submitComposer() {
-    const destination = selectedCapability?.destination;
-    if (destination?.kind === 'pending') return;
-    if (destination?.kind === 'calculator') {
-      setCalculatorOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'deliverables') {
-      setDeliverablesOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'images') {
-      setImagesOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'follow-ups') {
-      setFollowUpsOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'voice') {
-      setVoiceOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'view') {
+  /**
+   * Ouvre ce qu'une carte désigne. Partagé par le clic sur la carte et par la
+   * validation du composeur : deux portes, une seule définition de ce que
+   * « ouvrir » veut dire.
+   */
+  function ouvrirDestination(destination: NonNullable<CapabilityItem['destination']>) {
+    if (destination.kind === 'pending') return;
+    if (destination.kind === 'calculator') { setCalculatorOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'deliverables') { setDeliverablesOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'images') { setImagesOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'follow-ups') { setFollowUpsOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'voice') { setVoiceOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'view') {
       if (destination.view === 'chat') openChat();
       else openEmbeddedView(destination.view);
       return;
     }
-    if (destination?.kind === 'action') {
-      if (destination.action === 'settings.open') {
-        openSettings(destination.settingsTab);
-      } else {
-        runAction(destination.action);
-      }
+    if (destination.kind === 'action') {
+      if (destination.action === 'settings.open') openSettings(destination.settingsTab);
+      else runAction(destination.action);
+    }
+  }
+
+  function submitComposer() {
+    const destination = selectedCapability?.destination;
+    // Les destinations de navigation s'ouvrent maintenant dès le clic sur la
+    // carte ; ce chemin reste pour les cartes atteintes autrement (palette,
+    // lien profond) et pour ne pas perdre une capacité déjà sélectionnée.
+    if (destination && destination.kind !== 'prompt') {
+      ouvrirDestination(destination);
+      setSelectedCapability(null);
+      setComposerValue('');
       return;
     }
     if (destination?.kind === 'prompt') {
@@ -1367,7 +1430,7 @@ export function ConversationCanvasPrototype() {
                 className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)] disabled:opacity-70"
               >
                 {profileState === 'loading' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <Spinner taille="bouton" />
                 ) : profileState === 'error' ? (
                   <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 ) : displayName ? (
@@ -1405,8 +1468,8 @@ export function ConversationCanvasPrototype() {
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
-                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Loader2 className="h-3.5 w-3.5 animate-spin" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
-                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Loader2 className="h-3.5 w-3.5 animate-spin" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
+                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
+                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
                     </div>
                   )}
                   <div className="mb-7 flex items-start gap-3">
@@ -1434,7 +1497,11 @@ export function ConversationCanvasPrototype() {
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-text-muted">
                     <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-text" />
                     THÉRÈSE
-                    <span className="font-normal">· maintenant</span>
+                    {/* « maintenant » était écrit en dur : il ne changeait
+                        jamais et n'apprenait donc rien, tout en occupant une
+                        place permanente. Une heure réelle dit de quand date
+                        ce qu'on lit. */}
+                    <span className="font-normal">· {heureDAffichage}</span>
                   </div>
 
                   {scenario === 'today' ? (
@@ -1611,7 +1678,11 @@ export function ConversationCanvasPrototype() {
                           type="button"
                           onClick={() => chooseScenario(action.id)}
                           aria-pressed={scenario === action.id}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold ${
+                          /* text-sm et non text-xs : ce sont les cinq gestes
+                             principaux de l'accueil, ils avaient la taille de
+                             « Connecté » et des mentions du bas de page. Une
+                             action ne se lit pas comme une métadonnée. */
+                          className={`rounded-full border px-3 py-2 text-sm font-semibold ${
                             scenario === action.id
                               ? 'border-text bg-text text-white'
                               : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'

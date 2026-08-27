@@ -104,7 +104,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
   // Correctif KO Syn 1.1/1.2 : quand un modal destructif (suppression / RGPD) est
   // ouvert, Échap doit le fermer LUI, pas éjecter la vue Mémoire. On l'inscrit sur
-  // la pile d'Échap (interceptée avant le retour de vue par resolveEscape).
+  // la pile d'Échap (interceptée avant le retour de vue par cascade Échap de la coque).
   useEffect(() => {
     if (!deleteConfirm && !rgpdAction) return;
     return pushEscapeHandler(() => {
@@ -367,8 +367,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                        <AlertCircle className="w-5 h-5 text-red-400" />
+                      <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
+                        <AlertCircle className="w-5 h-5 text-error" />
                       </div>
                       <div>
                         <h3 className="text-base font-semibold text-text">Supprimer le contact ?</h3>
@@ -379,9 +379,9 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       Les projets et fichiers associés seront aussi supprimés.
                     </p>
                     {deleteError && (
-                      <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                        <span className="text-sm text-red-400">{deleteError}</span>
+                      <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-lg">
+                        <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                        <span className="text-sm text-error">{deleteError}</span>
                       </div>
                     )}
                     <div className="flex gap-2">
@@ -400,7 +400,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                         disabled={deleting}
                       >
                         {deleting ? (
-                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-error border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -471,8 +471,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     {rgpdAction.type === 'anonymize' && (
                       <>
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                            <UserX className="w-5 h-5 text-red-400" />
+                          <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
+                            <UserX className="w-5 h-5 text-error" />
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Anonymisation RGPD</h3>
@@ -489,7 +489,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}
                             placeholder="Ex: Demande du contact, fin de relation..."
-                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-red-400/50"
+                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-error/50"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -498,7 +498,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </Button>
                           <Button
                             variant="primary"
-                            className="flex-1 bg-red-500 hover:bg-red-600"
+                            className="flex-1 bg-error hover:bg-error"
                             onClick={() => handleRGPDAnonymize(rgpdAction.contact, anonymizeReason)}
                             disabled={rgpdActionLoading || !anonymizeReason.trim()}
                           >
@@ -735,7 +735,7 @@ function ContactsList({
                     <div className="border-t border-border/50 my-1" />
                     <button
                       onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors"
                     >
                       <UserX className="w-4 h-4" />
                       Anonymiser (Art. 17)
@@ -747,7 +747,7 @@ function ContactsList({
             {/* Delete button */}
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
-              className="p-1.5 rounded-md hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
+              className="p-1.5 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Supprimer"
             >
               <Trash2 className="w-4 h-4" />
@@ -801,7 +801,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   return (
     <span
       className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-        isExpired ? 'bg-red-500/20 text-red-400' :
+        isExpired ? 'bg-error/20 text-error' :
         isExpiringSoon ? 'bg-orange-500/20 text-orange-400' :
         badgeColors[baseLegale] || 'bg-gray-500/20 text-gray-400'
       }`}

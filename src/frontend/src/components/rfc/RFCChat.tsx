@@ -9,11 +9,12 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Square, Loader2 } from 'lucide-react';
+import { Send, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { streamMessage } from '../../services/api';
 import { cn } from '../../lib/utils';
+import { Spinner } from '../ui/Spinner';
 
 interface RFCMessage {
   id: string;
@@ -185,7 +186,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
 
         {isStreaming && messages[messages.length - 1]?.content === '' && (
           <div className="flex items-center gap-2 text-text-muted text-sm">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner taille="bouton" />
             THÉRÈSE réfléchit...
           </div>
         )}

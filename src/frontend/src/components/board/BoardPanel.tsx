@@ -7,7 +7,6 @@ import {
   Send,
   History,
   ChevronLeft,
-  Loader2,
   Trash2,
   FileDown,
 } from 'lucide-react';
@@ -29,6 +28,7 @@ import {
   type BoardDecisionResponse,
 } from '../../services/api';
 import { annulerDeliberation, couperTransport } from './annulerDeliberation';
+import { Spinner } from '../ui/Spinner';
 
 interface BoardPanelProps {
   isOpen: boolean;
@@ -594,7 +594,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         />
                       </div>
 
-                      {runError && <p className="text-sm text-red-400" role="alert">{runError}</p>}
+                      {runError && <p className="text-sm text-error" role="alert">{runError}</p>}
 
                       {confirmationOpen && (
                         <div className="rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4 text-sm text-text-muted" data-testid="board-confirmation">
@@ -638,7 +638,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                   >
-                    {runError && <div className="mb-4 rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-300" role="alert">{runError}</div>}
+                    {runError && <div className="mb-4 rounded-xl border border-error/30 bg-error/10 p-3 text-sm text-error" role="alert">{runError}</div>}
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
@@ -669,7 +669,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
                     {loadingHistory ? (
                       <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+                        <Spinner taille="zone" className="text-text-muted" />
                       </div>
                     ) : decisions.length === 0 ? (
                       <p className="text-center text-text-muted py-12">
@@ -697,7 +697,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                               <span className={cn(
                                 decision.confidence === 'high' && 'text-green-400',
                                 decision.confidence === 'medium' && 'text-warning',
-                                decision.confidence === 'low' && 'text-red-400'
+                                decision.confidence === 'low' && 'text-error'
                               )}>
                                 Confiance {decision.confidence}
                               </span>
@@ -707,8 +707,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                               onClick={(e) => handleDeleteDecision(decision.id, e)}
                               className={cn(
                                 'absolute top-3 right-3 p-2 rounded-lg',
-                                'text-text-muted hover:text-red-400',
-                                'hover:bg-red-400/10 transition-colors',
+                                'text-text-muted hover:text-error',
+                                'hover:bg-error/10 transition-colors',
                                 'opacity-0 group-hover:opacity-100'
                               )}
                               title="Supprimer"

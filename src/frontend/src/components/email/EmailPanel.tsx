@@ -17,7 +17,6 @@ import {
   Star,
   RefreshCw,
   Plus,
-  Loader2,
   UserPlus,
   ChevronDown,
   AlertTriangle,
@@ -36,6 +35,7 @@ import { EmailSetupWizard } from './wizard';
 import { SignatureEditorModal } from './SignatureEditorModal';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 interface EmailPanelProps {
   standalone?: boolean;
@@ -289,7 +289,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           </button>
                           <button
                             onClick={() => handleDisconnectAccount(acc.id)}
-                            className="px-2 py-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            className="px-2 py-2 text-text-muted hover:text-error hover:bg-error/10 transition-colors"
                             title="Déconnecter ce compte"
                           >
                             <LogOut className="w-3.5 h-3.5" />
@@ -312,7 +312,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   <p className="text-xs text-text-muted">{currentAccount.email}</p>
                   <button
                     onClick={() => handleDisconnectAccount(currentAccount.id)}
-                    className="p-0.5 text-text-muted hover:text-red-400 transition-colors"
+                    className="p-0.5 text-text-muted hover:text-error transition-colors"
                     title="Déconnecter ce compte"
                   >
                     <LogOut className="w-3 h-3" />
@@ -366,7 +366,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             >
               {reauthing ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  <Spinner taille="ligne" className="mr-2" />
                   En attente...
                 </>
               ) : (
@@ -383,11 +383,11 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <p className="text-red-400">{error}</p>
+              <p className="text-error">{error}</p>
               <Button variant="ghost" size="sm" onClick={loadAccounts}>
                 Réessayer
               </Button>
@@ -545,7 +545,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           </button>
                           <button
                             onClick={() => handleDisconnectAccount(acc.id)}
-                            className="px-2 py-2 text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            className="px-2 py-2 text-text-muted hover:text-error hover:bg-error/10 transition-colors"
                             title="Déconnecter ce compte"
                           >
                             <LogOut className="w-3.5 h-3.5" />
@@ -568,7 +568,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   <p className="text-xs text-text-muted">{currentAccount.email}</p>
                   <button
                     onClick={() => handleDisconnectAccount(currentAccount.id)}
-                    className="p-0.5 text-text-muted hover:text-red-400 transition-colors"
+                    className="p-0.5 text-text-muted hover:text-error transition-colors"
                     title="Déconnecter ce compte"
                   >
                     <LogOut className="w-3 h-3" />
@@ -628,7 +628,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             >
               {reauthing ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  <Spinner taille="ligne" className="mr-2" />
                   En attente...
                 </>
               ) : (
@@ -645,11 +645,11 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
-              <p className="text-red-400">{error}</p>
+              <p className="text-error">{error}</p>
               <Button variant="ghost" size="sm" onClick={loadAccounts}>
                 Réessayer
               </Button>

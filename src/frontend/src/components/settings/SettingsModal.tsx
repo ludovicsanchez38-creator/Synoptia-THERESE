@@ -2,7 +2,7 @@
 // Refonte v0.4.0 : 8 onglets → 6, sidebar verticale, UX simplifiée
 
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Loader2, Zap, Shield, Accessibility } from 'lucide-react';
+import { X, User, Cpu, Layers, Wrench, SlidersHorizontal, Info, Zap, Shield, Accessibility } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/Button';
@@ -25,6 +25,7 @@ import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { resolveSettingsTab, type SettingsTab } from '../../lib/deepLinks';
+import { Spinner } from '../ui/Spinner';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -74,7 +75,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const hiddenTabLabels = ALL_TABS.filter((tab) => !visibleTabs.includes(tab)).map((tab) => tab.label);
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  // Échap reste géré par la cascade de la coque (ConversationCanvasPrototype) via le store.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen, isolateBackground: true });
 
@@ -587,7 +588,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     if (loading) {
       return (
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+          <Spinner taille="zone" className="text-accent-cyan" />
         </div>
       );
     }
@@ -861,7 +862,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                 >
                   {profileSaving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner taille="bouton" className="mr-2" />
                       Enregistrement...
                     </>
                   ) : (

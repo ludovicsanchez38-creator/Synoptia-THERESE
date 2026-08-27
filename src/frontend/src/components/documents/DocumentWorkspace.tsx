@@ -26,7 +26,7 @@
  *
  * Revue adversariale lot D (finding E) : le bouton interne « Retour » n'est
  * PAS le seul chemin de sortie de l'atelier - la back-bar « ← Chat » de
- * ChatLayout, Échap (resolveEscape -> goBack) et les boutons header/⌘K
+ * ChatLayout, Échap (cascade Échap de la coque -> goBack) et les boutons header/⌘K
  * (setView) démontent ce composant SANS passer par `handleBack`. Un effet de
  * nettoyage au DÉMONTAGE appelle donc `closeDocument()` inconditionnellement
  * (idempotent - déjà appelé ou non par `handleBack`), et le rendu est gardé
@@ -40,13 +40,14 @@
  * `exportConversation` (chat.ts:282) via `downloadExportedDocument`.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDocumentStore } from '../../stores/documentStore';
 import { downloadExportedDocument, type DocumentPiste } from '../../services/api/documents';
 import { OutlineTree } from './OutlineTree';
 import { SectionEditor } from './SectionEditor';
 import { PistesPanel } from './PistesPanel';
+import { Spinner } from '../ui/Spinner';
 
 export interface DocumentWorkspaceProps {
   documentId: string;
@@ -153,7 +154,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
           <div className="flex items-center gap-2 shrink-0">
             <Button variant="ghost" size="sm" onClick={() => handleExport('md')} disabled={exportingFormat !== null}>
               {exportingFormat === 'md' ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Spinner taille="bouton" className="mr-1.5" />
               ) : (
                 <Download className="w-4 h-4 mr-1.5" />
               )}
@@ -161,7 +162,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             </Button>
             <Button variant="secondary" size="sm" onClick={() => handleExport('docx')} disabled={exportingFormat !== null}>
               {exportingFormat === 'docx' ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                <Spinner taille="bouton" className="mr-1.5" />
               ) : (
                 <Download className="w-4 h-4 mr-1.5" />
               )}
@@ -174,7 +175,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
       {!doc ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex items-center gap-2 text-sm text-text-muted">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner taille="bouton" />
             Chargement du document...
           </div>
         </div>

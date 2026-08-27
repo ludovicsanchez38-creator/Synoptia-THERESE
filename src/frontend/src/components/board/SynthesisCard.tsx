@@ -21,9 +21,9 @@ const confidenceConfig = {
     label: 'Confiance moyenne',
   },
   low: {
-    color: 'text-red-400',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
+    color: 'text-error',
+    bg: 'bg-error/10',
+    border: 'border-error/30',
     label: 'Confiance faible',
   },
 };

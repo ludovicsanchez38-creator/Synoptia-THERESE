@@ -41,12 +41,30 @@ describe('navigationStore', () => {
     expect(s.history).toEqual(['chat']);
   });
 
-  it('goBack avec historique vide revient à chat', () => {
+  /**
+   * Ce test disait « revient à chat ». Il datait d'avant la coque
+   * conversationnelle, quand le chat ÉTAIT l'écran de base. Depuis, l'écran
+   * de base est l'accueil de la coque, et ramener au chat produisait un
+   * second geste parasite : après avoir fermé une vue, l'utilisateur se
+   * retrouvait dans une conversation qu'il n'avait pas demandée.
+   * `null` = aucune vue embarquée = l'accueil. (27/08/2026)
+   */
+  it('goBack avec historique vide revient à l’accueil, pas au chat', () => {
     useNavigationStore.getState().setView('crm');
     useNavigationStore.getState().goBack(); // -> chat (history avait ['chat'])
-    useNavigationStore.getState().goBack(); // déjà chat, history vide -> reste chat
+    useNavigationStore.getState().goBack(); // history vide -> accueil
     const s = useNavigationStore.getState();
-    expect(s.activeView).toBe('chat');
+    expect(s.activeView).toBeNull();
+    expect(s.history).toEqual([]);
+  });
+
+  it('venir de l’accueil n’empile aucune vue fantôme', () => {
+    useNavigationStore.setState({ activeView: null, history: [] });
+
+    useNavigationStore.getState().setView('crm');
+
+    const s = useNavigationStore.getState();
+    expect(s.activeView).toBe('crm');
     expect(s.history).toEqual([]);
   });
 

@@ -85,23 +85,19 @@ async def _has_any_llm_key(session: AsyncSession) -> bool:
     if settings.anthropic_api_key or settings.mistral_api_key:
         return True
 
-    try:
-        for _, db_key in _LLM_KEY_SOURCES:
-            has_key, _corrupted = await _check_key_decryptable(session, db_key)
-            if has_key:
-                return True
-    except Exception as e:
-        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
-
-    # Ollama : choisi comme provider (Preference) ou serveur local joignable
-    try:
-        result = await session.execute(
-            select(Preference.value).where(Preference.key == "llm_provider").limit(1)
-        )
-        if result.scalar() == "ollama":
+    # Cette lecture-ci ne masque PLUS son échec : l'appelant a besoin de
+    # distinguer « aucune clé » de « on n'a pas pu lire ». Les replis
+    # environnement et .env ont déjà été tentés au-dessus, sans risque d'échec.
+    for _, db_key in _LLM_KEY_SOURCES:
+        has_key, _corrupted = await _check_key_decryptable(session, db_key)
+        if has_key:
             return True
-    except Exception as e:
-        logger.debug(f"Erreur lecture provider (setup-status): {e}")
+
+    # Ollama : choisi comme provider (Preference) ou serveur local joignable.
+    # Cette lecture ne masque plus son échec : une table de préférences
+    # illisible n'est pas « pas de clé », et l'appelant doit pouvoir le dire.
+    if await _lire_preference_ollama(session):
+        return True
     try:
         from app.services.http_client import get_http_client
 
@@ -123,42 +119,80 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
     et si son profil de facturation est complet.
     Permet d'afficher un guide de mise en route contextuel.
     """
-    has_calendar = False
+    indisponibles: list[str] = []
+
     try:
-        result = await session.execute(select(Calendar.id).limit(1))
-        has_calendar = result.scalar() is not None
+        has_calendar = await _lire_a_un_calendrier(session)
     except Exception as e:
         logger.warning(f"Erreur lecture calendrier (setup-status): {e}")
+        has_calendar = False
+        indisponibles.append("calendrier")
 
-    has_email = False
     try:
-        result = await session.execute(select(EmailAccount.id).limit(1))
-        has_email = result.scalar() is not None
+        has_email = await _lire_a_un_compte_email(session)
     except Exception as e:
         logger.warning(f"Erreur lecture compte email (setup-status): {e}")
+        has_email = False
+        indisponibles.append("email")
 
-    billing_complete = False
     try:
-        profile = get_cached_profile()
-        if profile is None:
-            # Cache vide après un démarrage avec profil chiffré : lecture de
-            # secours en session (déchiffre et répare le cache au passage).
-            from app.services.user_profile import get_user_profile
-
-            profile = await get_user_profile(session)
-        if profile is not None:
-            billing_complete = profile.is_billing_complete()
+        billing_complete = await _lire_facturation_complete(session)
     except Exception as e:
         logger.warning(f"Erreur lecture profil facturation (setup-status): {e}")
+        billing_complete = False
+        indisponibles.append("facturation")
 
-    has_llm_key = await _has_any_llm_key(session)
+    try:
+        has_llm_key = await _lire_a_une_cle_ia(session)
+    except Exception as e:
+        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
+        has_llm_key = False
+        indisponibles.append("cle_ia")
 
     return {
         "has_calendar": has_calendar,
         "has_email": has_email,
         "billing_complete": billing_complete,
         "has_llm_key": has_llm_key,
+        # Ce qu'on n'a PAS PU vérifier, nommément. Sans cette liste, un échec
+        # de lecture sortait en `False`, indistinguable d'un « non configuré » :
+        # l'écran demandait alors de connecter un calendrier DÉJÀ connecté, et
+        # l'utilisateur allait réparer ce qui n'était pas cassé.
+        "indisponibles": indisponibles,
     }
+
+
+async def _lire_preference_ollama(session: AsyncSession) -> bool:
+    """Ollama est-il le fournisseur choisi ? Laisse remonter ses échecs."""
+    result = await session.execute(
+        select(Preference.value).where(Preference.key == "llm_provider").limit(1)
+    )
+    return bool(result.scalar() == "ollama")
+
+
+async def _lire_a_une_cle_ia(session: AsyncSession) -> bool:
+    return await _has_any_llm_key(session)
+
+
+async def _lire_a_un_calendrier(session: AsyncSession) -> bool:
+    result = await session.execute(select(Calendar.id).limit(1))
+    return result.scalar() is not None
+
+
+async def _lire_a_un_compte_email(session: AsyncSession) -> bool:
+    result = await session.execute(select(EmailAccount.id).limit(1))
+    return result.scalar() is not None
+
+
+async def _lire_facturation_complete(session: AsyncSession) -> bool:
+    profile = get_cached_profile()
+    if profile is None:
+        # Cache vide après un démarrage avec profil chiffré : lecture de
+        # secours en session (déchiffre et répare le cache au passage).
+        from app.services.user_profile import get_user_profile
+
+        profile = await get_user_profile(session)
+    return profile.is_billing_complete() if profile is not None else False
 
 
 @router.get("/today")

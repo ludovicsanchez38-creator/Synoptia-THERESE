@@ -6,11 +6,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Send, X, Loader2, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, X, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function EmailCompose() {
   const requestExternalAction = useExternalActionConfirmation();
@@ -277,7 +278,7 @@ export function EmailCompose() {
           <p className="text-sm text-yellow-200 flex-1">Abandonner ce brouillon ?</p>
           <button
             onClick={confirmCancel}
-            className="px-3 py-1.5 text-sm bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm bg-error/20 text-error hover:bg-error/30 rounded-lg transition-colors"
           >
             Oui, abandonner
           </button>
@@ -293,8 +294,8 @@ export function EmailCompose() {
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30">
         {error && (
-          <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <p className="text-sm text-error">{error}</p>
           </div>
         )}
 
@@ -303,7 +304,7 @@ export function EmailCompose() {
             <Button variant="primary" size="sm" onClick={handleSend} disabled={sending}>
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner taille="bouton" className="mr-2" />
                   Envoi...
                 </>
               ) : (

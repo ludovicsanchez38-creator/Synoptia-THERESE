@@ -96,7 +96,7 @@ export function CodeReviewPanel() {
           <span className="flex items-center gap-1 text-green-400">
             <Plus size={12} /> {totalAdd} ajouts
           </span>
-          <span className="flex items-center gap-1 text-red-400">
+          <span className="flex items-center gap-1 text-error">
             <Minus size={12} /> {totalDel} suppressions
           </span>
           <span>{diffFiles.length} fichier{diffFiles.length > 1 ? 's' : ''} touché{diffFiles.length > 1 ? 's' : ''}</span>
@@ -129,7 +129,7 @@ export function CodeReviewPanel() {
                 </span>
                 <span className={`text-xs ${
                   file.change_type === 'added' ? 'text-green-400' :
-                  file.change_type === 'deleted' ? 'text-red-400' :
+                  file.change_type === 'deleted' ? 'text-error' :
                   'text-amber-400'
                 }`}>
                   {file.change_type === 'added' ? 'nouveau' :
@@ -217,7 +217,7 @@ export function CodeReviewPanel() {
           <button
             onClick={() => setConfirmation('reject')}
             disabled={actionPending !== null}
-            className="flex items-center justify-center gap-2 rounded-lg bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-lg bg-error/10 px-4 py-2.5 text-sm font-medium text-error transition hover:bg-error/20 disabled:opacity-50"
           >
             <X size={16} />
             {actionPending === 'reject' ? 'Refus...' : 'Refuser'}

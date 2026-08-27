@@ -96,6 +96,13 @@ export interface SetupStatus {
   billing_complete: boolean;
   /** US-012 : au moins une clé LLM cloud configurée (env ou DB) */
   has_llm_key: boolean;
+  /**
+   * Ce que le serveur n'a PAS PU vérifier, nommément (« calendrier »,
+   * « email », « facturation »). Sans cette liste, un échec de lecture
+   * sortait en `false`, indistinguable d'un « non configuré » : l'écran
+   * réclamait de brancher ce qui l'était déjà.
+   */
+  indisponibles: string[];
 }
 
 /** Mise en route : ce qui reste à brancher (Accueil). 100 % local. */

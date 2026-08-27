@@ -2,7 +2,7 @@
 // Sélection provider, clé API, modèle, transcription vocale, recherche web, images, extraction auto
 
 import { useEffect, useState } from 'react';
-import { Key, Check, AlertCircle, XCircle, Loader2, Eye, EyeOff, Cpu, Database, RefreshCw, Plus } from 'lucide-react';
+import { Key, Check, AlertCircle, XCircle, Eye, EyeOff, Cpu, Database, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import type { LLMEffort } from '../../services/api/config';
@@ -15,6 +15,7 @@ import { handleRovingFocus } from '../../lib/rovingFocus';
 // du backend. Ré-exports pour ne pas casser les importeurs existants.
 export type { FournisseurConfig as ProviderConfig } from '../../lib/catalogueModeles';
 export { FOURNISSEURS as PROVIDERS } from '../../lib/catalogueModeles';
+import { Spinner } from '../ui/Spinner';
 
 // Configuration des providers de génération d'images
 export interface ImageProviderConfig {
@@ -303,7 +304,7 @@ export function LLMTab({
                 onClick={onSaveApiKey}
                 disabled={saving || !apiKeyInput.trim()}
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sauver'}
+                {saving ? <Spinner taille="bouton" /> : 'Sauver'}
               </Button>
             </div>
 
@@ -423,7 +424,7 @@ export function LLMTab({
               disabled={savingBaseUrl || !baseUrlInput.trim()}
               size="sm"
             >
-              {savingBaseUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : baseUrlSaved ? <Check className="w-4 h-4" /> : 'Enregistrer'}
+              {savingBaseUrl ? <Spinner taille="bouton" /> : baseUrlSaved ? <Check className="w-4 h-4" /> : 'Enregistrer'}
             </Button>
           </div>
         </div>

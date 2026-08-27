@@ -160,7 +160,7 @@ describe('US-013 : axe sans violation', () => {
           has_calendar: false,
           has_email: false,
           billing_complete: false,
-          has_llm_key: false,
+          has_llm_key: false, indisponibles: [],
         }}
       />
     );

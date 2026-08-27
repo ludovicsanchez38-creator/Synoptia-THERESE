@@ -3,13 +3,13 @@
  * Compose les sous-composants ; charge /today + /setup-status en parallèle.
  */
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { fetchTodayDashboard, fetchSetupStatus, type TodayDashboard, type SetupStatus } from '../../services/api/dashboard';
 import { HomeHeader } from './HomeHeader';
 import { QuickActions } from './QuickActions';
 import { RecentConversations } from './RecentConversations';
 import { TodayPanels } from './TodayPanels';
 import { SetupChecklist } from './SetupChecklist';
+import { Spinner } from '../ui/Spinner';
 
 export function HomeView() {
   const [today, setToday] = useState<TodayDashboard | null>(null);
@@ -37,7 +37,7 @@ export function HomeView() {
           <p className="text-sm text-text-muted">Aperçu du jour indisponible pour le moment.</p>
         ) : (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin text-accent" /> Chargement de ta journée…
+            <Spinner taille="zone" className="text-accent" /> Chargement de ta journée…
           </div>
         )}
       </div>

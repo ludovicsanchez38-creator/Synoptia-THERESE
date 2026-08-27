@@ -278,7 +278,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
   const [showActions, setShowActions] = useState(false);
 
   const priorityColors = {
-    urgent: 'bg-red-500/10 text-red-400 border-red-500/20',
+    urgent: 'bg-error/10 text-error border-error/20',
     high: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
     medium: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
@@ -318,7 +318,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
             {task.priority === 'low' && 'Basse'}
           </span>
           {isOverdue && (
-            <span className="flex items-center gap-1 text-xs text-red-400">
+            <span className="flex items-center gap-1 text-xs text-error">
               <AlertCircle className="w-3 h-3" />
               En retard
             </span>

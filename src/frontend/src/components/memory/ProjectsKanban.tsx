@@ -39,7 +39,7 @@ const STATUS_COLUMNS = [
   { id: 'active', label: 'Actif', icon: Circle, color: 'text-success', bg: 'bg-green-500/10', border: 'border-green-500/20' },
   { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-warning', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
   { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-info', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-error', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+  { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
 ] as const;
 
 const COLUMN_IDS = STATUS_COLUMNS.map((c) => c.id);
@@ -333,7 +333,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(project); }}
-            className="p-1 rounded-md hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
+            className="p-1 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
             title="Supprimer"
           >
             <Trash2 className="w-3.5 h-3.5" />

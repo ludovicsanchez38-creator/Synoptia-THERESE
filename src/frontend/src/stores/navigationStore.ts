@@ -38,7 +38,20 @@ export const APP_VIEWS = [
 export type AppView = (typeof APP_VIEWS)[number];
 
 interface NavigationStore {
-  activeView: AppView;
+  /**
+   * La vue embarquée affichée, ou `null` quand il n'y en a AUCUNE — c'est
+   * l'accueil conversationnel de la coque qui occupe alors l'écran.
+   *
+   * Ce `null` est le correctif du 27/08/2026. Le store démarrait sur `'home'`,
+   * l'ancien tableau de bord embarqué, que plus rien n'affiche au lancement :
+   * la coque a son propre accueil et un commentaire l'y rappelle déjà (« ne
+   * pas appeler `initializeView`, qui poserait la vue 'home' et écraserait
+   * l'accueil conversationnel natif »). La pile mentait donc DÈS L'OUVERTURE :
+   * ouvrir une vue empilait `'home'`, et « Retour » ramenait sur un écran où
+   * l'utilisateur n'était jamais allé — il fallait deux ou trois gestes pour
+   * revenir vraiment. « Aucune vue » est un état réel : il lui fallait un nom.
+   */
+  activeView: AppView | null;
   /** Pile des vues précédentes (pour le retour / Échap). */
   history: AppView[];
   setView: (view: AppView) => void;
@@ -49,7 +62,7 @@ interface NavigationStore {
 }
 
 export const useNavigationStore = create<NavigationStore>((set) => ({
-  activeView: 'home', // Vue par défaut, sera ajustée par initializeView()
+  activeView: null, // aucune vue embarquée : la coque montre son accueil
   history: [],
 
   setView: (view) =>
@@ -57,14 +70,20 @@ export const useNavigationStore = create<NavigationStore>((set) => ({
       if (view === state.activeView) return state; // no-op : pas de doublon
       return {
         activeView: view,
-        history: [...state.history, state.activeView],
+        // On n'empile que des vues RÉELLES. Venir de l'accueil n'empile rien :
+        // sinon le retour ramènerait vers un écran jamais visité.
+        history: state.activeView === null
+          ? state.history
+          : [...state.history, state.activeView],
       };
     }),
 
   goBack: () =>
     set((state) => {
       if (state.history.length === 0) {
-        return { activeView: 'chat', history: [] };
+        // Pile vide = on retourne à l'accueil, pas au chat. Ouvrir le chat
+        // ici était le deuxième geste parasite du parcours de retour.
+        return { activeView: null, history: [] };
       }
       const history = [...state.history];
       const previous = history.pop() as AppView;
@@ -75,9 +94,11 @@ export const useNavigationStore = create<NavigationStore>((set) => ({
 
   initializeView: () => {
     const skipDashboard = usePersonalisationStore.getState().skipDashboard ?? false;
-    set({ 
-      activeView: skipDashboard ? 'chat' : 'home', 
-      history: [] 
+    // `null` et non `'home'` : voir le commentaire d'`activeView`. La coque
+    // n'appelait plus cette fonction PARCE QU'elle posait la mauvaise vue.
+    set({
+      activeView: skipDashboard ? 'chat' : null,
+      history: [],
     });
   },
 }));

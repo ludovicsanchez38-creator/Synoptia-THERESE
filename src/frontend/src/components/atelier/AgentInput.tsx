@@ -55,7 +55,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
       {isStreaming ? (
         <button
           onClick={onCancel}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition hover:bg-red-500/30"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-error/20 text-error transition hover:bg-error/30"
           title="Annuler"
         >
           <Square size={16} />

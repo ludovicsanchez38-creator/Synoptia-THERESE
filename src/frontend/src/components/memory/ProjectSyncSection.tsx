@@ -7,10 +7,11 @@
  * par un autre périmètre) sont montrés, jamais exécutés.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FolderSync, Loader2, Play, RefreshCw, Unlink } from 'lucide-react';
+import { FolderSync, Play, RefreshCw, Unlink } from 'lucide-react';
 
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 interface Props {
   projectId: string;
@@ -165,7 +166,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               onClick={() => void attacher()}
               disabled={occupe !== null || !chemin.trim()}
             >
-              {occupe === 'racine' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Attacher'}
+              {occupe === 'racine' ? <Spinner taille="bouton" /> : 'Attacher'}
             </Button>
           </div>
         </div>
@@ -193,7 +194,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               disabled={occupe !== null}
             >
               {occupe === 'plan'
-                ? <Loader2 className="w-4 h-4 animate-spin" />
+                ? <Spinner taille="bouton" />
                 : <><RefreshCw className="w-4 h-4 mr-1" />Préparer la synchronisation</>}
             </Button>
             {plan && plan.etat === 'propose' && (
@@ -203,7 +204,7 @@ export function ProjectSyncSection({ projectId }: Props) {
                 disabled={occupe !== null}
               >
                 {occupe === 'apply'
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  ? <Spinner taille="bouton" />
                   : <><Play className="w-4 h-4 mr-1" />Appliquer</>}
               </Button>
             )}

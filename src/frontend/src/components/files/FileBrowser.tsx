@@ -25,7 +25,6 @@ import {
   FolderUp,
   Search,
   Database,
-  Loader2,
   AlertCircle,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -34,6 +33,7 @@ import { indexFile, getWorkingDirectory, type FileMetadata } from '../../service
 import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
 import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
 import { estIndexable } from '../../lib/formatsIndexables';
+import { Spinner } from '../ui/Spinner';
 
 export interface FileEntry {
   name: string;
@@ -395,7 +395,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <Loader2 className="w-6 h-6 text-accent-cyan animate-spin" />
+            <Spinner taille="zone" className="text-accent-cyan" />
           </div>
         ) : filteredEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-text-muted">
@@ -461,7 +461,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                       title="Indexer ce fichier"
                     >
                       {isIndexing ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Spinner taille="ligne" />
                       ) : (
                         <Database className="w-3.5 h-3.5" />
                       )}
