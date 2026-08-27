@@ -95,3 +95,38 @@ describe('Rattacher un projet avant le premier message', () => {
     expect(api.createConversation).not.toHaveBeenCalled();
   });
 });
+
+describe('Le store retrouve la conversation après le changement d’identifiant', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.createConversation.mockResolvedValue({ id: 'conv-serveur', title: 'Nouvelle conversation' });
+    api.setConversationProject.mockResolvedValue({ project_id: 'projet-a', memory_scope: 'project' });
+  });
+
+  // Relevé par la relecture : vérifier l'argument transmis ne prouve pas que
+  // l'état final est juste. Ce test suit le parcours jusqu'au bout — c'est
+  // l'écart entre le store et le serveur qui produisait l'affichage menteur.
+  it('le projet se pose bien sur la conversation persistée', async () => {
+    poserConversation({});
+
+    const identifiant = await rattacherAUnProjet('conv-locale', 'projet-a', 'project');
+    useChatStore.getState().setConversationProjectId(identifiant, 'projet-a', 'project');
+
+    const conversations = useChatStore.getState().conversations;
+    expect(conversations).toHaveLength(1);
+    expect(conversations[0].id).toBe('conv-serveur');
+    expect(conversations[0].projectId).toBe('projet-a');
+    expect(conversations[0].memoryScope).toBe('project');
+  });
+
+  it('l’ancien identifiant ne retrouve plus rien — d’où l’affichage menteur', async () => {
+    poserConversation({});
+
+    await rattacherAUnProjet('conv-locale', 'projet-a', 'project');
+    useChatStore.getState().setConversationProjectId('conv-locale', 'projet-a', 'project');
+
+    // Personne ne correspond : le store resterait sans projet, en contradiction
+    // avec le serveur. C'est exactement ce que le correctif évite.
+    expect(useChatStore.getState().conversations[0].projectId).toBeUndefined();
+  });
+});
