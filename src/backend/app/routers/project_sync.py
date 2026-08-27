@@ -14,6 +14,7 @@ from app.services import project_sync_service as svc
 from app.services.project_sync import ErreurDeScan
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from app.services.error_handler import message_pour_ecran
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +74,14 @@ async def definir_racine(project_id: str, request: RacineRequest) -> dict[str, A
     except Exception as e:
         # BUG-172 : une panne inattendue partait en 500 nu que le client
         # affichait « Impossible de contacter le serveur ». Dire la vérité.
+        # BUG-172 puis D4 : dire la vérité, sans livrer le texte technique.
+        # `detail=f"... {e}"` renvoyait l'exception brute à l'écran — un
+        # OverflowError SQLite y est parti tel quel —, ce que la frontière
+        # d'erreurs de la 0.48 interdit. Le détail reste aux logs.
         logger.error("Échec de définition de racine", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"La définition de la racine a échoué : {e}",
+            detail=message_pour_ecran(e, "en attachant ce dossier"),
         )
     return {
         "racine": root.racine,

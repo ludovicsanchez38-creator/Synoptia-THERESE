@@ -94,10 +94,45 @@ async def _verrou_du_projet(project_id: str) -> "AsyncIterator[None]":
 # Racine
 # ---------------------------------------------------------------------------
 
-async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
+def _resoudre_racine(chemin: str) -> Path:
+    """Résolution et contrôle d'existence — travail DISQUE, jamais sur la boucle.
+
+    D5 : sur Windows, avec un antivirus ou un volume réseau qui se réveille,
+    `resolve()` et `is_dir()` prennent des secondes. Sur la boucle asyncio, ce
+    sont TOUTES les requêtes de l'application qui attendent, et le client finit
+    par abandonner au bout de ses trente secondes.
+    """
     racine = Path(chemin).expanduser().resolve()
     if not racine.is_dir():
         raise ErreurRacine(f"Le dossier n'existe pas : {racine}")
+    return racine
+
+
+def _verifier_conflits(racine: Path, autres: list[str]) -> None:
+    """Aucune racine ne doit en recouvrir une autre — travail DISQUE lui aussi.
+
+    `exists()` et `samefile()` interrogent le système de fichiers une fois par
+    racine déjà connue : sur un partage réseau injoignable, chacun peut durer.
+    """
+    for chemin_autre in autres:
+        autre_racine = Path(chemin_autre)
+        if autre_racine == racine:
+            raise ErreurRacine("Cette racine appartient déjà à un autre projet.")
+        if racine.is_relative_to(autre_racine) or autre_racine.is_relative_to(racine):
+            raise ErreurRacine(
+                f"Racine imbriquée avec celle d'un autre projet : {autre_racine}"
+            )
+        try:
+            if autre_racine.exists() and racine.samefile(autre_racine):
+                raise ErreurRacine(
+                    "Cette racine désigne le même dossier qu'un autre projet."
+                )
+        except OSError:
+            pass
+
+
+async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
+    racine = await asyncio.to_thread(_resoudre_racine, chemin)
 
     # B1 (revue jalon) : la racine ne change JAMAIS pendant un plan ou un
     # apply - même verrou projet d'abord, puis le verrou global des racines.
@@ -106,30 +141,17 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
         resultat = await session.execute(select(ProjectSyncRoot))
         existantes = list(resultat.scalars().all())
 
-        for autre in existantes:
-            if autre.project_id == project_id:
-                continue
-            if autre.detachee:
-                # Un tombeau garde la génération, pas la propriété du dossier.
-                continue
-            autre_racine = Path(autre.racine)
-            if autre_racine == racine:
-                raise ErreurRacine(
-                    "Cette racine appartient déjà à un autre projet."
-                )
-            if racine.is_relative_to(autre_racine) or autre_racine.is_relative_to(
-                racine
-            ):
-                raise ErreurRacine(
-                    f"Racine imbriquée avec celle d'un autre projet : {autre_racine}"
-                )
-            try:
-                if autre_racine.exists() and racine.samefile(autre_racine):
-                    raise ErreurRacine(
-                        "Cette racine désigne le même dossier qu'un autre projet."
-                    )
-            except OSError:
-                pass
+        # Les comparaisons touchent le disque : elles sortent de la boucle, et
+        # la liste des chemins est prélevée avant pour n'y emporter que du texte.
+        concurrentes = [
+            autre.racine
+            for autre in existantes
+            if autre.project_id != project_id and not autre.detachee
+        ]
+        await asyncio.to_thread(_verifier_conflits, racine, concurrentes)
+        # `_volume_id` fait un stat() : même raison, il sort de la boucle, et
+        # une seule fois pour les deux branches ci-dessous.
+        volume = await asyncio.to_thread(_volume_id, racine)
 
         actuelle = next(
             (r for r in existantes if r.project_id == project_id), None
@@ -138,7 +160,7 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
             root = ProjectSyncRoot(
                 project_id=project_id,
                 racine=str(racine),
-                volume_id=_volume_id(racine),
+                volume_id=volume,
             )
             session.add(root)
             await session.commit()
@@ -149,7 +171,7 @@ async def definir_racine(project_id: str, chemin: str) -> ProjectSyncRoot:
         # ne repart JAMAIS - un ancien plan partiel de génération 1
         # redeviendrait compatible (revue jalon, B1).
         actuelle.racine = str(racine)
-        actuelle.volume_id = _volume_id(racine)
+        actuelle.volume_id = volume
         actuelle.generation += 1
         actuelle.detachee = False
         await _invalider_generation(session, project_id)
@@ -200,11 +222,20 @@ async def _invalider_generation(session: AsyncSession, project_id: str) -> None:
 # Plan
 # ---------------------------------------------------------------------------
 
+def _racine_encore_valide(racine: Path, volume_attendu: int) -> bool:
+    """La racine est-elle toujours là, sur le même volume ? Travail DISQUE."""
+    return racine.is_dir() and _volume_id(racine) == volume_attendu
+
+
 async def preparer_plan(project_id: str) -> SyncPlan:
     async with _verrou_du_projet(project_id):
         root = await _racine_de(project_id)
         racine = Path(root.racine)
-        if not racine.is_dir() or _volume_id(racine) != root.volume_id:
+        # Contrôle DISQUE avant le scan : hors de la boucle, comme le scan
+        # lui-même. Sur un volume réseau qui se réveille, ces deux appels
+        # figeaient toute l'application avant même d'avoir commencé.
+        racine_valide = await asyncio.to_thread(_racine_encore_valide, racine, root.volume_id)
+        if not racine_valide:
             from app.services.project_sync import ErreurDeScan
 
             raise ErreurDeScan(
