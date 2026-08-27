@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Check,
   AlertCircle,
-  Loader2,
   Server,
   Plug,
   Eye,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
+import { Spinner } from '../../ui/Spinner';
 
 interface SmtpConfigStepProps {
   onBack: () => void;
@@ -405,7 +405,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             disabled={!canTest || testing}
           >
             {testing ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              <Spinner taille="bouton" className="mr-1" />
             ) : (
               <Plug className="w-4 h-4 mr-1" />
             )}
@@ -419,7 +419,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             disabled={!canSave || saving}
           >
             {saving ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              <Spinner taille="bouton" className="mr-1" />
             ) : (
               <ArrowRight className="w-4 h-4 mr-1" />
             )}

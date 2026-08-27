@@ -7,10 +7,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import { ChevronLeft, Save } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function TaskForm() {
   const {
@@ -137,7 +138,7 @@ export function TaskForm() {
         <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
           {saving ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Spinner taille="bouton" className="mr-2" />
               Enregistrement...
             </>
           ) : (

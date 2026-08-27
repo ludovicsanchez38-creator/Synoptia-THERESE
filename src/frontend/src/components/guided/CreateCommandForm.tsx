@@ -7,9 +7,10 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
+import { Spinner } from '../ui/Spinner';
 
 interface CreateCommandFormProps {
   onSubmit: (data: {
@@ -248,7 +249,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             disabled={!isValid || isSubmitting}
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Spinner taille="bouton" className="mr-2" />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}

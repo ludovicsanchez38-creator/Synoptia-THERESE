@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Archive, Shield, Database, Clock, UserCheck, HardDrive, Loader2, Download, Trash2, EyeOff, RotateCcw } from 'lucide-react';
+import { Archive, Shield, Database, Clock, UserCheck, HardDrive, Download, Trash2, EyeOff, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { purgeLocalPersistence } from '../../lib/purgeLocalData';
 import { getPurgeSettings, updatePurgeSettings } from '../../services/api/rgpd';
@@ -27,6 +27,7 @@ import {
   type CloudGrant,
   type CloudPurpose,
 } from '../../lib/consent';
+import { Spinner } from '../ui/Spinner';
 
 // Types de données stockées
 const DATA_TYPES = [
@@ -224,7 +225,7 @@ export function PrivacyTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -279,7 +280,7 @@ export function PrivacyTab() {
               onClick={() => void handleExportAll()}
               disabled={dataOperation !== null}
             >
-              {dataOperation === 'export' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
+              {dataOperation === 'export' ? <Spinner taille="ligne" className="mr-1.5" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
               Exporter toutes mes données
             </Button>
             <input
@@ -297,7 +298,7 @@ export function PrivacyTab() {
               onClick={() => void handleCreateBackup()}
               disabled={dataOperation !== null}
             >
-              {dataOperation === 'backup' ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Archive className="mr-1.5 h-3.5 w-3.5" />}
+              {dataOperation === 'backup' ? <Spinner taille="ligne" className="mr-1.5" /> : <Archive className="mr-1.5 h-3.5 w-3.5" />}
               Créer une sauvegarde
             </Button>
           </div>
@@ -315,7 +316,7 @@ export function PrivacyTab() {
             <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan hover:underline">Actualiser</button>
           </div>
           {backupLoading ? (
-            <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement…</div>
+            <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Spinner taille="ligne" />Chargement…</div>
           ) : backups.length === 0 ? (
             <p className="px-3 py-4 text-xs text-text-muted">Aucune sauvegarde locale.</p>
           ) : (
@@ -335,11 +336,11 @@ export function PrivacyTab() {
                       </div>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" onClick={() => { setRestoreConfirmation(backup.backup_name); setBackupDeleteConfirmation(null); }} disabled={dataOperation !== null}>
-                          {restoring ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}
+                          {restoring ? <Spinner taille="ligne" className="mr-1" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}
                           Restaurer
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => { setBackupDeleteConfirmation(backup.backup_name); setRestoreConfirmation(null); }} disabled={dataOperation !== null}>
-                          {deleting ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+                          {deleting ? <Spinner taille="ligne" className="mr-1" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
                           Supprimer
                         </Button>
                       </div>
@@ -553,7 +554,7 @@ export function PrivacyTab() {
                     onClick={() => void handleDeleteAll()}
                     disabled={deletePhrase !== 'SUPPRIMER' || dataOperation !== null}
                   >
-                    {dataOperation === 'delete-all' && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    {dataOperation === 'delete-all' && <Spinner taille="ligne" className="mr-1.5" />}
                     Supprimer définitivement
                   </Button>
                 </div>
@@ -635,7 +636,7 @@ export function PrivacyTab() {
           >
             {saving ? (
               <>
-                <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                <Spinner taille="ligne" className="mr-1.5" />
                 Enregistrement...
               </>
             ) : saved ? (

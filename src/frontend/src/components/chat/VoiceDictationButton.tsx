@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Loader2, Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
 import { needsVoiceCloudConsent, VOICE_CLOUD_PROVIDER } from '../../services/api/voice';
 import { grantCloudConsent } from '../../lib/consent';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 interface VoiceDictationButtonProps {
   onTranscript: (text: string) => void;
@@ -129,7 +130,7 @@ export function VoiceDictationButton({
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
-              <span className="inline-flex items-center gap-2 font-semibold"><Loader2 className="h-3.5 w-3.5 animate-spin" />Transcription en cours</span>
+              <span className="inline-flex items-center gap-2 font-semibold"><Spinner taille="ligne" />Transcription en cours</span>
               <button type="button" onClick={cancelProcessing} className="rounded-[6px] border border-error px-2 py-1 font-semibold text-error">Annuler</button>
             </div>
           )}
@@ -150,7 +151,7 @@ export function VoiceDictationButton({
       aria-label={label}
       >
         {isProcessing ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Spinner taille="zone" />
         ) : isRecording ? (
           <MicOff className="h-5 w-5" />
         ) : (

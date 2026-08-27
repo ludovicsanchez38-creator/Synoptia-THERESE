@@ -2,12 +2,13 @@
 // Extraction depuis SettingsModal.tsx pour modularité
 
 import { useState, useRef, useCallback } from 'react';
-import { User, Upload, Check, AlertCircle, Eye, FileText, X, Save, Loader2 } from 'lucide-react';
+import { User, Upload, Check, AlertCircle, Eye, FileText, X, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { Spinner } from '../ui/Spinner';
 
 // Types des props du formulaire profil
 export interface ProfileFormData {
@@ -155,7 +156,7 @@ export function ProfileTab({
             <div className="flex-1 overflow-y-auto p-5">
               {mdLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 text-accent-cyan animate-spin" />
+                  <Spinner taille="zone" className="text-accent-cyan" />
                   <span className="ml-2 text-text-muted">Chargement...</span>
                 </div>
               ) : (
@@ -198,7 +199,7 @@ export function ProfileTab({
                   disabled={mdSaving || mdLoading}
                 >
                   {mdSaving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner taille="bouton" className="mr-2" />
                   ) : (
                     <Save className="w-4 h-4 mr-2" />
                   )}

@@ -9,14 +9,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Play, Square, ChevronRight, Loader2,
-  FileBarChart, UserCheck, CalendarCheck, Wallet, Radar, Handshake,
+  X, Play, Square, ChevronRight, FileBarChart, UserCheck, CalendarCheck, Wallet, Radar, Handshake,
   CheckCircle2, AlertCircle, Clock, Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useActionsStore } from '../../stores/actionsStore';
 import type { ActionAgent, TaskState, TaskStep } from '../../services/api/actions';
+import { Spinner } from '../ui/Spinner';
 
 /** Mapping icone -> composant Lucide */
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -208,7 +208,7 @@ function ParamsForm({
           )}
         >
           {isLoading ? (
-            <Loader2 size={16} className="animate-spin" />
+            <Spinner taille="bouton" />
           ) : (
             <Play size={16} />
           )}
@@ -279,7 +279,7 @@ function TaskProgress({
           </button>
         ) : isStopping ? (
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-warning">
-            <Loader2 size={12} className="animate-spin" />
+            <Spinner taille="ligne" />
             Arrêt en cours
           </span>
         ) : (
@@ -334,7 +334,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
 
   const statusIcon = {
     pending: <Clock size={14} className="text-text-muted" />,
-    running: <Loader2 size={14} className="text-cyan-400 animate-spin" />,
+    running: <Spinner taille="ligne" className="text-cyan-400" />,
     completed: <CheckCircle2 size={14} className="text-emerald-400" />,
     skipped: <Clock size={14} className="text-text-muted" />,
     error: <AlertCircle size={14} className="text-red-400" />,
@@ -486,7 +486,7 @@ export function ActionPanel() {
           onClick={() => openPanel()}
           className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-cyan-400 shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
         >
-          <Loader2 size={14} className="animate-spin" />
+          <Spinner taille="ligne" />
           {activeTask.status === 'cancel_requested'
             ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
             : `${activeTask.agent_name || 'Action'} en cours...`}
@@ -570,7 +570,7 @@ export function ActionPanel() {
 
               {isLoading && (
                 <div className="flex justify-center py-8">
-                  <Loader2 size={24} className="text-text-muted animate-spin" />
+                  <Spinner taille="zone" className="text-text-muted" />
                 </div>
               )}
             </div>

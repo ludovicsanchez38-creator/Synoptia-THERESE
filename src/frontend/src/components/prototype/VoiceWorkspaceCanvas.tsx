@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   FileAudio,
-  Loader2,
   Mic,
   PanelRightClose,
   Play,
@@ -19,6 +18,7 @@ import {
 } from '../../services/api/voice';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { Spinner } from '../ui/Spinner';
 
 function readableSize(bytes: number): string {
   if (bytes < 1_048_576) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
@@ -151,7 +151,7 @@ export function VoiceWorkspaceCanvas({
             <ShieldCheck className="mr-1 inline h-4 w-4" /><strong>{transcriptionEngine}</strong> · {usesLocalTranscription ? 'l’audio reste sur cette machine.' : 'le fichier sera envoyé à Groq après ta confirmation.'}
           </div>
 
-          {confirmationOpen ? <div className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="voice-transcription-confirmation"><strong>Confirmer la transcription avec {transcriptionEngine} ?</strong><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmTranscription()} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et transcrire</button></div></div> : <button type="button" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{transcribing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</button>}
+          {confirmationOpen ? <div className="mt-4 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning" data-testid="voice-transcription-confirmation"><strong>Confirmer la transcription avec {transcriptionEngine} ?</strong><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setConfirmationOpen(false)} className="rounded-[8px] border border-border bg-surface px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmTranscription()} className="rounded-[8px] bg-text px-3 py-2 font-semibold text-white">Confirmer et transcrire</button></div></div> : <button type="button" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{transcribing ? <Spinner taille="bouton" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</button>}
 
           {transcriptionError && <div role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error"><p><AlertCircle className="mr-1 inline h-4 w-4" />{transcriptionError}</p><button type="button" onClick={prepareTranscription} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button></div>}
 
@@ -163,7 +163,7 @@ export function VoiceWorkspaceCanvas({
           <p className="mt-1 text-xs leading-5 text-text-muted">Synthèse locale Piper. Aucun texte n’est envoyé vers un service externe.</p>
           <label className="mt-4 block text-sm font-semibold text-text">Texte à lire<textarea aria-label="Texte à lire" rows={9} value={speechText} onChange={(event) => { setSpeechUrl(null); setSpeechStatus(null); setSpeechError(null); setSpeechText(event.target.value); }} placeholder="Colle ici le texte à convertir en audio…" className="mt-2 w-full rounded-[10px] border border-border bg-surface p-3 text-sm font-normal leading-6 text-text" /></label>
           {!ttsReady && <div className="mt-3 rounded-[9px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs leading-5 text-warning">La voix locale doit être activée dans Paramètres → Confidentialité avant d’utiliser la synthèse.</div>}
-          <button type="button" onClick={() => void createSpeech()} disabled={!speechText.trim() || !ttsReady || speechLoading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{speechLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}{speechLoading ? 'Création de l’audio…' : 'Générer l’audio local'}</button>
+          <button type="button" onClick={() => void createSpeech()} disabled={!speechText.trim() || !ttsReady || speechLoading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{speechLoading ? <Spinner taille="bouton" /> : <Volume2 className="h-4 w-4" />}{speechLoading ? 'Création de l’audio…' : 'Générer l’audio local'}</button>
           {speechStatus && <p role="status" className="mt-3 rounded-[9px] border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{speechStatus}</p>}
           {speechError && <div role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error"><p><AlertCircle className="mr-1 inline h-4 w-4" />{speechError}</p><button type="button" onClick={() => void createSpeech()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button></div>}
           {speechUrl && <div className="mt-5 rounded-[12px] border border-border bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-xs font-semibold text-text"><Play className="h-4 w-4 text-[var(--k4)]" />Audio généré localement</div><audio controls src={speechUrl} className="w-full" /><a href={speechUrl} download="therese-tts.wav" className="mt-3 inline-flex rounded-[8px] border border-text px-3 py-2 text-xs font-semibold text-text">Enregistrer le WAV</a></div>}

@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Plus, Globe, X, Shield, Square } from 'lucide-react';
+import { Plus, Globe, X, Shield, Square } from 'lucide-react';
 import { AdvisorCard } from './AdvisorCard';
 import { SynthesisCard } from './SynthesisCard';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import type { AdvisorRole, BoardSynthesis } from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 const ADVISOR_ORDER: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmatic', 'visionary'];
 
@@ -89,7 +90,7 @@ export function DeliberationView({
             <span className="text-text-muted">
               Recherche d'informations actualisées sur le web...
             </span>
-            <Loader2 className="w-4 h-4 animate-spin text-accent-cyan" />
+            <Spinner taille="bouton" className="text-accent-cyan" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -189,7 +190,7 @@ export function DeliberationView({
           animate={{ opacity: 1 }}
           className="flex items-center justify-center gap-3 py-8"
         >
-          <Loader2 className="w-5 h-5 animate-spin text-accent-cyan" />
+          <Spinner taille="zone" className="text-accent-cyan" />
           <span className="text-text-muted">Synthèse en cours...</span>
         </motion.div>
       )}

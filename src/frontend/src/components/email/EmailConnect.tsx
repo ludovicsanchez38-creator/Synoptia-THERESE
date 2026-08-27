@@ -6,9 +6,10 @@
  */
 
 import { useState } from 'react';
-import { Mail, ExternalLink, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 interface EmailConnectProps {
   onSuccess: () => void;
@@ -141,7 +142,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner taille="bouton" className="mr-2" />
                 Connexion...
               </>
             ) : (

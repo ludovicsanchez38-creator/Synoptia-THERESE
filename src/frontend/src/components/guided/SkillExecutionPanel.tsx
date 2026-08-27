@@ -5,12 +5,12 @@ import {
   Table,
   Download,
   Check,
-  Loader2,
   X,
   RefreshCw,
 } from 'lucide-react';
 import type { FileFormat } from './actionData';
 import { cn } from '../../lib/utils';
+import { Spinner } from '../ui/Spinner';
 
 export type SkillExecutionStatus = 'idle' | 'generating' | 'success' | 'error';
 
@@ -149,7 +149,7 @@ export function SkillExecutionPanel({
                   exit={{ opacity: 0, scale: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center"
                 >
-                  <Loader2 className="w-4 h-4 text-accent-cyan animate-spin" />
+                  <Spinner taille="bouton" className="text-accent-cyan" />
                 </motion.div>
               )}
               {status === 'success' && (

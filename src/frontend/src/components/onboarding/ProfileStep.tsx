@@ -6,10 +6,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Upload, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Upload, AlertCircle } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 
 interface ProfileStepProps {
   onNext: () => void;
@@ -264,7 +265,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             {saveState === 'success'
               ? 'Profil enregistré'
               : loading
-                ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Enregistrement en cours...</>)
+                ? (<><Spinner taille="bouton" className="mr-2" />Enregistrement en cours...</>)
                 : 'Continuer'}
           </Button>
         </div>

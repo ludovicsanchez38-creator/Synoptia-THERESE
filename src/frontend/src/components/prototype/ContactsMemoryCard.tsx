@@ -3,7 +3,6 @@ import {
   AlertCircle,
   ChevronRight,
   ExternalLink,
-  Loader2,
   Mail,
   RefreshCw,
   Search,
@@ -17,6 +16,7 @@ import {
   selectRecentContacts,
 } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 const EMPTY_CONTACTS: Contact[] = [];
 
@@ -94,7 +94,7 @@ export function ContactsMemoryCard({
 
       {resource.status === 'loading' ? (
         <div className="flex min-h-44 items-center justify-center gap-2 px-5 py-8 text-sm text-text-muted" role="status">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-[var(--k4)]" />
           Je consulte ta mémoire…
         </div>
       ) : resource.status === 'error' ? (
@@ -184,7 +184,7 @@ export function ContactsMemoryCanvas({
 
       {resource.status === 'loading' ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-[var(--k4)]" />
           Chargement de la mémoire…
         </div>
       ) : resource.status === 'error' ? (

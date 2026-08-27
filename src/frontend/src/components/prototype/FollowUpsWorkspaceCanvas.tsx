@@ -4,7 +4,6 @@ import {
   Bell,
   CalendarClock,
   CheckCircle2,
-  Loader2,
   Mail,
   PanelRightClose,
   Pencil,
@@ -21,6 +20,7 @@ import {
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { Spinner } from '../ui/Spinner';
 
 const FILTERS: Array<{ id: 'all' | FollowUpStatus; label: string }> = [
   { id: 'all', label: 'Toutes' },
@@ -152,7 +152,7 @@ export function FollowUpsWorkspaceCanvas({
         )}
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <div className="grid min-h-56 place-items-center rounded-[12px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Aucune relance dans cette catégorie.</div></div> : <div className="space-y-2">{visibleItems.map((item) => {
+          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Spinner taille="zone" className="mx-auto mb-2" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <div className="grid min-h-56 place-items-center rounded-[12px] border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Aucune relance dans cette catégorie.</div></div> : <div className="space-y-2">{visibleItems.map((item) => {
             const busy = pendingId === item.id;
             const overdue = item.status === 'pending' && new Date(item.due_date).getTime() < Date.now();
             return <article key={item.id} className="rounded-[11px] border border-border bg-surface p-4" data-testid="follow-up-row">

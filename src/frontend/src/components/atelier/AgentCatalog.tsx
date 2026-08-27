@@ -8,13 +8,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  Bot, Loader2, AlertCircle, Brain,
+  Bot, AlertCircle, Brain,
   Search, PenTool, BarChart3, CalendarDays, Code2, Palette,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAgentProfiles, getAgentConfig } from "../../services/api/agents";
 import type { AgentProfile, AgentModelInfo } from "../../services/api/agents";
+import { Spinner } from "../ui/Spinner";
 
 /** Couleurs par ID agent (fallback si le backend ne les fournit pas) */
 const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = {
@@ -181,7 +182,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
   if (loading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <Loader2 size={24} className="animate-spin text-text-muted" />
+        <Spinner taille="zone" className="text-text-muted" />
         <p className="text-xs text-text-muted">Chargement des agents...</p>
       </div>
     );

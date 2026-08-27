@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { formaterCout, UNITE_COUT } from '../../lib/coutAffiche';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function LimitsTab() {
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,7 @@ export function LimitsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="w-6 h-6 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
       </div>
     );
   }
@@ -166,7 +167,7 @@ export function LimitsTab() {
               onClick={handleSaveLimits}
               disabled={saving}
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sauver'}
+              {saving ? <Spinner taille="bouton" /> : 'Sauver'}
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3">

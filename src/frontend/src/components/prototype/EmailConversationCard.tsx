@@ -5,7 +5,6 @@ import {
   ChevronRight,
   ExternalLink,
   Inbox,
-  Loader2,
   Mail,
   RefreshCw,
   Save,
@@ -24,6 +23,7 @@ import type {
   EmailTone,
 } from './usePrototypeEmailData';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 function EmailStateShell({ children }: { children: ReactNode }) {
   return <div className="flex min-h-44 items-center justify-center px-5 py-8">{children}</div>;
@@ -85,7 +85,7 @@ export function EmailInboxCard({
       {resource.status === 'loading' ? (
         <EmailStateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+            <Spinner taille="bouton" className="text-[var(--k4)]" />
             Je consulte tes messages…
           </div>
         </EmailStateShell>
@@ -311,7 +311,7 @@ export function EmailMessageCanvas({
 
       {!resource || resource.status === 'loading' ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted" role="status">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-[var(--k4)]" />
           Chargement du message…
         </div>
       ) : resource.status === 'error' ? (
@@ -465,7 +465,7 @@ export function EmailMessageCanvas({
                 disabled={generating}
                 className="inline-flex items-center gap-1.5 rounded-[9px] border border-[var(--k4)] bg-surface px-3 py-2 text-xs font-semibold text-[var(--k4)] disabled:opacity-60"
               >
-                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {generating ? <Spinner taille="ligne" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {generating ? 'Génération…' : 'Générer une proposition'}
               </button>
               <button

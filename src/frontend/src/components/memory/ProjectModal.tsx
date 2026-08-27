@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Briefcase, Loader2, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { X, Briefcase, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -7,6 +7,7 @@ import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { ProjectSyncSection } from './ProjectSyncSection';
+import { Spinner } from '../ui/Spinner';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -360,7 +361,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 </select>
                 {loadingContacts && (
                   <p className="text-xs text-text-muted flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Spinner taille="ligne" />
                     Chargement des contacts...
                   </p>
                 )}
@@ -447,7 +448,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     disabled={uploadingFile}
                   >
                     {uploadingFile ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Upload en cours...</>
+                      <><Spinner taille="bouton" className="mr-2" />Upload en cours...</>
                     ) : (
                       <><Upload className="w-4 h-4 mr-2" />Ajouter un fichier (.md, .xlsx, .pdf, .docx)</>
                     )}
@@ -525,7 +526,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       onClick={handleDelete}
                       disabled={deleting}
                     >
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Supprimer'}
+                      {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
                     </Button>
                   </div>
                 </div>
@@ -557,7 +558,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner taille="bouton" className="mr-2" />
                       Enregistrement...
                     </>
                   ) : isEditing ? (

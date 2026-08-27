@@ -17,7 +17,6 @@ import {
   Star,
   RefreshCw,
   Plus,
-  Loader2,
   UserPlus,
   ChevronDown,
   AlertTriangle,
@@ -36,6 +35,7 @@ import { EmailSetupWizard } from './wizard';
 import { SignatureEditorModal } from './SignatureEditorModal';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 interface EmailPanelProps {
   standalone?: boolean;
@@ -366,7 +366,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             >
               {reauthing ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  <Spinner taille="ligne" className="mr-2" />
                   En attente...
                 </>
               ) : (
@@ -383,7 +383,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
@@ -628,7 +628,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             >
               {reauthing ? (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                  <Spinner taille="ligne" className="mr-2" />
                   En attente...
                 </>
               ) : (
@@ -645,7 +645,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">

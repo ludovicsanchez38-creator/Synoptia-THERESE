@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronRight,
   ListTodo,
-  Loader2,
   Mail,
   Receipt,
   RefreshCw,
@@ -15,6 +14,7 @@ import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
 import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
+import { Spinner } from '../ui/Spinner';
 
 const attentionIcons = {
   event: Calendar,
@@ -94,7 +94,7 @@ export function TodayDashboardCard({
       {resource.status === 'loading' ? (
         <StateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <Spinner taille="bouton" className="text-accent" />
             Je rassemble ta journée…
           </div>
         </StateShell>

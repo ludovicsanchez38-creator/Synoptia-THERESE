@@ -2,13 +2,14 @@
 // Génération d'images, transcription vocale, recherche web, extraction auto
 // Extrait de LLMTab pour alléger la navigation
 
-import { Check, AlertCircle, Loader2, Eye, EyeOff, Mic, Image as ImageIcon, Globe, Sparkles } from 'lucide-react';
+import { Check, AlertCircle, Eye, EyeOff, Mic, Image as ImageIcon, Globe, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { IMAGE_PROVIDERS } from './LLMTab';
 import { ExportProfileSection } from './ExportProfileSection';
 import { VariablesSection } from './VariablesSection';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { EmailAccountsSection } from './EmailAccountsSection';
+import { Spinner } from '../ui/Spinner';
 
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
@@ -191,7 +192,7 @@ export function ServicesTab({
                       onClick={() => onSaveImageKey(provider.apiKeyId)}
                       disabled={isSaving || !keyInput.trim()}
                     >
-                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sauver'}
+                      {isSaving ? <Spinner taille="bouton" /> : 'Sauver'}
                     </Button>
                   </div>
 
@@ -272,7 +273,7 @@ export function ServicesTab({
               </button>
             </div>
             <Button variant="primary" onClick={onSaveGroqKey} disabled={groqSaving || !groqKeyInput.trim()}>
-              {groqSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sauver'}
+              {groqSaving ? <Spinner taille="bouton" /> : 'Sauver'}
             </Button>
           </div>
 
@@ -359,7 +360,7 @@ export function ServicesTab({
               className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
             <Button variant="primary" size="sm" onClick={onSaveBraveKey} disabled={braveSaving || !braveKeyInput.trim()} className="text-xs px-3">
-              {braveSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : braveSaved ? <Check className="w-3 h-3" /> : 'Sauver'}
+              {braveSaving ? <Spinner taille="ligne" /> : braveSaved ? <Check className="w-3 h-3" /> : 'Sauver'}
             </Button>
             {braveSaved && <span role="status" className="sr-only">Clé Brave Search sauvegardée.</span>}
           </div>

@@ -17,7 +17,6 @@ import {
   ChevronRight,
   AlertTriangle,
   ExternalLink,
-  Loader2,
   Download,
 } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
@@ -30,6 +29,7 @@ import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Spinner } from '../ui/Spinner';
 
 interface CalendarPanelProps {
   isOpen?: boolean;
@@ -475,7 +475,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       >
         {reauthing ? (
           <>
-            <Loader2 className="w-3 h-3 animate-spin mr-2" />
+            <Spinner taille="ligne" className="mr-2" />
             En attente...
           </>
         ) : (

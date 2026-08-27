@@ -8,7 +8,6 @@ import {
   Clock3,
   FileCheck2,
   ListTodo,
-  Loader2,
   PanelRightClose,
   Receipt,
   RefreshCw,
@@ -25,6 +24,7 @@ import {
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { Spinner } from '../ui/Spinner';
 
 type DeliverableStatus = 'all' | 'a_faire' | 'en_cours' | 'en_revision' | 'valide';
 
@@ -199,7 +199,7 @@ export function DeliverablesWorkspaceCanvas({
       </header>
 
       {projectsResource.status === 'loading' ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted"><Loader2 className="h-5 w-5 animate-spin text-accent" />Chargement du suivi réel…</div>
+        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="zone" className="text-accent" />Chargement du suivi réel…</div>
       ) : projectsResource.status === 'error' ? (
         <div className="m-auto max-w-sm px-6 text-center"><AlertCircle className="mx-auto h-8 w-8 text-warning" /><h3 className="mt-3 text-sm font-bold text-text">Suivi indisponible</h3><p className="mt-1 text-xs leading-5 text-text-muted">{projectsResource.error}</p><button type="button" onClick={() => void refreshProjects()} className="mt-4 inline-flex items-center gap-2 rounded-[9px] bg-text px-4 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button></div>
       ) : projectsResource.data.length === 0 ? (
@@ -220,7 +220,7 @@ export function DeliverablesWorkspaceCanvas({
             <div role="toolbar" aria-label="Filtrer les livrables" className="mt-4 flex flex-wrap gap-1.5">{STATUS_FILTERS.map((filter) => <button key={filter.id} data-deliverable-filter type="button" aria-pressed={statusFilter === filter.id} tabIndex={statusFilter === filter.id ? 0 : -1} onKeyDown={(event) => handleRovingFocus(event, '[data-deliverable-filter]', 'horizontal')} onClick={() => setStatusFilter(filter.id)} className={`rounded-full border px-2.5 py-1.5 text-xs font-semibold ${statusFilter === filter.id ? 'border-text bg-text text-white' : 'border-border bg-surface text-text-muted'}`}>{filter.label}</button>)}</div>
 
             <section className="mt-3 space-y-2" aria-label="Livrables du projet">
-              {!detail || detail.deliverables.status === 'loading' ? <div className="flex items-center justify-center gap-2 rounded-[11px] border border-border bg-surface px-4 py-7 text-xs text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement des livrables…</div> : detail.deliverables.status === 'error' ? <div role="alert" className="rounded-[11px] border border-warning/40 bg-[var(--color-warning-tint)] px-4 py-4 text-xs text-warning">{detail.deliverables.error}</div> : view.filteredDeliverables.length > 0 ? view.filteredDeliverables.map((deliverable) => <DeliverableRow key={deliverable.id} deliverable={deliverable} />) : <div className="rounded-[11px] border border-dashed border-[#C8D3E3] bg-surface px-4 py-7 text-center text-xs text-text-muted">{view.deliverables.length === 0 ? 'Aucun livrable réel n’est encore rattaché à ce projet.' : 'Aucun livrable avec ce statut.'}</div>}
+              {!detail || detail.deliverables.status === 'loading' ? <div className="flex items-center justify-center gap-2 rounded-[11px] border border-border bg-surface px-4 py-7 text-xs text-text-muted"><Spinner taille="bouton" />Chargement des livrables…</div> : detail.deliverables.status === 'error' ? <div role="alert" className="rounded-[11px] border border-warning/40 bg-[var(--color-warning-tint)] px-4 py-4 text-xs text-warning">{detail.deliverables.error}</div> : view.filteredDeliverables.length > 0 ? view.filteredDeliverables.map((deliverable) => <DeliverableRow key={deliverable.id} deliverable={deliverable} />) : <div className="rounded-[11px] border border-dashed border-[#C8D3E3] bg-surface px-4 py-7 text-center text-xs text-text-muted">{view.deliverables.length === 0 ? 'Aucun livrable réel n’est encore rattaché à ce projet.' : 'Aucun livrable avec ce statut.'}</div>}
             </section>
 
             <section className="mt-5 grid gap-3 sm:grid-cols-2">

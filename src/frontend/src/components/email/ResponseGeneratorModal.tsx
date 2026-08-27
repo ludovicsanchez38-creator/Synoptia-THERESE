@@ -8,10 +8,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, RefreshCw, Check, Loader2 } from 'lucide-react';
+import { X, Sparkles, RefreshCw, Check } from 'lucide-react';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { Spinner } from '../ui/Spinner';
 
 interface ResponseGeneratorModalProps {
   isOpen: boolean;
@@ -277,7 +278,7 @@ export function ResponseGeneratorModal({
                     className="flex items-center gap-2 px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-lg transition-colors disabled:opacity-50"
                   >
                     {isGenerating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Spinner taille="bouton" />
                     ) : (
                       <RefreshCw className="w-4 h-4" />
                     )}

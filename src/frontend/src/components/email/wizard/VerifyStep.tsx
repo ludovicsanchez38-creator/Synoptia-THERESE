@@ -6,10 +6,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Loader2, ChevronLeft, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronLeft, ExternalLink } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-shell';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
+import { Spinner } from '../../ui/Spinner';
 
 interface VerifyStepProps {
   clientId: string;
@@ -142,7 +143,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {state === 'initiating' && (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
-            <Loader2 className="w-8 h-8 text-accent-cyan animate-spin" />
+            <Spinner taille="zone" className="text-accent-cyan" />
           </div>
           <h3 className="text-lg font-semibold text-text">Préparation de l'autorisation...</h3>
           <p className="text-sm text-text-muted">
@@ -155,7 +156,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {state === 'waiting' && (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
-            <Loader2 className="w-8 h-8 text-accent-cyan animate-spin" />
+            <Spinner taille="zone" className="text-accent-cyan" />
           </div>
           <h3 className="text-lg font-semibold text-text">En attente d'autorisation...</h3>
           <p className="text-sm text-text-muted">

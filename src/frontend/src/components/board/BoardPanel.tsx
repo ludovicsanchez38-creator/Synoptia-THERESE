@@ -7,7 +7,6 @@ import {
   Send,
   History,
   ChevronLeft,
-  Loader2,
   Trash2,
   FileDown,
 } from 'lucide-react';
@@ -29,6 +28,7 @@ import {
   type BoardDecisionResponse,
 } from '../../services/api';
 import { annulerDeliberation, couperTransport } from './annulerDeliberation';
+import { Spinner } from '../ui/Spinner';
 
 interface BoardPanelProps {
   isOpen: boolean;
@@ -669,7 +669,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
                     {loadingHistory ? (
                       <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+                        <Spinner taille="zone" className="text-text-muted" />
                       </div>
                     ) : decisions.length === 0 ? (
                       <p className="text-center text-text-muted py-12">

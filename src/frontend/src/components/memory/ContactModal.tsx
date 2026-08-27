@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { X, User, Trash2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -7,6 +7,7 @@ import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { Spinner } from '../ui/Spinner';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -299,7 +300,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                       onClick={handleDelete}
                       disabled={deleting}
                     >
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Supprimer'}
+                      {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
                     </Button>
                   </div>
                 </div>
@@ -331,7 +332,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner taille="bouton" className="mr-2" />
                       Enregistrement...
                     </>
                   ) : isEditing ? (

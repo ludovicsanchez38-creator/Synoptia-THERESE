@@ -6,10 +6,11 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Zap, Loader2 } from "lucide-react";
+import { X, Zap } from "lucide-react";
 import { useOpenClawStore } from "../../stores/openclawStore";
 import { Z_LAYER } from "../../styles/z-layers";
 import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
+import { Spinner } from "../ui/Spinner";
 
 export function NewTaskDialog() {
   const { isNewTaskOpen, closeNewTask, dispatchTask, isDispatching, openclawConnected, runningCount, maxAgents } =
@@ -123,7 +124,7 @@ export function NewTaskDialog() {
           >
             {isDispatching ? (
               <>
-                <Loader2 size={14} className="animate-spin" />
+                <Spinner taille="ligne" />
                 Lancement...
               </>
             ) : (

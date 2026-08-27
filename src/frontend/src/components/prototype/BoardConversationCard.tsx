@@ -8,7 +8,6 @@ import {
   Gavel,
   Globe,
   History,
-  Loader2,
   Play,
   Plus,
   RefreshCw,
@@ -29,6 +28,7 @@ import type { BoardRunState, BoardWorkspaceData, PrototypeAdvisorState } from '.
 import type { ReadResource } from './usePrototypeReadData';
 import { grantCloudConsent } from '../../lib/consent';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { Spinner } from '../ui/Spinner';
 
 export type BoardTarget = string | 'new-board' | 'current' | null;
 
@@ -93,14 +93,14 @@ export function BoardHistoryCard({
 
       {hasCurrentRun && (
         <button type="button" onClick={onOpenCurrent} className="flex w-full items-center gap-3 border-b border-[var(--k4)]/30 bg-[var(--k4bg)] px-4 py-3 text-left" data-testid="board-current-run">
-          {run.status === 'running' ? <Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" /> : run.status === 'complete' ? <CheckCircle2 className="h-4 w-4 text-success" /> : <AlertCircle className="h-4 w-4 text-warning" />}
+          {run.status === 'running' ? <Spinner taille="bouton" className="text-[var(--k4)]" /> : run.status === 'complete' ? <CheckCircle2 className="h-4 w-4 text-success" /> : <AlertCircle className="h-4 w-4 text-warning" />}
           <span className="min-w-0 flex-1"><strong className="block truncate text-xs text-text">{run.question}</strong><span className="text-xs text-[var(--k4)]">{run.phase || run.status}</span></span>
           <ChevronRight className="h-4 w-4 text-[var(--k4)]" />
         </button>
       )}
 
       {resource.status === 'loading' ? (
-        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin text-[var(--k4)]" />Je consulte les décisions…</div></StateShell>
+        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Spinner taille="bouton" className="text-[var(--k4)]" />Je consulte les décisions…</div></StateShell>
       ) : resource.status === 'error' ? (
         <StateShell>
           <div className="max-w-sm text-center" data-testid="board-history-error"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">Historique indisponible</p><p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p><div className="mt-4 flex justify-center gap-2"><button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button><button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir le Board</button></div></div>
@@ -138,7 +138,7 @@ function SynthesisView({ synthesis }: { synthesis: BoardSynthesis }) {
 function AdvisorOpinionCard({ advisor, info }: { advisor?: PrototypeAdvisorState; info: AdvisorInfo }) {
   return (
     <section className="rounded-[12px] border border-border bg-surface p-3">
-      <div className="flex items-center gap-2.5"><CharacterPortrait index={advisorPortraits[info.role]} className="h-8 w-8 rounded-[8px] border border-text" /><div className="min-w-0 flex-1"><h4 className="text-xs font-bold text-text">{info.name}</h4><p className="truncate text-xs text-text-muted">{advisor?.provider || info.personality}</p></div>{advisor?.isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--k4)]" /> : advisor?.isComplete ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <span className="h-2 w-2 rounded-full bg-border" />}</div>
+      <div className="flex items-center gap-2.5"><CharacterPortrait index={advisorPortraits[info.role]} className="h-8 w-8 rounded-[8px] border border-text" /><div className="min-w-0 flex-1"><h4 className="text-xs font-bold text-text">{info.name}</h4><p className="truncate text-xs text-text-muted">{advisor?.provider || info.personality}</p></div>{advisor?.isRunning ? <Spinner taille="ligne" className="text-[var(--k4)]" /> : advisor?.isComplete ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <span className="h-2 w-2 rounded-full bg-border" />}</div>
       {advisor?.content && <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{advisor.content}</p>}
     </section>
   );
@@ -151,7 +151,7 @@ function BoardRunView({ run, advisors, onCancel, onReset }: { run: BoardRunState
     <div className="space-y-4" data-testid="board-run-view">
       <section className="rounded-[13px] border border-border bg-surface p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Question soumise</span><h3 className="mt-1 text-sm font-bold leading-6 text-text">{run.question}</h3></div><span className="rounded-full bg-[var(--k4bg)] px-2.5 py-1 text-xs font-semibold text-[var(--k4)]">{run.mode === 'sovereign' ? 'Souverain' : 'Cloud'}</span></div>{run.context && <p className="mt-3 border-t border-border pt-3 text-xs leading-5 text-text-muted">{run.context}</p>}</section>
 
-      {run.status === 'running' && <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3"><div className="flex items-center gap-2 text-xs font-semibold text-accent" role="status">{run.isSearchingWeb ? <Globe className="h-4 w-4 animate-pulse" /> : <Loader2 className="h-4 w-4 animate-spin" />}{run.phase}</div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface" role="progressbar" aria-label="Progression de la délibération" aria-valuemin={0} aria-valuemax={5} aria-valuenow={completed} aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}><div className="h-full bg-[#7C3AED] transition-[width]" style={{ width: `${Math.max(4, completed / 5 * 100)}%` }} /></div><div className="mt-1 text-right text-xs text-text-muted">{completed}/5 conseillers terminés</div></div>}
+      {run.status === 'running' && <div className="rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3"><div className="flex items-center gap-2 text-xs font-semibold text-accent" role="status">{run.isSearchingWeb ? <Globe className="h-4 w-4 animate-pulse" /> : <Spinner taille="bouton" />}{run.phase}</div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface" role="progressbar" aria-label="Progression de la délibération" aria-valuemin={0} aria-valuemax={5} aria-valuenow={completed} aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}><div className="h-full bg-[#7C3AED] transition-[width]" style={{ width: `${Math.max(4, completed / 5 * 100)}%` }} /></div><div className="mt-1 text-right text-xs text-text-muted">{completed}/5 conseillers terminés</div></div>}
 
       <div className="grid gap-3 xl:grid-cols-2">{advisorOrder.map((role) => {
         const info = advisors.find((advisor) => advisor.role === role) || { role, name: role, emoji: '', color: '', personality: '' };
@@ -293,11 +293,11 @@ export function BoardWorkspaceCanvas({
   return (
     <div className="flex h-full flex-col"><div className="border-b border-border px-5 py-4 pr-16"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Gavel className="h-3.5 w-3.5" />Board réel</div><h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">{target === 'new-board' || target === 'current' ? 'Délibération stratégique' : 'Décision enregistrée'}</h2><p className="mt-1 text-sm text-text-muted">Cinq regards, leurs divergences et une synthèse sauvegardée dans l’historique local.</p></div>
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {resource.status === 'loading' ? <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement du Board…</div></StateShell>
+        {resource.status === 'loading' ? <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement du Board…</div></StateShell>
           : resource.status === 'error' ? <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
           : showRun ? <BoardRunView run={run} advisors={advisors} onCancel={onCancel} onReset={onReset} />
           : target === 'new-board' || target === 'current' ? <NewBoardForm advisors={advisors} run={run} onStart={onStart} />
-          : !decisionResource || decisionResource.status === 'loading' ? <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Loader2 className="h-4 w-4 animate-spin" />Chargement de la décision…</div></StateShell>
+          : !decisionResource || decisionResource.status === 'loading' ? <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement de la décision…</div></StateShell>
           : decisionResource.status === 'error' ? <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{decisionResource.error}</p><button type="button" onClick={onRetryDecision} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
           : <DecisionDetail decision={decisionResource.data} />}
       </div><div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Ouvrir le Board complet</button></div></div>

@@ -6,13 +6,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
+import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
 import { TEXTES_ONBOARDING } from './textes';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { Spinner } from '../ui/Spinner';
 
 interface LLMStepProps {
   onNext: (provider: api.LLMProvider | null) => void;
@@ -240,7 +241,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   if (loading) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3" role="status">
-        <Loader2 className="w-8 h-8 animate-spin text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan" />
         <p className="text-sm text-text-muted">Vérification des modèles disponibles…</p>
       </div>
     );
@@ -375,7 +376,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   onClick={handleSaveApiKey}
                   disabled={saving || !apiKeyInput.trim()}
                 >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sauver'}
+                  {saving ? <Spinner taille="bouton" /> : 'Sauver'}
                 </Button>
               </div>
 

@@ -6,11 +6,12 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Send, X, Loader2, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, X, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
+import { Spinner } from '../ui/Spinner';
 
 export function EmailCompose() {
   const requestExternalAction = useExternalActionConfirmation();
@@ -303,7 +304,7 @@ export function EmailCompose() {
             <Button variant="primary" size="sm" onClick={handleSend} disabled={sending}>
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner taille="bouton" className="mr-2" />
                   Envoi...
                 </>
               ) : (
