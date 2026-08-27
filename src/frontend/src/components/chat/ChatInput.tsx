@@ -607,9 +607,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // identifiant, le backend en créerait une seconde, et le projet
       // resterait sur celle que plus personne n'affiche.
       await attendrePersistance();
-      // Only send conversation_id if it's synced with backend
+      // Only send conversation_id if it's synced with backend.
+      // L'identifiant est relu DANS le store : celui du rendu date d'avant
+      // l'attente, et le rattachement vient peut-être de le remplacer. Envoyer
+      // l'ancien, c'est un identifiant que le serveur ne connaît pas.
       const conversation = currentConversation();
-      const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
+      const idCourant = conversation?.id ?? currentConversationId;
+      const syncedConversationId = conversation?.synced ? idCourant : undefined;
 
       // Stream response from backend (inclure skill_id si provient des guided prompts)
       const controller = new AbortController();
@@ -633,18 +637,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           // a DÉJÀ son identité serveur : l'écraser laisserait le projet sur
           // une conversation que plus personne n'affiche.
           const dejaEnregistree = Boolean(
-            useChatStore
-              .getState()
-              .conversations.find((c) => c.id === currentConversationId)?.synced
+            useChatStore.getState().conversations.find((c) => c.id === idCourant)?.synced
           );
           if (
-            doitAdopterIdentiteServeur(
-              currentConversationId,
-              backendConversationId,
-              dejaEnregistree
-            )
+            doitAdopterIdentiteServeur(idCourant, backendConversationId, dejaEnregistree)
           ) {
-            updateConversationId(currentConversationId!, backendConversationId);
+            updateConversationId(idCourant!, backendConversationId);
           }
         }
 
@@ -834,8 +832,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
     try {
       await attendrePersistance();
+      // Même règle que sur le chemin normal : l'identifiant est relu dans le
+      // store, jamais repris de la valeur figée au rendu.
       const conversation = currentConversation();
-      const syncedConversationId = conversation?.synced ? currentConversationId : undefined;
+      const idCourant = conversation?.id ?? currentConversationId;
+      const syncedConversationId = conversation?.synced ? idCourant : undefined;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -849,18 +850,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         if (chunk.conversation_id && !backendConversationId) {
           backendConversationId = chunk.conversation_id;
           const dejaEnregistree = Boolean(
-            useChatStore
-              .getState()
-              .conversations.find((c) => c.id === currentConversationId)?.synced
+            useChatStore.getState().conversations.find((c) => c.id === idCourant)?.synced
           );
           if (
-            doitAdopterIdentiteServeur(
-              currentConversationId,
-              backendConversationId,
-              dejaEnregistree
-            )
+            doitAdopterIdentiteServeur(idCourant, backendConversationId, dejaEnregistree)
           ) {
-            updateConversationId(currentConversationId!, backendConversationId);
+            updateConversationId(idCourant!, backendConversationId);
           }
         }
 
