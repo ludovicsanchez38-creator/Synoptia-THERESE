@@ -1156,58 +1156,55 @@ export function ConversationCanvasPrototype() {
       return;
     }
     setCanvasOpen(false);
+    // La destination est DÉCLARÉE dans la carte : l'ouvrir au clic, plutôt
+    // que d'attendre une validation du composeur que rien n'annonce. Le
+    // premier geste suffit là où il en fallait deux.
+    //
+    // Frontière : seules les destinations de NAVIGATION s'ouvrent ainsi. Une
+    // carte de type `prompt` propose un texte à relire et à corriger avant
+    // envoi — cette étape est une fonctionnalité, pas un frottement, et la
+    // supprimer enverrait un message que personne n'a validé.
+    if (capability.destination && capability.destination.kind !== 'prompt') {
+      ouvrirDestination(capability.destination);
+      setSelectedCapability(null);
+      setComposerValue('');
+      return;
+    }
     setComposerValue(capability.prompt);
   }
 
-  function submitComposer() {
-    const destination = selectedCapability?.destination;
-    if (destination?.kind === 'pending') return;
-    if (destination?.kind === 'calculator') {
-      setCalculatorOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'deliverables') {
-      setDeliverablesOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'images') {
-      setImagesOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'follow-ups') {
-      setFollowUpsOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'voice') {
-      setVoiceOpen(true);
-      setCanvasOpen(true);
-      setSelectedCapability(null);
-      setComposerValue('');
-      return;
-    }
-    if (destination?.kind === 'view') {
+  /**
+   * Ouvre ce qu'une carte désigne. Partagé par le clic sur la carte et par la
+   * validation du composeur : deux portes, une seule définition de ce que
+   * « ouvrir » veut dire.
+   */
+  function ouvrirDestination(destination: NonNullable<CapabilityItem['destination']>) {
+    if (destination.kind === 'pending') return;
+    if (destination.kind === 'calculator') { setCalculatorOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'deliverables') { setDeliverablesOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'images') { setImagesOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'follow-ups') { setFollowUpsOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'voice') { setVoiceOpen(true); setCanvasOpen(true); return; }
+    if (destination.kind === 'view') {
       if (destination.view === 'chat') openChat();
       else openEmbeddedView(destination.view);
       return;
     }
-    if (destination?.kind === 'action') {
-      if (destination.action === 'settings.open') {
-        openSettings(destination.settingsTab);
-      } else {
-        runAction(destination.action);
-      }
+    if (destination.kind === 'action') {
+      if (destination.action === 'settings.open') openSettings(destination.settingsTab);
+      else runAction(destination.action);
+    }
+  }
+
+  function submitComposer() {
+    const destination = selectedCapability?.destination;
+    // Les destinations de navigation s'ouvrent maintenant dès le clic sur la
+    // carte ; ce chemin reste pour les cartes atteintes autrement (palette,
+    // lien profond) et pour ne pas perdre une capacité déjà sélectionnée.
+    if (destination && destination.kind !== 'prompt') {
+      ouvrirDestination(destination);
+      setSelectedCapability(null);
+      setComposerValue('');
       return;
     }
     if (destination?.kind === 'prompt') {
