@@ -301,11 +301,18 @@ Findings non-bloquants relevés par la revue 3 agents (les bloquants F1/F2/F3 on
 
 ## Tests de non-regression
 
-Avant chaque release :
-1. `uv run pytest tests/test_regression.py -v`
-2. `uv run pytest tests/ --ignore=tests/e2e -q --timeout=30`
-3. Si un test echoue, NE PAS publier
-4. Chaque fix critique = un test de regression
+Avant chaque release, les SIX gates - dans cet ordre. `ruff` est le premier de
+la CI et le plus vite oublié : il a bloqué la release 0.50.1 sur un simple
+ordre d'imports, après que tous les autres soient passés.
+
+1. `uv run ruff check src/backend/ tests/`   ← **premier gate de la CI**
+2. `uv run pytest tests/test_regression.py -v`
+3. `OLLAMA_BASE_URL=http://127.0.0.1:9 uv run pytest tests/ --ignore=tests/e2e --junit-xml=/tmp/g.xml -q` (lire le XML : la console est tronquée par `os._exit`)
+4. `cd src/frontend && npx vitest run && npx tsc --noEmit && npx eslint src --max-warnings 27`
+5. `rm -rf .mypy_cache && uv run mypy src/backend/app --ignore-missing-imports --no-error-summary | grep -c " error:"` (baseline 1001)
+6. Si un gate echoue, NE PAS taguer
+
+Chaque fix critique = un test de regression.
 
 ## Documentation
 
