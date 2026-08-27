@@ -1008,12 +1008,17 @@ async def _chemin_lisible(session: AsyncSession, fichier: FileMetadata) -> str:
     chemin = Path(fichier.path)
     for racine in resultat.scalars().all():
         base = Path(racine.racine)
-        for candidat, reference in ((chemin, base), (chemin.resolve(), base.resolve())):
-            try:
-                if candidat.is_relative_to(reference):
-                    return str(candidat.relative_to(reference))
-            except OSError:
-                continue
+        if chemin.is_relative_to(base):
+            return str(chemin.relative_to(base))
+        # Second essai seulement si le premier a échoué, et DANS le try : la
+        # résolution touche le disque, et une boucle de liens symboliques ferait
+        # tomber tout le catalogue pour un simple confort d'affichage.
+        try:
+            reel, racine_reelle = chemin.resolve(), base.resolve()
+            if reel.is_relative_to(racine_reelle):
+                return str(reel.relative_to(racine_reelle))
+        except OSError:
+            continue
     return str(fichier.name)
 
 
