@@ -135,10 +135,13 @@ déterministe comme `[contact:]` — plutôt qu'un quatrième dialecte.
 
 ## Ce qui reste à trancher
 
-- **Le cas « cherche dans SWL » depuis une conversation non rattachée.**
-  Refuser en expliquant, ou autoriser quand le projet est nommé par
-  l'utilisateur lui-même et le journaliser. À décider avant d'écrire la
-  moindre ligne.
+- ~~**Le cas « cherche dans SWL » depuis une conversation non rattachée.**~~
+  **Tranché le 27/08 par Ludo : refuser en expliquant.** Thérèse répond que
+  la conversation n'est pas rattachée à ce projet et propose le geste qui
+  l'y rattache. Le modèle ne peut jamais élargir son propre périmètre, même
+  poliment : la cloison de la 0.43 tient dans le code, pas dans
+  l'interprétation d'une phrase. L'outil hérite donc du périmètre de la
+  conversation, sans aucun paramètre de projet.
 - **Le type `file` dans l'injection automatique**, une fois le catalogue en
   place. Le laisser fait double emploi ; le retirer prive les réponses d'un
   contexte qui arrive parfois à propos.
