@@ -12,6 +12,7 @@ import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { Button } from '../ui/Button';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -71,9 +72,35 @@ export function TaskList() {
   };
 
   if (filteredTasks.length === 0) {
+    /* Un écran vide est le moment où l'on a le PLUS besoin d'être guidé :
+       c'est souvent la première fois qu'on l'ouvre. « Aucune tâche » seul au
+       milieu constatait le vide sans proposer d'en sortir - le bouton de
+       création existait, mais dans la barre du haut, loin du regard. */
+    const filtre = searchQuery.trim();
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-text-muted">Aucune tâche</p>
+      <div className="flex h-full items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <CheckCircle2 className="mx-auto h-9 w-9 text-text-muted" />
+          <p className="mt-3 text-base font-semibold text-text">
+            {filtre ? 'Aucune tâche ne correspond' : 'Aucune tâche pour l’instant'}
+          </p>
+          <p className="mt-1 text-sm leading-5 text-text-muted">
+            {filtre
+              ? `Rien ne correspond à « ${filtre} ». Essaie un autre mot, ou crée cette tâche.`
+              : 'Note ce que tu ne veux pas oublier : Thérèse le gardera avec le reste de ton contexte.'}
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setCurrentTask(null);
+              setIsTaskFormOpen(true);
+            }}
+          >
+            Créer une tâche
+          </Button>
+        </div>
       </div>
     );
   }
