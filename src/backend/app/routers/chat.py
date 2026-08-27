@@ -62,6 +62,7 @@ from app.services.slash_commands import (
 )
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
+    _base_tool_name,
     empreinte_action,
     pop_pending,
     register_pending,
@@ -1958,6 +1959,39 @@ async def _attendre_annulation(
         await asyncio.sleep(intervalle_s)
 
 
+def retirer_outils_deja_en_attente(
+    tools: list[dict[str, Any]],
+    pending_confirmations: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    """Retire les outils sensibles dont une action attend déjà validation.
+
+    Un message mixte (texte + directive inline) prépare l'action par la voie
+    déterministe et relaie sa carte, puis appelle le modèle avec le même outil
+    encore disponible : le modèle le rappelle, et une seconde carte s'affiche
+    pour un seul et même rendez-vous.
+
+    On ne coupe QUE l'outil concerné : le modèle doit garder de quoi lire,
+    chercher et répondre. Toute entrée douteuse est ignorée (fail-open) — on
+    ne prive pas le modèle d'un outil sur une donnée qu'on ne comprend pas.
+    """
+    if not pending_confirmations:
+        return tools
+
+    bloques = {
+        _base_tool_name(entree["tool_name"])
+        for entree in pending_confirmations
+        if isinstance(entree, dict) and isinstance(entree.get("tool_name"), str)
+    }
+    if not bloques:
+        return tools
+
+    return [
+        outil
+        for outil in tools
+        if _base_tool_name(outil.get("function", {}).get("name", "")) not in bloques
+    ]
+
+
 async def _do_stream_response(
     conversation_id: str,
     user_message: str,
@@ -2205,6 +2239,11 @@ async def _do_stream_response(
         # (dépendance optionnelle e2e, absente de l'app packagée).
         if web_search_enabled and llm_service.config.provider.value != "gemini":
             tools = web_tools() + tools
+
+        # Une action sensible déjà en attente ne doit pas être re-proposée au
+        # modèle : sinon il la rappelle et une seconde carte s'affiche pour la
+        # même action (cf. tests/test_chat_outils_deja_en_attente.py).
+        tools = retirer_outils_deja_en_attente(tools, pending_confirmations)
 
     if tools:
         logger.info(f"Providing {len(tools)} tools to LLM")
