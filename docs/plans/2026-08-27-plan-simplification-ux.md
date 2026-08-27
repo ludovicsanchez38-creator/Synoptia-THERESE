@@ -4,6 +4,10 @@
 > ancrés fichier:ligne), dont les cinq structurants ont été contre-vérifiés
 > à la main. Contrainte absolue : **aucune perte de fonctionnalité**.
 
+> Les 43 constats avec leurs preuves fichier:ligne :
+> `2026-08-27-constats-ux-detail.md`. Cinq y sont marqués VÉRIFIÉ (relus à la
+> main) ; les autres restent des pistes à confirmer avant exécution.
+
 ## Le vrai diagnostic
 
 Ludo : « je trouve qu'il y a trop d'interfaces ».
