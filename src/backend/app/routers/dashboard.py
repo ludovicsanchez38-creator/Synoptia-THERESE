@@ -85,13 +85,13 @@ async def _has_any_llm_key(session: AsyncSession) -> bool:
     if settings.anthropic_api_key or settings.mistral_api_key:
         return True
 
-    try:
-        for _, db_key in _LLM_KEY_SOURCES:
-            has_key, _corrupted = await _check_key_decryptable(session, db_key)
-            if has_key:
-                return True
-    except Exception as e:
-        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
+    # Cette lecture-ci ne masque PLUS son échec : l'appelant a besoin de
+    # distinguer « aucune clé » de « on n'a pas pu lire ». Les replis
+    # environnement et .env ont déjà été tentés au-dessus, sans risque d'échec.
+    for _, db_key in _LLM_KEY_SOURCES:
+        has_key, _corrupted = await _check_key_decryptable(session, db_key)
+        if has_key:
+            return True
 
     # Ollama : choisi comme provider (Preference) ou serveur local joignable
     try:
@@ -146,7 +146,12 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
         billing_complete = False
         indisponibles.append("facturation")
 
-    has_llm_key = await _has_any_llm_key(session)
+    try:
+        has_llm_key = await _lire_a_une_cle_ia(session)
+    except Exception as e:
+        logger.warning(f"Erreur lecture clés LLM (setup-status): {e}")
+        has_llm_key = False
+        indisponibles.append("cle_ia")
 
     return {
         "has_calendar": has_calendar,
@@ -159,6 +164,10 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
         # l'utilisateur allait réparer ce qui n'était pas cassé.
         "indisponibles": indisponibles,
     }
+
+
+async def _lire_a_une_cle_ia(session: AsyncSession) -> bool:
+    return await _has_any_llm_key(session)
 
 
 async def _lire_a_un_calendrier(session: AsyncSession) -> bool:

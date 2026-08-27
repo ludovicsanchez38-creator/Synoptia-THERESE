@@ -66,3 +66,39 @@ class TestUnePanneNeSeDeguisePasEnVide:
 
         assert "has_email" in corps and "billing_complete" in corps
         assert corps["indisponibles"] == ["calendrier"]
+
+
+class TestLaCleIaSuitLaMemeRegle:
+    """Trois vérifications sur quatre, ce n'est pas une règle.
+
+    `_has_any_llm_key` absorbait ses erreurs de lecture et retombait sur
+    False, sans jamais signaler l'échec — alors que le calendrier, l'email et
+    la facturation le font depuis le correctif. La mise en route demandait
+    donc de configurer une clé DÉJÀ configurée, exactement le défaut qu'on
+    venait de fermer ailleurs. Relevé par la revue du 27/08/2026.
+    """
+
+    @pytest.mark.asyncio
+    async def test_une_lecture_de_cle_en_echec_est_nommee(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.routers import dashboard
+
+        async def lecture_en_panne(*a, **k):
+            raise RuntimeError("database is locked")
+
+        monkeypatch.setattr(dashboard, "_lire_a_une_cle_ia", lecture_en_panne)
+
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+
+        assert "cle_ia" in corps["indisponibles"]
+        assert corps["has_llm_key"] is False
+
+    @pytest.mark.asyncio
+    async def test_sans_cle_mais_sans_panne_rien_n_est_signale(
+        self, client: AsyncClient
+    ) -> None:
+        """Ne pas confondre « pas de clé » avec « on n'a pas pu savoir »."""
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+
+        assert "cle_ia" not in corps["indisponibles"]
