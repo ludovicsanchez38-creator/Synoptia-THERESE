@@ -98,7 +98,7 @@ export function MeetingAgendaCard({
             <Calendar className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="meeting-agenda-title" className="text-sm font-semibold text-text">Préparer un rendez-vous</h2>
+            <h2 id="meeting-agenda-title" className="text-base font-semibold text-text">Préparer un rendez-vous</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${resource.data.events.length} événement${resource.data.events.length > 1 ? 's' : ''} sur 90 jours`

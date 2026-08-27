@@ -74,7 +74,7 @@ export function TodayDashboardCard({
             <Sparkles className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="today-dashboard-title" className="text-sm font-semibold text-text">{todayBriefTitle(items.length)}</h2>
+            <h2 id="today-dashboard-title" className="text-base font-semibold text-text">{todayBriefTitle(items.length)}</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
@@ -133,7 +133,9 @@ export function TodayDashboardCard({
               <button
                 type="button"
                 onClick={onSetupEmail}
-                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"
+                /* L'action qui sort de l'état vide : elle mérite mieux que
+                   la taille des métadonnées qui l'entourent. */
+                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-sm font-semibold text-white"
               >
                 Brancher mes mails
               </button>

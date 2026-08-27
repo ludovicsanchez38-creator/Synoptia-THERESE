@@ -124,7 +124,7 @@ export function InvoiceWorkspaceCard({
             <Receipt className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="invoice-workspace-title" className="text-sm font-semibold text-text">Facturer un client</h2>
+            <h2 id="invoice-workspace-title" className="text-base font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready' ? `${resource.data.invoices.length} document${resource.data.invoices.length > 1 ? 's' : ''} enregistré${resource.data.invoices.length > 1 ? 's' : ''}` : 'Lecture de la facturation locale'}
             </p>
@@ -627,7 +627,7 @@ export function InvoiceWorkspaceCanvas({
       </div>
 
       <div className="border-t border-border bg-surface p-4">
-        <button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Ouvrir la facturation complète</button>
+        <button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Gérer mes devis et factures</button>
       </div>
     </div>
   );

@@ -65,7 +65,7 @@ export function EmailInboxCard({
             <Mail className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="email-inbox-title" className="text-sm font-semibold text-text">Messages à consulter</h2>
+            <h2 id="email-inbox-title" className="text-base font-semibold text-text">Messages à consulter</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready' && resource.data.currentAccount
                 ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''} · ${resource.data.currentAccount.email}`
@@ -489,7 +489,7 @@ export function EmailMessageCanvas({
           className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-4 py-3 text-sm font-semibold text-white"
         >
           <ExternalLink className="h-4 w-4" />
-          Ouvrir Email complet
+          Gérer ma messagerie
         </button>
       </div>
     </div>

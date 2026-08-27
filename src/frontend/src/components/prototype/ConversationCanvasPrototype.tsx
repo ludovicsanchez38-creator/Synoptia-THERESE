@@ -1670,7 +1670,11 @@ export function ConversationCanvasPrototype() {
                           type="button"
                           onClick={() => chooseScenario(action.id)}
                           aria-pressed={scenario === action.id}
-                          className={`rounded-full border px-3 py-2 text-xs font-semibold ${
+                          /* text-sm et non text-xs : ce sont les cinq gestes
+                             principaux de l'accueil, ils avaient la taille de
+                             « Connecté » et des mentions du bas de page. Une
+                             action ne se lit pas comme une métadonnée. */
+                          className={`rounded-full border px-3 py-2 text-sm font-semibold ${
                             scenario === action.id
                               ? 'border-text bg-text text-white'
                               : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'

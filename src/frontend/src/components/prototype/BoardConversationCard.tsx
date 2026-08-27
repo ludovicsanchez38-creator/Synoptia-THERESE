@@ -81,7 +81,7 @@ export function BoardHistoryCard({
         <div className="flex items-center gap-2.5">
           <CharacterPortrait index={1} className="h-9 w-9 rounded-[9px] border border-text" />
           <div>
-            <h2 id="board-history-title" className="text-sm font-semibold text-text">Décision</h2>
+            <h2 id="board-history-title" className="text-base font-semibold text-text">Décision</h2>
             <p className="text-xs text-text-muted">{resource.status === 'ready' ? `${resource.data.decisions.length} décision${resource.data.decisions.length > 1 ? 's' : ''} enregistrée${resource.data.decisions.length > 1 ? 's' : ''}` : 'Lecture de l’historique local'}</p>
           </div>
         </div>
@@ -103,7 +103,7 @@ export function BoardHistoryCard({
         <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Spinner taille="bouton" className="text-[var(--k4)]" />Je consulte les décisions…</div></StateShell>
       ) : resource.status === 'error' ? (
         <StateShell>
-          <div className="max-w-sm text-center" data-testid="board-history-error"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">Historique indisponible</p><p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p><div className="mt-4 flex justify-center gap-2"><button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button><button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Ouvrir le Board</button></div></div>
+          <div className="max-w-sm text-center" data-testid="board-history-error"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">Historique indisponible</p><p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p><div className="mt-4 flex justify-center gap-2"><button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button><button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir toutes mes décisions</button></div></div>
         </StateShell>
       ) : decisions.length === 0 ? (
         <StateShell><div className="text-center" data-testid="board-history-empty"><Gavel className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucune décision enregistrée</p><p className="mt-1 text-xs text-text-muted">Une délibération ne démarrera qu’après ta confirmation.</p><button type="button" onClick={onNewBoard} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Convoquer le Board</button></div></StateShell>
@@ -300,6 +300,6 @@ export function BoardWorkspaceCanvas({
           : !decisionResource || decisionResource.status === 'loading' ? <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement de la décision…</div></StateShell>
           : decisionResource.status === 'error' ? <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{decisionResource.error}</p><button type="button" onClick={onRetryDecision} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
           : <DecisionDetail decision={decisionResource.data} />}
-      </div><div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Ouvrir le Board complet</button></div></div>
+      </div><div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Voir toutes mes décisions</button></div></div>
   );
 }
