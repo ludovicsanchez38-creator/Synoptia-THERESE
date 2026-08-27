@@ -890,6 +890,13 @@ export function ConversationCanvasPrototype() {
     // en dépendance : la demande en attente est rejouée dès que le flux finit.
     if (isStreaming) return;
     derniereVueRef.current = viewDemandee;
+    if (viewDemandee === null) {
+      // Retour à l'accueil : le store ne désigne plus aucune vue, l'écran
+      // doit suivre. Sans cette branche, fermer par le store laissait la
+      // dernière vue affichée - l'écran et la pile divergeaient à nouveau.
+      setEmbeddedView(null);
+      return;
+    }
     if (viewDemandee === 'chat') {
       if (!chatOpen) openChat();
       return;
