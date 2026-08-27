@@ -926,14 +926,22 @@ export function ConversationCanvasPrototype() {
   // commandes déterministes - doit devenir visible ici. Sans cet abonnement,
   // ces gestes changeaient un état que la coque n'observait pas.
   const viewDemandee = useNavigationStore((state) => state.activeView);
-  const derniereVueRef = useRef<AppView | null>(null);
+  // La référence part de la vue COURANTE, pas de `null`.
+  //
+  // `null` servait ici de sentinelle « effet pas encore initialisé ». Depuis
+  // que `null` est aussi une valeur métier légitime — « aucune vue, la coque
+  // montre son accueil » —, les deux sens sont entrés en collision : la
+  // PREMIÈRE navigation depuis l'accueil était prise pour l'initialisation et
+  // avalée. L'écran restait sur l'accueil pendant que le store disait autre
+  // chose, pour tout geste qui appelle seulement `setView` (actions rapides de
+  // l'accueil, « Tout voir » de l'agenda, raccourcis de mise en route).
+  //
+  // Partir de la valeur courante donne le même « ne rien forcer au montage »
+  // sans avoir besoin d'une valeur réservée.
+  const derniereVueRef = useRef<AppView | null>(viewDemandee);
   useEffect(() => {
-    // Au montage, ne rien forcer : la coque a son propre écran d'accueil et
-    // n'ouvre le chat que sur un geste. Seuls les CHANGEMENTS de vue comptent.
-    if (derniereVueRef.current === null) {
-      derniereVueRef.current = viewDemandee;
-      return;
-    }
+    // Seuls les CHANGEMENTS de vue comptent : au montage, la référence vaut
+    // déjà la vue courante, donc rien ne se déclenche.
     if (derniereVueRef.current === viewDemandee) return;
     // La référence n'avance QUE si la navigation aboutit. Refusée pendant un
     // flux, la demande resterait sinon perdue : `activeView` n'ayant pas

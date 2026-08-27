@@ -93,6 +93,35 @@ describe('La suppression d’un fichier joint demande confirmation', () => {
     expect(screen.queryByText(/Supprimer « devis-v2.pdf » \?/)).toBeNull();
   });
 
+  /**
+   * Régression introduite par la confirmation elle-même, trouvée par la
+   * revue. La cible retenue survivait au changement de projet : l'effet de
+   * réinitialisation remettait l'erreur et la confirmation du PROJET à zéro,
+   * mais pas le fichier visé. On pouvait donc ouvrir le projet A, viser un
+   * fichier sans confirmer, passer au projet B, et y voir réapparaître la
+   * question — puis supprimer un fichier de A depuis B.
+   *
+   * Une confirmation qui survit à son contexte est pire que pas de
+   * confirmation du tout : elle donne l'accord de l'utilisateur à autre chose
+   * que ce qu'il a vu.
+   */
+  it('changer de projet abandonne la suppression en cours', async () => {
+    const { rerender } = render(
+      <ProjectModal isOpen onClose={vi.fn()} onSaved={vi.fn()} project={PROJET} />,
+    );
+    await waitFor(() => expect(screen.getByText('devis-v2.pdf')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Supprimer le fichier/i }));
+    await screen.findByText(/Supprimer « devis-v2.pdf » \?/);
+
+    const AUTRE = { ...(PROJET as object), id: 'p2', name: 'Autre projet' } as never;
+    rerender(<ProjectModal isOpen onClose={vi.fn()} onSaved={vi.fn()} project={AUTRE} />);
+
+    await waitFor(() =>
+      expect(screen.queryByText(/Supprimer « devis-v2.pdf » \?/)).toBeNull(),
+    );
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
   it('la suppression n’a lieu qu’après confirmation explicite', async () => {
     await ouvrir();
     fireEvent.click(screen.getByRole('button', { name: /Supprimer le fichier/i }));

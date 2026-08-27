@@ -77,6 +77,30 @@ describe('Le retour est déterministe', () => {
     expect(ecranAffiche()).toBe('accueil');
   });
 
+  /**
+   * Régression introduite par le correctif de l'état initial lui-même, et
+   * trouvée par la revue. Le pont coque/store utilisait `null` comme
+   * SENTINELLE « effet pas encore initialisé » ; en faisant de `null` une
+   * valeur métier légitime (« aucune vue »), les deux sens sont entrés en
+   * collision : la première navigation depuis l'accueil était prise pour
+   * l'initialisation et avalée. L'écran restait sur l'accueil pendant que le
+   * store disait autre chose.
+   *
+   * Touchait tout geste qui appelle seulement `setView` : les actions rapides
+   * de l'accueil, « Tout voir » de l'agenda, les raccourcis de mise en route.
+   */
+  it('la PREMIÈRE navigation depuis l’accueil ouvre bien la vue', async () => {
+    const { runAction } = await import('../../lib/actionRegistry');
+    render(<ConversationCanvasPrototype />);
+    expect(ecranAffiche()).toBe('accueil');
+
+    await act(async () => {
+      runAction('invoices.open');
+    });
+
+    await waitFor(() => expect(ecranAffiche()).toBe('invoices'));
+  });
+
   it('l’historique reflète l’écran affiché, jamais un écran fantôme', async () => {
     render(<ConversationCanvasPrototype />);
 

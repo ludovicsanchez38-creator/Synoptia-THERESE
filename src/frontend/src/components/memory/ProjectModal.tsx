@@ -168,6 +168,14 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     }
     setError(null);
     setShowDeleteConfirm(false);
+    // La cible d'une suppression ne survit PAS au changement de projet. Sans
+    // cette ligne, viser un fichier dans le projet A sans confirmer, puis
+    // ouvrir le projet B, y faisait réapparaître la question — et confirmer
+    // supprimait alors un fichier de A depuis B. Une confirmation qui survit à
+    // son contexte donne l'accord de l'utilisateur à autre chose que ce qu'il
+    // a vu.
+    setFichierASupprimer(null);
+    boutonSuppressionRef.current = null;
   }, [isOpen, project]);
 
   function handleChange(field: keyof FormData, value: string) {
