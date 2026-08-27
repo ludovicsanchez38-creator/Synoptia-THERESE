@@ -110,6 +110,10 @@ que les documents généraux et qu'il existe des fichiers indexés dans des
 projets, le dire à l'endroit du sélecteur. Une phrase suffit. C'est la pièce
 qui coûte le moins et qui règle peut-être à elle seule le cas signalé.
 
+> **LIVRÉ le 27/08** — `search_files` et `read_file`. Le design a été rejeté
+> une première fois : un catalogue sans lecture, sans identifiant, et qui
+> recopiait la cloison fail-open des contacts. La V2 corrige les trois.
+
 **Un catalogue, pas une seconde recherche sémantique.** La relecture
 adversariale a rejeté ma première formulation, et elle avait raison : « les
 documents indexés » et « Fichier-index.html » sont des interrogations de
