@@ -106,7 +106,7 @@ export function DynamicSkillForm({
                 className="block text-sm font-medium text-text mb-1.5"
               >
                 {field.label}
-                {field.required && <span className="text-red-400 ml-1">*</span>}
+                {field.required && <span className="text-error ml-1">*</span>}
               </label>
 
               {/* Text input */}

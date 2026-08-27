@@ -64,7 +64,7 @@ export function TaskList() {
   }
 
   const priorityColors = {
-    urgent: 'text-red-400',
+    urgent: 'text-error',
     high: 'text-orange-400',
     medium: 'text-blue-400',
     low: 'text-text-muted',
@@ -125,7 +125,7 @@ export function TaskList() {
                       {task.status === 'in_progress' && (
                         <Clock className="w-4 h-4 text-blue-400" />
                       )}
-                      {isOverdue && <AlertCircle className="w-4 h-4 text-red-400" />}
+                      {isOverdue && <AlertCircle className="w-4 h-4 text-error" />}
                       <span
                         className={`text-xs font-medium ${
                           priorityColors[task.priority as keyof typeof priorityColors]
@@ -153,7 +153,7 @@ export function TaskList() {
                       {task.due_date && (
                         <span
                           className={`text-xs ${
-                            isOverdue ? 'text-red-400 font-medium' : 'text-text-muted'
+                            isOverdue ? 'text-error font-medium' : 'text-text-muted'
                           }`}
                         >
                           {new Date(task.due_date).toLocaleDateString('fr-FR', {
@@ -182,10 +182,10 @@ export function TaskList() {
                     {/* Delete Button */}
                     <button
                       onClick={(e) => handleDelete(task.id, e)}
-                      className="p-1 hover:bg-red-500/20 rounded transition-colors"
+                      className="p-1 hover:bg-error/20 rounded transition-colors"
                       title="Supprimer"
                     >
-                      <Trash2 className="w-4 h-4 text-text-muted hover:text-red-400" />
+                      <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
                     </button>
                   </div>
                 </div>

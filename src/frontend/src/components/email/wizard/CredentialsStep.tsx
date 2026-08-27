@@ -132,7 +132,7 @@ export function CredentialsStep({
               {validation.clientId.valid ? (
                 <CheckCircle className="w-5 h-5 text-green-400" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-red-400" />
+                <AlertCircle className="w-5 h-5 text-error" />
               )}
             </div>
           )}
@@ -140,7 +140,7 @@ export function CredentialsStep({
         {validation.clientId && (
           <p
             className={`text-xs mt-1 ${
-              validation.clientId.valid ? 'text-green-400' : 'text-red-400'
+              validation.clientId.valid ? 'text-green-400' : 'text-error'
             }`}
           >
             {validation.clientId.message}
@@ -167,7 +167,7 @@ export function CredentialsStep({
               {validation.clientSecret.valid ? (
                 <CheckCircle className="w-5 h-5 text-green-400" />
               ) : (
-                <AlertCircle className="w-5 h-5 text-red-400" />
+                <AlertCircle className="w-5 h-5 text-error" />
               )}
             </div>
           )}
@@ -175,7 +175,7 @@ export function CredentialsStep({
         {validation.clientSecret && (
           <p
             className={`text-xs mt-1 ${
-              validation.clientSecret.valid ? 'text-green-400' : 'text-red-400'
+              validation.clientSecret.valid ? 'text-green-400' : 'text-error'
             }`}
           >
             {validation.clientSecret.message}
@@ -207,7 +207,7 @@ export function CredentialsStep({
           </Button>
         </div>
         {importError && (
-          <p className="text-xs text-red-400">{importError}</p>
+          <p className="text-xs text-error">{importError}</p>
         )}
       </div>
 

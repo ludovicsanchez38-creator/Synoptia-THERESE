@@ -35,7 +35,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             // Normal state
             !error && 'border-border focus:ring-cyan-400 focus:border-cyan-400/50',
             // Error state
-            error && 'border-red-500/50 focus:ring-red-400 focus:border-red-400/50',
+            error && 'border-error/50 focus:ring-red-400 focus:border-error/50',
             // Icon padding
             icon && 'pl-10',
             className

@@ -207,7 +207,7 @@ export function NotificationCenter() {
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
             aria-live="polite"
             aria-label={`${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`}
           >

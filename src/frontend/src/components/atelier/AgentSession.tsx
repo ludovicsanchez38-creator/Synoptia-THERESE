@@ -453,7 +453,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                     key={msg.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mx-3 my-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-400"
+                    className="mx-3 my-1.5 rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-xs text-error"
                   >
                     {msg.content}
                   </motion.div>
@@ -573,7 +573,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         {isStreaming ? (
           <button
             onClick={handleCancel}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/20 text-red-400 transition hover:bg-red-500/30"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-error/20 text-error transition hover:bg-error/30"
             title="Annuler"
           >
             <Square size={16} />

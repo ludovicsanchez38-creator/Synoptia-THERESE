@@ -296,7 +296,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                               e.stopPropagation();
                               handleDeleteCommand(cmd.id);
                             }}
-                            className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                            className="px-2 py-0.5 rounded text-xs font-medium bg-error/20 text-error hover:bg-error/30 transition-colors"
                           >
                             Confirmer
                           </button>
@@ -317,7 +317,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                             setConfirmDeleteId(cmd.id);
                             setShowMoveMenuId(null);
                           }}
-                          className="p-1 rounded-full hover:bg-red-500/15 text-text-muted hover:text-red-400 transition-colors"
+                          className="p-1 rounded-full hover:bg-error/15 text-text-muted hover:text-error transition-colors"
                           title="Supprimer"
                         >
                           <Trash2 className="w-3 h-3" />

@@ -465,8 +465,8 @@ function WeekView({
                 style={{ top: nowLineTop }}
               >
                 <div className="relative flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                  <div className="flex-1 h-px bg-red-500" />
+                  <div className="w-2 h-2 rounded-full bg-error -ml-1" />
+                  <div className="flex-1 h-px bg-error" />
                 </div>
               </div>
             )}
@@ -700,9 +700,9 @@ function DayView({
                 style={{ top: nowLineTop }}
               >
                 <div className="relative flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                  <div className="flex-1 h-px bg-red-500" />
-                  <span className="text-xs font-medium text-red-400 ml-2">
+                  <div className="w-2 h-2 rounded-full bg-error -ml-1" />
+                  <div className="flex-1 h-px bg-error" />
+                  <span className="text-xs font-medium text-error ml-2">
                     {String(currentHour).padStart(2, '0')}:{String(currentMinute).padStart(2, '0')}
                   </span>
                 </div>

@@ -154,7 +154,7 @@ function ParamsForm({
           <div key={param.id} className="space-y-1.5">
             <label className="text-xs font-medium text-text-muted">
               {param.label}
-              {param.required && <span className="text-red-400 ml-1">*</span>}
+              {param.required && <span className="text-error ml-1">*</span>}
             </label>
             {param.type === 'select' ? (
               <select
@@ -254,7 +254,7 @@ function TaskProgress({
     cancel_requested: 'text-warning',
     completed: 'text-emerald-400',
     cancelled: 'text-text-muted',
-    error: 'text-red-400',
+    error: 'text-error',
   }[task.status];
 
   return (
@@ -270,7 +270,7 @@ function TaskProgress({
             onClick={onCancel}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs',
-              'bg-red-500/10 text-red-400 hover:bg-red-500/20',
+              'bg-error/10 text-error hover:bg-error/20',
               'transition-colors',
             )}
           >
@@ -298,7 +298,7 @@ function TaskProgress({
           <motion.div
             className={cn(
               'h-full rounded-full',
-              isDone ? 'bg-emerald-400' : isError ? 'bg-red-400' : 'bg-[#22D3EE]',
+              isDone ? 'bg-emerald-400' : isError ? 'bg-error' : 'bg-[#22D3EE]',
             )}
             initial={{ width: 0 }}
             animate={{ width: `${Math.round(task.progress * 100)}%` }}
@@ -337,7 +337,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
     running: <Spinner taille="ligne" className="text-cyan-400" />,
     completed: <CheckCircle2 size={14} className="text-emerald-400" />,
     skipped: <Clock size={14} className="text-text-muted" />,
-    error: <AlertCircle size={14} className="text-red-400" />,
+    error: <AlertCircle size={14} className="text-error" />,
   }[step.status];
 
   // Auto-expand quand ca devient running
@@ -356,7 +356,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
           : step.status === 'completed'
           ? 'border-emerald-400/10 bg-emerald-400/5'
           : step.status === 'error'
-          ? 'border-red-400/10 bg-red-400/5'
+          ? 'border-error/10 bg-error/5'
           : 'border-border bg-transparent',
       )}
     >
@@ -399,7 +399,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
       </AnimatePresence>
       {step.error && (
         <div className="px-3 pb-3">
-          <p className="text-xs text-red-400">{step.error}</p>
+          <p className="text-xs text-error">{step.error}</p>
         </div>
       )}
     </div>
@@ -500,7 +500,7 @@ export function ActionPanel() {
                 cancelAction(activeTask.task_id);
               }}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
-              className="ml-1 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30"
+              className="ml-1 p-1 rounded-full bg-error/20 text-error hover:bg-error/30"
             >
               <Square size={10} />
             </span>

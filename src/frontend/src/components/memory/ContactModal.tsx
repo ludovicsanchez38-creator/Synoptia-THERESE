@@ -272,19 +272,19 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Error */}
               {error && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <span className="text-sm text-red-400">{error}</span>
+                <div className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <span className="text-sm text-error">{error}</span>
                 </div>
               )}
 
               {/* Delete confirmation */}
               {showDeleteConfirm && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm text-red-400 font-medium">Supprimer ce contact ?</p>
-                    <p className="text-xs text-red-400/70">Cette action est irréversible.</p>
+                    <p className="text-sm text-error font-medium">Supprimer ce contact ?</p>
+                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -313,7 +313,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 {isEditing && !showDeleteConfirm && (
                   <Button
                     variant="ghost"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />

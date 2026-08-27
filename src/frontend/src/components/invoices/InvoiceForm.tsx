@@ -658,9 +658,9 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <button
                         type="button"
                         onClick={() => removeLine(index)}
-                        className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                        className="p-2 rounded-lg bg-error/10 hover:bg-error/20 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-error" />
                       </button>
                     </div>
 

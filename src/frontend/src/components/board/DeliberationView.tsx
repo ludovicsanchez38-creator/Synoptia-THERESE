@@ -133,7 +133,7 @@ export function DeliberationView({
               variant="ghost"
               size="sm"
               onClick={onCancel}
-              className="text-red-400 hover:text-red-300 hover:bg-red-400/10 gap-1.5 shrink-0"
+              className="text-error hover:text-error hover:bg-error/10 gap-1.5 shrink-0"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
               Annuler

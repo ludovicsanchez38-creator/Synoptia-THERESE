@@ -246,8 +246,8 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           animate={{ opacity: 1, scale: 1 }}
           className="text-center space-y-4"
         >
-          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto">
-            <XCircle className="w-8 h-8 text-red-400" />
+          <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center mx-auto">
+            <XCircle className="w-8 h-8 text-error" />
           </div>
           <h3 className="text-lg font-semibold text-text">Échec de la connexion</h3>
           <p className="text-sm text-text-muted">{error || 'Une erreur est survenue'}</p>

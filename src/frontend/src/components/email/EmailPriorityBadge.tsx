@@ -17,9 +17,9 @@ const PRIORITY_CONFIG = {
   high: {
     emoji: '🔴',
     text: 'Urgent',
-    color: 'text-red-400',
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/30',
+    color: 'text-error',
+    bg: 'bg-error/10',
+    border: 'border-error/30',
   },
   medium: {
     emoji: '🟠',

@@ -15,7 +15,7 @@ import { useAccessibilityStore } from "../../stores/accessibilityStore";
 const STATUS_COLORS: Record<string, { dot: string; text: string; label: string }> = {
   running: { dot: "bg-green-400", text: "text-green-400", label: "En cours" },
   done: { dot: "bg-text-muted", text: "text-text-muted", label: "Terminée" },
-  error: { dot: "bg-red-400", text: "text-red-400", label: "Erreur" },
+  error: { dot: "bg-error", text: "text-error", label: "Erreur" },
   cancelled: { dot: "bg-amber-400", text: "text-amber-400", label: "Annulée" },
 };
 
@@ -140,7 +140,7 @@ export function SessionList() {
       <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5">
         <span
           className={`h-1.5 w-1.5 rounded-full ${
-            openclawConnected ? "bg-green-400" : "bg-red-400"
+            openclawConnected ? "bg-green-400" : "bg-error"
           }`}
         />
         <span className="text-[10px] text-text-muted">
@@ -197,7 +197,7 @@ export function SessionList() {
                     {session.status === "running" && (
                       <button
                         onClick={(e) => handleCancel(e, session.id)}
-                        className="flex-shrink-0 rounded p-0.5 text-red-400/60 transition hover:bg-red-500/10 hover:text-red-400"
+                        className="flex-shrink-0 rounded p-0.5 text-error/60 transition hover:bg-error/10 hover:text-error"
                         title="Annuler cette session"
                         aria-label="Annuler cette session"
                       >

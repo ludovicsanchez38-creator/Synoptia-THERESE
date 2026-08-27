@@ -365,8 +365,8 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Erreur suppression */}
       {trashError && (
-        <div className="mx-6 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg shrink-0">
-          <p className="text-xs text-red-300">{trashError}</p>
+        <div className="mx-6 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg shrink-0">
+          <p className="text-xs text-error">{trashError}</p>
         </div>
       )}
 

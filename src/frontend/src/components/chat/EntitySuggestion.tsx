@@ -92,7 +92,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
             </button>
             <button
               onClick={handleIgnore}
-              className="p-1 rounded hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
+              className="p-1 rounded hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Ignorer"
             >
               <X className="w-4 h-4" />

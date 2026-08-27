@@ -191,8 +191,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
   if (error && profiles.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <AlertCircle size={24} className="text-red-400/60" />
-        <p className="text-xs text-red-400/80">{error}</p>
+        <AlertCircle size={24} className="text-error/60" />
+        <p className="text-xs text-error/80">{error}</p>
       </div>
     );
   }
@@ -270,7 +270,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                   setCustomModel("");
                   localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
                 }}
-                className="shrink-0 text-[10px] text-text-muted hover:text-red-400 transition-colors"
+                className="shrink-0 text-[10px] text-text-muted hover:text-error transition-colors"
               >
                 ✕
               </button>

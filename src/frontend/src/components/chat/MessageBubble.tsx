@@ -600,7 +600,7 @@ export const MessageBubble = memo(function MessageBubble({
                 className={cn(
                   'flex items-center gap-1.5 px-2 py-1 rounded-[6px]',
                   message.uncertainty.confidence_level === 'low'
-                    ? 'bg-red-500/10 text-red-400'
+                    ? 'bg-error/10 text-error'
                     : message.uncertainty.confidence_level === 'medium'
                     ? 'bg-yellow-500/10 text-warning'
                     : 'bg-green-500/10 text-green-400'

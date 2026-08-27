@@ -255,8 +255,8 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const tasksContent = (
     <>
       {error && (
-        <div className="mx-6 mt-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-          <p className="text-sm text-red-400">{error}</p>
+        <div className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <p className="text-sm text-error">{error}</p>
         </div>
       )}
 

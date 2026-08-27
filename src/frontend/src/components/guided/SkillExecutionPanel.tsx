@@ -65,8 +65,8 @@ const formatConfig: Record<FileFormat, {
   },
   pdf: {
     icon: FileText,
-    color: 'text-red-400',
-    bgTint: 'bg-red-500/15',
+    color: 'text-error',
+    bgTint: 'bg-error/15',
     label: 'Document PDF',
     description: 'Fichier .pdf prêt à être téléchargé'
   },
@@ -169,7 +169,7 @@ export function SkillExecutionPanel({
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0 }}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-error flex items-center justify-center"
                 >
                   <X className="w-3.5 h-3.5 text-white" />
                 </motion.div>

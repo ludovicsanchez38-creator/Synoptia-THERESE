@@ -38,8 +38,8 @@ const formatConfig: Record<FileFormat, {
   },
   pdf: {
     icon: FileText,
-    color: 'text-red-400',
-    bgTint: 'bg-red-500/15',
+    color: 'text-error',
+    bgTint: 'bg-error/15',
   },
 };
 

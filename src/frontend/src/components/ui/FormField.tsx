@@ -36,11 +36,11 @@ export function FormField({
         htmlFor={htmlFor}
         className={cn(
           'block text-sm font-medium transition-colors',
-          error ? 'text-red-400' : 'text-text'
+          error ? 'text-error' : 'text-text'
         )}
       >
         {label}
-        {required && <span className="text-red-400 ml-0.5" aria-hidden="true">*</span>}
+        {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
       </label>
 
       {description && (
@@ -55,7 +55,7 @@ export function FormField({
         <p
           id={errorId}
           role="alert"
-          className="text-xs text-red-400 mt-1"
+          className="text-xs text-error mt-1"
         >
           {error}
         </p>

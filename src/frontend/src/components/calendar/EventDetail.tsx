@@ -104,7 +104,7 @@ export function EventDetail() {
             className={`inline-block px-2 py-1 text-xs rounded ${
               event.status === 'tentative'
                 ? 'bg-yellow-500/10 text-warning'
-                : 'bg-red-500/10 text-red-400'
+                : 'bg-error/10 text-error'
             }`}
           >
             {event.status === 'tentative' ? 'Provisoire' : 'Annulé'}
