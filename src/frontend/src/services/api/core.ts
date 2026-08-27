@@ -118,6 +118,16 @@ export function getSessionToken(): string | null {
  */
 export const API_TIMEOUT_MS = 30_000;
 
+/**
+ * Le début du message que NOUS écrivons quand un délai est dépassé.
+ *
+ * Selon le moteur, l'abandon peut remonter sous le nom générique `AbortError`
+ * au lieu de `TimeoutError`. Reconnaître notre propre texte est alors le seul
+ * moyen de distinguer un délai d'une annulation voulue par l'utilisateur — et
+ * c'est sans risque, puisque cette chaîne vient d'ici.
+ */
+export const MARQUEUR_DELAI = 'Délai de';
+
 export type ApiFetchOptions = RequestInit & {
   /**
    * Délai maximal en millisecondes, `null` pour désactiver. À désactiver sur

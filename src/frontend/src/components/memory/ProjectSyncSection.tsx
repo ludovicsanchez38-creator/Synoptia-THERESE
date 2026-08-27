@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FolderSync, Play, RefreshCw, Unlink } from 'lucide-react';
 
 import * as api from '../../services/api';
+import { MARQUEUR_DELAI } from '../../services/api/core';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 
@@ -30,7 +31,11 @@ interface Props {
  */
 function messageDEchec(e: unknown, action: string): string {
   const nom = (e as { name?: string } | null)?.name;
-  if (nom === 'TimeoutError') {
+  const texte = e instanceof Error ? e.message : '';
+  // Un délai peut remonter sous le nom générique `AbortError` selon le moteur.
+  // On le reconnaît alors à NOTRE propre message, jamais à une chaîne devinée.
+  const estUnDelai = nom === 'TimeoutError' || texte.startsWith(MARQUEUR_DELAI);
+  if (estUnDelai) {
     return (
       'Le dossier met trop de temps à répondre. Cela arrive sur un disque '
       + 'réseau ou quand un antivirus analyse le dossier. Vérifie que le '

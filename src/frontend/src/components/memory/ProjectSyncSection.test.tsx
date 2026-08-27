@@ -252,3 +252,48 @@ describe('D4/D5 : un échec d’attache s’explique et relit l’état', () => 
     expect(message.textContent).toContain('refusé');
   });
 });
+
+// Résiduel relevé par la relecture : selon le moteur, un délai dépassé peut
+// remonter sous le nom générique `AbortError`. Le distinguer d'une annulation
+// volontaire se fait sur NOTRE propre texte de délai, pas sur une chaîne
+// devinée — c'est nous qui l'écrivons dans la couche API.
+describe('D5 : un délai déguisé en annulation reste un délai', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    apiMocks.etatSync.mockResolvedValue({
+      racine: null, generation: null, dernier_plan: null, run: null,
+    });
+    apiMocks.journalSync.mockResolvedValue([]);
+  });
+
+  it('reconnaît un délai remonté sous le nom AbortError', async () => {
+    const e = new Error('Délai de 30000 ms dépassé');
+    e.name = 'AbortError';
+    apiMocks.definirRacineSync.mockRejectedValue(e);
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+
+    const champ = screen.getByPlaceholderText(/Documents/i);
+    fireEvent.change(champ, { target: { value: 'D:\\site' } });
+    fireEvent.click(screen.getByRole('button', { name: /attacher/i }));
+
+    const message = await screen.findByRole('alert');
+    expect(message.textContent?.toLowerCase()).toMatch(/temps|long/);
+    expect(message.textContent).not.toContain('30000');
+  });
+
+  it('une annulation volontaire reste une annulation', async () => {
+    const e = new Error("L'utilisateur a annulé");
+    e.name = 'AbortError';
+    apiMocks.definirRacineSync.mockRejectedValue(e);
+    render(<ProjectSyncSection projectId="p1" />);
+    await waitFor(() => expect(apiMocks.etatSync).toHaveBeenCalled());
+
+    const champ = screen.getByPlaceholderText(/Documents/i);
+    fireEvent.change(champ, { target: { value: 'D:\\site' } });
+    fireEvent.click(screen.getByRole('button', { name: /attacher/i }));
+
+    const message = await screen.findByRole('alert');
+    expect(message.textContent?.toLowerCase()).toContain('interrompue');
+  });
+});
