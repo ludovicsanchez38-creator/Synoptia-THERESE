@@ -751,9 +751,50 @@ async def _get_memory_context(
     except Exception as e:
         logger.debug(f"Contexte juridique ignoré : {e}")
 
+    # D6 : dire la cloison au lieu de la taire. Une conversation non rattachée
+    # applique le moindre privilège : les fichiers d'un dossier synchronisé
+    # portent un périmètre de projet et restent hors de portée. Sans cette
+    # mention, « rien ne correspond » et « rien n'est consultable ici »
+    # produisent le même silence, et le modèle répond comme si ces documents
+    # n'existaient pas — devant quelqu'un qui vient d'en indexer mille.
+    #
+    # La mention décrit le périmètre, jamais le contenu : elle ne franchit pas
+    # la cloison qu'elle décrit.
+    if scope == "global" and session is not None:
+        with contextlib.suppress(Exception):
+            hors_perimetre = await _compter_documents_de_projet(session)
+            if hors_perimetre:
+                context_parts.append(
+                    f"**Périmètre documentaire** : cette conversation n'est "
+                    f"rattachée à aucun projet, elle ne consulte donc que les "
+                    f"documents généraux. {hors_perimetre} document(s) indexé(s) "
+                    f"dans des projets sont hors du périmètre et ne te sont pas "
+                    f"accessibles. Si l'utilisateur parle de documents que tu ne "
+                    f"trouves pas, dis-lui de rattacher la conversation à son "
+                    f"projet avec le sélecteur en haut du chat — n'invente jamais "
+                    f"leur contenu et ne prétends pas qu'ils n'existent pas."
+                )
+
     if context_parts:
         return "\n\n".join(context_parts)
     return None
+
+
+async def _compter_documents_de_projet(session: AsyncSession) -> int:
+    """Combien de documents indexés vivent dans un projet.
+
+    `chunk_count > 0` n'est pas cosmétique : une indexation qui a échoué laisse
+    la ligne en base sans rien avoir écrit dans l'index vectoriel. Les compter
+    reviendrait à annoncer des documents introuvables.
+    """
+    from app.models.entities import FileMetadata
+
+    resultat = await session.execute(
+        select(func.count())
+        .select_from(FileMetadata)
+        .where(FileMetadata.scope == "project", FileMetadata.chunk_count > 0)
+    )
+    return int(resultat.scalar_one() or 0)
 
 
 # ============================================================
