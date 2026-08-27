@@ -93,15 +93,11 @@ async def _has_any_llm_key(session: AsyncSession) -> bool:
         if has_key:
             return True
 
-    # Ollama : choisi comme provider (Preference) ou serveur local joignable
-    try:
-        result = await session.execute(
-            select(Preference.value).where(Preference.key == "llm_provider").limit(1)
-        )
-        if result.scalar() == "ollama":
-            return True
-    except Exception as e:
-        logger.debug(f"Erreur lecture provider (setup-status): {e}")
+    # Ollama : choisi comme provider (Preference) ou serveur local joignable.
+    # Cette lecture ne masque plus son échec : une table de préférences
+    # illisible n'est pas « pas de clé », et l'appelant doit pouvoir le dire.
+    if await _lire_preference_ollama(session):
+        return True
     try:
         from app.services.http_client import get_http_client
 
@@ -164,6 +160,14 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
         # l'utilisateur allait réparer ce qui n'était pas cassé.
         "indisponibles": indisponibles,
     }
+
+
+async def _lire_preference_ollama(session: AsyncSession) -> bool:
+    """Ollama est-il le fournisseur choisi ? Laisse remonter ses échecs."""
+    result = await session.execute(
+        select(Preference.value).where(Preference.key == "llm_provider").limit(1)
+    )
+    return bool(result.scalar() == "ollama")
 
 
 async def _lire_a_une_cle_ia(session: AsyncSession) -> bool:

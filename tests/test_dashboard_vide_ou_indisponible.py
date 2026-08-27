@@ -95,6 +95,32 @@ class TestLaCleIaSuitLaMemeRegle:
         assert corps["has_llm_key"] is False
 
     @pytest.mark.asyncio
+    async def test_une_preference_de_fournisseur_illisible_est_nommee(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Le premier correctif avait DÉPLACÉ le défaut, pas fermé.
+
+        J'avais retiré le `try/except` qui masquait la lecture des clés en
+        base, mais deux autres subsistaient dans la même fonction. Une
+        préférence de fournisseur illisible retombait donc encore sur un
+        `False` muet. Trouvé par la sonde de la revue, qui a exécuté le cas
+        au lieu de lire le code.
+
+        Le test d'Ollama, lui, garde son silence : son absence est le cas
+        NORMAL d'une installation cloud, pas une panne.
+        """
+        from app.routers import dashboard
+
+        async def lecture_en_panne(*a, **k):
+            raise RuntimeError("preference table unreadable")
+
+        monkeypatch.setattr(dashboard, "_lire_preference_ollama", lecture_en_panne)
+
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+
+        assert "cle_ia" in corps["indisponibles"]
+
+    @pytest.mark.asyncio
     async def test_sans_cle_mais_sans_panne_rien_n_est_signale(
         self, client: AsyncClient
     ) -> None:
