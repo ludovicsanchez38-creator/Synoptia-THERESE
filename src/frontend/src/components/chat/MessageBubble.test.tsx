@@ -370,3 +370,67 @@ describe('P5-4 : la redirection ne capture pas les liens externes', () => {
     expect(downloadSkillFileMock).not.toHaveBeenCalled();
   });
 });
+
+describe("D2 : l'origine interne de l'app desktop est aussi interceptée", () => {
+  beforeEach(() => {
+    downloadSkillFileMock.mockClear();
+  });
+
+  // Dr_logic, 25/08 : « le lien proposé ouvre le navigateur web avec
+  // http://tauri.localhost/api/skills/download/… mais ça ne fonctionne pas ».
+  // tauri.localhost est l'origine INTERNE de la fenêtre Tauri (Windows/Linux) ;
+  // ouverte dans un navigateur externe elle ne résout rien. La garde BUG-173
+  // ne connaissait que 127.0.0.1 et localhost.
+  it.each([
+    ['http://tauri.localhost', 'http://tauri.localhost'],
+    ['https://tauri.localhost', 'https://tauri.localhost'],
+  ])('intercepte un lien absolu sur %s', async (_nom, origine) => {
+    downloadSkillFileMock.mockClear();
+    const message = makeMessage({
+      content: `Document : [Télécharger](${origine}/api/skills/download/48ed1acf-9f99-41e8-a540-76467fec571f)`,
+    });
+    const { unmount } = render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'Télécharger' });
+    expect(lien.getAttribute('target')).not.toBe('_blank');
+
+    fireEvent.click(lien);
+    await waitFor(() => {
+      expect(downloadSkillFileMock).toHaveBeenCalledWith(
+        '48ed1acf-9f99-41e8-a540-76467fec571f',
+        expect.any(String),
+      );
+    });
+    unmount();
+  });
+
+  // Le schéma tauri:// (origine macOS) n'a pas besoin d'interception : react-markdown
+  // vide l'href des protocoles non autorisés, le lien est déjà inerte. On l'ancre pour
+  // que personne ne le croie cliquable ni ne le voie partir en navigateur externe.
+  it('laisse le schéma tauri:// inerte, jamais ouvert en externe', () => {
+    downloadSkillFileMock.mockClear();
+    const message = makeMessage({
+      content: 'Document : [Télécharger](tauri://localhost/api/skills/download/48ed1acf)',
+    });
+    render(<MessageBubble message={message} />);
+
+    expect(screen.queryByRole('link', { name: 'Télécharger' })).toBeNull();
+    expect(document.querySelector('a[target="_blank"]')).toBeNull();
+  });
+
+  // Garde P5-4 conservée : un hôte externe qui se TERMINE par tauri.localhost
+  // sans en être (sous-domaine pirate) doit partir en externe.
+  it('ne capture pas un hôte externe imitant l’origine interne', () => {
+    downloadSkillFileMock.mockClear();
+    const message = makeMessage({
+      content:
+        'Voir [doc](https://tauri.localhost.exemple.com/api/skills/download/guide-2026)',
+    });
+    render(<MessageBubble message={message} />);
+
+    const lien = screen.getByRole('link', { name: 'doc' });
+    expect(lien.getAttribute('target')).toBe('_blank');
+    fireEvent.click(lien);
+    expect(downloadSkillFileMock).not.toHaveBeenCalled();
+  });
+});

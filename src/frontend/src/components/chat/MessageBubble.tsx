@@ -432,8 +432,12 @@ export const MessageBubble = memo(function MessageBubble({
                 // vers le save natif de la carte.
                 // Ancrée (P5-4) : seulement les liens INTERNES - un lien
                 // web externe contenant le motif doit partir en externe.
+                // D2 (Dr_logic, 25/08) : l'origine INTERNE de la fenêtre Tauri
+                // est `tauri.localhost` sur Windows/Linux, pas `localhost`. Un
+                // lien absolu sur cette origine échappait à la garde et partait
+                // en navigateur externe, où il ne résout rien.
                 const skillDl = href?.match(
-                  /^(?:https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?)?\/api\/skills\/download\/([\w-]+)$/,
+                  /^(?:https?:\/\/(?:127\.0\.0\.1|localhost|tauri\.localhost)(?::\d+)?)?\/api\/skills\/download\/([\w-]+)$/,
                 );
                 if (skillDl) {
                   const fileId = skillDl[1];
@@ -449,6 +453,13 @@ export const MessageBubble = memo(function MessageBubble({
                       {children}
                     </a>
                   );
+                }
+                // D2, second trou : ReactMarkdown VIDE l'href des schémas non
+                // autorisés (tauri://, javascript:, data:). Le lien gardait
+                // `target="_blank"` et ouvrait un onglet sur rien. Sans
+                // destination, ce n'est pas un lien : on rend le texte seul.
+                if (!href) {
+                  return <span className="text-muted">{children}</span>;
                 }
                 return (
                   <a
