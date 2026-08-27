@@ -303,10 +303,10 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">
+                <label htmlFor="projectmodal-nom-du-projet" className="text-sm text-text-muted">
                   Nom du projet <span className="text-error">*</span>
                 </label>
-                <input
+                <input id="projectmodal-nom-du-projet"
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
@@ -317,8 +317,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Description</label>
-                <textarea
+                <label htmlFor="projectmodal-description" className="text-sm text-text-muted">Description</label>
+                <textarea id="projectmodal-description"
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="Description du projet..."
@@ -377,8 +377,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Budget */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Budget (€)</label>
-                <input
+                <label htmlFor="projectmodal-budget" className="text-sm text-text-muted">Budget (€)</label>
+                <input id="projectmodal-budget"
                   type="number"
                   value={formData.budget}
                   onChange={(e) => handleChange('budget', e.target.value)}
@@ -391,8 +391,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Notes */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Notes</label>
-                <textarea
+                <label htmlFor="projectmodal-notes" className="text-sm text-text-muted">Notes</label>
+                <textarea id="projectmodal-notes"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Notes internes sur le projet..."
@@ -466,8 +466,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Tags */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
-                <input
+                <label htmlFor="projectmodal-tags-separes-par-des-virgule" className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
+                <input id="projectmodal-tags-separes-par-des-virgule"
                   type="text"
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}

@@ -282,8 +282,8 @@ export function EventForm() {
 
         {/* Summary */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Titre *</label>
-          <input
+          <label htmlFor="eventform-titre" className="text-sm text-text-muted mb-2 block">Titre *</label>
+          <input id="eventform-titre"
             type="text"
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
@@ -309,8 +309,8 @@ export function EventForm() {
         {/* Start Date/Time */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Date de début *</label>
-            <input
+            <label htmlFor="eventform-date-de-debut" className="text-sm text-text-muted mb-2 block">Date de début *</label>
+            <input id="eventform-date-de-debut"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -319,8 +319,8 @@ export function EventForm() {
           </div>
           {!allDay && (
             <div>
-              <label className="text-sm text-text-muted mb-2 block">Heure de début *</label>
-              <input
+              <label htmlFor="eventform-heure-de-debut" className="text-sm text-text-muted mb-2 block">Heure de début *</label>
+              <input id="eventform-heure-de-debut"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -333,8 +333,8 @@ export function EventForm() {
         {/* End Date/Time */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Date de fin *</label>
-            <input
+            <label htmlFor="eventform-date-de-fin" className="text-sm text-text-muted mb-2 block">Date de fin *</label>
+            <input id="eventform-date-de-fin"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -343,8 +343,8 @@ export function EventForm() {
           </div>
           {!allDay && (
             <div>
-              <label className="text-sm text-text-muted mb-2 block">Heure de fin *</label>
-              <input
+              <label htmlFor="eventform-heure-de-fin" className="text-sm text-text-muted mb-2 block">Heure de fin *</label>
+              <input id="eventform-heure-de-fin"
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
@@ -356,8 +356,8 @@ export function EventForm() {
 
         {/* Location */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Lieu</label>
-          <input
+          <label htmlFor="eventform-lieu" className="text-sm text-text-muted mb-2 block">Lieu</label>
+          <input id="eventform-lieu"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -368,8 +368,8 @@ export function EventForm() {
 
         {/* Description */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Description</label>
-          <textarea
+          <label htmlFor="eventform-description" className="text-sm text-text-muted mb-2 block">Description</label>
+          <textarea id="eventform-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de l'événement"
@@ -380,8 +380,8 @@ export function EventForm() {
 
         {/* Attendees */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Participants</label>
-          <input
+          <label htmlFor="eventform-participants" className="text-sm text-text-muted mb-2 block">Participants</label>
+          <input id="eventform-participants"
             type="text"
             value={attendeesInput}
             onChange={(e) => setAttendeesInput(e.target.value)}

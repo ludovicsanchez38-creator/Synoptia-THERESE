@@ -5,7 +5,7 @@
  * US-011 : Composants formulaire standardises
  */
 
-import { type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 
 export interface FormFieldProps {
@@ -30,6 +30,24 @@ export function FormField({
   const errorId = htmlFor ? `${htmlFor}-error` : undefined;
   const descId = htmlFor ? `${htmlFor}-desc` : undefined;
 
+  /* Ces deux identifiants étaient calculés… et jamais posés. Un lecteur
+     d'écran annonçait le champ et son label, mais ni l'explication ni le
+     message d'erreur : le rouge sous le champ n'existait que pour l'œil.
+     On rattache donc ici, à l'endroit qui connaît les deux. */
+  const rattachements = [description && descId, error && errorId]
+    .filter(Boolean)
+    .join(' ');
+
+  const champDecrit = Children.map(children, (enfant) => {
+    if (!isValidElement(enfant)) return enfant;
+    const existant = (enfant.props as { 'aria-describedby'?: string })['aria-describedby'];
+    const decrit = [existant, rattachements].filter(Boolean).join(' ');
+    return cloneElement(enfant as ReactElement<Record<string, unknown>>, {
+      ...(decrit ? { 'aria-describedby': decrit } : {}),
+      ...(error ? { 'aria-invalid': true } : {}),
+    });
+  });
+
   return (
     <div className={cn('space-y-1.5', className)}>
       <label
@@ -49,7 +67,7 @@ export function FormField({
         </p>
       )}
 
-      {children}
+      {champDecrit}
 
       {error && (
         <p

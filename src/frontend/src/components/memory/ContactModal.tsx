@@ -189,8 +189,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm text-text-muted">Prénom</label>
-                  <input
+                  <label htmlFor="contactmodal-prenom" className="text-sm text-text-muted">Prénom</label>
+                  <input id="contactmodal-prenom"
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
@@ -199,8 +199,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-text-muted">Nom</label>
-                  <input
+                  <label htmlFor="contactmodal-nom" className="text-sm text-text-muted">Nom</label>
+                  <input id="contactmodal-nom"
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
@@ -212,8 +212,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Company */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Entreprise</label>
-                <input
+                <label htmlFor="contactmodal-entreprise" className="text-sm text-text-muted">Entreprise</label>
+                <input id="contactmodal-entreprise"
                   type="text"
                   value={formData.company}
                   onChange={(e) => handleChange('company', e.target.value)}
@@ -224,8 +224,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Email */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Email</label>
-                <input
+                <label htmlFor="contactmodal-email" className="text-sm text-text-muted">Email</label>
+                <input id="contactmodal-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
@@ -236,8 +236,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Phone */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Téléphone</label>
-                <input
+                <label htmlFor="contactmodal-telephone" className="text-sm text-text-muted">Téléphone</label>
+                <input id="contactmodal-telephone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
@@ -248,8 +248,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Notes */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Notes</label>
-                <textarea
+                <label htmlFor="contactmodal-notes" className="text-sm text-text-muted">Notes</label>
+                <textarea id="contactmodal-notes"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
@@ -260,8 +260,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Tags */}
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
-                <input
+                <label htmlFor="contactmodal-tags-separes-par-des-virgule" className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
+                <input id="contactmodal-tags-separes-par-des-virgule"
                   type="text"
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}

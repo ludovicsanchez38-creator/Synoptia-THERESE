@@ -160,8 +160,8 @@ export function TaskForm() {
 
         {/* Title */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Titre *</label>
-          <input
+          <label htmlFor="taskform-titre" className="text-sm text-text-muted mb-2 block">Titre *</label>
+          <input id="taskform-titre"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -172,8 +172,8 @@ export function TaskForm() {
 
         {/* Description */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Description</label>
-          <textarea
+          <label htmlFor="taskform-description" className="text-sm text-text-muted mb-2 block">Description</label>
+          <textarea id="taskform-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de la tâche"
@@ -185,8 +185,8 @@ export function TaskForm() {
         {/* Status & Priority */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Statut</label>
-            <select
+            <label htmlFor="taskform-statut" className="text-sm text-text-muted mb-2 block">Statut</label>
+            <select id="taskform-statut"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -199,8 +199,8 @@ export function TaskForm() {
           </div>
 
           <div>
-            <label className="text-sm text-text-muted mb-2 block">Priorité</label>
-            <select
+            <label htmlFor="taskform-priorite" className="text-sm text-text-muted mb-2 block">Priorité</label>
+            <select id="taskform-priorite"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
@@ -215,8 +215,8 @@ export function TaskForm() {
 
         {/* Due Date */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Date limite</label>
-          <input
+          <label htmlFor="taskform-date-limite" className="text-sm text-text-muted mb-2 block">Date limite</label>
+          <input id="taskform-date-limite"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -226,8 +226,8 @@ export function TaskForm() {
 
         {/* Tags */}
         <div>
-          <label className="text-sm text-text-muted mb-2 block">Tags</label>
-          <input
+          <label htmlFor="taskform-tags" className="text-sm text-text-muted mb-2 block">Tags</label>
+          <input id="taskform-tags"
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
@@ -239,8 +239,8 @@ export function TaskForm() {
 
         {/* Project (optional, future feature) */}
         {/* <div>
-          <label className="text-sm text-text-muted mb-2 block">Projet lié</label>
-          <select
+          <label htmlFor="taskform-projet-lie" className="text-sm text-text-muted mb-2 block">Projet lié</label>
+          <select id="taskform-projet-lie"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
             className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
