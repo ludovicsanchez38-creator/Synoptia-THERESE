@@ -263,6 +263,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
 }
 
 function DevisDraftForm({
+  contactInitial,
   data,
   onCreateDraft,
   onCreateContact,
@@ -270,8 +271,13 @@ function DevisDraftForm({
   data: InvoiceWorkspaceData;
   onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
   onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
+  /** Le contact que la coque a déjà à l'écran, s'il y en a un. */
+  contactInitial?: string;
 }) {
-  const [contactId, setContactId] = useState('');
+  /* Entrée 2 : le formulaire naissait vide alors que la coque tient le contact
+     sélectionné, qui survit au passage de « Retrouver » à « Facturer ». La
+     valeur héritée reste modifiable : préremplir n'est pas verrouiller. */
+  const [contactId, setContactId] = useState(contactInitial ?? '');
   const [currency, setCurrency] = useState('EUR');
   const [issueDate, setIssueDate] = useState(todayIso);
   const [dueDate, setDueDate] = useState(dueDateIso);
@@ -582,6 +588,7 @@ function DevisDraftForm({
 }
 
 export function InvoiceWorkspaceCanvas({
+  contactInitial,
   resource,
   invoiceResource,
   selection,
@@ -598,6 +605,8 @@ export function InvoiceWorkspaceCanvas({
   onRetryInvoice: () => void;
   onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
   onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
+  /** Le contact que la coque a déjà à l'écran, s'il y en a un. */
+  contactInitial?: string;
   onOpenClassic: () => void;
 }) {
   return (
@@ -614,7 +623,7 @@ export function InvoiceWorkspaceCanvas({
         ) : resource.status === 'error' ? (
           <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></StateShell>
         ) : selection === 'new-devis' ? (
-          <DevisDraftForm data={resource.data} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
+          <DevisDraftForm data={resource.data} contactInitial={contactInitial} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
         ) : !invoiceResource || invoiceResource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement du document…</div></StateShell>
         ) : invoiceResource.status === 'error' ? (

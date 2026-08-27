@@ -356,6 +356,9 @@ function ContextCanvas({
           resource={invoiceResource}
           invoiceResource={invoiceDetailResource}
           selection={selectedInvoiceId}
+          /* Entrée 2 : le client déjà à l'écran arme le nouveau devis. La
+             valeur reste modifiable dans le formulaire. */
+          contactInitial={selectedContactId ?? undefined}
           onRetry={onRetryInvoices}
           onRetryInvoice={onRetryInvoice}
           onCreateDraft={onCreateDevisDraft}
