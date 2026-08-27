@@ -63,6 +63,7 @@ from app.services.slash_commands import (
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
+    canoniser_arguments,
     empreinte_action,
     pop_pending,
     register_pending,
@@ -2256,12 +2257,26 @@ async def _do_stream_response(
             capabilities += "- **web_search** : Recherche sur internet. Utilise-le pour toute question sur l'actualité, analyser un site web, ou trouver des informations récentes.\n"
         if "browser_navigate" in tool_names:
             capabilities += "- **browser_navigate** : Navigue sur une page web, extrait le contenu, interagit (clic, formulaire, liens, screenshot). Utilise-le quand l'utilisateur demande d'aller sur un site précis.\n"
+        # Une capacité par outil, chacune gardée par SON nom. Les paires
+        # (« read_emails / send_email ») étaient annoncées sous une garde
+        # unique : un outil retiré de la liste — parce qu'une action attend
+        # confirmation — restait promis au modèle, qui le rappelait. Une
+        # promesse qui survit au retrait de l'outil est ce qui produit la
+        # seconde carte.
         if "create_contact" in tool_names:
-            capabilities += "- **create_contact** / **create_project** : Créer des contacts et projets en mémoire.\n"
+            capabilities += "- **create_contact** : Creer un contact en memoire.\n"
+        if "create_project" in tool_names:
+            capabilities += "- **create_project** : Creer un projet en memoire.\n"
         if "read_emails" in tool_names:
-            capabilities += "- **read_emails** / **send_email** / **search_emails** : Lire, envoyer et chercher dans les emails de l'utilisateur.\n"
+            capabilities += "- **read_emails** : Lire les emails de l'utilisateur.\n"
+        if "send_email" in tool_names:
+            capabilities += "- **send_email** : Envoyer un email depuis le compte de l'utilisateur.\n"
+        if "search_emails" in tool_names:
+            capabilities += "- **search_emails** : Chercher dans les emails de l'utilisateur.\n"
         if "list_calendar_events" in tool_names:
-            capabilities += "- **list_calendar_events** / **create_calendar_event** : Consulter et creer des evenements dans le calendrier.\n"
+            capabilities += "- **list_calendar_events** : Consulter les evenements du calendrier.\n"
+        if "create_calendar_event" in tool_names:
+            capabilities += "- **create_calendar_event** : Creer un evenement dans le calendrier.\n"
         if "search_invoices" in tool_names:
             capabilities += "- **search_invoices** : Retrouver une facture, un devis ou un avoir LOCAL par sa reference (ex: FACT-2026-001) ou par client. Utilise-le AU LIEU de dire que tu ne peux pas chercher les documents locaux, et ne propose JAMAIS de recreer un document existant. L'envoi d'une facture en piece jointe par email est IMPOSSIBLE pour le moment : n'utilise pas send_email pour ca, oriente vers la vue Facturation.\n"
         if "read_contact" in tool_names:
@@ -2758,7 +2773,7 @@ async def _execute_tools_and_continue(
         # "Executing tool: send_email" laissait croire à un envoi réel alors que
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
-            pending_arguments = dict(tc.arguments)
+            pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
             if tc.name.split("__", 1)[-1] == "create_calendar_event" and session is not None:
                 from app.services.workspace_tools import (
                     get_calendar_confirmation_destination,

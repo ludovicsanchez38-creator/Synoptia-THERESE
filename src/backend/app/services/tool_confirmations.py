@@ -129,3 +129,27 @@ def empreinte_action(tool_name: str, arguments: dict[str, Any]) -> str | None:
             (corps or "").strip(),
         )
     )
+
+
+def canoniser_arguments(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Ramène les alias d'un outil sensible sur les noms qu'il lit vraiment.
+
+    Relevé par la relecture adversariale : `_send_email` ne lit que `body`. Un
+    modèle qui écrit `content` produisait donc un e-mail au corps VIDE — et la
+    déduplication aggravait le cas, puisque la carte conserve les arguments du
+    premier appel reçu. Ce qui est montré à l'utilisateur doit être exactement
+    ce qui partira.
+
+    Un `body` déjà présent fait autorité : on ne l'écrase jamais.
+    """
+    if _base_tool_name(tool_name) != "send_email":
+        return arguments
+
+    canonises = dict(arguments)
+    if not isinstance(canonises.get("body"), str) or not canonises["body"]:
+        for alias in _ALIAS_CORPS[1:]:
+            valeur = canonises.get(alias)
+            if isinstance(valeur, str) and valeur:
+                canonises["body"] = valeur
+                break
+    return canonises

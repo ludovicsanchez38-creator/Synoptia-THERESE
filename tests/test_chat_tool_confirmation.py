@@ -344,3 +344,68 @@ async def test_meme_envoi_par_loutil_natif_et_par_mcp_une_seule_carte(monkeypatc
         )
     ]
     assert len(_cartes(_parse_chunks(raw))) == 1
+
+
+@pytest.mark.asyncio
+async def test_le_corps_est_conserve_quel_que_soit_lordre_des_alias(monkeypatch):
+    """Relevé par la relecture adversariale : la dédup pouvait vider l'e-mail.
+
+    L'empreinte tient `content` et `body` pour un même corps, mais la carte
+    conserve les arguments du PREMIER appel — et l'envoi ne lit que `body`.
+    Ordre `content` puis `body` : une seule carte, corps vide à l'écran, et un
+    e-mail vide expédié après confirmation. Le corps doit survivre à l'alias.
+    """
+    async def _jamais(*args, **kwargs):  # pragma: no cover
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    appels = [
+        ToolCall(
+            id="t1",
+            name="send_email",
+            arguments={"to": "x@y.fr", "subject": "Sujet", "content": "Le corps"},
+        ),
+        ToolCall(
+            id="t2",
+            name="send_email",
+            arguments={"to": "x@y.fr", "subject": "Sujet", "body": "Le corps"},
+        ),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    cartes = _cartes(_parse_chunks(raw))
+    assert len(cartes) == 1
+    assert cartes[0]["confirmation"]["arguments"]["body"] == "Le corps"
+
+
+@pytest.mark.asyncio
+async def test_un_corps_sous_alias_seul_nest_pas_perdu(monkeypatch):
+    """Même seul, `content` doit atteindre l'envoi, qui ne lit que `body`."""
+    async def _jamais(*args, **kwargs):  # pragma: no cover
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _jamais)
+
+    appels = [
+        ToolCall(
+            id="t1",
+            name="send_email",
+            arguments={"to": "x@y.fr", "subject": "Sujet", "content": "Le corps"},
+        ),
+    ]
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            _FakeLLM(), None, None, "", appels, [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    cartes = _cartes(_parse_chunks(raw))
+    assert len(cartes) == 1
+    assert cartes[0]["confirmation"]["arguments"]["body"] == "Le corps"
