@@ -63,7 +63,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const isEditing = !!project;
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape L7 ou escapeStack du parent).
+  // Échap reste géré par la cascade de la coque, ou par l'escapeStack du parent.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 

@@ -45,7 +45,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   const isEditing = !!contact;
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  // Échap reste géré par la cascade de la coque (ConversationCanvasPrototype) via le store.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 

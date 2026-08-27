@@ -298,8 +298,10 @@ describe('Gate de parité par source d’action', () => {
     it('branche Échap sur la pile unifiée', async () => {
       // Deux versions creuses avant celle-ci. La première cherchait le mot
       // « Escape » dans le fichier source. La seconde vérifiait que
-      // `resolveEscape` est bien une fonction et créait un espion jamais
-      // utilisé — ce qui ne prouve rien non plus (relevé par Soso).
+      // l'ancienne `resolveEscape` était bien une fonction, et créait un
+      // espion jamais utilisé — ce qui ne prouve rien non plus (relevé par
+      // Soso). Cette fonction a été retirée le 27/08/2026 : elle n'avait plus
+      // aucun appelant.
       //
       // Ce qui compte : la coque doit consommer Échap DANS L'ORDRE de la pile
       // unifiée. Un handler poussé sur la pile partagée est le plus récent :

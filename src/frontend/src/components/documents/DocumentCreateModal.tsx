@@ -40,7 +40,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
   const [formError, setFormError] = useState<string | null>(null);
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape / escapeStack du parent).
+  // Échap reste géré par la pile unifiée (cascade Échap de la coque / escapeStack du parent).
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 

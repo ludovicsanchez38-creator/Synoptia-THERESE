@@ -104,7 +104,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
   // Correctif KO Syn 1.1/1.2 : quand un modal destructif (suppression / RGPD) est
   // ouvert, Échap doit le fermer LUI, pas éjecter la vue Mémoire. On l'inscrit sur
-  // la pile d'Échap (interceptée avant le retour de vue par resolveEscape).
+  // la pile d'Échap (interceptée avant le retour de vue par cascade Échap de la coque).
   useEffect(() => {
     if (!deleteConfirm && !rgpdAction) return;
     return pushEscapeHandler(() => {

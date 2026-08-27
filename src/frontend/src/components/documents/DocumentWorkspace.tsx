@@ -26,7 +26,7 @@
  *
  * Revue adversariale lot D (finding E) : le bouton interne « Retour » n'est
  * PAS le seul chemin de sortie de l'atelier - la back-bar « ← Chat » de
- * ChatLayout, Échap (resolveEscape -> goBack) et les boutons header/⌘K
+ * ChatLayout, Échap (cascade Échap de la coque -> goBack) et les boutons header/⌘K
  * (setView) démontent ce composant SANS passer par `handleBack`. Un effet de
  * nettoyage au DÉMONTAGE appelle donc `closeDocument()` inconditionnellement
  * (idempotent - déjà appelé ou non par `handleBack`), et le rendu est gardé

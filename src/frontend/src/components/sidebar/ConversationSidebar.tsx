@@ -125,7 +125,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
     }
   }, [contextMenuId]);
 
-  // Échap géré par la pile unifiée (resolveEscape, L7) : ferme la sidebar via le store.
+  // Échap géré par la cascade de la coque (ConversationCanvasPrototype) : ferme la sidebar via le store.
 
   return (
     <AnimatePresence>

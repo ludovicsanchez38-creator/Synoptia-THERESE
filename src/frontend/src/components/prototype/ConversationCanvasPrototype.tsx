@@ -611,9 +611,27 @@ function CommandPalette({
 
 
 /**
- * Overlays de la pile unifiée, dans l'ordre de `resolveEscape` mais SANS son
+ * Overlays de la pile unifiée, dans l'ordre de `cascade Échap de la coque` mais SANS son
  * retour de vue final : la coque enchaîne ensuite sur ses propres surfaces.
  * Retourne vrai si Échap a été consommé ici.
+ */
+/**
+ * L'AUTORITÉ d'Échap pour toute l'application, avec la cascade de l'effet
+ * clavier plus bas dans ce fichier.
+ *
+ * Il exista un `lib/cascade Échap de la coque.ts` qui se déclarait « UNE seule autorité
+ * pour la touche Échap ». Il n'avait plus AUCUN appelant, alors que quatorze
+ * composants lui déléguaient par commentaire : Échap ne marchait plus que par
+ * l'ordre de cette cascade, que personne ne pouvait vérifier depuis les
+ * composants qui le subissaient. Ses onze branches étant toutes couvertes ici
+ * — et sept d'entre elles ne pouvant PAS l'être ailleurs, puisqu'elles portent
+ * sur des états locaux de la coque que les stores ne voient pas —, il a été
+ * retiré le 27/08/2026 plutôt que rebranché.
+ *
+ * Deux moitiés, dans cet ordre : ici les overlays portés par les STORES, puis
+ * dans l'effet clavier les surfaces LOCALES (palette, tiroir, centre de
+ * confiance, chat, vue embarquée, panneaux). Une surface nouvelle doit
+ * s'inscrire dans l'une des deux — il n'y a pas de troisième endroit.
  */
 function consommeEchapUnifie(): boolean {
   if (runTopEscapeHandler()) return true;
@@ -761,7 +779,14 @@ export function ConversationCanvasPrototype() {
     return true;
   }, []);
 
-  const closeConversationDrawer = useCallback(() => setDrawerOpen(false), []);
+  const closeConversationDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    // Le store reste la définition de l'action « Conversations » : le tenir
+    // d'accord avec l'écran évite qu'un geste local et la commande divergent.
+    if (usePanelStoreDirect.getState().showConversationSidebar) {
+      usePanelStoreDirect.getState().closeConversationSidebar();
+    }
+  }, []);
   const closeCommandPalette = useCallback(() => setCommandOpen(false), []);
   const closeCapabilityCenter = useCallback(() => setCapabilityCenterOpen(false), []);
   const closeTrustCenter = useCallback(() => setTrustCenterOpen(false), []);
@@ -778,6 +803,27 @@ export function ConversationCanvasPrototype() {
     if (drawerOpen) closeConversationDrawer();
     else openConversationDrawer('history');
   }, [closeConversationDrawer, drawerOpen, openConversationDrawer]);
+
+  // Même patron que le pont J0a des vues, pour la même raison. L'action
+  // « Conversations » (raccourci B, palette ⌘K) bascule
+  // `showConversationSidebar` dans le panelStore ; la coque, elle, a son
+  // propre tiroir en état local. La commande basculait donc un booléen que
+  // personne n'affichait : un geste annoncé, exécuté sans erreur, et sans le
+  // moindre effet visible.
+  const tiroirDemande = usePanelStore((state) => state.showConversationSidebar);
+  const dernierTiroirRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (dernierTiroirRef.current === null) {
+      dernierTiroirRef.current = tiroirDemande;
+      return;
+    }
+    if (dernierTiroirRef.current === tiroirDemande) return;
+    dernierTiroirRef.current = tiroirDemande;
+    if (tiroirDemande) openConversationDrawer('history');
+    else closeConversationDrawer();
+    // openConversationDrawer est recréé à chaque rendu : l'inclure bouclerait.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiroirDemande]);
 
   useEffect(() => {
     let active = true;

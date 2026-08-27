@@ -3,13 +3,13 @@
  *
  * Problème : les modaux NON gérés par un store (confirmation de suppression,
  * action RGPD dans la Mémoire-vue, menu slash...) sont en state local React.
- * `resolveEscape` ne les voyait pas → Échap tombait sur le retour de vue (goBack)
- * et ÉJECTAIT la vue entière sous le modal (KO 1.1/1.2), ou fermait la sidebar
- * en plus du menu slash (KO 1.3).
+ * la cascade Échap ne les voyait pas → Échap tombait sur le retour de vue
+ * (goBack) et ÉJECTAIT la vue entière sous le modal (KO 1.1/1.2), ou fermait
+ * la sidebar en plus du menu slash (KO 1.3).
  *
  * Solution : un composant qui ouvre un tel overlay PUSH un handler ici (et le POP
- * au démontage). `resolveEscape` déclenche le handler le plus en avant AVANT toute
- * autre priorité. Pile LIFO : le dernier overlay ouvert est le premier fermé.
+ * au démontage). La cascade Échap de la coque déclenche le handler le plus en
+ * avant AVANT toute autre priorité. Pile LIFO : le dernier overlay ouvert est le premier fermé.
  */
 
 const handlers: Array<() => void> = [];

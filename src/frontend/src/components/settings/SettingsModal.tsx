@@ -74,7 +74,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const hiddenTabLabels = ALL_TABS.filter((tab) => !visibleTabs.includes(tab)).map((tab) => tab.label);
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
-  // Échap reste géré par la pile unifiée (resolveEscape, L7) via le store.
+  // Échap reste géré par la cascade de la coque (ConversationCanvasPrototype) via le store.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen, isolateBackground: true });
 

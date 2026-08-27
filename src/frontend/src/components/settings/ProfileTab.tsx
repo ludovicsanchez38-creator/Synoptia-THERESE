@@ -61,7 +61,7 @@ export function ProfileTab({
   const [mdSaved, setMdSaved] = useState(false);
   const [mdError, setMdError] = useState<string | null>(null);
 
-  // US-013 : la modale THERESE.md est en state local (invisible pour resolveEscape) :
+  // US-013 : la modale THERESE.md est en state local (invisible pour cascade Échap de la coque) :
   // piège de focus + Échap gérés ici. closeMdModal stable (useCallback) pour ne pas
   // réarmer le piège à chaque re-render de l'onglet (frappe dans le formulaire).
   const mdDialogRef = useRef<HTMLDivElement>(null);

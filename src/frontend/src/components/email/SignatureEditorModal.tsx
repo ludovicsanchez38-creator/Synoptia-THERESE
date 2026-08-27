@@ -10,7 +10,7 @@
  * re-sanitise via nh3 au PUT (double filet, source de vérité).
  *
  * Échap : la modale s'inscrit sur la pile Échap unifiée (escapeStack) pour se
- * fermer sans laisser resolveEscape éjecter la vue email (cf. KO revue produit).
+ * fermer sans laisser cascade Échap de la coque éjecter la vue email (cf. KO revue produit).
  */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

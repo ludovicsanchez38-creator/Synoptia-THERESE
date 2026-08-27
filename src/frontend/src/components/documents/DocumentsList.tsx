@@ -11,7 +11,7 @@
  * `DocumentWorkspace` - il gère son propre cycle de vie de fermeture
  * (`closeDocument()` du store, appelé avant `onBack`).
  *
- * Échap : NE PAS ajouter d'écouteur clavier local - `resolveEscape` gère
+ * Échap : NE PAS ajouter d'écouteur clavier local - `cascade Échap de la coque` gère
  * déjà le retour de vue (content-swap) et la pile pushEscapeHandler gère
  * la modale de création (comme ProjectsPanel pour ProjectModal).
  *

@@ -53,7 +53,7 @@ export function ProjectsPanel() {
   }, [load]);
 
   // F1 (revue) : nos overlays sont en state local (non pilotés par panelStore), donc
-  // invisibles pour resolveEscape → Échap éjectait la vue SOUS la modale. On les
+  // invisibles pour cascade Échap de la coque → Échap éjectait la vue SOUS la modale. On les
   // enregistre sur la pile Échap unifiée (LIFO) tant qu'ils sont ouverts.
   useEffect(() => {
     if (!deleteTarget) return;
