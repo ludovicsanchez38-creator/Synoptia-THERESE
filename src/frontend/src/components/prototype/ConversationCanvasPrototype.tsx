@@ -899,7 +899,11 @@ export function ConversationCanvasPrototype() {
       useNavigationStore.getState().setView('chat');
     }
     setEmbeddedView(null);
-    setCanvasOpen(false);
+    // Entrée 9 : ouvrir le chat fermait l'objet qu'on venait de lire. Poser une
+    // question sur un message coûtait de le perdre, puis de le rouvrir.
+    // Sous le seuil xl, en revanche, le canevas recouvre la colonne et l'isole
+    // (voile 0.48.1) : l'y laisser reviendrait à ouvrir un chat invisible.
+    if (panneauCouvrant) setCanvasOpen(false);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
     setImagesOpen(false);

@@ -143,7 +143,23 @@ La règle qui rend le lot cohérent n'est pas « tout mène à un canevas », c'
 Un item qui ouvre une fiche pendant qu'un autre ouvre une liste serait
 déroutant ; un item qui ouvre son objet, toujours, ne l'est pas.
 
-### 9. Le chat ne ferme plus le canevas qu'il commente
+### 9. Le chat ne ferme plus le canevas qu'il commente — REPORTÉ
+
+> **Tenté le 28/08, restauré.** Ce n'est pas un état à changer, c'est la
+> structure du rendu. Le canevas ne vit que dans la branche « accueil » du
+> ternaire de la colonne principale ; l'extraire en variable et le rendre dans
+> la branche chat compile et passe le typage, mais la variable reste nulle au
+> moment où le chat s'ouvre — quelque chose remet `canvasOpen` à faux sur ce
+> chemin, et le trouver demande de dérouler la coque, pas d'ajouter une
+> condition.
+>
+> Le contrat d'écran, lui, est acquis et vérifié : sous le seuil, le canevas
+> doit céder la place, sinon le chat s'ouvrirait sous un voile. Le test qui
+> l'exprimait passait déjà.
+>
+> À reprendre seul, dans une session dédiée, avec la recette visuelle. Forcer
+> un refactor de la coque la plus critique en fin de lot aurait été le
+> meilleur moyen de casser ce que les six entrées précédentes ont réparé.
 
 `openChat` (`ConversationCanvasPrototype.tsx:888`) appelle `setCanvasOpen(false)`.
 Poser une question sur le mail affiché coûte aujourd'hui : perdre le mail,
