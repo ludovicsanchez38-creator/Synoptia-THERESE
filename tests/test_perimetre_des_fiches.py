@@ -95,16 +95,72 @@ class TestLApiRendCeQuElleEcrit:
     la rejouer. »
     """
 
-    def test_la_fiche_projet_renvoyee_porte_son_perimetre(self):
-        from app.models.schemas import ProjectResponse
+    @pytest.mark.asyncio
+    async def test_un_projet_cree_dans_un_dossier_est_relu_dans_ce_dossier(self, client):
+        """Aller-retour HTTP réel, pas un grep de schéma.
 
-        champs = ProjectResponse.model_fields
-        assert "scope" in champs and "scope_id" in champs, (
-            "sans cela, aucun écran ne peut afficher ni modifier le périmètre "
-            "d'un projet — le champ posé en base est invisible"
+        Le premier jet vérifiait `ProjectResponse.model_fields`. Il était vert
+        alors que les QUATRE constructeurs de la réponse ne passaient pas les
+        champs : Pydantic rendait le défaut « global » quoi qu'il y ait en base.
+
+        C'est la faute que ce test existe pour empêcher, commise dans le
+        commentaire même qui la dénonce — « un champ que l'écriture honore et
+        que la lecture écrase ». On écrit, on relit, on compare.
+        """
+        creation = await client.post(
+            "/api/memory/projects",
+            json={"name": "Valette c/ SARL", "scope": "project", "scope_id": "dossier-valette"},
         )
+        assert creation.status_code in (200, 201), creation.text
+        cree = creation.json()
+        assert cree["scope"] == "project", "la création doit RENDRE le périmètre posé"
+        assert cree["scope_id"] == "dossier-valette"
+
+        relecture = await client.get(f"/api/memory/projects/{cree['id']}")
+        assert relecture.status_code == 200
+        relu = relecture.json()
+        assert relu["scope"] == "project", (
+            "la lecture écrasait le périmètre par le défaut du schéma"
+        )
+        assert relu["scope_id"] == "dossier-valette"
+
+    @pytest.mark.asyncio
+    async def test_la_liste_des_projets_rend_aussi_le_perimetre(self, client):
+        await client.post(
+            "/api/memory/projects",
+            json={"name": "Rousset c/ SAS", "scope": "project", "scope_id": "dossier-rousset"},
+        )
+        liste = await client.get("/api/memory/projects")
+        assert liste.status_code == 200
+        projets = liste.json()
+        cible = [p for p in projets if p["name"] == "Rousset c/ SAS"]
+        assert cible, "projet introuvable dans la liste"
+        assert cible[0]["scope"] == "project"
+
+    @pytest.mark.asyncio
+    async def test_rattacher_un_projet_apres_coup_est_relu(self, client):
+        """Le quatrième constructeur, que la preuve par sabotage a trouvé nu.
+
+        Les trois autres (liste, création, lecture) étaient couverts ; celui de
+        la mise à jour ne l'était pas. Un test par constructeur, sinon le
+        sabotage le dit.
+        """
+        creation = await client.post("/api/memory/projects", json={"name": "Dossier neutre"})
+        projet = creation.json()
+        assert projet["scope"] == "global", "défaut inchangé"
+
+        maj = await client.patch(
+            f"/api/memory/projects/{projet['id']}",
+            json={"scope": "project", "scope_id": "dossier-valette"},
+        )
+        assert maj.status_code == 200, maj.text
+        assert maj.json()["scope"] == "project", (
+            "la réponse de mise à jour doit rendre le périmètre, pas le défaut"
+        )
+        assert maj.json()["scope_id"] == "dossier-valette"
 
     def test_la_fiche_contact_renvoyee_porte_son_perimetre(self):
+        """Les contacts, eux, câblaient déjà les deux (`_contact_to_response`)."""
         from app.models.schemas import ContactResponse
 
         champs = ContactResponse.model_fields
