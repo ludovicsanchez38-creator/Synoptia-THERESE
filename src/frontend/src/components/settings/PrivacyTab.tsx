@@ -252,14 +252,15 @@ export function PrivacyTab() {
         <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3">
           <p className="text-sm text-success">
             Tes données métier sont stockées sur ta machine, dans ton dossier utilisateur :
-            base SQLite chiffrée au repos (SQLCipher AES-256, sauf si l'application a été
-            démarrée avec l'échappatoire de débogage prévue quand le trousseau système est
-            indisponible) et index vectoriel Qdrant. Il n'existe aucun serveur THÉRÈSE qui
-            les héberge.
+            base SQLite chiffrée au repos (SQLCipher AES-256 ; seule une échappatoire de
+            débogage explicite peut la laisser en clair) et index vectoriel Qdrant. Il
+            n'existe aucun serveur THÉRÈSE qui les héberge.
           </p>
           <p className="text-xs text-success mt-2">
-            L'index Qdrant, lui, n'est pas chiffré : il contient en clair le texte extrait de
-            tes fichiers et les notes de tes contacts.
+            Deux endroits ne sont pas chiffrés : l'index Qdrant, qui contient en clair le
+            texte extrait de tes fichiers et les notes de tes contacts, et le stockage local
+            de cette interface, où sont conservés tes conversations, tes e-mails, ton agenda
+            et tes projets.
           </p>
           {/* Campagne dix personas (28/08) : cet encadré affirmait « Aucune donnée n'est
               envoyée à un serveur externe », avec pour seule exception les modèles cloud.

@@ -104,6 +104,16 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     // Les deux moitiés comptent : « tout est chiffré » serait le mensonge
     // symétrique de celui qu'on vient de retirer.
     expect(await screen.findByText(/SQLCipher/i)).toBeInTheDocument();
-    expect(await screen.findByText(/n'est pas chiffré/i)).toBeInTheDocument();
+    expect(await screen.findByText(/ne sont pas chiffrés/i)).toBeInTheDocument();
+  });
+
+  it('dit aussi que le stockage local de l’interface n’est pas chiffré', async () => {
+    // Relevé par la revalidation : le prompt le disait, l'écran « qui fait
+    // foi » non. Un avocat qui ne lit que cet onglet ratait la copie en clair
+    // de ses conversations.
+    render(<PrivacyTab />);
+    const bloc = await screen.findByText(/ne sont pas chiffrés/i);
+
+    expect(bloc.textContent).toMatch(/conversations/i);
   });
 });
