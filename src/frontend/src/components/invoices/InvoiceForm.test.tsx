@@ -147,7 +147,7 @@ describe('InvoiceForm - garde-fou profil émetteur (P0-PROD-2)', () => {
 
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
 
-    expect(await screen.findByText(/Profil émetteur incomplet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Infos de ta société incomplètes/i)).toBeInTheDocument();
   });
 
   it('fait disparaître l\'avertissement quand le profil est complété via les Réglages, sans remonter le formulaire', async () => {
@@ -155,7 +155,7 @@ describe('InvoiceForm - garde-fou profil émetteur (P0-PROD-2)', () => {
 
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
 
-    expect(await screen.findByText(/Profil émetteur incomplet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Infos de ta société incomplètes/i)).toBeInTheDocument();
 
     // Simule la sauvegarde du profil dans Réglages (autre modale, ce composant
     // reste monté) : SettingsModal appelle useBillingProfileStore.getState().refresh()
@@ -166,7 +166,7 @@ describe('InvoiceForm - garde-fou profil émetteur (P0-PROD-2)', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText(/Profil émetteur incomplet/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Infos de ta société incomplètes/i)).not.toBeInTheDocument();
     });
   });
 });

@@ -108,26 +108,27 @@ import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { estCoteACote, usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
-import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
+import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR, TITRES_ETABLI } from '../../lib/etabli';
 import { actionsAuRepos } from '../../lib/paletteAuRepos';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
+// E3 : les titres des CINQ verbes de l'établi viennent de `lib/etabli`, à côté
+// des verbes eux-mêmes. Leur éloignement est ce qui a permis la dérive de la
+// v0.53.0 : l'entrée 10 a changé ce que « Écrire » fait, cette table est restée
+// sur « Consulter mes emails », et le canevas l'annonçait aux lecteurs d'écran.
+// `today` et `atelier` ne sont pas des verbes de l'établi : ils restent ici.
 const scenarioLabels: Record<Scenario, string> = {
+  ...TITRES_ETABLI,
   today: 'Mes priorités du jour',
-  memory: 'Retrouver un contact',
-  email: 'Consulter mes emails',
-  meeting: 'Préparer un rendez-vous',
-  invoice: 'Créer un devis',
-  board: 'Éclairer une décision',
   atelier: 'Confier une mission',
 };
 
 const scenarioPrompts: Record<Scenario, string> = {
   today: "Qu'est-ce qui demande mon attention aujourd'hui ?",
   memory: 'Retrouve mes contacts récents et leur contexte mémorisé.',
-  email: 'Montre-moi les messages à traiter et aide-moi à préparer une réponse.',
+  email: 'Aide-moi à écrire un message : propose un objet et un corps que je pourrai relire.',
   meeting: 'Prépare mon prochain rendez-vous et montre-moi uniquement le contexte vérifiable.',
   invoice: 'Retrouve mes derniers devis et factures, ou aide-moi à préparer un devis brouillon.',
   board: 'Retrouve mes dernières décisions ou aide-moi à cadrer une nouvelle question stratégique.',
@@ -305,7 +306,15 @@ function ContextCanvas({
   return (
     <motion.aside
       ref={dialogRef}
-      role="dialog"
+      // E5 : `role="dialog"` promettait un focus contenu, une page neutralisée
+      // et un Échap qui rend la main. Avec `piegeClavier: false` — délibéré,
+      // le panneau vit côte à côte avec la conversation au-dessus du seuil xl —
+      // rien de tout cela n'est vrai, et un lecteur d'écran annonçait
+      // « dialogue ». La revue 0.49 avait corrigé les six panneaux frères ;
+      // celui-ci y avait échappé, étant une fonction interne de la coque et
+      // non un fichier `*Canvas.tsx`. C'est pourtant la surface que les cinq
+      // verbes ouvrent.
+      role="region"
       aria-labelledby="prototype-context-canvas-title"
       tabIndex={-1}
       initial={{ x: 32, opacity: 0 }}
@@ -1482,7 +1491,7 @@ export function ConversationCanvasPrototype() {
                 fichiers ou les contacts, contrairement à ce que la loupe
                 laissait croire. Le mot reste à la palette, qui indexe tout. */}
             <IconButton label="Conversations" onClick={() => openConversationDrawer('search')}><History className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Espaces de travail" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Projets" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             {/* BUG-159 : accès permanent aux Paramètres, au-dessus de l'aide
                 (demande Dr_logic) - ils n'étaient joignables que par la palette
                 ou par le bouton Profil, dont la fonction n'était pas lisible. */}
@@ -1572,7 +1581,7 @@ export function ConversationCanvasPrototype() {
                           : scenario === 'memory'
                             ? 'Je consulte les contacts réellement enregistrés et leur contexte local, sans rien modifier.'
                           : scenario === 'email'
-                            ? 'Je consulte la boîte connectée. Tu peux lire un message et préparer un brouillon sans l’envoyer.'
+                            ? 'Je prépare un message. Tu peux le relire et le corriger : rien ne part d’ici.'
                           : scenario === 'meeting'
                             ? 'Je consulte les événements, les participants et le contexte CRM réellement relié, sans rien inventer.'
                             : scenario === 'invoice'
@@ -1743,8 +1752,8 @@ export function ConversationCanvasPrototype() {
                       </>
                     ) : scenario === 'invoice' ? (
                       <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Facturation locale" />
-                        <SourceChip icon={<Users className="h-3 w-3" />} label="Référentiel contacts" />
+                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Tes devis" />
+                        <SourceChip icon={<Users className="h-3 w-3" />} label="Tes clients" />
                         <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Brouillon confirmé, aucun envoi" />
                       </>
                     ) : scenario === 'board' ? (

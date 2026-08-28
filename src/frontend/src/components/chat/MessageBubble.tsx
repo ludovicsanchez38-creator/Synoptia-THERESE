@@ -328,7 +328,7 @@ export const MessageBubble = memo(function MessageBubble({
         {/* Action buttons (copy + save as shortcut) */}
         <div className={cn(
           'absolute top-2 right-2 flex items-center gap-1 z-10',
-          'opacity-0 group-hover:opacity-100 transition-all'
+          'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all'
         )}>
           {/* Sauvegarder comme raccourci (assistant uniquement, pas en streaming, pas pour les images) */}
           {!isUser && !message.isStreaming && !isImage && onSaveAsCommand && (

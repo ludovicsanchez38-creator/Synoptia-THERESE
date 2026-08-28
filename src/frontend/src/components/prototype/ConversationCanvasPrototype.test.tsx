@@ -398,7 +398,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
       render(<ConversationCanvasPrototype />);
 
       await act(async () => {
-        screen.getByLabelText('Espaces de travail').click();
+        screen.getByLabelText('Projets').click();
       });
 
       await waitFor(() => {

@@ -61,3 +61,37 @@ describe('Le rôle annoncé par un panneau correspond à son comportement', () =
     expect(ligne).toMatch(/aria-labelledby=|aria-label=/);
   });
 });
+
+
+/**
+ * Le canevas de contexte — le panneau que les cinq verbes ouvrent.
+ *
+ * Trouvé par la relecture du chantier E : `ContextCanvas` porte
+ * `role="dialog"` avec `piegeClavier: false`. Un dialogue ARIA promet un focus
+ * contenu, une page neutralisée et un Échap qui rend la main. Au-dessus du
+ * seuil `xl`, où le panneau vit côte à côte avec la conversation, rien de tout
+ * cela n'est vrai — et un lecteur d'écran annonce « dialogue ».
+ *
+ * La revue 0.49 avait corrigé ses six frères (liste ci-dessus). Celui-ci y a
+ * échappé parce qu'il est une fonction interne de la coque, pas un fichier
+ * `*Canvas.tsx` : la liste ne pouvait pas le voir. C'est la surface que tout le
+ * monde ouvre.
+ */
+describe('Le canevas de contexte est une région, pas un dialogue', () => {
+  const coque = readFileSync(
+    path.join(__dirname, 'ConversationCanvasPrototype.tsx'),
+    'utf8',
+  );
+
+  it('n’annonce pas un dialogue qu’il ne tient pas', () => {
+    const ligneDuCanevas = coque
+      .split('\n')
+      .findIndex((l) => l.includes('aria-labelledby="prototype-context-canvas-title"'));
+    expect(ligneDuCanevas).toBeGreaterThan(-1);
+
+    // Le rôle est posé juste avant l'étiquette.
+    const alentours = coque.split('\n').slice(ligneDuCanevas - 3, ligneDuCanevas + 1).join('\n');
+    expect(alentours).not.toContain('role="dialog"');
+    expect(alentours).toContain('role="region"');
+  });
+});

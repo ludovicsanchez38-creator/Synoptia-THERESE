@@ -433,7 +433,7 @@ function ConversationItem({
             e.stopPropagation();
             onContextMenu(e);
           }}
-          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background/60 rounded transition-all"
+          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:bg-background/60 rounded transition-all"
         >
           <MoreHorizontal className="w-4 h-4 text-text-muted" />
         </button>

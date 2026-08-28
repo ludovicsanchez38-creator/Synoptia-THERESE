@@ -65,7 +65,7 @@ describe('Le retour est déterministe', () => {
     expect(ecranAffiche()).toBe('accueil');
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Espaces de travail' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Projets' }));
     });
     await waitFor(() => expect(ecranAffiche()).toBe('projects'));
 
@@ -105,7 +105,7 @@ describe('Le retour est déterministe', () => {
     render(<ConversationCanvasPrototype />);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Espaces de travail' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Projets' }));
     });
     await waitFor(() => expect(ecranAffiche()).toBe('projects'));
 

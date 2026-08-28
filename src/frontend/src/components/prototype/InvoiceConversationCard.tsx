@@ -245,7 +245,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
       {data.billingProfile && !data.billingProfile.is_complete && (
         <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          Profil émetteur incomplet : {data.billingProfile.missing.join(', ')}. La génération PDF doit rester bloquée.
+          Infos de ta société incomplètes : {data.billingProfile.missing.join(', ')}. La génération PDF doit rester bloquée.
         </div>
       )}
       {!data.billingProfile && (
@@ -437,7 +437,7 @@ function DevisDraftForm({
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-accent"><Users className="h-4 w-4" /></span>
               <div>
                 <h3 className="text-sm font-bold text-text">Crée le client de ce premier devis</h3>
-                <p className="mt-1 text-xs leading-5 text-text-muted">Le contact sera enregistré dans le CRM puis sélectionné automatiquement. Tu restes dans ce canevas.</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">Le contact sera enregistré dans le CRM puis sélectionné automatiquement. Tu restes ici.</p>
               </div>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -487,7 +487,7 @@ function DevisDraftForm({
       {data.billingProfile && !data.billingProfile.is_complete && (
         <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          Profil émetteur incomplet : {data.billingProfile.missing.join(', ')}. Tu peux enregistrer le brouillon, mais pas générer un PDF conforme.
+          Infos de ta société incomplètes : {data.billingProfile.missing.join(', ')}. Tu peux enregistrer le brouillon, mais pas générer un PDF conforme.
         </div>
       )}
       {!data.billingProfile && (
@@ -623,7 +623,7 @@ export function InvoiceWorkspaceCanvas({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Receipt className="h-3.5 w-3.5" />Facturation locale</div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Receipt className="h-3.5 w-3.5" />Tes devis</div>
         <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">{selection === 'new-devis' ? 'Nouveau devis brouillon' : 'Détail du document'}</h2>
         <p className="mt-1 text-sm text-text-muted">Les données affichées viennent du module Facturation existant.</p>
       </div>

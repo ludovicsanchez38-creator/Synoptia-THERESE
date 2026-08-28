@@ -439,7 +439,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-warning">
-                Profil émetteur incomplet ({billingMissing.join(', ')}). Une facture sans ces
+                Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
                 informations n'est pas conforme. Complète-le dans Réglages &gt; Profil avant de
                 générer le PDF.
               </p>

@@ -65,11 +65,11 @@ export function EmailInboxCard({
             <Mail className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="email-inbox-title" className="text-base font-semibold text-text">Messages à consulter</h2>
+            <h2 id="email-inbox-title" className="text-base font-semibold text-text">Messages reçus</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready' && resource.data.currentAccount
                 ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''} · ${resource.data.currentAccount.email}`
-                : 'Lecture de la boîte connectée'}
+                : 'Ta boîte connectée'}
             </div>
           </div>
         </div>
@@ -318,8 +318,12 @@ export function EmailMessageCanvas({
           <Mail className="h-3.5 w-3.5" />
           Email connecté
         </div>
-        <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">Lecture et brouillon</h2>
-        <p className="mt-1 text-sm text-text-muted">Le message reste en lecture seule. Enregistrer un brouillon ne l’envoie pas.</p>
+        <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">Rédaction</h2>
+        <p className="mt-1 text-sm text-text-muted">
+          {nouvelleRedaction
+            ? 'Ton brouillon reste ici : rien ne part tant que tu ne l’envoies pas depuis ta messagerie.'
+            : 'Le message d’origine reste en lecture seule. Enregistrer un brouillon ne l’envoie pas.'}
+        </p>
       </div>
 
       {!nouvelleRedaction && (!resource || resource.status === 'loading') ? (

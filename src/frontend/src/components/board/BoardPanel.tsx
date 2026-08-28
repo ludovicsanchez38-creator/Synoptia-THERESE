@@ -709,7 +709,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                                 'absolute top-3 right-3 p-2 rounded-lg',
                                 'text-text-muted hover:text-error',
                                 'hover:bg-error/10 transition-colors',
-                                'opacity-0 group-hover:opacity-100'
+                                'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                               )}
                               title="Supprimer"
                             >

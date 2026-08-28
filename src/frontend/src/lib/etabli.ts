@@ -31,6 +31,25 @@ export const ACTIONS_ETABLI: readonly ActionEtabli[] = [
 ];
 
 /**
+ * Le TITRE de la surface qu'ouvre chaque verbe.
+ *
+ * Exporté ici, à côté des verbes eux-mêmes, pour qu'un test puisse APPARIER
+ * les deux. La dérive de la v0.53.0 vient de leur éloignement : l'entrée 10 a
+ * changé ce que « Écrire » fait, la table des titres est restée dans la coque,
+ * et le canevas a continué de s'annoncer « Consulter mes emails » aux lecteurs
+ * d'écran.
+ *
+ * `Record<IdEtabli, string>` : un verbe sans titre ne compile pas.
+ */
+export const TITRES_ETABLI: Record<IdEtabli, string> = {
+  email: 'Écrire un message',
+  memory: 'Retrouver un contact',
+  meeting: 'Préparer un rendez-vous',
+  invoice: 'Créer un devis',
+  board: 'Éclairer une décision',
+};
+
+/**
  * Une icône par action, table EXHAUSTIVE (`Record<IdEtabli, …>` : un id
  * sans icône ne compile pas). Elle remplace la cascade de ternaires de la
  * palette, dont la branche finale servait de fourre-tout — une action

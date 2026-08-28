@@ -450,7 +450,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        'h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity',
+                        'h-7 w-7 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity',
                         isIndexing && 'opacity-100'
                       )}
                       onClick={(e) => {
@@ -470,7 +470,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
 
                   {/* Arrow for folders */}
                   {entry.isDirectory && (
-                    <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" />
                   )}
                 </motion.div>
               );
