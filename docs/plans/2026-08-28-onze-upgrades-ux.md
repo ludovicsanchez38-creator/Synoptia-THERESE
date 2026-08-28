@@ -110,7 +110,34 @@ doit continuer de trouver.
 
 ## Second train — effort moyen, quatre entrées
 
-### 8. Le brief et les canevas ouvrent l'objet, pas le module
+### 8. Le brief et les canevas ouvrent l'objet, pas le module — INACHEVÉE
+
+> **Tentée le 28/08, dispatcher retiré.** Les préalables sont posés et vrais :
+> le serveur transmet enfin l'identifiant du message d'une relance, et chaque
+> item du brief sait quel objet il désigne. C'est le dispatcher qui promettait
+> plus qu'il ne tenait.
+>
+> Sur les cinq types, **un seul ouvrait réellement son objet** : la facture,
+> parce que sa lecture va chercher le document par identifiant sans attendre
+> son hook. Les autres ouvraient la bonne surface et y affichaient autre chose.
+>
+> | Type | Ce qui manquait |
+> |---|---|
+> | Rendez-vous | la cible posée n'alimente pas la ressource que le canevas affiche ; au réveil, le hook reprend le premier événement à venir, pas celui qu'on a cliqué |
+> | Relance | la lecture du message court avant que son hook soit allumé, et elle exige un compte que la réponse du serveur n'expose pas |
+> | Prospect | la sélection était écrite dans l'état local d'un canevas que la vue CRM n'observe pas ; elle lit son propre magasin, et n'affiche la fiche que sur un onglet précis |
+> | Tâche | pas traitée : l'identifiant était calculé puis rejeté sur la liste |
+>
+> Un brief où la facture s'ouvre et le reste non est exactement ce que ce plan
+> interdisait : plus déroutant que l'ancien, uniformément grossier.
+>
+> Et mon test ne l'a pas vu — il lisait le source au lieu de cliquer. Même
+> classe d'erreur que ma première tentative sur l'entrée 9. **La reprise
+> commence par un test qui clique un item et vérifie l'objet affiché** : le
+> titre du rendez-vous, la fiche du prospect, le formulaire de la tâche, le
+> corps du message.
+
+### 8 bis. Le détail de ce qui était prévu
 
 Le plus fort du lot, et la contradiction la plus audible :
 `TodayDashboardCard.tsx:159` appelle `onOpenView(item.targetView)` trois lignes

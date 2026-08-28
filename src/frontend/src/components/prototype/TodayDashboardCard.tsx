@@ -64,8 +64,10 @@ export function TodayDashboardCard({
    * plus haut, et le clic ouvrait le module. Sur « Relancer Dupont », il
    * fallait retrouver Dupont dans la boîte entière.
    *
-   * Facultatif : sans ce gestionnaire, le brief retombe sur la destination
-   * grossière plutôt que de ne rien faire.
+   * Facultatif, et personne ne le fournit encore : la première tentative
+   * ouvrait bien une surface pour chaque type, mais l'OBJET n'y arrivait que
+   * pour la facture. Un brief à moitié précis serait pire que l'actuel,
+   * uniformément grossier. Le point d'accroche reste, la reprise le remplira.
    */
   onOpenItem?: (item: TodayAttentionItem) => void;
   /** B1 (0.48) : l'état vide dit la vérité - sans compte email, le brief

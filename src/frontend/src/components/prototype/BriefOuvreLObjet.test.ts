@@ -85,41 +85,19 @@ describe('Entrée 8 : chaque item du brief sait quel objet il désigne', () => {
   });
 });
 
-// Le modèle peut porter l'identité sans que le clic s'en serve : c'est le
-// branchement qui compte, et un sabotage doit casser un test.
-describe('Entrée 8 : le clic s’en sert vraiment', () => {
-  it('la coque déclare un gestionnaire d’objet sur le brief', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const source = readFileSync(
-      path.join(__dirname, 'ConversationCanvasPrototype.tsx'),
-      'utf8',
-    );
-    expect(source).toContain('onOpenItem={(item)');
-    // Les cinq types sont traités, pas seulement le plus facile.
-    for (const kind of ['event', 'invoice', 'follow_up', 'prospect']) {
-      expect(source).toContain(`item.kind === '${kind}'`);
-    }
-  });
-
-  it('un item sans identifiant retombe sur sa liste, il n’est pas ignoré', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const source = readFileSync(
-      path.join(__dirname, 'ConversationCanvasPrototype.tsx'),
-      'utf8',
-    );
-    expect(source).toContain('if (!item.cibleId)');
-  });
-
-  it('la carte du brief passe l’item, pas seulement sa vue', async () => {
-    const { readFileSync } = await import('node:fs');
-    const path = await import('node:path');
-    const carte = readFileSync(
-      path.join(__dirname, 'TodayDashboardCard.tsx'),
-      'utf8',
-    );
-    // Sans ça, la coque peut savoir ouvrir l'objet sans jamais en recevoir un.
-    expect(carte).toContain('onOpenItem(item)');
-  });
-});
+/*
+ * Le dispatcher a été RETIRÉ après relecture, et le brief rouvre les modules
+ * comme avant. Sur les cinq types, un seul ouvrait réellement son objet : la
+ * facture. Le rendez-vous posait une cible que le canevas ne lit pas, la
+ * relance courait après un compte que son hook n'a pas encore chargé, le
+ * prospect écrivait dans l'état local d'un canevas que la vue CRM n'observe
+ * pas, et la tâche n'était pas traitée du tout.
+ *
+ * Un brief où la facture s'ouvre et le reste non est précisément ce que le
+ * plan interdisait : plus déroutant que l'ancien, uniformément grossier.
+ *
+ * Ce qui reste ci-dessus est acquis et vrai : chaque item SAIT quel objet il
+ * désigne, et le serveur transmet enfin l'identifiant du message d'une
+ * relance. La reprise partira de là — avec un test qui CLIQUE et vérifie
+ * l'objet affiché, pas un scan de source.
+ */
