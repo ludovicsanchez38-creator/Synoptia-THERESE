@@ -436,9 +436,10 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     # net reste utile, mais les avoirs doivent etre lisibles pour eux-memes.
     avoirs_par_devise: dict[str, float] = {}
     for a in avoirs:
-        avoirs_par_devise[_devise(a)] = round(
-            avoirs_par_devise.get(_devise(a), 0.0) + (a.total_ttc or 0), 2
+        avoirs_par_devise[_devise(a)] = avoirs_par_devise.get(_devise(a), 0.0) + (
+            a.total_ttc or 0
         )
+    avoirs_par_devise = {d: round(m, 2) for d, m in sorted(avoirs_par_devise.items())}
 
     encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
     en_retard = [
@@ -446,15 +447,28 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
         if f.status == "overdue" or (f.due_date is not None and f.due_date < maintenant)
     ]
     retard = sum(f.total_ttc or 0 for f in en_retard)
+    # Arrondir a CHAQUE addition fait diverger deux champs du meme resultat :
+    # deux documents a 1,055 donnaient retard_ttc 2,11 et retard_par_devise
+    # 2,10. On accumule, puis on arrondit une seule fois, comme encours.
     retard_par_devise: dict[str, float] = {}
     for f in en_retard:
-        retard_par_devise[_devise(f)] = round(
-            retard_par_devise.get(_devise(f), 0.0) + (f.total_ttc or 0), 2
+        retard_par_devise[_devise(f)] = retard_par_devise.get(_devise(f), 0.0) + (
+            f.total_ttc or 0
         )
+    retard_par_devise = {d: round(m, 2) for d, m in sorted(retard_par_devise.items())}
 
+    # Une facture peut porter le statut « overdue » avec une echeance FUTURE :
+    # l'API l'accepte, et le comptage du retard suit le statut tandis que son
+    # anciennete suit la date. La contradiction sortait telle quelle, sous la
+    # forme d'un retard de MOINS cinq jours. On ne mesure l'anciennete que sur
+    # les echeances reellement depassees, et on ne rend rien s'il n'y en a pas.
     plus_ancienne = None
     if en_retard:
-        echeances = [f.due_date for f in en_retard if f.due_date is not None]
+        echeances = [
+            f.due_date
+            for f in en_retard
+            if f.due_date is not None and f.due_date < maintenant
+        ]
         if echeances:
             plus_ancienne = (maintenant - min(echeances)).days
 
@@ -511,8 +525,15 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
                     " Un montant NEGATIF dans encours_par_devise est un avoir "
                     "net : ce n'est pas a encaisser, c'est du au client. Voir "
                     "avoirs_par_devise."
-                    if any(m < 0 for m in encours_par_devise.values())
-                    else ""
+                    if avoirs and any(m < 0 for m in encours_par_devise.values())
+                    else (
+                        " ATTENTION : un montant negatif apparait sans qu'aucun "
+                        "avoir existe - une facture porte un montant negatif. "
+                        "Ne presente pas ce total comme un encours, signale "
+                        "l'anomalie."
+                        if any(m < 0 for m in encours_par_devise.values())
+                        else ""
+                    )
                 )
             ),
     }

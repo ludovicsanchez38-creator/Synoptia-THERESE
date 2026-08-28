@@ -18,6 +18,29 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture(autouse=True)
+def _sans_cle_ia_dans_l_environnement(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Isole ces tests des clés IA de la machine qui les exécute.
+
+    Trouvé à la revue de release (Soso, 28/08) : la suite annonçait 2447/0 sur
+    une machine SANS clé, et 2447/1 dès qu'une clé était posée - c'est-à-dire
+    sur la plupart des postes de dev. `_has_any_llm_key` sort en True depuis
+    `os.environ` AVANT d'atteindre la lecture de préférence que ces tests
+    sabotent : le chemin testé n'était jamais parcouru, et l'échec ressemblait
+    à une régression du produit.
+
+    Un gate dont le résultat dépend de l'environnement n'est pas un gate.
+    """
+    from app.config import settings
+    from app.routers import dashboard
+
+    for noms, attribut in dashboard._LLM_KEY_SOURCES:
+        for nom in noms:
+            monkeypatch.delenv(nom, raising=False)
+        if hasattr(settings, attribut):
+            monkeypatch.setattr(settings, attribut, None, raising=False)
+
+
 class TestUnePanneNeSeDeguisePasEnVide:
     @pytest.mark.asyncio
     async def test_le_cas_nominal_ne_signale_rien_d_indisponible(

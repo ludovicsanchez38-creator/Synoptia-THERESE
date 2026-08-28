@@ -436,3 +436,139 @@ class TestLeCasQueSosoAExecute:
             "-200 USD dans un champ nommé « encours » se lit comme une somme "
             "à encaisser ; la note doit dire que c'est dû au client"
         )
+
+
+class TestDeuxChiffresPourLaMemeChoseNeDoiventPasDifferer:
+    """
+    Troisième passe de revue (Soso, 28/08).
+
+    `retard_par_devise` et `avoirs_par_devise` arrondissaient APRÈS chaque
+    addition, alors que `retard_ttc` et `encours_par_devise` accumulent puis
+    arrondissent une fois. Deux documents à 1,055 EUR donnaient donc
+    `retard_ttc: 2.11` et `retard_par_devise: {"EUR": 2.10}` — un centime
+    d'écart entre deux champs du MÊME résultat, sur une question d'argent.
+
+    Le modèle lit les deux et en cite un ; lequel dépend de la phrase.
+    """
+
+    class _Doc:
+        def __init__(self, devise, montant, type_doc="facture", statut="overdue"):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = statut
+            self.due_date = None
+            self.invoice_number = f"X-{montant}"
+            self.contact = None
+
+    def test_le_retard_par_devise_egale_le_retard_global(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc("EUR", 1.055), self._Doc("EUR", 1.055)],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["retard_par_devise"]["EUR"] == resultat["retard_ttc"], (
+            f"{resultat['retard_par_devise']['EUR']} vs {resultat['retard_ttc']}"
+        )
+
+    def test_les_avoirs_par_devise_suivent_le_meme_arrondi(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [
+                self._Doc("EUR", 1.055, type_doc="avoir"),
+                self._Doc("EUR", 1.055, type_doc="avoir"),
+            ],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["avoirs_par_devise"]["EUR"] == -resultat["encours_par_devise"]["EUR"], (
+            f"{resultat['avoirs_par_devise']} vs {resultat['encours_par_devise']}"
+        )
+
+
+class TestUnRetardNeSeCompteJamaisEnJoursNegatifs:
+    """
+    Troisième passe de revue (Soso, 28/08).
+
+    Le calcul compte une facture comme en retard si `status == "overdue"` OU
+    si l'échéance est passée, mais mesure l'ancienneté sur la seule date.
+    Une facture marquée `overdue` avec une échéance FUTURE - que l'API
+    accepte - rendait `plus_ancien_retard_jours: -5`. Un retard de moins cinq
+    jours n'existe pas ; c'est le statut et la date qui se contredisent, et
+    le résultat présente cette contradiction comme un fait.
+    """
+
+    class _Doc:
+        def __init__(self, echeance, statut="overdue"):
+            self.currency = "EUR"
+            self.total_ttc = 1000.0
+            self.document_type = "facture"
+            self.status = statut
+            self.due_date = echeance
+            self.invoice_number = "FUTUR-001"
+            self.contact = None
+
+    def test_une_echeance_future_ne_produit_pas_un_retard_negatif(self):
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = _totaux_des_documents(
+            [self._Doc(maintenant + timedelta(days=5))], maintenant
+        )
+
+        jours = resultat["plus_ancien_retard_jours"]
+        assert jours is None or jours >= 0, f"retard de {jours} jours"
+
+
+class TestUneFactureNegativeNestPasUnAvoir:
+    """
+    Troisième passe de revue (Soso, 28/08).
+
+    `InvoiceLineRequest` n'impose aucune borne : le backend accepte une
+    facture à -100 EUR, le garde-fou n'existant que côté écran. L'encours
+    devenait négatif, et ma note le qualifiait d'« avoir » alors que
+    `nombre_avoirs` valait 0. Une explication fausse est pire qu'un chiffre
+    nu : elle rend le chiffre crédible.
+
+    Fermer la validation est une décision produit (une ligne négative sert
+    aussi de remise), donc elle reste ouverte et nommée. Ce que la revue
+    corrige ici, c'est le mensonge : THÉRÈSE signale l'anomalie au lieu de
+    l'expliquer de travers.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture"):
+            self.currency = "EUR"
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = None
+            self.invoice_number = "NEG-001"
+            self.contact = None
+
+    def test_un_encours_negatif_sans_avoir_est_signale_comme_anomalie(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(-100.0)], datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        assert resultat["nombre_avoirs"] == 0
+        assert resultat["encours_par_devise"]["EUR"] == -100.0
+        note = resultat["note"].lower()
+        assert "anomalie" in note, f"note muette sur un encours négatif : {note!r}"
+        assert "est un avoir" not in note, (
+            "aucun avoir n'existe : appeler ce montant un avoir donne une "
+            "explication fausse à un chiffre faux"
+        )
