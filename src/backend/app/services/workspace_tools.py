@@ -316,7 +316,7 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "ce qui est du AU client est dans `du_au_client_par_devise`, ne le "
             "presente jamais comme une somme a encaisser. `encours_ttc` et "
             "`retard_ttc` ne valent un nombre que s'il y a une seule devise ET "
-            "un montant positif ; sinon null, et il n'existe AUCUN total global "
+            "un montant positif ou nul ; sinon null, et il n'existe AUCUN total global "
             "- n'en fabrique pas, donne `encours_par_devise` montant par "
             "montant. Chaque ligne du detail porte son `type` et sa `devise`, "
             "un avoir y est NEGATIF, et la somme du detail vaut exactement "

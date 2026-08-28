@@ -1128,3 +1128,65 @@ class TestLeRetardEstBrutEtLeDitFranchement:
         assert "avant" in description and "avoir" in description, (
             "le contrat doit dire que retard_ttc est brut, avant avoirs"
         )
+
+
+class TestLeContratDitExactementCeQueLeCodeFait:
+    """
+    Sixième passe (Soso, 28/08) : la dernière contradiction, dans les mots.
+
+    Le code rend `retard_ttc: 0` quand rien n'est échu - un zéro exact, la
+    correction même de la passe 5. Mais le contrat annoncé au modèle disait
+    « ne valent un nombre que s'il y a une seule devise ET un montant
+    POSITIF ». Zéro n'est pas positif. Le modèle lit donc qu'un zéro ne
+    devrait pas exister, et peut taire une réponse juste.
+
+    Après cinq passes à empêcher THÉRÈSE d'affirmer le faux, la dernière
+    faille était de lui faire douter du vrai. Un contrat qui décrit autre
+    chose que le code est un mensonge de plus, simplement adressé au modèle
+    au lieu de l'utilisateur.
+    """
+
+    class _Doc:
+        def __init__(self, echeance):
+            self.currency = "EUR"
+            self.total_ttc = 100.0
+            self.document_type = "facture"
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = "D-100"
+            self.contact = None
+
+    def test_le_code_rend_bien_zero(self):
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = _totaux_des_documents(
+            [self._Doc(maintenant + timedelta(days=10))], maintenant
+        )
+        assert resultat["retard_ttc"] == 0
+
+    def test_le_contrat_de_l_outil_admet_le_zero(self):
+        from app.services.workspace_tools import INVOICE_TOTALS_TOOL
+
+        description = INVOICE_TOTALS_TOOL["function"]["description"]
+        assert "positif ou nul" in description, (
+            "« positif » exclut zéro, que le code rend pourtant : le modèle "
+            "lit qu'un zéro ne devrait pas exister et peut le taire"
+        )
+
+    def test_le_prompt_de_conversation_dit_la_meme_chose(self):
+        """La description et le prompt dynamique doivent s'accorder."""
+        import inspect
+
+        from app.routers import chat
+
+        source = inspect.getsource(chat)
+        i = source.find("invoice_totals** :")
+        assert i != -1
+        bloc = source[i : i + 1200]
+        assert "positif" not in bloc or "positif ou nul" in bloc, (
+            "le prompt dynamique répète la contradiction que la description "
+            "vient de corriger"
+        )
