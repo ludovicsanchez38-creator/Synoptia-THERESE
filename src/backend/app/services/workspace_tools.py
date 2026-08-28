@@ -320,7 +320,10 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "- n'en fabrique pas, donne `encours_par_devise` montant par "
             "montant. Chaque ligne du detail porte son `type` et sa `devise`, "
             "un avoir y est NEGATIF, et la somme du detail vaut exactement "
-            "l'encours : ne la recalcule pas autrement."
+            "l'encours : ne la recalcule pas autrement. "
+            "`retard_ttc` est BRUT, avant avoirs : il peut donc depasser "
+            "l'encours, et ce n'est pas une contradiction - ne le presente "
+            "jamais comme « la part en retard » de l'encours."
         ),
         "parameters": {
             "type": "object",
@@ -545,8 +548,17 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
             "du_au_client_par_devise": du_au_client_par_devise,
             "devises_multiples": len(devises) > 1,
+            # Le gate du retard lit les devises des seules factures ECHUES.
+            # Le lire sur tous les documents eteignait un chiffre exact : cent
+            # euros echus a cote de deux cents dollars a echeance future
+            # rendaient null, alors qu'une seule devise etait en retard. Et
+            # sans aucune facture echue, « zero » est une reponse exacte, pas
+            # une ignorance. Se taire quand on sait est le symetrique
+            # d'affirmer quand on ignore.
             "retard_ttc": (
-                round(retard, 2) if len(devises) <= 1 and retard >= 0 else None
+                round(retard, 2)
+                if len(_devises_presentes(en_retard)) <= 1 and retard >= 0
+                else None
             ),
             "retard_par_devise": dict(sorted(retard_par_devise.items())),
             "nombre": len(factures),

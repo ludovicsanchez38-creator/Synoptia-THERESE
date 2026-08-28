@@ -237,7 +237,12 @@ class TestLesAvoirsEtLaDevise:
             "un total additionné à travers les devises est un chiffre faux : "
             f"rendu {resultat['encours_ttc']!r}"
         )
-        assert resultat["retard_ttc"] is None, "même règle pour le retard"
+        # Corrigé à la cinquième passe. Ce test exigeait `null` pour le retard
+        # au motif que deux devises se mélangent. Mais aucune de ces deux
+        # factures n'a d'échéance : rien n'est échu, et « zéro » est alors une
+        # réponse EXACTE, pas une ignorance. Le gate du retard lit désormais
+        # les devises des seules factures échues.
+        assert resultat["retard_ttc"] == 0, "rien n'est échu : le retard vaut zéro"
         assert resultat["encours_par_devise"] == {"EUR": 1000.0, "USD": 1000.0}, (
             "à défaut d'un total, rendre ce qui est vrai : un montant par devise"
         )
@@ -986,3 +991,140 @@ class TestLaSommeDuDetailEstExacteAuCentime:
         somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
         assert somme == resultat["encours_par_devise"]["EUR"]
 
+
+
+class TestLeGelNeDoitPasEteindreUnChiffreExact:
+    """
+    Cinquième passe (Soso, 28/08) : la sur-correction que je lui avais demandé
+    de chercher. Il l'a trouvée.
+
+    Le gate du retard lisait les devises de TOUS les documents, pas celles des
+    seules factures échues. Cent euros échus à côté de deux cents dollars à
+    échéance FUTURE rendaient `retard_ttc: null`, alors que le retard vaut
+    exactement 100 EUR : une seule devise est en retard. Et avec plusieurs
+    devises mais aucune facture échue, le retard exact est zéro - le code
+    rendait null.
+
+    Se taire quand on sait est le symétrique d'affirmer quand on ignore. Les
+    quatre passes précédentes ont corrigé le second travers ; celle-ci corrige
+    le premier, qu'elles avaient créé.
+    """
+
+    class _Doc:
+        def __init__(self, montant, devise="EUR", echeance=None, type_doc="facture"):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"D-{devise}-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_un_retard_dans_une_seule_devise_est_rendu(self):
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = self._totaux(
+            [
+                self._Doc(100.0, echeance=maintenant - timedelta(days=3)),
+                self._Doc(200.0, devise="USD", echeance=maintenant + timedelta(days=30)),
+            ]
+        )
+
+        assert resultat["retard_ttc"] == 100.0, (
+            f"le retard vaut exactement 100 EUR, rendu {resultat['retard_ttc']!r}"
+        )
+        assert resultat["encours_ttc"] is None, "l'encours, lui, mélange bien deux devises"
+
+    def test_aucune_facture_echue_donne_zero_pas_null(self):
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = self._totaux(
+            [
+                self._Doc(100.0, echeance=maintenant + timedelta(days=10)),
+                self._Doc(200.0, devise="USD", echeance=maintenant + timedelta(days=10)),
+            ]
+        )
+
+        assert resultat["retard_ttc"] == 0, (
+            f"« rien n'est en retard » est une réponse exacte : {resultat['retard_ttc']!r}"
+        )
+
+    def test_un_retard_reellement_multidevise_reste_null(self):
+        """La correction ne doit pas rouvrir ce que la passe 1 a fermé."""
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = self._totaux(
+            [
+                self._Doc(100.0, echeance=maintenant - timedelta(days=3)),
+                self._Doc(200.0, devise="USD", echeance=maintenant - timedelta(days=3)),
+            ]
+        )
+
+        assert resultat["retard_ttc"] is None
+        assert resultat["retard_par_devise"] == {"EUR": 100.0, "USD": 200.0}
+
+
+class TestLeRetardEstBrutEtLeDitFranchement:
+    """
+    Cinquième passe (Soso, 28/08), second point.
+
+    Une facture de 1 000 EUR échue et un avoir de 200 EUR donnent
+    `encours_ttc: 800` et `retard_ttc: 1000`. Le retard dépasse le reste à
+    encaisser, ce qui se lit comme une contradiction.
+
+    Ce n'est pas un bug de calcul : un avoir n'est rattaché à aucune facture
+    en particulier, et décider qu'il éteint CELLE-CI plutôt qu'une autre
+    serait inventer une allocation comptable. Le retard est donc brut, et le
+    contrat doit le dire au modèle - sinon il présentera 1 000 comme « la
+    part en retard de tes 800 ».
+
+    Nommer le champ n'est pas décorer un chiffre : la description dit ce que
+    le nombre EST, elle n'excuse pas ce qu'il n'est pas.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture", echeance=None):
+            self.currency = "EUR"
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"D-{montant}"
+            self.contact = None
+
+    def test_le_retard_peut_depasser_l_encours(self):
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = _totaux_des_documents(
+            [
+                self._Doc(1000.0, echeance=maintenant - timedelta(days=5)),
+                self._Doc(200.0, type_doc="avoir"),
+            ],
+            maintenant,
+        )
+
+        assert resultat["encours_ttc"] == 800.0
+        assert resultat["retard_ttc"] == 1000.0
+
+    def test_le_contrat_annonce_que_le_retard_est_avant_avoirs(self):
+        """Sans cette phrase, le modèle présente 1 000 comme une part de 800."""
+        from app.services.workspace_tools import INVOICE_TOTALS_TOOL
+
+        description = INVOICE_TOTALS_TOOL["function"]["description"].lower()
+        assert "avant" in description and "avoir" in description, (
+            "le contrat doit dire que retard_ttc est brut, avant avoirs"
+        )
