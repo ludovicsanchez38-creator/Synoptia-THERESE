@@ -312,10 +312,12 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "« combien on me doit ». N'utilise PAS search_invoices pour ca : "
             "il cherche UNE facture par son numero ou son client, il ne "
             "totalise rien. "
-            "Quand plusieurs devises sont en jeu, `encours_ttc` et `retard_ttc` "
-            "valent null : il n'existe alors AUCUN total global, et tu ne dois "
-            "pas en fabriquer un. Donne `encours_par_devise` tel quel, montant "
-            "par montant. Chaque facture du detail porte sa `devise` : cite-la."
+            "`encours_ttc` et `retard_ttc` valent un nombre UNIQUEMENT s'il y a "
+            "une seule devise ET si ce montant est positif. Quand ils valent "
+            "null, il n'existe AUCUN total global : n'en fabrique pas, donne "
+            "`encours_par_devise` montant par montant. Chaque ligne du detail "
+            "porte son `type` et sa `devise`, et un avoir y est NEGATIF : la "
+            "somme du detail vaut l'encours, ne la recalcule pas autrement."
         ),
         "parameters": {
             "type": "object",
@@ -442,10 +444,11 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     avoirs_par_devise = {d: round(m, 2) for d, m in sorted(avoirs_par_devise.items())}
 
     encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
-    en_retard = [
-        f for f in factures
-        if f.status == "overdue" or (f.due_date is not None and f.due_date < maintenant)
-    ]
+    # Le retard se constate sur l'ECHEANCE, jamais sur le seul statut. Une
+    # facture marquee « overdue » dont l'echeance tombe dans cinq jours entrait
+    # dans le montant en retard avec un age de zero jour : le resultat disait
+    # « 1 000 EUR en retard depuis 0 jour ». Patcher l'age laissait le tas faux.
+    en_retard = [f for f in factures if f.due_date is not None and f.due_date < maintenant]
     retard = sum(f.total_ttc or 0 for f in en_retard)
     # Arrondir a CHAQUE addition fait diverger deux champs du meme resultat :
     # deux documents a 1,055 donnaient retard_ttc 2,11 et retard_par_devise
@@ -483,7 +486,14 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
                 if getattr(f, "contact", None) is not None
                 else None
             ),
-            "montant_ttc": f.total_ttc,
+            # Signe : la liste ne contenait que les factures alors que
+            # l'encours soustrait les avoirs. Un modele qui additionne le
+            # detail - geste frequent sur « quelles factures » - obtenait
+            # 1 000 quand l'encours valait 800.
+            "type": f.document_type,
+            "montant_ttc": round(
+                -(f.total_ttc or 0) if f.document_type == "avoir" else (f.total_ttc or 0), 2
+            ),
             # Un montant sans devise se lit en euros par défaut.
             "devise": _devise(f),
             "echeance": f.due_date.date().isoformat() if f.due_date else None,
@@ -492,7 +502,7 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             ),
         }
         for f in sorted(
-            factures, key=lambda x: (x.due_date is None, x.due_date or maintenant)
+            documents, key=lambda x: (x.due_date is None, x.due_date or maintenant)
         )
     ]
 
@@ -500,11 +510,21 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     # le dit plutôt que de choisir une étiquette au hasard.
     devises = _devises_presentes(documents)
     return {
-            "encours_ttc": round(encours, 2) if len(devises) <= 1 else None,
+            # Gel du contrat des nombres. Un total n'est rendu QUE s'il est
+            # encore un « reste a encaisser » : une seule devise, et un montant
+            # positif ou nul. Un net negatif - avoirs seuls, ou avoirs plus gros
+            # que les factures - n'est pas a encaisser ; le nommer ainsi et
+            # poser une note a cote refait l'erreur de `devises_multiples`, ou
+            # le drapeau n'a jamais retenu le nombre.
+            "encours_ttc": (
+                round(encours, 2) if len(devises) <= 1 and encours >= 0 else None
+            ),
             "encours_par_devise": encours_par_devise,
             "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
             "devises_multiples": len(devises) > 1,
-            "retard_ttc": round(retard, 2) if len(devises) <= 1 else None,
+            "retard_ttc": (
+                round(retard, 2) if len(devises) <= 1 and retard >= 0 else None
+            ),
             "retard_par_devise": dict(sorted(retard_par_devise.items())),
             "nombre": len(factures),
             "nombre_en_retard": len(en_retard),

@@ -453,11 +453,16 @@ class TestDeuxChiffresPourLaMemeChoseNeDoiventPasDifferer:
 
     class _Doc:
         def __init__(self, devise, montant, type_doc="facture", statut="overdue"):
+            from datetime import UTC, datetime, timedelta
+
             self.currency = devise
             self.total_ttc = montant
             self.document_type = type_doc
             self.status = statut
-            self.due_date = None
+            # Echeance REELLEMENT depassee : depuis la quatrieme passe, le
+            # retard se constate sur la date et non sur le statut. Ce test
+            # s'appuyait sur l'ancienne regle, qui etait le defaut.
+            self.due_date = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=3)
             self.invoice_number = f"X-{montant}"
             self.contact = None
 
@@ -572,3 +577,203 @@ class TestUneFactureNegativeNestPasUnAvoir:
             "aucun avoir n'existe : appeler ce montant un avoir donne une "
             "explication fausse à un chiffre faux"
         )
+
+
+class TestUnNombreQuiNestPlusUnEncoursNestPasRendu:
+    """
+    Quatrième passe (Grok, 28/08) : le clone de la passe 1, sur l'autre axe.
+
+    La passe 1 a appris qu'un drapeau ne retient pas un nombre : le modèle lit
+    2000 malgré `devises_multiples: true`. J'ai donc annulé le total quand les
+    DEVISES se mélangent. Mais je n'ai pas annulé le total quand le nombre
+    cesse d'être un encours.
+
+    Avoirs seuls, ou avoirs plus gros que les factures, une seule devise :
+    `encours_ttc: -200`. Le champ s'appelle « reste à encaisser ». -200 n'est
+    pas à encaisser. Le drapeau a changé de forme (une note, un dictionnaire
+    d'avoirs) ; le nombre, lui, est resté. Même règle, autre axe.
+
+    Règle gelée : `encours_ttc` et `retard_ttc` ne valent un nombre que si
+    UNE devise ET ce nombre est positif ou nul. Sinon `null`.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture", echeance=None):
+            self.currency = "EUR"
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"D-{montant}"
+            self.contact = None
+
+    def test_un_avoir_seul_ne_rend_pas_un_encours_negatif(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(200.0, type_doc="avoir")],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["encours_ttc"] is None, (
+            f"-200 n'est pas un reste à encaisser : {resultat['encours_ttc']!r}"
+        )
+
+    def test_des_avoirs_plus_gros_que_les_factures_non_plus(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(100.0), self._Doc(300.0, type_doc="avoir")],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["encours_ttc"] is None
+
+    def test_un_encours_positif_reste_un_nombre(self):
+        """La règle ne doit pas tout éteindre : sans ceci, elle serait inutile."""
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(1000.0), self._Doc(200.0, type_doc="avoir")],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["encours_ttc"] == 800.0
+
+    def test_un_retard_negatif_nest_pas_rendu_non_plus(self):
+        """
+        Garde-fou trouvé NON COUVERT par le sabotage : retirer `retard >= 0`
+        ne cassait aucun test. Une facture à montant négatif - que le backend
+        accepte, faute de borne sur `InvoiceLineRequest` - et dont l'échéance
+        est dépassée rend un « montant en retard » négatif. Un retard négatif
+        n'est pas un retard.
+        """
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        doc = self._Doc(-500.0)
+        doc.due_date = maintenant - timedelta(days=10)
+
+        resultat = _totaux_des_documents([doc], maintenant)
+
+        assert resultat["retard_ttc"] is None, (
+            f"retard de {resultat['retard_ttc']!r} EUR"
+        )
+
+
+class TestUnMontantEnRetardSuitLEcheancePasLeStatut:
+    """
+    Quatrième passe (Grok, 28/08) : j'ai patché l'âge, pas le tas.
+
+    La passe 3 a supprimé le « retard de -5 jours ». Mais l'appartenance à
+    `en_retard` est restée « statut overdue OU échéance dépassée ». Une
+    facture marquée overdue dont l'échéance tombe dans cinq jours entre donc
+    toujours dans `retard_ttc`, avec `jours_de_retard: 0` et
+    `plus_ancien_retard_jours: null`. Le résultat dit « 1 000 € en retard
+    depuis 0 jour ». L'âge est devenu honnête, le montant est resté faux.
+    """
+
+    class _Doc:
+        def __init__(self, echeance, statut="overdue"):
+            self.currency = "EUR"
+            self.total_ttc = 1000.0
+            self.document_type = "facture"
+            self.status = statut
+            self.due_date = echeance
+            self.invoice_number = "FUT-001"
+            self.contact = None
+
+    def test_une_echeance_future_nentre_pas_dans_le_montant_en_retard(self):
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = _totaux_des_documents(
+            [self._Doc(maintenant + timedelta(days=5))], maintenant
+        )
+
+        assert resultat["retard_ttc"] in (0, 0.0, None), (
+            f"« en retard depuis 0 jour » pour {resultat['retard_ttc']} EUR"
+        )
+        assert resultat["nombre_en_retard"] == 0
+
+    def test_une_echeance_depassee_compte_toujours(self):
+        from datetime import UTC, datetime, timedelta
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = _totaux_des_documents(
+            [self._Doc(maintenant - timedelta(days=5), statut="sent")], maintenant
+        )
+
+        assert resultat["retard_ttc"] == 1000.0
+        assert resultat["plus_ancien_retard_jours"] == 5
+
+
+class TestLaListeDeDocumentsSeSommeSansContredireLeTotal:
+    """
+    Quatrième passe (Grok, 28/08).
+
+    `factures[]` ne contient que les factures ; `encours_ttc` en soustrait les
+    avoirs. Un modèle qui additionne la liste - geste fréquent, surtout sur
+    « quelles factures ne sont pas payées » - obtient 1 000 quand l'encours
+    vaut 800. Deux chiffres dans le même résultat, tous deux défendables,
+    dont un faux selon la question posée.
+
+    La consigne « ne fabrique pas de total » ne portait que sur le mélange de
+    devises. Le détail doit donc porter les avoirs, signés.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture", numero="X"):
+            self.currency = "EUR"
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = None
+            self.invoice_number = numero
+            self.contact = None
+
+    def test_la_somme_du_detail_egale_l_encours(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [
+                self._Doc(1000.0, numero="FACT-1"),
+                self._Doc(200.0, type_doc="avoir", numero="AV-1"),
+            ],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        assert somme == resultat["encours_ttc"], (
+            f"la liste somme à {somme}, l'encours vaut {resultat['encours_ttc']}"
+        )
+
+    def test_chaque_ligne_dit_son_type(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(200.0, type_doc="avoir", numero="AV-1")],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["factures"][0]["type"] == "avoir"
+        assert resultat["factures"][0]["montant_ttc"] == -200.0, (
+            "un avoir listé positivement se resomme comme une créance"
+        )
+
