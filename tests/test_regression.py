@@ -50,7 +50,7 @@ class TestBUG110_UpdateBloquee:
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
 
         # Lire la configuration Tauri
-        with open(tauri_conf_path, 'r') as f:
+        with open(tauri_conf_path, 'r', encoding='utf-8') as f:
             tauri_conf = json.load(f)
 
         # Vérifier que le plugin updater existe
@@ -80,7 +80,7 @@ class TestBUG110_UpdateBloquee:
 
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
 
-        with open(tauri_conf_path, 'r') as f:
+        with open(tauri_conf_path, 'r', encoding='utf-8') as f:
             tauri_conf = json.load(f)
 
         endpoint = tauri_conf["plugins"]["updater"]["endpoints"][0]
@@ -116,7 +116,7 @@ class TestBUG110_UpdateBloquee:
 
         tauri_conf_path = Path(__file__).resolve().parent.parent / "src" / "frontend" / "src-tauri" / "tauri.conf.json"
 
-        with open(tauri_conf_path, 'r') as f:
+        with open(tauri_conf_path, 'r', encoding='utf-8') as f:
             tauri_conf = json.load(f)
 
         updater_config = tauri_conf["plugins"]["updater"]
@@ -5983,7 +5983,7 @@ class TestBUG69NestedExceptShadowing:
         from pathlib import Path
 
         src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "openrouter.py"
-        src = src_file.read_text()
+        src = src_file.read_text(encoding="utf-8")
         match = re.search(
             r"except httpx\.HTTPStatusError as \w+:.*?(?=\n\s*except [A-Z])",
             src,
@@ -6001,7 +6001,7 @@ class TestBUG69NestedExceptShadowing:
         from pathlib import Path
 
         src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "anthropic.py"
-        src = src_file.read_text()
+        src = src_file.read_text(encoding="utf-8")
         match = re.search(
             r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*except [A-Z])",
             src,
@@ -6018,7 +6018,7 @@ class TestBUG69NestedExceptShadowing:
         from pathlib import Path
 
         src_file = Path(__file__).parent.parent / "src" / "backend" / "app" / "services" / "providers" / "ollama.py"
-        src = src_file.read_text()
+        src = src_file.read_text(encoding="utf-8")
         match = re.search(
             r"except httpx\.HTTPStatusError as e:.*?(?=\n\s*(?:except [A-Z]|async def|def |class ))",
             src,

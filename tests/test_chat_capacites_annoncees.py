@@ -11,7 +11,7 @@ lit la capacité, invente l'appel, et redemande une action déjà en attente.
 import re
 from pathlib import Path
 
-SOURCE = Path("src/backend/app/routers/chat.py").read_text()
+SOURCE = Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
 
 
 def _bloc_capacites() -> list[tuple[str, str]]:

@@ -489,7 +489,7 @@ class TestMCPServiceConfiguration:
             ]
         }
 
-        with open(config_path, "w") as f:
+        with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config_data, f)
 
         service = MCPService(config_path=config_path)
@@ -511,7 +511,7 @@ class TestMCPServiceConfiguration:
 
         assert config_path.exists()
 
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             data = json.load(f)
 
         assert len(data["servers"]) == 1

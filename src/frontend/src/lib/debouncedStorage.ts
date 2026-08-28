@@ -26,6 +26,26 @@ export function __resetPersistenceForTests(): void {
   instances.length = 0;
 }
 
+/**
+ * Le stockage du navigateur, s'il existe encore.
+ *
+ * Une écriture différée peut se déclencher APRÈS la disparition de sa cible :
+ * un environnement de test démonté, un contexte sans stockage, un navigateur
+ * qui refuse l'accès (fenêtre privée, données de site bloquées) où le simple
+ * accesseur lève. Trouvé par la CI de la 0.54.0 : les 1075 tests passaient et
+ * vitest sortait quand même en 1 sur un `ReferenceError` hors de tout test.
+ *
+ * Rendre nul plutôt que lever : une écriture perdue est un désagrément, une
+ * exception non capturée casse la fenêtre entière.
+ */
+function stockage(): Storage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function createDebouncedStorage(delayMs = 400): Storage {
   let timer: ReturnType<typeof setTimeout> | null = null;
   // Map par clé (revue adversariale : un pending unique perdait la 1re
@@ -50,8 +70,11 @@ export function createDebouncedStorage(delayMs = 400): Storage {
       pending.clear();
       return;
     }
-    for (const [key, value] of pending) {
-      localStorage.setItem(key, value);
+    const cible = stockage();
+    if (cible) {
+      for (const [key, value] of pending) {
+        cible.setItem(key, value);
+      }
     }
     pending.clear();
   };
@@ -70,7 +93,7 @@ export function createDebouncedStorage(delayMs = 400): Storage {
     getItem(key: string): string | null {
       // Lecture cohérente : pousser l'écriture en attente d'abord
       if (pending.has(key)) flush();
-      return localStorage.getItem(key);
+      return stockage()?.getItem(key) ?? null;
     },
     setItem(key: string, value: string): void {
       if (persistenceDisabled) return;
@@ -81,10 +104,10 @@ export function createDebouncedStorage(delayMs = 400): Storage {
     },
     removeItem(key: string): void {
       pending.delete(key);
-      localStorage.removeItem(key);
+      stockage()?.removeItem(key);
     },
     get length(): number {
-      return localStorage.length;
+      return stockage()?.length ?? 0;
     },
     clear(): void {
       pending.clear();
@@ -92,10 +115,10 @@ export function createDebouncedStorage(delayMs = 400): Storage {
         clearTimeout(timer);
         timer = null;
       }
-      localStorage.clear();
+      stockage()?.clear();
     },
     key(index: number): string | null {
-      return localStorage.key(index);
+      return stockage()?.key(index) ?? null;
     },
   };
 }

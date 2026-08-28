@@ -66,6 +66,6 @@ def test_une_entree_malformee_ne_retire_rien():
 
 def test_le_filtre_est_reellement_branche_dans_le_flux():
     """Anti-fonction-morte : ce chantier a déjà livré une autorité sans appelant."""
-    source = pathlib.Path("src/backend/app/routers/chat.py").read_text()
+    source = pathlib.Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
     appels = source.count("retirer_outils_deja_en_attente(")
     assert appels >= 2, "défini mais jamais appelé dans le flux"

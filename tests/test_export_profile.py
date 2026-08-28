@@ -83,7 +83,7 @@ class TestExportProfileStorage:
         assert profile.language == "fr-FR"  # repli défauts
         assert warning is not None
         # Le fichier fautif n'est PAS écrasé (diagnostic possible).
-        assert clean_profile.read_text() == "{ pas du json"
+        assert clean_profile.read_text(encoding="utf-8") == "{ pas du json"
 
     def test_invalide_repli_defauts_warning(self, clean_profile):
         from app.services.export_profile import load_export_profile
