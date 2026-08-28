@@ -508,6 +508,55 @@ async def get_web_search_status(session: AsyncSession = Depends(get_session)):
     }
 
 
+@router.get("/mode-cabinet")
+async def get_mode_cabinet(session: AsyncSession = Depends(get_session)):
+    """Le carnet général est-il cloisonné par dossier ?
+
+    Chantier C : pour une profession au secret, voir le carnet commun depuis un
+    dossier client est éliminatoire. Pour un artisan, le cloisonner serait une
+    punition. D'où un réglage, dont le défaut reste le carnet partagé.
+    """
+    resultat = await session.execute(
+        select(Preference).where(Preference.key == "mode_cabinet")
+    )
+    preference = resultat.scalar_one_or_none()
+    actif = preference is not None and preference.value.lower() == "true"
+    return {"enabled": actif}
+
+
+@router.post("/mode-cabinet")
+async def set_mode_cabinet(
+    enabled: bool,
+    session: AsyncSession = Depends(get_session),
+):
+    """Active ou coupe le cloisonnement du carnet par dossier."""
+    resultat = await session.execute(
+        select(Preference).where(Preference.key == "mode_cabinet")
+    )
+    preference = resultat.scalar_one_or_none()
+
+    if preference:
+        preference.value = str(enabled).lower()
+        preference.updated_at = datetime.now(UTC)
+    else:
+        preference = Preference(
+            key="mode_cabinet",
+            value=str(enabled).lower(),
+            category="features",
+        )
+        session.add(preference)
+
+    await session.commit()
+
+    # La politique vit dans un cache, comme le garde de recherche web : sans
+    # cette ligne, le réglage n'aurait effet qu'au prochain démarrage.
+    from app.services.cloisonnement import poser_mode_cabinet
+
+    poser_mode_cabinet(enabled)
+
+    return {"success": True, "enabled": enabled}
+
+
 @router.post("/web-search")
 async def set_web_search_status(
     enabled: bool,

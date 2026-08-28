@@ -115,20 +115,37 @@ l'utilisateur croit remplir un carnet d'adresses, il remplit une conversation.
 Et le code promet de pouvoir « promouvoir » un contact — ce contrôle n'existe
 nulle part (`schemas.py:160`, aucun champ `scope` dans `ContactUpdate`).
 
-### 3. La cloison arrête les documents, pas les fiches — 2 personas, 2 chemins
+### 3. La cloison arrête les documents, pas les fiches — 1 persona, confirmé
 
-L'avocat, dans le dossier Rousset, s'est vu ressortir la lettre de licenciement
-d'un autre client **et** le traitement anxiolytique de sa cliente.
+**Correction du 28/08, après relecture du chantier C.** Cette section affirmait
+que deux personas subissaient la même fuite. **C'est faux, et je le corrige ici
+plutôt que de le laisser dans un document d'arbitrage.**
 
-Le formateur, en générant une convocation Qualiopi pour « Atelier Martin », a
-obtenu comme prérequis « Avoir suivi la session Excel débutant (8-9 juillet
-2026) » — les dates de la **Mairie de Manosque**, un autre client, absent de la
-conversation.
-
-Deux métiers, deux surfaces (réponse de chat / document Word), même mécanisme :
-tout contact créé depuis l'écran est `scope="global"` par défaut
+**Ce qui est établi** — l'avocat, dans le dossier Rousset, s'est vu ressortir la
+lettre de licenciement d'un autre client **et** le traitement anxiolytique de sa
+cliente. Sa conversation était rattachée au projet Rousset. Le mécanisme est
+vérifié : tout contact créé depuis l'écran est `scope="global"`
 (`memory.py:401`), ses notes sont indexées avec lui, et la recherche du chat ne
-passe pas `include_global` — donc le défaut `True` s'applique (`qdrant.py:240`).
+passe pas `include_global` — le défaut `True` s'applique (`qdrant.py:240`).
+
+**Ce qui ne l'est pas** — le formateur a obtenu une convocation « Atelier
+Martin » portant un prérequis daté du 8-9 juillet, qu'il attribue à la Mairie de
+Manosque. Trois faits s'y opposent :
+
+1. il travaillait en **conversation libre**, non rattachée à un projet — le
+   cloisonnement n'y joue aucun rôle, et un mode « cabinet » n'y changerait rien ;
+2. ces dates n'apparaissent **nulle part ailleurs** dans son propre rapport, y
+   compris là où il enregistre la facture Mairie ;
+3. il qualifie lui-même la ligne de « **prérequis inventé** ».
+
+L'hypothèse la plus économique est une hallucination du modèle local, à laquelle
+il a attribué après coup une origine plausible. Le compter comme une fuite de
+cloisonnement aurait fait porter au chantier C un défaut qu'il ne corrige pas.
+
+**Le vrai second chemin est ailleurs, et il est pire** : `read_contact`
+(`_cloison_contacts`) laisse passer les contacts globaux **par conception**.
+Fermer la recherche vectorielle sans fermer l'outil SQL ne protège rien — le
+modèle demanderait la fiche et obtiendrait le secret.
 
 Le seul libellé qui parle de cloisonnement dit **« Documents consultés par cette
 conversation »**. Les fichiers sont cloisonnés. Les fiches clients, non.

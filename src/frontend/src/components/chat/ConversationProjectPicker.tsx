@@ -136,9 +136,9 @@ export function ConversationProjectPicker({
   return (
     <label className="flex min-w-0 items-center gap-1.5 text-xs text-text-muted">
       <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <span className="sr-only">Documents consultés par cette conversation</span>
+      <span className="sr-only">Dossier de cette conversation</span>
       <select
-        aria-label="Documents consultés par cette conversation"
+        aria-label="Dossier de cette conversation"
         value={selection}
         disabled={enCours}
         onChange={(e) => void surChangement(e.target.value)}

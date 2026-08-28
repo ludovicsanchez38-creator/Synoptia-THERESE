@@ -38,13 +38,18 @@ describe('ConversationProjectPicker', () => {
     );
   });
 
-  it('annonce des documents généraux quand rien n’est rattaché', async () => {
+  it('porte un nom accessible et reste vide quand rien n’est rattaché', async () => {
     render(<ConversationProjectPicker conversationId="conv-1" projectId={null} />);
 
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toBeTruthy();
     });
-    expect(screen.getByRole('combobox')).toHaveAccessibleName(/documents consultés/i);
+    // C1 (28/08) : ce test exigeait « documents consultés ». Le libellé était
+    // faux — les fichiers étaient cloisonnés, les fiches contacts non, et c'est
+    // dans une fiche qu'un avocat avait écrit le secret médical de sa cliente.
+    // La propriété protégée (le sélecteur a un nom accessible, et il est vide
+    // hors dossier) est conservée ; seul le texte change.
+    expect(screen.getByRole('combobox')).toHaveAccessibleName(/dossier de cette conversation/i);
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 

@@ -806,6 +806,9 @@ async def create_project(
         budget=request.budget,
         notes=request.notes,
         tags=json.dumps(request.tags) if request.tags else None,
+        # C2 : un champ de schéma que la route n'écrit pas est un contrôle mort.
+        scope=request.scope,
+        scope_id=request.scope_id,
     )
     session.add(project)
     await session.commit()

@@ -30,6 +30,7 @@ from app.services.chat_actions import (
     available_actions_text,
     parse_action_message,
 )
+from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
 from app.services.entity_extractor import (
     get_entity_extractor,
@@ -700,6 +701,12 @@ async def _get_memory_context(
             score_threshold=0.35,  # Lower threshold for broader context
             scope=scope,
             scope_id=scope_id,
+            # C3 : en mode cabinet, une conversation rattachée à un dossier ne
+            # reçoit plus les souvenirs généraux. Le défaut (`True`) est
+            # inchangé hors de ce mode. La MÊME politique est lue par
+            # `_cloison_contacts` — fermer ici seulement laisserait l'outil
+            # `read_contact` recracher la fiche par son nom.
+            include_global=souvenirs_globaux_visibles(scope),
             # Les souvenirs rattachés à CETTE conversation y restent
             # consultables, comme côté SQL.
             conversation_id=conversation_id,

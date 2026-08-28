@@ -131,6 +131,28 @@ async def _load_brave_key():
     except Exception as e:
         logger.debug(f"Préférence de recherche web non chargée : {e}")
 
+    # Chantier C : le mode cabinet cloisonne le carnet général par dossier.
+    # Même motif de cache que ci-dessus.
+    try:
+        from app.models.database import get_session_context
+        from app.models.entities import Preference
+        from app.services.cloisonnement import poser_mode_cabinet
+        from sqlalchemy import select
+
+        async with get_session_context() as session:
+            resultat = await session.execute(
+                select(Preference).where(Preference.key == "mode_cabinet")
+            )
+            preference = resultat.scalar_one_or_none()
+            if preference is not None:
+                poser_mode_cabinet(preference.value.lower() == "true")
+                logger.info(
+                    "Cloisonnement du carnet : %s",
+                    "par dossier" if preference.value.lower() == "true" else "partagé",
+                )
+    except Exception as e:
+        logger.debug(f"Mode cabinet non chargé : {e}")
+
 
 async def _load_user_profile():
     """Load user profile from database and cache it."""

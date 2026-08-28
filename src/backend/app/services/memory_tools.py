@@ -15,9 +15,10 @@ from pathlib import Path
 from typing import Any
 
 from app.models.entities import Contact, FileMetadata, Project
+from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
 from app.services.qdrant import get_qdrant_service
-from sqlalchemy import case, func, or_
+from sqlalchemy import case, false, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -306,7 +307,13 @@ def _cloison_contacts(
     globaux. `scope` NULL en base (contacts d'avant E3-05) est traité comme
     général : ne pas le faire masquerait des contacts existants.
     """
-    generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
+    # C3 : en mode cabinet, une conversation rattachée à un dossier ne voit
+    # plus le carnet général. Sans cette branche, le modèle contournerait la
+    # fermeture du RAG en demandant simplement la fiche par son nom.
+    if not souvenirs_globaux_visibles(scope):
+        generaux = false()
+    else:
+        generaux = or_(Contact.scope == "global", Contact.scope.is_(None))
     # RÉGRESSION ÉVITÉE (revue de clôture) : l'interface crée les contacts
     # suggérés avec `scope="conversation"` (`EntitySuggestion.tsx`). Sans cette
     # branche, un contact tout juste enregistré depuis la conversation en cours

@@ -169,6 +169,14 @@ class ContactUpdate(BaseModel):
     notes: str | None = None
     tags: list[str] | None = None
 
+    # C2 (28/08) : le périmètre doit pouvoir CHANGER. `ContactCreate` porte un
+    # `scope` depuis la revue L6, mais aucun écran ne l'envoie, et une fiche née
+    # globale le restait pour toujours — le code promettait pourtant de pouvoir
+    # la « promouvoir » (memory_tools.py:228), sans jamais offrir le contrôle.
+    # `None` = ne pas toucher au périmètre existant.
+    scope: str | None = None  # global | project | conversation
+    scope_id: str | None = None
+
     # CRM fields (Phase 5)
     stage: str | None = None
     source: str | None = None
@@ -281,6 +289,12 @@ class ProjectCreate(BaseModel):
     name: str
     description: str | None = None
     contact_id: str | None = None
+    # C2 : l'avocat a lu « Présente dans le projet Valette » depuis le dossier
+    # Rousset. Le FICHIER était bien cloisonné ; l'entité projet, non — elle
+    # naissait globale sans recours. Défaut inchangé pour ne rien casser en
+    # silence.
+    scope: str = "global"
+    scope_id: str | None = None
     status: Literal["active", "completed", "on_hold", "cancelled"] = "active"
     budget: float | None = None
     notes: str | None = None
@@ -297,6 +311,13 @@ class ProjectUpdate(BaseModel):
     budget: float | None = None
     notes: str | None = None
     tags: list[str] | None = None
+
+    # C2 (28/08) : le périmètre est un CHOIX, et il doit pouvoir changer.
+    # Sans lui, une fiche née globale le restait pour toujours — et le mode
+    # cloisonné (C3) viderait un dossier de sa propre personne, dont la fiche
+    # est justement globale. `None` = ne pas toucher au périmètre existant.
+    scope: str | None = None  # global | project | conversation
+    scope_id: str | None = None
 
 
 class ProjectResponse(BaseModel):
