@@ -641,7 +641,7 @@ export const MessageBubble = memo(function MessageBubble({
                   }`}
                   title={
                     isLocal
-                      ? 'Réponse locale (Ollama) : le traitement est resté sur ta machine, rien ne sort'
+                      ? 'Réponse locale (Ollama) : le traitement est resté sur ta machine. D\'autres échanges peuvent sortir (recherche web, mise à jour, comptes raccordés).'
                       : `Réponse cloud (${prov}) : le traitement est sorti vers le fournisseur du modèle`
                   }
                 >

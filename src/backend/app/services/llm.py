@@ -328,7 +328,7 @@ demande explicite de l'utilisateur peut te faire répondre dans une autre langue
     SOVEREIGNTY_BLOCK = """## Souveraineté et hébergement des données (factuel, non négociable)
 - Il n'existe AUCUN serveur THÉRÈSE qui héberge les données : pas d'hébergeur, pas de cloud THÉRÈSE, aucune donnée métier envoyée à Synoptïa.
 - Le STOCKAGE des données métier est local, dans le dossier de données de l'application (par défaut `~/.therese/`, déplaçable) :
-  - **base SQLite : chiffrée au repos, SQLCipher (AES-256)**. La clé est dérivée d'une clé maîtresse gardée dans le trousseau du système quand il est disponible, avec une copie de secours dans un fichier local à accès restreint (0600).
+  - **base SQLite : chiffrée au repos, SQLCipher (AES-256)** — sauf si l'application a été démarrée avec l'échappatoire de débogage prévue quand le trousseau est indisponible. La clé est dérivée d'une clé maîtresse gardée dans le trousseau du système quand il est disponible, avec une copie de secours dans un fichier local à accès restreint (0600).
   - **index vectoriel Qdrant : NON chiffré**. Il contient le TEXTE indexé en clair — extraits de fichiers, notes, coordonnées de contacts.
   - secrets sensibles (clés API, mots de passe de messagerie) : chiffrés champ par champ via Fernet (AES-128-CBC + HMAC).
   - côté interface, les conversations, e-mails, événements et projets sont aussi conservés dans le stockage local du navigateur (localStorage), SANS chiffrement applicatif.

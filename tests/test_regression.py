@@ -6232,6 +6232,13 @@ class TestP0IA_GardesFousPromptSysteme:
         assert "AUCUN serveur THÉRÈSE qui héberge les données" in prompt, (
             "Le prompt doit nier tout hébergement des données par un serveur Thérèse"
         )
+        # Relecture de diff (Soso) : nier l'hébergement ne suffit pas. La
+        # propriété qui compte pour l'utilisateur est que ses données métier ne
+        # partent pas chez l'éditeur — un serveur de mise à jour existe, il ne
+        # reçoit pas ses contacts.
+        assert "aucune donnée métier envoyée à Synoptïa" in prompt, (
+            "Le prompt doit garantir qu'aucune donnée métier ne part chez l'éditeur"
+        )
         assert "N'invente JAMAIS un lieu d'hébergement" in prompt, (
             "Le prompt doit interdire d'inventer un hébergeur/domaine tiers"
         )

@@ -273,7 +273,9 @@ export function PrivacyTab() {
                 contenu de tes conversations ne part chez aucun fournisseur de modèle.</li>
               <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
                 (DuckDuckGo par défaut) dès que l'assistante décide de chercher, y compris
-                en modèle local. Tu peux la couper dans Réglages &gt; Services.</li>
+                en modèle local, et sans te demander confirmation. L'interrupteur de
+                Réglages &gt; Services la coupe pour le chat ; le Board, la recherche
+                approfondie et l'Atelier continuent d'y accéder.</li>
               <li>• <strong>Sans que tu le demandes</strong> : la vérification de mise à jour
                 (vers synoptia.fr) et le téléchargement des modèles (recherche sémantique au
                 démarrage, voix locale à l'activation). Ces échanges n'emportent pas de
