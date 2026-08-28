@@ -155,6 +155,23 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
+@pytest.fixture(autouse=True)
+def _autorisation_recherche_web_neutre():
+    """Le garde de la recherche web tient un cache de module.
+
+    Sans cette remise à zéro globale, un test qui coupe la recherche laisse le
+    cache à `False` pour tous les fichiers suivants — et un test de DuckDuckGo
+    sans rapport se met à lever `RechercheWebRefusee`. C'est arrivé dès le
+    premier lancement complet : la fixture locale du fichier de garde ne
+    protégeait que ce fichier.
+    """
+    from app.services.web_search import poser_autorisation_recherche
+
+    poser_autorisation_recherche(None)
+    yield
+    poser_autorisation_recherche(None)
+
+
 @pytest.fixture(scope="function")
 def client():
     """Test client HTTP sync, compatible await.

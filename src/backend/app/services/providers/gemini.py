@@ -251,7 +251,19 @@ class GeminiProvider(BaseProvider):
             # renvoyé par Gemini (qui voit les noms sanitisés) à l'outil réel.
             name_map = _build_name_map(tools) if tools else {}
             grounding_models = ["gemini-3", "gemini-2.5", "gemini-2.0"]
-            grounding_ok = enable_grounding and any(model.startswith(m) for m in grounding_models)
+            # Campagne dix personas : l'ancrage Google Search est une sortie
+            # réseau au même titre que `web_search`, mais il passe par le
+            # fournisseur — l'interrupteur de Réglages > Services ne le voyait
+            # pas. La décision descend ici, comme le garde est descendu dans le
+            # service de recherche : tout appelant est couvert, y compris ceux
+            # qui ne passent pas `enable_grounding` (le chat, le Board).
+            from app.services.web_search import recherche_web_autorisee
+
+            grounding_ok = (
+                enable_grounding
+                and recherche_web_autorisee()
+                and any(model.startswith(m) for m in grounding_models)
+            )
             if declarations and grounding_ok and model.startswith("gemini-3"):
                 request_body["tools"] = [{"google_search": {}, "functionDeclarations": declarations}]
                 # Combiner built-in tools (google_search) + function calling sur Gemini 3

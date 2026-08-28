@@ -15,7 +15,11 @@ from dataclasses import dataclass, field
 from typing import AsyncGenerator
 
 from app.services.error_handler import message_pour_ecran
-from app.services.web_search import SearchResponse, get_web_search_service
+from app.services.web_search import (
+    RechercheWebRefusee,
+    SearchResponse,
+    get_web_search_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +128,13 @@ async def search_parallel(
     seen_urls: set[str] = set()
 
     for resp in responses:
+        if isinstance(resp, RechercheWebRefusee):
+            # Campagne dix personas : `return_exceptions=True` transforme tout
+            # en silence. Un refus doit remonter — sinon la recherche
+            # approfondie rend un rapport vide et l'utilisateur croit que le web
+            # n'avait rien, alors qu'il a lui-même coupé la sortie.
+            logger.info(f"Recherche approfondie refusée : {resp}")
+            raise resp
         if isinstance(resp, Exception):
             logger.error(f"Erreur recherche : {resp}")
             continue

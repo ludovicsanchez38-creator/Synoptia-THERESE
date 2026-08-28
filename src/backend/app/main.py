@@ -107,6 +107,30 @@ async def _load_brave_key():
     except Exception as e:
         logger.debug(f"Brave Search key not configured: {e}")
 
+    # Campagne dix personas : le garde de la recherche web vit dans le service
+    # (toute sortie réseau est couverte, pas seulement l'outil du chat). Il lit
+    # un cache, comme la clé Brave — sans ce chargement, l'interrupteur ne
+    # prendrait effet qu'après un changement de réglage.
+    try:
+        from app.models.database import get_session_context
+        from app.models.entities import Preference
+        from app.services.web_search import poser_autorisation_recherche
+        from sqlalchemy import select
+
+        async with get_session_context() as session:
+            resultat = await session.execute(
+                select(Preference).where(Preference.key == "web_search_enabled")
+            )
+            preference = resultat.scalar_one_or_none()
+            if preference is not None:
+                poser_autorisation_recherche(preference.value.lower() == "true")
+                logger.info(
+                    "Recherche web : %s (préférence chargée)",
+                    "autorisée" if preference.value.lower() == "true" else "coupée",
+                )
+    except Exception as e:
+        logger.debug(f"Préférence de recherche web non chargée : {e}")
+
 
 async def _load_user_profile():
     """Load user profile from database and cache it."""

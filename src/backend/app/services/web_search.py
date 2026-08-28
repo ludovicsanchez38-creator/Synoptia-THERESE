@@ -33,6 +33,71 @@ class SearchResponse:
     total_results: int
 
 
+# ---------------------------------------------------------------------------
+# Garde d'autorisation — campagne dix personas du 28/08
+#
+# La préférence `web_search_enabled` existait déjà en base, mais n'était lue
+# qu'à UN endroit : le routeur de chat, pour décider si l'outil est proposé au
+# modèle. Le garde était donc au mauvais étage. Board, la recherche approfondie
+# et l'Atelier appellent ce service directement (18 appels, zéro lecture du
+# réglage) et le contournaient : couper l'interrupteur ne coupait que le chat.
+#
+# Le garde est ici, sur la sortie réseau. Tout appelant est couvert par
+# construction, y compris ceux qui ne sont pas encore écrits.
+#
+# Le cache suit le motif de la clé Brave : la préférence est posée au démarrage
+# et à chaque changement de configuration, pour ne pas faire une requête SQL à
+# chaque recherche (et pour que le service reste utilisable sans session).
+# ---------------------------------------------------------------------------
+
+_autorisation_recherche_cache: bool | None = None
+
+
+class RechercheWebRefusee(Exception):
+    """La recherche web est coupée par l'utilisateur.
+
+    Type distinct, et volontairement PAS une sous-classe d'erreur réseau :
+    Board (`return ""`) et la recherche approfondie (`return_exceptions=True`)
+    avalent les pannes. Sans ce type, un refus deviendrait « aucun résultat » et
+    l'utilisateur croirait que le web n'a rien trouvé, au lieu de comprendre
+    qu'il l'a lui-même coupé.
+    """
+
+
+def poser_autorisation_recherche(autorisee: bool | None) -> None:
+    """Met en cache la préférence de recherche web.
+
+    `None` remet le défaut (autorisé), qui est aussi l'état d'une installation
+    n'ayant jamais touché au réglage.
+    """
+    global _autorisation_recherche_cache
+    _autorisation_recherche_cache = autorisee
+
+
+def recherche_web_autorisee() -> bool:
+    """Défaut : autorisé.
+
+    Décision de la relecture de design. Les personas qui ont fermé
+    l'application l'ont fait sur un MENSONGE — l'écran affirmait que rien ne
+    sortait — pas sur un défaut allumé. Une fois que l'interrupteur coupe
+    vraiment et que l'écran le dit, ils peuvent l'éteindre. Basculer le défaut
+    priverait de recherche, sans trace d'un choix, des utilisateurs qui n'ont
+    rien demandé.
+    """
+    if _autorisation_recherche_cache is None:
+        return True
+    return _autorisation_recherche_cache
+
+
+def verifier_autorisation_recherche() -> None:
+    """Lève `RechercheWebRefusee` si la recherche web est coupée."""
+    if not recherche_web_autorisee():
+        raise RechercheWebRefusee(
+            "La recherche web est désactivée. Tu peux la réactiver dans "
+            "Réglages > Services."
+        )
+
+
 class BraveSearchService:
     """
     Web search service using Brave Search API.
@@ -77,6 +142,7 @@ class BraveSearchService:
         Returns:
             SearchResponse with results
         """
+        verifier_autorisation_recherche()
         client = await self._get_client()
 
         try:
@@ -178,6 +244,7 @@ class WebSearchService:
         Returns:
             SearchResponse with results
         """
+        verifier_autorisation_recherche()
         client = await self._get_client()
 
         try:
@@ -295,6 +362,7 @@ class SearXNGService:
 
     async def search(self, query: str, max_results: int = 5, region: str = "fr") -> SearchResponse:
         """Search using SearXNG JSON API."""
+        verifier_autorisation_recherche()
         client = await self._get_client()
 
         try:
@@ -483,7 +551,17 @@ async def execute_web_search(arguments: dict[str, Any]) -> str:
         return "Erreur: requête de recherche vide"
 
     service = get_web_search_service()
-    response = await service.search(query, max_results=max_results)
+    try:
+        response = await service.search(query, max_results=max_results)
+    except RechercheWebRefusee as refus:
+        # Le modèle doit pouvoir le DIRE. Sans ce message, il inventerait une
+        # panne ou prétendrait ne pas avoir accès à internet — ce que le prompt
+        # système lui interdit par ailleurs.
+        return (
+            f"Recherche web refusée : {refus} "
+            "Explique-le à l'utilisateur et propose de répondre avec les "
+            "données locales."
+        )
     return service.format_results_for_llm(response)
 
 
@@ -540,6 +618,15 @@ def web_tools() -> list[dict[str, Any]]:
 
 async def execute_browser_action(arguments: dict[str, Any]) -> str:
     """Exécute une action browser via le browser agent."""
+    # La navigation sort sur le réseau comme la recherche : même interrupteur.
+    try:
+        verifier_autorisation_recherche()
+    except RechercheWebRefusee as refus:
+        return (
+            f"Navigation web refusée : {refus} "
+            "Explique-le à l'utilisateur et propose de répondre avec les "
+            "données locales."
+        )
     if not browser_tool_available():
         return (
             "La navigation web n'est pas disponible dans cette installation. "

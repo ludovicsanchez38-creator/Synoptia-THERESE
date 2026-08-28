@@ -532,6 +532,12 @@ async def set_web_search_status(
 
     await session.commit()
 
+    # Le garde vit dans le service de recherche : sans cette ligne,
+    # l'interrupteur n'aurait effet qu'au prochain démarrage.
+    from app.services.web_search import poser_autorisation_recherche
+
+    poser_autorisation_recherche(enabled)
+
     return {"success": True, "enabled": enabled}
 
 

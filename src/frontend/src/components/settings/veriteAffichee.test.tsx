@@ -47,7 +47,7 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     expect(screen.getAllByText(/vérification de mise à jour/i).length).toBeGreaterThan(0);
   });
 
-  it('ne prétend pas que l’interrupteur coupe TOUTE la recherche web', async () => {
+  it('dit que l’interrupteur coupe partout, et nomme ce qu’il ne couvre pas', async () => {
     // Mon propre mensonge, attrapé par la relecture du diff : j'avais écrit
     // « tu peux la couper dans Réglages > Services ». Le réglage
     // `web_search_enabled` n'est lu que par le chat — Board (board.py),
@@ -61,12 +61,13 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
       .map((n) => (n.closest('li') ?? n).textContent ?? '')
       .join(' ');
 
-    expect(texte).toMatch(/Board|recherche approfondie|Atelier/i);
-    // Trou signalé par la revalidation : le chat sous Gemini fait de l'ancrage
-    // Google Search SANS passer par l'outil `web_search`
-    // (`gemini.py:216`, `enable_grounding=True` par défaut, et
-    // `web_search_enabled` n'y est jamais lu). L'interrupteur ne le coupe pas.
+    // A-mécanique a descendu le garde dans le service de recherche : le
+    // Board, la recherche approfondie, l'Atelier, la navigation et l'ancrage
+    // Google de Gemini sont désormais couverts. L'écran doit le dire — et
+    // nommer ce qui reste dehors, sinon on recommence à promettre trop.
+    expect(texte).toMatch(/Board/i);
     expect(texte).toMatch(/Gemini/i);
+    expect(texte).toMatch(/MCP/i);
   });
 
   it('ne justifie plus la conservation illimitée par « pas de données personnelles tierces »', async () => {

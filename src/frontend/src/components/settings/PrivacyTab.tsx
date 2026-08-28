@@ -277,9 +277,9 @@ export function PrivacyTab() {
               <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
                 (DuckDuckGo par défaut) dès que l'assistante décide de chercher, y compris
                 en modèle local, et sans te demander confirmation. L'interrupteur de
-                Réglages &gt; Services ne coupe que l'outil de recherche du chat : le Board,
-                la recherche approfondie, l'Atelier et l'ancrage Google des modèles Gemini
-                y accèdent par d'autres chemins.</li>
+                Réglages &gt; Services la coupe partout : le chat, le Board, la recherche
+                approfondie, l'Atelier, la navigation web et l'ancrage Google des modèles
+                Gemini. Les serveurs MCP que tu ajoutes, eux, ne passent pas par lui.</li>
               <li>• <strong>Sans que tu le demandes</strong> : la vérification de mise à jour
                 (vers synoptia.fr) et le téléchargement des modèles (recherche sémantique au
                 démarrage, voix locale à l'activation). Ces échanges n'emportent pas de

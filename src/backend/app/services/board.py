@@ -34,7 +34,7 @@ from app.services.llm import (
 from app.services.llm import Message as LLMMessage
 from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.user_profile import get_cached_profile
-from app.services.web_search import WebSearchService
+from app.services.web_search import RechercheWebRefusee, WebSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -305,6 +305,16 @@ class BoardService:
             logger.info(f"Recherche web: {len(response.results)} résultats trouvés")
             return results_text
 
+        except RechercheWebRefusee as refus:
+            # Campagne dix personas : sans cette branche, un refus tomberait
+            # dans l'except générique ci-dessous et deviendrait une chaîne vide,
+            # que le Board présente comme « aucun résultat ». L'utilisateur
+            # croirait que le web n'a rien trouvé, alors qu'il l'a coupé.
+            logger.info(f"Recherche web refusée pour le Board : {refus}")
+            return (
+                "[Recherche web coupée par l'utilisateur : aucune source externe "
+                "n'a été consultée. Réglages > Services pour la réactiver.]"
+            )
         except Exception as e:
             logger.warning(f"Échec recherche web pour Board: {e}")
             return ""

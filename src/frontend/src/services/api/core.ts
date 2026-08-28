@@ -137,8 +137,70 @@ export type ApiFetchOptions = RequestInit & {
   timeoutMs?: number | null;
 };
 
-export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Response> {
-  const { timeoutMs = API_TIMEOUT_MS, ...init } = options;
+/**
+ * Rafraîchissement du jeton, partagé entre toutes les requêtes concurrentes.
+ *
+ * Dix appels qui prennent un 401 en même temps ne doivent déclencher qu'UN
+ * rafraîchissement. Distinct de `_initPromise` (qui, lui, résout le port du
+ * sidecar une fois pour toutes) : celui-ci se remet à zéro après chaque
+ * tentative, puisqu'il peut resservir à la relance suivante.
+ */
+let _rafraichissementEnCours: Promise<string | null> | null = null;
+
+/**
+ * Recharge le jeton avec un `fetch` BRUT.
+ *
+ * Repasser par `apiFetch` ferait qu'un 401 sur cette requête déclencherait un
+ * rejeu, qui rechargerait le jeton, qui... — récursion. Et l'ancien jeton
+ * périmé ne doit pas être envoyé : la route est exemptée d'authentification.
+ */
+async function rechargerLeJeton(): Promise<string | null> {
+  if (_rafraichissementEnCours) return _rafraichissementEnCours;
+  _rafraichissementEnCours = (async () => {
+    try {
+      const reponse = await fetch(`${API_BASE}/api/auth/token`);
+      if (!reponse.ok) return null;
+      const donnees = await reponse.json();
+      _sessionToken = donnees.token ?? null;
+      return _sessionToken;
+    } catch {
+      // Contrairement à `initializeAuth`, on ne masque pas : l'appelant doit
+      // savoir que le rejeu est impossible plutôt que de le tenter à vide.
+      return null;
+    } finally {
+      _rafraichissementEnCours = null;
+    }
+  })();
+  return _rafraichissementEnCours;
+}
+
+/**
+ * Ce 401 vient-il de NOTRE middleware d'authentification ?
+ *
+ * Le marqueur est dans le CORPS, pas dans un en-tête : `expose_headers` ne
+ * contient que `Content-Disposition`, donc un en-tête personnalisé serait
+ * invisible du JS dans la webview — le rejeu ne serait jamais parti, et les
+ * tests Node ne l'auraient pas vu. `code: "UNAUTHORIZED"` n'est émis qu'à
+ * `main.py:712` ; les 401 métier (Gmail, Groq, Sheets) sont des
+ * `{"detail": ...}`.
+ */
+async function estUnJetonPerime(reponse: Response): Promise<boolean> {
+  if (reponse.status !== 401) return false;
+  try {
+    const corps = await reponse.clone().json();
+    return corps?.code === 'UNAUTHORIZED';
+  } catch {
+    return false;
+  }
+}
+
+/** Remet l'authentification à zéro. Réservé aux tests. */
+export function _reinitialiserAuthPourTests(): void {
+  _sessionToken = null;
+  _rafraichissementEnCours = null;
+}
+
+function envoyer(url: string, init: RequestInit, timeoutMs: number | null): Promise<Response> {
   const headers = new Headers(init.headers);
   if (_sessionToken) {
     headers.set('X-Therese-Token', _sessionToken);
@@ -147,6 +209,8 @@ export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Re
     return fetch(url, { ...init, headers });
   }
 
+  // Un AbortController NEUF à chaque tentative : réutiliser celui du premier
+  // envoi rejouerait sur un signal déjà soldé.
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(new DOMException(`Délai de ${timeoutMs} ms dépassé`, 'TimeoutError')),
@@ -165,6 +229,39 @@ export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Re
   return fetch(url, { ...init, headers, signal: controller.signal }).finally(() =>
     clearTimeout(timer),
   );
+}
+
+/**
+ * Requête authentifiée, avec UN rejeu si le moteur a été relancé.
+ *
+ * Campagne dix personas : Tauri relance le sidecar (jusqu'à 3 fois), chaque
+ * démarrage génère un nouveau jeton, et le frontend gardait l'ancien. Tout
+ * retournait 401 pendant que le bandeau annonçait que le moteur était reparti.
+ *
+ * Le rejeu couvre AUSSI la branche sans délai : c'est celle du chat en flux,
+ * du Board et des agents. Le 401 du middleware arrive avant l'entrée dans la
+ * route, donc aucune génération n'a démarré et le message utilisateur n'est pas
+ * encore persisté — rejouer est sans effet de bord.
+ */
+export function apiFetch(url: string, options: ApiFetchOptions = {}): Promise<Response> {
+  const { timeoutMs = API_TIMEOUT_MS, ...init } = options;
+
+  return (async () => {
+    const jetonEnvoye = _sessionToken;
+    const reponse = await envoyer(url, init, timeoutMs);
+
+    if (!(await estUnJetonPerime(reponse))) return reponse;
+
+    // Une requête concurrente a peut-être déjà rafraîchi : dans ce cas on
+    // rejoue directement, sans relancer un rafraîchissement.
+    if (_sessionToken === jetonEnvoye) {
+      const nouveau = await rechargerLeJeton();
+      if (!nouveau) return reponse;
+    }
+
+    // Un seul rejeu : un second refus remonte à l'appelant.
+    return envoyer(url, init, timeoutMs);
+  })();
 }
 
 // API Error
