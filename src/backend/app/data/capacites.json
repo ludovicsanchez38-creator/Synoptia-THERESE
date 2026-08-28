@@ -7,14 +7,13 @@
       "famille": "quotidien",
       "textes": {
         "fr-FR": {
-          "nom": "Accueil et alertes",
-          "quoi": "Voir la journée d'un coup d'œil : agenda du jour, urgences, factures en retard et prospects à relancer."
+          "nom": "Accueil",
+          "quoi": "Revenir à l'écran d'accueil, celui qui s'ouvre au lancement : l'établi, le brief du jour et le composeur."
         }
       },
       "maturite": "complete",
       "audience": "tous",
       "entrees": [
-        "accueil.vue",
         "accueil.action"
       ],
       "exigences": [],
@@ -362,18 +361,6 @@
   ],
   "points_entree": [
     {
-      "id": "accueil.vue",
-      "capacites": [
-        "accueil"
-      ],
-      "type": "vue",
-      "principal": true,
-      "binding": {
-        "registre": "vue",
-        "view": "home"
-      }
-    },
-    {
       "id": "accueil.action",
       "capacites": [
         "accueil"
@@ -382,7 +369,8 @@
       "binding": {
         "registre": "action",
         "actionId": "home.open"
-      }
+      },
+      "principal": true
     },
     {
       "id": "contacts.vue",

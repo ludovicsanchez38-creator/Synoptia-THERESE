@@ -108,7 +108,7 @@ vi.mock('./usePrototypeAtelierData', () => ({
  * ajoutée hors convention sera signalée par le test de complétude.
  */
 const VUES_CONNUES = [
-  'home', 'memory', 'crm', 'email', 'calendar', 'tasks', 'invoices', 'files', 'projects', 'documents',
+  'memory', 'crm', 'email', 'calendar', 'tasks', 'invoices', 'files', 'projects', 'documents',
 ] as const;
 
 const ACTIONS_DE_VUE = APP_ACTIONS
@@ -162,6 +162,11 @@ describe('Gate de parité par source d’action', () => {
       // Trouvée par CE test dès sa réécriture : l'ancienne version, filtrée sur
       // `VUES_CONNUES` des deux côtés, ne la voyait pas du tout.
       'prompt-library.open',
+      // 28/08 : « Accueil » n'ouvre plus une vue embarquée. Il ferme ce qui
+      // recouvre l'accueil de la coque — jusque-là il menait à un SECOND écran
+      // d'accueil, si bien que le seul chemin nommé vers l'accueil conduisait
+      // au mauvais.
+      'home.open',
     ];
 
     const toutesLesOuvertures = APP_ACTIONS
@@ -403,7 +408,7 @@ describe('Gate de parité par source d’action', () => {
       // paraît perdu jusqu'à une réouverture manuelle.
       // Le `beforeEach` laisse le store sur `chat` : partir de l'accueil pour
       // que l'ouverture soit un vrai changement de vue.
-      useNavigationStore.setState({ activeView: 'home', history: [] });
+      useNavigationStore.setState({ activeView: 'crm', history: [] });
       render(<ConversationCanvasPrototype />);
 
       await act(async () => { useNavigationStore.getState().setView('chat'); });

@@ -58,7 +58,10 @@ export const APP_ACTIONS: AppAction[] = [
   { id: 'project.new', label: 'Ajouter un projet', description: 'Créer un nouveau projet', group: 'Mémoire', keywords: ['nouveau projet'], run: () => panel().openNewProject() },
 
   // -- Navigation (vues content-swap) --
-  { id: 'home.open', label: 'Accueil', description: "Revenir à la page d'accueil", group: 'Navigation', shortcut: 'H', keywords: ['accueil', 'home', 'journée'], run: () => nav().setView('home') },
+  // 28/08 : cette action, son raccourci H et ses mots-clés « accueil » menaient
+  // au SECOND écran d'accueil, celui que le plan retire. Le seul chemin nommé
+  // vers l'accueil réel conduisait donc au mauvais.
+  { id: 'home.open', label: 'Accueil', description: "Revenir à la page d'accueil", group: 'Navigation', shortcut: 'H', keywords: ['accueil', 'home', 'journée'], run: () => nav().retourAccueil() },
   { id: 'crm.open', label: 'Ouvrir le Pipeline', description: 'Pipeline commercial', group: 'Navigation', shortcut: 'P', keywords: ['pipeline', 'prospects'], run: () => nav().setView('crm') },
   { id: 'email.open', label: 'Ouvrir l\'Email', description: 'Boîte email', group: 'Navigation', shortcut: 'E', run: () => nav().setView('email') },
   { id: 'calendar.open', label: 'Ouvrir l\'Agenda', description: 'Agenda et rendez-vous', group: 'Navigation', shortcut: '⇧C', keywords: ['agenda', 'rdv'], run: () => nav().setView('calendar') },

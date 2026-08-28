@@ -84,11 +84,15 @@ describe('navigationStore', () => {
     expect(useNavigationStore.getState().activeView).toBe('projects');
   });
 
-  it("la vue 'home' existe et l'action ⌘K home.open y navigue", async () => {
+  it("l'action ⌘K home.open ramène à l'accueil de la coque, pas à une vue", async () => {
+    // 28/08, signalé par Ludo : aucun chemin nommé ne ramenait à l'accueil
+    // réel. Celui-ci menait au SECOND écran d'accueil, celui que le plan
+    // retire — le seul bouton nommé « Accueil » conduisait au mauvais.
     const { runAction } = await import('../lib/actionRegistry');
+    useNavigationStore.getState().setView('crm');
     const ok = runAction('home.open');
     expect(ok).toBe(true);
-    expect(useNavigationStore.getState().activeView).toBe('home');
+    expect(useNavigationStore.getState().activeView).toBeNull();
   });
 
   it("la vue 'documents' existe et l'action ⌘K documents.open y navigue (D2)", async () => {

@@ -23,7 +23,6 @@ import { usePersonalisationStore } from './personalisationStore';
  */
 export const APP_VIEWS = [
   'chat',
-  'home', // Vue Accueil persistante (refonte dashboard)
   'memory',
   'crm',
   'email',
@@ -55,6 +54,18 @@ interface NavigationStore {
   /** Pile des vues précédentes (pour le retour / Échap). */
   history: AppView[];
   setView: (view: AppView) => void;
+  /**
+   * Revenir à l'accueil de la coque.
+   *
+   * Signalé par Ludo le 28/08 : aucun chemin nommé n'y ramenait. On ne pouvait
+   * que FERMER ce qu'on avait ouvert, ce qui suppose de savoir ce qu'on a
+   * ouvert — et l'action qui s'appelait « Accueil » menait à un second écran
+   * d'accueil, celui qu'on cherche justement à retirer.
+   *
+   * L'accueil est la racine : la pile se vide, on ne « revient » pas d'un
+   * accueil vers un écran précédent.
+   */
+  retourAccueil: () => void;
   goBack: () => void;
   resetToChat: () => void;
   /** Initialise la vue selon les préférences utilisateur */
@@ -78,6 +89,8 @@ export const useNavigationStore = create<NavigationStore>((set) => ({
       };
     }),
 
+
+  retourAccueil: () => set({ activeView: null, history: [] }),
   goBack: () =>
     set((state) => {
       if (state.history.length === 0) {

@@ -4,7 +4,6 @@ import type { AppView } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
-const HomeView = lazy(() => import('../home/HomeView').then((module) => ({ default: module.HomeView })));
 const CRMPanel = lazy(() => import('../crm').then((module) => ({ default: module.CRMPanel })));
 const EmailPanel = lazy(() => import('../email').then((module) => ({ default: module.EmailPanel })));
 const CalendarPanel = lazy(() => import('../calendar').then((module) => ({ default: module.CalendarPanel })));
@@ -16,7 +15,6 @@ const ProjectsPanel = lazy(() => import('../memory/ProjectsPanel').then((module)
 const DocumentsList = lazy(() => import('../documents/DocumentsList').then((module) => ({ default: module.DocumentsList })));
 
 export const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
-  home: 'Accueil et alertes',
   memory: 'Contacts',
   crm: 'Pipeline',
   email: 'Email',
@@ -62,7 +60,6 @@ export function PrototypeUnifiedViewCanvas({
           scroller dans le mail », revue harmonisation 17/07) */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Suspense fallback={<div className="grid h-full place-items-center text-sm text-text-muted">Chargement…</div>}>
-          {view === 'home' && <HomeView />}
           {view === 'crm' && <CRMPanel standalone />}
           {view === 'email' && <EmailPanel standalone />}
           {view === 'calendar' && <CalendarPanel standalone />}

@@ -21,6 +21,7 @@ import {
   User,
   Users,
   X,
+  Home,
 } from 'lucide-react';
 import {
   CapabilityCenter,
@@ -967,7 +968,12 @@ export function ConversationCanvasPrototype() {
       // Retour à l'accueil : le store ne désigne plus aucune vue, l'écran
       // doit suivre. Sans cette branche, fermer par le store laissait la
       // dernière vue affichée - l'écran et la pile divergeaient à nouveau.
+      // 28/08 : le chat aussi. « Revenir à l'accueil » depuis une
+      // conversation ne ramenait rien, puisque le chat n'est pas une vue
+      // embarquée — il occupe la colonne par un autre chemin.
       setEmbeddedView(null);
+      setChatOpen(false);
+      setCanvasOpen(false);
       return;
     }
     if (viewDemandee === 'chat') {
@@ -1279,7 +1285,6 @@ export function ConversationCanvasPrototype() {
 
   function runUnifiedAction(actionId: string) {
     const viewByAction: Partial<Record<string, Exclude<AppView, 'chat'>>> = {
-      'home.open': 'home',
       'memory.open': 'memory',
       'memory.search': 'memory',
       'crm.open': 'crm',
@@ -1296,6 +1301,12 @@ export function ConversationCanvasPrototype() {
     if (view) {
       runAction(actionId);
       openEmbeddedView(view);
+      return;
+    }
+    // 28/08 : « Accueil » ne désigne plus une vue embarquée mais l'accueil de
+    // la coque — celui qu'on voit en ouvrant l'application.
+    if (actionId === 'home.open') {
+      useNavigationStore.getState().retourAccueil();
       return;
     }
     if (actionId === 'chat.new') { startConversation(); return; }
@@ -1406,6 +1417,11 @@ export function ConversationCanvasPrototype() {
 
         <div className="relative flex min-h-0 flex-1">
           <nav data-dialog-allow aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
+            {/* Signalé par Ludo le 28/08 : aucun bouton ne ramenait à l'accueil.
+                On ne pouvait que fermer ce qu'on avait ouvert, ce qui suppose
+                de savoir ce qu'on a ouvert. Il vient en tête du rail : c'est
+                la destination la plus fondamentale de l'application. */}
+            <IconButton label="Accueil" onClick={() => runUnifiedAction('home.open')}><Home className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             {/* Entrée 4 : deux boutons ouvraient le même tiroir, où `surface` ne
                 change que le focus initial. Et « Rechercher » ici ne cherchait

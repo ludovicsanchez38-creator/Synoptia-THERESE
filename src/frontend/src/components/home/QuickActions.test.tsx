@@ -11,7 +11,7 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import { useDocumentStore } from '../../stores/documentStore';
 
 beforeEach(() => {
-  useNavigationStore.setState({ activeView: 'home', history: [] });
+  useNavigationStore.setState({ activeView: 'crm', history: [] });
   useDocumentStore.setState({ createModalRequested: false });
 });
 

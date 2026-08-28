@@ -11,20 +11,23 @@ import { useNavigationStore } from './navigationStore';
  */
 describe('chatStore — activer une conversation affiche le chat (BUG-107)', () => {
   beforeEach(() => {
-    useNavigationStore.setState({ activeView: 'home', history: [] });
+    useNavigationStore.setState({ activeView: 'crm', history: [] });
     useChatStore.setState({ conversations: [], currentConversationId: null });
   });
 
-  it('createConversation ramène la vue active sur le chat depuis l’Accueil', () => {
-    expect(useNavigationStore.getState().activeView).toBe('home');
+  it('createConversation ramène la vue active sur le chat depuis une autre vue', () => {
+    // 28/08 : « l'Accueil » n'est plus une vue embarquée mais l'écran de la
+    // coque. Ce test vérifie le retour au chat DEPUIS ailleurs : n'importe
+    // quelle vue réelle fait l'affaire.
+    expect(useNavigationStore.getState().activeView).toBe('crm');
     useChatStore.getState().createConversation();
     expect(useNavigationStore.getState().activeView).toBe('chat');
   });
 
-  it('loadConversation ramène la vue active sur le chat depuis l’Accueil', () => {
+  it('loadConversation ramène la vue active sur le chat depuis une autre vue', () => {
     const id = useChatStore.getState().createConversation();
-    // Re-simule un retour sur l'Accueil avant la sélection dans la sidebar.
-    useNavigationStore.setState({ activeView: 'home', history: [] });
+    // Re-simule une autre vue ouverte avant la sélection dans la sidebar.
+    useNavigationStore.setState({ activeView: 'crm', history: [] });
     useChatStore.getState().loadConversation(id);
     expect(useNavigationStore.getState().activeView).toBe('chat');
   });

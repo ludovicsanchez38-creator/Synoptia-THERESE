@@ -197,10 +197,32 @@ describe('Le crosswalk est réel, pas déclaratif', () => {
         const entrees = POINTS_ENTREE.filter((p) => capacite.entrees.includes(p.id));
         const vue = entrees.find((p) => p.binding.registre === 'vue');
         if (!vue || vue.binding.registre !== 'vue') {
-          // Réglages n'est pas une vue, c'est un panneau : son action se
-          // vérifie sur son effet réel (le panneau s'ouvre), pas sur la
-          // navigation. Sans cette branche, `reglages.action` échappait au
-          // banc — c'est le garde-fou de comptage qui l'a montré.
+          // Toutes les capacités ne mènent pas à une vue embarquée : les
+          // Réglages ouvrent un panneau, l'Accueil ferme ce qui recouvre la
+          // coque. Chacune se vérifie sur son EFFET RÉEL, déclaré ici — une
+          // exception nommée par capacité aurait laissé passer n'importe quel
+          // écart, et c'est précisément ce que ce crosswalk existe pour voir.
+          const EFFETS_SANS_VUE: Record<string, () => void> = {
+            accueil: () => {
+              expect(
+                useNavigationStore.getState().activeView,
+                "l'action « Accueil » doit ramener à l'écran de la coque, "
+                + "donc n'ouvrir aucune vue embarquée",
+              ).toBeNull();
+            },
+          };
+          const effet = EFFETS_SANS_VUE[capacite.id];
+          if (effet) {
+            for (const action of entrees) {
+              if (action.binding.registre !== 'action') continue;
+              useNavigationStore.setState({ activeView: 'crm' } as never);
+              runAction(action.binding.actionId);
+              actionsExecutees++;
+              effet();
+            }
+            continue;
+          }
+          // Le cas historique : le panneau des Réglages.
           const { usePanelStore } = await import('../../stores/panelStore');
           for (const action of entrees) {
             if (action.binding.registre !== 'action') continue;

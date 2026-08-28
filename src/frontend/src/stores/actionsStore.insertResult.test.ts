@@ -26,7 +26,7 @@ const completedTask = (id: string): TaskState => ({
 
 describe('actionsStore.insertResultInChat (BUG-107 / prep-RDV)', () => {
   beforeEach(() => {
-    useNavigationStore.setState({ activeView: 'home', history: [] });
+    useNavigationStore.setState({ activeView: 'crm', history: [] });
     useChatStore.setState({ conversations: [], currentConversationId: null });
   });
 
