@@ -327,6 +327,11 @@ class ProjectResponse(BaseModel):
     name: str
     description: str | None
     contact_id: str | None
+    # C2 : le périmètre est écrit en base — sans lui ici, aucun écran ne
+    # peut l'afficher ni le modifier. Un champ que l'API ne relit pas est
+    # un contrôle mort, comme `ContactCreate.scope` l'a été depuis L6.
+    scope: str = "global"
+    scope_id: str | None = None
     status: str
     budget: float | None
     notes: str | None

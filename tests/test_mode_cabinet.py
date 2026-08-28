@@ -19,7 +19,6 @@ d'adresses commun à ses chantiers, le cloisonnement strict serait une punition.
 Pour un avocat, c'est la condition d'usage.
 """
 import pytest
-
 from app.services import cloisonnement
 
 
@@ -58,28 +57,82 @@ class TestLaPolitiqueEstUnique:
 
 
 class TestLesDeuxPortesLisentLaMemePolitique:
-    """Le point qui a fait tomber la V1 du design."""
+    """Le point qui a fait tomber la V1 du design.
 
-    def test_la_recherche_vectorielle_consulte_la_politique(self):
-        import inspect
+    Ces tests EXÉCUTENT la recherche et lisent l'argument réellement passé.
+    Un premier jet se contentait de `"souvenirs_globaux_visibles" in
+    inspect.getsource(...)` : la relecture a montré qu'un revert
+    `include_global=True  # souvenirs_globaux_visibles(scope)` serait resté
+    vert. Troisième fois aujourd'hui qu'un test de lecture de source rassure
+    au lieu de vérifier.
+    """
 
-        from app.routers import chat
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("cabinet", "attendu"),
+        [(False, True), (True, False)],
+        ids=["carnet partagé → global visible", "mode cabinet → global fermé"],
+    )
+    async def test_le_rag_passe_include_global_selon_la_politique(
+        self, monkeypatch, cabinet, attendu
+    ):
+        from app.routers import chat as routeur_chat
 
-        source = inspect.getsource(chat._get_memory_context)
-        assert "souvenirs_globaux_visibles" in source, (
-            "le RAG doit passer include_global selon la politique, pas le défaut"
+        cloisonnement.poser_mode_cabinet(cabinet)
+        arguments = {}
+
+        class _QdrantEspion:
+            async def async_search(self, **kwargs):
+                arguments.update(kwargs)
+                return []
+
+        monkeypatch.setattr(routeur_chat, "get_qdrant_service", lambda: _QdrantEspion())
+
+        async def _perimetre(*_args, **_kwargs):
+            return ("project", "dossier-rousset")
+
+        monkeypatch.setattr(routeur_chat, "_perimetre_de_conversation", _perimetre)
+
+        await routeur_chat._get_memory_context("le dossier", None, session=None)
+
+        assert arguments.get("include_global") is attendu, (
+            f"cabinet={cabinet} : le RAG doit passer include_global={attendu}, "
+            f"reçu {arguments.get('include_global')!r}"
         )
 
-    def test_l_outil_read_contact_consulte_la_meme_politique(self):
-        import inspect
+    @pytest.mark.asyncio
+    async def test_l_outil_read_contact_lit_la_meme_politique(self, client):
+        """Vérifié par le comportement SQL, pas par la source.
 
-        from app.services import memory_tools
+        Couvert en détail par TestEtancheiteReelleDuDossier ; on garde ici
+        l'assertion de symétrie : les deux portes changent ensemble.
+        """
+        from sqlalchemy import select
 
-        source = inspect.getsource(memory_tools._cloison_contacts)
-        assert "souvenirs_globaux_visibles" in source, (
-            "sans cela, le modèle demande la fiche par son nom et obtient le "
-            "secret que le RAG venait de lui cacher"
-        )
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+        from app.services.memory_tools import _cloison_contacts
+
+        async with get_session_context() as session:
+            session.add(
+                Contact(first_name="Temoin", last_name="Global",
+                        display_name="Temoin Global", scope="global")
+            )
+            await session.commit()
+
+            resultats = {}
+            for cabinet in (False, True):
+                cloisonnement.poser_mode_cabinet(cabinet)
+                trouves = await session.execute(
+                    _cloison_contacts(select(Contact), "project", "un-dossier", None)
+                )
+                resultats[cabinet] = any(
+                    c.last_name == "Global" for c in trouves.scalars().all()
+                )
+
+            assert resultats == {False: True, True: False}, (
+                "la porte SQL doit suivre la même politique que le RAG"
+            )
 
 
 class TestEtancheiteReelleDuDossier:
@@ -97,11 +150,10 @@ class TestEtancheiteReelleDuDossier:
 
     @pytest.mark.asyncio
     async def test_le_carnet_general_disparait_du_dossier_en_mode_cabinet(self, client):
-        from sqlalchemy import select
-
         from app.models.database import get_session_context
         from app.models.entities import Contact
         from app.services.memory_tools import _cloison_contacts
+        from sqlalchemy import select
 
         async with get_session_context() as session:
             session.add(
@@ -137,11 +189,10 @@ class TestEtancheiteReelleDuDossier:
     @pytest.mark.asyncio
     async def test_une_conversation_libre_voit_toujours_son_carnet(self, client):
         """Le mode ne doit pas rendre l'application inutilisable hors dossier."""
-        from sqlalchemy import select
-
         from app.models.database import get_session_context
         from app.models.entities import Contact
         from app.services.memory_tools import _cloison_contacts
+        from sqlalchemy import select
 
         async with get_session_context() as session:
             session.add(
@@ -185,3 +236,66 @@ class TestLeModeEstAtteignable:
         assert "poser_mode_cabinet" in inspect.getsource(routeur_config), (
             "sans cela, activer le mode n'aurait effet qu'au prochain démarrage"
         )
+
+
+class TestLActivationNEstJamaisSilencieuse:
+    """Le point le plus grave de la relecture.
+
+    « Toute fiche née de l'écran est `global`. Cabinet allumé, conversation
+    Rousset : plus de Valette, plus de Mme Rousset non plus. Tu as malgré tout
+    livré POST /api/config/mode-cabinet, qui pose le cache tout de suite. Aucun
+    écran, aucun compteur, aucun garde. Un curl suffit à vider le dossier de sa
+    propre personne. »
+
+    L'activation doit donc DIRE combien de fiches deviendront invisibles, et
+    exiger que l'appelant l'ait vu.
+    """
+
+    @pytest.mark.asyncio
+    async def test_activer_sans_confirmation_est_refuse_et_compte_les_fiches(self, client):
+        from app.models.database import get_session_context
+        from app.models.entities import Contact
+
+        async with get_session_context() as session:
+            session.add(
+                Contact(first_name="Germaine", last_name="Rousset",
+                        display_name="Germaine Rousset", scope="global")
+            )
+            await session.commit()
+
+        reponse = await client.post("/api/config/mode-cabinet?enabled=true")
+
+        assert reponse.status_code == 409, (
+            "activer le cloisonnement sans avoir vu combien de fiches il masque "
+            "vide le dossier en silence"
+        )
+        # Le compte doit être EXPLOITABLE par l'écran qui l'affiche, donc dans
+        # un champ, pas dans une phrase. Le gestionnaire global de l'app aplatit
+        # les HTTPException en `str(detail)` : la route rend donc une
+        # JSONResponse.
+        detail = reponse.json()
+        assert detail["fiches_generales"] >= 1
+        assert "dossier" in detail["message"].lower(), (
+            "le message doit dire CE QUE l'utilisateur perd, pas seulement "
+            "qu'il faut confirmer"
+        )
+        assert cloisonnement.mode_cabinet_actif() is False, (
+            "un refus ne doit surtout pas avoir posé le cache au passage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_activer_en_confirmant_fonctionne(self, client):
+        reponse = await client.post("/api/config/mode-cabinet?enabled=true&confirme=true")
+
+        assert reponse.status_code == 200
+        assert cloisonnement.mode_cabinet_actif() is True
+
+    @pytest.mark.asyncio
+    async def test_couper_le_mode_ne_demande_aucune_confirmation(self, client):
+        """Revenir au carnet partagé ne masque rien : rien à confirmer."""
+        cloisonnement.poser_mode_cabinet(True)
+
+        reponse = await client.post("/api/config/mode-cabinet?enabled=false")
+
+        assert reponse.status_code == 200
+        assert cloisonnement.mode_cabinet_actif() is False

@@ -49,7 +49,7 @@ describe('ConversationProjectPicker', () => {
     // dans une fiche qu'un avocat avait écrit le secret médical de sa cliente.
     // La propriété protégée (le sélecteur a un nom accessible, et il est vide
     // hors dossier) est conservée ; seul le texte change.
-    expect(screen.getByRole('combobox')).toHaveAccessibleName(/dossier de cette conversation/i);
+    expect(screen.getByRole('combobox')).toHaveAccessibleName(/carnet partagé/i);
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 

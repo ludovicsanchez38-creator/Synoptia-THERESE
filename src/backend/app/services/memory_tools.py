@@ -20,6 +20,7 @@ from app.services.contexte_execution import ContexteExecution
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy import case, false, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
@@ -310,6 +311,9 @@ def _cloison_contacts(
     # C3 : en mode cabinet, une conversation rattachée à un dossier ne voit
     # plus le carnet général. Sans cette branche, le modèle contournerait la
     # fermeture du RAG en demandant simplement la fiche par son nom.
+    # Le type est annoté : sans lui, mypy infère `False_` du premier
+    # assignement et refuse le `or_(...)` qui suit.
+    generaux: ColumnElement[bool]
     if not souvenirs_globaux_visibles(scope):
         generaux = false()
     else:

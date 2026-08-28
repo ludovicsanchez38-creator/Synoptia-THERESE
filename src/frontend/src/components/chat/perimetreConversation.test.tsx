@@ -30,8 +30,12 @@ describe('Le sélecteur de périmètre nomme ce qu’il cloisonne', () => {
     expect(source).not.toContain('Documents consultés par cette conversation');
   });
 
-  it('nomme le dossier, pas un type d’objet', () => {
+  it('nomme le dossier SANS promettre une étanchéité qui dépend d’un réglage', () => {
+    // Relecture : « Dossier de cette conversation » tout court remplaçait un
+    // mensonge étroit (« documents ») par un mensonge large — le carnet reste
+    // partagé tant que le mode cabinet est éteint, ce qui est le défaut.
     expect(source).toMatch(/Dossier de cette conversation/);
+    expect(source).toMatch(/carnet partagé/);
   });
 
   it('garde une étiquette accessible cohérente avec le texte visible', () => {

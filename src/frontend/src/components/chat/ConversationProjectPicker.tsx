@@ -136,9 +136,14 @@ export function ConversationProjectPicker({
   return (
     <label className="flex min-w-0 items-center gap-1.5 text-xs text-text-muted">
       <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      <span className="sr-only">Dossier de cette conversation</span>
+      {/* C1, corrigé après relecture : « Dossier de cette conversation »
+          promettait une étanchéité qui dépend d'un réglage éteint par défaut —
+          un mensonge plus large que celui qu'il remplaçait. Le libellé dit ce
+          qui est vrai dans les deux cas : les fichiers suivent le dossier, le
+          carnet reste partagé tant que le mode cabinet n'est pas activé. */}
+      <span className="sr-only">Dossier de cette conversation : fichiers rattachés, carnet partagé</span>
       <select
-        aria-label="Dossier de cette conversation"
+        aria-label="Dossier de cette conversation : fichiers rattachés, carnet partagé"
         value={selection}
         disabled={enCours}
         onChange={(e) => void surChangement(e.target.value)}

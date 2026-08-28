@@ -84,3 +84,28 @@ class TestLaRouteHonoreLePerimetre:
         assert "exclude_unset" in source or "scope" in source, (
             f"{nom} doit pouvoir changer le périmètre sans l'écraser par défaut"
         )
+
+
+class TestLApiRendCeQuElleEcrit:
+    """Écrire un périmètre que l'API ne relit pas, c'est la leçon de
+    `ContactCreate.scope` rejouée : un champ mort.
+
+    Relevé par la relecture : « tu écris un périmètre que l'API ne relit pas.
+    C'est ContactCreate.scope recommencé. La leçon que tu cites, tu viens de
+    la rejouer. »
+    """
+
+    def test_la_fiche_projet_renvoyee_porte_son_perimetre(self):
+        from app.models.schemas import ProjectResponse
+
+        champs = ProjectResponse.model_fields
+        assert "scope" in champs and "scope_id" in champs, (
+            "sans cela, aucun écran ne peut afficher ni modifier le périmètre "
+            "d'un projet — le champ posé en base est invisible"
+        )
+
+    def test_la_fiche_contact_renvoyee_porte_son_perimetre(self):
+        from app.models.schemas import ContactResponse
+
+        champs = ContactResponse.model_fields
+        assert "scope" in champs and "scope_id" in champs

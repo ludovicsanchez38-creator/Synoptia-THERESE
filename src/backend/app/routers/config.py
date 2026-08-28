@@ -33,6 +33,7 @@ from app.services.encryption import decrypt_value, encrypt_value, is_value_encry
 from app.services.http_client import get_http_client
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -509,7 +510,9 @@ async def get_web_search_status(session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/mode-cabinet")
-async def get_mode_cabinet(session: AsyncSession = Depends(get_session)):
+async def get_mode_cabinet(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, bool]:
     """Le carnet général est-il cloisonné par dossier ?
 
     Chantier C : pour une profession au secret, voir le carnet commun depuis un
@@ -524,12 +527,52 @@ async def get_mode_cabinet(session: AsyncSession = Depends(get_session)):
     return {"enabled": actif}
 
 
-@router.post("/mode-cabinet")
+# response_model=None : la route rend soit un dict, soit une JSONResponse
+# (le 409 structuré), et FastAPI ne sait pas dériver un modèle de cette union.
+@router.post("/mode-cabinet", response_model=None)
 async def set_mode_cabinet(
     enabled: bool,
+    confirme: bool = False,
     session: AsyncSession = Depends(get_session),
-):
-    """Active ou coupe le cloisonnement du carnet par dossier."""
+) -> dict[str, object] | JSONResponse:
+    """Active ou coupe le cloisonnement du carnet par dossier.
+
+    L'activation n'est JAMAIS silencieuse. Toute fiche créée depuis l'écran est
+    générale : activer le cloisonnement les retire d'un coup des conversations
+    rattachées à un dossier — y compris la fiche du client de ce dossier. Un
+    avocat qui ouvre le dossier Rousset perdrait Valette, et Mme Rousset avec.
+
+    Le premier appel compte les fiches concernées et refuse (409). Le second,
+    avec `confirme=true`, applique. Couper le mode ne masque rien : aucune
+    confirmation n'est demandée.
+    """
+    from app.models.entities import Contact
+    from sqlalchemy import func, or_, select
+
+    if enabled and not confirme:
+        compte = await session.execute(
+            select(func.count()).select_from(Contact).where(
+                or_(Contact.scope == "global", Contact.scope.is_(None))
+            )
+        )
+        fiches_generales = compte.scalar_one()
+        # JSONResponse et non HTTPException : le gestionnaire global aplatit
+        # toute HTTPException en `str(detail)` (`main.py:596`), ce qui rendrait
+        # le compteur inexploitable par l'écran qui doit l'afficher.
+        return JSONResponse(
+            status_code=409,
+            content={
+                "code": "CLOISONNEMENT_A_CONFIRMER",
+                "message": (
+                    f"{fiches_generales} fiche(s) sont encore générales et "
+                    "disparaîtront des conversations rattachées à un dossier, "
+                    "y compris celles du dossier lui-même. Rattache-les à leur "
+                    "dossier, ou confirme."
+                ),
+                "fiches_generales": fiches_generales,
+            },
+        )
+
     resultat = await session.execute(
         select(Preference).where(Preference.key == "mode_cabinet")
     )
