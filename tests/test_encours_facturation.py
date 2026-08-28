@@ -368,9 +368,12 @@ class TestUnAvoirNestPasUnEncoursNegatif:
             "un avoir doit être lisible pour lui-même, pas seulement comme "
             "un encours négatif"
         )
-        assert resultat["encours_par_devise"].get("USD") != -200.0 or (
-            "avoir" in resultat["note"].lower()
-        ), "si le net reste négatif, la note doit dire que ce n'est pas à encaisser"
+        # Réécrit à la cinquième passe. Ce test acceptait qu'un net négatif
+        # reste dans `encours_par_devise` À CONDITION qu'une note l'explique.
+        # C'était précisément le défaut : une note ne retient pas un chiffre,
+        # elle le rend crédible. Le négatif ne vit plus sous ce nom.
+        assert "USD" not in resultat["encours_par_devise"]
+        assert resultat["du_au_client_par_devise"] == {"USD": 200.0}
 
 
 class TestLeCasQueSosoAExecute:
@@ -432,10 +435,13 @@ class TestLeCasQueSosoAExecute:
         )
 
         assert resultat["avoirs_par_devise"] == {"USD": 200.0}
-        assert "avoir" in resultat["note"].lower(), (
-            "-200 USD dans un champ nommé « encours » se lit comme une somme "
-            "à encaisser ; la note doit dire que c'est dû au client"
-        )
+        # Réécrit à la cinquième passe. Ce test se contentait d'une NOTE
+        # expliquant le -200 USD resté dans `encours_par_devise`. La note ne
+        # retenait pas le chiffre : le modèle lisait le dictionnaire, que le
+        # prompt lui ordonne justement de lire quand le scalaire est null.
+        assert "USD" not in resultat["encours_par_devise"]
+        assert resultat["du_au_client_par_devise"] == {"USD": 200.0}
+        assert resultat["encours_par_devise"] == {"EUR": 1000.0}
 
 
 class TestDeuxChiffresPourLaMemeChoseNeDoiventPasDifferer:
@@ -493,8 +499,12 @@ class TestDeuxChiffresPourLaMemeChoseNeDoiventPasDifferer:
             datetime.now(UTC).replace(tzinfo=None),
         )
 
-        assert resultat["avoirs_par_devise"]["EUR"] == -resultat["encours_par_devise"]["EUR"], (
-            f"{resultat['avoirs_par_devise']} vs {resultat['encours_par_devise']}"
+        # Réécrit à la cinquième passe : un net négatif a quitté
+        # `encours_par_devise` pour `du_au_client_par_devise`. Ce que ce test
+        # vérifie reste le même - les deux champs disent le même montant, au
+        # centime près, sans divergence d'arrondi.
+        assert resultat["avoirs_par_devise"]["EUR"] == resultat["du_au_client_par_devise"]["EUR"], (
+            f"{resultat['avoirs_par_devise']} vs {resultat['du_au_client_par_devise']}"
         )
 
 
@@ -570,13 +580,14 @@ class TestUneFactureNegativeNestPasUnAvoir:
         )
 
         assert resultat["nombre_avoirs"] == 0
-        assert resultat["encours_par_devise"]["EUR"] == -100.0
-        note = resultat["note"].lower()
-        assert "anomalie" in note, f"note muette sur un encours négatif : {note!r}"
-        assert "est un avoir" not in note, (
-            "aucun avoir n'existe : appeler ce montant un avoir donne une "
-            "explication fausse à un chiffre faux"
-        )
+        # Réécrit à la cinquième passe. Ce test exigeait une NOTE d'anomalie à
+        # côté du montant négatif. Grok a montré que c'était le même geste que
+        # `devises_multiples` : le drapeau change de forme, le chiffre reste
+        # lisible sous un nom qui ment. Plus de note, plus de négatif sous
+        # « encours » - le montant vit sous un nom exact.
+        assert "EUR" not in resultat["encours_par_devise"]
+        assert resultat["du_au_client_par_devise"] == {"EUR": 100.0}
+        assert "anomalie" not in resultat["note"].lower()
 
 
 class TestUnNombreQuiNestPlusUnEncoursNestPasRendu:
@@ -817,3 +828,161 @@ class TestUneFactureSansEcheanceResteDansLEncours:
         assert resultat["retard_ttc"] == 0, "sans date, le retard ne s'affirme pas"
         assert resultat["nombre"] == 1
         assert resultat["nombre_en_retard"] == 0
+
+
+class TestAucunChampNommeEncoursNePorteUnNegatif:
+    """
+    Cinquième passe (Grok, 28/08) : la passe 1 rejouée pour la troisième fois.
+
+    J'ai gelé le SCALAIRE `encours_ttc`. Le nombre est resté dans le résultat,
+    sous un autre nom - `encours_par_devise: {"EUR": -200}` - et le prompt
+    ORDONNE au modèle de lire le dictionnaire quand le scalaire vaut null.
+    Le drapeau a changé de forme (null, plus une note), le chiffre a changé de
+    champ. C'est le même geste que `devises_multiples`, la troisième fois.
+
+    Règle, appliquée à TOUS les champs et plus au seul scalaire : rien de ce
+    qui s'appelle « encours » ou « retard » ne porte un montant négatif. Ce
+    qui est dû au client vit dans un champ qui le dit.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture", devise="EUR", echeance=None):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"D-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_un_avoir_seul_ne_laisse_aucun_negatif_dans_encours_par_devise(self):
+        resultat = self._totaux([self._Doc(200.0, type_doc="avoir")])
+
+        assert all(m >= 0 for m in resultat["encours_par_devise"].values()), (
+            f"négatif sous un nom qui veut dire « à encaisser » : "
+            f"{resultat['encours_par_devise']}"
+        )
+        assert resultat["du_au_client_par_devise"] == {"EUR": 200.0}, (
+            "ce qui est dû au client doit vivre dans un champ qui le dit"
+        )
+
+    def test_un_retard_negatif_ne_survit_pas_dans_le_dictionnaire(self):
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = self._totaux(
+            [self._Doc(-500.0, echeance=maintenant - timedelta(days=10))]
+        )
+
+        assert all(m >= 0 for m in resultat["retard_par_devise"].values()), (
+            f"retard négatif : {resultat['retard_par_devise']}"
+        )
+
+    def test_les_devises_saines_survivent_au_nettoyage(self):
+        """Sans ceci, la règle éteindrait l'outil au lieu de le rendre honnête."""
+        resultat = self._totaux(
+            [
+                self._Doc(1000.0),
+                self._Doc(500.0, devise="USD"),
+                self._Doc(200.0, type_doc="avoir"),
+            ]
+        )
+
+        assert resultat["encours_par_devise"] == {"EUR": 800.0, "USD": 500.0}
+        assert resultat["du_au_client_par_devise"] == {}
+
+    def test_plus_aucune_note_ne_decore_un_chiffre(self):
+        """
+        Les notes « avoir net » et « anomalie » commentaient un négatif qui
+        n'existe plus. Une note qui explique un chiffre le rend crédible ;
+        c'est ce qui avait fait passer -100 pour un avoir alors qu'aucun avoir
+        n'existait. Reste la mention du périmètre, qui ne commente rien.
+        """
+        resultat = self._totaux([self._Doc(200.0, type_doc="avoir")])
+
+        note = resultat["note"].lower()
+        assert "anomalie" not in note
+        assert "negatif" not in note and "négatif" not in note
+        assert "devis" in note, "le périmètre de la requête reste utile à dire"
+
+
+class TestLaSommeDuDetailEstExacteAuCentime:
+    """
+    Cinquième passe (Grok, 28/08) : trou ouvert par le gel lui-même.
+
+    La consigne neuve affirme « la somme du détail vaut l'encours ». Mais
+    chaque ligne est arrondie seule pendant que le total est arrondi une
+    fois : deux documents à 1,004 donnent un total de 2,01 et un détail qui
+    somme à 2,00. C'est le centime de la passe 3, sur la paire que je venais
+    de déclarer identique - et mon test de la somme n'utilisait que 1 000 et
+    -200, qui ne s'arrondissent pas.
+
+    Un test qui choisit des nombres ronds ne teste pas l'arrondi.
+    """
+
+    class _Doc:
+        def __init__(self, montant, type_doc="facture"):
+            self.currency = "EUR"
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = None
+            self.invoice_number = f"D-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_aucun_montant_ne_sort_avec_une_trainee_flottante(self):
+        """
+        Trou trouvé par sabotage : retirer l'arrondi de l'accumulateur ne
+        cassait aucun test, parce que mes cas choisissaient des montants dont
+        la somme tombe juste. 0,10 + 0,20 vaut 0.30000000000000004 en
+        flottant, et le JSON transmet ce nombre tel quel au modèle, qui
+        l'annonce.
+
+        Un test qui choisit des nombres commodes ne teste pas l'arithmétique.
+        """
+        resultat = self._totaux([self._Doc(0.10), self._Doc(0.20)])
+
+        for champ in ("encours_par_devise", "retard_par_devise", "avoirs_par_devise"):
+            for devise, montant in resultat[champ].items():
+                assert round(montant, 2) == montant, (
+                    f"{champ}[{devise}] = {montant!r} traîne des décimales"
+                )
+        for ligne in resultat["factures"]:
+            assert round(ligne["montant_ttc"], 2) == ligne["montant_ttc"]
+        assert resultat["encours_ttc"] == 0.30
+
+    def test_deux_montants_a_1_004(self):
+        resultat = self._totaux([self._Doc(1.004), self._Doc(1.004)])
+        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        assert somme == resultat["encours_ttc"], (
+            f"détail {somme}, encours {resultat['encours_ttc']}"
+        )
+
+    def test_deux_montants_a_1_055(self):
+        resultat = self._totaux([self._Doc(1.055), self._Doc(1.055)])
+        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        assert somme == resultat["encours_ttc"], (
+            f"détail {somme}, encours {resultat['encours_ttc']}"
+        )
+
+    def test_le_detail_somme_aussi_par_devise(self):
+        resultat = self._totaux([self._Doc(1.004), self._Doc(1.004)])
+        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        assert somme == resultat["encours_par_devise"]["EUR"]
+

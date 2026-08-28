@@ -312,12 +312,15 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "« combien on me doit ». N'utilise PAS search_invoices pour ca : "
             "il cherche UNE facture par son numero ou son client, il ne "
             "totalise rien. "
-            "`encours_ttc` et `retard_ttc` valent un nombre UNIQUEMENT s'il y a "
-            "une seule devise ET si ce montant est positif. Quand ils valent "
-            "null, il n'existe AUCUN total global : n'en fabrique pas, donne "
-            "`encours_par_devise` montant par montant. Chaque ligne du detail "
-            "porte son `type` et sa `devise`, et un avoir y est NEGATIF : la "
-            "somme du detail vaut l'encours, ne la recalcule pas autrement."
+            "AUCUN champ nomme encours ou retard ne porte de montant negatif : "
+            "ce qui est du AU client est dans `du_au_client_par_devise`, ne le "
+            "presente jamais comme une somme a encaisser. `encours_ttc` et "
+            "`retard_ttc` ne valent un nombre que s'il y a une seule devise ET "
+            "un montant positif ; sinon null, et il n'existe AUCUN total global "
+            "- n'en fabrique pas, donne `encours_par_devise` montant par "
+            "montant. Chaque ligne du detail porte son `type` et sa `devise`, "
+            "un avoir y est NEGATIF, et la somme du detail vaut exactement "
+            "l'encours : ne la recalcule pas autrement."
         ),
         "parameters": {
             "type": "object",
@@ -423,42 +426,63 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     factures = [d for d in documents if d.document_type == "facture"]
     avoirs = [d for d in documents if d.document_type == "avoir"]
 
+    # UNE valeur arrondie par document, dont derivent TOUS les nombres rendus.
+    # Sans cela, chaque ligne du detail s'arrondissait seule pendant que les
+    # totaux s'arrondissaient une fois : deux documents a 1,004 donnaient un
+    # encours de 2,01 et un detail qui sommait a 2,00, alors meme que la
+    # consigne affirme « la somme du detail vaut l'encours ».
+    def _montant(document: Any) -> float:
+        brut = document.total_ttc or 0
+        return round(-brut if document.document_type == "avoir" else brut, 2)
+
+    montants = {id(d): _montant(d) for d in documents}
+
     # Un total par devise, toujours. Additionner 1 000 EUR et 1 000 USD donne
     # 2 000, un montant qui n'existe dans aucune des deux ; le modèle lit le
     # nombre et l'annonce. Le total global n'est donc rendu que lorsqu'une
     # seule devise est en jeu — sinon `None`, et le détail par devise parle.
-    encours_par_devise: dict[str, float] = {}
-    for f in factures:
-        encours_par_devise[_devise(f)] = encours_par_devise.get(_devise(f), 0.0) + (f.total_ttc or 0)
-    for a in avoirs:
-        encours_par_devise[_devise(a)] = encours_par_devise.get(_devise(a), 0.0) - (a.total_ttc or 0)
-    encours_par_devise = {d: round(m, 2) for d, m in sorted(encours_par_devise.items())}
+    net_par_devise: dict[str, float] = {}
+    for d in documents:
+        net_par_devise[_devise(d)] = round(
+            net_par_devise.get(_devise(d), 0.0) + montants[id(d)], 2
+        )
+
+    # Rien de ce qui s'appelle « encours » ne porte un negatif. Geler le seul
+    # scalaire laissait le nombre vivre dans le dictionnaire, que le prompt
+    # ordonne justement de lire quand le scalaire est null : le drapeau
+    # changeait de forme, le chiffre changeait de champ. Ce qui est du AU
+    # client vit desormais sous un nom qui le dit.
+    encours_par_devise = {d: m for d, m in sorted(net_par_devise.items()) if m >= 0}
+    du_au_client_par_devise = {
+        d: round(-m, 2) for d, m in sorted(net_par_devise.items()) if m < 0
+    }
     # Un avoir n'est pas un encours negatif : « encours » veut dire RESTE A
     # ENCAISSER, et -200 USD n'est pas a encaisser, c'est du a un client. Le
     # net reste utile, mais les avoirs doivent etre lisibles pour eux-memes.
     avoirs_par_devise: dict[str, float] = {}
     for a in avoirs:
-        avoirs_par_devise[_devise(a)] = avoirs_par_devise.get(_devise(a), 0.0) + (
-            a.total_ttc or 0
+        avoirs_par_devise[_devise(a)] = round(
+            avoirs_par_devise.get(_devise(a), 0.0) - montants[id(a)], 2
         )
-    avoirs_par_devise = {d: round(m, 2) for d, m in sorted(avoirs_par_devise.items())}
 
-    encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
+    encours = round(sum(montants[id(d)] for d in documents), 2)
     # Le retard se constate sur l'ECHEANCE, jamais sur le seul statut. Une
     # facture marquee « overdue » dont l'echeance tombe dans cinq jours entrait
     # dans le montant en retard avec un age de zero jour : le resultat disait
     # « 1 000 EUR en retard depuis 0 jour ». Patcher l'age laissait le tas faux.
     en_retard = [f for f in factures if f.due_date is not None and f.due_date < maintenant]
-    retard = sum(f.total_ttc or 0 for f in en_retard)
+    retard = round(sum(montants[id(f)] for f in en_retard), 2)
     # Arrondir a CHAQUE addition fait diverger deux champs du meme resultat :
     # deux documents a 1,055 donnaient retard_ttc 2,11 et retard_par_devise
     # 2,10. On accumule, puis on arrondit une seule fois, comme encours.
     retard_par_devise: dict[str, float] = {}
     for f in en_retard:
-        retard_par_devise[_devise(f)] = retard_par_devise.get(_devise(f), 0.0) + (
-            f.total_ttc or 0
+        retard_par_devise[_devise(f)] = round(
+            retard_par_devise.get(_devise(f), 0.0) + montants[id(f)], 2
         )
-    retard_par_devise = {d: round(m, 2) for d, m in sorted(retard_par_devise.items())}
+    # Meme regle que l'encours : pas de retard negatif sous un nom qui promet
+    # une somme a recouvrer.
+    retard_par_devise = {d: m for d, m in sorted(retard_par_devise.items()) if m >= 0}
 
     # Une facture peut porter le statut « overdue » avec une echeance FUTURE :
     # l'API l'accepte, et le comptage du retard suit le statut tandis que son
@@ -491,9 +515,7 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             # detail - geste frequent sur « quelles factures » - obtenait
             # 1 000 quand l'encours valait 800.
             "type": f.document_type,
-            "montant_ttc": round(
-                -(f.total_ttc or 0) if f.document_type == "avoir" else (f.total_ttc or 0), 2
-            ),
+            "montant_ttc": montants[id(f)],
             # Un montant sans devise se lit en euros par défaut.
             "devise": _devise(f),
             "echeance": f.due_date.date().isoformat() if f.due_date else None,
@@ -521,6 +543,7 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             ),
             "encours_par_devise": encours_par_devise,
             "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
+            "du_au_client_par_devise": du_au_client_par_devise,
             "devises_multiples": len(devises) > 1,
             "retard_ttc": (
                 round(retard, 2) if len(devises) <= 1 and retard >= 0 else None
@@ -540,20 +563,6 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
                     "utilise le detail par devise."
                     if len(devises) > 1
                     else ""
-                )
-                + (
-                    " Un montant NEGATIF dans encours_par_devise est un avoir "
-                    "net : ce n'est pas a encaisser, c'est du au client. Voir "
-                    "avoirs_par_devise."
-                    if avoirs and any(m < 0 for m in encours_par_devise.values())
-                    else (
-                        " ATTENTION : un montant negatif apparait sans qu'aucun "
-                        "avoir existe - une facture porte un montant negatif. "
-                        "Ne presente pas ce total comme un encours, signale "
-                        "l'anomalie."
-                        if any(m < 0 for m in encours_par_devise.values())
-                        else ""
-                    )
                 )
             ),
     }
