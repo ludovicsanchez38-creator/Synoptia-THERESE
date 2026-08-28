@@ -173,12 +173,25 @@ export function EmailInboxCard({
 
 export function EmailMessageCanvas({
   resource,
+  nouvelleRedaction = false,
   onRetry,
   onGenerateDraft,
   onSaveDraft,
   onOpenClassic,
 }: {
   resource: ReadResource<EmailMessage> | null;
+  /**
+   * Écrire sans partir d'un message reçu (entrée 10, plan du 28/08).
+   *
+   * « Écrire » menait à « Messages à consulter », puis « Email complet », puis
+   * « Nouveau » : trois clics pour le verbe le plus simple de l'établi, quand
+   * « Facturer » ouvre un devis d'un geste. Les champs vivaient déjà ici, ils
+   * ne savaient pas fonctionner sans message source.
+   *
+   * Cette surface ne peut pas envoyer, et ne le doit pas : elle promet un
+   * brouillon. La sortie vers la messagerie est là pour expédier.
+   */
+  nouvelleRedaction?: boolean;
   onRetry: () => void;
   onGenerateDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
   onSaveDraft: (request: SendEmailRequest) => Promise<{ id: string }>;
@@ -309,12 +322,12 @@ export function EmailMessageCanvas({
         <p className="mt-1 text-sm text-text-muted">Le message reste en lecture seule. Enregistrer un brouillon ne l’envoie pas.</p>
       </div>
 
-      {!resource || resource.status === 'loading' ? (
+      {!nouvelleRedaction && (!resource || resource.status === 'loading') ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted" role="status">
           <Spinner taille="bouton" className="text-[var(--k4)]" />
           Chargement du message…
         </div>
-      ) : resource.status === 'error' ? (
+      ) : !nouvelleRedaction && resource?.status === 'error' ? (
         <div className="flex flex-1 items-center justify-center px-6 text-center" data-testid="email-message-error">
           <div>
             <AlertCircle className="mx-auto h-5 w-5 text-warning" />
@@ -326,6 +339,9 @@ export function EmailMessageCanvas({
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {/* En rédaction libre, il n'y a pas de message d'origine à relire :
+              seulement le brouillon à écrire. */}
+          {resource?.status === 'ready' && (
           <article className="rounded-[13px] border border-border bg-surface p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -342,6 +358,7 @@ export function EmailMessageCanvas({
               {resource.data.body_plain || resource.data.snippet || 'Aucun contenu texte disponible.'}
             </div>
           </article>
+          )}
 
           <section className="mt-4 rounded-[13px] border border-border bg-surface p-4" aria-labelledby="email-draft-title">
             <div className="flex flex-wrap items-center justify-between gap-3">

@@ -183,6 +183,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 function ContextCanvas({
   scenario,
+  redactionLibre,
   onClose,
   contactsResource,
   emailMessageResource,
@@ -233,6 +234,8 @@ function ContextCanvas({
   onOpenAtelierPanel,
 }: {
   scenario: Exclude<Scenario, 'today'>;
+  /** Entrée 10 : « Écrire » ouvre une rédaction, pas une liste. */
+  redactionLibre: boolean;
   onClose: () => void;
   contactsResource: ReadResource<Contact[]>;
   emailMessageResource: ReadResource<EmailMessage> | null;
@@ -326,6 +329,7 @@ function ContextCanvas({
       {scenario === 'email' ? (
         <EmailMessageCanvas
           resource={emailMessageResource}
+          nouvelleRedaction={redactionLibre}
           onRetry={onRetryEmailMessage}
           onGenerateDraft={onGenerateEmailDraft}
           onSaveDraft={onSaveEmailDraft}
@@ -757,6 +761,9 @@ export function ConversationCanvasPrototype() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMeetingTarget, setSelectedMeetingTarget] = useState<MeetingTarget>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | 'new-devis' | null>(null);
+  // Entrée 10 : pendant exact de 'new-devis'. « Écrire » ouvre une rédaction,
+  // là où il menait à « Messages à consulter ».
+  const [redactionLibre, setRedactionLibre] = useState(false);
   const [selectedBoardTarget, setSelectedBoardTarget] = useState<BoardTarget>(null);
   const [selectedAtelierTarget, setSelectedAtelierTarget] = useState<AtelierTarget>(
     initialScenario === 'atelier' ? 'new-mission' : null,
@@ -1167,7 +1174,10 @@ export function ConversationCanvasPrototype() {
       setSelectedAtelierTarget(atelierRun.status === 'idle' ? 'new-mission' : 'current');
     }
     if (next === 'meeting') setSelectedMeetingTarget(null);
-    setCanvasOpen(next !== 'today' && next !== 'email' && next !== 'invoice' && next !== 'board');
+    // Entrée 10 : le verbe le plus simple de l'établi demandait trois clics.
+    // Il ouvre maintenant une rédaction, comme « Facturer » ouvre un devis.
+    setRedactionLibre(next === 'email');
+    setCanvasOpen(next !== 'today' && next !== 'invoice' && next !== 'board');
     setComposerValue('');
     setSelectedCapability(null);
     if (typeof conversationScrollRef.current?.scrollTo === 'function') {
@@ -1868,6 +1878,7 @@ export function ConversationCanvasPrototype() {
                 />
               ) : canvasOpen && scenario !== 'today' && (
                 <ContextCanvas
+                  redactionLibre={redactionLibre}
                   scenario={scenario}
                   onClose={() => {
                     collapseScenarioPanel();
