@@ -8,6 +8,7 @@ during conversation to interact with user's connected accounts.
 import asyncio
 import contextlib
 import logging
+from collections.abc import Iterable
 from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
@@ -278,6 +279,27 @@ SEARCH_INVOICES_TOOL = {
 }
 
 
+def _devise(document: object) -> str:
+    """La devise d'un document, absence comprise.
+
+    La migration desktop ajoute `currency TEXT DEFAULT 'EUR'` SANS NOT NULL :
+    sur une base migrée - celle de tous les testeurs - la valeur peut manquer.
+    Une seule fonction repond a la question, pour que le detail et le decompte
+    des devises ne puissent pas diverger.
+    """
+    return getattr(document, "currency", None) or "EUR"
+
+
+def _devises_presentes(documents: Iterable[object]) -> set[str]:
+    """Les devises en jeu, lues comme le detail les lit.
+
+    Filtrer sur `if d.currency` faisait disparaitre les devises absentes : une
+    facture sans devise a cote d'une facture en USD passait pour une devise
+    unique, et le total additionne revenait, etiquete USD.
+    """
+    return {_devise(d) for d in documents}
+
+
 INVOICE_TOTALS_TOOL: dict[str, Any] = {
     "type": "function",
     "function": {
@@ -385,40 +407,19 @@ def drain_generated_files() -> list[dict[str, Any]]:
     return list(bucket)
 
 
-async def _invoice_totals(args: dict, session: AsyncSession) -> str:
-    """B3 : ce qu'il reste a encaisser.
+def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, Any]:
+    """Le calcul, separe de la lecture en base.
 
-    Borne aux FACTURES : un devis n'est pas une creance. La relecture de design
-    l'a impose — sans ce filtre, le devis Moreau de 4 620 EUR serait entre dans
-    l'encours d'un artisan qui attendait 1 218 EUR.
-
-    Outil separe et non extension de `search_invoices` : celui-ci est un lookup
-    borne a 10 resultats, et « un total sur 10 lignes est un mensonge ».
+    Extrait le 28/08 apres un sabotage NON DETECTE. Le trou que ce code
+    ferme - une facture sans devise, qui faisait passer un melange pour une
+    devise unique - est impossible a produire par l'ORM sur une base neuve
+    (NOT NULL), alors qu'il existe sur les bases MIGREES des testeurs
+    (`ADD COLUMN currency TEXT DEFAULT 'EUR'`, sans NOT NULL). Tant que le
+    calcul vivait derriere une requete, aucun test ne pouvait l'exercer sur
+    ce cas : remettre l'ancien filtre passait inapercu.
     """
-    import json
-    from datetime import UTC, datetime
-
-    from app.models.entities import Invoice
-
-    maintenant = datetime.now(UTC).replace(tzinfo=None)
-
-    # Factures ET avoirs : un avoir est une créance NÉGATIVE. L'ignorer
-    # surestime l'encours ; l'ajouter tel quel le double, car `total_ttc` est
-    # toujours stocké positif. Les devis restent dehors : un devis n'est pas dû.
-    lignes = await session.execute(
-        select(Invoice)
-        .options(selectinload(Invoice.contact))
-        .where(
-            Invoice.document_type.in_(["facture", "avoir"]),
-            Invoice.status.in_(["sent", "overdue"]),
-        )
-    )
-    documents = list(lignes.scalars().all())
     factures = [d for d in documents if d.document_type == "facture"]
     avoirs = [d for d in documents if d.document_type == "avoir"]
-
-    def _devise(document: object) -> str:
-        return getattr(document, "currency", None) or "EUR"
 
     # Un total par devise, toujours. Additionner 1 000 EUR et 1 000 USD donne
     # 2 000, un montant qui n'existe dans aucune des deux ; le modèle lit le
@@ -430,6 +431,14 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
     for a in avoirs:
         encours_par_devise[_devise(a)] = encours_par_devise.get(_devise(a), 0.0) - (a.total_ttc or 0)
     encours_par_devise = {d: round(m, 2) for d, m in sorted(encours_par_devise.items())}
+    # Un avoir n'est pas un encours negatif : « encours » veut dire RESTE A
+    # ENCAISSER, et -200 USD n'est pas a encaisser, c'est du a un client. Le
+    # net reste utile, mais les avoirs doivent etre lisibles pour eux-memes.
+    avoirs_par_devise: dict[str, float] = {}
+    for a in avoirs:
+        avoirs_par_devise[_devise(a)] = round(
+            avoirs_par_devise.get(_devise(a), 0.0) + (a.total_ttc or 0), 2
+        )
 
     encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
     en_retard = [
@@ -475,11 +484,11 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
 
     # Sommer des devises différentes produit un chiffre qui n'existe pas : on
     # le dit plutôt que de choisir une étiquette au hasard.
-    devises = {d.currency for d in documents if d.currency}
-    return json.dumps(
-        {
+    devises = _devises_presentes(documents)
+    return {
             "encours_ttc": round(encours, 2) if len(devises) <= 1 else None,
             "encours_par_devise": encours_par_devise,
+            "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
             "devises_multiples": len(devises) > 1,
             "retard_ttc": round(retard, 2) if len(devises) <= 1 else None,
             "retard_par_devise": dict(sorted(retard_par_devise.items())),
@@ -498,10 +507,47 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
                     if len(devises) > 1
                     else ""
                 )
+                + (
+                    " Un montant NEGATIF dans encours_par_devise est un avoir "
+                    "net : ce n'est pas a encaisser, c'est du au client. Voir "
+                    "avoirs_par_devise."
+                    if any(m < 0 for m in encours_par_devise.values())
+                    else ""
+                )
             ),
-        },
-        ensure_ascii=False,
+    }
+
+
+async def _invoice_totals(args: dict, session: AsyncSession) -> str:
+    """B3 : ce qu'il reste a encaisser.
+
+    Borne aux FACTURES : un devis n'est pas une creance. La relecture de design
+    l'a impose — sans ce filtre, le devis Moreau de 4 620 EUR serait entre dans
+    l'encours d'un artisan qui attendait 1 218 EUR.
+
+    Outil separe et non extension de `search_invoices` : celui-ci est un lookup
+    borne a 10 resultats, et « un total sur 10 lignes est un mensonge ».
+    """
+    import json
+    from datetime import UTC, datetime
+
+    from app.models.entities import Invoice
+
+    maintenant = datetime.now(UTC).replace(tzinfo=None)
+
+    # Factures ET avoirs : un avoir est une créance NÉGATIVE. L'ignorer
+    # surestime l'encours ; l'ajouter tel quel le double, car `total_ttc` est
+    # toujours stocké positif. Les devis restent dehors : un devis n'est pas dû.
+    lignes = await session.execute(
+        select(Invoice)
+        .options(selectinload(Invoice.contact))
+        .where(
+            Invoice.document_type.in_(["facture", "avoir"]),
+            Invoice.status.in_(["sent", "overdue"]),
+        )
     )
+    documents = list(lignes.scalars().all())
+    return json.dumps(_totaux_des_documents(documents, maintenant), ensure_ascii=False)
 
 
 async def _search_invoices(args: dict, session: AsyncSession) -> str:

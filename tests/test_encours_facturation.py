@@ -289,3 +289,150 @@ class TestLesAvoirsEtLaDevise:
                 )
                 trouvee.scalars().one().currency = None
                 await session.commit()
+
+
+class TestLeDetecteurEtLeDetailParlentDeLaMemeDevise:
+    """
+    Revérification de release (Soso, 28/08) : mon correctif avait deux moitiés
+    qui ne parlaient pas de la même chose.
+
+    `_devise()` traite une devise absente comme EUR pour le détail, mais le
+    décompte l'ignorait (`if d.currency`). Une facture sans devise à côté
+    d'une facture en USD donnait donc UNE seule devise : `encours_ttc: 2000`,
+    étiqueté `devise: "USD"`, `devises_multiples: false` — pendant que le
+    détail affichait 1 000 EUR et 1 000 USD. Le garde-fou s'éteignait au
+    moment précis où l'ambiguïté était la plus grande.
+
+    J'avais écarté ce cas en concluant « le schéma l'interdit ». C'était vrai
+    d'une base NEUVE seulement : la migration desktop ajoute
+    `currency TEXT DEFAULT 'EUR'` SANS NOT NULL (`database.py`), et les bases
+    des testeurs sont toutes migrées. Une preuve tirée du mauvais périmètre
+    ressemble à une preuve.
+    """
+
+    def test_une_devise_absente_compte_comme_celle_du_detail(self):
+        from app.services.workspace_tools import _devise, _devises_presentes
+
+        class _Doc:
+            def __init__(self, devise):
+                self.currency = devise
+
+        sans, en_dollars = _Doc(None), _Doc("USD")
+
+        assert _devise(sans) == "EUR", "le détail lit une devise absente comme EUR"
+        assert _devises_presentes([sans, en_dollars]) == {"EUR", "USD"}, (
+            "le décompte doit lire la même chose que le détail, sinon un "
+            "mélange passe pour une devise unique"
+        )
+
+    def test_une_devise_vide_ne_disparait_pas_non_plus(self):
+        from app.services.workspace_tools import _devises_presentes
+
+        class _Doc:
+            def __init__(self, devise):
+                self.currency = devise
+
+        assert _devises_presentes([_Doc(""), _Doc("CHF")]) == {"EUR", "CHF"}
+
+
+class TestUnAvoirNestPasUnEncoursNegatif:
+    """
+    Revérification de release (Soso, 28/08).
+
+    Une facture de 1 000 EUR et un avoir de 200 USD donnaient
+    `encours_par_devise = {"EUR": 1000, "USD": -200}`. Arithmétiquement c'est
+    un solde net ; mais le champ s'appelle « encours », c'est-à-dire ce qui
+    RESTE À ENCAISSER. Or -200 USD n'est pas à encaisser : c'est un avoir,
+    une somme due au client. Le nom promettait une chose, le nombre en disait
+    une autre.
+    """
+
+    @pytest.mark.asyncio
+    async def test_les_avoirs_sont_exposes_a_part(self, client):
+        from app.models.database import get_session_context
+        from app.models.entities import Invoice
+        from app.services.workspace_tools import execute_workspace_tool
+        from sqlalchemy import select
+
+        await _poser_facture(client, 1000.0, "sent")
+        avoir = await _poser_facture(client, 200.0, "sent", type_doc="avoir")
+
+        async with get_session_context() as session:
+            trouve = await session.execute(select(Invoice).where(Invoice.id == avoir))
+            trouve.scalars().one().currency = "USD"
+            await session.commit()
+
+            resultat = json.loads(await execute_workspace_tool("invoice_totals", {}, session))
+
+        assert resultat["avoirs_par_devise"] == {"USD": 200.0}, (
+            "un avoir doit être lisible pour lui-même, pas seulement comme "
+            "un encours négatif"
+        )
+        assert resultat["encours_par_devise"].get("USD") != -200.0 or (
+            "avoir" in resultat["note"].lower()
+        ), "si le net reste négatif, la note doit dire que ce n'est pas à encaisser"
+
+
+class TestLeCasQueSosoAExecute:
+    """
+    Le cas exact de la revérification : 1 000 sans devise + 1 000 USD.
+
+    Soso l'a fait tourner et THÉRÈSE recevait `encours_ttc: 2000`, étiqueté
+    `devise: "USD"`, `devises_multiples: false`, pendant que le détail
+    affichait 1 000 EUR et 1 000 USD. Un montant inventé, avec une étiquette
+    au hasard, présenté comme certain.
+
+    Ce test passe par `_totaux_des_documents`, la fonction extraite : c'est
+    le SEUL moyen d'exercer ce cas, puisqu'une base de test neuve refuse une
+    devise nulle (NOT NULL) alors que les bases migrées des testeurs
+    l'acceptent. Un test qui n'appelait que l'aide `_devises_presentes`
+    laissait le sabotage passer : la remise de l'ancien filtre dans
+    `_totaux_des_documents` n'était détectée par rien.
+    """
+
+    class _Doc:
+        def __init__(self, devise, montant, type_doc="facture", statut="sent"):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = statut
+            self.due_date = None
+            self.invoice_number = f"X-{montant}"
+            self.contact = None
+
+    def test_une_facture_sans_devise_ne_masque_pas_le_melange(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc(None, 1000.0), self._Doc("USD", 1000.0)],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["devises_multiples"] is True, (
+            "une devise absente n'est pas une devise commune"
+        )
+        assert resultat["encours_ttc"] is None, (
+            f"total inventé sur des devises hétérogènes : {resultat['encours_ttc']!r}"
+        )
+        assert resultat["devise"] is None, (
+            f"étiquette choisie au hasard : {resultat['devise']!r}"
+        )
+        assert resultat["encours_par_devise"] == {"EUR": 1000.0, "USD": 1000.0}
+
+    def test_un_avoir_seul_dans_sa_devise_est_annonce_comme_un_avoir(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc("EUR", 1000.0), self._Doc("USD", 200.0, type_doc="avoir")],
+            datetime.now(UTC).replace(tzinfo=None),
+        )
+
+        assert resultat["avoirs_par_devise"] == {"USD": 200.0}
+        assert "avoir" in resultat["note"].lower(), (
+            "-200 USD dans un champ nommé « encours » se lit comme une somme "
+            "à encaisser ; la note doit dire que c'est dû au client"
+        )
