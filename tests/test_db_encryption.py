@@ -5,6 +5,7 @@ La clé est dérivée de la clé maîtresse du trousseau (HKDF) ; en test, elle
 est fixée par THERESE_DB_KEY (conftest) pour rester indépendante du Keychain.
 """
 import sqlite3
+from contextlib import closing
 
 import pytest
 from app.config import settings
@@ -16,7 +17,7 @@ from app.models.database import (
 
 
 def _make_plain_db(path, rows: int = 3) -> None:
-    with sqlite3.connect(str(path)) as conn:
+    with closing(sqlite3.connect(str(path))) as conn:
         conn.execute("CREATE TABLE contacts (id INTEGER PRIMARY KEY, name TEXT)")
         for i in range(rows):
             conn.execute("INSERT INTO contacts (name) VALUES (?)", (f"Contact {i}",))
@@ -42,7 +43,10 @@ class TestMigration:
 
         # 1. Le fichier n'a plus l'en-tête SQLite : illisible hors app
         assert db_is_encrypted(db) is True
-        with pytest.raises(sqlite3.DatabaseError), sqlite3.connect(str(db)) as raw:
+        with (
+            pytest.raises(sqlite3.DatabaseError),
+            closing(sqlite3.connect(str(db))) as raw,
+        ):
             raw.execute("SELECT * FROM sqlite_master").fetchall()
 
         # 2. Les données sont intactes via db_connect (clé posée)

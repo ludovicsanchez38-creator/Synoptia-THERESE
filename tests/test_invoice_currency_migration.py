@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ from app.models.database import ensure_invoice_currency_column, ensure_invoice_l
 def test_ensure_invoice_currency_column_handles_legacy_sqlite_db(tmp_path: Path, with_invoices_table: bool):
     db_path = tmp_path / "legacy-therese.db"
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         if with_invoices_table:
             conn.execute(
                 """
@@ -48,7 +49,7 @@ def test_ensure_invoice_currency_column_handles_legacy_sqlite_db(tmp_path: Path,
 
     changed = ensure_invoice_currency_column(db_path)
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         columns = [row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()]
         if with_invoices_table:
             assert changed is True
@@ -64,7 +65,7 @@ def test_ensure_invoice_currency_column_handles_legacy_sqlite_db(tmp_path: Path,
 def test_ensure_invoice_currency_column_is_idempotent(tmp_path: Path):
     db_path = tmp_path / "legacy-therese.db"
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.execute(
             "CREATE TABLE invoices (id TEXT PRIMARY KEY, currency TEXT NOT NULL DEFAULT 'EUR')"
         )
@@ -80,7 +81,7 @@ def test_ensure_invoice_currency_column_is_idempotent(tmp_path: Path):
 def test_ensure_invoice_legacy_columns_adds_missing_invoice_fields(tmp_path: Path):
     db_path = tmp_path / "legacy-therese.db"
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.execute(
             """
             CREATE TABLE invoices (
@@ -120,7 +121,7 @@ def test_ensure_invoice_legacy_columns_adds_missing_invoice_fields(tmp_path: Pat
 
     added_columns = ensure_invoice_legacy_columns(db_path)
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         columns = {row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()}
         for expected in {
             "payment_terms",
@@ -152,7 +153,7 @@ def test_ensure_invoice_legacy_columns_adds_missing_invoice_fields(tmp_path: Pat
 def test_ensure_invoice_legacy_columns_is_idempotent(tmp_path: Path):
     db_path = tmp_path / "legacy-therese.db"
 
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn:
         conn.execute(
             """
             CREATE TABLE invoices (

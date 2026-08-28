@@ -8283,3 +8283,35 @@ class TestBUG126_NotificationsNaiveDatetime:
 
         count = await _check_overdue_tasks(db_session)
         assert count == 1
+
+
+class TestLaPromesseDePermissionsEstVraieSurToutesLesPlateformes:
+    """
+    Le bloc de souveraineté promettait un fichier de clé « à accès restreint
+    (0600) », sans condition.
+
+    Le runner Windows l'a démenti par l'exécution : `os.chmod(f, 0o600)` n'y
+    bascule que le bit lecture seule, et le mode se relit `0o666`. La copie de
+    secours de la clé n'est donc PAS restreinte sur Windows, et THÉRÈSE
+    l'affirmait quand même - à un utilisateur, sur son propre fichier de clé.
+
+    C'est le motif exact que le lot A devait fermer, dans le lot A lui-même.
+    Deux tests le rendaient visible depuis longtemps, sur un workflow que
+    personne ne regardait.
+    """
+
+    def test_le_bloc_ne_promet_pas_0600_sans_condition(self):
+        from app.services.llm import LLMService
+
+        SOVEREIGNTY_BLOCK = LLMService.SOVEREIGNTY_BLOCK
+
+        if "0600" not in SOVEREIGNTY_BLOCK:
+            return  # la mention a disparu : rien à qualifier
+        alentours = SOVEREIGNTY_BLOCK[
+            max(0, SOVEREIGNTY_BLOCK.index("0600") - 320) : SOVEREIGNTY_BLOCK.index("0600") + 120
+        ].lower()
+        assert any(mot in alentours for mot in ("windows", "unix", "macos", "selon")), (
+            "0600 est une notion POSIX : sur Windows le fichier se relit 0o666. "
+            "La promettre sans nommer la plateforme est faux pour une partie "
+            "des testeurs."
+        )

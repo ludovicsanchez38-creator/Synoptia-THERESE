@@ -253,7 +253,11 @@ class TestMCPService:
         # Vérifie que subprocess a été appelé avec les bons arguments
         mock_subprocess.assert_called_once()
         call_args = mock_subprocess.call_args
-        assert call_args[0][0].endswith("npx")  # commande (peut être résolue en chemin absolu)
+        # Sous Windows, le binaire résolu est « npx.CMD » : comparer le nom
+        # sans son extension plutôt que la fin de la chaîne.
+        from pathlib import PurePath
+
+        assert PurePath(call_args[0][0]).stem.lower() == "npx"
         assert call_args[0][1] == "@test/mcp"  # args
 
     @patch("app.services.mcp_service.asyncio.create_subprocess_exec")

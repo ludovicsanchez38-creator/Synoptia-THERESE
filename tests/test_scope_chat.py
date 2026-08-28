@@ -23,6 +23,8 @@ Choix de conception, à garder en tête en lisant ces tests :
   entière. Cloisonner par défaut ferait disparaître des documents sans que
   personne ne l'ait demandé.
 """
+from contextlib import closing
+
 import pytest
 
 
@@ -373,7 +375,7 @@ class TestMigrationDesBasesExistantes:
         from app.models.database import apply_adhoc_migrations
 
         chemin = tmp_path / "therese.db"
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             # Une table `conversations` telle qu'elle existe en 0.42.
             conn.execute(
                 "CREATE TABLE conversations ("
@@ -384,7 +386,7 @@ class TestMigrationDesBasesExistantes:
 
         apply_adhoc_migrations(chemin)
 
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             colonnes = {row[1] for row in conn.execute("PRAGMA table_info(conversations)")}
             index = {row[1] for row in conn.execute("PRAGMA index_list(conversations)")}
         assert "ix_conversations_project_id" in index, (
@@ -410,7 +412,7 @@ class TestMigrationDesBasesExistantes:
         from app.models.database import apply_adhoc_migrations
 
         chemin = tmp_path / "therese.db"
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             conn.execute(
                 "CREATE TABLE conversations ("
                 "id TEXT PRIMARY KEY, title TEXT, summary TEXT, "
@@ -421,7 +423,7 @@ class TestMigrationDesBasesExistantes:
 
         apply_adhoc_migrations(chemin)
 
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             valeur = conn.execute(
                 "SELECT memory_scope FROM conversations WHERE id='ancienne'"
             ).fetchone()[0]
@@ -441,7 +443,7 @@ class TestMigrationDesBasesExistantes:
         from app.models.database import apply_adhoc_migrations
 
         chemin = tmp_path / "therese.db"
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             conn.execute(
                 "CREATE TABLE conversations ("
                 "id TEXT PRIMARY KEY, title TEXT, summary TEXT, "

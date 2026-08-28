@@ -19,41 +19,70 @@ Deux leçons :
   J'ai livré la 0.53.0 avec ce workflow rouge, sans le voir.
 """
 
+import ast
 from pathlib import Path
 
 RACINE = Path(__file__).parent
 
 
 class TestAucuneLectureNeDependDeLaPlateforme:
+    """
+    Les deux gates lisent l'ARBRE SYNTAXIQUE, pas le texte.
+
+    Premier jet : une recherche de sous-chaîne. Elle signalait la prose de sa
+    propre docstring et celle du gate voisin, qui citent les motifs qu'ils
+    traquent. Un gate qui confond un mot et un appel finit par être désarmé
+    pour avoir crié à tort.
+    """
+
+    # `tarfile.open`, `zipfile.open`, `gzip.open` s'appellent aussi « open »
+    # et n'ont pas d'encodage TEXTE : les viser ferait crier le gate à tort,
+    # et un gate qui crie à tort finit désarmé.
+    OUVREURS_DARCHIVE = {"tarfile", "zipfile", "gzip", "bz2", "lzma", "shutil"}
+
+    @classmethod
+    def _appels(cls, fichier: Path, nom: str) -> list[ast.Call]:
+        arbre = ast.parse(fichier.read_text(encoding="utf-8"))
+        trouves = []
+        for n in ast.walk(arbre):
+            if not isinstance(n, ast.Call):
+                continue
+            if isinstance(n.func, ast.Name) and n.func.id == nom:
+                trouves.append(n)
+            elif isinstance(n.func, ast.Attribute) and n.func.attr == nom:
+                recepteur = n.func.value
+                if (
+                    isinstance(recepteur, ast.Name)
+                    and recepteur.id in cls.OUVREURS_DARCHIVE
+                ):
+                    continue
+                trouves.append(n)
+        return trouves
+
     def test_aucun_read_text_sans_encodage(self):
         fautes = []
         for fichier in sorted(RACINE.rglob("test_*.py")):
-            if fichier.name == Path(__file__).name:
-                continue
-            for numero, ligne in enumerate(
-                fichier.read_text(encoding="utf-8").splitlines(), 1
-            ):
-                if ".read_text()" in ligne:
-                    fautes.append(f"{fichier.name}:{numero}")
+            for appel in self._appels(fichier, "read_text"):
+                if not any(kw.arg == "encoding" for kw in appel.keywords):
+                    fautes.append(f"{fichier.name}:{appel.lineno}")
         assert fautes == [], (
             "read_text() sans encodage retient cp1252 sous Windows et casse "
             f"la collecte entière : {fautes}"
         )
 
     def test_aucun_open_sans_encodage(self):
+        binaire = {"rb", "wb", "ab", "r+b", "w+b", "rb+", "wb+"}
         fautes = []
         for fichier in sorted(RACINE.rglob("test_*.py")):
-            if fichier.name == Path(__file__).name:
-                continue
-            texte = fichier.read_text(encoding="utf-8")
-            for numero, ligne in enumerate(texte.splitlines(), 1):
-                nu = ligne.strip()
-                if nu.startswith("#") or "encoding" in ligne:
-                    continue
-                # `open(x)` et `open(x, "r")` en lecture texte, pas `open(x, "rb")`
-                # Une ouverture BINAIRE n'a pas d'encodage : "rb", "wb", "ab"…
-                binaire = any(f'{q}{m}{q}' in ligne for q in "\"'" for m in ("rb", "wb", "ab", "r+b", "w+b"))
-                if "open(" in ligne and not binaire:
-                    if "io.open(" in ligne or "= open(" in ligne or "with open(" in ligne:
-                        fautes.append(f"{fichier.name}:{numero}")
+            for appel in self._appels(fichier, "open"):
+                mode = ""
+                if len(appel.args) > 1 and isinstance(appel.args[1], ast.Constant):
+                    mode = str(appel.args[1].value)
+                for kw in appel.keywords:
+                    if kw.arg == "mode" and isinstance(kw.value, ast.Constant):
+                        mode = str(kw.value.value)
+                if mode in binaire:
+                    continue  # une ouverture binaire n'a pas d'encodage
+                if not any(kw.arg == "encoding" for kw in appel.keywords):
+                    fautes.append(f"{fichier.name}:{appel.lineno}")
         assert fautes == [], f"ouverture texte sans encodage explicite : {fautes}"

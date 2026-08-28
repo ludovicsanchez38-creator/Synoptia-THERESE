@@ -301,10 +301,15 @@ class TestWorkingDirectory:
         assert "path" in data or data is None or isinstance(data, dict)
 
     @pytest.mark.asyncio
-    async def test_set_working_directory(self, client: AsyncClient):
-        """Test setting working directory."""
+    async def test_set_working_directory(self, client: AsyncClient, tmp_path):
+        """Un répertoire qui EXISTE est accepté.
+
+        Le test envoyait « /tmp » en dur : ce chemin n'existe pas sous Windows,
+        où l'API répondait donc 400 - à raison. Le test mesurait la plateforme,
+        pas le produit. `tmp_path` donne un répertoire réel partout.
+        """
         response = await client.post("/api/config/working-directory", json={
-            "path": "/tmp",
+            "path": str(tmp_path),
         })
 
         assert response.status_code == 200

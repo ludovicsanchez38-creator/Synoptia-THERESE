@@ -10,6 +10,7 @@ import os
 import sqlite3
 import subprocess
 import sys
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -48,7 +49,7 @@ def _read_stamp(db_path: Path) -> str | None:
 
 def _make_legacy_db(db_path: Path) -> None:
     """DB « legacy » minimale : tables métier présentes, pas d'alembic_version."""
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY, first_name VARCHAR)")
         conn.commit()
 
@@ -84,7 +85,7 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
         for column in ATELIER_HISTORY_COLUMNS
         if column != missing_column
     ]
-    with sqlite3.connect(str(db_path)) as conn:
+    with closing(sqlite3.connect(str(db_path))) as conn:
         conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
         conn.execute(
             "CREATE TABLE invoices "
@@ -135,7 +136,7 @@ def test_stamp_idempotent_et_ne_regresse_pas(tmp_path):
     db = tmp_path / "tracked.db"
     _make_legacy_db(db)
     # DB déjà suivie par Alembic à une révision plus ancienne
-    with sqlite3.connect(str(db)) as conn:
+    with closing(sqlite3.connect(str(db))) as conn:
         conn.execute("CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)")
         conn.execute("INSERT INTO alembic_version VALUES ('21b429e036ef')")
         conn.commit()
@@ -259,7 +260,7 @@ def test_une_base_044_n_est_pas_reestampillee_sans_les_tables_sync(tmp_path):
     était sautée pour toujours."""
     db = tmp_path / "base-044.db"
     _make_patched_tracked_db(db)
-    with sqlite3.connect(str(db)) as conn:
+    with closing(sqlite3.connect(str(db))) as conn:
         for table in (
             "project_sync_roots", "project_sync_entries",
             "sync_plans", "sync_operations",
@@ -279,7 +280,7 @@ def test_des_tables_sync_malformees_ne_passent_pas_la_preuve(tmp_path):
     étaient estampillées head - la preuve vérifie les colonnes réelles."""
     db = tmp_path / "malformee.db"
     _make_patched_tracked_db(db)
-    with sqlite3.connect(str(db)) as conn:
+    with closing(sqlite3.connect(str(db))) as conn:
         for table in (
             "project_sync_roots", "project_sync_entries",
             "sync_plans", "sync_operations",

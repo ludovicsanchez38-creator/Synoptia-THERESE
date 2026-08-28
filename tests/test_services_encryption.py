@@ -5,6 +5,7 @@ Teste le service de chiffrement Fernet (AES-128-CBC + HMAC) pour les donnees sen
 """
 
 import stat
+import sys
 
 import pytest
 from app.services.encryption import (
@@ -165,8 +166,27 @@ class TestSingletonPattern:
 
 
 class TestKeyFilePermissions:
-    """Tests des permissions des fichiers de cle."""
+    """Les fichiers de clé sont restreints au seul compte utilisateur.
 
+    Ces deux tests étaient ROUGES sur Windows depuis longtemps, sur un
+    workflow que personne ne regardait : `0o666 != 0o600`. Ce n'est pas une
+    régression - `os.chmod(f, 0o600)` n'y bascule que le bit lecture seule,
+    les modes POSIX n'existent pas.
+
+    Ils sont donc marqués pour ce qu'ils sont : une garantie POSIX. Mais le
+    fait mesuré compte, et il a servi : le bloc de souveraineté promettait
+    « un fichier local à accès restreint (0600) » SANS condition, à un
+    utilisateur Windows dont le fichier ne l'est pas. Cette phrase est
+    corrigée, et `test_regression.py` empêche désormais qu'elle revienne.
+
+    Restreindre réellement le fichier sous Windows demanderait des ACL
+    (`icacls` ou `win32security`) : dette nommée, pas traitée ici.
+    """
+
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="0600 est POSIX : Windows relit 0o666, la restriction demanderait des ACL",
+    )
     def test_key_file_permissions(self, mock_encryption_paths):
         """Le fichier de cle a les permissions 600."""
         service = EncryptionService()
@@ -180,6 +200,10 @@ class TestKeyFilePermissions:
         file_stat = key_file.stat()
         assert oct(stat.S_IMODE(file_stat.st_mode)) == "0o600"
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="0600 est POSIX : Windows relit 0o666, la restriction demanderait des ACL",
+    )
     def test_salt_file_permissions(self, mock_encryption_paths):
         """Le fichier de salt a les permissions 600."""
         service = EncryptionService()
