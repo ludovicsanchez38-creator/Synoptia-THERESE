@@ -37,6 +37,33 @@ function poserLargeur(coteACote: boolean) {
   })) as unknown as typeof window.matchMedia;
 }
 
+/**
+ * Relecture Grok du 28/08, objection 2 : `estCoteACote()` est un INSTANTANÉ lu
+ * à l'ouverture, alors que l'isolation, elle, suit la largeur en continu
+ * (`usePanneauCouvrant` écoute `matchMedia`, `useDialogFocusTrap` se réarme).
+ * Ouvrir large puis rétrécir reproduisait donc l'échec que ce lot refuse, avec
+ * un geste de retard. Le mock ci-dessus ne peut pas le montrer : ses listeners
+ * sont des `vi.fn()`, personne ne reçoit jamais `change`.
+ */
+function poserLargeurPilotable(coteACote: boolean) {
+  const auditeurs = new Set<(evenement: MediaQueryListEvent) => void>();
+  let large = coteACote;
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    get matches() { return query.includes('min-width: 1280px') ? large : false; },
+    media: query,
+    onchange: null,
+    addListener: (l: (e: MediaQueryListEvent) => void) => auditeurs.add(l),
+    removeListener: (l: (e: MediaQueryListEvent) => void) => auditeurs.delete(l),
+    addEventListener: (_type: string, l: (e: MediaQueryListEvent) => void) => auditeurs.add(l),
+    removeEventListener: (_type: string, l: (e: MediaQueryListEvent) => void) => auditeurs.delete(l),
+    dispatchEvent: vi.fn(),
+  })) as unknown as typeof window.matchMedia;
+  return (suivant: boolean) => {
+    large = suivant;
+    auditeurs.forEach((auditeur) => auditeur({ matches: suivant } as MediaQueryListEvent));
+  };
+}
+
 function reinitialiser() {
   vi.clearAllMocks();
   _clearEscapeHandlers();
@@ -73,6 +100,26 @@ describe('Entrée 9 : le chat garde l’objet qu’il commente', () => {
 
     expect(document.querySelector(CANEVAS)).toBeTruthy();
     // Et la conversation reste vivante : rien ne l'a rendue inerte.
+    expect(screen.getByTestId('prototype-chat-surface').closest('[inert]')).toBeNull();
+  });
+
+  it('rétrécir APRÈS coup rend la place, plutôt que d’isoler la conversation', async () => {
+    const redimensionner = poserLargeurPilotable(true);
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { await Promise.resolve(); });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Nouvelle conversation' }));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    expect(document.querySelector(CANEVAS)).toBeTruthy();
+
+    // La fenêtre passe sous le seuil : le canevas devient couvrant.
+    await act(async () => { redimensionner(false); });
+
+    await waitFor(() => expect(document.querySelector(CANEVAS)).toBeNull());
     expect(screen.getByTestId('prototype-chat-surface').closest('[inert]')).toBeNull();
   });
 

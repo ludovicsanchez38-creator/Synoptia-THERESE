@@ -1137,6 +1137,16 @@ export function ConversationCanvasPrototype() {
     calculatorOpen || deliverablesOpen || imagesOpen || followUpsOpen || voiceOpen
     || (canvasOpen && scenario !== 'today');
 
+  // Relecture Grok, objection 2 : `openChat` lit la largeur UNE FOIS, alors que
+  // l'isolation, elle, la suit (`usePanneauCouvrant` écoute `matchMedia`, le
+  // piège de focus se réarme). Ouvrir large puis rétrécir posait donc `inert`
+  // sur la conversation restée à côté — l'échec que l'entrée 9 refuse, avec un
+  // geste de retard. Sous le seuil, le canevas cède la place, exactement comme
+  // s'il avait été ouvert à cette largeur.
+  useEffect(() => {
+    if (chatOpen && canvasOpen && panneauCouvrant) setCanvasOpen(false);
+  }, [chatOpen, canvasOpen, panneauCouvrant]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -1164,6 +1174,27 @@ export function ConversationCanvasPrototype() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [blockStreamingNavigation, calculatorOpen, canvasOpen, capabilityCenterOpen, chatOpen, closeCapabilityCenter, closeCommandPalette, closeConversationDrawer, closeTrustCenter, collapseEmbeddedView, collapseScenarioPanel, collapseToolPanel, commandOpen, deliverablesOpen, drawerOpen, embeddedView, fermerLeChat, followUpsOpen, imagesOpen, trustCenterOpen, voiceOpen]);
+
+  /**
+   * Ramener l'écran à l'accueil : l'établi sur le brief, aucun panneau, aucune
+   * conversation. Distincte du retour PAR LE STORE (`viewDemandee === null`),
+   * qui ferme les surfaces sans toucher au parcours : revenir d'une vue vers
+   * l'établi ne doit pas effacer le parcours qu'on y avait choisi.
+   */
+  function rangerPourLAccueil() {
+    setEmbeddedView(null);
+    setChatOpen(false);
+    setCanvasOpen(false);
+    setCalculatorOpen(false);
+    setDeliverablesOpen(false);
+    setImagesOpen(false);
+    setFollowUpsOpen(false);
+    setVoiceOpen(false);
+    setSelectedCapability(null);
+    setRedactionLibre(false);
+    setScenario('today');
+    setComposerValue('');
+  }
 
   function chooseScenario(next: Scenario) {
     if (blockStreamingNavigation()) return;
@@ -1321,7 +1352,14 @@ export function ConversationCanvasPrototype() {
     // 28/08 : « Accueil » ne désigne plus une vue embarquée mais l'accueil de
     // la coque — celui qu'on voit en ouvrant l'application.
     if (actionId === 'home.open') {
+      if (blockStreamingNavigation()) return;
       useNavigationStore.getState().retourAccueil();
+      // Relecture Grok, objection 1 : `retourAccueil()` remet `activeView` à
+      // `null`. Depuis l'établi il y est DÉJÀ — « Écrire » passe par
+      // `chooseScenario`, qui ne touche pas au store — et l'effet qui range
+      // l'écran n'écoute que les CHANGEMENTS de vue. Le bouton ne faisait donc
+      // rien sur le parcours le plus fréquent. Le ménage se fait ici.
+      rangerPourLAccueil();
       return;
     }
     if (actionId === 'chat.new') { startConversation(); return; }
