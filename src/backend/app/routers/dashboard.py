@@ -339,6 +339,11 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 "id": follow_up.id,
                 "due_date": follow_up.due_date,
                 "note": follow_up.note,
+                # Entrée 8 : le serveur s'en sert pour retrouver l'objet et
+                # l'expéditeur, puis le jetait. Sans lui, un clic sur une
+                # relance ne peut ouvrir que la boîte entière, à charge pour
+                # l'utilisateur d'y retrouver sa ligne.
+                "email_message_id": follow_up.email_message_id,
                 "email_subject": message.subject if message else None,
                 "email_from": (message.from_name or message.from_email) if message else None,
                 "contact_id": follow_up.contact_id,

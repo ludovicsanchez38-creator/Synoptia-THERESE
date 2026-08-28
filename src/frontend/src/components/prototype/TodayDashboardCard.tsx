@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
-import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind } from './prototypeReadModels';
+import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
 import { SetupChecklist } from '../home/SetupChecklist';
@@ -50,12 +50,24 @@ export function TodayDashboardCard({
   resource,
   onRetry,
   onOpenView,
+  onOpenItem,
   setup = null,
   onSetupEmail,
 }: {
   resource: ReadResource<TodayDashboard>;
   onRetry: () => void;
   onOpenView: (view: AppView) => void;
+  /**
+   * Ouvrir l'objet que l'item désigne (entrée 8 du plan du 28/08).
+   *
+   * « Tu peux agir ici, sans chercher le bon module » s'affiche trois lignes
+   * plus haut, et le clic ouvrait le module. Sur « Relancer Dupont », il
+   * fallait retrouver Dupont dans la boîte entière.
+   *
+   * Facultatif : sans ce gestionnaire, le brief retombe sur la destination
+   * grossière plutôt que de ne rien faire.
+   */
+  onOpenItem?: (item: TodayAttentionItem) => void;
   /** B1 (0.48) : l'état vide dit la vérité - sans compte email, le brief
       ne peut rien préparer. La coque charge le SetupStatus et le passe. */
   setup?: SetupStatus | null;
@@ -169,7 +181,7 @@ export function TodayDashboardCard({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onOpenView(item.targetView)}
+                onClick={() => (onOpenItem ? onOpenItem(item) : onOpenView(item.targetView))}
                 className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
               >
                 <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${attentionColors[item.kind]}`}>

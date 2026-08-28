@@ -19,6 +19,17 @@ export interface TodayAttentionItem {
   badge: string;
   urgent: boolean;
   targetView: Extract<AppView, 'calendar' | 'tasks' | 'email' | 'invoices' | 'crm'>;
+  /**
+   * L'objet que cet item désigne (entrée 8 du plan du 28/08).
+   *
+   * L'identité était calculée pour fabriquer la clé, puis jetée : le brief ne
+   * pouvait ouvrir que le module, et l'utilisateur devait y retrouver sa ligne
+   * à la main — sous une phrase qui promet le contraire.
+   *
+   * `null` quand le serveur ne la donne pas : une relance dont le message a
+   * disparu s'ouvre sur sa liste plutôt que sur un identifiant inventé.
+   */
+  cibleId: string | null;
 }
 
 function isOverdue(dueDate: string | null, today: string): boolean {
@@ -51,6 +62,7 @@ function taskToAttention(task: DashboardTask, today: string): TodayAttentionItem
   const dueLabel = formatCivilDate(task.due_date);
   return {
     id: `task-${task.id}`,
+    cibleId: task.id,
     kind: 'task',
     title: task.title,
     detail: dueLabel ? `Échéance ${dueLabel}` : `Priorité ${task.priority || 'à préciser'}`,
@@ -64,6 +76,7 @@ function invoiceToAttention(invoice: DashboardInvoice): TodayAttentionItem {
   const dueLabel = formatCivilDate(invoice.due_date);
   return {
     id: `invoice-${invoice.id}`,
+    cibleId: invoice.id,
     kind: 'invoice',
     title: `Facture ${invoice.invoice_number}`,
     detail: [formatMoney(invoice), dueLabel ? `échéance ${dueLabel}` : 'échéance non renseignée'].join(' · '),
@@ -78,6 +91,7 @@ function eventToAttention(event: DashboardEvent): TodayAttentionItem {
   const hasParticipants = event.attendees_count > 0;
   return {
     id: `event-${event.id}`,
+    cibleId: event.id,
     kind: 'event',
     title: event.summary,
     detail: [
@@ -100,6 +114,8 @@ function followUpToAttention(followUp: DashboardFollowUp, today: string): TodayA
   const subject = followUp.email_subject || followUp.note || 'Relance email';
   return {
     id: `follow-up-${followUp.id}`,
+    // Le message, pas la relance ni le contact : c'est lui qu'on veut rouvrir.
+    cibleId: followUp.email_message_id ?? null,
     kind: 'follow_up',
     title: followUp.contact_name ? `Relancer ${followUp.contact_name}` : subject,
     detail: [subject, `échéance ${formatCivilDate(followUp.due_date)}`].filter(Boolean).join(' · '),
@@ -116,6 +132,7 @@ function eventTimestamp(event: DashboardEvent): string {
 function prospectToAttention(prospect: DashboardProspect): TodayAttentionItem {
   return {
     id: `prospect-${prospect.id}`,
+    cibleId: prospect.id,
     kind: 'prospect',
     title: `Relancer ${prospect.name}`,
     detail: [prospect.company, prospect.stage].filter(Boolean).join(' · ') || 'Contexte CRM disponible',

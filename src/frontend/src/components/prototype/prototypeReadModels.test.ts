@@ -22,6 +22,7 @@ function dashboard(): TodayDashboard {
     ],
     due_follow_ups: [{
       id: 'f1', due_date: '2026-07-13T12:00:00', note: 'Rappeler après le devis',
+      email_message_id: 'msg-test',
       email_subject: 'Proposition commerciale', email_from: 'Camille', contact_id: 'c1',
       contact_name: 'Camille Martin',
     }],

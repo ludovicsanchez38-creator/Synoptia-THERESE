@@ -69,6 +69,9 @@ class TestToday:
             "id": follow_up.id,
             "due_date": follow_up.due_date,
             "note": follow_up.note,
+            # Entrée 8 (28/08) : l'identifiant du message, que le serveur
+            # connaissait et ne transmettait pas.
+            "email_message_id": message.id,
             "email_subject": message.subject,
             "email_from": message.from_name,
             "contact_id": contact.id,

@@ -1564,6 +1564,44 @@ export function ConversationCanvasPrototype() {
                         if (view === 'chat') openChat();
                         else openEmbeddedView(view);
                       }}
+                      /* Entrée 8 : un clic mène à l'OBJET, dans la surface qui
+                         sait l'afficher — jamais à la liste où il faudrait le
+                         retrouver. Les cinq types d'un coup : un brief où
+                         certains items ouvrent leur fiche et d'autres une
+                         boîte entière serait plus déroutant que l'ancien,
+                         uniformément grossier. */
+                      onOpenItem={(item) => {
+                        if (!item.cibleId) {
+                          openEmbeddedView(item.targetView);
+                          return;
+                        }
+                        if (item.kind === 'event') {
+                          setScenario('meeting');
+                          setSelectedMeetingTarget(item.cibleId);
+                          setCanvasOpen(true);
+                          return;
+                        }
+                        if (item.kind === 'invoice') {
+                          setScenario('invoice');
+                          setSelectedInvoiceId(item.cibleId);
+                          setCanvasOpen(true);
+                          void openInvoice(item.cibleId);
+                          return;
+                        }
+                        if (item.kind === 'follow_up') {
+                          setScenario('email');
+                          setRedactionLibre(false);
+                          setCanvasOpen(true);
+                          void openEmailMessage(item.cibleId);
+                          return;
+                        }
+                        if (item.kind === 'prospect') {
+                          setSelectedContactId(item.cibleId);
+                          openEmbeddedView('crm');
+                          return;
+                        }
+                        openEmbeddedView(item.targetView);
+                      }}
                       setup={setupStatus}
                       onSetupEmail={() => openEmbeddedView('email')}
                     />

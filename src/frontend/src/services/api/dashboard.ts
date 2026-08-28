@@ -45,6 +45,8 @@ export interface DashboardFollowUp {
   id: string;
   due_date: string;
   note: string | null;
+  /** Entrée 8 : l'identifiant du message à rouvrir, quand il existe encore. */
+  email_message_id: string | null;
   email_subject: string | null;
   email_from: string | null;
   contact_id: string | null;
