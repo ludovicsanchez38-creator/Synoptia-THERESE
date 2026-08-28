@@ -434,7 +434,7 @@ export function CapabilityCenter({
                 <ShieldCheck className="h-4 w-4 text-accent" />
                 Toujours sous contrôle
               </div>
-              <p className="mt-1.5 text-xs leading-4 text-text-muted">Sources et coûts affichés lorsqu’ils sont disponibles ; confirmation sur les actions externes raccordées.</p>
+              <p className="mt-1.5 text-xs leading-4 text-text-muted">Sources et coûts affichés lorsqu’ils sont disponibles ; envoi d’e-mail et création de rendez-vous confirmés avant l’effet.</p>
             </div>
           </nav>
 
@@ -583,7 +583,7 @@ export function TrustCenter({
         <div className="p-2">
           <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Données métier conservées localement ; secrets protégés par le trousseau système." />
           <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Service d’IA et modèle configurés dans les Paramètres, avec option locale via Ollama." />
-          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="Les parcours raccordés indiquent leur destination et demandent une confirmation avant l’effet externe." />
+          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="L’envoi d’un e-mail et la création d’un rendez-vous demandent une confirmation. Les autres accès externes, dont la recherche web, partent sans la demander ; son interrupteur est dans Réglages > Services." />
           <TrustRow icon={<Gauge className="h-3.5 w-3.5" />} title="Coûts et limites" value="Seules les consommations réellement mesurées sont présentées comme telles." />
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>

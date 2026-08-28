@@ -45,7 +45,7 @@ export const TITRES_ETABLI: Record<IdEtabli, string> = {
   email: 'Écrire un message',
   memory: 'Retrouver un contact',
   meeting: 'Préparer un rendez-vous',
-  invoice: 'Créer un devis',
+  invoice: 'Facturer un client',
   board: 'Éclairer une décision',
 };
 

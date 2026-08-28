@@ -434,6 +434,20 @@ async def set_preference(
             status_code=400, detail="Use /api-key endpoint for API keys"
         )
 
+    # Revue de release 0.54.0 : le mode cabinet a sa propre porte, qui COMPTE
+    # les fiches qui vont sortir du champ des reponses et refuse le premier
+    # appel (409) pour montrer ce nombre. L'ecrire ici sauterait le comptage :
+    # au redemarrage, main.py relit la preference et pose le mode, sans que
+    # personne ait vu ce qu'il allait rendre invisible.
+    if key.lower() == "mode_cabinet":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Le mode cabinet s'active par POST /api/config/mode-cabinet, "
+                "qui compte d'abord les fiches concernees."
+            ),
+        )
+
     # Revue dette 0.43.4 : ce detour permettait d'ecrire une adresse de
     # fournisseur invalide, relue ensuite sans controle par POST /llm.
     if key.lower().endswith("_base_url"):

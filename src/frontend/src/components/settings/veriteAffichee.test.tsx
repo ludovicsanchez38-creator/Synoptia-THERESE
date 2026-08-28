@@ -13,6 +13,9 @@
  * découpée), et elle testait le dépôt plutôt que l'écran. Ici, ce qui est
  * asserté est ce que l'utilisateur lit.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -116,5 +119,47 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     const bloc = await screen.findByText(/ne sont pas chiffrés/i);
 
     expect(bloc.textContent).toMatch(/conversations/i);
+  });
+});
+
+describe('Les promesses de confirmation disent ce qui est réellement confirmé', () => {
+  /**
+   * Reste du chantier A, trouvé à la relecture de release.
+   *
+   * Trois phrases annonçaient « confirmation avant effet externe » — dans le
+   * Centre de confiance, sous le composeur en permanence, et dans l'encadré
+   * « Toujours sous contrôle ». Or seuls l'envoi d'e-mail et la création
+   * d'événement sont confirmés. La recherche web, elle, part toujours sans
+   * demander : A-mécanique lui a donné un interrupteur, pas une carte.
+   *
+   * Ce n'était pas une régression — ces phrases précèdent la campagne. Mais
+   * annoncer « l'écran cesse d'affirmer le faux » en les laissant aurait
+   * reproduit le motif pour lequel trois personas sont partis.
+   */
+  const source = (chemin: string) =>
+    readFileSync(join(__dirname, '..', '..', chemin), 'utf-8')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('ne promet pas une confirmation générale avant tout effet externe', () => {
+    const centre = source('components/prototype/CapabilityCenter.tsx');
+    expect(centre).not.toContain('demandent une confirmation avant l’effet externe');
+    expect(centre).not.toContain('confirmation sur les actions externes raccordées');
+  });
+
+  it('le Centre de confiance dit que la recherche web ne demande rien', () => {
+    // Verrou positif : interdire l'ancienne phrase ne suffit pas, une nouvelle
+    // formule générale repasserait. La seule chose qui tienne, c'est d'exiger
+    // que l'écran nomme l'exception - deux outils sont confirmés
+    // (SENSITIVE_TOOL_NAMES : send_email, create_calendar_event), pas la
+    // recherche web.
+    const centre = source('components/prototype/CapabilityCenter.tsx');
+    expect(centre).toMatch(/recherche web[^<]*partent sans la demander/);
+  });
+
+  it('la mention sous le composeur nomme ce qui est confirmé', () => {
+    const coque = source('components/prototype/ConversationCanvasPrototype.tsx');
+    expect(coque).not.toContain('Parcours réel · confirmation avant effet');
   });
 });

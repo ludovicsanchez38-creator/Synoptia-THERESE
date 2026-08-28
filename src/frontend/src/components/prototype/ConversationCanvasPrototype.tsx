@@ -1857,7 +1857,7 @@ export function ConversationCanvasPrototype() {
                           rail (« Plus d'outils »). */}
                       <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Parcours réel · confirmation avant effet</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Parcours réel · envoi et rendez-vous confirmés</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}

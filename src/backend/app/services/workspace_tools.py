@@ -289,7 +289,11 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "reste a encaisser », « quelles factures ne sont pas payees », "
             "« combien on me doit ». N'utilise PAS search_invoices pour ca : "
             "il cherche UNE facture par son numero ou son client, il ne "
-            "totalise rien."
+            "totalise rien. "
+            "Quand plusieurs devises sont en jeu, `encours_ttc` et `retard_ttc` "
+            "valent null : il n'existe alors AUCUN total global, et tu ne dois "
+            "pas en fabriquer un. Donne `encours_par_devise` tel quel, montant "
+            "par montant. Chaque facture du detail porte sa `devise` : cite-la."
         ),
         "parameters": {
             "type": "object",
@@ -413,12 +417,31 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
     factures = [d for d in documents if d.document_type == "facture"]
     avoirs = [d for d in documents if d.document_type == "avoir"]
 
+    def _devise(document: object) -> str:
+        return getattr(document, "currency", None) or "EUR"
+
+    # Un total par devise, toujours. Additionner 1 000 EUR et 1 000 USD donne
+    # 2 000, un montant qui n'existe dans aucune des deux ; le modèle lit le
+    # nombre et l'annonce. Le total global n'est donc rendu que lorsqu'une
+    # seule devise est en jeu — sinon `None`, et le détail par devise parle.
+    encours_par_devise: dict[str, float] = {}
+    for f in factures:
+        encours_par_devise[_devise(f)] = encours_par_devise.get(_devise(f), 0.0) + (f.total_ttc or 0)
+    for a in avoirs:
+        encours_par_devise[_devise(a)] = encours_par_devise.get(_devise(a), 0.0) - (a.total_ttc or 0)
+    encours_par_devise = {d: round(m, 2) for d, m in sorted(encours_par_devise.items())}
+
     encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
     en_retard = [
         f for f in factures
         if f.status == "overdue" or (f.due_date is not None and f.due_date < maintenant)
     ]
     retard = sum(f.total_ttc or 0 for f in en_retard)
+    retard_par_devise: dict[str, float] = {}
+    for f in en_retard:
+        retard_par_devise[_devise(f)] = round(
+            retard_par_devise.get(_devise(f), 0.0) + (f.total_ttc or 0), 2
+        )
 
     plus_ancienne = None
     if en_retard:
@@ -438,6 +461,8 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
                 else None
             ),
             "montant_ttc": f.total_ttc,
+            # Un montant sans devise se lit en euros par défaut.
+            "devise": _devise(f),
             "echeance": f.due_date.date().isoformat() if f.due_date else None,
             "jours_de_retard": (
                 (maintenant - f.due_date).days if f.due_date and f.due_date < maintenant else 0
@@ -453,9 +478,11 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
     devises = {d.currency for d in documents if d.currency}
     return json.dumps(
         {
-            "encours_ttc": round(encours, 2),
+            "encours_ttc": round(encours, 2) if len(devises) <= 1 else None,
+            "encours_par_devise": encours_par_devise,
             "devises_multiples": len(devises) > 1,
-            "retard_ttc": round(retard, 2),
+            "retard_ttc": round(retard, 2) if len(devises) <= 1 else None,
+            "retard_par_devise": dict(sorted(retard_par_devise.items())),
             "nombre": len(factures),
             "nombre_en_retard": len(en_retard),
             "nombre_avoirs": len(avoirs),
@@ -465,6 +492,12 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
             "note": (
                 "Devis exclus : un devis n'est pas une creance. Factures "
                 "payees exclues."
+                + (
+                    " Plusieurs devises : aucun total global n'est calculable, "
+                    "utilise le detail par devise."
+                    if len(devises) > 1
+                    else ""
+                )
             ),
         },
         ensure_ascii=False,

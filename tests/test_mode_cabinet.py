@@ -298,3 +298,59 @@ class TestLActivationNEstJamaisSilencieuse:
 
         assert reponse.status_code == 200
         assert cloisonnement.mode_cabinet_actif() is False
+
+
+class TestLaPorteDeriveeNeContournePasLeCompte:
+    """
+    Revue de release (Soso, 28/08).
+
+    `POST /api/config/mode-cabinet` refuse au premier appel (409) en annonçant
+    combien de fiches vont sortir du champ des réponses, et n'accepte qu'au
+    second, confirmé. Mais `PUT /api/config/preferences/mode_cabinet` écrit la
+    même préférence sans rien compter : au redémarrage, `main.py` la relit et
+    pose le mode. Le cloisonnement s'activerait sans que personne ait vu le
+    nombre, donc sans que personne ait pu constater que des fiches allaient
+    devenir invisibles à THÉRÈSE.
+
+    Portée réelle, mesurée : la route est aujourd'hui INATTEIGNABLE par HTTP.
+    Son paramètre `value: str | int | float | bool | list | dict` fait répondre
+    « Field required » à toutes les formes essayées (corps booléen, corps
+    chaîne, corps enveloppé, paramètre d'URL) — pour mode_cabinet comme pour
+    n'importe quelle préférence. Le contournement n'est donc pas exploitable
+    en l'état, et cette garde est une défense en profondeur : elle tient si le
+    jour où la route est réparée, personne ne repense au comptage.
+
+    D'où l'appel direct à la fonction, comme pour `qwen_base_url`
+    (`test_dette_0434_llm.py`) : c'est la GARDE qui est prouvée ici, pas le
+    transport, qui lui ne passe pas.
+    """
+
+    @pytest.mark.asyncio
+    async def test_la_porte_generique_refuse_mode_cabinet(self, db_session):
+        from app.routers.config import set_preference
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException) as leve:
+            await set_preference(key="mode_cabinet", value="true", session=db_session)
+        assert leve.value.status_code == 400
+        assert "mode-cabinet" in str(leve.value.detail), (
+            "le refus doit dire par où passer, sinon il ressemble à une panne"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_refus_ne_depend_pas_de_la_casse(self, db_session):
+        from app.routers.config import set_preference
+        from fastapi import HTTPException
+
+        with pytest.raises(HTTPException):
+            await set_preference(key="MODE_CABINET", value="true", session=db_session)
+
+    @pytest.mark.asyncio
+    async def test_une_preference_ordinaire_passe_toujours(self, db_session):
+        """La garde vise une clé, pas la route : sans ceci, elle pourrait tout fermer."""
+        from app.routers.config import set_preference
+
+        resultat = await set_preference(
+            key="theme_preference", value="dark", session=db_session
+        )
+        assert resultat is not None

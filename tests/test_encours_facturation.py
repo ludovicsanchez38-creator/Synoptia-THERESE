@@ -201,3 +201,59 @@ class TestLesAvoirsEtLaDevise:
             "sommer des devises différentes sans le dire produit un chiffre "
             "qui n'existe pas"
         )
+
+    @pytest.mark.asyncio
+    async def test_devises_melangees_aucun_total_additionne_nest_rendu(self, client):
+        """
+        Revue de release (Soso, 28/08) : un drapeau à côté d'un chiffre ne
+        retient pas le chiffre.
+
+        Le test précédent n'exigeait que `devises_multiples is True`. Il
+        passait pendant que `encours_ttc` valait la somme brute de 1 000 EUR
+        et 1 000 USD, arrondie à deux décimales. Le modèle lit un nombre et
+        répond « ton encours est de 2 000 € » : THÉRÈSE affirme un montant
+        qui n'existe dans aucune devise, là où la 0.53.0 avouait ne pas
+        savoir. Un drapeau ne s'oppose pas à un nombre, il le décore.
+
+        Ce que la fonction doit rendre : le détail par devise, et AUCUN total
+        additionné.
+        """
+        from app.models.database import get_session_context
+        from app.models.entities import Invoice
+        from app.services.workspace_tools import execute_workspace_tool
+        from sqlalchemy import select
+
+        await _poser_facture(client, 1000.0, "sent")
+        identifiant = await _poser_facture(client, 1000.0, "sent")
+
+        async with get_session_context() as session:
+            trouvee = await session.execute(select(Invoice).where(Invoice.id == identifiant))
+            trouvee.scalars().one().currency = "USD"
+            await session.commit()
+
+            resultat = json.loads(await execute_workspace_tool("invoice_totals", {}, session))
+
+        assert resultat["encours_ttc"] is None, (
+            "un total additionné à travers les devises est un chiffre faux : "
+            f"rendu {resultat['encours_ttc']!r}"
+        )
+        assert resultat["retard_ttc"] is None, "même règle pour le retard"
+        assert resultat["encours_par_devise"] == {"EUR": 1000.0, "USD": 1000.0}, (
+            "à défaut d'un total, rendre ce qui est vrai : un montant par devise"
+        )
+
+    @pytest.mark.asyncio
+    async def test_chaque_facture_du_detail_porte_sa_devise(self, client):
+        """Un montant sans devise se lit en euros par défaut."""
+        from app.models.database import get_session_context
+        from app.services.workspace_tools import execute_workspace_tool
+
+        await _poser_facture(client, 1000.0, "sent")
+
+        async with get_session_context() as session:
+            resultat = json.loads(await execute_workspace_tool("invoice_totals", {}, session))
+
+        assert resultat["factures"], "la facture posée doit apparaître"
+        assert resultat["factures"][0]["devise"] == "EUR", (
+            "`montant_ttc` sans devise laisse le modèle choisir l'étiquette"
+        )

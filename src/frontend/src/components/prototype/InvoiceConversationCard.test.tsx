@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { TITRES_ETABLI } from '../../lib/etabli';
 import type { Contact, Invoice } from '../../services/api';
 import { InvoiceWorkspaceCanvas, InvoiceWorkspaceCard } from './InvoiceConversationCard';
 import type { InvoiceWorkspaceData } from './usePrototypeInvoiceData';
@@ -186,5 +187,31 @@ describe('InvoiceWorkspaceCanvas', () => {
       email: 'camille@example.test',
     }));
     expect(await screen.findByLabelText('Client du devis')).toHaveValue(contact.id);
+  });
+});
+
+describe('Le titre annoncé par la coque est celui que la surface affiche', () => {
+  /**
+   * Résidu du chantier E, trouvé à la relecture de release.
+   *
+   * Sous le verbe « Facturer », la coque annonçait « Créer un devis » pendant
+   * que la surface s'intitulait « Facturer un client ». Deux noms pour un
+   * même travail, dont un qui le rétrécit à son seul brouillon de départ.
+   *
+   * Ce test EXÉCUTE la surface et lit son titre au lieu de relire la table :
+   * comparer deux littéraux dans deux fichiers ne prouve que leur égalité,
+   * pas que l'écran affiche l'un des deux.
+   */
+  it('la surface Facturer porte le titre de TITRES_ETABLI.invoice', () => {
+    render(
+      <InvoiceWorkspaceCard
+        resource={{ status: 'ready', data: data(), error: null }}
+        onRetry={vi.fn()}
+        onOpenInvoice={vi.fn()}
+        onCreateDevis={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2, name: TITRES_ETABLI.invoice })).toBeInTheDocument();
   });
 });
