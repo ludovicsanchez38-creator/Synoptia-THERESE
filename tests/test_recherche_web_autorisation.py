@@ -141,14 +141,45 @@ class TestUnRefusNeSeDeguiseJamaisEnPanne:
             "sinon un refus s'affiche comme « aucun résultat »"
         )
 
-    def test_la_recherche_approfondie_distingue_aussi(self):
-        import inspect
+    @pytest.mark.asyncio
+    async def test_la_recherche_approfondie_dit_le_refus_a_l_ecran(self):
+        """On EXÉCUTE le générateur réel, on ne lit pas la source.
 
-        from app.services import deep_research
+        Le premier jet de ce test cherchait « RechercheWebRefusee » dans le
+        module. Il était vert — parce que le nom se trouvait dans
+        `search_parallel`, une fonction que PERSONNE n'appelle. Pendant ce
+        temps, le générateur vivant avalait le refus dans son `except
+        Exception` et affichait « Aucun résultat trouvé. Vérifie ta clé Brave
+        Search ». Un utilisateur qui vient de couper l'interrupteur lisait donc
+        qu'il avait un problème de clé API.
 
-        source = inspect.getsource(deep_research)
-        assert "RechercheWebRefusee" in source, (
-            "la recherche approfondie doit dire qu'elle a été refusée, pas se taire"
+        Un test qui lit du code mort est pire qu'une absence de test : il
+        rassure. Celui-ci consomme les événements que l'écran affiche.
+        """
+        from app.services.deep_research import deep_research as recherche_approfondie
+
+        web_search.poser_autorisation_recherche(False)
+
+        class _ModeleMuet:
+            async def generate_content(self, *args, **kwargs):
+                return "sous-question 1"
+
+        evenements = []
+        async for progression in recherche_approfondie(
+            "une question", _ModeleMuet(), max_queries=1
+        ):
+            evenements.append(progression)
+
+        erreurs = [e for e in evenements if getattr(e, "type", None) == "error"]
+        assert erreurs, "un refus doit produire un événement d'erreur visible"
+
+        texte = " ".join(getattr(e, "content", "") or "" for e in erreurs)
+        assert "Brave" not in texte, (
+            "ne pas envoyer l'utilisateur vérifier une clé API alors qu'il a "
+            "lui-même coupé la recherche web"
+        )
+        assert "Réglages" in texte or "coupée" in texte.lower(), (
+            f"le message doit dire que la recherche est coupée. Reçu : {texte!r}"
         )
 
     @pytest.mark.asyncio
@@ -213,3 +244,104 @@ class TestLAncrageGoogleSuitLeMemeInterrupteur:
         assert "recherche_web_autorisee" in bloc, (
             "grounding_ok doit tenir compte de la préférence utilisateur"
         )
+
+
+class TestAucunAppelantNEchappeAuGarde:
+    """Inventaire : tout code qui obtient un service de recherche doit traiter
+    le refus explicitement, sinon il le déguise en panne.
+
+    Recensé à la main le 28/08 : `board.py`, `deep_research.py` (deux chemins :
+    parallèle et avec progression) et `agents/tools.py`. Le chat passe par
+    `execute_web_search`, gardé lui aussi.
+    """
+
+    @pytest.mark.parametrize(
+        "module",
+        ["app.services.board", "app.services.deep_research", "app.services.agents.tools"],
+    )
+    def test_chaque_appelant_traite_le_refus(self, module):
+        import importlib
+        import inspect
+
+        source = inspect.getsource(importlib.import_module(module))
+        # On cherche la CLAUSE, pas le mot : l'import contient déjà le nom, et
+        # un test qui se contente de le trouver reste vert quand le `except`
+        # disparaît. (Trouvé par la preuve par sabotage.)
+        assert "except RechercheWebRefusee" in source, (
+            f"{module} obtient un service de recherche sans RATTRAPER un refus : "
+            "il le laisserait tomber dans son except générique et l'utilisateur "
+            "croirait que le web n'a rien trouvé"
+        )
+
+    def test_les_deux_chemins_de_la_recherche_approfondie_sont_couverts(self):
+        """Le module a DEUX points d'appel, traités différemment.
+
+        Le premier lance les recherches en parallèle (`asyncio.gather` avec
+        `return_exceptions=True`) : le refus arrive comme une VALEUR, il se
+        teste par `isinstance`. Le second est un générateur de progression :
+        le refus arrive comme une exception, il se rattrape par `except`.
+
+        Le second avait été oublié à la première passe — d'où ce test qui
+        vérifie les deux zones séparément, plutôt qu'un comptage global qui
+        aurait été vert avec deux fois la même forme.
+        """
+        import inspect
+
+        from app.services import deep_research
+
+        source = inspect.getsource(deep_research)
+        separateur = "# Étape 2 : Recherches parallèles (avec progression)"
+        assert separateur in source, "repère de découpage introuvable"
+
+        chemin_parallele, chemin_progression = source.split(separateur, 1)
+
+        assert "isinstance(resp, RechercheWebRefusee)" in chemin_parallele, (
+            "le chemin parallèle doit reconnaître le refus parmi les valeurs "
+            "renvoyées par gather(return_exceptions=True)"
+        )
+        assert "except RechercheWebRefusee" in chemin_progression, (
+            "le chemin avec progression doit rattraper le refus avant son "
+            "except générique, sinon le rapport sort vide sans explication"
+        )
+
+
+class TestLaRechercheApprofondieDemarre:
+    """Bug préexistant révélé par le test ci-dessus, hors périmètre initial.
+
+    `deep_research()` et `decompose_question()` importent `LLMMessage` depuis
+    `app.services.providers`. Ce nom n'existe pas : la classe s'appelle
+    `Message`. L'import est la PREMIÈRE ligne exécutable du générateur — la
+    recherche approfondie plantait donc avant même de commencer, à chaque
+    appel, alors qu'elle est atteignable depuis l'écran
+    (`ChatInput.tsx` → `POST /api/chat/deep-research`).
+
+    Personne ne l'avait vu parce qu'aucun test n'exécutait le générateur : ils
+    lisaient sa source. C'est la deuxième leçon du jour sur les tests qui
+    rassurent au lieu de vérifier.
+    """
+
+    def test_les_imports_du_module_existent_vraiment(self):
+        from app.services import providers
+
+        assert hasattr(providers, "Message"), "la classe s'appelle bien Message"
+        assert not hasattr(providers, "LLMMessage"), (
+            "si LLMMessage apparaît un jour, ce test doit être revu plutôt que "
+            "supprimé : c'est lui qui a attrapé l'import fantôme"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_generateur_demarre_sans_ImportError(self):
+        from app.services.deep_research import deep_research as recherche_approfondie
+
+        web_search.poser_autorisation_recherche(False)
+
+        class _ModeleMuet:
+            async def generate_content(self, *args, **kwargs):
+                return "sous-question"
+
+        # On consomme au moins un événement : si l'import est cassé, l'appel
+        # lève ImportError avant le premier yield.
+        agen = recherche_approfondie("question", _ModeleMuet(), max_queries=1)
+        premier = await agen.__anext__()
+        assert premier is not None
+        await agen.aclose()

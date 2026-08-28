@@ -81,7 +81,7 @@ async def decompose_question(
     llm_service: object,
 ) -> list[str]:
     """Décompose une question en sous-requêtes de recherche via le LLM."""
-    from app.services.providers import LLMMessage
+    from app.services.providers import Message as LLMMessage
 
     prompt = DECOMPOSITION_PROMPT.format(question=question)
     messages = [LLMMessage(role="user", content=prompt)]
@@ -186,7 +186,7 @@ async def deep_research(
 
     Yields des ResearchProgress pour le streaming SSE.
     """
-    from app.services.providers import LLMMessage
+    from app.services.providers import Message as LLMMessage
 
     # Étape 1 : Décomposition
     yield ResearchProgress(
@@ -233,6 +233,27 @@ async def deep_research(
                         snippet=result.snippet,
                         query=query,
                     ))
+        except RechercheWebRefusee as refus:
+            # Le refus s'AFFICHE, il ne casse pas le flux.
+            #
+            # Un `raise` ici refermerait le SSE en échec côté routeur, et
+            # l'utilisateur n'aurait rien à lire. Le laisser tomber dans
+            # l'except générique ci-dessous serait pire : il verrait « Aucun
+            # résultat trouvé. Vérifie ta clé Brave Search » alors qu'il vient
+            # lui-même de couper l'interrupteur. On rend donc le même type
+            # d'événement que le cas vide, avec le vrai motif.
+            logger.info(f"Recherche approfondie refusée : {refus}")
+            yield ResearchProgress(
+                type="error",
+                step=i,
+                total_steps=total,
+                query=query,
+                content=(
+                    f"Recherche web coupée : {refus} "
+                    "Aucune source externe n'a été consultée."
+                ),
+            )
+            return
         except Exception as e:
             logger.error(f"Erreur recherche '{query}': {e}")
 

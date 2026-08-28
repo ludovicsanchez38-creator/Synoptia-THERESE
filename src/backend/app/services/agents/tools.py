@@ -325,7 +325,10 @@ class AgentToolExecutor:
     async def web_search(self, query: str, max_results: int = 5) -> str:
         """Recherche sur le web via Brave Search ou DuckDuckGo."""
         try:
-            from app.services.web_search import get_web_search_service
+            from app.services.web_search import (
+                RechercheWebRefusee,
+                get_web_search_service,
+            )
 
             search_service = get_web_search_service()
 
@@ -339,6 +342,12 @@ class AgentToolExecutor:
                 lines.append(f"   {r.url}")
                 lines.append(f"   {r.snippet}\n")
             return "\n".join(lines)
+        except RechercheWebRefusee as refus:
+            # Un choix de l'utilisateur n'est pas une erreur : le préfixer
+            # « Erreur » ferait croire à une panne et pousserait l'agent à
+            # réessayer.
+            logger.info(f"Recherche web refusée pour l'Atelier : {refus}")
+            return f"Recherche web coupée par l'utilisateur. {refus}"
         except Exception as e:
             logger.error(f"Erreur web_search: {e}", exc_info=True)
             return f"Erreur de recherche web : {e}"
