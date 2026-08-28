@@ -318,7 +318,7 @@ INVOICE_TOTALS_TOOL: dict[str, Any] = {
             "`retard_ttc` ne valent un nombre que s'il y a une seule devise ET "
             "un montant positif ou nul ; sinon null, et il n'existe AUCUN total global "
             "- n'en fabrique pas, donne `encours_par_devise` montant par "
-            "montant. Chaque ligne du detail porte son `type` et sa `devise`, "
+            "montant. Chaque ligne de `documents` porte son `type` et sa `devise`, "
             "un avoir y est NEGATIF, et la somme du detail vaut exactement "
             "l'encours : ne la recalcule pas autrement. "
             "`retard_ttc` est BRUT, avant avoirs : il peut donc depasser "
@@ -455,7 +455,10 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     # ordonne justement de lire quand le scalaire est null : le drapeau
     # changeait de forme, le chiffre changeait de champ. Ce qui est du AU
     # client vit desormais sous un nom qui le dit.
-    encours_par_devise = {d: m for d, m in sorted(net_par_devise.items()) if m >= 0}
+    # Une devise dont le net est nul n'est pas une creance : elle n'a rien a
+    # faire dans une table de ce qui reste a encaisser, et sa presence faisait
+    # dire « plusieurs devises » a cote d'un total libelle dans une seule.
+    encours_par_devise = {d: m for d, m in sorted(net_par_devise.items()) if m > 0}
     du_au_client_par_devise = {
         d: round(-m, 2) for d, m in sorted(net_par_devise.items()) if m < 0
     }
@@ -558,7 +561,10 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             "encours_par_devise": encours_par_devise,
             "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
             "du_au_client_par_devise": du_au_client_par_devise,
-            "devises_multiples": len(devises) > 1,
+            # Le drapeau suit le gate du scalaire, sinon il le contredit : la
+            # passe 6 a fait lire au gate les devises qui portent reellement
+            # un encours, le drapeau qui le decrit etait reste sur toutes.
+            "devises_multiples": len(devises_avec_encours) > 1,
             # Le gate du retard lit les devises des seules factures ECHUES.
             # Le lire sur tous les documents eteignait un chiffre exact : cent
             # euros echus a cote de deux cents dollars a echeance future
@@ -581,7 +587,11 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
                 if len(devises_avec_encours) == 1
                 else (next(iter(devises)) if len(devises) == 1 else None)
             ),
-            "factures": detail,
+            # `documents` et non `factures` : depuis que le detail porte les
+            # avoirs signes, l'etiquette « factures » annoncait deux lignes
+            # sous un compteur qui en disait une.
+            "documents": detail,
+            "nombre_documents": len(detail),
             "note": (
                 "Devis exclus : un devis n'est pas une creance. Factures "
                 "payees exclues."

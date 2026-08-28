@@ -258,8 +258,8 @@ class TestLesAvoirsEtLaDevise:
         async with get_session_context() as session:
             resultat = json.loads(await execute_workspace_tool("invoice_totals", {}, session))
 
-        assert resultat["factures"], "la facture posée doit apparaître"
-        assert resultat["factures"][0]["devise"] == "EUR", (
+        assert resultat["documents"], "la facture posée doit apparaître"
+        assert resultat["documents"][0]["devise"] == "EUR", (
             "`montant_ttc` sans devise laisse le modèle choisir l'étiquette"
         )
 
@@ -773,7 +773,7 @@ class TestLaListeDeDocumentsSeSommeSansContredireLeTotal:
             datetime.now(UTC).replace(tzinfo=None),
         )
 
-        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        somme = round(sum(d["montant_ttc"] for d in resultat["documents"]), 2)
         assert somme == resultat["encours_ttc"], (
             f"la liste somme à {somme}, l'encours vaut {resultat['encours_ttc']}"
         )
@@ -788,8 +788,8 @@ class TestLaListeDeDocumentsSeSommeSansContredireLeTotal:
             datetime.now(UTC).replace(tzinfo=None),
         )
 
-        assert resultat["factures"][0]["type"] == "avoir"
-        assert resultat["factures"][0]["montant_ttc"] == -200.0, (
+        assert resultat["documents"][0]["type"] == "avoir"
+        assert resultat["documents"][0]["montant_ttc"] == -200.0, (
             "un avoir listé positivement se resomme comme une créance"
         )
 
@@ -968,27 +968,27 @@ class TestLaSommeDuDetailEstExacteAuCentime:
                 assert round(montant, 2) == montant, (
                     f"{champ}[{devise}] = {montant!r} traîne des décimales"
                 )
-        for ligne in resultat["factures"]:
+        for ligne in resultat["documents"]:
             assert round(ligne["montant_ttc"], 2) == ligne["montant_ttc"]
         assert resultat["encours_ttc"] == 0.30
 
     def test_deux_montants_a_1_004(self):
         resultat = self._totaux([self._Doc(1.004), self._Doc(1.004)])
-        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        somme = round(sum(d["montant_ttc"] for d in resultat["documents"]), 2)
         assert somme == resultat["encours_ttc"], (
             f"détail {somme}, encours {resultat['encours_ttc']}"
         )
 
     def test_deux_montants_a_1_055(self):
         resultat = self._totaux([self._Doc(1.055), self._Doc(1.055)])
-        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        somme = round(sum(d["montant_ttc"] for d in resultat["documents"]), 2)
         assert somme == resultat["encours_ttc"], (
             f"détail {somme}, encours {resultat['encours_ttc']}"
         )
 
     def test_le_detail_somme_aussi_par_devise(self):
         resultat = self._totaux([self._Doc(1.004), self._Doc(1.004)])
-        somme = round(sum(d["montant_ttc"] for d in resultat["factures"]), 2)
+        somme = round(sum(d["montant_ttc"] for d in resultat["documents"]), 2)
         assert somme == resultat["encours_par_devise"]["EUR"]
 
 
@@ -1257,3 +1257,86 @@ class TestUneDeviseQuiSAnnuleNeFaitPasTaireLesAutres:
 
         assert resultat["encours_ttc"] is None
         assert resultat["encours_par_devise"] == {"EUR": 1000.0, "USD": 500.0}
+
+
+class TestLesEtiquettesNeContredisentPasLesNombres:
+    """
+    Septième passe : ma propre chasse aux symétries, après trois jumeaux
+    manqués. Deux défauts, tous deux introduits par mes correctifs.
+
+    A. `devises_multiples` restait calculé sur TOUS les documents. Une facture
+       de 100 EUR annulée par un avoir, à côté de 500 USD, rendait
+       `encours_ttc: 500`, `devise: "USD"` ET `devises_multiples: true`. Le
+       modèle lit « plusieurs devises » à côté d'un total unique libellé dans
+       une seule. Le gate a suivi la règle à la passe 6, le drapeau qui le
+       décrit ne l'a pas suivie.
+
+    B. `nombre` comptait les factures pendant que la liste `factures[]` porte
+       désormais aussi les avoirs. Un résultat annonçait « 1 » avec deux
+       lignes en dessous. C'est le prix du correctif de la passe 5, que je
+       n'ai pas payé au moment de le poser : la liste a changé de contenu,
+       son étiquette et son compteur sont restés.
+    """
+
+    class _Doc:
+        def __init__(self, montant, devise="EUR", type_doc="facture"):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = None
+            self.invoice_number = f"{devise}-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_le_drapeau_des_devises_suit_le_scalaire(self):
+        resultat = self._totaux(
+            [
+                self._Doc(100.0),
+                self._Doc(100.0, type_doc="avoir"),
+                self._Doc(500.0, devise="USD"),
+            ]
+        )
+
+        assert resultat["encours_ttc"] == 500.0
+        assert resultat["devises_multiples"] is False, (
+            "« plusieurs devises » à côté d'un total unique libellé USD : le "
+            "modèle doit choisir laquelle des deux annonces croire"
+        )
+
+    def test_une_devise_sans_rien_a_encaisser_quitte_la_liste(self):
+        """Un euro à zéro n'est pas une créance : il n'a rien à faire dans
+        une table de ce qui reste à encaisser."""
+        resultat = self._totaux(
+            [
+                self._Doc(100.0),
+                self._Doc(100.0, type_doc="avoir"),
+                self._Doc(500.0, devise="USD"),
+            ]
+        )
+
+        assert resultat["encours_par_devise"] == {"USD": 500.0}
+
+    def test_le_compteur_compte_ce_que_la_liste_contient(self):
+        resultat = self._totaux(
+            [self._Doc(1000.0), self._Doc(200.0, type_doc="avoir")]
+        )
+
+        assert len(resultat["documents"]) == 2
+        assert resultat["nombre"] == 1, "une seule FACTURE impayée"
+        assert resultat["nombre_avoirs"] == 1
+        assert resultat["nombre_documents"] == len(resultat["documents"])
+
+    def test_le_drapeau_reste_vrai_quand_deux_devises_sont_dues(self):
+        """La correction ne doit pas éteindre le drapeau quand il est utile."""
+        resultat = self._totaux([self._Doc(1000.0), self._Doc(500.0, devise="USD")])
+
+        assert resultat["devises_multiples"] is True
+        assert resultat["encours_ttc"] is None
