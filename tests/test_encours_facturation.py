@@ -1190,3 +1190,70 @@ class TestLeContratDitExactementCeQueLeCodeFait:
             "le prompt dynamique répète la contradiction que la description "
             "vient de corriger"
         )
+
+
+class TestUneDeviseQuiSAnnuleNeFaitPasTaireLesAutres:
+    """
+    Sixième passe (Grok, 28/08) : le jumeau du gate retard, que je n'avais pas
+    traité en même temps.
+
+    Le gate de l'encours comptait les devises de TOUS les documents. Une
+    facture de 100 EUR annulée par un avoir de 100 EUR, à côté d'une facture
+    de 500 USD, rendait `encours_ttc: null` - alors que le reste à encaisser
+    vaut exactement 500 USD. L'euro qui s'annule restait une seconde devise et
+    faisait taire le scalaire.
+
+    J'ai corrigé ce défaut sur le retard à la passe précédente, sans voir
+    qu'il existait à l'identique sur l'encours. Corriger un défaut sans
+    chercher son jumeau, c'est la moitié du travail - et c'est le motif de
+    cette session entière.
+    """
+
+    class _Doc:
+        def __init__(self, montant, devise="EUR", type_doc="facture"):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = None
+            self.invoice_number = f"D-{devise}-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_le_cas_exact_de_grok(self):
+        resultat = self._totaux(
+            [
+                self._Doc(100.0),
+                self._Doc(100.0, type_doc="avoir"),
+                self._Doc(500.0, devise="USD"),
+            ]
+        )
+
+        assert resultat["encours_ttc"] == 500.0, (
+            f"le reste à encaisser vaut exactement 500 USD, rendu "
+            f"{resultat['encours_ttc']!r}"
+        )
+        assert resultat["devise"] == "USD", "et il est libellé sans ambiguïté"
+
+    def test_tout_s_annule_donne_zero(self):
+        resultat = self._totaux(
+            [self._Doc(100.0), self._Doc(100.0, type_doc="avoir")]
+        )
+
+        assert resultat["encours_ttc"] == 0, "« plus rien à encaisser » est exact"
+
+    def test_deux_devises_reellement_dues_se_taisent_toujours(self):
+        """La correction ne doit pas rouvrir ce que la passe 1 a fermé."""
+        resultat = self._totaux(
+            [self._Doc(1000.0), self._Doc(500.0, devise="USD")]
+        )
+
+        assert resultat["encours_ttc"] is None
+        assert resultat["encours_par_devise"] == {"EUR": 1000.0, "USD": 500.0}

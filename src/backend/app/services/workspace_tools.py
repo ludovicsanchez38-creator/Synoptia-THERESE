@@ -459,6 +459,9 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     du_au_client_par_devise = {
         d: round(-m, 2) for d, m in sorted(net_par_devise.items()) if m < 0
     }
+    # Une devise dont le net est nul ne pese pas sur la lisibilite du total :
+    # elle n'a rien a encaisser, elle ne doit pas faire taire les autres.
+    devises_avec_encours = {d for d, m in net_par_devise.items() if m != 0}
     # Un avoir n'est pas un encours negatif : « encours » veut dire RESTE A
     # ENCAISSER, et -200 USD n'est pas a encaisser, c'est du a un client. Le
     # net reste utile, mais les avoirs doivent etre lisibles pour eux-memes.
@@ -541,8 +544,16 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             # que les factures - n'est pas a encaisser ; le nommer ainsi et
             # poser une note a cote refait l'erreur de `devises_multiples`, ou
             # le drapeau n'a jamais retenu le nombre.
+            # Le gate lit les devises qui portent REELLEMENT un encours. Le
+            # lire sur tous les documents faisait taire un chiffre exact :
+            # cent euros annules par un avoir, a cote de cinq cents dollars,
+            # rendaient null alors qu'il reste exactement 500 USD - l'euro
+            # eteint comptait encore comme une seconde devise. Jumeau du gate
+            # retard, corrige a la meme passe.
             "encours_ttc": (
-                round(encours, 2) if len(devises) <= 1 and encours >= 0 else None
+                round(encours, 2)
+                if len(devises_avec_encours) <= 1 and encours >= 0
+                else None
             ),
             "encours_par_devise": encours_par_devise,
             "avoirs_par_devise": dict(sorted(avoirs_par_devise.items())),
@@ -565,7 +576,11 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             "nombre_en_retard": len(en_retard),
             "nombre_avoirs": len(avoirs),
             "plus_ancien_retard_jours": plus_ancienne,
-            "devise": (next(iter(devises)) if len(devises) == 1 else None),
+            "devise": (
+                next(iter(devises_avec_encours))
+                if len(devises_avec_encours) == 1
+                else (next(iter(devises)) if len(devises) == 1 else None)
+            ),
             "factures": detail,
             "note": (
                 "Devis exclus : un devis n'est pas une creance. Factures "
