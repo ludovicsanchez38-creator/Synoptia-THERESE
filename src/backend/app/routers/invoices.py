@@ -55,7 +55,7 @@ async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Inv
     statement = (
         select(Invoice)
         .where(Invoice.id == invoice_id)
-        .options(selectinload(Invoice.lines))
+        .options(selectinload(Invoice.lines), selectinload(Invoice.contact))
     )
     result = await session.execute(statement)
     return result.scalar_one_or_none()
@@ -132,10 +132,26 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         for line in invoice.lines
     ]
 
+    # Le contact n'est présent que si l'appelant a chargé la relation
+    # (`selectinload`). On ne le force pas ici : un accès paresseux dans un
+    # contexte async lèverait.
+    nom_du_client = None
+    contact = invoice.__dict__.get("contact")
+    if contact is not None:
+        nom_du_client = (
+            getattr(contact, "display_name", None)
+            or " ".join(
+                filter(None, [getattr(contact, "first_name", None),
+                              getattr(contact, "last_name", None)])
+            ).strip()
+            or getattr(contact, "company", None)
+        )
+
     return InvoiceResponse(
         id=invoice.id,
         invoice_number=invoice.invoice_number,
         contact_id=invoice.contact_id,
+        contact_name=nom_du_client,
         document_type=invoice.document_type,
         tva_applicable=invoice.tva_applicable,
         currency=invoice.currency,
@@ -174,7 +190,7 @@ async def list_invoices(
     """
     Liste les factures avec pagination et filtres.
     """
-    statement = select(Invoice).options(selectinload(Invoice.lines))
+    statement = select(Invoice).options(selectinload(Invoice.lines), selectinload(Invoice.contact))
 
     # Filtres
     if status:

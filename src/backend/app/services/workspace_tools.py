@@ -261,7 +261,7 @@ SEARCH_INVOICES_TOOL = {
             "Recherche les factures, devis et avoirs LOCAUX de l'utilisateur "
             "par reference (ex: FACT-2026-001, DEV-2026-007) ou par nom de "
             "client. Utilise cet outil des qu'une facture ou un devis est "
-            "mentionne par sa reference ou son client."
+            "mentionne par sa reference ou son client. L'envoi par email est impossible dans l'application, y compris depuis la vue Facturation : n'utilise pas send_email pour ca et n'affirme jamais un envoi. Le parcours reel : telecharger le PDF, l'envoyer soi-meme, puis marquer le document « Envoyee » a la main."
         ),
         "parameters": {
             "type": "object",
@@ -276,6 +276,27 @@ SEARCH_INVOICES_TOOL = {
     },
 }
 
+
+INVOICE_TOTALS_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "invoice_totals",
+        "description": (
+            "Calcule ce qu'il RESTE A ENCAISSER : total des factures emises et "
+            "non encore payees, et part deja en retard. Utilise-le pour toute "
+            "question de tresorerie sans nom ni reference : « combien il me "
+            "reste a encaisser », « quelles factures ne sont pas payees », "
+            "« combien on me doit ». N'utilise PAS search_invoices pour ca : "
+            "il cherche UNE facture par son numero ou son client, il ne "
+            "totalise rien."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+}
+
 WORKSPACE_TOOLS = [
     READ_EMAILS_TOOL,
     SUMMARIZE_EMAILS_TOOL,
@@ -285,6 +306,7 @@ WORKSPACE_TOOLS = [
     CREATE_CALENDAR_EVENT_TOOL,
     GENERATE_DOCUMENT_TOOL,
     SEARCH_INVOICES_TOOL,
+    INVOICE_TOTALS_TOOL,
 ]
 
 # P8 (2e passage personas) : routage chat -> skill Office en OUTIL appelable
@@ -324,6 +346,8 @@ async def execute_workspace_tool(
         return await _generate_document(arguments, session, contexte=contexte)
     elif tool_name == "search_invoices":
         return await _search_invoices(arguments, session)
+    elif tool_name == "invoice_totals":
+        return await _invoice_totals(arguments, session)
     else:
         return f"Outil inconnu : {tool_name}"
 
@@ -354,6 +378,76 @@ def drain_generated_files() -> list[dict[str, Any]]:
     bucket = _TURN_GENERATED_FILES.get() or []
     _TURN_GENERATED_FILES.set(None)
     return list(bucket)
+
+
+async def _invoice_totals(args: dict, session: AsyncSession) -> str:
+    """B3 : ce qu'il reste a encaisser.
+
+    Borne aux FACTURES : un devis n'est pas une creance. La relecture de design
+    l'a impose — sans ce filtre, le devis Moreau de 4 620 EUR serait entre dans
+    l'encours d'un artisan qui attendait 1 218 EUR.
+
+    Outil separe et non extension de `search_invoices` : celui-ci est un lookup
+    borne a 10 resultats, et « un total sur 10 lignes est un mensonge ».
+    """
+    import json
+    from datetime import UTC, datetime
+
+    from app.models.entities import Invoice
+
+    maintenant = datetime.now(UTC).replace(tzinfo=None)
+
+    lignes = await session.execute(
+        select(Invoice).where(
+            Invoice.document_type == "facture",
+            Invoice.status.in_(["sent", "overdue"]),
+        )
+    )
+    factures = list(lignes.scalars().all())
+
+    encours = sum(f.total_ttc or 0 for f in factures)
+    en_retard = [
+        f for f in factures
+        if f.status == "overdue" or (f.due_date is not None and f.due_date < maintenant)
+    ]
+    retard = sum(f.total_ttc or 0 for f in en_retard)
+
+    plus_ancienne = None
+    if en_retard:
+        echeances = [f.due_date for f in en_retard if f.due_date is not None]
+        if echeances:
+            plus_ancienne = (maintenant - min(echeances)).days
+
+    detail = [
+        {
+            "reference": f.invoice_number,
+            "montant_ttc": f.total_ttc,
+            "echeance": f.due_date.date().isoformat() if f.due_date else None,
+            "jours_de_retard": (
+                (maintenant - f.due_date).days if f.due_date and f.due_date < maintenant else 0
+            ),
+        }
+        for f in sorted(
+            factures, key=lambda x: (x.due_date is None, x.due_date or maintenant)
+        )
+    ]
+
+    return json.dumps(
+        {
+            "encours_ttc": round(encours, 2),
+            "retard_ttc": round(retard, 2),
+            "nombre": len(factures),
+            "nombre_en_retard": len(en_retard),
+            "plus_ancien_retard_jours": plus_ancienne,
+            "devise": factures[0].currency if factures else "EUR",
+            "factures": detail,
+            "note": (
+                "Devis exclus : un devis n'est pas une creance. Factures "
+                "payees exclues."
+            ),
+        },
+        ensure_ascii=False,
+    )
 
 
 async def _search_invoices(args: dict, session: AsyncSession) -> str:
@@ -404,10 +498,12 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
 
     listing = get_prompt_security().sanitize_for_context("\n".join(lines), source="factures")
     guidance = (
-        "\n\nPour l'envoyer par email : ouvre la vue Facturation, sélectionne le "
-        "document et génère son PDF. L'envoi en pièce jointe depuis le chat est "
-        "IMPOSSIBLE pour le moment : n'appelle PAS send_email pour transmettre "
-        "cette facture et ne prétends jamais l'avoir envoyée."
+        "\n\nL'envoi par email n'existe nulle part dans l'application — ni "
+        "depuis le chat, ni depuis la vue Facturation. N'appelle PAS send_email "
+        "pour transmettre ce document et ne prétends jamais l'avoir envoyé. Le "
+        "parcours qui aboutit : télécharger le PDF, l'envoyer par ses propres "
+        "moyens, puis marquer le document « Envoyée » à la main dans son "
+        "formulaire."
     )
     return f"{len(rows)} document(s) trouvé(s) :\n{listing}{guidance}"
 

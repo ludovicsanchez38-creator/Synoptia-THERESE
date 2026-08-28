@@ -15,6 +15,9 @@ export interface Contact {
   company: string | null;
   email: string | null;
   phone: string | null;
+  // B2 : le champ existe en base depuis toujours ; sans lui ici, aucune valeur
+  // saisie ne remontait jusqu'à l'API.
+  address: string | null;
   notes: string | null;
   tags: string[] | null;
   stage: string;

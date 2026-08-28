@@ -89,8 +89,17 @@ def test_la_consigne_utile_de_bug_148_est_conservee():
     assert "recreer" in ligne or "recréer" in ligne, (
         "la consigne « ne propose JAMAIS de recréer un document existant » a disparu"
     )
-    assert "piece jointe" in ligne or "pièce jointe" in ligne, (
-        "la consigne sur l'envoi en pièce jointe impossible a disparu"
+    # B1 (28/08) : ce test exigeait le mot « pièce jointe ». La consigne dit
+    # désormais l'impossibilité PLUS LARGEMENT — l'envoi n'existe nulle part,
+    # y compris depuis la vue Facturation, où l'ancienne rédaction orientait
+    # l'utilisateur dans un cul-de-sac. La propriété protégée (le modèle sait
+    # qu'il ne peut pas envoyer, et ne doit pas l'affirmer) est conservée et
+    # élargie ; seul le mot change.
+    assert "impossible" in ligne, (
+        "la consigne sur l'envoi impossible a disparu"
+    )
+    assert "send_email" in ligne, (
+        "le modèle doit savoir explicitement de ne pas détourner send_email"
     )
 
 

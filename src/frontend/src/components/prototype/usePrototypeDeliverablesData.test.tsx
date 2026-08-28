@@ -21,7 +21,7 @@ const project: Project = {
 };
 const contact: Contact = {
   id: 'contact-1', first_name: 'Camille', last_name: 'Martin', company: 'Client réel', email: 'camille@example.com',
-  phone: null, notes: null, tags: [], stage: 'active', score: 0, source: 'local', last_interaction: null,
+  phone: null, address: null, notes: null, tags: [], stage: 'active', score: 0, source: 'local', last_interaction: null,
   created_at: '2026-07-01', updated_at: '2026-07-12',
 };
 const deliverable: DeliverableResponse = {

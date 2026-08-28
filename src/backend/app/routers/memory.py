@@ -392,6 +392,10 @@ async def create_contact(
         company=request.company,
         email=request.email,
         phone=request.phone,
+        # B2 : l'adresse était DÉCLARÉE par le schéma et jetée ici. L'artisan
+        # l'envoyait, elle revenait vide — et un devis sans adresse ne s'envoie
+        # pas.
+        address=request.address,
         notes=request.notes,
         tags=json.dumps(request.tags) if request.tags else None,
         # CRM fields (Phase 5)

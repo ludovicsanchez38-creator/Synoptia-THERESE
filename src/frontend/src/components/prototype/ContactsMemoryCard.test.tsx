@@ -9,7 +9,7 @@ const contact = (id: string, firstName: string, updatedAt: string): Contact => (
   last_name: 'Martin',
   company: 'Synoptïa',
   email: `${firstName.toLowerCase()}@example.test`,
-  phone: null,
+  phone: null, address: null,
   notes: `Notes de ${firstName}`,
   tags: ['client'],
   stage: 'client',

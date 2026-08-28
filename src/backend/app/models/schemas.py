@@ -895,7 +895,11 @@ class InvoiceResponse(BaseModel):
 
     id: str
     invoice_number: str
-    contact_id: str
+    contact_id: str | None
+    # B4 : « Je ne retiens pas les numéros DEV-2026-001, je retiens
+    # Moreau. » Un join, pas une dénormalisation : Invoice.contact
+    # existe déjà.
+    contact_name: str | None = None
     document_type: str = "facture"  # devis, facture, avoir
     tva_applicable: bool = True
     currency: Literal["EUR", "CHF", "USD", "GBP", "CAD"] = "EUR"

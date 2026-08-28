@@ -293,7 +293,7 @@ function DevisDraftForm({
   const [errorFieldId, setErrorFieldId] = useState<string | null>(null);
   const [created, setCreated] = useState<Invoice | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [contactForm, setContactForm] = useState({ firstName: '', lastName: '', company: '', email: '' });
+  const [contactForm, setContactForm] = useState({ firstName: '', lastName: '', company: '', email: '', phone: '', address: '' });
   const [contactSaving, setContactSaving] = useState(false);
   const contactSavingRef = useRef(false);
   const [contactError, setContactError] = useState<string | null>(null);
@@ -412,6 +412,11 @@ function DevisDraftForm({
         last_name: contactForm.lastName.trim() || null,
         company: contactForm.company.trim() || null,
         email: contactForm.email.trim() || null,
+        // B2 : le chemin du premier devis n'avait ni téléphone ni adresse.
+        // « Moreau n'a pas que un mail. Mes clients, c'est le téléphone et la
+        // maison. » Sans adresse, le PDF sort avec un destinataire vide.
+        phone: contactForm.phone.trim() || null,
+        address: contactForm.address.trim() || null,
       });
       setContactId(contact.id);
     } catch {
@@ -447,6 +452,12 @@ function DevisDraftForm({
               </label>
               <label htmlFor="invoiceconversationcard-email" className="text-xs text-text-muted">Email
                 <input id="invoiceconversationcard-email" aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+              <label htmlFor="invoiceconversationcard-telephone" className="text-xs text-text-muted">Téléphone
+                <input id="invoiceconversationcard-telephone" aria-label="Téléphone du nouveau contact" type="tel" value={contactForm.phone} onChange={(event) => setContactForm((current) => ({ ...current, phone: event.target.value }))} placeholder="06 12 34 56 78" className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+              </label>
+              <label htmlFor="invoiceconversationcard-adresse" className="text-xs text-text-muted sm:col-span-2">Adresse
+                <input id="invoiceconversationcard-adresse" aria-label="Adresse du nouveau contact" value={contactForm.address} onChange={(event) => setContactForm((current) => ({ ...current, address: event.target.value }))} placeholder="14 chemin des Oliviers, 04300 Mane" className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
             </div>
             {contactError && <p id="devis-contact-error" className="mt-3 text-sm font-semibold text-error" role="alert">{contactError}</p>}

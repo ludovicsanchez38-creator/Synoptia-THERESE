@@ -44,6 +44,7 @@ const contact = (id: string, updatedAt: string, over: Partial<Contact> = {}): Co
   company: null,
   email: null,
   phone: null,
+  address: null,
   notes: null,
   tags: null,
   stage: 'lead',

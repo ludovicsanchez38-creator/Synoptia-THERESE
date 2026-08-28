@@ -43,6 +43,8 @@ CLASSIFICATION_DES_OUTILS: dict[str, str] = {
     "create_calendar_event": MUTATION_LOCALE,
     "generate_document": MUTATION_LOCALE,
     "search_invoices": LECTURE_SEULE,
+    # B3 : totalise l'encours en base, ne sort pas de la machine.
+    "invoice_totals": LECTURE_SEULE,
     "search_files": LECTURE_SEULE,
     "read_file": LECTURE_SEULE,
     # Outils intégrés

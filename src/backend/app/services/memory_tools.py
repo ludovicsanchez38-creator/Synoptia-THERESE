@@ -63,6 +63,13 @@ CREATE_CONTACT_TOOL = {
                     "type": "string",
                     "description": "Numero de telephone du contact (optionnel)",
                 },
+                "address": {
+                    "type": "string",
+                    "description": (
+                        "Adresse postale du contact (optionnel). Indispensable "
+                        "pour etablir un devis ou une facture."
+                    ),
+                },
                 "notes": {
                     "type": "string",
                     "description": "Notes supplementaires sur le contact (optionnel)",
@@ -468,6 +475,7 @@ async def execute_create_contact(
                 company=company,
                 email=email,
                 phone=arguments.get("phone"),
+                address=arguments.get("address"),
                 notes=arguments.get("notes"),
                 last_interaction=datetime.now(UTC),
                 # Une entité créée depuis le chat appartient à son dossier,

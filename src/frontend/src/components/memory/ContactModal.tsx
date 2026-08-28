@@ -22,6 +22,7 @@ interface FormData {
   company: string;
   email: string;
   phone: string;
+  address: string;
   notes: string;
   tags: string;
 }
@@ -32,6 +33,7 @@ const initialFormData: FormData = {
   company: '',
   email: '',
   phone: '',
+  address: '',
   notes: '',
   tags: '',
 };
@@ -59,6 +61,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         company: contact.company || '',
         email: contact.email || '',
         phone: contact.phone || '',
+        address: contact.address || '',
         notes: contact.notes || '',
         tags: Array.isArray(contact.tags) ? contact.tags.join(', ') : (contact.tags || ''),
       });
@@ -97,6 +100,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         company: formData.company.trim() || null,
         email: formData.email.trim() || null,
         phone: formData.phone.trim() || null,
+        address: formData.address.trim() || null,
         notes: formData.notes.trim() || null,
         tags: formData.tags.trim()
           ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
@@ -242,6 +246,20 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="+33 6 12 34 56 78"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                />
+              </div>
+
+              {/* Adresse — B2 : sans elle, un devis part avec un destinataire
+                  vide. Le champ existait en base et n'était saisissable nulle
+                  part. */}
+              <div className="space-y-2">
+                <label htmlFor="contactmodal-adresse" className="text-sm text-text-muted">Adresse</label>
+                <input id="contactmodal-adresse"
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="14 chemin des Oliviers, 04300 Mane"
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>

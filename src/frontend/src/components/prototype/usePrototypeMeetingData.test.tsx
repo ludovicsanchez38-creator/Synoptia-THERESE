@@ -37,7 +37,7 @@ const event: CalendarEvent = {
 };
 const contact: Contact = {
   id: 'contact-1', first_name: 'Camille', last_name: 'Martin', company: 'Client',
-  email: 'CLIENT@example.com', phone: null, notes: 'Contexte vérifié', tags: [], stage: 'prospect',
+  email: 'CLIENT@example.com', phone: null, address: null, notes: 'Contexte vérifié', tags: [], stage: 'prospect',
   score: 0, source: 'local', last_interaction: null, created_at: '2026-07-01', updated_at: '2026-07-12',
 };
 const activity: ActivityResponse = {

@@ -26,6 +26,7 @@ from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 router = APIRouter()
@@ -355,7 +356,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     # --- Factures impayées > 30 jours ---
     overdue_invoices = []
     try:
-        stmt_invoices = select(Invoice).where(
+        stmt_invoices = select(Invoice).options(selectinload(Invoice.contact)).where(
             and_(
                 Invoice.status.in_(["sent", "overdue"]),
                 Invoice.due_date <= thirty_days_ago,
@@ -369,6 +370,11 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 "id": inv.id,
                 "invoice_number": inv.invoice_number,
                 "contact_id": inv.contact_id,
+                # B4 : le brief affichait « Facture FACT-2026-001 » — une
+                # référence, pas un client. L'artisan cherche Garcia.
+                "contact_name": (
+                    getattr(inv.contact, "display_name", None) if inv.contact else None
+                ),
                 "total_ttc": inv.total_ttc,
                 "currency": inv.currency,
                 "due_date": inv.due_date.isoformat() if inv.due_date else None,
