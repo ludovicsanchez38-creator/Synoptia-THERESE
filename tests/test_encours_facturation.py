@@ -777,3 +777,43 @@ class TestLaListeDeDocumentsSeSommeSansContredireLeTotal:
             "un avoir listé positivement se resomme comme une créance"
         )
 
+
+
+class TestUneFactureSansEcheanceResteDansLEncours:
+    """
+    Conséquence assumée du gel, figée pour qu'elle reste un choix.
+
+    Depuis que le retard se constate sur l'échéance seule, une facture marquée
+    « overdue » SANS échéance n'entre plus dans `retard_ttc`. L'API pose
+    toujours une échéance (+30 jours par défaut), mais une base migrée peut
+    porter des factures sans.
+
+    Ce n'est pas une perte d'argent : la facture reste dans `encours_ttc`,
+    c'est le sous-ensemble « en retard » qui rétrécit. Sans date, on ne peut
+    pas affirmer qu'une facture est en retard - on n'a que le statut posé à
+    la main, et c'est précisément ce que la quatrième passe a écarté.
+    """
+
+    class _Doc:
+        def __init__(self):
+            self.currency = "EUR"
+            self.total_ttc = 1000.0
+            self.document_type = "facture"
+            self.status = "overdue"
+            self.due_date = None
+            self.invoice_number = "SANS-ECHEANCE"
+            self.contact = None
+
+    def test_elle_compte_dans_l_encours_mais_pas_dans_le_retard(self):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        resultat = _totaux_des_documents(
+            [self._Doc()], datetime.now(UTC).replace(tzinfo=None)
+        )
+
+        assert resultat["encours_ttc"] == 1000.0, "l'argent dû ne disparaît pas"
+        assert resultat["retard_ttc"] == 0, "sans date, le retard ne s'affirme pas"
+        assert resultat["nombre"] == 1
+        assert resultat["nombre_en_retard"] == 0
