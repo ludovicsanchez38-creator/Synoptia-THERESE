@@ -251,12 +251,12 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
       {!data.billingProfile && (
         <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          Les infos de ta société n’ont pas pu être vérifiées. Aucune génération PDF n’est proposée dans ce canevas.
+          Les infos de ta société n’ont pas pu être vérifiées. Aucune génération PDF n’est proposée ici.
         </div>
       )}
       <div className="flex items-start gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs text-accent">
         <ShieldCheck className="h-4 w-4 shrink-0" />
-        Lecture seule dans ce canevas. L’envoi de facture n’est pas disponible et aucune action n’a été exécutée.
+        Lecture seule ici. L’envoi de facture n’est pas disponible et aucune action n’a été exécutée.
       </div>
     </div>
   );
@@ -476,7 +476,7 @@ function DevisDraftForm({
         <div className="text-center" data-testid="invoice-no-contact">
           <Users className="mx-auto h-6 w-6 text-text-muted" />
           <p className="mt-2 text-sm font-semibold text-text">{contactsUnavailable ? 'Contacts indisponibles' : 'Aucun contact disponible'}</p>
-          <p className="mt-1 text-xs text-text-muted">{contactsUnavailable ? 'Le référentiel de contacts n’a pas pu être chargé.' : 'Un devis doit être rattaché à un contact réel.'}</p>
+          <p className="mt-1 text-xs text-text-muted">{contactsUnavailable ? 'La liste de tes contacts n’a pas pu être chargée.' : 'Un devis doit être rattaché à un contact réel.'}</p>
         </div>
       </StateShell>
     );

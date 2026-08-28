@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import {
   AlertCircle,
@@ -12,7 +13,6 @@ import {
   History,
   Mail,
   HelpCircle,
-  PanelRightClose,
   Plus,
   Search,
   Settings,
@@ -326,15 +326,7 @@ function ContextCanvas({
       <h2 id="prototype-context-canvas-title" data-dialog-autofocus tabIndex={-1} className="sr-only">
         {scenarioLabels[scenario]}
       </h2>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Fermer le canevas"
-        title="Fermer le canevas"
-        className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-[9px] border border-border bg-surface text-text-muted shadow-sm hover:text-text"
-      >
-        <PanelRightClose className="h-4 w-4" />
-      </button>
+      <BoutonFermerLePanneau onClose={onClose} />
       {scenario === 'email' ? (
         <EmailMessageCanvas
           resource={emailMessageResource}

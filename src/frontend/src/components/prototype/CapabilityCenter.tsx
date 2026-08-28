@@ -200,7 +200,7 @@ export const capabilities: CapabilityItem[] = [
 
   {
     id: 'document-workshop', group: 'create', title: 'Rédiger un document', icon: FileText,
-    description: 'Construire propositions, dossiers et rapports structurés avec un canevas éditable.',
+    description: 'Construire propositions, dossiers et rapports structurés dans un document éditable.',
     features: ['Trame', 'Sections', 'Réécriture'], keywords: ['document', 'rapport', 'proposition'],
     prompt: 'Aide-moi à construire un document structuré à partir de mes sources.', destination: { kind: 'view', view: 'documents' },
   },

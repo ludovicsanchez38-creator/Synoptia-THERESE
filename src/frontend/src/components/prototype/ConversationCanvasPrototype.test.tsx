@@ -210,7 +210,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
 
     // Décision Ludo 16/07 : la languette à chevron intriguait plus qu'elle
     // n'aidait, elle est retirée. Fermer un canevas revient simplement au fil.
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer le canevas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer ce panneau' }));
     expect(screen.queryByTestId('reopen-right-panel-tab')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Rouvrir le panneau/ })).not.toBeInTheDocument();
   });
@@ -239,7 +239,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     window.history.replaceState({}, '', '/?interface=conversation-canvas&scenario=atelier');
     render(<ConversationCanvasPrototype />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer le canevas' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer ce panneau' }));
     expect(activityHarness.cancelAtelier).not.toHaveBeenCalled();
     expect(activityHarness.cancelBoard).not.toHaveBeenCalled();
     expect(screen.getByTestId('shell-background-activities')).toHaveTextContent('Atelier en arrière-plan · Tests');
