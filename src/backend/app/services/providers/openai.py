@@ -5,6 +5,7 @@ GPT API streaming implementation with tool support.
 Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 """
 
+import contextlib
 import json
 import logging
 from typing import Any, AsyncGenerator
@@ -22,6 +23,21 @@ from .base import (
 logger = logging.getLogger(__name__)
 
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+
+
+def _refuse_le_sampling(model: str) -> bool:
+    """Ce modèle rejette-t-il `temperature` ?
+
+    Signalé par Ludo le 28/08 (« gpt ne marche pas », 400 sur chaque message),
+    reproduit contre l'API réelle qui répond : « Unsupported value:
+    'temperature' does not support 0.7 with this model. Only the default (1)
+    value is supported. »
+
+    Même motif que Gemini 3 en 0.48.2 : les modèles de raisonnement refusent
+    les réglages d'échantillonnage. C'est la même famille que celle qui exige
+    `max_completion_tokens`, d'où la règle partagée ci-dessous.
+    """
+    return _uses_max_completion_tokens(model)
 
 
 def _uses_max_completion_tokens(model: str) -> bool:
@@ -71,7 +87,6 @@ class OpenAIProvider(BaseProvider):
         """Build request body with correct token parameter."""
         request_body: dict[str, Any] = {
             "model": self.config.model,
-            "temperature": self.config.temperature,
             "messages": messages,
             "stream": True,
             # Usage réel (dette 14/06/2026) : sans ce flag, le chunk usage final
@@ -83,6 +98,11 @@ class OpenAIProvider(BaseProvider):
             request_body["max_completion_tokens"] = self.config.max_tokens
         else:
             request_body["max_tokens"] = self.config.max_tokens
+
+        # Le réglage reste utile là où il est accepté : on ne le retire que
+        # pour les modèles qui le refusent.
+        if not _refuse_le_sampling(self.config.model):
+            request_body["temperature"] = self.config.temperature
 
         if tools:
             request_body["tools"] = tools
@@ -224,7 +244,16 @@ class OpenAIProvider(BaseProvider):
             async for event in self._stream_request(request_body):
                 yield event
         except httpx.HTTPStatusError as e:
-            logger.error(f"{type(self).__name__} API error: {e.response.status_code}")
+            # Le corps porte la raison du refus — « temperature does not
+            # support 0.7 with this model » pour le 400 du 28/08 — et le log
+            # la jetait : diagnostiquer obligeait à reproduire l'appel à la
+            # main. Le détail va aux logs, jamais à l'écran (frontière 0.48).
+            detail = ""
+            with contextlib.suppress(Exception):
+                detail = e.response.text[:500]
+            logger.error(
+                f"{type(self).__name__} API error: {e.response.status_code} {detail}"
+            )
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:
             logger.error(f"{type(self).__name__} streaming error: {e}")
