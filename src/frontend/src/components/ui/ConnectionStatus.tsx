@@ -1,34 +1,46 @@
-import { Wifi, WifiOff, Loader } from 'lucide-react';
+import { Cpu, PowerOff, Loader } from 'lucide-react';
 import { useStatusStore } from '../../stores/statusStore';
 import { cn } from '../../lib/utils';
 
+/**
+ * État du MOTEUR LOCAL (le sidecar backend), pas du réseau.
+ *
+ * Campagne dix personas (28/08) : ce bandeau affichait « Connecté » avec une
+ * icône Wifi. Une magistrate qui préparait ses interventions dans le train y a
+ * lu, logiquement, qu'elle était en ligne. Le libellé et l'icône désignent
+ * désormais ce qu'ils mesurent réellement.
+ *
+ * La détection réseau (`hooks/useOnlineStatus.ts`) existe et n'est branchée
+ * nulle part : c'est un autre chantier. Ici, on se contente d'arrêter de faire
+ * une promesse qu'on ne tient pas.
+ */
 export function ConnectionStatus() {
   const { connectionState, latency } = useStatusStore();
 
   const stateConfig = {
     connected: {
-      icon: Wifi,
+      icon: Cpu,
       color: 'text-success',
       bgColor: 'bg-success/10',
-      label: 'Connecté',
+      label: 'Moteur actif',
     },
     connecting: {
       icon: Loader,
       color: 'text-warning',
       bgColor: 'bg-warning/10',
-      label: 'Connexion...',
+      label: 'Démarrage du moteur...',
     },
     disconnected: {
-      icon: WifiOff,
+      icon: PowerOff,
       color: 'text-text-muted',
       bgColor: 'bg-surface-elevated',
-      label: 'Déconnecté',
+      label: 'Moteur arrêté',
     },
     error: {
-      icon: WifiOff,
+      icon: PowerOff,
       color: 'text-error',
       bgColor: 'bg-error/10',
-      label: 'Erreur',
+      label: 'Erreur du moteur',
     },
   };
 

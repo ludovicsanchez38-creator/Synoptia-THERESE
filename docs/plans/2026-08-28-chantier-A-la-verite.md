@@ -1,4 +1,59 @@
-# Chantier A — « La vérité » : design soumis à relecture AVANT code
+# Chantier A — « La vérité »
+
+> **NO-GO des deux relecteurs sur la version initiale (28/08).** Grok et Soso ont
+> convergé : le design cassait quatre choses invisibles depuis le plan. Le
+> chantier est **scindé** en conséquence.
+>
+> ## Ce qui a fait tomber la V1
+>
+> **A2 (gate sur la recherche web) casse quatre choses :**
+>
+> 1. `/confirm-tool` route tout outil intégré vers `execute_workspace_tool`, qui
+>    **ne connaît pas** `web_search` — démontré à l'exécution :
+>    `Outil inconnu : web_search`. La recherche ne fonctionnerait plus du tout.
+> 2. `ToolConfirmationCard.tsx:67` présente tout outil non-calendrier comme un
+>    **e-mail**, avec un bouton « Envoyer ».
+> 3. Après confirmation, le résultat **n'est pas réinjecté au modèle** :
+>    l'utilisateur recevrait des résultats bruts, sans reprise de génération.
+> 4. Board, Deep Research et les agents appellent le service de recherche
+>    **directement** (`board.py:284`, `deep_research.py:113`) : ils contourneraient
+>    le gate. Une promesse de confirmation qui ne couvre pas ces chemins serait un
+>    mensonge de plus.
+>
+> Soso corrige aussi le cadrage : « `web_search` n'est pas une mutation externe :
+> c'est une **lecture avec exfiltration de la requête**. Ta taxonomie mélange deux
+> risques. » Il propose un registre unique `ToolPolicy(effect, data_egress,
+> confirmation, executor, continuation)`.
+>
+> **A6 (retry 401) est mal cadré :** je voulais exclure le SSE ; Soso démontre que
+> le 401 du middleware arrive **avant** l'entrée dans la route (`main.py:700`),
+> donc aucune génération n'a démarré et le rejeu est sûr. En revanche il ne faut
+> **pas** rejouer « tout 401 » (Gmail, Groq, Sheets en renvoient aussi) : il faut
+> un marqueur propre au middleware. Et `sidecar-status: running` est émis dès le
+> `spawn`, avant que FastAPI soit prêt (`lib.rs:303`).
+>
+> **A5 (score) :** ni `min(100)` ni clamp d'affichage. Le maximum théorique est
+> 170, `entities.py:37` documente déjà `0-100+`, et des overrides manuels existent
+> sans champ de provenance — une migration par recalcul effacerait une intention
+> utilisateur. Reste le libellé, qui est faux.
+>
+> ## Le chantier est scindé
+>
+> | Lot | Contenu | État |
+> |---|---|---|
+> | **A-texte** | Les affirmations fausses qui se corrigent par du texte et un test : bloc souveraineté, trois phrases de `PrivacyTab`, les libellés du score, « Connecté » | **en cours** |
+> | **A-mécanique** | Le gate de confirmation web (A2) et le rejeu du 401 (A6) | **à redessiner**, design séparé |
+>
+> A-texte ne prétend rien corriger d'autre que ce qu'il dit. En particulier, tant
+> que A-mécanique n'est pas livré, **la phrase corrigée devra avouer que la
+> recherche web part sans confirmation** — dire vrai avant de réparer, c'est
+> l'objet même du chantier.
+>
+> Le document ci-dessous est la V1, conservée pour mémoire.
+
+---
+
+# V1 (NO-GO) — design soumis à relecture AVANT code
 
 Issu de la campagne dix personas du 28/08. Sept endroits où l'écran ou le prompt
 système affirment quelque chose de faux. Trois personas sur dix sont partis

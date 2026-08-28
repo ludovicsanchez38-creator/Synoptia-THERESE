@@ -38,7 +38,7 @@ const DATA_TYPES = [
   { type: 'Mémoire', description: 'Notes, contexte et connaissances mémorisées par l\'IA' },
   { type: 'Calendrier', description: 'Événements et rendez-vous synchronisés' },
   { type: 'Tâches', description: 'Liste de tâches et projets en cours' },
-  { type: 'Fichiers', description: 'Métadonnées des fichiers indexés (pas les fichiers eux-mêmes)' },
+  { type: 'Fichiers', description: 'Métadonnées des fichiers indexés, et le texte qui en est extrait pour la recherche' },
 ];
 
 // Durées de conservation
@@ -47,7 +47,7 @@ const RETENTION_TABLE = [
   { type: 'Contacts (clients)', duree: '5 ans après fin de contrat', justification: 'Obligation comptable (Code de commerce)' },
   { type: 'Factures', duree: '10 ans', justification: 'Obligation fiscale (CGI art. 286)' },
   { type: 'Emails', duree: 'Selon ta configuration', justification: 'Synchronisation locale' },
-  { type: 'Conversations IA', duree: 'Illimitée (locale)', justification: 'Pas de données personnelles tierces' },
+  { type: 'Conversations IA', duree: "Illimitée, jusqu'à ce que tu effaces", justification: 'Peuvent contenir ce que tu y écris, y compris des données de tiers' },
   { type: 'Mémoire IA', duree: 'Illimitée (locale)', justification: 'Contexte personnel' },
 ];
 
@@ -251,13 +251,38 @@ export function PrivacyTab() {
         </h4>
         <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3">
           <p className="text-sm text-success">
-            Toutes tes données sont stockées localement sur ta machine. Aucune donnée n'est
-            envoyée à un serveur externe (sauf les requêtes aux modèles IA si tu utilises un
-            provider cloud comme Anthropic, OpenAI ou Google).
+            Tes données métier sont stockées sur ta machine, dans ton dossier utilisateur :
+            base SQLite chiffrée (SQLCipher AES-256) et index vectoriel Qdrant. Il n'existe
+            aucun serveur THÉRÈSE qui les héberge.
           </p>
           <p className="text-xs text-success mt-2">
-            Base de données SQLite + index vectoriel Qdrant, le tout dans ton dossier utilisateur.
+            L'index Qdrant, lui, n'est pas chiffré : il contient en clair le texte extrait de
+            tes fichiers et les notes de tes contacts.
           </p>
+          {/* Campagne dix personas (28/08) : cet encadré affirmait « Aucune donnée n'est
+              envoyée à un serveur externe », avec pour seule exception les modèles cloud.
+              Trois personas dont le métier l'exige (avocat, médecin, magistrate) ont trouvé
+              l'écart et sont partis. On énonce des CLASSES de sortie plutôt qu'une liste
+              nominative : une liste pourrit au premier ajout. */}
+          <div className="mt-3 rounded-lg border border-border/60 bg-surface p-3">
+            <p className="text-xs font-semibold text-text">Ce qui peut sortir de ta machine</p>
+            <ul className="mt-1.5 space-y-1 text-xs text-text-muted">
+              <li>• <strong>Ce que tu as branché</strong> : le fournisseur du modèle si tu
+                choisis un modèle cloud, ta messagerie, ton agenda, tes serveurs MCP, la
+                génération d'images, la dictée cloud. Avec un modèle local (Ollama), le
+                contenu de tes conversations ne part chez aucun fournisseur de modèle.</li>
+              <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
+                (DuckDuckGo par défaut) dès que l'assistante décide de chercher, y compris
+                en modèle local. Tu peux la couper dans Réglages &gt; Services.</li>
+              <li>• <strong>Sans que tu le demandes</strong> : la vérification de mise à jour
+                (vers synoptia.fr) et le téléchargement des modèles (recherche sémantique au
+                démarrage, voix locale à l'activation). Ces échanges n'emportent pas de
+                données métier.</li>
+            </ul>
+            <p className="mt-2 text-xs text-text-muted">
+              Aucune télémétrie ni mesure d'audience n'est présente dans cette version.
+            </p>
+          </div>
         </div>
       </section>
 

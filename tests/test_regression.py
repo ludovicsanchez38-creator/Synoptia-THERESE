@@ -6222,8 +6222,15 @@ class TestP0IA_GardesFousPromptSysteme:
 
         prompt = LLMService()._get_system_prompt_with_identity()
         assert "~/.therese/" in prompt, "Le prompt doit nommer le dossier de stockage local"
-        assert "Aucun serveur THÉRÈSE n'existe" in prompt, (
-            "Le prompt doit nier explicitement l'existence d'un serveur Thérèse"
+        # 0.54.0 : ce test exigeait la phrase « Aucun serveur THÉRÈSE n'existe ».
+        # Elle est devenue fausse : l'application interroge
+        # https://synoptia.fr/therese/alpha/latest.json pour ses mises à jour
+        # (tauri.conf.json), donc un serveur Synoptïa existe bel et bien.
+        # La propriété que ce garde-fou protège reste la même — le modèle ne
+        # doit pas laisser croire à un hébergement des données — mais elle
+        # s'exprime désormais sans nier un fait vérifiable.
+        assert "AUCUN serveur THÉRÈSE qui héberge les données" in prompt, (
+            "Le prompt doit nier tout hébergement des données par un serveur Thérèse"
         )
         assert "N'invente JAMAIS un lieu d'hébergement" in prompt, (
             "Le prompt doit interdire d'inventer un hébergeur/domaine tiers"
@@ -7452,16 +7459,58 @@ class TestMistralToolLoop:
 
 
 class TestSovereigntyHonesty:
-    """Souveraineté : ne plus prétendre la base chiffrée (NO-GO Syn 0.20.0)."""
+    """Souveraineté : le bloc doit dire la VÉRITÉ sur le chiffrement.
 
-    def test_prompt_does_not_claim_encrypted_database(self):
+    Histoire de ce test, à ne pas rejouer à l'envers. En 0.20.0, la base
+    n'était pas chiffrée et une revue (NO-GO Syn) a exigé qu'on cesse de le
+    prétendre : le test imposait alors la phrase « n'est PAS chiffrée au
+    repos ». Puis US-014 a livré SQLCipher (AES-256) — et ni le prompt ni ce
+    test ne l'ont su. Le produit a donc passé plusieurs versions à ORDONNER à
+    son assistante d'affirmer une contre-vérité sur sa propre sécurité, avec un
+    test vert pour la garantir. Trouvé par la campagne dix personas du 28/08,
+    quand un médecin a posé la question.
+
+    Inversé en 0.54.0 : le test exige désormais la vérité. Les deux moitiés
+    comptent — dire que la base est chiffrée, ET rester honnête sur ce qui ne
+    l'est pas, sinon on remplace un mensonge par un autre.
+    """
+
+    def test_le_prompt_dit_que_la_base_est_chiffree(self):
         from app.services.llm import LLMService
 
         block = LLMService.SOVEREIGNTY_BLOCK
-        assert "base SQLite chiffrée" not in block, "ne plus affirmer que la base est chiffrée (faux)"
-        assert "n'est PAS chiffrée au repos" in block
-        # Honnête sur ce qui EST chiffré : les secrets, via Fernet (AES-128)
+        assert "n'est PAS chiffrée au repos" not in block, (
+            "la base EST chiffrée depuis US-014 (SQLCipher AES-256) : "
+            "ne plus ordonner au modèle d'affirmer le contraire"
+        )
+        assert "SQLCipher" in block and "AES-256" in block
+
+    def test_le_prompt_reste_honnete_sur_ce_qui_n_est_pas_chiffre(self):
+        """Dire « tout est chiffré » serait le mensonge symétrique."""
+        from app.services.llm import LLMService
+
+        block = LLMService.SOVEREIGNTY_BLOCK
+        # L'index vectoriel garde le texte en clair (payloads Qdrant).
+        assert "Qdrant" in block and "clair" in block
+        # Les secrets : Fernet AES-128, pas AES-256.
         assert "AES-128" in block and "clés API" in block
+
+    def test_le_prompt_ne_promet_pas_que_rien_ne_sort_avec_un_modele_local(self):
+        """Le mensonge jumeau, relevé par la relecture de design.
+
+        Même avec Ollama, deux sorties partent sans que l'utilisateur les
+        demande : la vérification de mise à jour (vers synoptia.fr) et le
+        téléchargement du modèle d'embeddings au démarrage. Et `web_search`
+        part sur simple décision du modèle, sans confirmation, tant que le lot
+        A-mécanique n'est pas livré.
+        """
+        from app.services.llm import LLMService
+
+        block = LLMService.SOVEREIGNTY_BLOCK
+        assert "rien ne sort" not in block, (
+            "faux : mise à jour, téléchargement de modèles et recherche web "
+            "sortent même avec un modèle local"
+        )
 
 
 class TestV3GenerateTemplateLLMCall:
