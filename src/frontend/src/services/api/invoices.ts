@@ -21,6 +21,9 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   contact_id: string;
+  // B4 : « je retiens Moreau, pas DEV-2026-001 ». Rempli par le join côté
+  // API ; absent si le contact a disparu.
+  contact_name?: string | null;
   document_type: 'devis' | 'facture' | 'avoir';
   tva_applicable: boolean;
   currency: string;

@@ -52,10 +52,27 @@ class TestLaListeNommeLeClient:
         assert premiere["contact_name"] and "Garcia" in premiere["contact_name"]
 
     @pytest.mark.asyncio
-    async def test_une_facture_sans_contact_ne_casse_pas_la_liste(self, client):
-        """Le join ne doit pas exclure ni planter sur un contact absent."""
+    async def test_le_nom_vient_de_la_societe_quand_il_n_y_a_pas_de_personne(self, client):
+        """`display_name` ignore `company` dès qu'un prénom existe.
+
+        Relevé par la relecture : « SCI des Oliviers + Sophie → Sophie ». Pour
+        une facture adressée à une société, c'est la société qu'on cherche.
+        """
+        contact = await client.post(
+            "/api/memory/contacts", json={"company": "SCI des Tilleuls"}
+        )
+        facture = await client.post(
+            "/api/invoices/",
+            json={"contact_id": contact.json()["id"], "document_type": "facture",
+                  "lines": [{"description": "Travaux", "quantity": 1,
+                             "unit_price_ht": 1020.0, "tva_rate": 0.0}]},
+        )
+        assert facture.status_code in (200, 201), facture.text
+
         liste = await client.get("/api/invoices/")
-        assert liste.status_code == 200
+        cible = [f for f in liste.json() if f["id"] == facture.json()["id"]]
+        assert cible and cible[0]["contact_name"], "une société doit être nommée"
+        assert "Tilleuls" in cible[0]["contact_name"]
 
 
 class TestLeBriefNommeLeClient:
@@ -90,7 +107,11 @@ class TestLeBriefNommeLeClient:
         assert brief.status_code == 200
         impayees = brief.json().get("overdue_invoices", [])
         assert impayees, "la facture échue depuis 45 jours doit figurer au brief"
-        assert "contact_name" in impayees[0], (
+        assert impayees[0].get("contact_name"), (
             "le brief nomme une référence, pas un client : l'artisan y a lu "
             "« Facture FACT-2026-001 » au lieu de Garcia"
+        )
+        assert "Garcia" in impayees[0]["contact_name"], (
+            f"nom attendu, reçu {impayees[0]['contact_name']!r} — le premier jet "
+            "vérifiait seulement la présence de la clé, donc None passait"
         )

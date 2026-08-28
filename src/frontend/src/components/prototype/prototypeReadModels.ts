@@ -78,7 +78,11 @@ function invoiceToAttention(invoice: DashboardInvoice): TodayAttentionItem {
     id: `invoice-${invoice.id}`,
     cibleId: invoice.id,
     kind: 'invoice',
-    title: `Facture ${invoice.invoice_number}`,
+    // B4 : l'artisan lisait « Facture FACT-2026-001 » — une référence, pas un
+    // client. Le nom d'abord, la référence en repli quand il manque.
+    title: invoice.contact_name
+      ? `${invoice.contact_name} · ${invoice.invoice_number}`
+      : `Facture ${invoice.invoice_number}`,
     detail: [formatMoney(invoice), dueLabel ? `échéance ${dueLabel}` : 'échéance non renseignée'].join(' · '),
     badge: 'À relancer',
     urgent: true,

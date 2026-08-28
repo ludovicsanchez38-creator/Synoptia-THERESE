@@ -284,7 +284,15 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium text-text">{invoice.invoice_number}</h3>
+                      {/* B4 : l'artisan cherchait Moreau, la liste ne montrait
+                          que DEV-2026-001. Le client d'abord, la référence
+                          ensuite — et la référence seule quand le nom manque. */}
+                      <h3 className="font-medium text-text">
+                        {invoice.contact_name || invoice.invoice_number}
+                      </h3>
+                      {invoice.contact_name && (
+                        <span className="text-xs text-text-muted">{invoice.invoice_number}</span>
+                      )}
                       {invoice.document_type && invoice.document_type !== 'facture' && (
                         <span className={cn(
                           'px-2 py-0.5 rounded text-xs font-medium',

@@ -35,6 +35,9 @@ export interface DashboardInvoice {
   id: string;
   invoice_number: string;
   contact_id: string;
+  // B4 : le brief titrait « Facture FACT-2026-001 » — une référence, pas un
+  // client. Rempli par le join côté API.
+  contact_name?: string | null;
   total_ttc: number;
   currency: string;
   due_date: string | null;

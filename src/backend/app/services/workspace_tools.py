@@ -15,6 +15,7 @@ from typing import Any
 from app.services.contexte_execution import ContexteExecution
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -397,15 +398,22 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
 
     maintenant = datetime.now(UTC).replace(tzinfo=None)
 
+    # Factures ET avoirs : un avoir est une créance NÉGATIVE. L'ignorer
+    # surestime l'encours ; l'ajouter tel quel le double, car `total_ttc` est
+    # toujours stocké positif. Les devis restent dehors : un devis n'est pas dû.
     lignes = await session.execute(
-        select(Invoice).where(
-            Invoice.document_type == "facture",
+        select(Invoice)
+        .options(selectinload(Invoice.contact))
+        .where(
+            Invoice.document_type.in_(["facture", "avoir"]),
             Invoice.status.in_(["sent", "overdue"]),
         )
     )
-    factures = list(lignes.scalars().all())
+    documents = list(lignes.scalars().all())
+    factures = [d for d in documents if d.document_type == "facture"]
+    avoirs = [d for d in documents if d.document_type == "avoir"]
 
-    encours = sum(f.total_ttc or 0 for f in factures)
+    encours = sum(f.total_ttc or 0 for f in factures) - sum(a.total_ttc or 0 for a in avoirs)
     en_retard = [
         f for f in factures
         if f.status == "overdue" or (f.due_date is not None and f.due_date < maintenant)
@@ -421,6 +429,14 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
     detail = [
         {
             "reference": f.invoice_number,
+            # B4 : « je retiens Moreau, pas FACT-2026-001 ». La question
+            # « quelles factures ne sont pas payées » attend des noms.
+            "client": (
+                getattr(f.contact, "display_name", None)
+                or getattr(f.contact, "company", None)
+                if getattr(f, "contact", None) is not None
+                else None
+            ),
             "montant_ttc": f.total_ttc,
             "echeance": f.due_date.date().isoformat() if f.due_date else None,
             "jours_de_retard": (
@@ -432,14 +448,19 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
         )
     ]
 
+    # Sommer des devises différentes produit un chiffre qui n'existe pas : on
+    # le dit plutôt que de choisir une étiquette au hasard.
+    devises = {d.currency for d in documents if d.currency}
     return json.dumps(
         {
             "encours_ttc": round(encours, 2),
+            "devises_multiples": len(devises) > 1,
             "retard_ttc": round(retard, 2),
             "nombre": len(factures),
             "nombre_en_retard": len(en_retard),
+            "nombre_avoirs": len(avoirs),
             "plus_ancien_retard_jours": plus_ancienne,
-            "devise": factures[0].currency if factures else "EUR",
+            "devise": (next(iter(devises)) if len(devises) == 1 else None),
             "factures": detail,
             "note": (
                 "Devis exclus : un devis n'est pas une creance. Factures "
