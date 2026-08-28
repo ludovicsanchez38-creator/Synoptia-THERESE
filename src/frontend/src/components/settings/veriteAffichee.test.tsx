@@ -39,8 +39,12 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
 
     // La recherche web part SANS confirmation tant que le lot A-mécanique
     // n'est pas livré. L'écran doit l'avouer plutôt que de le taire.
-    expect(await screen.findByText(/La recherche web/i)).toBeInTheDocument();
-    expect(await screen.findByText(/vérification de mise à jour/i)).toBeInTheDocument();
+    // « La recherche web » apparaît à deux endroits depuis qu'on l'a aussi
+    // signalée dans le bloc des consentements : on vise la puce de l'encadré
+    // Stockage, celle qui porte le contrat.
+    const puces = await screen.findAllByText(/La recherche web/i);
+    expect(puces.length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/vérification de mise à jour/i).length).toBeGreaterThan(0);
   });
 
   it('ne prétend pas que l’interrupteur coupe TOUTE la recherche web', async () => {
@@ -51,11 +55,18 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     // appellent le service directement : 18 appels, zéro vérification du
     // réglage. Écrire cela dans le chantier « la vérité » aurait été le comble.
     render(<PrivacyTab />);
-    const intitule = await screen.findByText(/La recherche web/i);
-    // findByText rend le <strong> ; la phrase entière est dans le <li> parent.
-    const texte = (intitule.closest('li') ?? intitule).textContent ?? '';
+    const intitules = await screen.findAllByText(/La recherche web/i);
+    // findAllByText rend les <strong> ; la phrase entière est dans le <li>.
+    const texte = intitules
+      .map((n) => (n.closest('li') ?? n).textContent ?? '')
+      .join(' ');
 
     expect(texte).toMatch(/Board|recherche approfondie|Atelier/i);
+    // Trou signalé par la revalidation : le chat sous Gemini fait de l'ancrage
+    // Google Search SANS passer par l'outil `web_search`
+    // (`gemini.py:216`, `enable_grounding=True` par défaut, et
+    // `web_search_enabled` n'y est jamais lu). L'interrupteur ne le coupe pas.
+    expect(texte).toMatch(/Gemini/i);
   });
 
   it('ne justifie plus la conservation illimitée par « pas de données personnelles tierces »', async () => {
@@ -73,6 +84,18 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     // Qdrant stocke le TEXTE extrait, découpé en fragments — pas une
     // métadonnée. Trouvé par la relecture de design, pas par la campagne.
     expect(screen.queryByText(/pas les fichiers eux-mêmes/i)).toBeNull();
+  });
+
+  it('ne dit plus que « tout reste local » faute de consentement cloud', async () => {
+    // Trouvé en cherchant, sur demande du relecteur, s'il restait des phrases
+    // du même type. Celle-ci était dans le MÊME onglet : « Aucun consentement
+    // cloud accordé : tout reste local tant que tu n'autorises rien. »
+    // Faux : la recherche web et la vérification de mise à jour ne passent par
+    // aucun consentement.
+    render(<PrivacyTab />);
+    await screen.findByText(/Ce qui peut sortir de ta machine/i);
+
+    expect(screen.queryByText(/tout reste local tant que tu n/i)).toBeNull();
   });
 
   it('dit que la base est chiffrée ET que l’index ne l’est pas', async () => {

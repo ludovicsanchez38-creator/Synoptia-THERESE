@@ -252,8 +252,10 @@ export function PrivacyTab() {
         <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3">
           <p className="text-sm text-success">
             Tes données métier sont stockées sur ta machine, dans ton dossier utilisateur :
-            base SQLite chiffrée (SQLCipher AES-256) et index vectoriel Qdrant. Il n'existe
-            aucun serveur THÉRÈSE qui les héberge.
+            base SQLite chiffrée au repos (SQLCipher AES-256, sauf si l'application a été
+            démarrée avec l'échappatoire de débogage prévue quand le trousseau système est
+            indisponible) et index vectoriel Qdrant. Il n'existe aucun serveur THÉRÈSE qui
+            les héberge.
           </p>
           <p className="text-xs text-success mt-2">
             L'index Qdrant, lui, n'est pas chiffré : il contient en clair le texte extrait de
@@ -274,8 +276,9 @@ export function PrivacyTab() {
               <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
                 (DuckDuckGo par défaut) dès que l'assistante décide de chercher, y compris
                 en modèle local, et sans te demander confirmation. L'interrupteur de
-                Réglages &gt; Services la coupe pour le chat ; le Board, la recherche
-                approfondie et l'Atelier continuent d'y accéder.</li>
+                Réglages &gt; Services ne coupe que l'outil de recherche du chat : le Board,
+                la recherche approfondie, l'Atelier et l'ancrage Google des modèles Gemini
+                y accèdent par d'autres chemins.</li>
               <li>• <strong>Sans que tu le demandes</strong> : la vérification de mise à jour
                 (vers synoptia.fr) et le téléchargement des modèles (recherche sémantique au
                 démarrage, voix locale à l'activation). Ces échanges n'emportent pas de
@@ -442,7 +445,9 @@ export function PrivacyTab() {
         )}
         {cloudGrants.length === 0 && (
           <p className="mt-3 text-xs text-text-muted">
-            Aucun consentement cloud accordé : tout reste local tant que tu n’autorises rien.
+            Aucun consentement cloud accordé : aucun fournisseur de modèle, de dictée ou
+            d’images ne reçoit tes contenus. La recherche web et la vérification de mise à
+            jour, elles, ne passent pas par ces consentements (voir Stockage ci-dessus).
           </p>
         )}
         {!voiceGranted && (

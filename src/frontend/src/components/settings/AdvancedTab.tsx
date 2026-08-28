@@ -103,7 +103,7 @@ export function AdvancedTab({
               </div>
               <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
                 <Check className="w-4 h-4 text-success" />
-                <span className="text-sm text-success">Données 100% locales</span>
+                <span className="text-sm text-success">Stockées sur cette machine</span>
               </div>
             </>
           )}
