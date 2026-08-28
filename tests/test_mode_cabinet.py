@@ -107,11 +107,10 @@ class TestLesDeuxPortesLisentLaMemePolitique:
         Couvert en détail par TestEtancheiteReelleDuDossier ; on garde ici
         l'assertion de symétrie : les deux portes changent ensemble.
         """
-        from sqlalchemy import select
-
         from app.models.database import get_session_context
         from app.models.entities import Contact
         from app.services.memory_tools import _cloison_contacts
+        from sqlalchemy import select
 
         async with get_session_context() as session:
             session.add(
