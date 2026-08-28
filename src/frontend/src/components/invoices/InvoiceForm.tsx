@@ -440,7 +440,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-warning">
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
-                informations n'est pas conforme. Complète-le dans Réglages &gt; Profil avant de
+                informations n'est pas conforme. Complète-les dans Réglages &gt; Profil avant de
                 générer le PDF.
               </p>
             </div>

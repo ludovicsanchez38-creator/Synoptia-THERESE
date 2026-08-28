@@ -311,7 +311,7 @@ export const capabilities: CapabilityItem[] = [
   },
   {
     id: 'profile', group: 'control', title: 'Profil et espace de travail', icon: Settings,
-    description: 'Centraliser le profil émetteur, le dossier local et le contexte personnel.',
+    description: 'Centraliser les infos de ta société, le dossier local et le contexte personnel.',
     features: ['Profil/SIRET/NDA', 'Dossier de travail', 'THERESE.md'], keywords: ['profil', 'siret', 'contexte'],
     prompt: 'Vérifie que mon profil et mon espace de travail sont correctement configurés.', destination: { kind: 'action', action: 'settings.open', settingsTab: 'profile' },
   },

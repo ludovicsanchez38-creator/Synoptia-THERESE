@@ -49,7 +49,7 @@ export function usePrototypeInvoiceData(enabled = true) {
       const contacts = contactsResult.status === 'fulfilled' ? contactsResult.value : [];
       const billingProfile = profileResult.status === 'fulfilled' ? profileResult.value : null;
       if (contactsResult.status === 'rejected') unavailableSources.push('contacts');
-      if (profileResult.status === 'rejected') unavailableSources.push('profil émetteur');
+      if (profileResult.status === 'rejected') unavailableSources.push('infos de ta société');
 
       setResource({
         status: 'ready',

@@ -1752,7 +1752,7 @@ export function ConversationCanvasPrototype() {
                       </>
                     ) : scenario === 'invoice' ? (
                       <>
-                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Tes devis" />
+                        <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Devis et factures" />
                         <SourceChip icon={<Users className="h-3 w-3" />} label="Tes clients" />
                         <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Brouillon confirmé, aucun envoi" />
                       </>
