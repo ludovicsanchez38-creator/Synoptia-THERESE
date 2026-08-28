@@ -1,7 +1,12 @@
 # Les améliorations d'usage — plan d'exécution
 
-> Dix entrées retenues sur onze : la cinquième est sortie après relecture,
-> son diagnostic ne tenait pas.
+> Dix entrées livrées sur onze. La cinquième est sortie après relecture, son
+> diagnostic ne tenait pas : le registre des tâches est en mémoire, brancher
+> l'appel au démarrage n'aurait rien ramené.
+>
+> S'y est ajouté, hors plan, un manque signalé par Ludo en cours de route :
+> aucun bouton ne ramenait à l'accueil, et la seule action qui portait ce nom
+> menait au second écran d'accueil.
 
 Issu de l'audit à trois voix du 27/08 (Grok, Codex, trois agents internes sur
 des angles séparés, puis arbitrage). Objectif posé par Ludo, mot pour mot :
@@ -143,9 +148,9 @@ La règle qui rend le lot cohérent n'est pas « tout mène à un canevas », c'
 Un item qui ouvre une fiche pendant qu'un autre ouvre une liste serait
 déroutant ; un item qui ouvre son objet, toujours, ne l'est pas.
 
-### 9. Le chat ne ferme plus le canevas qu'il commente — REPORTÉ
+### 9. Le chat ne ferme plus le canevas qu'il commente — LIVRÉ
 
-> **Tenté le 28/08, restauré.** Ce n'est pas un état à changer, c'est la
+> **Livré le 28/08, après une première tentative restaurée.** Ce n'est pas un état à changer, c'est la
 > structure du rendu. Le canevas ne vit que dans la branche « accueil » du
 > ternaire de la colonne principale ; l'extraire en variable et le rendre dans
 > la branche chat compile et passe le typage, mais la variable reste nulle au
@@ -164,9 +169,15 @@ déroutant ; un item qui ouvre son objet, toujours, ne l'est pas.
 > entrée est faux : le canevas n'est PAS prisonnier de la branche accueil, il
 > est déjà rendu à part. La reprise devra partir de là.
 >
-> À reprendre seul, dans une session dédiée, avec la recette visuelle. Forcer
-> un refactor de la coque la plus critique en fin de lot aurait été le
-> meilleur moyen de casser ce que les six entrées précédentes ont réparé.
+> **Ce qui bloquait vraiment**, trouvé par la relecture : mon test cherchait la
+> carte du parcours, qui vit dans la colonne que le ternaire démonte à
+> l'ouverture du chat. Le canevas est ailleurs. Et le test « grand écran » ne
+> prouvait rien, l'animation de sortie gardant l'élément dans le document — le
+> sabotage passait inaperçu.
+>
+> `openChat` lit désormais la même largeur que le voile, via une fonction
+> exportée : un appelant qui aurait interrogé la fenêtre de son côté aurait
+> fait deux contrats d'un seul.
 
 `openChat` (`ConversationCanvasPrototype.tsx:888`) appelle `setCanvasOpen(false)`.
 Poser une question sur le mail affiché coûte aujourd'hui : perdre le mail,
