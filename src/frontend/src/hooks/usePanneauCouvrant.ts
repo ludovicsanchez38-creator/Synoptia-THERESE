@@ -19,7 +19,14 @@ export const SEUIL_COTE_A_COTE = 1280;
 
 const REQUETE = `(min-width: ${SEUIL_COTE_A_COTE}px)`;
 
-function estCoteACote(): boolean {
+/**
+ * Le panneau tient-il À CÔTÉ de la colonne, ou la recouvre-t-il ?
+ *
+ * Exportée pour que `openChat` lise la même largeur que ce hook : un appelant
+ * qui interrogerait `window.innerWidth` de son côté se contredirait avec la
+ * media query, et le contrat d'écran deviendrait deux contrats.
+ */
+export function estCoteACote(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false;
   }

@@ -106,7 +106,7 @@ import type { SlashCommand } from '../chat/SlashCommandsMenu';
 import { ShortcutsModal } from '../chat/ShortcutsModal';
 import { VoiceDictationButton } from '../chat/VoiceDictationButton';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { estCoteACote, usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { actionsAuRepos } from '../../lib/paletteAuRepos';
@@ -907,7 +907,12 @@ export function ConversationCanvasPrototype() {
       useNavigationStore.getState().setView('chat');
     }
     setEmbeddedView(null);
-    setCanvasOpen(false);
+    // Entrée 9 : ouvrir le chat fermait l'objet qu'on venait de lire. Poser
+    // une question sur un message coûtait de le perdre, puis de le rouvrir.
+    // Sous le seuil, en revanche, le canevas recouvre la colonne et l'isole
+    // (voile 0.48.1) : l'y laisser poserait `inert` sur la conversation qu'on
+    // vient d'ouvrir — un chat à l'écran, et mort.
+    if (!estCoteACote()) setCanvasOpen(false);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
     setImagesOpen(false);
