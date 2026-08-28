@@ -257,3 +257,35 @@ class TestLesAvoirsEtLaDevise:
         assert resultat["factures"][0]["devise"] == "EUR", (
             "`montant_ttc` sans devise laisse le modèle choisir l'étiquette"
         )
+
+    @pytest.mark.asyncio
+    async def test_aucune_facture_ne_peut_exister_sans_devise(self, client):
+        """
+        Angle mort supposé du correctif, mesuré : il n'existe pas.
+
+        `devises` ignore les valeurs nulles (`if d.currency`). Une facture
+        sans devise à côté d'une facture en USD donnerait donc une seule
+        devise, et le total global serait calculé sur les deux — le garde-fou
+        s'éteindrait au moment précis où l'ambiguïté est la plus grande.
+
+        Ce qui l'empêche n'est pas le code de `_invoice_totals` : c'est la
+        contrainte NOT NULL du schéma. Ce test la fige, parce que le jour où
+        elle tomberait, le filtre `if d.currency` deviendrait un trou sans
+        que rien d'autre ne le signale.
+        """
+        from app.models.database import get_session_context
+        from app.models.entities import Invoice
+        from sqlalchemy import select
+
+        identifiant = await _poser_facture(client, 100.0, "sent")
+
+        # L'erreur remonte telle que la pose le pilote (sqlcipher3), pas
+        # enveloppée par SQLAlchemy : viser `IntegrityError` de sqlalchemy.exc
+        # laisserait le test échouer alors que la contrainte a bien tenu.
+        with pytest.raises(Exception, match="invoices.currency"):
+            async with get_session_context() as session:
+                trouvee = await session.execute(
+                    select(Invoice).where(Invoice.id == identifiant)
+                )
+                trouvee.scalars().one().currency = None
+                await session.commit()
