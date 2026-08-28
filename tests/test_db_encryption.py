@@ -5,6 +5,7 @@ La clé est dérivée de la clé maîtresse du trousseau (HKDF) ; en test, elle
 est fixée par THERESE_DB_KEY (conftest) pour rester indépendante du Keychain.
 """
 import sqlite3
+import sys
 from contextlib import closing
 
 import pytest
@@ -62,9 +63,33 @@ class TestMigration:
         with db_connect(db) as conn:
             assert conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0] == 3
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="le scénario exige une connexion OUVERTE pendant la migration ; "
+        "Windows refuse alors le renommage, et l'application ne passe jamais par là",
+    )
     def test_migration_couvre_le_wal_non_checkpointe(self, tmp_path):
         """Revue adversariale : des transactions encore dans le -wal (pas
-        checkpointées) doivent survivre à la migration vers le chiffré."""
+        checkpointées) doivent survivre à la migration vers le chiffré.
+
+        Ce test garde DÉLIBÉRÉMENT une connexion ouverte pendant l'appel -
+        c'est la seule façon d'avoir un WAL non checkpointé, puisque fermer
+        la connexion le rapatrie. Sous Windows, `os.replace` refuse alors de
+        renommer par-dessus un fichier ouvert : dernier des dix échecs de
+        `tests-windows.yml`.
+
+        Vérifié avant de l'écarter : l'application ne construit jamais cette
+        situation. `ensure_db_encrypted` tourne au démarrage, AVANT la
+        création des moteurs et avant la seule fuite de connexion du code
+        applicatif. Et si un tiers verrouillait quand même le fichier
+        (antivirus, seconde instance), l'exception est RELANCÉE - THÉRÈSE
+        échoue bruyamment au lieu de continuer avec une base en clair en
+        prétendant le contraire.
+
+        Dette nommée : une reprise bornée sur `PermissionError` rendrait le
+        démarrage tolérant à un verrou passager. C'est un changement de
+        comportement au démarrage, pas une correction de test.
+        """
         db = tmp_path / "therese.db"
         conn = sqlite3.connect(str(db))
         conn.execute("PRAGMA journal_mode=WAL")
