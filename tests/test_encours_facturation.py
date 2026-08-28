@@ -1340,3 +1340,84 @@ class TestLesEtiquettesNeContredisentPasLesNombres:
 
         assert resultat["devises_multiples"] is True
         assert resultat["encours_ttc"] is None
+
+
+class TestLaRegleEstBalayeeSurTousLesChamps:
+    """
+    Septième passe, retour de Grok : deux jumeaux de plus, sur les deux
+    derniers champs que je n'avais pas balayés.
+
+    A. La `note` affirmait « Plusieurs devises : aucun total global n'est
+       calculable » pendant que `devises_multiples` valait false et que
+       `encours_ttc` valait 500. J'ai fait suivre la règle au DRAPEAU à la
+       passe 7 ; la PHRASE qui dit la même chose lisait toujours toutes les
+       devises des documents.
+
+    B. `retard_par_devise` n'avait pas le filtre `m > 0` que je venais de
+       poser sur `encours_par_devise`. Une facture à 0 EUR échue à côté de
+       500 USD échue laissait `{EUR: 0.0, USD: 500.0}` et faisait taire
+       `retard_ttc`, alors que `encours_ttc` rendait bien 500.
+
+    Quatrième et cinquième jumeaux de la session. Le motif est constant :
+    poser une règle sur un champ et ne pas la balayer sur les autres.
+    """
+
+    class _Doc:
+        def __init__(self, montant, devise="EUR", type_doc="facture", echeance=None):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"{devise}-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        return _totaux_des_documents(documents, datetime.now(UTC).replace(tzinfo=None))
+
+    def test_la_note_ne_contredit_pas_le_total_rendu(self):
+        resultat = self._totaux(
+            [
+                self._Doc(100.0),
+                self._Doc(100.0, type_doc="avoir"),
+                self._Doc(500.0, devise="USD"),
+            ]
+        )
+
+        assert resultat["encours_ttc"] == 500.0
+        assert "aucun total global" not in resultat["note"].lower(), (
+            f"la note nie le total que le champ à côté vient de rendre : "
+            f"{resultat['note']!r}"
+        )
+
+    def test_la_note_previent_toujours_quand_le_total_manque(self):
+        """La correction ne doit pas rendre la note muette quand elle est utile."""
+        resultat = self._totaux(
+            [self._Doc(1000.0), self._Doc(500.0, devise="USD")]
+        )
+
+        assert resultat["encours_ttc"] is None
+        assert "aucun total global" in resultat["note"].lower()
+
+    def test_le_retard_par_devise_a_le_meme_filtre_que_l_encours(self):
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        resultat = self._totaux(
+            [
+                self._Doc(0.0, echeance=maintenant - timedelta(days=3)),
+                self._Doc(500.0, devise="USD", echeance=maintenant - timedelta(days=3)),
+            ]
+        )
+
+        assert resultat["retard_par_devise"] == {"USD": 500.0}, (
+            "un retard de zéro euro n'est pas un retard"
+        )
+        assert resultat["retard_ttc"] == 500.0, (
+            f"une seule devise est réellement en retard : {resultat['retard_ttc']!r}"
+        )

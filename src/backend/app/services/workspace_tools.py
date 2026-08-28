@@ -491,7 +491,9 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
         )
     # Meme regle que l'encours : pas de retard negatif sous un nom qui promet
     # une somme a recouvrer.
-    retard_par_devise = {d: m for d, m in sorted(retard_par_devise.items()) if m >= 0}
+    # Meme filtre que l'encours : un retard de zero euro n'est pas un retard,
+    # et sa presence faisait taire le scalaire comme une seconde devise.
+    retard_par_devise = {d: m for d, m in sorted(retard_par_devise.items()) if m > 0}
 
     # Une facture peut porter le statut « overdue » avec une echeance FUTURE :
     # l'API l'accepte, et le comptage du retard suit le statut tandis que son
@@ -574,7 +576,7 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             # d'affirmer quand on ignore.
             "retard_ttc": (
                 round(retard, 2)
-                if len(_devises_presentes(en_retard)) <= 1 and retard >= 0
+                if len(retard_par_devise) <= 1 and retard >= 0
                 else None
             ),
             "retard_par_devise": dict(sorted(retard_par_devise.items())),
@@ -598,7 +600,7 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
                 + (
                     " Plusieurs devises : aucun total global n'est calculable, "
                     "utilise le detail par devise."
-                    if len(devises) > 1
+                    if len(devises_avec_encours) > 1
                     else ""
                 )
             ),
