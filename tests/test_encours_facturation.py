@@ -1421,3 +1421,84 @@ class TestLaRegleEstBalayeeSurTousLesChamps:
         assert resultat["retard_ttc"] == 500.0, (
             f"une seule devise est réellement en retard : {resultat['retard_ttc']!r}"
         )
+
+
+class TestLeGateDuRetardLitLeMemeEnsembleQueLEncours:
+    """
+    Huitième passe : le jumeau que le correctif de `retard_par_devise`
+    a lui-même posé.
+
+    L'encours a DEUX ensembles, à dessein :
+      * `encours_par_devise` ne garde que `m > 0` (rien de nommé encours
+        ne porte un zéro ni un négatif) ;
+      * le gate du scalaire lit `devises_avec_encours`, `m != 0` : un
+        avoir en dollars à côté d'une facture en euros doit faire taire
+        le total, parce que la somme traverse encore les deux devises.
+
+    La passe précédente a collé le gate du retard sur le dict filtré
+    `m > 0`. Un zéro ne fait plus taire (c'était le but). Un négatif
+    non plus : facture à -100 EUR échue à côté de 500 USD échue rendait
+    `retard_ttc: 400`, un chiffre qui n'existe dans aucune des deux,
+    pendant que `encours_ttc` valait null sur le même dossier. Même
+    règle, mauvais ensemble.
+    """
+
+    class _Doc:
+        def __init__(self, montant, devise="EUR", type_doc="facture", echeance=None):
+            self.currency = devise
+            self.total_ttc = montant
+            self.document_type = type_doc
+            self.status = "sent"
+            self.due_date = echeance
+            self.invoice_number = f"{devise}-{montant}"
+            self.contact = None
+
+    @staticmethod
+    def _totaux(documents, maintenant=None):
+        from datetime import UTC, datetime
+
+        from app.services.workspace_tools import _totaux_des_documents
+
+        if maintenant is None:
+            maintenant = datetime.now(UTC).replace(tzinfo=None)
+        return _totaux_des_documents(documents, maintenant)
+
+    def test_un_negatif_dans_une_autre_devise_fait_taire_le_retard(self):
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        passe = maintenant - timedelta(days=3)
+        resultat = self._totaux(
+            [
+                self._Doc(-100.0, echeance=passe),
+                self._Doc(500.0, devise="USD", echeance=passe),
+            ],
+            maintenant,
+        )
+
+        assert resultat["encours_ttc"] is None, (
+            "l'encours, lui, mélange bien deux devises"
+        )
+        assert resultat["retard_par_devise"] == {"USD": 500.0}, (
+            "le négatif ne vit pas sous un nom qui promet une somme à recouvrer"
+        )
+        assert resultat["retard_ttc"] is None, (
+            f"400 n'existe ni en EUR ni en USD : {resultat['retard_ttc']!r}"
+        )
+
+    def test_un_zero_ne_fait_toujours_pas_taire(self):
+        """La correction ne doit pas rouvrir le filtre m > 0 de la passe précédente."""
+        from datetime import UTC, datetime, timedelta
+
+        maintenant = datetime.now(UTC).replace(tzinfo=None)
+        passe = maintenant - timedelta(days=3)
+        resultat = self._totaux(
+            [
+                self._Doc(0.0, echeance=passe),
+                self._Doc(500.0, devise="USD", echeance=passe),
+            ],
+            maintenant,
+        )
+
+        assert resultat["retard_ttc"] == 500.0
+        assert resultat["retard_par_devise"] == {"USD": 500.0}

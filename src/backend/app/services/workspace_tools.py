@@ -489,10 +489,10 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
         retard_par_devise[_devise(f)] = round(
             retard_par_devise.get(_devise(f), 0.0) + montants[id(f)], 2
         )
-    # Meme regle que l'encours : pas de retard negatif sous un nom qui promet
-    # une somme a recouvrer.
-    # Meme filtre que l'encours : un retard de zero euro n'est pas un retard,
-    # et sa presence faisait taire le scalaire comme une seconde devise.
+    # Deux ensembles, comme l'encours : le dict ne garde que m > 0 (un
+    # retard de zero n'est pas un retard), le gate lit m != 0 (un
+    # negatif dans une autre devise empoisonne encore la somme).
+    devises_avec_retard = {d for d, m in retard_par_devise.items() if m != 0}
     retard_par_devise = {d: m for d, m in sorted(retard_par_devise.items()) if m > 0}
 
     # Une facture peut porter le statut « overdue » avec une echeance FUTURE :
@@ -567,16 +567,17 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
             # passe 6 a fait lire au gate les devises qui portent reellement
             # un encours, le drapeau qui le decrit etait reste sur toutes.
             "devises_multiples": len(devises_avec_encours) > 1,
-            # Le gate du retard lit les devises des seules factures ECHUES.
-            # Le lire sur tous les documents eteignait un chiffre exact : cent
-            # euros echus a cote de deux cents dollars a echeance future
-            # rendaient null, alors qu'une seule devise etait en retard. Et
-            # sans aucune facture echue, « zero » est une reponse exacte, pas
-            # une ignorance. Se taire quand on sait est le symetrique
-            # d'affirmer quand on ignore.
+            # Le gate du retard lit les devises des seules factures ECHUES
+            # dont le montant n'est pas nul - m != 0, comme
+            # devises_avec_encours. Le dict filtre m > 0 : coller le gate
+            # dessus laissait un negatif dans une autre devise invisible,
+            # et le scalaire additionnait les deux.
+            # Sans aucune facture echue, « zero » est une reponse exacte,
+            # pas une ignorance. Se taire quand on sait est le
+            # symetrique d'affirmer quand on ignore.
             "retard_ttc": (
                 round(retard, 2)
-                if len(retard_par_devise) <= 1 and retard >= 0
+                if len(devises_avec_retard) <= 1 and retard >= 0
                 else None
             ),
             "retard_par_devise": dict(sorted(retard_par_devise.items())),
