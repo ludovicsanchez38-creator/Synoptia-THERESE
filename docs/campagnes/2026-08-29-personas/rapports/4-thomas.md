@@ -80,7 +80,7 @@ agenda. Il ne le fait pas pour mon argent.
 - **Le repli en calendrier local tient sans compte Google.** Le second calendrier a été créé en
   `provider: "local"`, sans `account_id`, et le RDV du jeudi s'y est posé. (API.)
 - **« Accepté » n'est plus proposé comme statut de facture.** Lu au passage en cherchant le champ
-  TVA (`InvoiceForm.tsx:518-530`, code seulement, pas exercé) : une créance ne sort plus de
+  TVA (`InvoiceForm.tsx:526-531`, code seulement, pas exercé) : une créance ne sort plus de
   l'encours par un clic de menu.
 
 ## Findings
@@ -92,7 +92,7 @@ il affiche un bandeau jaune. Il ne dit rien quand il pose 20 % de TVA sur de la 
 deux sont des défauts de conformité ; un seul est gardé. L'écran m'a donc appris qu'il me
 surveillait, sur le sujet le moins cher des deux.
 
-**Source.** `src/frontend/src/components/invoices/InvoiceForm.tsx:439-445` (le bandeau) contre
+**Source.** `src/frontend/src/components/invoices/InvoiceForm.tsx:437-446` (le bandeau) contre
 `:112` et `:143` (le défaut posé), et `src/backend/app/models/schemas.py:944` côté serveur.
 Preuve d'exécution : `POST /api/invoices/` → `"total_tax": 360.0`.
 
