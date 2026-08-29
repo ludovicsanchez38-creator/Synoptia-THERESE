@@ -8248,7 +8248,7 @@ class TestBUG126_NotificationsNaiveDatetime:
         count = await _check_overdue_invoices(db_session)
         assert count == 1
 
-    async def test_check_inactive_prospects_avec_last_interaction_naive(self, db_session):
+    async def test_check_inactive_prospects_avec_date_de_relance_naive(self, db_session):
         from datetime import datetime
 
         from app.models.entities import Contact

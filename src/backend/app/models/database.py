@@ -156,6 +156,13 @@ def apply_adhoc_migrations(db_path) -> None:
         }
         if colonnes_contacts and "next_follow_up" not in colonnes_contacts:
             conn.execute("ALTER TABLE contacts ADD COLUMN next_follow_up TIMESTAMP")
+            # `Field(index=True)` ne vaut que pour une base neuve (`create_all`).
+            # Sur une base packagée déjà installée, la colonne arriverait nue et
+            # le balayage se ferait par rowid.
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_contacts_next_follow_up "
+                "ON contacts(next_follow_up)"
+            )
             conn.commit()
             logger.info(
                 "Migration auto : colonne 'next_follow_up' ajoutée à la table contacts"

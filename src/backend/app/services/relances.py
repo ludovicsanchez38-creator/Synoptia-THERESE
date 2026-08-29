@@ -30,7 +30,26 @@ def contacts_a_relancer(maintenant: datetime | None = None) -> SelectOfScalar[Co
     consommateurs.
     """
     seuil = maintenant or datetime.now(UTC)
-    return select(Contact).where(
-        Contact.next_follow_up != None,  # noqa: E711
-        Contact.next_follow_up <= seuil,
+    return (
+        select(Contact)
+        .where(
+            Contact.next_follow_up != None,  # noqa: E711
+            Contact.next_follow_up <= seuil,
+            # `archive` est le tombeau RGPD, pas une etape commerciale :
+            # l'anonymisation y pose la fiche et efface tout SAUF cette date.
+            # Sans cette exclusion, le brief afficherait « Relancer [ANONYMISE] ».
+            Contact.stage != "archive",
+        )
+        # Sans tri explicite, l'ordre est celui de SQLite : la relance la plus
+        # en retard peut finir en bas de l'ecran.
+        .order_by(Contact.next_follow_up)
     )
+
+
+def solder_la_relance(contact: Contact) -> None:
+    """Eteint le devoir. L'appelant commit.
+
+    Sans ce geste, une date echue reste au brief pour toujours : on aurait
+    remplace un devoir invente par un devoir eternel.
+    """
+    contact.next_follow_up = None

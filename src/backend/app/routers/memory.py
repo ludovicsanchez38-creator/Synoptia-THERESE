@@ -330,6 +330,7 @@ def _contact_to_response(contact: Contact) -> ContactResponse:
         score=contact.score,
         source=contact.source,
         last_interaction=contact.last_interaction,
+        next_follow_up=contact.next_follow_up,
         # Scope (L6)
         scope=contact.scope,
         scope_id=contact.scope_id,
@@ -401,6 +402,7 @@ async def create_contact(
         # CRM fields (Phase 5)
         stage=request.stage,
         source=request.source,
+        next_follow_up=request.next_follow_up,
         # Scope (L6) : rattachement conversation/projet (defaut global si non fourni)
         scope=request.scope or "global",
         scope_id=request.scope_id,

@@ -144,6 +144,11 @@ async def create_activity(
 
     # Mettre à jour last_interaction du contact
     contact.last_interaction = datetime.now(UTC)
+    # Consigner une activite, c'est AVOIR relance : le devoir s'eteint. Sans
+    # ce geste, la date echue resterait au brief indefiniment (revue du 29/08).
+    from app.services.relances import solder_la_relance
+
+    solder_la_relance(contact)
     contact.updated_at = datetime.now(UTC)
     session.add(contact)
 

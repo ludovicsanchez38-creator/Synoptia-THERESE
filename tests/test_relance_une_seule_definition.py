@@ -116,3 +116,129 @@ async def test_le_brief_et_la_cloche_comptent_pareil(db_session: AsyncSession):
     assert notifs[0].action_url == f"/crm/contacts/{du_brief[0]['id']}", (
         "la cloche et le brief doivent parler du MEME contact"
     )
+
+
+@pytest.mark.asyncio
+async def test_un_contact_anonymise_ne_se_relance_pas(db_session: AsyncSession):
+    """`archive` est le tombeau RGPD, pas une étape commerciale.
+
+    L'anonymisation vide le nom, l'e-mail et les notes, pose `stage=archive`
+    et ne touche PAS `next_follow_up`. Sans exclusion, le brief afficherait
+    « Relancer [ANONYMISÉ] » et la cloche sonnerait dessus.
+    """
+    hier = datetime.now(UTC) - timedelta(days=1)
+    db_session.add(_contact(first_name="[ANONYMISÉ]", stage="archive", next_follow_up=hier))
+    await db_session.commit()
+
+    trouves = (await db_session.execute(contacts_a_relancer())).scalars().all()
+
+    assert trouves == []
+
+
+@pytest.mark.asyncio
+async def test_relancer_pour_de_vrai_solde_la_date(db_session: AsyncSession):
+    """Le devoir doit pouvoir s'éteindre.
+
+    Sans ce geste, une date échue reste au brief pour toujours : on aurait
+    remplacé un devoir inventé par un devoir éternel.
+    """
+    from app.services.relances import solder_la_relance
+
+    hier = datetime.now(UTC) - timedelta(days=1)
+    c = _contact(next_follow_up=hier)
+    db_session.add(c)
+    await db_session.commit()
+
+    solder_la_relance(c)
+    await db_session.commit()
+
+    assert c.next_follow_up is None
+    assert (await db_session.execute(contacts_a_relancer())).scalars().all() == []
+
+
+@pytest.mark.asyncio
+async def test_une_activite_crm_solde_la_relance(db_session: AsyncSession):
+    """Consigner un appel, c'est avoir relancé. Le parcours, pas l'helper."""
+    from app.models.schemas import CreateActivityRequest
+    from app.routers.crm import create_activity
+
+    hier = datetime.now(UTC) - timedelta(days=1)
+    c = _contact(next_follow_up=hier)
+    db_session.add(c)
+    await db_session.commit()
+
+    await create_activity(
+        CreateActivityRequest(contact_id=c.id, type="call", title="Appel de relance"),
+        db_session,
+    )
+
+    await db_session.refresh(c)
+    assert c.next_follow_up is None, "consigner une relance doit éteindre le devoir"
+
+
+@pytest.mark.asyncio
+async def test_la_plus_en_retard_est_la_premiere(db_session: AsyncSession):
+    """La plus en retard vient en premier.
+
+    LIMITE CONNUE de ce test : il ne detecte PAS un `order_by` manquant, parce
+    que SQLite utilise l'index sur `next_follow_up` pour le balayage et rend
+    donc les lignes deja triees. Le sabotage a ete joue : il passe. Ce que ce
+    test garantit reellement, c'est le contrat rendu a l'appelant, pas le
+    mecanisme. Le `order_by` reste indispensable : sur une base migree sans
+    index, l'ordre serait celui du rowid (d'ou l'index pose dans la migration).
+    """
+    for jours, nom in ((1, "Recente"), (90, "Ancienne"), (30, "Moyenne")):
+        db_session.add(_contact(last_name=nom, next_follow_up=datetime.now(UTC) - timedelta(days=jours)))
+    await db_session.commit()
+
+    trouves = (await db_session.execute(contacts_a_relancer())).scalars().all()
+
+    assert [c.last_name for c in trouves] == ["Ancienne", "Moyenne", "Recente"]
+
+
+@pytest.mark.asyncio
+async def test_le_brief_http_expose_la_date_et_ignore_les_archives(
+    client, db_session: AsyncSession
+):
+    """Le garde passe par GET /today, pas par le wrapper interne.
+
+    La première version de ce test appelait `prospects_a_relancer` : une
+    requête réécrite en ligne dans la route serait passée inaperçue.
+    """
+    hier = datetime.now(UTC) - timedelta(days=1)
+    db_session.add(_contact(last_name="Vivant", next_follow_up=hier))
+    db_session.add(_contact(last_name="Mort", stage="archive", next_follow_up=hier))
+    await db_session.commit()
+
+    reponse = await client.get("/api/dashboard/today")
+    prospects = reponse.json()["stale_prospects"]
+
+    assert [p["name"] for p in prospects] == ["Alex Vivant"]
+    assert prospects[0]["next_follow_up"] is not None, (
+        "l'écran doit pouvoir dire POURQUOI cette ligne est là"
+    )
+
+
+@pytest.mark.asyncio
+async def test_on_peut_poser_et_solder_une_date_depuis_l_api(client):
+    """Sans écriture, seul un import peut poser une relance : la
+    fonctionnalité serait inutilisable depuis l'application.
+    """
+    cree = await client.post(
+        "/api/memory/contacts",
+        json={"first_name": "Poser", "last_name": "Date", "next_follow_up": "2026-01-15T00:00:00Z"},
+    )
+    assert cree.status_code in (200, 201), cree.text
+    fiche = cree.json()
+    assert fiche["next_follow_up"] is not None, "la réponse doit rendre la date posée"
+
+    du_brief = (await client.get("/api/dashboard/today")).json()["stale_prospects"]
+    assert [p["name"] for p in du_brief] == ["Poser Date"]
+
+    solde = await client.patch(
+        f"/api/memory/contacts/{fiche['id']}", json={"next_follow_up": None}
+    )
+    assert solde.status_code == 200, solde.text
+
+    apres = (await client.get("/api/dashboard/today")).json()["stale_prospects"]
+    assert apres == [], "solder la date doit retirer la ligne du brief"

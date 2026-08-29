@@ -151,6 +151,9 @@ class ContactCreate(BaseModel):
     # CRM fields (Phase 5)
     stage: str = "contact"
     source: str | None = None
+    # La prochaine relance DECIDEE. Sans ce champ en ecriture, seule une
+    # importation pourrait en poser une (revue du 29/08).
+    next_follow_up: datetime | None = None
 
     # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
     scope: str | None = None  # global | project | conversation (defaut global cote modele)
@@ -189,6 +192,7 @@ class ContactUpdate(BaseModel):
     rgpd_date_collecte: datetime | None = None
     rgpd_date_expiration: datetime | None = None
     rgpd_consentement: bool | None = None
+    next_follow_up: datetime | None = None
 
 
 class ContactResponse(BaseModel):
@@ -227,6 +231,7 @@ class ContactResponse(BaseModel):
 # ============================================================
 # RGPD Schemas (Phase 6)
 # ============================================================
+    next_follow_up: datetime | None = None
 
 
 class RGPDExportResponse(BaseModel):

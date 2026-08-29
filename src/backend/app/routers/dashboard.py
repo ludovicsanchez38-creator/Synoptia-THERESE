@@ -253,7 +253,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     """Retourne les données du jour pour le tableau de bord.
 
     Agrège : RDV du jour, tâches urgentes, relances email proches,
-    factures impayées > 30j et prospects sans interaction > 15j.
+    factures impayées > 30j et relances échues (date posée).
     Conçu pour se charger en <500ms (SQLite local, pas d'appel réseau).
     """
     today = date.today()
