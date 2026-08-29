@@ -269,3 +269,51 @@ Lots 4 (objet affaire), 5 (MCP, à faire **après** le 4) et 6 (rétractation,
 objets d'organisme de formation) : chantiers, pas des lots d'une journée.
 Correctifs d'un après-midi encore ouverts : le filtre `!!c.source` du panneau
 CRM, `extra_data` mort, l'absence d'indexation sémantique à l'import.
+
+---
+
+## Troisième passe : Grok renverse le plan (29/08, nuit)
+
+Verdict sur les lots 4-5-6 : **l'ordre était faux**. Ce qui passe en premier
+n'est ni l'objet « affaire » ni les objets d'organisme de formation, c'est
+**d'arrêter d'affirmer**. Construire une table neuve pendant que le canal de
+lecture ment, c'est donner une maison neuve à un état faux.
+
+Il a aussi corrigé deux affirmations de la deuxième passe :
+
+- **Le MCP expose 8 outils, tous en lecture**, pas 14. Les six écritures sont
+  déjà refusées dans le code, avec leur motif. Le plan décrivait un serveur à
+  ouvrir en écriture alors qu'il avait été désarmé volontairement.
+- **`solder_la_relance` s'exécutait pour tous les types d'activité.** Écrire
+  une note de correction éteignait silencieusement un devoir. Défaut introduit
+  et livré le matin même en 0.58.0.
+
+### Ce qui a été livré, dans l'ordre corrigé
+
+| Tranche | Livrée |
+|---|---|
+| **A** | `read_contact` sépare les faits, `etat_courant` (vide) et les `traces`, avec une consigne explicite. Le résumé manuscrit cesse d'être un état. |
+| **B** | `Activity.statut` + `remplace_id`, une route pour poser l'annulation, les traces en vigueur d'abord dans la fenêtre de cinq, la timeline qui barre ET écrit « annulée ». |
+| **C** | La **prestation** (pas l'« affaire ») : qui, quoi, combien, où ça en est. `etat_courant` en dérive. Zéro extraction depuis les notes. |
+| **D** | Le contrat de lecture vit dans **une** fonction, servie par `GET /contacts/{id}/fiche`, lue par le chat **et** le MCP. Écriture toujours fermée, documentée comme un choix (`docs/MCP-THERESE.md`). |
+| **E1-E3** | Le financeur et son statut (un champ, pas une entité), la séance **bloquée** sans être annulée, le questionnaire à froid **déduit** de la fin de formation. |
+
+### Ce qui reste explicitement dehors
+
+- **L'objet « affaire »** : refusé. Ludo vend des formations ; séparer
+  « affaire » et « action de formation » aurait donné deux pipelines pour un
+  seul métier.
+- **L'encaissement partiel** (deux payeurs) : il n'y a aucune facture en base.
+  Étendre `Invoice.status` maintenant serait un moteur à vide.
+- **L'écriture MCP** : ce n'est pas une route à écrire, c'est une décision à
+  prendre — qui, de THÉRÈSE ou du CRM d'origine, fait foi.
+- Les 63 opportunités mortes, l'indexation des notes, le remplissage
+  automatique de l'état courant.
+
+### Ce que le sabotage a trouvé, cette fois encore
+
+Douze gardes écrites sans être testées, toutes découvertes en cassant le
+produit : filtres qui ne discriminaient pas faute d'un second objet, gardes de
+validation jamais exercées, tests qui n'empruntaient pas la vraie sortie. Et
+**trois fois** un fichier de résultats XML périmé m'a fait annoncer un vert
+alors que la collecte était cassée par une erreur de syntaxe.
