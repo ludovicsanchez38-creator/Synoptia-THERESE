@@ -126,6 +126,12 @@ facture `FACT-2026-001` due le 04/09. Code :
 Aucun onglet « Notifications » dans `src/frontend/src/components/settings/` : il n'y a pas de
 réglage à trouver.
 
+**Et ce n'est pas qu'une histoire de date.** Deux lignes plus haut, la sélection filtre aussi sur
+`Invoice.status.in_(["sent", "overdue"])` (`notification_service.py:126`). Une facture que je
+remets en main propre sur le chantier — donc jamais « envoyée » depuis l'application — ne
+déclenchera **jamais** de notification, même trente jours après. Ce n'est donc pas seulement
+« trop tard » : sur ma façon de travailler, c'est « jamais ».
+
 **Libellés exacts.**
 - Ce que je reçois, un mois trop tard : « **Facture {numéro} impayee depuis {X} jours** », bouton
   « **Relancer** » (`notification_service.py:148`).
@@ -165,8 +171,5 @@ déjà côté serveur.
 
 ## Ai-je abandonné ?
 
-Oui — à 6 minutes 30, sur l'écran resté vide pendant que le modèle réfléchissait ; puis une
-deuxième fois, pour de bon, en lisant « TVA 20 % (360 €) » sur une facture où j'avais écrit
-« rénovation » dans ma toute première phrase. Ma ligne rouge est là : une facture posée à 20 %
-sur de la rénovation sans qu'un seul écran me le dise, alors que le même écran sait m'arrêter
-pour un SIRET manquant.
+Oui. Ma ligne rouge : une facture posée à 20 % sur de la rénovation sans qu'un seul écran me le
+dise, alors que le même écran sait m'arrêter pour un SIRET manquant.
