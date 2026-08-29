@@ -5,6 +5,7 @@
  * Phase 4 - Invoicing
  */
 
+import { montantAvecDevise } from '../../lib/devise';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -325,7 +326,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-accent-cyan">{invoice.total_ttc.toFixed(2)} €</p>
+                      <p className="text-2xl font-bold text-accent-cyan">{montantAvecDevise(invoice.total_ttc, invoice.currency)}</p>
                       <p className="text-sm text-text-muted">TTC</p>
                     </div>
 

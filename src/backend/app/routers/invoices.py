@@ -13,6 +13,7 @@ from app.models.entities import Contact, Invoice, InvoiceLine, Preference
 from app.models.schemas import (
     ConvertDevisRequest,
     CreateInvoiceRequest,
+    InvoiceLineRequest,
     InvoiceLineResponse,
     InvoiceResponse,
     MarkPaidRequest,
@@ -102,16 +103,34 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     return f"{prefix}-{current_year}-{next_number:03d}"
 
 
+def _montants_de_ligne(ligne: InvoiceLineRequest) -> tuple[float, float]:
+    """Le HT et le TTC d'une ligne, arrondis au centime a la SOURCE.
+
+    F1 (0.55) : `total_ttc` etait stocke non arrondi. Trois lignes de 33,33 EUR
+    a 20 % donnaient 119.98799999999999 en base, pendant que le PDF imprimait
+    119,99, que l'encours disait 119,99 et que la somme des lignes affichees
+    faisait 119,99. Un client qui additionne les lignes de son PDF ne
+    retrouvait pas le total du document.
+
+    L'argent n'a pas de troisieme decimale : on arrondit ou le montant NAIT,
+    pas a chaque affichage. Les totaux du document somment ensuite des lignes
+    deja arrondies, donc la somme des parts egale toujours le tout.
+    """
+    total_ht = round(ligne.quantity * ligne.unit_price_ht, 2)
+    total_ttc = round(total_ht * (1 + ligne.tva_rate / 100), 2)
+    return total_ht, total_ttc
+
+
 def _calculate_invoice_totals(lines: list[InvoiceLine]) -> tuple[float, float, float]:
     """
-    Calcule les totaux d'une facture.
+    Calcule les totaux d'une facture, a partir de lignes DEJA arrondies.
 
     Returns:
         (subtotal_ht, total_tax, total_ttc)
     """
-    subtotal_ht = sum(line.total_ht for line in lines)
-    total_tax = sum(line.total_ttc - line.total_ht for line in lines)
-    total_ttc = sum(line.total_ttc for line in lines)
+    subtotal_ht = round(sum(line.total_ht for line in lines), 2)
+    total_ttc = round(sum(line.total_ttc for line in lines), 2)
+    total_tax = round(total_ttc - subtotal_ht, 2)
 
     return subtotal_ht, total_tax, total_ttc
 
@@ -292,8 +311,7 @@ async def create_invoice(
     # Créer les lignes
     db_lines = []
     for line_req in request.lines:
-        total_ht = line_req.quantity * line_req.unit_price_ht
-        total_ttc = total_ht * (1 + line_req.tva_rate / 100)
+        total_ht, total_ttc = _montants_de_ligne(line_req)
 
         line = InvoiceLine(
             invoice_id=invoice.id,
@@ -404,8 +422,7 @@ async def update_invoice(
         # Créer les nouvelles lignes
         db_lines = []
         for line_req in request.lines:
-            total_ht = line_req.quantity * line_req.unit_price_ht
-            total_ttc = total_ht * (1 + line_req.tva_rate / 100)
+            total_ht, total_ttc = _montants_de_ligne(line_req)
 
             line = InvoiceLine(
                 invoice_id=invoice.id,
