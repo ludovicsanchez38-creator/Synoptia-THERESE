@@ -436,12 +436,42 @@ async def execute_create_contact(
         scope=scope, scope_id=scope_id, conversation_id=conversation_id,
     )
     if existing is not None:
+        # 0.56 : `success: true` PROMETTAIT une ecriture qui n'avait pas lieu.
+        # Les champs passes ici (notes, adresse, telephone) sont lus PLUS BAS,
+        # a la construction du Contact : sur un contact existant, personne ne
+        # les lit. Le modele annoncait donc « la fiche inclut desormais
+        # l'historique de la signature » - et il avait raison de le faire,
+        # c'est l'outil qui le lui promettait.
+        #
+        # Campagne cinq personas, finding de Karim. Pas d'`update_contact` :
+        # on repare le contrat des outils qui existent, on n'ouvre pas de porte.
+        ignores = [
+            libelle
+            for champ, libelle in (
+                ("notes", "notes"),
+                ("address", "adresse"),
+                ("phone", "telephone"),
+                ("email", "email"),
+                ("company", "entreprise"),
+            )
+            if arguments.get(champ)
+        ]
+        if ignores:
+            message = (
+                f"Contact '{existing.display_name}' existe deja : je le reutilise, "
+                f"mais RIEN n'a ete enregistre. Ces informations sont ignorees : "
+                f"{', '.join(ignores)}. Ne dis pas que la fiche a ete mise a jour."
+            )
+        else:
+            message = f"Contact '{existing.display_name}' existe deja, je le reutilise."
         return json.dumps({
-            "success": True,
+            # Faux quand rien n'a ete ecrit : c'est le contrat, pas la politesse.
+            "success": not ignores,
             "contact_id": existing.id,
             "display_name": existing.display_name,
             "already_existed": True,
-            "message": f"Contact '{existing.display_name}' existe déjà, je le réutilise.",
+            "champs_ignores": ignores,
+            "message": message,
         }, ensure_ascii=False)
 
     # Fence 0.47 : JUSTE AVANT le premier effet durable (session.add puis

@@ -574,9 +574,33 @@ async def _executer_operation(
         return
 
     await _etablir_entree(project_id, root, operation, reponse.id)
+    etat, cause = etat_pour_une_indexation(getattr(reponse, "chunk_count", 0))
     await _consigner_operation(
-        operation.id, EtatOperation.FAIT,
+        operation.id, etat,
         empreinte_reelle=operation.empreinte_prevue,
+        erreur=cause,
+    )
+
+
+def etat_pour_une_indexation(chunk_count: int) -> tuple[EtatOperation, str | None]:
+    """L'etat a consigner apres une indexation, selon ce qu'elle a REELLEMENT produit.
+
+    0.56, finding d'Aude (campagne cinq personas) : le journal consignait FAIT
+    des que `index_payload` ne levait pas. Les trois fichiers du dossier
+    Vermeer etaient donc « faits » avec `chunk_count: 0`, et `search_files`
+    rendait `found: false` sur leur nom exact.
+
+    On ne touche PAS au filtre `chunk_count > 0` du catalogue : un fichier sans
+    chunk n'est pas lisible, le cacher est honnete. C'est le JOURNAL qui
+    mentait - il disait « fait » pour un fichier que le catalogue allait
+    refuser.
+    """
+    if chunk_count > 0:
+        return EtatOperation.FAIT, None
+    return (
+        EtatOperation.OBSOLETE,
+        "Fichier enregistre mais AUCUN chunk indexe : il n'apparaitra pas dans "
+        "les recherches. Format non extractible, fichier vide ou protege ?",
     )
 
 

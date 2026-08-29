@@ -43,6 +43,15 @@ function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }
       <Detail label="Fin">{value(args, 'end')}</Detail>
       <Detail label="Fuseau">{value(args, 'timezone') || 'Europe/Paris'}</Detail>
       <Detail label="Calendrier">{value(destination, 'calendar_name') || 'Destination à vérifier'}</Detail>
+      {/* Campagne cinq personas : Inès a validé « Séance Martin » en lisant
+          « Mon calendrier », sans qu'on lui dise que la ligne serait visible
+          depuis le dossier d'un autre patient. Le leak était CONSENTI, donc
+          pire : elle avait lu, et ce qu'on lui montrait était incomplet.
+          Avouer avant de réparer — le cloisonnement de l'agenda vient après. */}
+      <p className="pt-1 text-[11px] leading-4 text-warning">
+        Cet agenda est commun à tous tes dossiers : l’événement sera visible
+        depuis n’importe quelle conversation.
+      </p>
       <Detail label="Fournisseur">{provider === 'google' ? 'Google Calendar' : provider === 'caldav' ? 'CalDAV' : 'Local'}</Detail>
       {account && <Detail label="Compte">{account}</Detail>}
       {attendees && <Detail label="Participants">{attendees}</Detail>}

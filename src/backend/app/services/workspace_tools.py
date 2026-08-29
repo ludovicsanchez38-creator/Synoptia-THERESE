@@ -401,11 +401,41 @@ def start_generated_files_collection() -> None:
     _TURN_GENERATED_FILES.set([])
 
 
-def record_generated_file(payload: dict[str, Any]) -> None:
-    """Enregistre un fichier généré pendant le tour (no-op hors collecte)."""
+def record_generated_file(payload: dict[str, Any]) -> bool:
+    """Enregistre un fichier genere pendant le tour.
+
+    Rend VRAI si le fichier a ete collecte. Hors collecte, c'est un no-op - et
+    l'appelant doit le savoir : le retour d'outil promettait une carte que
+    personne n'allait afficher, et un modele parfait obeit a cette promesse.
+    Campagne cinq personas, abandon de Lea.
+    """
     bucket = _TURN_GENERATED_FILES.get()
-    if bucket is not None:
-        bucket.append(payload)
+    if bucket is None:
+        return False
+    bucket.append(payload)
+    return True
+
+
+def _texte_de_retour_document(nom: str, fmt: str, *, collecte: bool) -> str:
+    """Ce que l'outil dit au modele apres avoir produit un document.
+
+    BUG-173 : ne JAMAIS donner l'URL au modele - il la recopiait en lien
+    markdown, qui s'ouvre en navigateur externe sur tauri.localhost dans l'app
+    desktop et meurt.
+
+    0.56 : et ne JAMAIS promettre la carte quand elle ne sera pas affichee.
+    Lea a cherche un bouton parce que le modele lui en avait annonce un.
+    """
+    base = f"Document {fmt.upper()} genere : {nom}."
+    if collecte:
+        return (
+            f"{base} L'utilisateur peut l'enregistrer via la carte affichee "
+            "sous ce message - ne fournis aucun lien."
+        )
+    return (
+        f"{base} Le fichier est enregistre localement. N'annonce AUCUNE carte "
+        "ni aucun lien : dis simplement qu'il a ete produit."
+    )
 
 
 def drain_generated_files() -> list[dict[str, Any]]:
@@ -767,7 +797,7 @@ async def _generate_document(
             return (
                 "Génération interrompue : le document produit a été retiré."
             )
-        record_generated_file({
+        collecte = record_generated_file({
             "skill_id": skill_id,
             "file_id": resp.file_id,
             "file_name": resp.file_name,
@@ -780,10 +810,8 @@ async def _generate_document(
         # lien markdown, qui s'ouvre en navigateur externe sur
         # tauri.localhost dans l'app desktop et meurt. La carte native
         # sous le message (BUG-136) est LE chemin de téléchargement.
-        return (
-            f"Document {fmt.upper()} généré : {resp.file_name}. "
-            "L'utilisateur peut l'enregistrer via la carte affichée sous "
-            "ce message - ne fournis aucun lien."
+        return _texte_de_retour_document(
+            resp.file_name, fmt, collecte=collecte
         )
     except asyncio.CancelledError:
         raise

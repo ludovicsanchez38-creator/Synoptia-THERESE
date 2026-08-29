@@ -46,6 +46,7 @@ def summarize_executions(results: Iterable[tuple[str, str, bool]]) -> str | None
     récap ("Récap réel : ...") s'il y a eu au moins une opération de création, sinon None.
     """
     contacts_created = contacts_reused = projects_created = projects_reused = failures = 0
+    champs_jetes = 0
 
     for name, result_str, is_error in results:
         if name not in _CREATE_TOOLS:
@@ -66,6 +67,13 @@ def summarize_executions(results: Iterable[tuple[str, str, bool]]) -> str | None
                 contacts_reused += 1
             else:
                 projects_reused += 1
+            # 0.56 : « 1 deja existant(s) » est vrai et ne dit pas l'essentiel.
+            # Quand l'appel portait des champs (notes, adresse, telephone), ils
+            # sont JETES : le modele annonce alors une mise a jour, et le lecteur
+            # ne peut pas trancher. Redire un contact sans rien ajouter, en
+            # revanche, ne perd rien - on ne crie pas pour ca.
+            if data.get("champs_ignores"):
+                champs_jetes += 1
         elif data.get("success"):
             if is_contact:
                 contacts_created += 1
@@ -86,6 +94,8 @@ def summarize_executions(results: Iterable[tuple[str, str, bool]]) -> str | None
     reused = contacts_reused + projects_reused
     if reused:
         parts.append(f"{reused} déjà existant(s)")
+    if champs_jetes:
+        parts.append(f"rien n'a été écrit sur {champs_jetes} fiche(s) existante(s)")
     if failures:
         parts.append(f"{failures} échec(s)")
     return "Récap réel : " + ", ".join(parts) + "."
