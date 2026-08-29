@@ -144,11 +144,13 @@ async def create_activity(
 
     # Mettre à jour last_interaction du contact
     contact.last_interaction = datetime.now(UTC)
-    # Consigner une activite, c'est AVOIR relance : le devoir s'eteint. Sans
-    # ce geste, la date echue resterait au brief indefiniment (revue du 29/08).
-    from app.services.relances import solder_la_relance
+    # Un GESTE vers la personne, c'est avoir relance : le devoir s'eteint.
+    # Ecrire une note ne l'est pas (correctif du 29/08 au soir : une note de
+    # correction soldait la relance en silence).
+    from app.services.relances import GESTES_QUI_SOLDENT, solder_la_relance
 
-    solder_la_relance(contact)
+    if request.type in GESTES_QUI_SOLDENT:
+        solder_la_relance(contact)
     contact.updated_at = datetime.now(UTC)
     session.add(contact)
 

@@ -6828,7 +6828,14 @@ class TestP0PROD3_ChatTools:
 
     @pytest.mark.asyncio
     async def test_read_contact_tool_returns_full_fiche(self, db_session):
-        """read_contact retourne coordonnées, stage, score, notes et interactions."""
+        """read_contact ne perd RIEN : coordonnées, stage, score, notes, interactions.
+
+        29/08 : la forme a changé (tranche A). Les notes et les activités sont
+        descendues dans `traces`, parce que les présenter comme des champs de
+        fiche faisait affirmer au modèle un état que personne n'avait validé.
+        La garantie d'origine — aucun contenu ne disparaît — est inchangée et
+        vérifiée ci-dessous dans la nouvelle forme.
+        """
         import json
 
         from app.models.entities import Activity, Contact
@@ -6857,8 +6864,14 @@ class TestP0PROD3_ChatTools:
         fiche = data["contacts"][0]
         assert fiche["score"] == 85
         assert fiche["stage"] == "proposition"
-        assert fiche["notes"] == "Cherche un T3 sous 250k"
-        assert any(a["title"] == "Appel découverte" for a in fiche["recent_activities"])
+        textes = " ".join(
+            (t.get("texte") or "") + " " + (t.get("titre") or "") for t in fiche["traces"]
+        )
+        assert "Cherche un T3 sous 250k" in textes
+        assert "Appel découverte" in textes
+        assert fiche["etat_courant"] is None, (
+            "aucun objet métier ne porte encore l'état : l'app ne doit rien affirmer"
+        )
 
     @pytest.mark.asyncio
     async def test_read_contact_not_found(self, db_session):

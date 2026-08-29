@@ -120,8 +120,11 @@ READ_CONTACT_TOOL = {
     "function": {
         "name": "read_contact",
         "description": (
-            "Lit la fiche COMPLETE d'un contact existant dans la memoire de THERESE "
-            "(coordonnees, notes, stage commercial, score, source, dernieres interactions). "
+            "Lit une fiche de contact : ses coordonnees (des faits), son etat_courant "
+            "(ce que l'application a enregistre, souvent vide), et ses traces "
+            "(ce qui a ete ecrit, date, sans garantie d'actualite). N'AFFIRME que "
+            "etat_courant ; s'il est vide, cite les traces en les datant et ne "
+            "tranche pas entre deux qui se contredisent. "
             "Utilise CET OUTIL plutot que d'inventer quand l'utilisateur demande le contexte, "
             "le suivi, les notes ou l'historique d'une personne ou d'une entreprise. "
             "Recherche par nom, prenom, entreprise ou ADRESSE EMAIL "
@@ -770,7 +773,7 @@ async def execute_read_contact(
     scope_id: str | None = None,
     conversation_id: str | None = None,
 ) -> str:
-    """Execute the read_contact tool : retourne la fiche complète + interactions.
+    """Execute the read_contact tool : les faits, l'etat pose, et les traces.
 
     Permet au chat de LIRE le CRM au lieu d'halluciner le contexte client (P0-PROD-3,
     constat C9 : la fiche client ne remontait pas dans le chat).
@@ -862,7 +865,6 @@ async def execute_read_contact(
                 "source": c.source,
                 "stage": c.stage,
                 "score": c.score,
-                "notes": c.notes,
                 "last_interaction": c.last_interaction.isoformat()
                 if c.last_interaction
                 else None,
@@ -871,22 +873,66 @@ async def execute_read_contact(
                 "next_follow_up": c.next_follow_up.isoformat()
                 if c.next_follow_up
                 else None,
-                "recent_activities": [
-                    {
-                        "type": a.type,
-                        "title": a.title,
-                        "description": a.description,
-                        "date": a.created_at.isoformat() if a.created_at else None,
-                    }
-                    for a in activities
-                ],
+                # L'etat que l'APPLICATION a pose. Vide tant qu'aucun objet
+                # metier ne le porte : le resume manuscrit de la fiche n'est
+                # PAS un etat, il n'est qu'une trace parmi d'autres.
+                "etat_courant": None,
+                # Ce qui a ete ecrit, date, sans hierarchie de verite. Le bloc
+                # `notes` de la fiche y descend : sur les vraies donnees, il
+                # affirmait encore « FORGER 490 EUR » alors qu'une note plus
+                # recente disait « PROPULSER, 2 490 EUR ».
+                "traces": _traces_du_contact(c, activities),
             }
         )
 
     return json.dumps(
-        {"found": True, "count": len(contacts_out), "contacts": contacts_out},
+        {
+            "found": True,
+            "count": len(contacts_out),
+            "contacts": contacts_out,
+            "consigne": CONSIGNE_DE_LECTURE,
+        },
         ensure_ascii=False,
     )
+
+
+CONSIGNE_DE_LECTURE = (
+    "etat_courant est ce que l'application a REELLEMENT enregistre. traces est "
+    "ce qui a ete ecrit a un moment donne, sans garantie d'actualite. "
+    "N'affirme QUE ce qui est dans etat_courant. S'il est vide, dis que tu n'as "
+    "pas d'etat enregistre et cite les traces en les datant. Si deux traces sont "
+    "contradictoires, dis-le et ne tranche pas : la plus recente n'a pas "
+    "forcement raison."
+)
+
+
+def _traces_du_contact(contact: Any, activites: list[Any]) -> list[dict[str, Any]]:
+    """Tout ce qui a ete ecrit sur cette fiche, a egalite et date.
+
+    Le bloc `notes` y figure comme une trace sans date : c'est un texte
+    manuscrit, pas un fait. Le presenter comme un champ de fiche revenait a
+    faire affirmer au modele un etat que personne n'avait valide.
+    """
+    traces: list[dict[str, Any]] = []
+    if (contact.notes or "").strip():
+        traces.append(
+            {
+                "origine": "resume manuscrit de la fiche",
+                "date": None,
+                "titre": None,
+                "texte": contact.notes,
+            }
+        )
+    for a in activites:
+        traces.append(
+            {
+                "origine": f"activite ({a.type})",
+                "date": a.created_at.isoformat() if a.created_at else None,
+                "titre": a.title,
+                "texte": a.description,
+            }
+        )
+    return traces
 
 
 async def execute_memory_tool(

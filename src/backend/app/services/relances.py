@@ -46,6 +46,12 @@ def contacts_a_relancer(maintenant: datetime | None = None) -> SelectOfScalar[Co
     )
 
 
+# Ce qui compte comme « avoir relance » : un geste VERS la personne. Ecrire une
+# note ne l'est pas. Une note de correction (« CORRECTION de ma note de ce
+# matin ») eteignait le devoir en silence avant le correctif du 29/08 au soir.
+GESTES_QUI_SOLDENT = frozenset({"call", "email", "meeting"})
+
+
 def solder_la_relance(contact: Contact) -> None:
     """Eteint le devoir. L'appelant commit.
 

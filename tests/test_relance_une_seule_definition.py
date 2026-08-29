@@ -266,3 +266,48 @@ async def test_le_chat_voit_la_date_de_relance(db_session: AsyncSession):
     fiche = charge.get("contacts", [charge])[0] if isinstance(charge, dict) else charge[0]
     assert "next_follow_up" in fiche, "le modèle doit voir la date décidée"
     assert fiche["next_follow_up"] is not None
+
+
+@pytest.mark.asyncio
+async def test_une_note_ne_solde_pas_la_relance(db_session: AsyncSession):
+    """Écrire une note n'est PAS avoir relancé.
+
+    Défaut introduit le 29/08 : `solder_la_relance` s'exécutait pour tous les
+    types d'activité. Consigner une correction (« CORRECTION de ma note de ce
+    matin ») éteignait silencieusement un devoir. Seul un GESTE vers la
+    personne solde : appel, e-mail, rendez-vous.
+    """
+    from app.models.schemas import CreateActivityRequest
+    from app.routers.crm import create_activity
+
+    hier = datetime.now(UTC) - timedelta(days=1)
+    c = _contact(next_follow_up=hier)
+    db_session.add(c)
+    await db_session.commit()
+
+    await create_activity(
+        CreateActivityRequest(contact_id=c.id, type="note", title="CORRECTION : c'est PROPULSER"),
+        db_session,
+    )
+
+    await db_session.refresh(c)
+    assert c.next_follow_up is not None, "une note n'est pas une relance"
+
+
+@pytest.mark.asyncio
+async def test_un_geste_vers_la_personne_solde_bien(db_session: AsyncSession):
+    from app.models.schemas import CreateActivityRequest
+    from app.routers.crm import create_activity
+
+    hier = datetime.now(UTC) - timedelta(days=1)
+    for type_de_geste in ("call", "email", "meeting"):
+        c = _contact(last_name=type_de_geste, next_follow_up=hier)
+        db_session.add(c)
+        await db_session.commit()
+
+        await create_activity(
+            CreateActivityRequest(contact_id=c.id, type=type_de_geste, title="Relance"),
+            db_session,
+        )
+        await db_session.refresh(c)
+        assert c.next_follow_up is None, f"{type_de_geste} doit solder la relance"

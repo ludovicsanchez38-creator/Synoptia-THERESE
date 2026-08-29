@@ -2338,7 +2338,7 @@ async def _do_stream_response(
         if "read_file" in tool_names:
             capabilities += "- **read_file** : Lire le contenu d'un fichier indexe trouve par search_files, un seul par appel. Utilise-le des qu'on te demande ce qu'il y a DANS un fichier. S'il refuse, le fichier n'est pas consultable ici : ne devine JAMAIS son contenu.\n"
         if "read_contact" in tool_names:
-            capabilities += "- **read_contact** : Lire la fiche complete d'un contact (coordonnees, notes, stage, score, interactions). Utilise-le AU LIEU d'inventer le contexte client.\n"
+            capabilities += "- **read_contact** : Lire une fiche de contact. Elle rend des COORDONNEES (des faits), un `etat_courant` (ce que l'application a enregistre, souvent vide) et des `traces` (ce qui a ete ecrit, date, sans garantie d'actualite). N'affirme QUE `etat_courant`. S'il est vide, dis-le et cite les traces avec leur date. Deux traces qui se contredisent : dis-le, ne tranche pas. Utilise-le AU LIEU d'inventer le contexte client.\n"
         if "generate_document" in tool_names:
             capabilities += "- **generate_document** : Genere un VRAI fichier Word (docx), PowerPoint (pptx) ou Excel (xlsx) telechargeable. Utilise-le DES que l'utilisateur demande de creer/generer un document : appelle l'outil avec tout le contenu, ne redige PAS le document en clair dans le chat et ne fabrique jamais de lien.\n"
         mcp_tools = [n for n in tool_names if n not in ("web_search", "browser_navigate", *MEMORY_TOOL_NAMES, *WORKSPACE_TOOL_NAMES)]
