@@ -215,3 +215,57 @@ attendue et sa source avant d'ouvrir l'app**. Quatre épreuves :
    résumé continue d'affirmer l'état faux, on a mesuré que l'état courant est un
    paragraphe écrit à la main, pas un objet.
 
+
+---
+
+## Exécution des lots 2 et 3 (29/08, soir)
+
+**Lot 2 - une seule définition de « à relancer ».** `Contact.next_follow_up`,
+une fonction unique (`app/services/relances.py`), les deux surfaces branchées
+dessus. Une relance est une date posée et échue ; sans date, silence.
+
+La revue a rendu un **NO-GO fondé** sur la première version, en une phrase :
+« avant, un devoir inventé ; maintenant, un devoir éternel ». Rien n'écrivait
+ni ne soldait le champ. Corrigé :
+
+- `archive` sort du filtre (c'est le tombeau RGPD : l'anonymisation vide tout
+  sauf cette date, le brief aurait affiché « Relancer [ANONYMISÉ] ») ;
+- consigner une activité CRM éteint le devoir ;
+- le champ s'écrit et se lit par l'API, sinon seule une importation pouvait
+  poser une relance ;
+- tri par date, et index posé par la migration : sur une base packagée la
+  colonne serait arrivée nue ;
+- l'écran affiche la date et marque le retard ; `read_contact` l'envoie au
+  modèle.
+
+**Lot 3 - `Task.contact_id`.** Une tâche nomme la personne qu'elle concerne.
+Supprimer un contact dénoue le lien et **garde** la tâche : la supprimer ferait
+perdre du travail en silence, la laisser pointer sur un contact effacé serait
+un lien mort.
+
+**Sur les données réelles** : 17 relances échues (des décisions de Ludo) au lieu
+de 22 déduites, triées par retard, la plus ancienne au 15/03. Les 7 dates à
+venir restent portées par leurs tâches, désormais rattachées à leur contact.
+Les tâches « Relancer X » n'ont pas été supprimées : le brief ne montre que
+l'échu, et ces 7 dates n'auraient plus aucune maison.
+
+### Trois tests à moi étaient faux, et le sabotage les a trouvés
+
+1. Le test anti-jumeau se contentait de `assert callable(...)`, trivialement
+   vrai. Il passait sous un sabotage qui redonnait sa propre requête à la cloche.
+2. Le test du filtre de tâches ne créait qu'une tâche : il ne distinguait pas
+   « filtré » de « tout rendre ».
+3. Le test du tri **reste aveugle**, et c'est écrit dans sa docstring : SQLite
+   se sert de l'index et rend les lignes déjà triées. C'est en le sabotant que
+   l'index manquant en production a été découvert.
+
+Une `SyntaxError` introduite par un remplacement en masse a par ailleurs fait
+échouer le conftest, et les tests remontaient une `AttributeError` trompeuse
+que j'ai cherchée au mauvais endroit pendant plusieurs minutes.
+
+### Reste du plan
+
+Lots 4 (objet affaire), 5 (MCP, à faire **après** le 4) et 6 (rétractation,
+objets d'organisme de formation) : chantiers, pas des lots d'une journée.
+Correctifs d'un après-midi encore ouverts : le filtre `!!c.source` du panneau
+CRM, `extra_data` mort, l'absence d'indexation sémantique à l'import.
