@@ -7,7 +7,7 @@ Endpoints for memory management (contacts, projects, search).
 import json
 import logging
 import time
-from typing import Literal
+from typing import Any, Literal
 
 from app.models.database import get_session
 from app.models.entities import Contact, Conversation, FileMetadata, Project
@@ -606,6 +606,28 @@ async def get_contact(
         raise HTTPException(status_code=404, detail="Contact not found")
 
     return _contact_to_response(contact)
+
+
+@router.get("/contacts/{contact_id}/fiche")
+async def lire_la_fiche(
+    contact_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """La fiche selon le contrat de lecture, pour tout ce qui parle a un modele.
+
+    `GET /contacts/{id}` rend `ContactResponse` : c'est la forme dont
+    l'interface a besoin (le bloc `notes` s'y edite). Un MODELE, lui, doit
+    recevoir l'etat, les traces et la consigne, sinon il affirme un resume
+    perime.
+    """
+    from app.services.memory_tools import CONSIGNE_DE_LECTURE, fiche_selon_le_contrat
+
+    contact = await session.get(Contact, contact_id)
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact introuvable")
+
+    fiche = await fiche_selon_le_contrat(contact, session)
+    return {**fiche, "consigne": CONSIGNE_DE_LECTURE}
 
 
 @router.patch("/contacts/{contact_id}", response_model=ContactResponse)

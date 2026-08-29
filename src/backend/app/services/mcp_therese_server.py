@@ -38,7 +38,13 @@ TOOLS: list[dict[str, Any]] = [
     # --- CRM ---
     {
         "name": "list_contacts",
-        "description": "Liste les contacts CRM de THÉRÈSE avec filtrage optionnel.",
+        "description": (
+            "Liste les contacts CRM de THÉRÈSE avec filtrage optionnel. "
+            "ATTENTION : la liste est BORNÉE (limit, 50 par défaut, 200 au "
+            "maximum) et peut donc être tronquée sans que rien ne le signale. "
+            "N'annonce JAMAIS un nombre total de contacts à partir de cette "
+            "réponse : dis que tu en vois N, pas qu'il y en a N."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -250,7 +256,9 @@ TOOLS = [tool for tool in TOOLS if tool["name"] not in MUTATING_TOOLS]
 
 TOOL_ROUTES: dict[str, tuple[str, str]] = {
     "list_contacts": ("GET", "/api/memory/contacts"),
-    "get_contact": ("GET", "/api/memory/contacts/{contact_id}"),
+    # Le MEME contrat que le chat : sans ca, l'agent ne voyait que le resume
+    # manuscrit, sans les traces qui le contredisent (tranche D du 29/08).
+    "get_contact": ("GET", "/api/memory/contacts/{contact_id}/fiche"),
     "create_activity": ("POST", "/api/crm/activities"),
     "list_emails": ("GET", "/api/email/messages"),
     "draft_email": ("POST", "/api/email/drafts"),

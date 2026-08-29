@@ -16,6 +16,7 @@ from typing import Any
 
 from app.models.entities import (
     PHASES_OUVERTES,
+    Activity,
     Contact,
     FileMetadata,
     Prestation,
@@ -772,6 +773,70 @@ def _close_matches(folded_query: str, contacts: list[Contact]) -> list[str]:
     return [label for _, label in scored[:3]]
 
 
+async def fiche_selon_le_contrat(
+    contact: Contact, session: AsyncSession
+) -> dict[str, Any]:
+    """Le contrat de lecture d'une fiche, a UN SEUL endroit.
+
+    Le chat (`read_contact`) et la porte MCP (`get_contact`) doivent rendre la
+    MEME chose. Avant, le MCP passait par `ContactResponse` : il ne voyait que
+    le resume manuscrit, sans les traces qui le contredisent ni la consigne qui
+    interdit de trancher. La porte la plus pauvre affirmait le plus fort.
+    """
+    # Les traces EN VIGUEUR d'abord : sinon quelques annulees remplissent la
+    # fenetre de cinq et chassent la correction qui compte.
+    en_vigueur = await session.execute(
+        select(Activity)
+        .where(Activity.contact_id == contact.id, Activity.statut == "en_vigueur")
+        .order_by(Activity.created_at.desc())
+        .limit(5)
+    )
+    activites = list(en_vigueur.scalars().all())
+    if len(activites) < 5:
+        annulees = await session.execute(
+            select(Activity)
+            .where(Activity.contact_id == contact.id, Activity.statut == "annulee")
+            .order_by(Activity.created_at.desc())
+            .limit(5 - len(activites))
+        )
+        activites.extend(annulees.scalars().all())
+
+    ouvertes = await session.execute(
+        select(Prestation)
+        .where(
+            Prestation.contact_id == contact.id,
+            Prestation.phase.in_(PHASES_OUVERTES),
+        )
+        .order_by(Prestation.updated_at.desc())
+    )
+
+    return {
+        "contact_id": contact.id,
+        "display_name": contact.display_name,
+        "company": contact.company,
+        "email": contact.email,
+        "phone": contact.phone,
+        "source": contact.source,
+        "stage": contact.stage,
+        "score": contact.score,
+        "last_interaction": contact.last_interaction.isoformat()
+        if contact.last_interaction
+        else None,
+        # La date de relance DECIDEE. Sans elle, « qui dois-je relancer ? » se
+        # repondait avec le passe, ou s'inventait.
+        "next_follow_up": contact.next_follow_up.isoformat()
+        if contact.next_follow_up
+        else None,
+        # L'etat que l'APPLICATION a pose. Il DERIVE des prestations ouvertes :
+        # c'est le seul endroit ou quelqu'un a valide un intitule et un montant.
+        "etat_courant": _etat_courant(list(ouvertes.scalars().all())),
+        # Ce qui a ete ecrit, date, sans hierarchie de verite. Le bloc `notes`
+        # de la fiche y descend : sur les vraies donnees, il affirmait encore
+        # « FORGER 490 EUR » alors qu'une note plus recente disait autre chose.
+        "traces": _traces_du_contact(contact, activites),
+    }
+
+
 async def execute_read_contact(
     arguments: dict[str, Any],
     session: AsyncSession,
@@ -784,7 +849,6 @@ async def execute_read_contact(
     Permet au chat de LIRE le CRM au lieu d'halluciner le contexte client (P0-PROD-3,
     constat C9 : la fiche client ne remontait pas dans le chat).
     """
-    from app.models.entities import Activity
 
     query = (arguments.get("query") or "").strip()
     if not query:
@@ -852,63 +916,7 @@ async def execute_read_contact(
             ensure_ascii=False,
         )
 
-    contacts_out = []
-    for c in matches[:5]:
-        # Les traces EN VIGUEUR d'abord : sinon quelques annulees remplissent
-        # la fenetre de cinq et chassent la correction qui compte.
-        act_result = await session.execute(
-            select(Activity)
-            .where(Activity.contact_id == c.id, Activity.statut == "en_vigueur")
-            .order_by(Activity.created_at.desc())
-            .limit(5)
-        )
-        activities = list(act_result.scalars().all())
-        prest_result = await session.execute(
-            select(Prestation)
-            .where(
-                Prestation.contact_id == c.id,
-                Prestation.phase.in_(PHASES_OUVERTES),
-            )
-            .order_by(Prestation.updated_at.desc())
-        )
-        prestations = list(prest_result.scalars().all())
-        if len(activities) < 5:
-            annulees = await session.execute(
-                select(Activity)
-                .where(Activity.contact_id == c.id, Activity.statut == "annulee")
-                .order_by(Activity.created_at.desc())
-                .limit(5 - len(activities))
-            )
-            activities.extend(annulees.scalars().all())
-        contacts_out.append(
-            {
-                "contact_id": c.id,
-                "display_name": c.display_name,
-                "company": c.company,
-                "email": c.email,
-                "phone": c.phone,
-                "source": c.source,
-                "stage": c.stage,
-                "score": c.score,
-                "last_interaction": c.last_interaction.isoformat()
-                if c.last_interaction
-                else None,
-                # La date de relance DECIDEE. Sans elle, « qui dois-je
-                # relancer ? » se repondait avec le passe, ou s'inventait.
-                "next_follow_up": c.next_follow_up.isoformat()
-                if c.next_follow_up
-                else None,
-                # L'etat que l'APPLICATION a pose. Il DERIVE des prestations
-                # ouvertes : c'est le seul endroit ou quelqu'un a valide un
-                # intitule et un montant. Le resume manuscrit reste une trace.
-                "etat_courant": _etat_courant(prestations),
-                # Ce qui a ete ecrit, date, sans hierarchie de verite. Le bloc
-                # `notes` de la fiche y descend : sur les vraies donnees, il
-                # affirmait encore « FORGER 490 EUR » alors qu'une note plus
-                # recente disait « PROPULSER, 2 490 EUR ».
-                "traces": _traces_du_contact(c, activities),
-            }
-        )
+    contacts_out = [await fiche_selon_le_contrat(c, session) for c in matches[:5]]
 
     return json.dumps(
         {
