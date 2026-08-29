@@ -828,22 +828,41 @@ def _verify_restored_db() -> None:
     )
 
 
+
+def _membre_est_sur(dest: str | Path, nom: str) -> bool:
+    """Le membre d'archive reste-t-il DANS le dossier de destination ?
+
+    Le garde comparait des chemins par PREFIXE DE CHAINE :
+
+        str(target).startswith(str(dest_resolved))
+
+    Deux defauts, l'un qui refuse, l'autre qui laisse passer :
+    - sous Windows, `resolve()` peut rendre une forme courte (RUNNER~1) ou une
+      casse differente de celle du parent, et un membre legitime echoue - c'est
+      ce qui a rougi la CI Windows du 29/08 sur une archive que l'application
+      venait elle-meme de produire ;
+    - « /data-autre » commence par « /data » : un VOISIN passait le garde.
+
+    `Path.is_relative_to` repond exactement a la question posee.
+    """
+    racine = Path(dest).resolve()
+    cible = (Path(dest) / nom).resolve()
+    return cible == racine or cible.is_relative_to(racine)
+
+
 def _safe_extractall(tar, dest) -> None:
     """Extraction protégée contre le path traversal, compatible Python 3.11+.
 
     Utilise filter='data' (PEP 706, Python 3.12+) si disponible ; sinon valide
     chaque membre à la main (pas de chemin absolu / .. / lien)."""
-    from pathlib import Path
 
     try:
         tar.extractall(dest, filter="data")
         return
     except TypeError:
         pass  # Python < 3.12 : pas de paramètre filter
-    dest_resolved = Path(dest).resolve()
     for member in tar.getmembers():
-        target = (Path(dest) / member.name).resolve()
-        if not str(target).startswith(str(dest_resolved)) or member.issym() or member.islnk():
+        if not _membre_est_sur(dest, member.name) or member.issym() or member.islnk():
             raise HTTPException(
                 status_code=400, detail="Archive de backup non sûre (path traversal ou lien)"
             )

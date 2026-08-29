@@ -38,8 +38,13 @@ class TestLIndexNeDerivePas:
         resultat = subprocess.run(
             ["node", str(GENERATEUR)], capture_output=True, text=True, cwd=RACINE
         )
-        attendu = resultat.stdout
-        obtenu = INDEX.read_text(encoding="utf-8")
+        # Normaliser les fins de ligne : Windows rend « \r\n » et le fichier
+        # commité porte « \n ». Comparer brut faisait échouer le gate sur une
+        # plateforme et pas l'autre - même famille que l'encodage implicite
+        # corrigé le 29/08. Un gate dont le résultat dépend de la machine n'en
+        # est pas un.
+        attendu = resultat.stdout.replace("\r\n", "\n")
+        obtenu = INDEX.read_text(encoding="utf-8").replace("\r\n", "\n")
         assert obtenu == attendu, (
             "l'index a dérivé du code. Régénérer :\n"
             "  node scripts/index-des-noms.mjs > docs/INDEX-DES-NOMS.md"
