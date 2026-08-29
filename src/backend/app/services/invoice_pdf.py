@@ -79,8 +79,19 @@ def resolve_invoice_output_dir() -> str:
     except Exception as exc:
         logger.warning("Impossible de resoudre le dossier de travail depuis la DB : %s", exc)
 
-    fallback = os.path.expanduser(_DEFAULT_INVOICE_DIR)
-    logger.debug("Repertoire factures : fallback par defaut %s", fallback)
+    # Le repli suit le DOSSIER DE DONNEES, pas le dossier personnel en dur.
+    # Trouve par le controle d'integrite de la campagne du 29/08 : un persona
+    # sur installation jetable a depose FACT-2026-001.pdf dans l'installation
+    # REELLE. C'est le defaut O1 de la campagne precedente, sur un troisieme
+    # chemin - le lot 4 avait balaye les journaux et THERESE.md, pas les PDF.
+    #
+    # Le dossier de travail configure ci-dessus reste prioritaire : c'est un
+    # choix de l'utilisateur, pas une fuite.
+    from app.config import settings
+
+    base = settings.data_dir or os.path.expanduser("~/.therese")
+    fallback = os.path.join(str(base), "invoices")
+    logger.debug("Repertoire factures : repli dans le dossier de donnees %s", fallback)
     return fallback
 
 

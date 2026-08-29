@@ -144,3 +144,67 @@ class TestLaConfigurationDesJournauxEcritAuBonEndroit:
             for h in anciens:
                 if h not in logging.getLogger().handlers:
                     logging.getLogger().addHandler(h)
+
+
+class TestLesPdfSuiventAussiLeDossierDeDonnees:
+    """
+    Troisième chemin, trouvé par le contrôle d'intégrité de la campagne du
+    29/08 — pas par un test.
+
+    Le lot 4 a fait suivre `THERESE_DATA_DIR` aux journaux et à `THERESE.md`.
+    Il n'a pas balayé les PDF de facture : `resolve_invoice_output_dir()`
+    retombe sur `~/.therese/invoices` EN DUR quand aucun dossier de travail
+    n'est configuré. Un persona sur installation jetable a donc déposé
+    `FACT-2026-001.pdf` dans l'installation réelle - exactement le défaut O1
+    de la campagne précédente, sur un chemin de plus.
+
+    Sixième « jumeau » de la session : poser une règle sur deux chemins et ne
+    pas la balayer sur le troisième.
+
+    Le dossier de travail configuré reste prioritaire : c'est un choix de
+    l'utilisateur, pas une fuite.
+    """
+
+    def test_le_repli_reste_dans_l_installation_jetable(self, dossier_isole):
+        from app.services.invoice_pdf import resolve_invoice_output_dir
+
+        obtenu = Path(resolve_invoice_output_dir())
+
+        assert dossier_isole in obtenu.parents, (
+            f"PDF écrits dans {obtenu}, hors de {dossier_isole}"
+        )
+        assert Path.home() / ".therese" not in obtenu.parents, (
+            "une instance jetable dépose ses factures dans l'installation réelle"
+        )
+
+    def test_un_dossier_de_travail_configure_reste_prioritaire(
+        self, dossier_isole, tmp_path, monkeypatch
+    ):
+        """Le choix explicite de l'utilisateur passe avant le dossier de données."""
+        from app.services import invoice_pdf
+
+        choisi = tmp_path / "mes-documents"
+        choisi.mkdir()
+
+        class _Pref:
+            value = str(choisi)
+
+        class _Res:
+            def scalar_one_or_none(self):
+                return _Pref()
+
+        class _Session:
+            def execute(self, *a, **k):
+                return _Res()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        monkeypatch.setattr(
+            "app.models.database.get_sync_session", lambda: _Session()
+        )
+        obtenu = Path(invoice_pdf.resolve_invoice_output_dir())
+        assert obtenu == choisi / "factures"
