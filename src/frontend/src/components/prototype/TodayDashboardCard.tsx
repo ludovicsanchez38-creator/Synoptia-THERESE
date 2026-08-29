@@ -1,4 +1,13 @@
 import { useState } from 'react';
+import {
+  libelleDuRepli,
+  lireLeReglage,
+  MOTS_DU_VARIATEUR,
+  REGLAGE_PAR_DEFAUT,
+  ecrireLeReglage,
+  seuilDuReglage,
+  type ReglageDuBrief,
+} from '../../lib/variateurDuBrief';
 import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
@@ -78,9 +87,30 @@ export function TodayDashboardCard({
 }) {
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
   // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
-  // que sur un autre écran.
+  // que sur un autre écran. Depuis le 29/08, le seuil est réglable.
   const [toutAfficher, setToutAfficher] = useState(false);
-  const visibleItems = toutAfficher ? items : items.slice(0, 6);
+  const jour = resource.status === 'ready' ? resource.data.date : null;
+  const [reglage, setReglage] = useState<ReglageDuBrief>(REGLAGE_PAR_DEFAUT);
+  const [jourConnu, setJourConnu] = useState<string | null>(null);
+  // Le réglage vit et meurt avec la journée civile du backend : dès qu'elle
+  // change, on repart du défaut sans attendre un remontage.
+  if (jour !== null && jour !== jourConnu) {
+    setJourConnu(jour);
+    setReglage(lireLeReglage(jour));
+    setToutAfficher(false);
+  }
+
+  const seuil = seuilDuReglage(reglage);
+  const visibleItems = toutAfficher || seuil === null ? items : items.slice(0, seuil);
+  const replies = items.slice(visibleItems.length);
+  const retardsReplies = replies.filter((item) => item.urgent).length;
+
+  function choisirLeReglage(valeur: ReglageDuBrief) {
+    setReglage(valeur);
+    // Le réglage l'emporte sur une expansion ponctuelle déjà faite.
+    setToutAfficher(false);
+    if (jour !== null) ecrireLeReglage(jour, valeur);
+  }
 
   return (
     <section
@@ -104,6 +134,43 @@ export function TodayDashboardCard({
         </div>
         <BoutonOuvrirLaVue vue="calendar" onOuvrir={() => onOpenView('calendar')} />
       </div>
+
+      {/* Le variateur (plan du 29/08). Les trois mots sont écrits : une pastille
+          muette, c'est « des petits dessins sans nom, je n'ose pas ». Il
+          n'apparaît que lorsqu'il a de quoi replier, pour ne pas offrir une
+          commande sans effet. */}
+      {resource.status === 'ready' && items.length > 2 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+          <span id="variateur-brief-libelle" className="text-xs text-text-muted">
+            Aujourd’hui, montre-moi
+          </span>
+          <div
+            role="radiogroup"
+            aria-labelledby="variateur-brief-libelle"
+            className="flex items-center gap-1 rounded-[9px] border border-border bg-surface-2 p-0.5"
+          >
+            {MOTS_DU_VARIATEUR.map(({ valeur, mot }) => (
+              <label
+                key={valeur}
+                className={`cursor-pointer rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors ${
+                  reglage === valeur
+                    ? 'bg-surface text-text shadow-[0_1px_2px_rgba(16,28,54,0.12)]'
+                    : 'text-text-muted hover:text-text'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="variateur-brief"
+                  className="sr-only"
+                  checked={reglage === valeur}
+                  onChange={() => choisirLeReglage(valeur)}
+                />
+                {mot}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       {resource.status === 'loading' ? (
         <StateShell>
@@ -208,7 +275,7 @@ export function TodayDashboardCard({
               onClick={() => setToutAfficher(true)}
               className="w-full px-4 py-3 text-center text-xs font-semibold text-accent hover:bg-surface-2"
             >
-              Voir les {items.length - visibleItems.length} autres éléments
+              {libelleDuRepli(replies.length, retardsReplies)}
             </button>
           )}
         </div>

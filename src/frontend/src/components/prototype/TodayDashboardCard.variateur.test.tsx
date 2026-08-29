@@ -1,0 +1,248 @@
+/**
+ * Le variateur du brief du jour (plan du 29/08/2026).
+ *
+ * Trois mots dans l'en-tête règlent combien de lignes le brief développe.
+ * Rien ne disparaît : le reste est replié, et le repli annonce les retards.
+ *
+ * Ce que ces tests garantissent, et pourquoi :
+ *  - le défaut est le comportement d'aujourd'hui (personne ne voit de
+ *    changement sans avoir fait un geste) ;
+ *  - le sous-titre continue de compter le TOTAL, jamais les lignes visibles ;
+ *  - aucun retard ne disparaît en silence ;
+ *  - la valeur meurt avec la journée civile du backend, pas avec un
+ *    `new Date()` du navigateur (leçon BUG-125).
+ */
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DashboardTask, TodayDashboard } from '../../services/api/dashboard';
+import { installLocalStorageStub } from '../../test/localStorage-stub';
+import { TodayDashboardCard } from './TodayDashboardCard';
+
+const JOUR = '2026-07-13';
+
+function tache(index: number, enRetard: boolean): DashboardTask {
+  return {
+    id: `t${index}`,
+    title: `Tâche ${index}`,
+    status: 'todo',
+    priority: 'high',
+    due_date: enRetard ? '2026-07-01' : '2026-07-20',
+    project_id: null,
+  };
+}
+
+/** `nbRetards` tâches en retard, puis des tâches à venir, pour `total` lignes. */
+function dashboard(total: number, nbRetards: number, date = JOUR): TodayDashboard {
+  const taches = Array.from({ length: total }, (_, i) => tache(i + 1, i < nbRetards));
+  return {
+    date,
+    events: [],
+    urgent_tasks: taches,
+    due_follow_ups: [],
+    overdue_invoices: [],
+    stale_prospects: [],
+    summary: {
+      events_count: 0, tasks_count: total, follow_ups_count: 0,
+      invoices_count: 0, prospects_count: 0,
+    },
+  };
+}
+
+function afficher(data: TodayDashboard) {
+  return render(
+    <TodayDashboardCard
+      resource={{ status: 'ready', error: null, data }}
+      onRetry={vi.fn()}
+      onOpenView={vi.fn()}
+    />,
+  );
+}
+
+function lignesVisibles(): number {
+  return screen.getAllByText(/^Tâche \d+$/).length;
+}
+
+describe('Variateur du brief - le geste', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it("garde le comportement d'aujourd'hui par défaut : six lignes, le reste replié", () => {
+    afficher(dashboard(9, 0));
+
+    expect(lignesVisibles()).toBe(6);
+    expect(screen.getByRole('button', { name: /Voir les 3 autres éléments/ })).toBeInTheDocument();
+    // Le sous-titre compte le total, pas les lignes visibles.
+    expect(screen.getByText('9 éléments issus de tes données')).toBeInTheDocument();
+  });
+
+  it('propose trois mots écrits, pas trois pastilles muettes', () => {
+    afficher(dashboard(9, 0));
+
+    const groupe = screen.getByRole('radiogroup', { name: /montre-moi/i });
+    expect(groupe).toBeInTheDocument();
+    for (const mot of ['tout', "l'essentiel", 'le minimum']) {
+      expect(screen.getByRole('radio', { name: mot })).toBeInTheDocument();
+    }
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeChecked();
+  });
+
+  it('« le minimum » développe deux lignes et replie le reste', () => {
+    afficher(dashboard(9, 0));
+
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    expect(lignesVisibles()).toBe(2);
+    expect(screen.getByRole('button', { name: /Voir les 7 autres éléments/ })).toBeInTheDocument();
+    expect(screen.getByText('9 éléments issus de tes données')).toBeInTheDocument();
+  });
+
+  it('« tout » développe la liste entière et retire le repli', () => {
+    afficher(dashboard(9, 0));
+
+    fireEvent.click(screen.getByRole('radio', { name: 'tout' }));
+
+    expect(lignesVisibles()).toBe(9);
+    expect(screen.queryByRole('button', { name: /autres éléments/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Variateur du brief - aucun retard ne disparaît en silence', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it('annonce le nombre de retards repliés', () => {
+    afficher(dashboard(9, 4));
+
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    // 4 en retard, 2 développés : 2 retards partent dans le repli, et le
+    // bouton le dit.
+    expect(
+      screen.getByRole('button', { name: /Voir les 7 autres éléments, dont 2 en retard/ }),
+    ).toBeInTheDocument();
+  });
+
+  it('ne parle pas de retard quand le repli n’en contient aucun', () => {
+    afficher(dashboard(9, 2));
+
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    const bouton = screen.getByRole('button', { name: /autres éléments/ });
+    expect(bouton).toHaveTextContent('Voir les 7 autres éléments');
+    expect(bouton).not.toHaveTextContent('en retard');
+  });
+});
+
+describe('Variateur du brief - la valeur meurt avec la journée', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it('retrouve le réglage tant que le backend annonce le même jour', () => {
+    const { unmount } = afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+    unmount();
+
+    afficher(dashboard(9, 0));
+
+    expect(screen.getByRole('radio', { name: 'le minimum' })).toBeChecked();
+    expect(lignesVisibles()).toBe(2);
+  });
+
+  it('repart du défaut dès que le backend annonce un autre jour', () => {
+    const { unmount } = afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+    unmount();
+
+    afficher(dashboard(9, 0, '2026-07-14'));
+
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeChecked();
+    expect(lignesVisibles()).toBe(6);
+  });
+
+  it('reste utilisable quand le navigateur refuse le stockage', () => {
+    // Fenêtre privée, données de site bloquées, capture de vignette : l'accès
+    // lui-même jette. Le variateur doit servir pour la séance sans planter.
+    const refus = () => {
+      throw new Error('stockage refusé');
+    };
+    vi.mocked(localStorage.getItem).mockImplementation(refus);
+    vi.mocked(localStorage.setItem).mockImplementation(refus);
+    vi.mocked(localStorage.key).mockImplementation(refus);
+
+    afficher(dashboard(9, 0));
+    expect(lignesVisibles()).toBe(6);
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+    expect(lignesVisibles()).toBe(2);
+  });
+
+  it("n'accumule pas une valeur par jour : les autres jours sont oubliés", () => {
+    const store = installLocalStorageStub();
+    store.set('therese.brief.variateur.2026-07-10', 'minimum');
+    store.set('therese.brief.variateur.2026-07-11', 'tout');
+    store.set('un.autre.reglage', 'intact');
+
+    afficher(dashboard(9, 0));
+
+    expect([...store.keys()].filter((c) => c.startsWith('therese.brief.variateur.'))).toEqual([]);
+    // Ce qui n'appartient pas au variateur n'est pas touché.
+    expect(store.get('un.autre.reglage')).toBe('intact');
+  });
+
+  it("choisir un réglage l'emporte sur une expansion déjà faite", () => {
+    afficher(dashboard(9, 0));
+
+    fireEvent.click(screen.getByRole('button', { name: /Voir les 3 autres éléments/ }));
+    expect(lignesVisibles()).toBe(9);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    // Sans quoi le geste n'aurait aucun effet visible, et le contrôle
+    // mentirait : c'est exactement la pastille placebo qu'on a refusée.
+    expect(lignesVisibles()).toBe(2);
+  });
+
+  it('« Voir les autres » est une expansion de séance, il ne change pas le réglage', () => {
+    const { unmount } = afficher(dashboard(9, 0));
+
+    fireEvent.click(screen.getByRole('button', { name: /Voir les 3 autres éléments/ }));
+    expect(lignesVisibles()).toBe(9);
+    // Le réglage n'a pas bougé.
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeChecked();
+    unmount();
+
+    afficher(dashboard(9, 0));
+    expect(lignesVisibles()).toBe(6);
+  });
+});
+
+describe("Variateur du brief - rien ne sort de l'écran", () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+    vi.mocked(fetch).mockClear();
+  });
+
+  it("ne déclenche aucun appel réseau, quelle que soit la valeur choisie", () => {
+    afficher(dashboard(9, 3));
+
+    for (const mot of ['tout', 'le minimum', "l'essentiel"]) {
+      fireEvent.click(screen.getByRole('radio', { name: mot }));
+    }
+
+    // La réduction est une projection d'affichage. Le backend continue de
+    // servir la journée entière, et le chat continue de la lire par ses
+    // outils : c'est ça, la non-interférence.
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it("n'écrit la valeur nulle part ailleurs que sous sa propre clé datée", () => {
+    const store = installLocalStorageStub();
+
+    afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    expect([...store.keys()]).toEqual(['therese.brief.variateur.2026-07-13']);
+  });
+});

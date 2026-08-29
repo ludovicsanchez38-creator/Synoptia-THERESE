@@ -13,5 +13,11 @@ export function installLocalStorageStub(): Map<string, string> {
   );
   vi.mocked(localStorage.removeItem).mockImplementation((k: string) => void store.delete(k));
   vi.mocked(localStorage.clear).mockImplementation(() => store.clear());
+  // Énumération : indispensable pour tester tout code qui balaie le stockage.
+  vi.mocked(localStorage.key).mockImplementation((i: number) => [...store.keys()][i] ?? null);
+  Object.defineProperty(localStorage, 'length', {
+    get: () => store.size,
+    configurable: true,
+  });
   return store;
 }

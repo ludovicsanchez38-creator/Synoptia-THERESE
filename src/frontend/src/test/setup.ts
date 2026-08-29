@@ -41,6 +41,11 @@ const localStorageMock = {
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
+  // `key` et `length` complètent la forme d'un Storage réel. Sans eux, tout
+  // code qui énumère le stockage (une purge, par exemple) ne s'exécute jamais
+  // sous test : la boucle ne tourne pas, et le test est vert sans rien prouver.
+  key: vi.fn(),
+  length: 0,
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
