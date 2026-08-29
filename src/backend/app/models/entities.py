@@ -95,6 +95,41 @@ class Project(SQLModel, table=True):
     deliverables: list["Deliverable"] = Relationship(back_populates="project", cascade_delete=True)
 
 
+# piste -> proposition -> gagne / perdue, puis en_cours -> terminee.
+PHASES_DE_PRESTATION = ("piste", "proposition", "gagne", "perdue", "en_cours", "terminee")
+# Celles qui font qu'une prestation compte comme un etat courant de la fiche.
+PHASES_OUVERTES = ("piste", "proposition", "gagne", "en_cours")
+
+
+class Prestation(SQLModel, table=True):
+    """Ce que Ludo vend a quelqu'un : une formation, un diagnostic, un suivi.
+
+    Ce n'est PAS une opportunite commerciale. Ludo vend des formations : une
+    negociation est une formation pas encore signee, un client actif est la
+    meme chose en cours. Separer les deux aurait garanti deux pipelines, deux
+    montants, deux etapes.
+
+    Le plus petit objet qui ne mente pas : qui, quoi, combien, ou ca en est.
+    Ni BANT, ni objections, ni score : `Contact.extra_data` a deja montre que
+    ranger une donnee sans surface pour la lire, c'est la jeter avec des
+    etapes en plus.
+    """
+
+    __tablename__ = "prestations"
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    contact_id: str = Field(foreign_key="contacts.id", index=True)
+    intitule: str
+    # Absent n'est pas zero : poser 0 affirmerait que c'est gratuit.
+    montant_ht: float | None = None
+    # piste -> proposition -> gagne/perdue, puis en_cours -> terminee.
+    # Six mots qui couvrent la vente ET le suivi, la ou le Kanban des contacts
+    # en a sept qui ne parlent que de vente.
+    phase: str = Field(default="piste", index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class Conversation(SQLModel, table=True):
     """Conversation container for messages."""
 

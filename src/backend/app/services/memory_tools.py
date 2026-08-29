@@ -14,7 +14,13 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
-from app.models.entities import Contact, FileMetadata, Project
+from app.models.entities import (
+    PHASES_OUVERTES,
+    Contact,
+    FileMetadata,
+    Prestation,
+    Project,
+)
 from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
 from app.services.qdrant import get_qdrant_service
@@ -857,6 +863,15 @@ async def execute_read_contact(
             .limit(5)
         )
         activities = list(act_result.scalars().all())
+        prest_result = await session.execute(
+            select(Prestation)
+            .where(
+                Prestation.contact_id == c.id,
+                Prestation.phase.in_(PHASES_OUVERTES),
+            )
+            .order_by(Prestation.updated_at.desc())
+        )
+        prestations = list(prest_result.scalars().all())
         if len(activities) < 5:
             annulees = await session.execute(
                 select(Activity)
@@ -883,10 +898,10 @@ async def execute_read_contact(
                 "next_follow_up": c.next_follow_up.isoformat()
                 if c.next_follow_up
                 else None,
-                # L'etat que l'APPLICATION a pose. Vide tant qu'aucun objet
-                # metier ne le porte : le resume manuscrit de la fiche n'est
-                # PAS un etat, il n'est qu'une trace parmi d'autres.
-                "etat_courant": None,
+                # L'etat que l'APPLICATION a pose. Il DERIVE des prestations
+                # ouvertes : c'est le seul endroit ou quelqu'un a valide un
+                # intitule et un montant. Le resume manuscrit reste une trace.
+                "etat_courant": _etat_courant(prestations),
                 # Ce qui a ete ecrit, date, sans hierarchie de verite. Le bloc
                 # `notes` de la fiche y descend : sur les vraies donnees, il
                 # affirmait encore « FORGER 490 EUR » alors qu'une note plus
@@ -916,6 +931,22 @@ CONSIGNE_DE_LECTURE = (
     "auteur : ne t'appuie JAMAIS dessus, mentionne-la seulement pour "
     "expliquer une correction."
 )
+
+
+def _etat_courant(prestations: list[Any]) -> dict[str, Any] | None:
+    """Ce que l'application a REELLEMENT enregistre, ou rien.
+
+    Vide tant qu'aucune prestation n'est ouverte : sans objet metier, il n'y a
+    pas d'etat, et le resume manuscrit de la fiche n'en est pas un.
+    """
+    if not prestations:
+        return None
+    return {
+        "prestations_ouvertes": [
+            {"intitule": p.intitule, "montant_ht": p.montant_ht, "phase": p.phase}
+            for p in prestations
+        ]
+    }
 
 
 def _traces_du_contact(contact: Any, activites: list[Any]) -> list[dict[str, Any]]:

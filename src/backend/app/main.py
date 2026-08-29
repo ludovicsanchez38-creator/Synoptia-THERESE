@@ -63,6 +63,7 @@ from app.routers import (
     notifications_router,  # US-004 - Notifications push in-app
     perf_router,
     personalisation_router,
+    prestations_router,
     prompts_router,  # Bibliothèque de prompts
     rgpd_router,  # Phase 6 - RGPD Compliance
     skills_router,
@@ -856,6 +857,8 @@ app.include_router(
 )  # Phase 1.2 - Setup Wizard
 app.include_router(calendar_router, prefix="/api/calendar", tags=["Calendar"])  # Phase 2
 app.include_router(tasks_router, prefix="/api/tasks", tags=["Tasks"])  # Phase 3
+# Tranche C du 29/08 : le prefixe est porte par le routeur lui-meme.
+app.include_router(prestations_router, tags=["Prestations"])
 app.include_router(invoices_router, prefix="/api/invoices", tags=["Invoices"])  # Phase 4
 
 # Phase 5: CRM

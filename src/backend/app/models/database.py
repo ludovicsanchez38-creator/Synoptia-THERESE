@@ -151,6 +151,21 @@ def apply_adhoc_migrations(db_path) -> None:
         # Plan du 29/08 : la prochaine relance est une DATE DÉCIDÉE. Sans cette
         # colonne, l'accueil continuerait de déduire un devoir d'une absence
         # d'interaction, et de l'affirmer.
+        # Tranche C du 29/08 : la prestation. `create_all` ne cree la table
+        # que sur une base neuve ; une installation existante ne l'aurait pas.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS prestations ("
+            "id TEXT PRIMARY KEY, contact_id TEXT NOT NULL, intitule TEXT NOT NULL, "
+            "montant_ht REAL, phase TEXT NOT NULL DEFAULT 'piste', "
+            "created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, "
+            "FOREIGN KEY(contact_id) REFERENCES contacts(id))"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS ix_prestations_contact_id ON prestations(contact_id)"
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS ix_prestations_phase ON prestations(phase)")
+        conn.commit()
+
         # Tranche B du 29/08 : une trace peut en annuler une autre.
         colonnes_activites = {
             row[1] for row in conn.execute("PRAGMA table_info(activities)").fetchall()

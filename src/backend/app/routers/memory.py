@@ -695,6 +695,15 @@ async def delete_contact(
         tache.contact_id = None
         session.add(tache)
 
+    # Une prestation SANS personne n'a pas de sens : ce n'est pas du travail
+    # autonome comme une tache, c'est un engagement AVEC quelqu'un.
+    from app.models.entities import Prestation
+
+    for prestation in (
+        await session.execute(select(Prestation).where(Prestation.contact_id == contact_id))
+    ).scalars().all():
+        await session.delete(prestation)
+
     # Toujours supprimer les activités liées (FK non-nullable sur Activity.contact_id)
     from app.models.entities import Activity
     activities = (await session.execute(

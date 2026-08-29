@@ -52,6 +52,7 @@ from app.routers.memory import router as memory_router
 from app.routers.notifications import router as notifications_router
 from app.routers.performance import router as perf_router
 from app.routers.personalisation import router as personalisation_router
+from app.routers.prestations import router as prestations_router
 
 # Bibliothèque de prompts prêts à l'emploi
 from app.routers.prompts import router as prompts_router
@@ -84,6 +85,7 @@ __all__ = [
     "escalation_router",
     "email_router",  # Phase 1 - ACTIVATED
     "calendar_router",  # Phase 2 - ACTIVATED
+    "prestations_router",  # Tranche C du 29/08
     "tasks_router",  # Phase 3 - ACTIVATED
     "invoices_router",  # Phase 4 - ACTIVATED
     "crm_router",  # Phase 5 - Implemented

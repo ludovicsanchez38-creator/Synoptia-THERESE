@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutDashboard, Users, Activity, UserPlus, Upload, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
+import { ListeDesPrestations } from './ListeDesPrestations';
 import { useCRMStore } from '../../stores/crmStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
@@ -264,6 +265,15 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                 </button>
               </div>
 
+              {/* Les prestations d'abord : c'est l'ETAT (ce que Ludo a
+                  enregistre), la timeline en dessous n'est que la trace de ce
+                  qui a ete ecrit. */}
+              <section className="mb-6">
+                <h3 className="mb-2 text-sm font-semibold text-text">Prestations</h3>
+                <ListeDesPrestations contactId={selectedContact!.id} />
+              </section>
+
+              <h3 className="mb-2 text-sm font-semibold text-text">Historique</h3>
               <ActivityTimeline contactId={selectedContact!.id} key={activityRefreshKey} />
 
               {showAddActivity && selectedContact && (
