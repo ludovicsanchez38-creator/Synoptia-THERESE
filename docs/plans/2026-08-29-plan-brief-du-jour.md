@@ -171,3 +171,38 @@ Ce qu'elle ne dit pas, et qu'il faut assumer : elle ne détecte rien, elle ne
 s'adapte à rien, elle ne rattrape aucune baisse. Elle sert un homme fatigué, une
 nuit blanche, une femme qui a mal, quelqu'un qui sort d'un Board pourri. C'est
 légitime. Un module qui interpréterait un corps ne l'est pas.
+
+---
+
+## Exécution, le 29/08/2026
+
+Les trois lots sont livrés (commits `bdf04552` à `930f1c17`). Six gates verts :
+ruff propre, pytest 2565/0/0, vitest 1134 sur 189 fichiers, tsc propre,
+eslint 27 warnings (plafond, 0 erreur), mypy 1001 (baseline exacte).
+
+**Ce que la revue de diff a rattrapé, et qu'il faut retenir.** Le premier
+« vert » était faux sur deux points, et les deux étaient le défaut central du
+plan revenu par une autre porte :
+
+1. **Ma garde d'affichage était au mauvais seuil.** Le variateur apparaissait
+   dès 3 éléments, alors que « tout » et « l'essentiel » ne diffèrent qu'au
+   delà de 6. De 3 à 6, deux mots sur trois faisaient la même chose : une
+   commande placebo, exactement ce que la section 1 de ce plan refuse. Le
+   contrôle n'offre désormais que les mots dont le résultat diffère.
+2. **Une radio déjà cochée n'émet pas `change`.** Revenir à « l'essentiel »
+   depuis une liste dépliée ne faisait rien. Même défaut, autre mécanisme.
+
+Trois autres corrections : la purge tournait pendant le rendu React (rejoué
+par StrictMode), le titre annonçait « Aucune priorité détectée » pendant une
+relecture (défaut antérieur au variateur), et le focus clavier se dessinait
+sur une radio d'un pixel hors écran.
+
+**Ce que la garde d'étanchéité vaut vraiment.** Elle interdit deux chemins :
+nommer le module, et lire la clé de stockage en direct. Elle vérifie aussi
+qu'aucun rappel sortant de la carte ne porte la valeur. Elle ne prouve pas la
+non-interférence dans l'absolu, et sa première version était aveugle à sa
+propre sortie principale. C'est un garde-fou, pas une preuve.
+
+**Reste ouvert, nommé.** Le reste de `src/frontend/src/components/home/` est
+mort en production (seul `SetupChecklist` est référencé, et par un test).
+Hors périmètre de ce plan.
