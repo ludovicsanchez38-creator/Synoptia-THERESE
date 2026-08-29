@@ -523,7 +523,10 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   </>
                 ) : (
                   <>
-                    <option value="accepted">Accepté</option>
+                    {/* « Accepté » est un statut de DEVIS. Le proposer ici
+                        sortait la facture de l'encours (qui ne regarde que
+                        « Envoyé » et « En retard ») : une créance de 1 200 €
+                        disparaissait par un clic de menu. */}
                     <option value="paid">Payée</option>
                     <option value="overdue">En retard</option>
                   </>

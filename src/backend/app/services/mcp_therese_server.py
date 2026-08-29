@@ -135,8 +135,12 @@ TOOLS: list[dict[str, Any]] = [
                         "type": "object",
                         "properties": {
                             "description": {"type": "string"},
-                            "quantity": {"type": "number"},
-                            "unit_price": {"type": "number"},
+                            # Bornes 0.55 : sans elles, un modele qui « corrige »
+                            # une ligne invente un avoir fantome - un encours
+                            # negatif sans qu'aucun avoir existe. On refuse le
+                            # negatif, pas la gratuite (0 est une ligne offerte).
+                            "quantity": {"type": "number", "exclusiveMinimum": 0},
+                            "unit_price": {"type": "number", "minimum": 0},
                         },
                         "required": ["description", "quantity", "unit_price"],
                     },

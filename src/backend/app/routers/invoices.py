@@ -228,6 +228,15 @@ async def get_invoice(
     return _invoice_to_response(invoice)
 
 
+# Les statuts, par type de document. Un devis s'accepte ou se refuse ; une
+# facture s'envoie, se paie ou tombe en retard. Melanger les deux fait sortir
+# une creance de l'encours (`sent`/`overdue` seulement).
+STATUTS_DE_DEVIS = frozenset(
+    {"draft", "sent", "accepted", "refused", "expired", "converted", "cancelled"}
+)
+STATUTS_DE_FACTURE = frozenset({"draft", "sent", "paid", "overdue", "cancelled"})
+
+
 @router.post("", response_model=InvoiceResponse, include_in_schema=False)
 @router.post("/", response_model=InvoiceResponse)
 async def create_invoice(
@@ -331,6 +340,27 @@ async def update_invoice(
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # 0.55 : `status` etait une chaine LIBRE sur cette route generique. Poser
+    # « accepted » (un statut de DEVIS) sur une facture la sortait de l'encours,
+    # qui ne regarde que `sent` et `overdue` : une creance de 1 200 EUR
+    # disparaissait par un clic de menu, sans passer par le chat. La route
+    # dediee `/devis-status` etait deja protegee ; c'est la porte generique qui
+    # manquait. Un statut invente passait aussi - exactement ce que THERESE
+    # avait halluciné en 0.53 (« en attente », « partiellement paye »).
+    if request.status is not None:
+        autorises = (
+            STATUTS_DE_DEVIS if invoice.document_type == "devis" else STATUTS_DE_FACTURE
+        )
+        if request.status not in autorises:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Statut « {request.status} » invalide pour un document de type "
+                    f"« {invoice.document_type} ». Valeurs acceptées : "
+                    f"{', '.join(sorted(autorises))}"
+                ),
+            )
 
     # Mise à jour des champs
     if request.contact_id is not None:
@@ -841,7 +871,7 @@ async def update_devis_status(
     Statuts valides pour un devis : draft, sent, accepted, refused, expired, converted, cancelled.
     """
     new_status = request.get("status", "")
-    valid_devis_statuses = {"draft", "sent", "accepted", "refused", "expired", "converted", "cancelled"}
+    valid_devis_statuses = STATUTS_DE_DEVIS
 
     if new_status not in valid_devis_statuses:
         raise HTTPException(

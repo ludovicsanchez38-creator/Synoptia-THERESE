@@ -923,12 +923,25 @@ class InvoiceResponse(BaseModel):
 
 
 class InvoiceLineRequest(BaseModel):
-    """Request pour une ligne de facture."""
+    """Request pour une ligne de facture.
+
+    Bornes posées en 0.55 : le garde-fou n'existait que dans le formulaire
+    (`InvoiceForm.tsx` refuse quantity < 1 et unit_price_ht < 0). L'API et le
+    serveur MCP acceptaient tout, et un montant négatif produit un avoir
+    FANTÔME - un encours négatif sans qu'aucun avoir existe.
+
+    Un avoir est un `document_type` à part entière, avec un `total_ttc` stocké
+    positif : le borner ici ne l'empêche pas.
+
+    On refuse le négatif, pas la gratuité : une ligne offerte à 0 EUR reste
+    possible, l'écran l'autorise. Et la quantité accepte le fractionnaire
+    (une demi-journée de formation), seulement pas le zéro ni le négatif.
+    """
 
     description: str
-    quantity: float = 1.0
-    unit_price_ht: float
-    tva_rate: float = 20.0  # Default TVA française normale
+    quantity: float = Field(default=1.0, gt=0)
+    unit_price_ht: float = Field(ge=0)
+    tva_rate: float = Field(default=20.0, ge=0)  # Default TVA française normale
 
 
 class CreateInvoiceRequest(BaseModel):
