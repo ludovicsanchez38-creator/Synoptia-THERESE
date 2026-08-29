@@ -4,4 +4,4 @@ THÉRÈSE v2 - Backend Application Package
 L'assistante souveraine des entrepreneurs français.
 """
 
-__version__ = "0.56.0"
+__version__ = "0.57.0"
