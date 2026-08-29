@@ -151,3 +151,66 @@ class TestLaCleIaSuitLaMemeRegle:
         corps = (await client.get("/api/dashboard/setup-status")).json()
 
         assert "cle_ia" not in corps["indisponibles"]
+
+
+class TestLEtatDeFacturationEstConnuDesLAccueil:
+    """
+    L'accueil doit savoir si l'installation a déjà facturé, sans ouvrir
+    Facturer.
+
+    Campagne dix personas : huit sur dix ne se reconnaissent pas dans le
+    premier écran, où « Facturer » figure au quatrième rang d'une installation
+    vide. Le verbe doit attendre son tour - et revenir dès qu'il existe une
+    pièce OU que les infos de société sont renseignées.
+
+    `billing_complete` seul ne suffit pas : le profil émetteur ne conditionne
+    que la génération du PDF, pas la création d'une facture. Un artisan ayant
+    trente pièces sans profil complété perdrait le verbe à chaque redémarrage.
+    """
+
+    @pytest.mark.asyncio
+    async def test_une_installation_neuve_n_a_pas_de_piece(
+        self, client: AsyncClient
+    ) -> None:
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+        assert corps["has_invoices"] is False
+
+    @pytest.mark.asyncio
+    async def test_une_piece_creee_se_voit_depuis_l_accueil(
+        self, client: AsyncClient
+    ) -> None:
+        contact = await client.post(
+            "/api/memory/contacts", json={"first_name": "Client", "last_name": "Accueil"}
+        )
+        piece = await client.post(
+            "/api/invoices/",
+            json={
+                "contact_id": contact.json()["id"],
+                "document_type": "devis",
+                "lines": [{"description": "Prestation", "quantity": 1,
+                           "unit_price_ht": 100.0, "tva_rate": 20.0}],
+            },
+        )
+        assert piece.status_code == 200, piece.text
+
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+        assert corps["has_invoices"] is True, (
+            "un devis compte : quelqu'un qui a chiffré une prestation a "
+            "engagé la facturation"
+        )
+
+    @pytest.mark.asyncio
+    async def test_une_lecture_en_panne_est_nommee_pas_muette(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Même règle que les autres champs : ne pas confondre « vide » et
+        « on n'a pas pu savoir »."""
+        from app.routers import dashboard
+
+        async def lecture_en_panne(*a, **k):
+            raise RuntimeError("table illisible")
+
+        monkeypatch.setattr(dashboard, "_a_des_pieces_de_facturation", lecture_en_panne)
+
+        corps = (await client.get("/api/dashboard/setup-status")).json()
+        assert "facturation_pieces" in corps["indisponibles"]

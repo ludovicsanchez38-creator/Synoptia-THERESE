@@ -19,7 +19,7 @@ import type { SetupStatus } from '../../services/api/dashboard';
 const TOUT_BRANCHE: SetupStatus = {
   has_calendar: true,
   has_email: true,
-  billing_complete: true,
+  billing_complete: true, has_invoices: false,
   has_llm_key: true,
   indisponibles: [],
 };

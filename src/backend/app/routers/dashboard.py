@@ -150,10 +150,24 @@ async def get_setup_status(session: AsyncSession = Depends(get_session)):
         has_llm_key = False
         indisponibles.append("cle_ia")
 
+    # 0.55 : l'accueil masque le verbe « Facturer » tant que rien n'a été
+    # facturé - huit personas sur dix ne se reconnaissaient pas dans un premier
+    # écran qui les habille en commerçant. `billing_complete` ne suffit pas :
+    # le profil emetteur ne conditionne que le PDF, pas la creation d'une
+    # piece. Un artisan avec trente factures et sans profil perdrait le verbe
+    # a chaque redemarrage.
+    try:
+        has_invoices = await _a_des_pieces_de_facturation(session)
+    except Exception as e:
+        logger.warning(f"Erreur lecture pieces de facturation (setup-status): {e}")
+        has_invoices = False
+        indisponibles.append("facturation_pieces")
+
     return {
         "has_calendar": has_calendar,
         "has_email": has_email,
         "billing_complete": billing_complete,
+        "has_invoices": has_invoices,
         "has_llm_key": has_llm_key,
         # Ce qu'on n'a PAS PU vérifier, nommément. Sans cette liste, un échec
         # de lecture sortait en `False`, indistinguable d'un « non configuré » :
@@ -169,6 +183,18 @@ async def _lire_preference_ollama(session: AsyncSession) -> bool:
         select(Preference.value).where(Preference.key == "llm_provider").limit(1)
     )
     return bool(result.scalar() == "ollama")
+
+
+async def _a_des_pieces_de_facturation(session: AsyncSession) -> bool:
+    """Au moins un devis, une facture ou un avoir enregistre.
+
+    Un DEVIS compte : quelqu'un qui a chiffre une prestation a engage la
+    facturation, meme s'il n'a pas encore emis de facture.
+    """
+    from app.models.entities import Invoice
+
+    resultat = await session.execute(select(Invoice.id).limit(1))
+    return resultat.scalar() is not None
 
 
 async def _lire_a_une_cle_ia(session: AsyncSession) -> bool:

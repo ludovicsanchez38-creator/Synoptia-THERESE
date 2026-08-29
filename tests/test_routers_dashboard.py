@@ -182,6 +182,9 @@ class TestSetupStatus:
         assert resp.json() == {
             "has_calendar": False,
             "has_email": False,
+            # 0.55 : l'accueil masque « Facturer » tant que rien n'a été
+            # facturé et que les infos de société ne sont pas renseignées.
+            "has_invoices": False,
             "billing_complete": False,
             "has_llm_key": False,
             # Rien n'est configuré, mais tout a PU être vérifié : la liste est

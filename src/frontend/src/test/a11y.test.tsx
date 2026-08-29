@@ -159,7 +159,7 @@ describe('US-013 : axe sans violation', () => {
         status={{
           has_calendar: false,
           has_email: false,
-          billing_complete: false,
+          billing_complete: false, has_invoices: false,
           has_llm_key: false, indisponibles: [],
         }}
       />

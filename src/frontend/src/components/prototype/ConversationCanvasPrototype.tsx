@@ -109,6 +109,7 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { estCoteACote, usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR, TITRES_ETABLI } from '../../lib/etabli';
+import { actionsDeLEtabli } from '../../lib/etabliDePremierLancement';
 import { actionsAuRepos } from '../../lib/paletteAuRepos';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
@@ -678,6 +679,21 @@ export function ConversationCanvasPrototype() {
   const { resource: todayResource, refresh: refreshToday } = useTodayDashboardResource();
   // B1 (0.48) : la coque charge le SetupStatus (l'état vide honnête du brief).
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
+  /**
+   * Tant que `setupStatus` n'est pas lu, on ne masque RIEN : un accueil qui
+   * retire un verbe le temps d'une requête clignote, et un verbe qui clignote
+   * est plus déroutant qu'un verbe de trop.
+   */
+  const actionsVisibles = useMemo(
+    () =>
+      setupStatus === null
+        ? ACTIONS_ETABLI
+        : actionsDeLEtabli({
+            auMoinsUneFacture: setupStatus.has_invoices,
+            infosSocieteCompletes: setupStatus.billing_complete,
+          }),
+    [setupStatus],
+  );
   useEffect(() => {
     let annule = false;
     fetchSetupStatus()
@@ -1766,7 +1782,7 @@ export function ConversationCanvasPrototype() {
                   <div className="mt-9 border-t border-border pt-5">
                     <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
                     <div className="flex flex-wrap gap-2">
-                      {ACTIONS_ETABLI.map((action) => (
+                      {actionsVisibles.map((action) => (
                         <button
                           key={action.id}
                           type="button"

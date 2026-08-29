@@ -99,6 +99,12 @@ export interface SetupStatus {
   has_calendar: boolean;
   has_email: boolean;
   billing_complete: boolean;
+  /**
+   * 0.55 : au moins un devis, une facture ou un avoir enregistré. L'accueil
+   * masque le verbe « Facturer » tant que rien n'a été facturé et que les
+   * infos de société ne sont pas renseignées.
+   */
+  has_invoices: boolean;
   /** US-012 : au moins une clé LLM cloud configurée (env ou DB) */
   has_llm_key: boolean;
   /**

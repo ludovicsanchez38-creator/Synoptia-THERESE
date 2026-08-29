@@ -72,7 +72,7 @@ describe('L’état vide honnête (B1, 0.48)', () => {
   const setup = (has_email: boolean) => ({
     has_calendar: true,
     has_email,
-    billing_complete: true,
+    billing_complete: true, has_invoices: false,
     has_llm_key: true, indisponibles: []
   });
 
@@ -137,7 +137,7 @@ describe('Entrée 11 : ce qui reste à brancher se voit sur le brief', () => {
           has_llm_key: false,
           has_calendar: false,
           has_email: false,
-          billing_complete: false,
+          billing_complete: false, has_invoices: false,
           indisponibles: [],
         }}
         onSetupEmail={vi.fn()}
@@ -159,7 +159,7 @@ describe('Entrée 11 : ce qui reste à brancher se voit sur le brief', () => {
           has_llm_key: true,
           has_calendar: true,
           has_email: true,
-          billing_complete: true,
+          billing_complete: true, has_invoices: false,
           indisponibles: [],
         }}
         onSetupEmail={vi.fn()}
@@ -189,7 +189,7 @@ describe('Entrée 11b : plus aucune sortie vers l’accueil fantôme', () => {
           has_llm_key: true,
           has_calendar: true,
           has_email: true,
-          billing_complete: true,
+          billing_complete: true, has_invoices: false,
           indisponibles: [],
         }}
         onSetupEmail={vi.fn()}
@@ -214,7 +214,7 @@ describe('Entrée 11b : plus aucune sortie vers l’accueil fantôme', () => {
           has_llm_key: true,
           has_calendar: true,
           has_email: true,
-          billing_complete: true,
+          billing_complete: true, has_invoices: false,
           indisponibles: [],
         }}
         onSetupEmail={vi.fn()}
