@@ -240,3 +240,16 @@ rien casser au premier : le bug est invisible sur un test à un seul tour.
 En revanche `temperature` n'est PAS rejetée par Gemini 3, elle est acceptée
 puis ignorée - un guide de migration qui dit « strip X » ne dit pas que X
 provoque une erreur. Vérifier la conséquence, pas seulement la consigne.
+
+## Le bump de version rend obsolete l'index des noms (29/08/2026)
+
+`docs/INDEX-DES-NOMS.md` est genere par `scripts/index-des-noms.mjs` et porte le
+numero de version dans son titre. `tests/test_index_des_noms.py` verifie que le
+fichier commite est bien celui que le code produit.
+
+Consequence : tout bump de version cassait la CI backend, et le tag etait deja
+pousse au moment ou ca se voyait. Une suite locale verte lancee AVANT le bump ne
+dit rien de l'etat d'apres.
+
+Corrige a la 0.57.0 : `scripts/bump-version.sh` regenere l'index. Si un autre
+fichier genere venait a porter la version, l'ajouter au meme endroit.
