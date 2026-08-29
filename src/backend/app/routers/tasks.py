@@ -32,6 +32,7 @@ async def list_tasks(
     status: str | None = Query(None, description="Filter by status"),
     priority: str | None = Query(None, description="Filter by priority"),
     project_id: str | None = Query(None, description="Filter by project"),
+    contact_id: str | None = Query(None, description="Filtrer par contact"),
     limit: int = Query(200, ge=1, le=1000, description="Nombre max de tâches"),
     offset: int = Query(0, ge=0, description="Décalage de pagination"),
     session: AsyncSession = Depends(get_session),
@@ -43,6 +44,7 @@ async def list_tasks(
         - status: todo, in_progress, done, cancelled
         - priority: low, medium, high, urgent
         - project_id: UUID du projet lié
+        - contact_id: UUID du contact concerné
 
     US-016 : paginé (limit/offset, défaut 200) - la réponse était non bornée,
     des centaines de tâches terminées étaient sérialisées à chaque ouverture.
@@ -55,6 +57,8 @@ async def list_tasks(
         stmt = stmt.where(Task.priority == priority)
     if project_id:
         stmt = stmt.where(Task.project_id == project_id)
+    if contact_id:
+        stmt = stmt.where(Task.contact_id == contact_id)
 
     # Order by: uncompleted first, then by priority, then by due date
     stmt = stmt.order_by(
@@ -77,6 +81,7 @@ async def list_tasks(
             priority=task.priority,
             due_date=task.due_date.isoformat() if task.due_date else None,
             project_id=task.project_id,
+            contact_id=task.contact_id,
             tags=json.loads(task.tags) if task.tags else None,
             completed_at=task.completed_at.isoformat() if task.completed_at else None,
             created_at=task.created_at.isoformat(),
@@ -104,6 +109,7 @@ async def get_task(
         priority=task.priority,
         due_date=task.due_date.isoformat() if task.due_date else None,
         project_id=task.project_id,
+        contact_id=task.contact_id,
         tags=json.loads(task.tags) if task.tags else None,
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         created_at=task.created_at.isoformat(),
@@ -134,6 +140,7 @@ async def create_task(
         priority=request.priority,
         due_date=due_date,
         project_id=request.project_id,
+        contact_id=request.contact_id,
         tags=json.dumps(request.tags or []),
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -151,6 +158,7 @@ async def create_task(
         priority=task.priority,
         due_date=task.due_date.isoformat() if task.due_date else None,
         project_id=task.project_id,
+        contact_id=task.contact_id,
         tags=json.loads(task.tags) if task.tags else None,
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         created_at=task.created_at.isoformat(),
@@ -207,6 +215,7 @@ async def update_task(
         priority=task.priority,
         due_date=task.due_date.isoformat() if task.due_date else None,
         project_id=task.project_id,
+        contact_id=task.contact_id,
         tags=json.loads(task.tags) if task.tags else None,
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         created_at=task.created_at.isoformat(),
@@ -261,6 +270,7 @@ async def complete_task(
         priority=task.priority,
         due_date=task.due_date.isoformat() if task.due_date else None,
         project_id=task.project_id,
+        contact_id=task.contact_id,
         tags=json.loads(task.tags) if task.tags else None,
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         created_at=task.created_at.isoformat(),
@@ -294,6 +304,7 @@ async def uncomplete_task(
         priority=task.priority,
         due_date=task.due_date.isoformat() if task.due_date else None,
         project_id=task.project_id,
+        contact_id=task.contact_id,
         tags=json.loads(task.tags) if task.tags else None,
         completed_at=task.completed_at.isoformat() if task.completed_at else None,
         created_at=task.created_at.isoformat(),

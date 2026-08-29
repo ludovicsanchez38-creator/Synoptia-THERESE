@@ -242,3 +242,27 @@ async def test_on_peut_poser_et_solder_une_date_depuis_l_api(client):
 
     apres = (await client.get("/api/dashboard/today")).json()["stale_prospects"]
     assert apres == [], "solder la date doit retirer la ligne du brief"
+
+
+@pytest.mark.asyncio
+async def test_le_chat_voit_la_date_de_relance(db_session: AsyncSession):
+    """« Qui dois-je relancer ? » ne doit pas se répondre avec le passé.
+
+    `read_contact` envoyait `last_interaction` et pas la date décidée : le
+    modèle parlait de la dernière fois qu'on s'était parlé, ou inventait.
+    """
+    import json as _json
+
+    from app.services.memory_tools import execute_memory_tool
+
+    hier = datetime.now(UTC) - timedelta(days=1)
+    c = _contact(last_name="Ponzo", next_follow_up=hier)
+    db_session.add(c)
+    await db_session.commit()
+
+    brut = await execute_memory_tool("read_contact", {"query": "Ponzo"}, db_session)
+    charge = _json.loads(brut)
+
+    fiche = charge.get("contacts", [charge])[0] if isinstance(charge, dict) else charge[0]
+    assert "next_follow_up" in fiche, "le modèle doit voir la date décidée"
+    assert fiche["next_follow_up"] is not None

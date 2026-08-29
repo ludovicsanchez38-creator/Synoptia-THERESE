@@ -866,6 +866,11 @@ async def execute_read_contact(
                 "last_interaction": c.last_interaction.isoformat()
                 if c.last_interaction
                 else None,
+                # La date de relance DECIDEE. Sans elle, « qui dois-je
+                # relancer ? » se repondait avec le passe, ou s'inventait.
+                "next_follow_up": c.next_follow_up.isoformat()
+                if c.next_follow_up
+                else None,
                 "recent_activities": [
                     {
                         "type": a.type,

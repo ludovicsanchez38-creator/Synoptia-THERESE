@@ -63,6 +63,8 @@ export interface DashboardProspect {
   stage: string;
   email: string | null;
   last_interaction: string | null;
+  /** La date de relance DÉCIDÉE. C'est elle qui justifie la ligne au brief. */
+  next_follow_up: string | null;
 }
 
 export interface DashboardSummary {

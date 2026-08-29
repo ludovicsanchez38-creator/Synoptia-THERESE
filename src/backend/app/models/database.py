@@ -151,6 +151,19 @@ def apply_adhoc_migrations(db_path) -> None:
         # Plan du 29/08 : la prochaine relance est une DATE DÉCIDÉE. Sans cette
         # colonne, l'accueil continuerait de déduire un devoir d'une absence
         # d'interaction, et de l'affirmer.
+        # Lot 3 du 29/08 : une tache doit pouvoir nommer la personne qu'elle
+        # concerne, sinon « Relancer Dupont » n'est qu'une chaine de caracteres.
+        colonnes_taches = {
+            row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()
+        }
+        if colonnes_taches and "contact_id" not in colonnes_taches:
+            conn.execute("ALTER TABLE tasks ADD COLUMN contact_id TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_tasks_contact_id ON tasks(contact_id)"
+            )
+            conn.commit()
+            logger.info("Migration auto : colonne 'contact_id' ajoutée à la table tasks")
+
         colonnes_contacts = {
             row[1] for row in conn.execute("PRAGMA table_info(contacts)").fetchall()
         }

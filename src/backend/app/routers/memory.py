@@ -683,6 +683,18 @@ async def delete_contact(
 
     cascade_deleted: dict[str, int] = {}
 
+    # Une tâche est du TRAVAIL, pas une dépendance de la fiche : le lien se
+    # dénoue, la tâche reste. La supprimer ferait perdre du travail en silence,
+    # et la laisser pointer sur un contact effacé serait un lien mort.
+    from app.models.entities import Task
+
+    taches_liees = (
+        await session.execute(select(Task).where(Task.contact_id == contact_id))
+    ).scalars().all()
+    for tache in taches_liees:
+        tache.contact_id = None
+        session.add(tache)
+
     # Toujours supprimer les activités liées (FK non-nullable sur Activity.contact_id)
     from app.models.entities import Activity
     activities = (await session.execute(

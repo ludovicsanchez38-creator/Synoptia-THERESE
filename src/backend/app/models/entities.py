@@ -482,6 +482,9 @@ class Task(SQLModel, table=True):
     priority: str = "medium"  # low, medium, high, urgent
     due_date: datetime | None = None
     project_id: str | None = Field(default=None, foreign_key="projects.id", index=True)
+    # La personne que cette tache concerne. Sans ce lien, « Relancer Dupont »
+    # et le prospect Dupont sont deux objets sans rapport (plan du 29/08).
+    contact_id: str | None = Field(default=None, foreign_key="contacts.id", index=True)
     tags: str | None = None  # JSON array
     completed_at: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

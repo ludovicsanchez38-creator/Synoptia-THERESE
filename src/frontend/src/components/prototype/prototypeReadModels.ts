@@ -133,15 +133,23 @@ function eventTimestamp(event: DashboardEvent): string {
   return event.start_datetime || event.start_date || '';
 }
 
-function prospectToAttention(prospect: DashboardProspect): TodayAttentionItem {
+function prospectToAttention(prospect: DashboardProspect, aujourdHui: string): TodayAttentionItem {
+  // La date DÉCIDÉE est ce qui justifie la ligne. Sans elle affichée, le brief
+  // affirme un devoir sans dire d'où il vient (revue du 29/08).
+  const echeance = prospect.next_follow_up ? formatCivilDate(prospect.next_follow_up) : '';
+  const enRetard = isOverdue(prospect.next_follow_up, aujourdHui);
+  const morceaux = [
+    prospect.company,
+    echeance ? `relance prévue le ${echeance}` : null,
+  ].filter(Boolean) as string[];
   return {
     id: `prospect-${prospect.id}`,
     cibleId: prospect.id,
     kind: 'prospect',
     title: `Relancer ${prospect.name}`,
-    detail: [prospect.company, prospect.stage].filter(Boolean).join(' · ') || 'Contexte CRM disponible',
+    detail: morceaux.join(' · ') || 'Contexte CRM disponible',
     badge: 'CRM',
-    urgent: false,
+    urgent: enRetard,
     targetView: 'crm',
   };
 }
@@ -167,7 +175,7 @@ export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionIt
     ...engagedEvents.map(eventToAttention),
     ...otherFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
     ...otherTasks.map((task) => taskToAttention(task, data.date)),
-    ...data.stale_prospects.map(prospectToAttention),
+    ...data.stale_prospects.map((p) => prospectToAttention(p, data.date)),
   ];
 }
 

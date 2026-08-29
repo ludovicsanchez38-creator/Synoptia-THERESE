@@ -851,6 +851,7 @@ class TaskResponse(BaseModel):
     completed_at: str | None  # ISO datetime
     created_at: str  # ISO datetime
     updated_at: str  # ISO datetime
+    contact_id: str | None = None
 
 
 class CreateTaskRequest(BaseModel):
@@ -863,6 +864,7 @@ class CreateTaskRequest(BaseModel):
     due_date: str | None = None  # ISO datetime
     project_id: str | None = None
     tags: list[str] | None = None
+    contact_id: str | None = None
 
 
 class UpdateTaskRequest(BaseModel):
@@ -880,6 +882,7 @@ class UpdateTaskRequest(BaseModel):
 # =============================================================================
 # INVOICE SCHEMAS (Phase 4)
 # =============================================================================
+    contact_id: str | None = None
 
 
 class InvoiceLineResponse(BaseModel):
