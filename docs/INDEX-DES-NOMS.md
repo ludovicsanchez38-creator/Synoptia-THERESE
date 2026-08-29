@@ -104,3 +104,33 @@ ouvre les surfaces ci-dessus, il ne les documente pas.
 | Profil et espace de travail | `profile` |
 | Personnalisation | `personalization` |
 
+## Les liens entre surfaces
+
+Quelle carte de la conversation ouvre quelle vue complète. Le bouton
+porte toujours le nom de sa destination (« Ouvrir <nom> »).
+
+| Carte (dans la conversation) | Ouvre | Libellé du bouton |
+|---|---|---|
+| `AtelierConversationCard` | **Améliorer THÉRÈSE** | Ouvrir Améliorer THÉRÈSE |
+| `BoardConversationCard` | **Décision** | Ouvrir Décision |
+| `ContactsMemoryCard` | **Contacts** | Ouvrir Contacts |
+| `DeliverablesWorkspaceCanvas` | **Projets** | Ouvrir Projets |
+| `DeliverablesWorkspaceCanvas` | **Devis et factures** | Ouvrir Devis et factures |
+| `EmailConversationCard` | **Email** | Ouvrir Email |
+| `InvoiceConversationCard` | **Devis et factures** | Ouvrir Devis et factures |
+| `MeetingConversationCard` | **Agenda** | Ouvrir Agenda |
+| `TodayDashboardCard` | **Agenda** | Ouvrir Agenda |
+
+```mermaid
+graph LR
+  AtelierConversationCard --> atelier["Améliorer THÉRÈSE"]
+  BoardConversationCard --> board["Décision"]
+  ContactsMemoryCard --> memory["Contacts"]
+  DeliverablesWorkspaceCanvas --> projects["Projets"]
+  DeliverablesWorkspaceCanvas --> invoices["Devis et factures"]
+  EmailConversationCard --> email["Email"]
+  InvoiceConversationCard --> invoices["Devis et factures"]
+  MeetingConversationCard --> calendar["Agenda"]
+  TodayDashboardCard --> calendar["Agenda"]
+```
+

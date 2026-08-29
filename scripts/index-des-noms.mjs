@@ -18,7 +18,7 @@
  *
  * Usage : node scripts/index-des-noms.mjs > docs/INDEX-DES-NOMS.md
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -49,7 +49,44 @@ const groupes = Object.fromEntries(
 );
 const capacites = [...centre.matchAll(/id: '([\w-]+)', group: '(\w+)', title: '([^']+)'/g)];
 
+/**
+ * Les ARÊTES : quel contrôle mène à quelle destination.
+ *
+ * Demandé par Dr_logic-3D le 29/08 : « à partir du moment où on nomme
+ * distinctement chaque élément graphique du frontend, je peux faire une
+ * représentation graphique des interactions, sous forme de graphe ».
+ *
+ * Il ne demande pas de la documentation : il demande la MATIÈRE pour en
+ * produire lui-même. Les nœuds étaient déjà là ; voici les liens.
+ *
+ * Lues dans le code, pas recopiées : chaque carte déclare sa destination via
+ * `<BoutonOuvrirLaVue vue="…">`, et le libellé du bouton dérive de la table
+ * qui titre cette destination. Renommer une vue renomme le bouton ET cette
+ * ligne.
+ */
+function aretes() {
+  const dossier = join(RACINE, 'src/frontend/src/components/prototype');
+  const liens = [];
+  for (const fichier of readdirSync(dossier)) {
+    if (!/\.tsx$/.test(fichier) || /\.test\./.test(fichier)) continue;
+    const texte = readFileSync(join(dossier, fichier), 'utf-8');
+    for (const m of texte.matchAll(/<BoutonOuvrirLaVue\s+vue="([\w-]+)"/g)) {
+      liens.push({ depuis: fichier.replace(/\.tsx$/, ''), vers: m[1] });
+    }
+  }
+  // Une carte peut porter plusieurs boutons vers la même vue : un seul lien.
+  const vus = new Set();
+  return liens.filter((l) => {
+    const cle = `${l.depuis}->${l.vers}`;
+    if (vus.has(cle)) return false;
+    vus.add(cle);
+    return true;
+  });
+}
+
 const version = JSON.parse(lire('package.json')).version;
+
+const nomsDeDestination = { ...libellesVues, ...panneaux };
 
 const lignes = [];
 lignes.push(`# Index des noms — THÉRÈSE ${version}`);
@@ -102,5 +139,26 @@ for (const [idGroupe, nomGroupe] of Object.entries(groupes)) {
   for (const c of dedans) lignes.push(`| ${c[3]} | \`${c[1]}\` |`);
   lignes.push('');
 }
+
+lignes.push('## Les liens entre surfaces');
+lignes.push('');
+lignes.push('Quelle carte de la conversation ouvre quelle vue complète. Le bouton');
+lignes.push("porte toujours le nom de sa destination (« Ouvrir <nom> »).");
+lignes.push('');
+lignes.push('| Carte (dans la conversation) | Ouvre | Libellé du bouton |');
+lignes.push('|---|---|---|');
+for (const lien of aretes()) {
+  const nom = nomsDeDestination[lien.vers] ?? lien.vers;
+  lignes.push(`| \`${lien.depuis}\` | **${nom}** | Ouvrir ${nom} |`);
+}
+lignes.push('');
+lignes.push('```mermaid');
+lignes.push('graph LR');
+for (const lien of aretes()) {
+  const nom = nomsDeDestination[lien.vers] ?? lien.vers;
+  lignes.push(`  ${lien.depuis} --> ${lien.vers}["${nom}"]`);
+}
+lignes.push('```');
+lignes.push('');
 
 process.stdout.write(lignes.join('\n') + '\n');
