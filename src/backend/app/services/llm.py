@@ -195,6 +195,20 @@ _therese_md_content: str | None = None
 _therese_md_loaded: bool = False
 
 
+def chemins_de_recherche_therese_md() -> list[Path]:
+    """Ou chercher les consignes de personnalisation, DANS le dossier de donnees.
+
+    Le premier chemin valait `~/.therese/THERESE.md` en dur : une instance
+    jetable lisait les consignes de l'utilisateur reel. Le second, a la racine
+    du dossier personnel, reste - c'est un chemin de courtoisie documente, pas
+    une fuite d'isolation.
+    """
+    from app.config import settings
+
+    base = settings.data_dir or (Path.home() / ".therese")
+    return [Path(base) / "THERESE.md", Path.home() / "THERESE.md"]
+
+
 def load_therese_md() -> str | None:
     """Load THERESE.md from standard locations."""
     global _therese_md_content, _therese_md_loaded
@@ -202,10 +216,7 @@ def load_therese_md() -> str | None:
     if _therese_md_loaded:
         return _therese_md_content
 
-    search_paths = [
-        Path.home() / ".therese" / "THERESE.md",
-        Path.home() / "THERESE.md",
-    ]
+    search_paths = chemins_de_recherche_therese_md()
 
     for path in search_paths:
         if path.exists() and path.is_file():

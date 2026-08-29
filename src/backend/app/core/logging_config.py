@@ -145,6 +145,24 @@ class ReadableFormatter(logging.Formatter):
         return _mask_secrets(super().formatException(ei))
 
 
+def dossier_des_journaux() -> Path:
+    """Le dossier des journaux, DANS le dossier de donnees.
+
+    Il valait `~/.therese/logs` en dur. La campagne dix personas l'a demontre
+    en conditions reelles : chaque persona tournait sur une installation
+    jetable via `THERESE_DATA_DIR`, et les journaux - qui portent les arguments
+    COMPLETS des outils, donc des noms de contacts, des objets de mails, des
+    montants - atterrissaient dans l'installation reelle.
+
+    Le lot A de la 0.54 a corrige ce que l'ecran AFFIRMAIT sur l'isolation.
+    Celui-ci corrige ce que l'application FAIT.
+    """
+    from app.config import settings
+
+    base = settings.data_dir or (Path.home() / ".therese")
+    return Path(base) / "logs"
+
+
 def setup_logging() -> None:
     """Configure le logging structure pour THERESE.
 
@@ -158,7 +176,7 @@ def setup_logging() -> None:
     log_level = getattr(logging, log_level_name, logging.INFO)
 
     # Chemin des logs
-    log_dir = Path.home() / ".therese" / "logs"
+    log_dir = dossier_des_journaux()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "therese.log"
 
