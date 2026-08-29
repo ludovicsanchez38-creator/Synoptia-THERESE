@@ -52,6 +52,18 @@ describe('Étanchéité du variateur du brief', () => {
     expect(coupables).toEqual([]);
   });
 
+  it("n'est pas contournable par la clé de stockage", () => {
+    // Le test précédent cherche le nom du module. Une couche qui lirait
+    // directement `localStorage.getItem('therese.brief.variateur.…')`
+    // passerait au travers : c'est le contournement le plus court.
+    const coupables = fichiersSource(RACINE)
+      .filter((chemin) => readFileSync(chemin, 'utf-8').includes('therese.brief.variateur'))
+      .map((chemin) => relative(RACINE, chemin).split('\\').join('/'))
+      .filter((chemin) => !AUTORISES.has(chemin));
+
+    expect(coupables).toEqual([]);
+  });
+
   it("ne connaît lui-même ni le réseau, ni la mémoire, ni les outils", () => {
     const source = readFileSync(join(RACINE, 'lib/variateurDuBrief.ts'), 'utf-8');
 

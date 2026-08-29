@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   libelleDuRepli,
   lireLeReglage,
-  MOTS_DU_VARIATEUR,
+  motActif,
+  motsUtiles,
+  oublierLesAutresJours,
   REGLAGE_PAR_DEFAUT,
   ecrireLeReglage,
   seuilDuReglage,
@@ -100,6 +102,14 @@ export function TodayDashboardCard({
     setToutAfficher(false);
   }
 
+  // La purge est un effet de bord : elle n'a rien à faire dans le corps du
+  // rendu, que StrictMode rejoue et que React peut abandonner.
+  useEffect(() => {
+    if (jour !== null) oublierLesAutresJours(jour);
+  }, [jour]);
+
+  const motsOfferts = motsUtiles(items.length);
+  const motCoche = motActif(reglage, items.length);
   const seuil = seuilDuReglage(reglage);
   const visibleItems = toutAfficher || seuil === null ? items : items.slice(0, seuil);
   const replies = items.slice(visibleItems.length);
@@ -124,7 +134,9 @@ export function TodayDashboardCard({
             <Sparkles className="h-4 w-4" />
           </span>
           <div>
-            <h2 id="today-dashboard-title" className="text-base font-semibold text-text">{todayBriefTitle(items.length)}</h2>
+            <h2 id="today-dashboard-title" className="text-base font-semibold text-text">
+              {resource.status === 'ready' ? todayBriefTitle(items.length) : 'Ta journée'}
+            </h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
@@ -139,7 +151,7 @@ export function TodayDashboardCard({
           muette, c'est « des petits dessins sans nom, je n'ose pas ». Il
           n'apparaît que lorsqu'il a de quoi replier, pour ne pas offrir une
           commande sans effet. */}
-      {resource.status === 'ready' && items.length > 2 && (
+      {resource.status === 'ready' && motsOfferts.length > 1 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
           <span id="variateur-brief-libelle" className="text-xs text-text-muted">
             Aujourd’hui, montre-moi
@@ -149,7 +161,7 @@ export function TodayDashboardCard({
             aria-labelledby="variateur-brief-libelle"
             className="flex items-center gap-1 rounded-[9px] border border-border bg-surface-2 p-0.5"
           >
-            {MOTS_DU_VARIATEUR.map(({ valeur, mot }) => (
+            {motsOfferts.map(({ valeur, mot }) => (
               <label
                 key={valeur}
                 /* La radio elle-même est hors écran (`sr-only`) : sans cette
@@ -157,7 +169,7 @@ export function TodayDashboardCard({
                    invisible et personne ne saurait, au clavier, sur quel mot
                    il se trouve. */
                 className={`cursor-pointer rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-cyan ${
-                  reglage === valeur
+                  motCoche?.valeur === valeur
                     ? 'bg-surface text-text shadow-[0_1px_2px_rgba(16,28,54,0.12)]'
                     : 'text-text-muted hover:text-text'
                 }`}
@@ -166,12 +178,14 @@ export function TodayDashboardCard({
                   type="radio"
                   name="variateur-brief"
                   className="sr-only"
-                  checked={reglage === valeur}
+                  checked={motCoche?.valeur === valeur}
                   onChange={() => choisirLeReglage(valeur)}
                   /* Une radio déjà cochée n'émet pas `change` : sans ce clic,
                      revenir à « l'essentiel » depuis une liste dépliée ne
                      ferait rien, et le mot mentirait. */
-                  onClick={() => choisirLeReglage(valeur)}
+                  onClick={() => {
+                    if (motCoche?.valeur === valeur) choisirLeReglage(valeur);
+                  }}
                 />
                 {mot}
               </label>

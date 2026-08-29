@@ -39,6 +39,45 @@ export function seuilDuReglage(reglage: ReglageDuBrief): number | null {
   return SEUILS[reglage];
 }
 
+/** Combien de lignes ce réglage développerait, sur une liste de `total`. */
+export function lignesDeveloppees(reglage: ReglageDuBrief, total: number): number {
+  const seuil = SEUILS[reglage];
+  return seuil === null ? total : Math.min(seuil, total);
+}
+
+/**
+ * Les mots qui changent réellement quelque chose, pour cette liste-là.
+ *
+ * Sur une liste de 5, « tout » et « l'essentiel » développent les mêmes 5
+ * lignes : deux commandes identiques, donc l'une des deux est une placebo, et
+ * c'est précisément ce que la revue de design a refusé. On n'offre que les
+ * mots dont le résultat diffère. Quand deux mots se valent, c'est le plus
+ * modeste qui reste (« l'essentiel » plutôt que « tout »), pour ne pas
+ * promettre plus que ce qui est montré.
+ */
+export function motsUtiles(total: number): ReadonlyArray<{ valeur: ReglageDuBrief; mot: string }> {
+  const parNombreDeLignes = new Map<number, { valeur: ReglageDuBrief; mot: string }>();
+  for (const entree of MOTS_DU_VARIATEUR) {
+    parNombreDeLignes.set(lignesDeveloppees(entree.valeur, total), entree);
+  }
+  return [...parNombreDeLignes.values()];
+}
+
+/**
+ * Le mot à cocher pour un réglage donné.
+ *
+ * Un réglage stocké peut ne plus être offert (« tout » sur une liste de 5).
+ * On coche alors le mot qui produit exactement le même écran : l'affichage ne
+ * ment pas, et la case ne reste pas vide.
+ */
+export function motActif(
+  reglage: ReglageDuBrief,
+  total: number,
+): { valeur: ReglageDuBrief; mot: string } | undefined {
+  const lignes = lignesDeveloppees(reglage, total);
+  return motsUtiles(total).find((entree) => lignesDeveloppees(entree.valeur, total) === lignes);
+}
+
 const PREFIXE = 'therese.brief.variateur';
 
 function estUnReglage(valeur: unknown): valeur is ReglageDuBrief {
@@ -51,8 +90,9 @@ function estUnReglage(valeur: unknown): valeur is ReglageDuBrief {
  * Sans ça, une valeur par jour s'accumulerait en silence, et une accumulation
  * sans restitution est déjà un historique. Il n'y en aura pas.
  */
-function oublierLesAutresJours(jour: string): void {
+export function oublierLesAutresJours(jour: string): void {
   const aJeter: string[] = [];
+  try {
   for (let i = 0; i < window.localStorage.length; i += 1) {
     const cle = window.localStorage.key(i);
     if (cle && cle.startsWith(`${PREFIXE}.`) && cle !== `${PREFIXE}.${jour}`) {
@@ -60,6 +100,9 @@ function oublierLesAutresJours(jour: string): void {
     }
   }
   for (const cle of aJeter) window.localStorage.removeItem(cle);
+  } catch {
+    // Stockage refusé : rien à purger, rien à signaler.
+  }
 }
 
 /**
@@ -69,7 +112,6 @@ function oublierLesAutresJours(jour: string): void {
  */
 export function lireLeReglage(jour: string): ReglageDuBrief {
   try {
-    oublierLesAutresJours(jour);
     const brut = window.localStorage.getItem(`${PREFIXE}.${jour}`);
     return estUnReglage(brut) ? brut : REGLAGE_PAR_DEFAUT;
   } catch {
@@ -81,6 +123,10 @@ export function lireLeReglage(jour: string): ReglageDuBrief {
 
 export function ecrireLeReglage(jour: string, reglage: ReglageDuBrief): void {
   try {
+    // Purger aussi ici : sans ça, une fenêtre restée sur la veille pourrait
+    // réécrire sa clé après qu'une autre l'a effacée, et deux jours
+    // coexisteraient jusqu'à la prochaine lecture.
+    oublierLesAutresJours(jour);
     window.localStorage.setItem(`${PREFIXE}.${jour}`, reglage);
   } catch {
     // Rien à signaler : ce réglage ne porte aucune donnée, et son oubli ne

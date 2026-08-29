@@ -238,7 +238,47 @@ describe("Variateur du brief - rien ne sort de l'écran", () => {
     vi.mocked(fetch).mockClear();
   });
 
-  it("ne déclenche aucun appel réseau, quelle que soit la valeur choisie", () => {
+  it("ne passe la valeur à aucun des rappels sortants de la carte", () => {
+    // La liste blanche du test d'architecture exempte CETTE carte, puisqu'elle
+    // détient la valeur. C'est donc ici, et nulle part ailleurs, qu'elle
+    // pourrait la faire sortir : par un rappel remontant à la coque.
+    const rappels = {
+      onRetry: vi.fn(),
+      onOpenView: vi.fn(),
+      onOpenItem: vi.fn(),
+      onSetupEmail: vi.fn(),
+    };
+    render(
+      <TodayDashboardCard resource={{ status: 'ready', error: null, data: dashboard(9, 2) }} {...rappels} />,
+    );
+
+    for (const mot of ['tout', 'le minimum', "l'essentiel"]) {
+      fireEvent.click(screen.getByRole('radio', { name: mot }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: /autres éléments/ }));
+
+    for (const rappel of Object.values(rappels)) {
+      expect(rappel).not.toHaveBeenCalled();
+    }
+
+    // Et quand un rappel part pour une vraie raison, il ne porte pas la valeur.
+    // Il faut emprunter TOUTES les sorties de la carte, pas seulement celle
+    // qu'on a en tête : la première version de ce test ne cliquait pas le
+    // bouton Agenda, et un sabotage qui faisait fuir la valeur par là passait.
+    fireEvent.click(screen.getAllByText(/^Tâche \d+$/)[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Agenda/ }));
+    const argumentsSortis = JSON.stringify([
+      rappels.onRetry.mock.calls,
+      rappels.onOpenView.mock.calls,
+      rappels.onOpenItem.mock.calls,
+      rappels.onSetupEmail.mock.calls,
+    ]);
+    for (const valeur of ['tout', 'essentiel', 'minimum']) {
+      expect(argumentsSortis).not.toContain(valeur);
+    }
+  });
+
+  it("ne déclenche aucun appel réseau depuis la carte, quelle que soit la valeur choisie", () => {
     afficher(dashboard(9, 3));
 
     for (const mot of ['tout', 'le minimum', "l'essentiel"]) {
@@ -258,5 +298,116 @@ describe("Variateur du brief - rien ne sort de l'écran", () => {
     fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
 
     expect([...store.keys()]).toEqual(['therese.brief.variateur.2026-07-13']);
+  });
+});
+
+describe('Variateur du brief - aucun mot sans effet (revue Soso, P1)', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it("n'offre que les mots qui changent quelque chose", () => {
+    // Avec 5 éléments, « tout » et « l'essentiel » afficheraient les mêmes 5
+    // lignes : deux commandes identiques, donc une placebo. On n'en propose
+    // qu'une.
+    afficher(dashboard(5, 0));
+
+    expect(screen.queryByRole('radio', { name: 'tout' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'le minimum' })).toBeInTheDocument();
+  });
+
+  it('offre les trois mots dès que les trois diffèrent', () => {
+    afficher(dashboard(7, 0));
+
+    for (const mot of ['tout', "l'essentiel", 'le minimum']) {
+      expect(screen.getByRole('radio', { name: mot })).toBeInTheDocument();
+    }
+  });
+
+  it('disparaît quand il ne resterait qu’un seul mot utile', () => {
+    afficher(dashboard(2, 0));
+
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+  });
+
+  it('reste cohérent quand le réglage stocké n’est plus proposé', () => {
+    const store = installLocalStorageStub();
+    store.set('therese.brief.variateur.2026-07-13', 'tout');
+
+    // « tout » n'est pas offert à 5 éléments, mais il donne le même résultat
+    // que « l'essentiel » : c'est ce mot-là qui doit être coché.
+    afficher(dashboard(5, 0));
+
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeChecked();
+    expect(lignesVisibles()).toBe(5);
+  });
+
+  it("n'écrit qu'une fois par sélection", () => {
+    installLocalStorageStub();
+    const ecritures = vi.mocked(localStorage.setItem);
+    ecritures.mockClear();
+
+    afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    expect(ecritures).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Variateur du brief - le chargement ne ment pas (revue Soso, P2)', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it("ne titre pas « Aucune priorité détectée » pendant qu'il relit", () => {
+    render(
+      <TodayDashboardCard
+        resource={{ status: 'loading', error: null, data: null }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Aucune priorité détectée' })).not.toBeInTheDocument();
+  });
+
+  it('retrouve son réglage après un aller-retour par le chargement', () => {
+    const { rerender } = afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    rerender(
+      <TodayDashboardCard
+        resource={{ status: 'loading', error: null, data: null }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+      />,
+    );
+    rerender(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard(9, 0) }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('radio', { name: 'le minimum' })).toBeChecked();
+    expect(lignesVisibles()).toBe(2);
+  });
+
+  it("change de jour sans remontage : le réglage repart du défaut", () => {
+    const { rerender } = afficher(dashboard(9, 0));
+    fireEvent.click(screen.getByRole('radio', { name: 'le minimum' }));
+
+    rerender(
+      <TodayDashboardCard
+        resource={{ status: 'ready', error: null, data: dashboard(9, 0, '2026-07-14') }}
+        onRetry={vi.fn()}
+        onOpenView={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('radio', { name: "l'essentiel" })).toBeChecked();
+    expect(lignesVisibles()).toBe(6);
   });
 });
