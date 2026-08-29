@@ -358,13 +358,49 @@ WORKSPACE_TOOL_NAMES = {t["function"]["name"] for t in WORKSPACE_TOOLS}
 # Tool Execution
 # ============================================================
 
+async def _dossier_de_la_conversation(
+    conversation_id: str | None, session: AsyncSession
+) -> str | None:
+    """Le dossier auquel la conversation est rattachee, ou None.
+
+    ECHEC FERME, comme `_perimetre_de_conversation` : une erreur transitoire ne
+    doit pas elargir la cloison en silence. Sans conversation, sans
+    rattachement, ou en cas d'incident : None, c'est-a-dire pas de cloison -
+    mais aucun de ces cas ne PRETEND cloisonner.
+    """
+    if not conversation_id:
+        return None
+    from app.models.entities import Conversation
+
+    try:
+        conversation = await session.get(Conversation, conversation_id)
+    except Exception:
+        logger.warning("Perimetre de conversation illisible : cloison non appliquee")
+        return None
+    if conversation is None or conversation.memory_scope != "project":
+        return None
+    return str(conversation.project_id) if conversation.project_id else None
+
+
 async def execute_workspace_tool(
     tool_name: str,
     arguments: dict[str, Any],
     session: AsyncSession,
     contexte: ContexteExecution | None = None,
+    conversation_id: str | None = None,
 ) -> str:
-    """Execute a workspace tool and return the result as string."""
+    """Execute a workspace tool and return the result as string.
+
+    `conversation_id` porte le PERIMETRE : `chat.py` calculait deja
+    `_perimetre_de_conversation` pour les outils memoire, et ne le passait pas
+    ici. La cloison n'etait donc pas contournee dans les outils metier - elle
+    n'y etait pas EXPRIMABLE (campagne cinq personas, constat d'Ines).
+
+    Un seul consommateur pour l'instant : l'agenda LOCAL. Factures, mails et
+    fichiers l'ignorent encore, et un test le fige pour que personne ne croie
+    la signature suffisante.
+    """
+    _dossier = await _dossier_de_la_conversation(conversation_id, session)
     if tool_name == "read_emails":
         return await _read_emails(arguments, session)
     elif tool_name == "summarize_emails":
@@ -374,9 +410,9 @@ async def execute_workspace_tool(
     elif tool_name == "search_emails":
         return await _search_emails(arguments, session)
     elif tool_name == "list_calendar_events":
-        return await _list_calendar_events(arguments, session)
+        return await _list_calendar_events(arguments, session, project_id=_dossier)
     elif tool_name == "create_calendar_event":
-        return await _create_calendar_event(arguments, session)
+        return await _create_calendar_event(arguments, session, project_id=_dossier)
     elif tool_name == "generate_document":
         return await _generate_document(arguments, session, contexte=contexte)
     elif tool_name == "search_invoices":
@@ -1179,8 +1215,14 @@ async def _search_emails(args: dict, session: AsyncSession) -> str:
         return f"Erreur lors de la recherche : {e}"
 
 
-async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
-    """List upcoming calendar events."""
+async def _list_calendar_events(
+    args: dict, session: AsyncSession, project_id: str | None = None
+) -> str:
+    """List upcoming calendar events.
+
+    `project_id` : le dossier de la conversation, quand elle est rattachee.
+    Applique au fournisseur LOCAL seulement (voir `local_provider.list_events`).
+    """
     from datetime import datetime, timedelta, timezone
 
     provider, cal_id, error = await _get_calendar_provider(session)
@@ -1198,11 +1240,15 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
     time_max = now + timedelta(days=days)
 
     try:
+        supplement = {}
+        if project_id is not None and type(provider).__name__ == "LocalCalendarProvider":
+            supplement["project_id"] = project_id
         events, _ = await provider.list_events(
             calendar_id=cal_id,
             time_min=now,
             time_max=time_max,
             max_results=50,
+            **supplement,
         )
 
         if not events:
@@ -1232,8 +1278,15 @@ async def _list_calendar_events(args: dict, session: AsyncSession) -> str:
         return f"Erreur lors de la lecture du calendrier : {e}"
 
 
-async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
-    """Create a calendar event."""
+async def _create_calendar_event(
+    args: dict, session: AsyncSession, project_id: str | None = None
+) -> str:
+    """Create a calendar event.
+
+    `project_id` : le dossier de la conversation. Les evenements crees depuis
+    une conversation rattachee le portent ; ceux d'avant la 0.56 n'en ont pas,
+    et restent visibles partout.
+    """
     from datetime import datetime
 
     from app.services.calendar.base_provider import CreateEventRequest
@@ -1265,6 +1318,7 @@ async def _create_calendar_event(args: dict, session: AsyncSession) -> str:
 
     try:
         request = CreateEventRequest(
+            project_id=project_id,
             calendar_id=cal_id,
             summary=summary,
             start=start,

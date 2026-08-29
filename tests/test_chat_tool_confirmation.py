@@ -82,6 +82,8 @@ async def test_send_email_demande_confirmation_sans_envoyer(monkeypatch):
     assert tool_confirmations.pop_pending(cid) == (
         "send_email",
         {"to": "x@y.fr", "subject": "Sujet", "body": "Corps"},
+        # 0.56 : la conversation voyage avec l'action (cloison agenda).
+        "conv1",
     )
 
     # 4. Le LLM a reçu un résultat marquant l'action comme non exécutée.
@@ -186,6 +188,8 @@ async def test_send_email_mcp_namespace_non_execute_sans_confirmation(monkeypatc
     assert tool_confirmations.pop_pending(cid) == (
         "therese__send_email",
         {"to": "x@y.fr", "subject": "S", "body": "B"},
+        # 0.56 : la conversation voyage avec l'action (cloison agenda).
+        "conv1",
     )
 
 

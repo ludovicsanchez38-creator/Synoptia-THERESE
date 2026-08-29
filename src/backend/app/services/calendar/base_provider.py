@@ -84,6 +84,7 @@ class CalendarEventDTO:
 @dataclass
 class CreateEventRequest:
     """Request to create a calendar event."""
+
     calendar_id: str
     summary: str
     start: datetime | date
@@ -95,6 +96,10 @@ class CreateEventRequest:
     attendees: list[str] = field(default_factory=list)
     recurrence: list[str] | None = None
     reminders: list[int] = field(default_factory=lambda: [30])  # Default 30 min reminder
+    # 0.56 : le dossier depuis lequel l'evenement est cree. Cloison LOCALE
+    # seulement - le fournisseur Google liste en direct chez Google, la colonne
+    # SQLite ne le filtrerait pas.
+    project_id: str | None = None
 
 
 @dataclass

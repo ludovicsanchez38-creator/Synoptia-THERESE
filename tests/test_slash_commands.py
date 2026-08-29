@@ -165,8 +165,10 @@ async def test_rdv_prepares_confirmation_without_mutation(db_session):
     confirmation_id = outcome.confirmation["confirmation_id"]
     pending = pop_pending(confirmation_id)
     assert pending is not None
-    tool_name, arguments = pending
-    await execute_workspace_tool(tool_name, arguments, db_session)
+    tool_name, arguments, conversation_id = pending
+    await execute_workspace_tool(
+        tool_name, arguments, db_session, conversation_id=conversation_id
+    )
     await db_session.commit()
     assert len((await db_session.execute(select(CalendarEvent))).scalars().all()) == 1
     assert pop_pending(confirmation_id) is None

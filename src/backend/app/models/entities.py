@@ -441,6 +441,11 @@ class CalendarEvent(SQLModel, table=True):
 
     id: str = Field(primary_key=True)  # Google event ID
     calendar_id: str = Field(foreign_key="calendars.id", index=True)
+    # 0.56 : le dossier depuis lequel l'evenement a ete cree. NULLABLE et SANS
+    # backfill - coller un evenement existant au premier dossier venu serait
+    # presomptueux, et ferait disparaitre l'agenda de tout le monde. Les
+    # evenements d'avant 0.56 restent visibles partout (fail-open sur NULL).
+    project_id: str | None = Field(default=None, foreign_key="projects.id", index=True)
     summary: str  # Titre événement
     description: str | None = None
     location: str | None = None

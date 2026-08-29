@@ -16,7 +16,7 @@ from typing import Any
 SENSITIVE_TOOL_NAMES: set[str] = {"send_email", "create_calendar_event"}
 
 # confirmation_id -> (tool_name, arguments)
-_pending: dict[str, tuple[str, dict[str, Any]]] = {}
+_pending: dict[str, tuple[str, dict[str, Any], str | None]] = {}
 
 
 def _base_tool_name(tool_name: str) -> str:
@@ -39,14 +39,25 @@ def requires_confirmation(tool_name: str) -> bool:
     return _base_tool_name(tool_name) in SENSITIVE_TOOL_NAMES
 
 
-def register_pending(tool_name: str, arguments: dict[str, Any]) -> str:
-    """Enregistre une action en attente et renvoie son identifiant."""
+def register_pending(
+    tool_name: str, arguments: dict[str, Any], conversation_id: str | None = None
+) -> str:
+    """Enregistre une action en attente et renvoie son identifiant.
+
+    `conversation_id` voyage avec l'action : c'est le CHEMIN d'Ines. Elle a
+    confirme la creation de « Seance Martin » depuis le dossier Martin ; sans
+    cette information, l'evenement se creait sans dossier et reapparaissait
+    chez Ruiz. Cloisonner le flux sans cloisonner la confirmation ne couvrirait
+    pas le cas qui a produit le constat.
+    """
     confirmation_id = uuid.uuid4().hex
-    _pending[confirmation_id] = (tool_name, dict(arguments))
+    _pending[confirmation_id] = (tool_name, dict(arguments), conversation_id)
     return confirmation_id
 
 
-def pop_pending(confirmation_id: str) -> tuple[str, dict[str, Any]] | None:
+def pop_pending(
+    confirmation_id: str,
+) -> tuple[str, dict[str, Any], str | None] | None:
     """Retourne et consomme l'action en attente (None si inconnue/déjà consommée)."""
     return _pending.pop(confirmation_id, None)
 

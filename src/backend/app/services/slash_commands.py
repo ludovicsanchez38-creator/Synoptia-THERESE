@@ -218,7 +218,9 @@ async def _do_projet(
     return f"Projet **{pname}** créé en mémoire."
 
 
-async def _prepare_rdv(rest: str, session: AsyncSession) -> SlashCommandOutcome:
+async def _prepare_rdv(
+    rest: str, session: AsyncSession, conversation_id: str | None = None
+) -> SlashCommandOutcome:
     positional, kw = _split_positional_and_kwargs(rest)
     title = positional.strip()
     if not title:
@@ -244,7 +246,9 @@ async def _prepare_rdv(rest: str, session: AsyncSession) -> SlashCommandOutcome:
         "timezone": "Europe/Paris",
         "_confirmation_destination": await get_calendar_confirmation_destination(session),
     }
-    confirmation_id = register_pending("create_calendar_event", arguments)
+    confirmation_id = register_pending(
+        "create_calendar_event", arguments, conversation_id=conversation_id
+    )
     return SlashCommandOutcome(
         content=(
             f"Rendez-vous préparé : **{title}**, le "
@@ -287,7 +291,7 @@ async def execute_slash_command_outcome(
             )
         )
     if command == "rdv":
-        return await _prepare_rdv(rest, session)
+        return await _prepare_rdv(rest, session, conversation_id)
     return SlashCommandOutcome(f"Commande inconnue : /{command}")
 
 

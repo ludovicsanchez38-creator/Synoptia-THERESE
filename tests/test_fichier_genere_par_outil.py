@@ -110,7 +110,7 @@ class TestLaCarteArriveQuandLOutilAEcrit:
     async def test_un_fichier_produit_par_l_outil_emet_une_carte(self, db_session):
         from app.services import workspace_tools
 
-        async def _faux_outil(nom, arguments, session, contexte=None):
+        async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
             if nom == "generate_document":
                 workspace_tools.record_generated_file({
                     "skill_id": None, "file_id": "f-1",
@@ -142,7 +142,7 @@ class TestLaCarteArriveQuandLOutilAEcrit:
         """Le client arrête la lecture sur `done` : après, plus rien n'atteint l'écran."""
         from app.services import workspace_tools
 
-        async def _faux_outil(nom, arguments, session, contexte=None):
+        async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
             workspace_tools.record_generated_file({
                 "file_id": "f-2", "file_name": "planning.xlsx", "format": "xlsx",
             })
@@ -204,7 +204,7 @@ class TestLaCarteArriveAussiDansLaRecursion:
     async def test_un_fichier_ecrit_au_second_tour_emet_une_carte(self, db_session):
         from app.services import workspace_tools
 
-        async def _faux_outil(nom, arguments, session, contexte=None):
+        async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
             if nom == "generate_document":
                 workspace_tools.record_generated_file({
                     "file_id": "f-3", "file_name": "planning-recursion.xlsx",

@@ -25,7 +25,7 @@ def test_register_puis_pop_rend_l_action_une_seule_fois():
     assert isinstance(cid, str) and cid
 
     action = pop_pending(cid)
-    assert action == ("send_email", {"to": "x@y.fr", "subject": "S", "body": "B"})
+    assert action == ("send_email", {"to": "x@y.fr", "subject": "S", "body": "B"}, None)
 
     # Consommée : un second pop ne rejoue pas l'action (anti-double envoi).
     assert pop_pending(cid) is None

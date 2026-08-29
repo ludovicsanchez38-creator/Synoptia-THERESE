@@ -117,6 +117,19 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
             conn.commit()
             logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+        # 0.56 : cloison de l'agenda par dossier. NULLABLE et SANS backfill -
+        # les evenements d'avant la 0.56 n'appartiennent a aucun dossier et
+        # restent visibles partout. Les coller au premier dossier venu ferait
+        # disparaitre l'agenda de tout le monde.
+        cursor = conn.execute("PRAGMA table_info(calendar_events)")
+        cal_columns = [row[1] for row in cursor.fetchall()]
+        if cal_columns and "project_id" not in cal_columns:
+            conn.execute("ALTER TABLE calendar_events ADD COLUMN project_id TEXT")
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'project_id' ajoutee a calendar_events"
+            )
+
         # P0-IA-3 : provider LLM par message (badge local/cloud)
         cursor = conn.execute("PRAGMA table_info(messages)")
         msg_columns = [row[1] for row in cursor.fetchall()]

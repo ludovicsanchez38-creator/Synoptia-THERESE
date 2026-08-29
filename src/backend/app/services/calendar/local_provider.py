@@ -172,9 +172,25 @@ class LocalCalendarProvider(CalendarProvider):
         time_max: datetime | None = None,
         max_results: int = 100,
         page_token: str | None = None,
+        project_id: str | None = None,
     ) -> tuple[list[CalendarEventDTO], str | None]:
-        """List events from a local calendar."""
+        """List events from a local calendar.
+
+        `project_id` : cloison par dossier (0.56). LOCAL SEULEMENT - le
+        fournisseur Google liste en direct chez Google, la colonne SQLite ne le
+        filtrerait pas, et pretendre le contraire serait le motif de la 0.53.
+        """
         statement = select(CalendarEvent).where(CalendarEvent.calendar_id == calendar_id)
+        # 0.56 : cloison par dossier. Depuis une conversation rattachee, on ne
+        # rend que les evenements de CE dossier - plus ceux d'avant la 0.56, qui
+        # n'en portent aucun (fail-open sur NULL, pas de backfill).
+        # Campagne cinq personas : « Seance Martin » apparaissait depuis le
+        # dossier Ruiz.
+        if project_id is not None:
+            statement = statement.where(
+                (CalendarEvent.project_id == project_id)
+                | (CalendarEvent.project_id.is_(None))
+            )
 
         # Time filtering
         if time_min:
@@ -232,6 +248,7 @@ class LocalCalendarProvider(CalendarProvider):
         event = CalendarEvent(
             id=generate_uuid(),
             calendar_id=request.calendar_id,
+            project_id=request.project_id,
             summary=request.summary,
             description=request.description,
             location=request.location,

@@ -2865,7 +2865,9 @@ async def _execute_tools_and_continue(
                 continue
             if empreinte is not None:
                 empreintes_en_attente.add(empreinte)
-            confirmation_id = register_pending(tc.name, pending_arguments)
+            confirmation_id = register_pending(
+                tc.name, pending_arguments, conversation_id=conversation_id
+            )
             confirm_chunk = StreamChunk(
                 type="confirmation_required",
                 conversation_id=conversation_id,
@@ -2994,7 +2996,12 @@ async def _execute_tools_and_continue(
                 if session is None:
                     raise RuntimeError("Database session not available for workspace tools")
                 tool_result_str = await execute_workspace_tool(
-                    tc.name, tc.arguments, session, contexte=contexte
+                    tc.name, tc.arguments, session, contexte=contexte,
+                    # 0.56 : le PERIMETRE descend enfin jusqu'aux outils metier.
+                    # Il etait calcule pour la memoire et jamais transmis ici :
+                    # la cloison n'etait pas contournee, elle n'etait pas
+                    # exprimable (campagne cinq personas, constat d'Ines).
+                    conversation_id=conversation_id,
                 )
                 execution_time = (time.time() - start_time) * 1000
 
@@ -3219,7 +3226,7 @@ async def confirm_tool(
             status_code=404, detail="Action introuvable ou déjà traitée"
         )
 
-    tool_name, arguments = action
+    tool_name, arguments, conversation_id = action
     if not request.approved:
         return {"status": "cancelled", "tool_name": tool_name}
 
@@ -3236,7 +3243,9 @@ async def confirm_tool(
             else f"Erreur lors de l'envoi : {mcp_result.error}"
         )
     else:
-        result = await execute_workspace_tool(tool_name, arguments, session)
+        result = await execute_workspace_tool(
+            tool_name, arguments, session, conversation_id=conversation_id
+        )
     return {"status": "executed", "tool_name": tool_name, "result": result}
 
 

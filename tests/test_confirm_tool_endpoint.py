@@ -12,7 +12,7 @@ from app.services.tool_confirmations import register_pending
 async def test_confirm_tool_execute_apres_validation(client, monkeypatch):
     captured: dict = {}
 
-    async def _spy(tool_name, arguments, session):
+    async def _spy(tool_name, arguments, session, conversation_id=None):
         captured["tool"] = tool_name
         captured["args"] = arguments
         return "Email envoyé à x@y.fr"
