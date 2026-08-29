@@ -151,6 +151,21 @@ def apply_adhoc_migrations(db_path) -> None:
         # Plan du 29/08 : la prochaine relance est une DATE DÉCIDÉE. Sans cette
         # colonne, l'accueil continuerait de déduire un devoir d'une absence
         # d'interaction, et de l'affirmer.
+        # Tranche B du 29/08 : une trace peut en annuler une autre.
+        colonnes_activites = {
+            row[1] for row in conn.execute("PRAGMA table_info(activities)").fetchall()
+        }
+        if colonnes_activites and "statut" not in colonnes_activites:
+            conn.execute(
+                "ALTER TABLE activities ADD COLUMN statut TEXT NOT NULL DEFAULT 'en_vigueur'"
+            )
+            conn.execute("ALTER TABLE activities ADD COLUMN remplace_id TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_activities_statut ON activities(statut)"
+            )
+            conn.commit()
+            logger.info("Migration auto : 'statut' et 'remplace_id' ajoutés à activities")
+
         # Lot 3 du 29/08 : une tache doit pouvoir nommer la personne qu'elle
         # concerne, sinon « Relancer Dupont » n'est qu'une chaine de caracteres.
         colonnes_taches = {

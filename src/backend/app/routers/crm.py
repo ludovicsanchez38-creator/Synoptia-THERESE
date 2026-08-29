@@ -52,6 +52,7 @@ from app.services.oauth import (
 from app.services.scoring import calculate_base_score, update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import func, select
 
@@ -83,6 +84,8 @@ def _activity_to_response(activity: Activity) -> ActivityResponse:
         title=activity.title,
         description=activity.description,
         extra_data=activity.extra_data,
+        statut=activity.statut,
+        remplace_id=activity.remplace_id,
         created_at=activity.created_at.isoformat(),
     )
 
@@ -164,6 +167,46 @@ async def create_activity(
     logger.info(f"Activity created: {activity.id} for contact {contact.id}")
 
     return _activity_to_response(activity)
+
+
+class AnnulationDeTrace(BaseModel):
+    """Marquer une trace comme annulée, et dire par quoi."""
+
+    statut: str  # en_vigueur | annulee
+    remplace_par_id: str | None = None
+
+
+@router.patch("/activities/{activity_id}")
+async def marquer_la_trace(
+    activity_id: str,
+    request: AnnulationDeTrace,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Annule une trace, ou la remet en vigueur.
+
+    Sans cette route, le statut serait un champ que personne ne peut poser :
+    c'est exactement le defaut de `next_follow_up` corrige le meme jour.
+    """
+    if request.statut not in ("en_vigueur", "annulee"):
+        raise HTTPException(
+            status_code=400,
+            detail="statut doit valoir 'en_vigueur' ou 'annulee'",
+        )
+    trace = await session.get(Activity, activity_id)
+    if not trace:
+        raise HTTPException(status_code=404, detail="Trace introuvable")
+    if request.remplace_par_id and request.remplace_par_id == activity_id:
+        raise HTTPException(
+            status_code=400, detail="Une trace ne peut pas s'annuler elle-meme"
+        )
+
+    trace.statut = request.statut
+    # Le pointeur ne vaut que pour une annulation : remettre en vigueur
+    # l'efface, sinon la fiche garderait un lien vers un remplacant caduc.
+    trace.remplace_id = request.remplace_par_id if request.statut == "annulee" else None
+    session.add(trace)
+    await session.commit()
+    return {"id": trace.id, "statut": trace.statut, "remplace_id": trace.remplace_id}
 
 
 @router.delete("/activities/{activity_id}")

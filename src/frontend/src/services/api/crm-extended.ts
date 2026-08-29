@@ -18,6 +18,10 @@ export interface ActivityResponse {
   description: string | null;
   extra_data: string | null;
   created_at: string;
+  /** en_vigueur | annulee. Une trace retirée par son auteur reste lisible. */
+  statut?: string;
+  /** La trace qui la remplace, quand elle a été annulée. */
+  remplace_id?: string | null;
 }
 
 export interface DeliverableResponse {

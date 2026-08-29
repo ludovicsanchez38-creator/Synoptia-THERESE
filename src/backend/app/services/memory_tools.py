@@ -848,13 +848,23 @@ async def execute_read_contact(
 
     contacts_out = []
     for c in matches[:5]:
+        # Les traces EN VIGUEUR d'abord : sinon quelques annulees remplissent
+        # la fenetre de cinq et chassent la correction qui compte.
         act_result = await session.execute(
             select(Activity)
-            .where(Activity.contact_id == c.id)
+            .where(Activity.contact_id == c.id, Activity.statut == "en_vigueur")
             .order_by(Activity.created_at.desc())
             .limit(5)
         )
-        activities = act_result.scalars().all()
+        activities = list(act_result.scalars().all())
+        if len(activities) < 5:
+            annulees = await session.execute(
+                select(Activity)
+                .where(Activity.contact_id == c.id, Activity.statut == "annulee")
+                .order_by(Activity.created_at.desc())
+                .limit(5 - len(activities))
+            )
+            activities.extend(annulees.scalars().all())
         contacts_out.append(
             {
                 "contact_id": c.id,
@@ -902,7 +912,9 @@ CONSIGNE_DE_LECTURE = (
     "N'affirme QUE ce qui est dans etat_courant. S'il est vide, dis que tu n'as "
     "pas d'etat enregistre et cite les traces en les datant. Si deux traces sont "
     "contradictoires, dis-le et ne tranche pas : la plus recente n'a pas "
-    "forcement raison."
+    "forcement raison. Une trace de statut annulee a ete retiree par son "
+    "auteur : ne t'appuie JAMAIS dessus, mentionne-la seulement pour "
+    "expliquer une correction."
 )
 
 
@@ -930,6 +942,8 @@ def _traces_du_contact(contact: Any, activites: list[Any]) -> list[dict[str, Any
                 "date": a.created_at.isoformat() if a.created_at else None,
                 "titre": a.title,
                 "texte": a.description,
+                "statut": getattr(a, "statut", "en_vigueur"),
+                "remplacee_par": getattr(a, "remplace_id", None),
             }
         )
     return traces

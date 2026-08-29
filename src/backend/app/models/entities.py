@@ -565,6 +565,11 @@ class Activity(SQLModel, table=True):
     type: str  # email, call, meeting, note, stage_change, score_change
     title: str
     description: str | None = None
+    # Une trace peut en annuler une autre. Ce n'est pas un moteur de versions :
+    # un statut et un pointeur. Les notes de Ludo se corrigent en permanence
+    # (17 des 120 notes importees portent une retractation).
+    statut: str = Field(default="en_vigueur", index=True)  # en_vigueur | annulee
+    remplace_id: str | None = Field(default=None, foreign_key="activities.id")
     extra_data: str | None = None  # JSON extra data (renamed from metadata to avoid SQLModel conflict)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

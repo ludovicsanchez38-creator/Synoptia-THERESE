@@ -1008,6 +1008,8 @@ class ActivityResponse(BaseModel):
     description: str | None
     extra_data: str | None  # JSON extra data
     created_at: str  # ISO datetime
+    statut: str = "en_vigueur"
+    remplace_id: str | None = None
 
 
 class CreateActivityRequest(BaseModel):

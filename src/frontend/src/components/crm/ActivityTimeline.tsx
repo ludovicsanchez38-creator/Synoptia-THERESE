@@ -93,6 +93,9 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
       {activities.map((activity, index) => {
         const Icon = ACTIVITY_ICONS[activity.type as keyof typeof ACTIVITY_ICONS] || FileText;
         const color = ACTIVITY_COLORS[activity.type as keyof typeof ACTIVITY_COLORS] || 'text-text-muted';
+        // Une trace retirée par son auteur reste lisible, mais elle ne doit
+        // pas se lire comme un fait courant.
+        const annulee = activity.statut === 'annulee';
 
         return (
           <motion.div
@@ -116,14 +119,28 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
             <div className="flex-1 pb-6">
               <div className="bg-surface rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-text-primary">{activity.title}</h4>
+                  <h4
+                    className={`font-medium text-text-primary${annulee ? ' line-through opacity-60' : ''}`}
+                  >
+                    {activity.title}
+                  </h4>
                   <span className="text-xs text-text-muted whitespace-nowrap ml-2">
                     {formatDate(activity.created_at)}
                   </span>
                 </div>
 
+                {/* Un texte barré ne se lit pas au lecteur d'écran : le mot
+                    doit être écrit. */}
+                {annulee && (
+                  <p className="mb-2 text-xs font-medium text-text-muted">
+                    Note annulée par son auteur
+                  </p>
+                )}
+
                 {activity.description && (
-                  <p className="text-sm text-text-muted">{activity.description}</p>
+                  <p className={`text-sm text-text-muted${annulee ? ' line-through opacity-60' : ''}`}>
+                    {activity.description}
+                  </p>
                 )}
 
                 {activity.extra_data && (
