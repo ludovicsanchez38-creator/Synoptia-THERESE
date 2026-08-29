@@ -7,11 +7,17 @@ affirme une offre que personne n'a validee. Ludo les pose, ou elles n'existent
 pas.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from app.models.database import get_session
-from app.models.entities import PHASES_DE_PRESTATION, Contact, Prestation
+from app.models.entities import (
+    PHASES_DE_PRESTATION,
+    STATUTS_DE_FINANCEMENT,
+    Contact,
+    Prestation,
+)
+from app.services.echeances import echeance_du_questionnaire_a_froid
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,12 +36,18 @@ class PrestationCreee(BaseModel):
     intitule: str
     montant_ht: float | None = None
     phase: str = "piste"
+    financeur: str | None = None
+    statut_financement: str | None = None
+    fin_le: date | None = None
 
 
 class PrestationModifiee(BaseModel):
     intitule: str | None = None
     montant_ht: float | None = None
     phase: str | None = None
+    financeur: str | None = None
+    statut_financement: str | None = None
+    fin_le: date | None = None
 
 
 def _rendre(p: Prestation) -> dict[str, Any]:
@@ -45,9 +57,35 @@ def _rendre(p: Prestation) -> dict[str, Any]:
         "intitule": p.intitule,
         "montant_ht": p.montant_ht,
         "phase": p.phase,
+        "financeur": p.financeur,
+        "statut_financement": p.statut_financement,
+        "fin_le": p.fin_le.isoformat() if p.fin_le else None,
+        # DEDUITE de la fin de formation, jamais saisie deux fois : deux
+        # champs pour un fait, c'est deux occasions de diverger.
+        "questionnaire_a_froid_le": (
+            echeance_du_questionnaire_a_froid(p.fin_le).isoformat()
+            if p.fin_le
+            else None
+        ),
         "created_at": p.created_at.isoformat(),
         "updated_at": p.updated_at.isoformat(),
     }
+
+
+def _verifier_le_financement(statut: str | None, financeur: str | None) -> None:
+    """Un statut sans financeur ne dit rien : « depose » chez qui ?"""
+    if statut is None:
+        return
+    if statut not in STATUTS_DE_FINANCEMENT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"statut_financement doit valoir l'un de : {', '.join(STATUTS_DE_FINANCEMENT)}",
+        )
+    if not (financeur or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Un statut de financement exige de nommer le financeur",
+        )
 
 
 def _verifier_la_phase(phase: str | None) -> None:
@@ -82,6 +120,7 @@ async def creer(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     _verifier_la_phase(request.phase)
+    _verifier_le_financement(request.statut_financement, request.financeur)
     if not (request.intitule or "").strip():
         raise HTTPException(status_code=400, detail="Une prestation a besoin d'un intitule")
     if await session.get(Contact, request.contact_id) is None:
@@ -92,6 +131,9 @@ async def creer(
         intitule=request.intitule.strip(),
         montant_ht=request.montant_ht,
         phase=request.phase,
+        financeur=request.financeur,
+        statut_financement=request.statut_financement,
+        fin_le=request.fin_le,
     )
     session.add(p)
     await session.commit()
@@ -110,7 +152,14 @@ async def modifier(
     if p is None:
         raise HTTPException(status_code=404, detail="Prestation introuvable")
 
-    for champ, valeur in request.model_dump(exclude_unset=True).items():
+    modifs = request.model_dump(exclude_unset=True)
+    # Le financeur peut deja etre pose : on valide l'etat APRES fusion, sinon
+    # renseigner le seul statut serait refuse a tort.
+    _verifier_le_financement(
+        modifs.get("statut_financement", p.statut_financement),
+        modifs.get("financeur", p.financeur),
+    )
+    for champ, valeur in modifs.items():
         setattr(p, champ, valeur)
     p.updated_at = datetime.now(UTC)
     session.add(p)

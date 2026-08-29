@@ -164,6 +164,28 @@ def apply_adhoc_migrations(db_path) -> None:
             "CREATE INDEX IF NOT EXISTS ix_prestations_contact_id ON prestations(contact_id)"
         )
         conn.execute("CREATE INDEX IF NOT EXISTS ix_prestations_phase ON prestations(phase)")
+        # Tranche E1 : le dossier de financement est un ETAT de la prestation,
+        # pas une entite. Un dossier sans prestation ne veut rien dire.
+        colonnes_prestations = {
+            row[1] for row in conn.execute("PRAGMA table_info(prestations)").fetchall()
+        }
+        if colonnes_prestations and "fin_le" not in colonnes_prestations:
+            conn.execute("ALTER TABLE prestations ADD COLUMN fin_le DATE")
+            conn.commit()
+        # E2 : un evenement peut etre bloque sans etre annule.
+        colonnes_events = {
+            row[1] for row in conn.execute("PRAGMA table_info(calendar_events)").fetchall()
+        }
+        if colonnes_events and "blocage" not in colonnes_events:
+            conn.execute("ALTER TABLE calendar_events ADD COLUMN blocage TEXT")
+            conn.commit()
+        if colonnes_prestations and "financeur" not in colonnes_prestations:
+            conn.execute("ALTER TABLE prestations ADD COLUMN financeur TEXT")
+            conn.execute("ALTER TABLE prestations ADD COLUMN statut_financement TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS ix_prestations_statut_financement "
+                "ON prestations(statut_financement)"
+            )
         conn.commit()
 
         # Tranche B du 29/08 : une trace peut en annuler une autre.

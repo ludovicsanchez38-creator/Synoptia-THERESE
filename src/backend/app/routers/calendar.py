@@ -11,6 +11,7 @@ Local First - Multi-Provider
 import json
 import logging
 from datetime import UTC, date, datetime
+from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.models.database import get_session
@@ -37,6 +38,7 @@ from app.services.calendar.provider_factory import (
 from app.services.calendar_service import CalendarService
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -793,6 +795,41 @@ async def get_event(
         status=event.status,
         synced_at=event.synced_at.isoformat(),
     )
+
+
+class BlocageDeSeance(BaseModel):
+    """Pourquoi cet evenement ne peut pas avoir lieu en l'etat."""
+
+    blocage: str | None = None
+
+
+@router.patch("/events/{event_id}/blocage")
+async def bloquer_un_evenement(
+    event_id: str,
+    request: BlocageDeSeance,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Bloque un evenement, ou leve le blocage.
+
+    « Bloque » n'est pas « annule » : l'OPCO qui ecrit « ne maintenez pas la
+    seance du 24 sans l'attestation » ne demande pas d'annuler. Le motif est
+    obligatoire pour poser un blocage : un booleen sans raison obligerait a se
+    souvenir.
+    """
+    evenement = await session.get(CalendarEvent, event_id)
+    if evenement is None:
+        raise HTTPException(status_code=404, detail="Evenement introuvable")
+
+    motif = (request.blocage or "").strip()
+    if request.blocage is not None and not motif:
+        raise HTTPException(
+            status_code=400, detail="Un blocage doit dire POURQUOI"
+        )
+
+    evenement.blocage = motif or None
+    session.add(evenement)
+    await session.commit()
+    return {"id": evenement.id, "blocage": evenement.blocage, "status": evenement.status}
 
 
 @router.post("/events")

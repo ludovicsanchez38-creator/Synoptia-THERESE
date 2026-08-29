@@ -4,7 +4,7 @@ THÉRÈSE v2 - SQLModel Entities
 Database models for structured data storage.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Optional
 from uuid import uuid4
 
@@ -99,6 +99,9 @@ class Project(SQLModel, table=True):
 PHASES_DE_PRESTATION = ("piste", "proposition", "gagne", "perdue", "en_cours", "terminee")
 # Celles qui font qu'une prestation compte comme un etat courant de la fiche.
 PHASES_OUVERTES = ("piste", "proposition", "gagne", "en_cours")
+# Le parcours d'un dossier chez un financeur (OPCO, AFDAS, Atlas, FIFPL...).
+# C'est ce que les notes de Ludo corrigent le plus souvent.
+STATUTS_DE_FINANCEMENT = ("depose", "valide", "refuse", "a_retravailler", "solde")
 
 
 class Prestation(SQLModel, table=True):
@@ -126,6 +129,14 @@ class Prestation(SQLModel, table=True):
     # Six mots qui couvrent la vente ET le suivi, la ou le Kanban des contacts
     # en a sept qui ne parlent que de vente.
     phase: str = Field(default="piste", index=True)
+    # Le financeur, quand il y en a un. La plupart des prestations n'en ont
+    # pas : laisser vide plutot que d'affirmer « autofinance ».
+    financeur: str | None = None
+    statut_financement: str | None = Field(default=None, index=True)
+    # La fin de formation, d'ou court le questionnaire a froid (Qualiopi).
+    # Sans elle, aucune echeance n'est annoncee : une date reglementaire
+    # devinee est pire qu'une date absente.
+    fin_le: date | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -495,6 +506,12 @@ class CalendarEvent(SQLModel, table=True):
     attendees: str | None = None  # JSON array d'emails
     recurrence: str | None = None  # JSON array de règles RRULE
     status: str = "confirmed"  # confirmed, tentative, cancelled
+    # « Bloque » n'est PAS « annule ». Annule : ca n'aura pas lieu. Bloque :
+    # ca ne peut pas avoir lieu en l'etat, et il y a quelque chose a faire.
+    # L'OPCO qui ecrit « ne maintenez pas la seance du 24 sans l'attestation »
+    # ne dit pas d'annuler. Le motif est obligatoire : un booleen sans raison
+    # obligerait Ludo a se souvenir.
+    blocage: str | None = None
     synced_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Relationships

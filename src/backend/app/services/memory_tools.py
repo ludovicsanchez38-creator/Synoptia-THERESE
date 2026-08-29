@@ -951,7 +951,13 @@ def _etat_courant(prestations: list[Any]) -> dict[str, Any] | None:
         return None
     return {
         "prestations_ouvertes": [
-            {"intitule": p.intitule, "montant_ht": p.montant_ht, "phase": p.phase}
+            {
+                "intitule": p.intitule,
+                "montant_ht": p.montant_ht,
+                "phase": p.phase,
+                "financeur": p.financeur,
+                "statut_financement": p.statut_financement,
+            }
             for p in prestations
         ]
     }
