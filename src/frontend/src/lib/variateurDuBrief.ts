@@ -142,7 +142,11 @@ export function ecrireLeReglage(jour: string, reglage: ReglageDuBrief): void {
  * prévisible, donc testable) et le libellé dit ce qu'il replie.
  */
 export function libelleDuRepli(nbReplies: number, nbRetardsReplies: number): string {
-  const base = `Voir les ${nbReplies} autre${nbReplies > 1 ? 's' : ''} élément${nbReplies > 1 ? 's' : ''}`;
+  if (nbReplies === 1) {
+    // « Voir les 1 autre élément » ne se dit pas.
+    return nbRetardsReplies > 0 ? 'Voir le dernier élément, en retard' : 'Voir le dernier élément';
+  }
+  const base = `Voir les ${nbReplies} autres éléments`;
   if (nbRetardsReplies <= 0) return base;
   return `${base}, dont ${nbRetardsReplies} en retard`;
 }

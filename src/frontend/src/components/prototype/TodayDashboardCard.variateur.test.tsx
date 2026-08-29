@@ -411,3 +411,26 @@ describe('Variateur du brief - le chargement ne ment pas (revue Soso, P2)', () =
     expect(lignesVisibles()).toBe(6);
   });
 });
+
+describe('Variateur du brief - le repli se lit en français', () => {
+  beforeEach(() => {
+    installLocalStorageStub();
+  });
+
+  it("ne dit pas « les 1 autre élément » quand il n'en reste qu'un", () => {
+    afficher(dashboard(7, 0));
+
+    const bouton = screen.getByRole('button', { name: /élément/ });
+    expect(bouton).toHaveTextContent('Voir le dernier élément');
+    expect(bouton).not.toHaveTextContent('les 1');
+  });
+
+  it('annonce le retard du dernier élément sans compter jusqu’à un', () => {
+    // 7 éléments, 7 en retard : le seul replié est en retard.
+    afficher(dashboard(7, 7));
+
+    expect(screen.getByRole('button', { name: /élément/ })).toHaveTextContent(
+      'Voir le dernier élément, en retard',
+    );
+  });
+});
