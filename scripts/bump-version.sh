@@ -123,5 +123,18 @@ if [ $ERRORS -gt 0 ] || [ $VERIFY_ERRORS -gt 0 ]; then
     exit 1
 fi
 
+# L'index des noms porte le numero de version dans son titre, et un test
+# verifie que le fichier commite est bien celui que le code produit. Sans cette
+# regeneration, tout bump casse la CI backend une fois le tag deja pousse
+# (constate a la release 0.57.0).
+if [ -f scripts/index-des-noms.mjs ]; then
+    if node scripts/index-des-noms.mjs > docs/INDEX-DES-NOMS.md 2>/dev/null; then
+        echo "  OK  docs/INDEX-DES-NOMS.md regenere"
+    else
+        echo "  ERREUR  regeneration de docs/INDEX-DES-NOMS.md impossible"
+        exit 1
+    fi
+fi
+
 echo ""
-echo "Version $NEW appliquee dans les 7 fichiers (+ badge README + lockfiles)."
+echo "Version $NEW appliquee dans les 7 fichiers (+ badge README + lockfiles + index des noms)."
