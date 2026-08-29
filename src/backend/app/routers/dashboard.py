@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from datetime import date, datetime, timedelta
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import (
@@ -24,7 +25,7 @@ from app.models.entities import (
 )
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -110,6 +111,31 @@ async def _has_any_llm_key(session: AsyncSession) -> bool:
         pass  # Ollama absent : attendu pour la plupart des installs cloud
 
     return False
+
+
+
+async def prospects_a_relancer(session: AsyncSession) -> list[dict[str, Any]]:
+    """Les relances dues, telles que le brief les affiche.
+
+    Le filtre vit dans `app.services.relances` et NULLE PART AILLEURS : c'est
+    ce qui empêche l'accueil et les notifications de répondre deux chiffres
+    différents à la même question, comme ils le faisaient avant le 29/08.
+    """
+    from app.services.relances import contacts_a_relancer
+
+    resultat = await session.execute(contacts_a_relancer())
+    return [
+        {
+            "id": p.id,
+            "name": p.display_name,
+            "company": p.company,
+            "stage": p.stage,
+            "email": p.email,
+            "last_interaction": p.last_interaction.isoformat() if p.last_interaction else None,
+            "next_follow_up": p.next_follow_up.isoformat() if p.next_follow_up else None,
+        }
+        for p in resultat.scalars().all()
+    ]
 
 
 @router.get("/setup-status")
@@ -234,7 +260,6 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     today_dt = datetime.combine(today, datetime.min.time())
     tomorrow_dt = datetime.combine(today + timedelta(days=1), datetime.min.time())
     thirty_days_ago = datetime.now() - timedelta(days=30)
-    fifteen_days_ago = datetime.now() - timedelta(days=15)
     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
     follow_up_horizon = (today + timedelta(days=2)).isoformat() + "T23:59:59"
 
@@ -409,30 +434,10 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     except Exception as e:
         logger.warning(f"Erreur lecture factures: {e}")
 
-    # --- Prospects à relancer (sans interaction > 15 jours) ---
+    # --- Relances dues : une DATE POSÉE et échue, jamais une déduction ---
     stale_prospects = []
     try:
-        stmt_prospects = select(Contact).where(
-            and_(
-                Contact.stage.in_(["contact", "discovery"]),
-                or_(
-                    Contact.last_interaction == None,  # noqa: E711
-                    Contact.last_interaction < fifteen_days_ago,
-                ),
-            )
-        )
-        result_prospects = await session.execute(stmt_prospects)
-        prospects = result_prospects.scalars().all()
-
-        for p in prospects:
-            stale_prospects.append({
-                "id": p.id,
-                "name": p.display_name,
-                "company": p.company,
-                "stage": p.stage,
-                "email": p.email,
-                "last_interaction": p.last_interaction.isoformat() if p.last_interaction else None,
-            })
+        stale_prospects = await prospects_a_relancer(session)
     except Exception as e:
         logger.warning(f"Erreur lecture prospects: {e}")
 

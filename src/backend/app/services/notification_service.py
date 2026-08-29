@@ -12,7 +12,6 @@ from datetime import UTC, datetime, timedelta
 from app.models.database import get_session_context
 from app.models.entities import (
     CalendarEvent,
-    Contact,
     Invoice,
     Notification,
     Task,
@@ -157,21 +156,25 @@ async def _check_overdue_invoices(session: AsyncSession) -> int:
 
 
 async def _check_inactive_prospects(session: AsyncSession) -> int:
-    """Genere des notifications pour les prospects sans interaction > 15 jours."""
-    count = 0
-    threshold = datetime.now(UTC) - timedelta(days=15)
+    """Genere des notifications pour les relances ECHUES.
 
-    result = await session.execute(
-        select(Contact).where(
-            Contact.stage.in_(["contact", "discovery", "proposition"]),
-            Contact.last_interaction != None,  # noqa: E711
-            Contact.last_interaction < threshold,
-        )
-    )
+    Anciennement : « prospects sans interaction depuis 15 jours », une
+    deduction. Depuis le 29/08, une relance est une date posee.
+    """
+    count = 0
+
+    # Le filtre vit dans `app.services.relances`, partagé avec le brief. Le
+    # réécrire ici, c'est ce qui avait produit deux chiffres différents pour
+    # la même question (24 contre 20 sur les données réelles).
+    from app.services.relances import contacts_a_relancer
+
+    result = await session.execute(contacts_a_relancer())
     contacts = result.scalars().all()
 
     for contact in contacts:
-        days_inactive = (datetime.now(UTC) - _as_aware_utc(contact.last_interaction)).days
+        # `last_interaction` peut etre vide : le filtre ne porte plus sur elle.
+        # Le retard se compte depuis la date de relance, qui est toujours posee.
+        jours_de_retard = (datetime.now(UTC) - _as_aware_utc(contact.next_follow_up)).days
         # Verifier quon na pas deja une notif recente pour ce contact
         existing = await session.execute(
             select(Notification).where(
@@ -185,8 +188,13 @@ async def _check_inactive_prospects(session: AsyncSession) -> int:
 
         await create_notification(
             session,
-            title="Prospect inactif",
-            message=f"{contact.display_name} n'a pas repondu depuis {days_inactive} jours",
+            title="Relance echue",
+            message=(
+                f"Relance de {contact.display_name} prevue il y a {jours_de_retard} jour"
+                f"{'s' if jours_de_retard > 1 else ''}"
+                if jours_de_retard > 0
+                else f"Relance de {contact.display_name} prevue aujourd'hui"
+            ),
             type="action",
             source="crm",
             action_url=f"/crm/contacts/{contact.id}",

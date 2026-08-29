@@ -8254,11 +8254,15 @@ class TestBUG126_NotificationsNaiveDatetime:
         from app.models.entities import Contact
         from app.services.notification_service import _check_inactive_prospects
 
+        # 29/08 : la relance n'est plus deduite de `last_interaction` mais lue
+        # dans `next_follow_up`. La GARANTIE de BUG-126 est inchangee : une
+        # date naive ne doit pas faire tomber la cloche. Elle porte simplement
+        # sur le champ qui declenche desormais la notification.
         db_session.add(
             Contact(
                 first_name="Prospect",
                 stage="discovery",
-                last_interaction=datetime(2020, 1, 1, 12, 0, 0),  # naïf, > 15 jours
+                next_follow_up=datetime(2020, 1, 1, 12, 0, 0),  # naif, echu
             )
         )
         await db_session.flush()

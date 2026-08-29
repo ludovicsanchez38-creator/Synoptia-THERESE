@@ -134,14 +134,31 @@ class TestToday:
     async def test_today_stale_prospect_remonte_avec_son_nom(
         self, client: AsyncClient, db_session
     ):
-        """Régression : un prospect sans interaction doit apparaître dans
-        stale_prospects avec son nom. Contact n'a pas d'attribut `name`
-        (lève AttributeError, avalé en liste vide) — il faut display_name."""
+        """Régression : une relance due doit apparaître avec son nom. Contact
+        n'a pas d'attribut `name` (lève AttributeError, avalé en liste vide) —
+        il faut display_name.
+
+        29/08 : la relance est désormais une DATE POSÉE et échue, plus une
+        absence d'interaction. Le contact sans date ci-dessous ne doit donc
+        PAS remonter, et c'est le coeur du changement : l'application cesse
+        d'affirmer un devoir que personne n'a décidé.
+        """
+        from datetime import UTC, datetime, timedelta
+
         db_session.add(
             Contact(
                 id="ct-stale-1",
                 first_name="Jean",
                 last_name="Test",
+                stage="contact",
+                next_follow_up=datetime.now(UTC) - timedelta(days=1),
+            )
+        )
+        db_session.add(
+            Contact(
+                id="ct-sans-date",
+                first_name="Sans",
+                last_name="Date",
                 stage="contact",
                 last_interaction=None,
             )

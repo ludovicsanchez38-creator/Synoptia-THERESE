@@ -37,6 +37,9 @@ class Contact(SQLModel, table=True):
     score: int = Field(default=50)  # Scoring prospect (0-100+)
     source: str | None = None  # website, referral, linkedin, etc.
     last_interaction: datetime | None = Field(default=None, index=True)  # Derniere interaction (pour decay)
+    # La prochaine relance DECIDEE, pas deduite. Quand elle est vide, aucune
+    # surface n'a le droit d'affirmer qu'il faut relancer (plan du 29/08).
+    next_follow_up: datetime | None = Field(default=None, index=True)
 
     # RGPD (Phase 6)
     rgpd_base_legale: str | None = None  # consentement, contrat, interet_legitime, obligation_legale

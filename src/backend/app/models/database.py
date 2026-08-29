@@ -148,6 +148,19 @@ def apply_adhoc_migrations(db_path) -> None:
         # colonne, et aucun `alembic upgrade head` ne tourne au démarrage
         # packagé. Sans cette migration, toute lecture de conversation
         # échouerait après mise à jour.
+        # Plan du 29/08 : la prochaine relance est une DATE DÉCIDÉE. Sans cette
+        # colonne, l'accueil continuerait de déduire un devoir d'une absence
+        # d'interaction, et de l'affirmer.
+        colonnes_contacts = {
+            row[1] for row in conn.execute("PRAGMA table_info(contacts)").fetchall()
+        }
+        if colonnes_contacts and "next_follow_up" not in colonnes_contacts:
+            conn.execute("ALTER TABLE contacts ADD COLUMN next_follow_up TIMESTAMP")
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'next_follow_up' ajoutée à la table contacts"
+            )
+
         cursor = conn.execute("PRAGMA table_info(conversations)")
         conv_columns = {row[1] for row in cursor.fetchall()}
         if conv_columns and "project_id" not in conv_columns:
