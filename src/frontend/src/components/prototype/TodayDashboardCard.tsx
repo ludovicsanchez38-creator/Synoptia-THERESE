@@ -152,7 +152,11 @@ export function TodayDashboardCard({
             {MOTS_DU_VARIATEUR.map(({ valeur, mot }) => (
               <label
                 key={valeur}
-                className={`cursor-pointer rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors ${
+                /* La radio elle-même est hors écran (`sr-only`) : sans cette
+                   règle, le contour de focus se dessinerait sur un pixel
+                   invisible et personne ne saurait, au clavier, sur quel mot
+                   il se trouve. */
+                className={`cursor-pointer rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-cyan ${
                   reglage === valeur
                     ? 'bg-surface text-text shadow-[0_1px_2px_rgba(16,28,54,0.12)]'
                     : 'text-text-muted hover:text-text'
@@ -164,6 +168,10 @@ export function TodayDashboardCard({
                   className="sr-only"
                   checked={reglage === valeur}
                   onChange={() => choisirLeReglage(valeur)}
+                  /* Une radio déjà cochée n'émet pas `change` : sans ce clic,
+                     revenir à « l'essentiel » depuis une liste dépliée ne
+                     ferait rien, et le mot mentirait. */
+                  onClick={() => choisirLeReglage(valeur)}
                 />
                 {mot}
               </label>

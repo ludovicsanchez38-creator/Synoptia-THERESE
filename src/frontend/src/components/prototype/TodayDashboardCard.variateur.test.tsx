@@ -204,6 +204,20 @@ describe('Variateur du brief - la valeur meurt avec la journée', () => {
     expect(lignesVisibles()).toBe(2);
   });
 
+  it("re-choisir le réglage déjà actif referme une expansion", () => {
+    // Une radio déjà cochée n'émet pas `change`. Sans garde, le mot sur lequel
+    // on clique pour « revenir à l'essentiel » ne fait rien : un contrôle
+    // visiblement actif et sans effet, exactement la pastille placebo refusée.
+    afficher(dashboard(9, 0));
+
+    fireEvent.click(screen.getByRole('button', { name: /Voir les 3 autres éléments/ }));
+    expect(lignesVisibles()).toBe(9);
+
+    fireEvent.click(screen.getByRole('radio', { name: "l'essentiel" }));
+
+    expect(lignesVisibles()).toBe(6);
+  });
+
   it('« Voir les autres » est une expansion de séance, il ne change pas le réglage', () => {
     const { unmount } = afficher(dashboard(9, 0));
 
