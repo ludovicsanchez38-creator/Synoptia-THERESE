@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   Calendar,
@@ -101,13 +102,7 @@ export function TodayDashboardCard({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onOpenView('calendar')}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
-        >
-          Vue complète
-        </button>
+        <BoutonOuvrirLaVue vue="calendar" onOuvrir={() => onOpenView('calendar')} />
       </div>
 
       {resource.status === 'loading' ? (

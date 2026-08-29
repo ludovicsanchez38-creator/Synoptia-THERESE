@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   Calendar,
@@ -111,9 +112,7 @@ export function MeetingAgendaCard({
             <Plus className="h-3.5 w-3.5" />
             Nouvel événement
           </button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2">
-            Agenda complet
-          </button>
+          <BoutonOuvrirLaVue vue="calendar" onOuvrir={onOpenClassic} />
         </div>
       </div>
 
@@ -126,8 +125,11 @@ export function MeetingAgendaCard({
             <p className="mt-2 text-sm font-semibold text-text">Agenda indisponible</p>
             <p className="mt-1 text-xs text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
+              {/* Un seul « Ouvrir Agenda » à l'écran : celui de l'en-tête, à quarante
+                  pixels d'ici. Deux contrôles portant le même texte ne sont pas
+                  un secours de plus, c'est une ambiguïté - un testeur qui
+                  signale « j'ai cliqué sur Ouvrir Agenda » ne dirait pas lequel. */}
               <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
             </div>
           </div>
         </StateShell>
@@ -169,13 +171,7 @@ export function MeetingAgendaCard({
 // sur une base vierge il n'en existe aucun et le formulaire était remplacé par un
 // avertissement sans issue, perçu comme un bouton « Préparer un événement » inerte.
 // Le geste explicite de création provisionne ici le calendrier local par défaut.
-function CalendarProvisioning({
-  onEnsure,
-  onOpenClassic,
-}: {
-  onEnsure: () => Promise<void>;
-  onOpenClassic: () => void;
-}) {
+function CalendarProvisioning({ onEnsure }: { onEnsure: () => Promise<void> }) {
   const [failed, setFailed] = useState(false);
   const runEnsure = useCallback(() => {
     setFailed(false);
@@ -191,8 +187,10 @@ function CalendarProvisioning({
       <div className="rounded-[12px] border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="meeting-calendar-provisioning-error">
         <p>Impossible de préparer un calendrier pour le moment.</p>
         <div className="mt-3 flex gap-2">
+          {/* Le pied de page du canevas porte déjà « Ouvrir Agenda », en
+              permanence. Le répéter ici donnerait deux contrôles au même texte
+              sur le même écran. */}
           <button type="button" onClick={runEnsure} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Voir tout mon agenda</button>
         </div>
       </div>
     );
@@ -450,7 +448,7 @@ export function MeetingWorkspaceCanvas({
         {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Chargement de l’agenda…</div>
           : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
             : target === 'new-event' ? (resource.data.calendars.length === 0
-              ? <CalendarProvisioning onEnsure={onEnsureCalendar} onOpenClassic={onOpenClassic} />
+              ? <CalendarProvisioning onEnsure={onEnsureCalendar} />
               : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
               : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Je rassemble le contexte exact…</div>
                 : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
@@ -458,7 +456,7 @@ export function MeetingWorkspaceCanvas({
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>
 
-      <div className="border-t border-border bg-surface p-4"><button type="button" onClick={onOpenClassic} className="w-full rounded-[10px] border border-border px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-2">Voir tout mon agenda pour modifier ou supprimer</button></div>
+      <div className="border-t border-border bg-surface p-4"><BoutonOuvrirLaVue vue="calendar" onOuvrir={onOpenClassic} /></div>
     </div>
   );
 }

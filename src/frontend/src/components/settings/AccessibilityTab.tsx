@@ -185,7 +185,7 @@ export function AccessibilityTab() {
               <li>{mod}+K : Palette de commandes</li>
               <li>{mod}+B : Conversations</li>
               <li>{mod}+M : Mémoire</li>
-              <li>{mod}+D : Board de décision</li>
+              <li>{mod}+D : Décision</li>
               <li>Tab / Shift+Tab : Navigation</li>
             </ul>
           </div>

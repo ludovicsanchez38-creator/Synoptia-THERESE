@@ -151,7 +151,7 @@ describe('BUG-143 - préparation d’événement sans calendrier', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     await waitFor(() => expect(onEnsureCalendar).toHaveBeenCalledTimes(2));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Voir tout mon agenda' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir Agenda' }));
     expect(onOpenClassic).toHaveBeenCalledTimes(1);
   });
 

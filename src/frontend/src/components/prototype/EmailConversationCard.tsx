@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
-  ExternalLink,
   Inbox,
   Mail,
   RefreshCw,
@@ -73,13 +73,7 @@ export function EmailInboxCard({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
-        >
-          Email complet
-        </button>
+        <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
       </div>
 
       {resource.status === 'loading' ? (
@@ -104,9 +98,7 @@ export function EmailInboxCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">
-                Ouvrir Email
-              </button>
+              <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
             </div>
           </div>
         </EmailStateShell>
@@ -116,9 +108,7 @@ export function EmailInboxCard({
             <Inbox className="mx-auto h-6 w-6 text-text-muted" />
             <p className="mt-2 text-sm font-semibold text-text">Aucun compte email connecté</p>
             <p className="mt-1 text-xs text-text-muted">Configure Gmail ou IMAP dans la vue Email complète.</p>
-            <button type="button" onClick={onOpenClassic} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">
-              Configurer Email
-            </button>
+            <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
           </div>
         </EmailStateShell>
       ) : visibleMessages.length === 0 ? (
@@ -504,14 +494,7 @@ export function EmailMessageCanvas({
       )}
 
       <div className="border-t border-border bg-surface p-4">
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-4 py-3 text-sm font-semibold text-white"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Gérer ma messagerie
-        </button>
+        <BoutonOuvrirLaVue vue="email" onOuvrir={onOpenClassic} />
       </div>
     </div>
   );

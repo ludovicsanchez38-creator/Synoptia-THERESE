@@ -50,7 +50,7 @@ describe('Entrée 10 : « Écrire » mène à une rédaction', () => {
     const onOpenClassic = vi.fn();
     rendre(true, onOpenClassic);
 
-    fireEvent.click(screen.getByRole('button', { name: /messagerie/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir Email' }));
     expect(onOpenClassic).toHaveBeenCalled();
   });
 

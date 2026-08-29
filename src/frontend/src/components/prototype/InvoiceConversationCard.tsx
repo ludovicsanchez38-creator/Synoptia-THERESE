@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   CheckCircle2,
   ChevronRight,
-  ExternalLink,
   FilePlus2,
   FileText,
   Plus,
@@ -135,9 +135,7 @@ export function InvoiceWorkspaceCard({
             <Plus className="h-3.5 w-3.5" />
             Nouveau devis
           </button>
-          <button type="button" onClick={onOpenClassic} className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2">
-            Facturation complète
-          </button>
+          <BoutonOuvrirLaVue vue="invoices" onOuvrir={onOpenClassic} />
         </div>
       </div>
 
@@ -159,7 +157,7 @@ export function InvoiceWorkspaceCard({
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
-              <button type="button" onClick={onOpenClassic} className="rounded-[9px] border border-border px-3 py-2 text-xs font-semibold text-text">Gérer mes devis et factures</button>
+              <BoutonOuvrirLaVue vue="invoices" onOuvrir={onOpenClassic} />
             </div>
           </div>
         </StateShell>
@@ -647,7 +645,7 @@ export function InvoiceWorkspaceCanvas({
       </div>
 
       <div className="border-t border-border bg-surface p-4">
-        <button type="button" onClick={onOpenClassic} className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white"><ExternalLink className="h-4 w-4" />Gérer mes devis et factures</button>
+        <BoutonOuvrirLaVue vue="invoices" onOuvrir={onOpenClassic} />
       </div>
     </div>
   );

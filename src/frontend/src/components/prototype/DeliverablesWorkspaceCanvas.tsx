@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   BriefcaseBusiness,
@@ -230,7 +231,7 @@ export function DeliverablesWorkspaceCanvas({
           </>}
 
           <div className="mt-4 flex items-start gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Lecture seule depuis Projets, CRM, Tâches et Facturation. Aucune validation, suppression ou synchronisation n’est déclenchée ici.</div>
-          <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={onOpenProjects} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Gérer mes projets</button><button type="button" onClick={onOpenInvoices} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Gérer mes devis et factures</button></div>
+          <div className="mt-3 grid grid-cols-2 gap-2"><BoutonOuvrirLaVue vue="projects" onOuvrir={onOpenProjects} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text" /><BoutonOuvrirLaVue vue="invoices" onOuvrir={onOpenInvoices} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text" /></div>
         </div>
       )}
     </aside>

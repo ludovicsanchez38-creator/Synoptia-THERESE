@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
+import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   ChevronRight,
-  ExternalLink,
   Mail,
   RefreshCw,
   Search,
@@ -38,13 +38,7 @@ function EmptyContacts({ onOpenClassic }: { onOpenClassic: () => void }) {
         <Users className="mx-auto h-6 w-6 text-text-muted" />
         <p className="mt-2 text-sm font-semibold text-text">Aucun contact enregistré</p>
         <p className="mt-1 text-xs text-text-muted">La mémoire est prête, mais elle ne contient encore aucune personne.</p>
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="mt-4 rounded-[9px] border border-text bg-text px-3 py-2 text-xs font-semibold text-white"
-        >
-          Gérer mes contacts
-        </button>
+        <BoutonOuvrirLaVue vue="memory" onOuvrir={onOpenClassic} />
       </div>
     </div>
   );
@@ -83,13 +77,7 @@ export function ContactsMemoryCard({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="rounded-[8px] border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2"
-        >
-          Vue complète
-        </button>
+        <BoutonOuvrirLaVue vue="memory" onOuvrir={onOpenClassic} />
       </div>
 
       {resource.status === 'loading' ? (
@@ -138,13 +126,7 @@ export function ContactsMemoryCard({
       )}
 
       {resource.status === 'ready' && resource.data.length > recentContacts.length && (
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="w-full border-t border-border bg-surface-2 px-4 py-3 text-center text-xs font-semibold text-[var(--k4)] hover:bg-[var(--k4bg)]"
-        >
-          Voir les {resource.data.length - recentContacts.length} autres contacts
-        </button>
+        <BoutonOuvrirLaVue vue="memory" onOuvrir={onOpenClassic} />
       )}
     </section>
   );
@@ -281,14 +263,7 @@ export function ContactsMemoryCanvas({
       )}
 
       <div className="border-t border-border bg-surface p-4">
-        <button
-          type="button"
-          onClick={onOpenClassic}
-          className="flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-4 py-3 text-sm font-semibold text-white"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Gérer mes contacts
-        </button>
+        <BoutonOuvrirLaVue vue="memory" onOuvrir={onOpenClassic} />
       </div>
     </div>
   );

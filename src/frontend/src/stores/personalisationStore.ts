@@ -30,7 +30,7 @@ const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
   { action: 'newConversation', key: 'N', modifiers: ['cmd'], description: 'Nouvelle conversation' },
   { action: 'toggleSidebar', key: 'B', modifiers: ['cmd'], description: 'Afficher/masquer conversations' },
   { action: 'toggleMemory', key: 'M', modifiers: ['cmd'], description: 'Afficher/masquer espace de travail' },
-  { action: 'toggleBoard', key: 'D', modifiers: ['cmd'], description: 'Board de décision' },
+  { action: 'toggleBoard', key: 'D', modifiers: ['cmd'], description: 'Décision' },
   { action: 'commandPalette', key: 'K', modifiers: ['cmd'], description: 'Palette de commandes' },
   { action: 'focusInput', key: '/', modifiers: [], description: 'Focus sur le chat' },
   { action: 'clearChat', key: 'L', modifiers: ['cmd', 'shift'], description: 'Effacer conversation' },
