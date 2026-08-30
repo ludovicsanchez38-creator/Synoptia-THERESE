@@ -267,7 +267,7 @@ export function SectionEditor({
           aria-label="Consigne de la section"
           rows={2}
           disabled={isStreaming}
-          className="w-full px-2.5 py-1.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none disabled:opacity-60"
+          className="w-full px-2.5 py-1.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none disabled:opacity-60"
         />
       </div>
 
@@ -326,7 +326,7 @@ export function SectionEditor({
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="Instruction de retouche (ex. plus concis, ajouter un exemple...)"
             aria-label="Instruction de retouche"
-            className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+            className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
             disabled={isStreaming}
           />
           <Button variant="secondary" size="sm" onClick={handleRetouch} disabled={isStreaming || !instruction.trim()}>

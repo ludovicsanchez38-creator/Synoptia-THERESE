@@ -101,7 +101,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               placeholder="123456789-abc...apps.googleusercontent.com"
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
               disabled={loading}
             />
           </div>
@@ -113,7 +113,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}
               placeholder="GOCSPX-..."
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
               disabled={loading}
             />
           </div>
@@ -126,7 +126,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
           )}
 
           {authUrl && (
-            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-md">
+            <div className="flex items-center gap-2 p-3 bg-agent-green/10 border border-agent-green/20 rounded-md">
               <p className="text-sm text-agent-green">
                 Fenêtre d'autorisation ouverte. Suis les instructions.
               </p>

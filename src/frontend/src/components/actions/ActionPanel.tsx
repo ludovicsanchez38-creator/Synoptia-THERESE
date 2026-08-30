@@ -298,7 +298,7 @@ function TaskProgress({
           <motion.div
             className={cn(
               'h-full rounded-full',
-              isDone ? 'bg-emerald-400' : isError ? 'bg-error' : 'bg-accent-fill',
+              isDone ? 'bg-agent-green' : isError ? 'bg-error' : 'bg-accent-fill',
             )}
             initial={{ width: 0 }}
             animate={{ width: `${Math.round(task.progress * 100)}%` }}
@@ -352,9 +352,9 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
       className={cn(
         'rounded-md border transition-colors',
         step.status === 'running'
-          ? 'border-cyan-400/20 bg-cyan-400/5'
+          ? 'border-agent-cyan/20 bg-agent-cyan/5'
           : step.status === 'completed'
-          ? 'border-emerald-400/10 bg-emerald-400/5'
+          ? 'border-agent-green/10 bg-agent-green/5'
           : step.status === 'error'
           ? 'border-error/10 bg-error/5'
           : 'border-border bg-transparent',
@@ -484,7 +484,7 @@ export function ActionPanel() {
       return (
         <button
           onClick={() => openPanel()}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-agent-cyan shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-agent-cyan/30 text-sm text-agent-cyan shadow-lg shadow-agent-cyan/10 hover:bg-surface-elevated transition-colors animate-pulse"
         >
           <Spinner taille="ligne" />
           {activeTask.status === 'cancel_requested'

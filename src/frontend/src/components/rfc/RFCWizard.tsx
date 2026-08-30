@@ -152,7 +152,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
             return (
               <div key={s.id} className="flex items-center gap-1">
                 {i > 0 && (
-                  <div className={cn('w-6 h-px', isPast ? 'bg-accent-cyan' : 'bg-border')} />
+                  <div className={cn('w-6 h-px', isPast ? 'bg-accent' : 'bg-border')} />
                 )}
                 <div
                   className={cn(

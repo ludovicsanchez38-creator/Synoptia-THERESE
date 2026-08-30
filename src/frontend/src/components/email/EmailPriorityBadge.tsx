@@ -25,15 +25,15 @@ const PRIORITY_CONFIG = {
     emoji: '🟠',
     text: 'Important',
     color: 'text-agent-amber',
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/30',
+    bg: 'bg-agent-amber/10',
+    border: 'border-agent-amber/30',
   },
   low: {
     emoji: '🟢',
     text: 'Normal',
     color: 'text-agent-green',
-    bg: 'bg-green-500/10',
-    border: 'border-green-500/30',
+    bg: 'bg-agent-green/10',
+    border: 'border-agent-green/30',
   },
 };
 

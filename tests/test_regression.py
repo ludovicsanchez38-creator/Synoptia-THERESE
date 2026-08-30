@@ -1757,8 +1757,10 @@ class TestCalendarWeekDayViews:
         assert "nowLineTop" in content, (
             "Les vues semaine/jour doivent calculer la position de la ligne rouge"
         )
-        assert "bg-red-500" in content, (
-            "La ligne de l'heure actuelle doit être rouge"
+        assert "bg-instant" in content, (
+            "La ligne de l'heure actuelle doit être rouge (jeton --color-instant "
+            "depuis le 30/08/2026 : rouge par convention, pas par sémantique, "
+            "et décliné par thème)"
         )
 
 

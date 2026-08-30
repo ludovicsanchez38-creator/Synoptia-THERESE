@@ -213,7 +213,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             id="smtp-provider"
             value={selectedProvider}
             onChange={(e) => handleProviderSelect(e.target.value)}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             <option value="">Sélectionner un fournisseur...</option>
             {providers.map((p) => (
@@ -236,7 +236,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             value={form.email}
             onChange={(e) => updateField('email', e.target.value)}
             placeholder="toi@exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="space-y-1.5">
@@ -248,7 +248,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
               value={form.password}
               onChange={(e) => updateField('password', e.target.value)}
               placeholder="Mot de passe applicatif"
-              className="w-full px-3 py-2 pr-11 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-3 py-2 pr-11 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
             <button
               type="button"
@@ -274,7 +274,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             value={form.imap_host}
             onChange={(e) => updateField('imap_host', e.target.value)}
             placeholder="imap.exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="space-y-1.5">
@@ -285,7 +285,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             onChange={(e) => {
               if (e.target.value !== 'custom') updateField('imap_port', parseInt(e.target.value));
             }}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             {IMAP_PORT_OPTIONS.map((o) => (
               <option key={o.value} value={String(o.value)}>{o.label}</option>
@@ -305,7 +305,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             value={form.smtp_host}
             onChange={(e) => updateField('smtp_host', e.target.value)}
             placeholder="smtp.exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
         <div className="space-y-1.5">
@@ -323,7 +323,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
                 setError(null);
               }
             }}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             {SMTP_PORT_OPTIONS.map((o) => (
               <option key={o.value} value={String(o.value)}>{o.label}</option>
@@ -339,14 +339,14 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           type="checkbox"
           checked={form.smtp_use_tls}
           onChange={(e) => updateField('smtp_use_tls', e.target.checked)}
-          className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-accent-cyan/50"
+          className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-ring/50"
         />
         <span className="text-sm text-text-muted">Utiliser TLS/STARTTLS (587) - décocher pour le SSL direct (465)</span>
       </label>
 
       {/* Incohérence port/mode : dite AVANT le test, au lieu d'un faux timeout après */}
       {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls) && (
-        <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-md">
+        <div className="p-3 bg-agent-amber/10 border border-agent-amber/20 rounded-md">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
             <span className="text-sm text-warning">
@@ -371,7 +371,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
         <div
           className={`p-3 rounded-md border ${
             testResult.success
-              ? 'bg-green-500/10 border-green-500/20'
+              ? 'bg-agent-green/10 border-agent-green/20'
               : 'bg-error/10 border-error/20'
           }`}
         >

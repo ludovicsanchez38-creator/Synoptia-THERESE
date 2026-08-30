@@ -58,12 +58,23 @@ describe('lot 4 : le plancher typographique', () => {
     // className répartis sur plusieurs lignes ou construits dans un tableau
     // cn(...) : « Réessayer » du brief et les boutons de l'Atelier étaient
     // restés à 12 px alors que le test annonçait la règle satisfaite.
+    //
+    // Deuxième passe de la même revue : n'ancrer que sur <button ratait
+    // <Button>, <input>, <select>, <textarea> et <a>. Le champ « Filtrer… »
+    // des Fichiers était à 12 px pendant que la surface était déclarée sans
+    // contrôle sous le plancher. Un <input> n'a jamais de nœud texte enfant :
+    // ni le test, ni l'auditeur du navigateur ne pouvaient le voir.
+    //
+    // Portée : cette garantie vaut à la taille de police par DÉFAUT. La
+    // préférence d'accessibilité « Petite » réduit tout à l'échelle rem ;
+    // c'est un choix explicite de l'utilisateur, et seul --text-xs y résiste
+    // (plancher à 12 px, cf. globals.css).
     const fautifs: string[] = [];
     for (const f of SOURCES) {
       const contenu = readFileSync(f, 'utf-8');
-      for (const m of contenu.matchAll(/<button\b/g)) {
+      for (const m of contenu.matchAll(/<(?:button|input|select|textarea|a|Button)\b/g)) {
         // La balise ouvrante s'arrête au premier > hors accolades JSX.
-        let i = m.index + 7;
+        let i = m.index + m[0].length;
         let profondeur = 0;
         for (; i < contenu.length; i++) {
           const ch = contenu[i];

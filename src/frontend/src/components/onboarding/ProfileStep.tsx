@@ -150,7 +150,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                 setSaveState('idle');
               }}
               placeholder="Ton nom complet"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ton surnom"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -175,7 +175,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Ton entreprise"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
@@ -186,7 +186,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Ton rôle"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -200,7 +200,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ton@email.com"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
@@ -211,7 +211,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Ta ville"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -229,7 +229,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
-            className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
+            className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </div>
 

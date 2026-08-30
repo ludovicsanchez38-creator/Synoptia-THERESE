@@ -487,7 +487,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     >
                       <FileDown className="w-4 h-4 mr-1.5" />
                       PDF
-                      <span className="ml-1 px-1.5 py-0.5 bg-amber-500/20 text-agent-amber text-xs rounded-sm">Bientôt</span>
+                      <span className="ml-1 px-1.5 py-0.5 bg-agent-amber/20 text-agent-amber text-xs rounded-sm">Bientôt</span>
                     </Button>
                     <Button variant="primary" size="sm" onClick={handleNewDeliberation}>
                       + Nouvelle question
@@ -569,7 +569,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                             'w-full p-4 rounded-md',
                             'bg-surface-elevated border border-border',
                             'text-text placeholder:text-text-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan/50',
+                            'focus:outline-none focus:ring-2 focus:ring-ring/50',
                             'resize-none'
                           )}
                         />
@@ -588,7 +588,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                             'w-full p-4 rounded-md',
                             'bg-surface-elevated border border-border',
                             'text-text placeholder:text-text-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan/50',
+                            'focus:outline-none focus:ring-2 focus:ring-ring/50',
                             'resize-none'
                           )}
                         />

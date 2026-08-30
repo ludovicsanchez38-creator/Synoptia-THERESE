@@ -349,7 +349,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowExistingSheets(false)}
-                className="text-xs"
+                className="text-sm"
               >
                 Fermer
               </Button>
@@ -363,7 +363,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                   value={sheetSearch}
                   onChange={(e) => setSheetSearch(e.target.value)}
                   placeholder="Rechercher une feuille..."
-                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded-sm text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-ring/50"
                 />
               </div>
             )}
@@ -396,7 +396,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                           e.stopPropagation();
                           window.open(sheet.url, '_blank');
                         }}
-                        className="text-xs p-1"
+                        className="text-sm p-1"
                         title="Ouvrir dans Google Sheets"
                       >
                         <ExternalLink className="w-3 h-3" />
@@ -416,7 +416,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
             placeholder="ID du spreadsheet (ex: 1gXhiy43...)"
-            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
           <Button
             variant="ghost"
@@ -533,7 +533,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientIdInput}
                 onChange={(e) => setClientIdInput(e.target.value)}
                 placeholder="...apps.googleusercontent.com"
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50 font-mono"
               />
             </div>
             <div>
@@ -543,7 +543,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientSecretInput}
                 onChange={(e) => setClientSecretInput(e.target.value)}
                 placeholder="GOCSPX-..."
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50 font-mono"
               />
             </div>
           </div>

@@ -169,11 +169,11 @@ export function PerformanceTab() {
             <button
               onClick={handleToggleBatterySaver}
               className={`relative w-11 h-6 rounded-full transition-colors ${
-                status.power.battery_saver_mode ? 'bg-accent-cyan' : 'bg-border'
+                status.power.battery_saver_mode ? 'bg-accent' : 'bg-border'
               }`}
             >
               <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink-on-fill transition-transform ${
                   status.power.battery_saver_mode ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />

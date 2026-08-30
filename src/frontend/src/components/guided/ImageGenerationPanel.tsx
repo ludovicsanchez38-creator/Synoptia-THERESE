@@ -39,19 +39,19 @@ const providerConfig: Record<ImageProvider, {
 }> = {
   'gpt-image-2': {
     color: 'text-agent-green',
-    bgTint: 'bg-emerald-500/15',
+    bgTint: 'bg-agent-green/15',
     label: 'GPT Image 2',
     description: 'Image générée par OpenAI'
   },
   'nanobanan-pro': {
     color: 'text-agent-purple',
-    bgTint: 'bg-purple-500/15',
+    bgTint: 'bg-agent-purple/15',
     label: 'Nano Banana 2',
     description: 'Image générée par Gemini'
   },
   'fal-flux-pro': {
     color: 'text-agent-amber',
-    bgTint: 'bg-orange-500/15',
+    bgTint: 'bg-agent-amber/15',
     label: 'Fal Flux Pro',
     description: 'Image générée par Fal (Flux Pro v1.1)'
   },

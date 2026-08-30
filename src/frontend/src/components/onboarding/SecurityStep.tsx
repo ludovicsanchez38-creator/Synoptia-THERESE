@@ -173,7 +173,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           id="security-consent"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-1 w-5 h-5 rounded-sm border-border bg-transparent text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
+          className="mt-1 w-5 h-5 rounded-sm border-border bg-transparent text-accent-cyan-ink focus:ring-2 focus:ring-ring focus:ring-offset-0"
         />
         <div className="text-sm">
           <p className="text-text font-medium">

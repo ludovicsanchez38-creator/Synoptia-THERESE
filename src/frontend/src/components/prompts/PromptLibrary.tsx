@@ -134,7 +134,7 @@ function PromptCard({
               e.stopPropagation();
               onSelect(prompt);
             }}
-            className="text-xs text-accent-cyan-ink hover:bg-accent-tint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="text-sm text-accent-cyan-ink hover:bg-accent-tint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
           >
             Utiliser
           </Button>
@@ -358,7 +358,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher un prompt (ex : relance, LinkedIn, CGV...)"
-            className="w-full pl-10 pr-10 py-2.5 bg-surface/50 border border-border/30 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/20 transition-colors"
+            className="w-full pl-10 pr-10 py-2.5 bg-surface/50 border border-border/30 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-ring/20 transition-colors"
           />
           {searchQuery && (
             <button

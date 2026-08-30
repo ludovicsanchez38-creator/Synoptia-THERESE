@@ -75,10 +75,17 @@ const REMPLISSAGES = [
 const DOMAINES = ['agenda', 'taches', 'factures', 'prospects'] as const;
 
 describe('lot 5 : plus une seule couleur brute', () => {
-  it("aucune couleur Tailwind brute ne sert de couleur de texte", () => {
+  it("aucune couleur Tailwind brute, ni en texte ni en fond", () => {
+    // La première version ne regardait que le texte : 206 fonds, bordures et
+    // anneaux bruts sont restés, tous en nuances 400/500/600 pensées pour un
+    // fond sombre. Un survol qui passe de green-500/20 à /30 faisait tomber
+    // une action sous le seuil, et rien ne le voyait.
     const familles =
       'red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
-    const motif = new RegExp(`\\btext-(?:${familles})-\\d{2,3}\\b`, 'g');
+    const motif = new RegExp(
+      `\\b(?:text|bg|border|ring|from|to|via|placeholder|divide|outline|shadow|decoration|accent|caret)-(?:${familles})-\\d{2,3}\\b`,
+      'g',
+    );
     const fautifs: string[] = [];
     for (const f of SOURCES) {
       for (const m of readFileSync(f, 'utf-8').matchAll(motif)) fautifs.push(`${court(f)} : ${m[0]}`);

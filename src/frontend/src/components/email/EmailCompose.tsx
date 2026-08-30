@@ -205,7 +205,7 @@ export function EmailCompose() {
               value={toInput}
               onChange={(e) => setToInput(e.target.value)}
               placeholder="destinataire@example.com, ..."
-              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted/50 focus:outline-none"
+              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
             />
             <button
               onClick={() => setShowCcBcc(!showCcBcc)}
@@ -228,7 +228,7 @@ export function EmailCompose() {
                   value={ccInput}
                   onChange={(e) => setCcInput(e.target.value)}
                   placeholder="copie@example.com, ..."
-                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted/50 focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ export function EmailCompose() {
                   value={bccInput}
                   onChange={(e) => setBccInput(e.target.value)}
                   placeholder="copie cachée@example.com, ..."
-                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted/50 focus:outline-none"
+                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
                 />
               </div>
             </div>
@@ -256,7 +256,7 @@ export function EmailCompose() {
               value={draftSubject}
               onChange={(e) => setDraftSubject(e.target.value)}
               placeholder="Objet du message"
-              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted/50 focus:outline-none"
+              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
             />
           </div>
         </div>
@@ -268,14 +268,14 @@ export function EmailCompose() {
             value={draftBody}
             onChange={(e) => setDraftBody(e.target.value)}
             placeholder="Écris ton message..."
-            className="w-full h-full px-6 py-4 bg-transparent text-sm text-text placeholder:text-text-muted/50 resize-none focus:outline-none"
+            className="w-full h-full px-6 py-4 bg-transparent text-sm text-text placeholder:text-text-muted resize-none focus:outline-none"
           />
         </div>
       </div>
 
       {/* Confirmation d'abandon */}
       {showCancelConfirm && (
-        <div className="px-6 py-3 bg-yellow-500/10 border-t border-yellow-500/20 flex items-center gap-3">
+        <div className="px-6 py-3 bg-agent-amber/10 border-t border-agent-amber/20 flex items-center gap-3">
           <p className="text-sm text-agent-amber flex-1">Abandonner ce brouillon ?</p>
           <button
             onClick={confirmCancel}

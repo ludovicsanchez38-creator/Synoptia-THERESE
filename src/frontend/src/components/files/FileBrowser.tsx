@@ -348,7 +348,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
             placeholder="Filtrer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-32 pl-7 pr-2 py-1 text-xs bg-background/60 border border-border/50 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+            className="w-32 pl-7 pr-2 py-1 text-sm bg-background/60 border border-border/50 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
           />
         </div>
       </div>

@@ -191,7 +191,7 @@ export function ContactsMemoryCanvas({
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label="Rechercher un contact"
                 placeholder="Rechercher…"
-                className="w-full rounded-md border border-border bg-surface-2 py-2 pl-8 pr-2 text-xs text-text outline-none focus:border-domaine-prospects"
+                className="w-full rounded-md border border-border bg-surface-2 py-2 pl-8 pr-2 text-sm text-text outline-none focus:border-domaine-prospects"
               />
             </div>
             <div className="h-[calc(100%-46px)] space-y-1 overflow-y-auto">

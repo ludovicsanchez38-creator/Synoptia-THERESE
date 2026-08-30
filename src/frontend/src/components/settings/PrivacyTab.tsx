@@ -321,7 +321,7 @@ export function PrivacyTab() {
               placeholder="Passphrase de chiffrement"
               aria-label="Passphrase de chiffrement de la sauvegarde"
               autoComplete="new-password"
-              className="rounded-md border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+              className="rounded-md border border-border/50 bg-surface px-2 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
             />
             <Button
               variant="primary"
@@ -386,7 +386,7 @@ export function PrivacyTab() {
                           placeholder="Passphrase de la sauvegarde"
                           aria-label="Passphrase de la sauvegarde à restaurer"
                           autoComplete="off"
-                          className="mt-2 w-full rounded-md border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+                          className="mt-2 w-full rounded-md border border-border/50 bg-surface px-2 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
                         />
                         <div className="mt-2 flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => { setRestoreConfirmation(null); setRestorePassword(''); }}>Annuler</Button>

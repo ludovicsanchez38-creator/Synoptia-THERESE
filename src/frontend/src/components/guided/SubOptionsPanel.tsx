@@ -5,10 +5,10 @@ import { cn } from '../../lib/utils';
 
 // Mapping format -> icône et couleur
 const formatConfig: Record<FileFormat, { icon: typeof FileText; color: string; label: string }> = {
-  docx: { icon: FileText, color: 'text-agent-blue bg-blue-400/20', label: 'DOCX' },
-  pptx: { icon: Presentation, color: 'text-agent-amber bg-orange-400/20', label: 'PPTX' },
-  xlsx: { icon: Table, color: 'text-agent-green bg-green-400/20', label: 'XLSX' },
-  html: { icon: FileText, color: 'text-agent-cyan bg-cyan-400/20', label: 'HTML' },
+  docx: { icon: FileText, color: 'text-agent-blue bg-agent-blue/20', label: 'DOCX' },
+  pptx: { icon: Presentation, color: 'text-agent-amber bg-agent-amber/20', label: 'PPTX' },
+  xlsx: { icon: Table, color: 'text-agent-green bg-agent-green/20', label: 'XLSX' },
+  html: { icon: FileText, color: 'text-agent-cyan bg-agent-cyan/20', label: 'HTML' },
   pdf: { icon: FileText, color: 'text-error bg-error/20', label: 'PDF' },
 };
 
@@ -80,7 +80,7 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
               'hover:shadow-[0_0_15px_rgba(34,211,238,0.1)]',
               'text-text-muted hover:text-text',
               'transition-all duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
+              'focus:outline-none focus:ring-2 focus:ring-ring/30',
               'flex items-center gap-2'
             )}
           >

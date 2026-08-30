@@ -97,6 +97,12 @@
   --color-info-fill: #1D4ED8;
   --color-info-ink: #FFFFFF;
 
+  /* La préférence d'accessibilité « Petite » pose 14 px sur <html> : à
+     l'échelle rem, text-xs tombait alors à 10,5 px, sous le plancher que ce
+     projet s'est donné. La plus petite marche est plafonnée par le bas ; les
+     tailles au-dessus suivent la préférence, qui est un choix de l'utilisateur. */
+  --text-xs: max(0.75rem, 12px);
+
   /* Typography */
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-family-display: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
@@ -137,6 +143,11 @@
   --color-success-tint: #E7F7EF;
   --color-warning-tint: #FFF8E8;
   --color-error-tint: #FFF1F1;
+
+  /* La ligne de l'heure courante dans l'agenda. Rouge par convention, pas
+     par sémantique : ce n'est pas une erreur. Jeton dédié pour que le sens
+     reste lisible et que la couleur suive le thème. */
+  --color-instant: #DC2626;
   --color-info-tint: #EAF1FF;
 }
 
@@ -181,8 +192,11 @@
      laisse passer la couche du dessous et rend le contraste imprévisible. */
   --color-domaine-agenda: #22D3EE;
   --color-domaine-agenda-tint: #15334D;
-  --color-domaine-taches: #F59E0B;
-  --color-domaine-taches-tint: #302C30;
+  /* #FBBF24 et non #F59E0B : en sombre, --color-warning vaut déjà #F59E0B.
+     Un badge « en retard » et une puce de domaine Tâches étaient
+     indiscernables. */
+  --color-domaine-taches: #FBBF24;
+  --color-domaine-taches-tint: #313033;
   /* #F0509F ne donnait que 4,43:1 sur sa propre teinte opaque. */
   --color-domaine-factures: #F472B6;
   --color-domaine-factures-tint: #302646;
@@ -226,6 +240,7 @@
   --color-success-tint: #13303F;
   --color-warning-tint: #302C30;
   --color-error-tint: #302037;
+  --color-instant: #F87171;
   --color-info-tint: #1D2D4F;
 
   /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
@@ -302,7 +317,16 @@ select option {
 
 /* Gradient text utility (marque - identique dans les deux modes) */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-accent-cyan), var(--color-accent-magenta));
+  /* Les DEUX ENCRES, pas les couleurs de remplissage. Le dégradé de marque
+     clippé sur du texte donnait 1,67:1 en clair (cyan) et 4,22:1 en sombre
+     (magenta), et l'auditeur ne le voyait pas : il compose la couleur héritée
+     et ignore -webkit-text-fill-color: transparent. Entre les deux encres,
+     tout point du dégradé reste au-dessus de 4,9:1. */
+  background: linear-gradient(
+    135deg,
+    var(--color-accent-cyan-ink),
+    var(--color-accent-magenta-ink)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -406,8 +430,10 @@ svg.lucide { stroke-width: 2.25; }
   border: 1px solid var(--color-border);
 }
 [data-theme="dark"] .message-user {
-  background: linear-gradient(135deg, rgba(225, 29, 141, 0.12) 0%, rgba(225, 29, 141, 0.06) 100%);
-  border: 1px solid rgba(225, 29, 141, 0.2);
+  /* La même identité que le thème clair : l'accent. Avant, un lavis magenta
+     translucide, qui changeait le sens de la bulle selon le thème et laissait
+     passer la couche du dessous. */
+  background: var(--color-accent-tint);
 }
 [data-theme="dark"] .message-assistant {
   background: var(--color-surface-elevated);
@@ -501,12 +527,19 @@ html[data-reduce-motion="true"] *::after {
   --color-accent-cyan-ink: #00FFFF;
   --color-ink-on-fill: #000000;
 
-  /* Domaines en contraste élevé : les valeurs du thème clair tiennent AA
-     (4,70 à 6,23) mais pas le 7:1 AAA que ce bloc promet. */
-  --color-domaine-agenda: #164E63;
-  --color-domaine-taches: #7C2D12;
-  --color-domaine-factures: #831843;
-  --color-domaine-prospects: #4C1D95;
+  /* Domaines en contraste élevé. Ce bloc pose un fond NOIR : les encres y
+     sont claires, pas sombres. Les valeurs posées ici le 30/08/2026 étaient
+     copiées du thème clair (#164E63, #7C2D12…) et donnaient 1,2:1 à 2,2:1
+     sur les teintes du thème courant, qui n'étaient pas redéfinies non plus.
+     Teintes ramenées au noir, comme --color-accent-tint. */
+  --color-domaine-agenda: #67E8F9;
+  --color-domaine-agenda-tint: #000000;
+  --color-domaine-taches: #FDE68A;
+  --color-domaine-taches-tint: #000000;
+  --color-domaine-factures: #F9A8D4;
+  --color-domaine-factures-tint: #000000;
+  --color-domaine-prospects: #D8B4FE;
+  --color-domaine-prospects-tint: #000000;
   --color-accent-magenta-ink: #FF00FF;
   --color-bg: #000000;
   --color-surface: #0A0A0A;
@@ -539,19 +572,22 @@ html[data-reduce-motion="true"] *::after {
 
   --color-success: #00FF00;
   --color-warning: #FFFF00;
-  --color-error: #FF0000;
+  /* #FF0000 ne donne que 5,25:1 sur noir : AA, pas le AAA que ce bloc
+     annonce. #FF6B6B donne 7,57:1 des deux côtés. */
+  --color-error: #FF6B6B;
   --color-info: #00BFFF;
   --color-success-fill: #00FF00;
   --color-success-ink: #000000;
   --color-warning-fill: #FFFF00;
   --color-warning-ink: #000000;
-  --color-error-fill: #FF0000;
+  --color-error-fill: #FF6B6B;
   --color-error-ink: #000000;
   --color-info-fill: #00BFFF;
   --color-info-ink: #000000;
   --color-success-tint: #001F00;
   --color-warning-tint: #242400;
-  --color-error-tint: #260000;
+  --color-error-tint: #100000;
+  --color-instant: #FF6B6B;
   --color-info-tint: #001D26;
 
   --glow: none;

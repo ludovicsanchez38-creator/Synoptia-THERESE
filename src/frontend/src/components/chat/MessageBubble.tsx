@@ -125,10 +125,12 @@ function CodeBlock({
     <div className="relative group/code my-3">
       {/* Language badge + Copy button */}
       <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-3 py-1 bg-[#1e1e1e] rounded-t-md border-b border-gray-700">
-        <span className="text-xs text-text-muted font-mono">{language}</span>
+        <span className="text-xs text-[#B6C7DA] font-mono">{language}</span>
         <button
           onClick={copyCode}
-          className="flex items-center gap-1 text-sm text-text-muted hover:text-text transition-colors"
+          // Le bandeau vit sur #1e1e1e dans les deux thèmes : l'encre muette
+          // du thème clair y donnait 2,65:1.
+          className="flex items-center gap-1 text-sm text-[#B6C7DA] hover:brightness-125 transition-[filter]"
         >
           {copied ? (
             <>
@@ -613,8 +615,8 @@ export const MessageBubble = memo(function MessageBubble({
                   message.uncertainty.confidence_level === 'low'
                     ? 'bg-error/10 text-error'
                     : message.uncertainty.confidence_level === 'medium'
-                    ? 'bg-yellow-500/10 text-warning'
-                    : 'bg-green-500/10 text-agent-green'
+                    ? 'bg-agent-amber/10 text-warning'
+                    : 'bg-agent-green/10 text-agent-green'
                 )}
                 title={message.uncertainty.uncertainty_phrases.join(', ')}
               >
@@ -637,7 +639,7 @@ export const MessageBubble = memo(function MessageBubble({
               return (
                 <div
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-sm ${
-                    isLocal ? 'bg-green-500/10 text-agent-green' : 'bg-orange-500/10 text-agent-amber'
+                    isLocal ? 'bg-agent-green/10 text-agent-green' : 'bg-agent-amber/10 text-agent-amber'
                   }`}
                   title={
                     isLocal

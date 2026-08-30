@@ -448,7 +448,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         <select aria-label="Calendrier affiché"
           value={currentCalendarId || ''}
           onChange={(e) => setCurrentCalendar(e.target.value)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
         >
           {calendars.map((cal) => (
             <option key={cal.id} value={cal.id}>
@@ -461,7 +461,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   );
 
   const reauthBanner = needsReauth ? (
-    <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+    <div className="px-4 py-2 bg-agent-amber/10 border-b border-agent-amber/20 flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
       <p className="text-sm text-agent-amber flex-1">
         Connexion Google expirée. Reconnecte-toi pour synchroniser le calendrier.

@@ -38,12 +38,12 @@ interface AgentSessionMessage {
 
 /** Couleurs par profil */
 const COLOR_MAP: Record<string, { accent: string; bg: string }> = {
-  cyan: { accent: "text-agent-cyan", bg: "bg-cyan-500/10" },
-  magenta: { accent: "text-agent-magenta", bg: "bg-pink-500/10" },
-  blue: { accent: "text-agent-blue", bg: "bg-blue-500/10" },
-  green: { accent: "text-agent-green", bg: "bg-emerald-500/10" },
-  purple: { accent: "text-agent-purple", bg: "bg-purple-500/10" },
-  amber: { accent: "text-agent-amber", bg: "bg-amber-500/10" },
+  cyan: { accent: "text-agent-cyan", bg: "bg-agent-cyan/10" },
+  magenta: { accent: "text-agent-magenta", bg: "bg-agent-magenta/10" },
+  blue: { accent: "text-agent-blue", bg: "bg-agent-blue/10" },
+  green: { accent: "text-agent-green", bg: "bg-agent-green/10" },
+  purple: { accent: "text-agent-purple", bg: "bg-agent-purple/10" },
+  amber: { accent: "text-agent-amber", bg: "bg-agent-amber/10" },
 };
 
 const DEFAULT_COLOR = { accent: "text-text-muted", bg: "bg-surface-2" };
@@ -474,7 +474,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                   <div
                     className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
                       isUser
-                        ? "bg-cyan-500/10 text-agent-cyan"
+                        ? "bg-agent-cyan/10 text-agent-cyan"
                         : `${colors.bg}`
                     } text-sm`}
                   >
@@ -534,7 +534,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       {/* Input */}
       {pendingInstruction && (
         <div className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
-          <div className="rounded-md border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
+          <div className="rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">
               Modèle : {activeModel || "non identifié"}. Outils déclarés : {profile?.tools.join(", ") || "aucun"}.
@@ -561,7 +561,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           }
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-cyan-500/50 disabled:opacity-50"
+          className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-cyan/50 disabled:opacity-50"
           style={{ minHeight: "38px", maxHeight: "120px" }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
@@ -582,7 +582,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-500/20 text-agent-cyan transition hover:bg-cyan-500/30 disabled:opacity-30 disabled:hover:bg-cyan-500/20"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-cyan/20 text-agent-cyan transition hover:bg-agent-cyan/30 disabled:opacity-30 disabled:hover:bg-agent-cyan/20"
             title="Envoyer"
           >
             <Send size={16} />

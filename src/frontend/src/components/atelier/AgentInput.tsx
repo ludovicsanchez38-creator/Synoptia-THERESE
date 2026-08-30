@@ -43,7 +43,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
         placeholder={placeholder || 'Décris ce que tu veux...'}
         disabled={isStreaming}
         rows={1}
-        className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
+        className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50 disabled:opacity-50"
         style={{ minHeight: '38px', maxHeight: '120px' }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
@@ -64,7 +64,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
         <button
           onClick={handleSubmit}
           disabled={!value.trim()}
-          className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-30 disabled:hover:bg-purple-500/20"
+          className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-purple/20 text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-30 disabled:hover:bg-agent-purple/20"
           title="Envoyer"
         >
           <Send size={16} />

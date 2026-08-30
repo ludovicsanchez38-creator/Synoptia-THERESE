@@ -287,7 +287,7 @@ export function LLMTab({
                     }
                   }}
                   placeholder={currentProviderConfig?.keyPlaceholder || '...'}
-                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors font-mono"
                 />
                 <button
                   type="button"
@@ -532,7 +532,7 @@ function ModelSelector({
                 selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-8' :
                 'identifiant-du-modele'
               }
-              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50 font-mono"
             />
             <Button
               variant="primary"

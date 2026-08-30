@@ -48,6 +48,15 @@ function ApplicationBootstrap() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Le contraste élevé était posé sur un <div> interne uniquement. Les modales
+  // rendues par portail sous document.body sortaient de cet arbre CSS et
+  // gardaient la palette du thème courant : configuration d'un compte e-mail,
+  // générateur de réponse, éditeur de signature. Il suit <html> comme le thème.
+  useEffect(() => {
+    if (highContrast) document.documentElement.setAttribute('data-high-contrast', 'true');
+    else document.documentElement.removeAttribute('data-high-contrast');
+  }, [highContrast]);
+
   // 0.44 : contrôle de génération du manifeste de capacités. Le bundle
   // frontend et le binaire sidecar embarquent chacun leur exemplaire du même
   // fichier canonique ; s'ils ont été packagés à des moments différents, l'aide

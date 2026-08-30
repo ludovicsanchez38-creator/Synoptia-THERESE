@@ -20,33 +20,33 @@ import { Spinner } from "../ui/Spinner";
 /** Couleurs par ID agent (fallback si le backend ne les fournit pas) */
 const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = {
   cyan: {
-    border: "border-cyan-500/30",
-    bg: "bg-cyan-500/10",
+    border: "border-agent-cyan/30",
+    bg: "bg-agent-cyan/10",
     text: "text-agent-cyan",
   },
   magenta: {
-    border: "border-pink-500/30",
-    bg: "bg-pink-500/10",
+    border: "border-agent-magenta/30",
+    bg: "bg-agent-magenta/10",
     text: "text-agent-magenta",
   },
   blue: {
-    border: "border-blue-500/30",
-    bg: "bg-blue-500/10",
+    border: "border-agent-blue/30",
+    bg: "bg-agent-blue/10",
     text: "text-agent-blue",
   },
   green: {
-    border: "border-emerald-500/30",
-    bg: "bg-emerald-500/10",
+    border: "border-agent-green/30",
+    bg: "bg-agent-green/10",
     text: "text-agent-green",
   },
   purple: {
-    border: "border-purple-500/30",
-    bg: "bg-purple-500/10",
+    border: "border-agent-purple/30",
+    bg: "bg-agent-purple/10",
     text: "text-agent-purple",
   },
   amber: {
-    border: "border-amber-500/30",
-    bg: "bg-amber-500/10",
+    border: "border-agent-amber/30",
+    bg: "bg-agent-amber/10",
     text: "text-agent-amber",
   },
 };
@@ -191,8 +191,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
   if (error && profiles.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <AlertCircle size={24} className="text-error/60" />
-        <p className="text-xs text-error/80">{error}</p>
+        <AlertCircle size={24} className="text-error" />
+        <p className="text-xs text-error">{error}</p>
       </div>
     );
   }
@@ -201,7 +201,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
       {/* Header */}
       <div className="mb-5 text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cyan-500/10">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-agent-cyan/10">
           <Bot size={20} className="text-agent-cyan" />
         </div>
         <h3 className="mb-1 text-sm font-semibold text-text">
@@ -226,7 +226,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                 setCustomModel("");
                 localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
               }}
-              className="flex-1 bg-transparent text-xs text-text outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
+              className="flex-1 bg-transparent text-sm text-text outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
             >
               {Object.entries(
                 availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
@@ -261,7 +261,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                 }
               }}
               placeholder="ex: meta-llama/llama-4-maverick:free"
-              className="flex-1 bg-transparent text-xs text-text placeholder-[#6B7280]/50 outline-none"
+              className="flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none"
             />
             {customModel.trim() && (
               <button
@@ -296,7 +296,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.06 }}
               onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
-              className={`group flex flex-col items-center gap-2 rounded-md border ${colors.border} bg-surface p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-surface-elevated`}
+              className={`group flex flex-col items-center gap-2 rounded-md border ${colors.border} bg-surface p-4 text-center transition-all hover:border-agent-cyan/50 hover:bg-surface-elevated`}
             >
               {/* Icone */}
               <div

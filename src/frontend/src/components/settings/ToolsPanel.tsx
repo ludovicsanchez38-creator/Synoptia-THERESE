@@ -120,7 +120,7 @@ function PresetCategory({
                       aria-label={isInstalled ? `${preset.name} est installé` : `Installer ${preset.name}`}
                       onClick={() => onInstall(preset.id)}
                       disabled={isInstalled || isInstalling}
-                      className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+                      className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
                     <div className="pointer-events-none relative z-10 flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
@@ -543,7 +543,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                         </p>
                       ))}
                     {requirementsCheck.help_message && (
-                      <p className="mt-1 text-warning/80">{requirementsCheck.help_message}</p>
+                      <p className="mt-1 text-warning">{requirementsCheck.help_message}</p>
                     )}
                   </div>
                 </div>
@@ -556,7 +556,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                 value={presetFilter}
                 onChange={(e) => setPresetFilter(e.target.value)}
                 placeholder="Rechercher un preset..."
-                className="w-full px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
 
               {(() => {
@@ -653,7 +653,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     value={newServer.name}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Mon serveur"
-                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
                   />
                 </div>
                 <div>
@@ -663,7 +663,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     value={newServer.command}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, command: e.target.value }))}
                     placeholder="npx"
-                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   value={newServer.args}
                   onChange={(e) => setNewServer((prev) => ({ ...prev, args: e.target.value }))}
                   placeholder="-y @anthropic/mcp-server-filesystem ~"
-                  className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                  className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
                 />
               </div>
 

@@ -16,7 +16,7 @@ const AccessibleButton: React.FC<{ onClick: () => void; label: string }> = ({
   <button
     onClick={onClick}
     aria-label={label}
-    className="focus:ring-2 focus:ring-accent-cyan"
+    className="focus:ring-2 focus:ring-ring"
   >
     {label}
   </button>
@@ -126,7 +126,7 @@ describe('Accessibility', () => {
       render(<AccessibleButton onClick={() => {}} label="Focusable" />);
 
       const button = screen.getByRole('button');
-      expect(button.className).toContain('focus:ring-accent-cyan');
+      expect(button.className).toContain('focus:ring-ring');
     });
   });
 

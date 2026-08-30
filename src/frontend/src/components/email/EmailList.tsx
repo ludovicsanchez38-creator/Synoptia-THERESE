@@ -275,7 +275,7 @@ export function EmailList({ accountId }: EmailListProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Rechercher..."
-            className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 loadMessages();

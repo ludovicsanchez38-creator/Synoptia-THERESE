@@ -29,7 +29,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { ContactResponse } from '../../services/api';
 
 // Les 7 stages du pipeline. Couleurs prises aux jetons depuis le 30/08/2026 :
-// les nuances Tailwind brutes d'avant (bg-yellow-500, bg-gray-400…) donnaient
+// les nuances Tailwind brutes d'avant (bg-agent-amber, bg-gray-400…) donnaient
 // du blanc a 1,2:1 a 3,3:1 sur l'en-tete de colonne. Toutes celles-ci passent
 // AA en blanc (5,02 a 7,09).
 const PIPELINE_STAGES = [
@@ -167,7 +167,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
       {/* Cards contacts */}
       <div
         className={`bg-surface border border-surface rounded-b-md p-2 min-h-[200px] space-y-2 transition-colors ${
-          isOver ? 'ring-2 ring-accent-cyan/50 bg-accent-cyan/5' : ''
+          isOver ? 'ring-2 ring-ring/50 bg-accent-cyan/5' : ''
         }`}
       >
         {children}
@@ -231,7 +231,7 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
       exit={isOverlay ? undefined : { opacity: 0, y: -10 }}
       onClick={onClick}
       className={`bg-background border border-surface hover:border-accent-cyan rounded-md p-3 cursor-pointer transition-colors relative ${
-        isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30' : ''
+        isOverlay ? 'shadow-xl ring-2 ring-ring/30' : ''
       }`}
     >
       {/* Drag Handle */}

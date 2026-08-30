@@ -93,7 +93,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
                       en dessous donnait deux fois le meme mot a l'ecran. */}
                   <span className="sr-only">Phase de {p.intitule}</span>
                   <select
-                    className="rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-text"
+                    className="rounded-sm border border-border bg-surface-2 px-2 py-1 text-sm text-text"
                     value={p.phase}
                     onChange={(e) => basculer(p.id, e.target.value as PhaseDePrestation)}
                   >

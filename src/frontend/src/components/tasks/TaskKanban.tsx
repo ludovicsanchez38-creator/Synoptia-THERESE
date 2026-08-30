@@ -195,7 +195,7 @@ function DroppableColumn({ column, count, children }: DroppableColumnProps) {
     <div
       ref={setNodeRef}
       className={`flex-1 min-w-[300px] flex flex-col bg-background/20 rounded-md transition-colors ${
-        isOver ? 'ring-2 ring-accent-cyan/50 bg-accent-cyan/5' : ''
+        isOver ? 'ring-2 ring-ring/50 bg-accent-cyan/5' : ''
       }`}
     >
       {/* Column Header */}
@@ -279,8 +279,8 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
 
   const priorityColors = {
     urgent: 'bg-error/10 text-error border-error/20',
-    high: 'bg-orange-500/10 text-agent-amber border-orange-500/20',
-    medium: 'bg-blue-500/10 text-agent-blue border-blue-500/20',
+    high: 'bg-agent-amber/10 text-agent-amber border-agent-amber/20',
+    medium: 'bg-agent-blue/10 text-agent-blue border-agent-blue/20',
     low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
   };
 
@@ -293,7 +293,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       className={`p-3 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors relative ${
-        isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30' : ''
+        isOverlay ? 'shadow-xl ring-2 ring-ring/30' : ''
       }`}
       onClick={onClick}
     >
@@ -369,7 +369,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
           {task.status !== 'in_progress' && (
             <button
               onClick={() => onStatusChange('in_progress')}
-              className="p-1 hover:bg-blue-500/20 rounded-sm transition-colors"
+              className="p-1 hover:bg-agent-blue/20 rounded-sm transition-colors"
               title="Marquer en cours"
             >
               <Clock className="w-3 h-3 text-agent-blue" />
@@ -378,7 +378,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
           {task.status !== 'done' && (
             <button
               onClick={() => onStatusChange('done')}
-              className="p-1 hover:bg-green-500/20 rounded-sm transition-colors"
+              className="p-1 hover:bg-agent-green/20 rounded-sm transition-colors"
               title="Marquer terminé"
             >
               <CheckCircle2 className="w-3 h-3 text-agent-green" />

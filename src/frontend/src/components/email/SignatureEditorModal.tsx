@@ -169,7 +169,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                     value={html}
                     onChange={(e) => setHtml(e.target.value)}
                     placeholder={'<p>Ludovic Sanchez<br/>Synoptïa</p>'}
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none font-mono text-sm"
+                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm"
                   />
                 </div>
                 <div>

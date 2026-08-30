@@ -167,7 +167,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1.5 w-full text-xs px-1.5 py-1 bg-surface border border-border/50 rounded-sm text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
+                  className="mt-1.5 w-full text-sm px-1.5 py-1 bg-surface border border-border/50 rounded-sm text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name} className={sizeColor(m.size)}>
@@ -218,7 +218,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1 w-full text-xs px-1 py-0.5 bg-surface border border-border/50 rounded-sm text-text-muted"
+                  className="mt-1 w-full text-sm px-1 py-0.5 bg-surface border border-border/50 rounded-sm text-text-muted"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name}>

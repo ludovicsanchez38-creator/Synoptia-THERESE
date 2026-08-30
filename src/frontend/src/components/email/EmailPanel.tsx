@@ -352,7 +352,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
 
         {/* Bannière réautorisation */}
         {needsReauth && (
-          <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+          <div className="px-4 py-2 bg-agent-amber/10 border-b border-agent-amber/20 flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
             <p className="text-sm text-agent-amber flex-1">
               Connexion Gmail expirée. Reconnecte-toi pour continuer.
@@ -614,7 +614,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
 
         {/* Bannière réautorisation */}
         {needsReauth && (
-          <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
+          <div className="px-4 py-2 bg-agent-amber/10 border-b border-agent-amber/20 flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
             <p className="text-sm text-agent-amber flex-1">
               Connexion Gmail expirée. Reconnecte-toi pour continuer.

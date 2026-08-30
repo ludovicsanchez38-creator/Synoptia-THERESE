@@ -60,7 +60,7 @@ export function NewTaskDialog() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-agent-purple/20">
               <Zap size={14} className="text-agent-purple" />
             </div>
             <span className="text-sm font-semibold text-text">
@@ -78,7 +78,7 @@ export function NewTaskDialog() {
         {/* Body */}
         <div className="px-5 py-4">
           {!openclawConnected && (
-            <div className="mb-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-agent-amber">
+            <div className="mb-3 rounded-md border border-agent-amber/20 bg-agent-amber/10 px-3 py-2 text-xs text-agent-amber">
               OpenClaw n&apos;est pas connecté. Vérifie que le gateway tourne.
             </div>
           )}
@@ -93,7 +93,7 @@ export function NewTaskDialog() {
             onKeyDown={handleKeyDown}
             placeholder="Ex: Envoie un email de relance à Jean Dupont pour la facture F-2024-042..."
             rows={4}
-            className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50"
+            className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50"
             disabled={isDispatching}
           />
           <p className="mt-1.5 text-xs text-text-muted">
@@ -102,7 +102,7 @@ export function NewTaskDialog() {
           </p>
 
           {isMaxReached && (
-            <div className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-agent-amber">
+            <div className="mt-2 rounded-md border border-agent-amber/20 bg-agent-amber/10 px-3 py-2 text-xs text-agent-amber">
               Tu as déjà {maxAgents} agents en cours. Attends qu&apos;un se termine ou annule-en un.
             </div>
           )}
@@ -120,7 +120,7 @@ export function NewTaskDialog() {
           <button
             onClick={handleSubmit}
             disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
-            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md bg-agent-purple/20 px-4 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (
               <>

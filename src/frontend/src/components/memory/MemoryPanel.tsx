@@ -316,7 +316,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
             {/* RGPD Alert Banner */}
             {rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
-              <div className="mx-3 mt-3 p-2.5 rounded-md bg-orange-500/10 border border-orange-500/30">
+              <div className="mx-3 mt-3 p-2.5 rounded-md bg-agent-amber/10 border border-agent-amber/30">
                 <div className="flex items-center gap-2 text-sm text-agent-amber">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span>
@@ -489,7 +489,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}
                             placeholder="Ex: Demande du contact, fin de relation..."
-                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-error/50"
+                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-error/50"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -518,7 +518,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     {rgpdAction.type === 'renew' && (
                       <>
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-agent-green/20 flex items-center justify-center">
                             <RefreshCw className="w-5 h-5 text-agent-green" />
                           </div>
                           <div>
@@ -535,7 +535,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </Button>
                           <Button
                             variant="primary"
-                            className="flex-1 bg-green-500 hover:bg-green-600"
+                            className="flex-1 bg-agent-green hover:bg-agent-green"
                             onClick={() => handleRGPDRenewConsent(rgpdAction.contact)}
                             disabled={rgpdActionLoading}
                           >
@@ -767,7 +767,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
+      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-agent-amber/20 text-warning" title="Base légale RGPD non définie pour ce contact">
         RGPD ?
       </span>
     );
@@ -778,9 +778,9 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   const isExpired = dateExpiration && new Date(dateExpiration) < new Date();
 
   const badgeColors: Record<string, string> = {
-    consentement: 'bg-green-500/20 text-agent-green',
-    contrat: 'bg-blue-500/20 text-agent-blue',
-    interet_legitime: 'bg-purple-500/20 text-agent-purple',
+    consentement: 'bg-agent-green/20 text-agent-green',
+    contrat: 'bg-agent-blue/20 text-agent-blue',
+    interet_legitime: 'bg-agent-purple/20 text-agent-purple',
     obligation_legale: 'bg-gray-500/20 text-text-muted',
   };
 
@@ -802,7 +802,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
     <span
       className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
         isExpired ? 'bg-error/20 text-error' :
-        isExpiringSoon ? 'bg-orange-500/20 text-agent-amber' :
+        isExpiringSoon ? 'bg-agent-amber/20 text-agent-amber' :
         badgeColors[baseLegale] || 'bg-gray-500/20 text-text-muted'
       }`}
       title={`${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`}

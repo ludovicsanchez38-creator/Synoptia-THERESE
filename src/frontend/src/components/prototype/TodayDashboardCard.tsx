@@ -57,7 +57,10 @@ function StateShell({ children }: { children: React.ReactNode }) {
 const COULEUR_DE_DOMAINE: Record<string, string> = {
   Agenda: 'bg-domaine-agenda-tint text-domaine-agenda',
   Tâches: 'bg-domaine-taches-tint text-domaine-taches',
-  Relances: 'bg-domaine-taches-tint text-domaine-taches',
+  // Une relance porte sur un contact : même domaine que les prospects.
+  // Avant, la ligne « Relancer… » était violette et la pastille
+  // « Relances » brune, pour exactement la même donnée.
+  Relances: 'bg-domaine-prospects-tint text-domaine-prospects',
   Factures: 'bg-domaine-factures-tint text-domaine-factures',
   CRM: 'bg-domaine-prospects-tint text-domaine-prospects',
 };

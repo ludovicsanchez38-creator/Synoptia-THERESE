@@ -114,8 +114,8 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             className={cn(
               'w-full px-3 py-2 rounded-md text-sm',
               'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted/50',
-              'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
+              'placeholder:text-text-muted',
+              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
             )}
           />
           {name && (
@@ -139,8 +139,8 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             className={cn(
               'w-full px-3 py-2 rounded-md text-sm',
               'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted/50',
-              'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
+              'placeholder:text-text-muted',
+              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
             )}
           />
         </div>
@@ -166,7 +166,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
               className={cn(
                 'w-full px-3 py-2 rounded-md text-sm',
                 'bg-surface-elevated border border-border text-text',
-                'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
+                'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
               )}
             >
               {CATEGORY_OPTIONS.map((opt) => (
@@ -190,8 +190,8 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
               className={cn(
                 'w-full px-3 py-2 rounded-md text-sm',
                 'bg-surface-elevated border border-border text-text',
-                'placeholder:text-text-muted/50',
-                'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
+                'placeholder:text-text-muted',
+                'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
               )}
             />
           </div>
@@ -204,7 +204,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             type="checkbox"
             checked={showOnHome}
             onChange={(e) => setShowOnHome(e.target.checked)}
-            className="w-4 h-4 rounded-sm border-border bg-surface-elevated text-accent-cyan-ink focus:ring-accent-cyan/30"
+            className="w-4 h-4 rounded-sm border-border bg-surface-elevated text-accent-cyan-ink focus:ring-ring/30"
           />
           <label htmlFor="cmd-home" className="text-sm text-text">
             Afficher sur la page d'accueil
@@ -225,8 +225,8 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             className={cn(
               'w-full px-3 py-2 rounded-md text-sm resize-none',
               'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted/50',
-              'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
+              'placeholder:text-text-muted',
+              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
             )}
           />
         </div>

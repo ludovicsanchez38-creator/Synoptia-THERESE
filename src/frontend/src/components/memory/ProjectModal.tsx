@@ -311,7 +311,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Refonte site web"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -323,7 +323,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="Description du projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -385,7 +385,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   placeholder="5000"
                   min="0"
                   step="100"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -397,7 +397,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Notes internes sur le projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -472,7 +472,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="web, design, urgent"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -492,7 +492,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     <p className="text-sm text-error font-medium">
                       Supprimer « {fichierASupprimer.name} » ?
                     </p>
-                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
+                    <p className="text-xs text-error">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     {/* Pas « Annuler » : le formulaire en a déjà un, et deux
@@ -518,7 +518,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
-                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
+                    <p className="text-xs text-error">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button

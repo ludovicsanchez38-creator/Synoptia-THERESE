@@ -10,14 +10,14 @@ interface SynthesisCardProps {
 const confidenceConfig = {
   high: {
     color: 'text-agent-green',
-    bg: 'bg-green-500/10',
-    border: 'border-green-500/30',
+    bg: 'bg-agent-green/10',
+    border: 'border-agent-green/30',
     label: 'Confiance élevée',
   },
   medium: {
     color: 'text-warning',
-    bg: 'bg-yellow-500/10',
-    border: 'border-yellow-500/30',
+    bg: 'bg-agent-amber/10',
+    border: 'border-agent-amber/30',
     label: 'Confiance moyenne',
   },
   low: {

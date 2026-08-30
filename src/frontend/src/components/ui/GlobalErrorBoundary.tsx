@@ -55,7 +55,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
             )}
             <button
               onClick={this.handleReload}
-              className="px-6 py-3 bg-accent-fill text-accent-ink font-semibold rounded-md hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-bg"
+              className="px-6 py-3 bg-accent-fill text-accent-ink font-semibold rounded-md hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-bg"
             >
               Recharger l'application
             </button>

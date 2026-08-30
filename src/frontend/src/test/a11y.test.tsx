@@ -265,6 +265,10 @@ describe('lot 1 : les accents lisibles', () => {
     // la surface, jamais à la teinte sur laquelle elle s'affiche réellement.
     const PAIRES: [string, string][] = [
       ['accent', 'accent-tint'],
+      ['domaine-agenda', 'domaine-agenda-tint'],
+      ['domaine-taches', 'domaine-taches-tint'],
+      ['domaine-factures', 'domaine-factures-tint'],
+      ['domaine-prospects', 'domaine-prospects-tint'],
       ['success', 'success-tint'],
       ['warning', 'warning-tint'],
       ['error', 'error-tint'],
@@ -277,13 +281,23 @@ describe('lot 1 : les accents lisibles', () => {
     // Les deux thèmes : une teinte translucide en sombre laissait passer la
     // couche du dessous et faisait tomber un badge à 4,42:1 alors que le
     // jeton seul passait. Elles sont opaques depuis le 30/08/2026.
-    for (const [nomTheme, jetons] of [['clair', LIGHT_ALL], ['sombre', DARK]] as const) {
+    // Le contraste élevé est inclus : il posait un fond NOIR avec des encres
+    // de domaine copiées du thème clair, soit 1,2:1 à 2,2:1, et ne redéfinissait
+    // aucune teinte. Défaut trouvé par la revue adverse du 30/08/2026.
+    for (const [nomTheme, jetons] of [
+      ['clair', LIGHT_ALL],
+      ['sombre', DARK],
+      ['contraste élevé', HIGH_CONTRAST],
+    ] as const) {
       for (const [encre, teinte] of PAIRES) {
         const c = jetons[encre];
         const f = jetons[teinte];
         expect(c, `--color-${encre} absent du thème ${nomTheme}`).toBeTruthy();
         expect(f, `--color-${teinte} absent du thème ${nomTheme}`).toBeTruthy();
-        expect(contrast(c, f), `${encre} sur ${teinte} (${nomTheme})`).toBeGreaterThanOrEqual(4.5);
+        // Le mode contraste élevé annonce du AAA : on l'y tient.
+        const seuil = nomTheme === 'contraste élevé' ? 7 : 4.5;
+        expect(contrast(c, f), `${encre} sur ${teinte} (${nomTheme})`).toBeGreaterThanOrEqual(seuil);
+        expect(contrast(c, jetons['bg']), `${encre} sur le fond (${nomTheme})`).toBeGreaterThanOrEqual(seuil);
       }
     }
   });

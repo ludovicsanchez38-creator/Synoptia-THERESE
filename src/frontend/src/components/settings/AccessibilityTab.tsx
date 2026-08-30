@@ -51,7 +51,7 @@ export function AccessibilityTab() {
               tabIndex={theme === v ? 0 : -1}
               onClick={() => setTheme(v)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
+              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 theme === v
                   ? 'bg-accent-tint border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
@@ -80,12 +80,12 @@ export function AccessibilityTab() {
             role="switch"
             aria-checked={reduceMotion}
             onClick={() => setReduceMotion(!reduceMotion)}
-            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-              reduceMotion ? 'bg-accent-cyan' : 'bg-border'
+            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              reduceMotion ? 'bg-accent' : 'bg-border'
             }`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink-on-fill transition-transform ${
                 reduceMotion ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
@@ -105,7 +105,7 @@ export function AccessibilityTab() {
               tabIndex={fontSize === size ? 0 : -1}
               onClick={() => setFontSize(size)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
+              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 fontSize === size
                   ? 'bg-accent-tint border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
@@ -133,12 +133,12 @@ export function AccessibilityTab() {
             role="switch"
             aria-checked={highContrast}
             onClick={() => setHighContrast(!highContrast)}
-            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-              highContrast ? 'bg-accent-cyan' : 'bg-border'
+            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              highContrast ? 'bg-accent' : 'bg-border'
             }`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink-on-fill transition-transform ${
                 highContrast ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
@@ -162,12 +162,12 @@ export function AccessibilityTab() {
             role="switch"
             aria-checked={showKeyboardHints}
             onClick={() => setShowKeyboardHints(!showKeyboardHints)}
-            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-              showKeyboardHints ? 'bg-accent-cyan' : 'bg-border'
+            className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+              showKeyboardHints ? 'bg-accent' : 'bg-border'
             }`}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-ink-on-fill transition-transform ${
                 showKeyboardHints ? 'translate-x-5' : 'translate-x-0'
               }`}
             />

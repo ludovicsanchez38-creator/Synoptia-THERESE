@@ -125,7 +125,7 @@ export function CredentialsStep({
             value={clientId}
             onChange={(e) => onChange('clientId', e.target.value)}
             placeholder="123456789-abc...apps.googleusercontent.com"
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
           {validation.clientId && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -160,7 +160,7 @@ export function CredentialsStep({
             value={clientSecret}
             onChange={(e) => onChange('clientSecret', e.target.value)}
             placeholder="GOCSPX-..."
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
           {validation.clientSecret && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">

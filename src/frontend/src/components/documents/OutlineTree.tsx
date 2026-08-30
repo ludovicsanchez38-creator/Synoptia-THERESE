@@ -152,7 +152,7 @@ export function OutlineTree({
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Titre de la section"
             aria-label="Titre de la nouvelle section"
-            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
             autoFocus
           />
           <textarea
@@ -161,7 +161,7 @@ export function OutlineTree({
             placeholder="Consigne (optionnel)"
             aria-label="Consigne de la nouvelle section"
             rows={2}
-            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
           />
           <div className="flex items-center gap-2">
             <span className="text-xs text-text-muted">Niveau</span>
@@ -284,7 +284,7 @@ function SectionRow({ section, isActive, isOverlay, onSelect }: SectionRowProps)
     <div
       className={`mx-2 my-0.5 rounded-md border transition-colors ${
         isOverlay
-          ? 'shadow-xl ring-2 ring-accent-cyan/30 bg-surface border-border'
+          ? 'shadow-xl ring-2 ring-ring/30 bg-surface border-border'
           : isActive
           ? 'border-accent-cyan/50 bg-accent-cyan/10'
           : 'border-transparent hover:bg-surface/60 hover:border-border/40'

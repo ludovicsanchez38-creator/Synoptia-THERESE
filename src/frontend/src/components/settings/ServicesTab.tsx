@@ -175,7 +175,7 @@ export function ServicesTab({
                           }
                         }}
                         placeholder={provider.keyPlaceholder}
-                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors font-mono"
                       />
                       <button
                         type="button"
@@ -260,7 +260,7 @@ export function ServicesTab({
                   }
                 }}
                 placeholder="gsk_..."
-                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors font-mono"
               />
               <button
                 type="button"
@@ -318,7 +318,7 @@ export function ServicesTab({
             } ${webSearchLoading ? 'opacity-50' : ''}`}
           >
             <span
-              className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+              className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-ink-on-fill shadow transition-transform ${
                 webSearchEnabled ? 'translate-x-6' : 'translate-x-0'
               }`}
             />
@@ -359,7 +359,7 @@ export function ServicesTab({
               placeholder="BSA..."
               className="flex-1 px-3 py-1.5 rounded-md bg-surface border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
-            <Button variant="primary" size="sm" onClick={onSaveBraveKey} disabled={braveSaving || !braveKeyInput.trim()} className="text-xs px-3">
+            <Button variant="primary" size="sm" onClick={onSaveBraveKey} disabled={braveSaving || !braveKeyInput.trim()} className="text-sm px-3">
               {braveSaving ? <Spinner taille="ligne" /> : braveSaved ? <Check className="w-3 h-3" /> : 'Sauver'}
             </Button>
             {braveSaved && <span role="status" className="sr-only">Clé Brave Search sauvegardée.</span>}
@@ -386,11 +386,11 @@ export function ServicesTab({
             aria-checked={autoExtractEntities}
             onClick={onToggleAutoExtract}
             className={`w-12 h-6 rounded-full p-1 transition-colors ${
-              autoExtractEntities ? 'bg-accent-cyan' : 'bg-border'
+              autoExtractEntities ? 'bg-accent' : 'bg-border'
             }`}
           >
             <div
-              className={`w-4 h-4 rounded-full bg-white transition-transform ${
+              className={`w-4 h-4 rounded-full bg-ink-on-fill transition-transform ${
                 autoExtractEntities ? 'translate-x-6' : ''
               }`}
             />

@@ -291,7 +291,7 @@ export const focusVisibleStyles = {
  * Tailwind classes for focus visible.
  */
 export const focusVisibleClasses =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 // ============================================================
 // Accessibility hooks exports

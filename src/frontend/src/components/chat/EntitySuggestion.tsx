@@ -64,7 +64,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       className="flex items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
-        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-cyan-500/20' : 'bg-magenta-500/20'}`}>
+        <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-magenta-500/20'}`}>
           <Icon className={`w-4 h-4 ${type === 'contact' ? 'text-agent-cyan' : 'text-accent-magenta-ink'}`} />
         </div>
       </div>
@@ -85,7 +85,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
           <>
             <button
               onClick={handleSave}
-              className="p-1 rounded-sm hover:bg-cyan-500/20 text-agent-cyan transition-colors"
+              className="p-1 rounded-sm hover:bg-agent-cyan/20 text-agent-cyan transition-colors"
               title="Sauvegarder"
             >
               <Check className="w-4 h-4" />

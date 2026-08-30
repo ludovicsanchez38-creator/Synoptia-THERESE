@@ -230,7 +230,7 @@ function MonthView({
               key={index}
               className={`border border-border/30 rounded-md p-2 overflow-hidden ${
                 isCurrentMonth ? 'bg-surface-elevated/40' : 'bg-background/20 opacity-50'
-              } ${isToday ? 'ring-2 ring-accent-cyan' : ''}`}
+              } ${isToday ? 'ring-2 ring-ring' : ''}`}
             >
               <div className="text-sm font-medium text-text mb-1">{day.getDate()}</div>
               <div className="space-y-1">
@@ -469,8 +469,8 @@ function WeekView({
                 style={{ top: nowLineTop }}
               >
                 <div className="relative flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                  <div className="flex-1 h-px bg-red-500" />
+                  <div className="w-2 h-2 rounded-full bg-instant -ml-1" />
+                  <div className="flex-1 h-px bg-instant" />
                 </div>
               </div>
             )}
@@ -708,8 +708,8 @@ function DayView({
                 style={{ top: nowLineTop }}
               >
                 <div className="relative flex items-center">
-                  <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-                  <div className="flex-1 h-px bg-red-500" />
+                  <div className="w-2 h-2 rounded-full bg-instant -ml-1" />
+                  <div className="flex-1 h-px bg-instant" />
                   <span className="text-xs font-medium text-error ml-2">
                     {String(currentHour).padStart(2, '0')}:{String(currentMinute).padStart(2, '0')}
                   </span>

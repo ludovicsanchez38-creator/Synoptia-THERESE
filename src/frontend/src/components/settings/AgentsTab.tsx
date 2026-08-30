@@ -80,7 +80,7 @@ function AgentModelSelect({
         aria-label={`Modèle pour ${label}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
+        className="w-full rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-agent-purple/50"
       >
         {Object.entries(PROVIDER_LABELS).map(([provider, providerLabel]) => {
           const providerModels = models.filter((m) => m.provider === provider);
@@ -115,13 +115,13 @@ function AgentModelSelect({
                 }
               }}
               placeholder={placeholder}
-              className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50 font-mono"
+              className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none focus:border-agent-purple/50 font-mono"
             />
             <button
               type="button"
               onClick={handleUseCustom}
               disabled={!customInput.trim()}
-              className="shrink-0 rounded-md bg-purple-500/20 px-3 py-2 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-50"
+              className="shrink-0 rounded-md bg-agent-purple/20 px-3 py-2 text-sm font-medium text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-50"
             >
               Utiliser
             </button>
@@ -337,7 +337,7 @@ export function AgentsTab() {
             value={sourcePath}
             onChange={(e) => { setSourcePathInput(e.target.value); setSaved(false); }}
             placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE"
-            className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
+            className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none focus:border-agent-purple/50"
           />
           <button
             type="button"
@@ -356,7 +356,7 @@ export function AgentsTab() {
                 // Annulation utilisateur
               }
             }}
-            className="shrink-0 rounded-md border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-purple-500/50 transition"
+            className="shrink-0 rounded-md border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-agent-purple/50 transition"
             title="Parcourir..."
             aria-label="Parcourir les dossiers"
           >
@@ -376,7 +376,7 @@ export function AgentsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full rounded-md bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-50"
+        className="w-full rounded-md bg-agent-purple/20 px-4 py-2.5 text-sm font-medium text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-50"
       >
         {saving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
       </button>

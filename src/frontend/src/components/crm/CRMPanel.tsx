@@ -436,7 +436,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="text"
                 value={form.first_name}
                 onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
                 required
               />
             </div>
@@ -446,7 +446,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="text"
                 value={form.last_name || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               type="text"
               value={form.company || ''}
               onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
             />
           </div>
 
@@ -468,7 +468,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="email"
                 value={form.email || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
             </div>
             <div>
@@ -477,7 +477,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="tel"
                 value={form.phone || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
             </div>
           </div>
@@ -490,7 +490,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 value={form.source || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))}
                 placeholder="LinkedIn, Site web..."
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none"
               />
             </div>
             <div>
@@ -498,7 +498,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               <select id="crmpanel-stage"
                 value={form.stage}
                 onChange={(e) => setForm(prev => ({ ...prev, stage: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               >
                 {STAGES.map(s => (
                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -813,7 +813,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Appel de suivi, Envoi devis..."
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none"
               required
             />
           </div>
@@ -825,7 +825,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Détails de l'activité..."
               rows={3}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none resize-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none resize-none"
             />
           </div>
 

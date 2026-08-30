@@ -158,7 +158,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                     setFormError(null);
                   }}
                   placeholder="Proposition commerciale - Client X"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   autoFocus
                 />
               </div>
@@ -173,7 +173,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Objectif, contexte, destinataire..."
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 

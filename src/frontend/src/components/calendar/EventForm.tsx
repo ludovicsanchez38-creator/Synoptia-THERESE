@@ -288,7 +288,7 @@ export function EventForm() {
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             placeholder="Titre de l'événement"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
 
@@ -299,7 +299,7 @@ export function EventForm() {
             id="all-day"
             checked={allDay}
             onChange={(e) => setAllDay(e.target.checked)}
-            className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-2 focus:ring-ring/50"
           />
           <label htmlFor="all-day" className="text-sm text-text cursor-pointer">
             Événement sur toute la journée
@@ -314,7 +314,7 @@ export function EventForm() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
           </div>
           {!allDay && (
@@ -324,7 +324,7 @@ export function EventForm() {
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
             </div>
           )}
@@ -338,7 +338,7 @@ export function EventForm() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
           </div>
           {!allDay && (
@@ -348,7 +348,7 @@ export function EventForm() {
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
             </div>
           )}
@@ -362,7 +362,7 @@ export function EventForm() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Lieu de l'événement"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
 
@@ -374,7 +374,7 @@ export function EventForm() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de l'événement"
             rows={4}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 resize-none focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
         </div>
 
@@ -386,7 +386,7 @@ export function EventForm() {
             value={attendeesInput}
             onChange={(e) => setAttendeesInput(e.target.value)}
             placeholder="email1@example.com, email2@example.com"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
           <p className="text-xs text-text-muted mt-1">
             Séparez les emails par des virgules

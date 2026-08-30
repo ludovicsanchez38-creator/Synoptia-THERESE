@@ -189,7 +189,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       <select aria-label="Filtrer par statut"
         value={filterStatus || ''}
         onChange={(e) => setFilterStatus(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
       >
         <option value="">Tous les statuts</option>
         <option value="todo">A faire</option>
@@ -201,7 +201,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       <select aria-label="Filtrer par priorité"
         value={filterPriority || ''}
         onChange={(e) => setFilterPriority(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
       >
         <option value="">Toutes les priorités</option>
         <option value="urgent">Urgent</option>
@@ -214,7 +214,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <select aria-label="Filtrer par projet"
           value={filterProjectId || ''}
           onChange={(e) => setFilterProjectId(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
         >
           <option value="">Tous les projets</option>
           {projects.map((p) => (
@@ -227,7 +227,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <select aria-label="Filtrer par étiquette"
           value={filterTag || ''}
           onChange={(e) => setFilterTag(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
         >
           <option value="">Tous les tags</option>
           {availableTags.map((t) => (

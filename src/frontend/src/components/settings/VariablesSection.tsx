@@ -21,7 +21,7 @@ import {
 } from '../../services/api/variables';
 
 const inputCls =
-  'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-accent-cyan/50';
+  'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-ring/50';
 const labelCls = 'block text-xs text-text-muted mb-1';
 
 function formatValue(variable: Variable): string {

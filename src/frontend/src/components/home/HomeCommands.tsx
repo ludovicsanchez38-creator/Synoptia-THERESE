@@ -379,7 +379,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                     'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
                     'hover:shadow-[var(--shadow-card)]',
                     'transition-all duration-200 text-left',
-                    'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
+                    'focus:outline-none focus:ring-2 focus:ring-ring/30',
                   )}
                 >
                   {/* Icon container */}
@@ -418,7 +418,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
                   'hover:shadow-[var(--shadow-card)]',
                   'transition-all duration-200 text-left',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
+                  'focus:outline-none focus:ring-2 focus:ring-ring/30',
                 )}
               >
                 <div

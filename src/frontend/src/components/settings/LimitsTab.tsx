@@ -178,7 +178,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.max_input_tokens}
                 onChange={(e) => setLimits({ ...limits, max_input_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.max_output_tokens}
                 onChange={(e) => setLimits({ ...limits, max_output_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
@@ -198,7 +198,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.daily_input_limit}
                 onChange={(e) => setLimits({ ...limits, daily_input_limit: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div>
@@ -213,7 +213,7 @@ export function LimitsTab() {
                 step="0.01"
                 value={limits.monthly_budget_eur}
                 onChange={(e) => setLimits({ ...limits, monthly_budget_eur: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
@@ -226,7 +226,7 @@ export function LimitsTab() {
               max="100"
               value={limits.warn_at_percentage}
               onChange={(e) => setLimits({ ...limits, warn_at_percentage: parseInt(e.target.value) || 80 })}
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>

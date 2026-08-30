@@ -289,7 +289,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               onClick={() => handleSelectProvider(provider.id)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
               disabled={!isAvailable && provider.id === 'ollama'}
-              className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left focus:outline-none focus:ring-2 focus:ring-accent-cyan ${
+              className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left focus:outline-none focus:ring-2 focus:ring-ring ${
                 isSelected
                   ? 'bg-accent-cyan/10 border-accent-cyan/50'
                   : 'bg-background/40 border-border/50 hover:border-border'
@@ -359,7 +359,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                       }
                     }}
                     placeholder={currentProviderConfig?.keyPlaceholder || 'Clé API...'}
-                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors font-mono"
                   />
                   <button
                     type="button"
@@ -418,7 +418,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             value={baseUrlInput}
             onChange={(e) => setBaseUrlInput(e.target.value)}
             placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           />
           <p className="text-xs text-text-muted mt-2">
             Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton
@@ -438,7 +438,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               modeleChoisiParLUtilisateur.current = true;
               setSelectedModel(e.target.value);
             }}
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           >
             {availableModels.map((model) => (
               <option key={model.id} value={model.id} disabled={model.indisponible}>

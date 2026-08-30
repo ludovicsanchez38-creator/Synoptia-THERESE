@@ -162,7 +162,7 @@ export function VoiceLocalSection() {
               id="voice-local-model"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
             >
               {Object.entries(status.whisper_models).map(([key, info]) => (
                 <option key={key} value={key}>

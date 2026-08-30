@@ -47,7 +47,7 @@ function ThinkingIndicator() {
 
   return (
     <div className="flex items-center gap-2.5 px-3 py-2">
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/10">
+      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-agent-purple/10">
         <Headphones size={14} className={reduceMotion ? "text-agent-purple" : "text-agent-purple animate-pulse"} />
       </div>
       <div className="flex items-center gap-1.5">
@@ -57,7 +57,7 @@ function ThinkingIndicator() {
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
-                className="inline-block h-1 w-1 rounded-full bg-purple-400/60"
+                className="inline-block h-1 w-1 rounded-full bg-agent-purple/60"
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{
                   repeat: Infinity,
@@ -230,7 +230,7 @@ export function AgentChat() {
           {activeSession.status === "running" && (
             <button
               onClick={() => cancelSession(activeSessionId)}
-              className="rounded-sm p-1 text-error/70 transition hover:bg-error/10 hover:text-error"
+              className="rounded-sm p-1 text-error transition hover:bg-error/10 hover:text-error"
               title="Annuler la session"
               aria-label="Annuler la session"
             >
@@ -251,7 +251,7 @@ export function AgentChat() {
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
             {activeSession.status === "running" ? (
               <>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-agent-purple/10">
                   <Headphones size={20} className="animate-pulse text-agent-purple" />
                 </div>
                 <p className="text-xs text-text-muted">Katia travaille sur la tache...</p>
@@ -278,10 +278,10 @@ export function AgentChat() {
                     <div
                       className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
                         isUser
-                          ? "bg-cyan-500/10 text-agent-cyan"
+                          ? "bg-agent-cyan/10 text-agent-cyan"
                           : isAction
-                          ? "bg-amber-500/10 text-agent-amber"
-                          : "bg-purple-500/10 text-agent-purple"
+                          ? "bg-agent-amber/10 text-agent-amber"
+                          : "bg-agent-purple/10 text-agent-purple"
                       }`}
                     >
                       {isUser ? (
@@ -306,7 +306,7 @@ export function AgentChat() {
                       <div
                         className={`rounded-md px-3 py-2 text-sm leading-relaxed ${
                           isAction
-                            ? "border border-amber-500/20 bg-amber-500/5"
+                            ? "border border-agent-amber/20 bg-agent-amber/5"
                             : ""
                         }`}
                         style={
@@ -360,7 +360,7 @@ export function AgentChat() {
             placeholder="Envoyer un message a Katia..."
             disabled={isSending}
             rows={1}
-            className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
+            className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50 disabled:opacity-50"
             style={{ minHeight: "38px", maxHeight: "120px" }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -379,7 +379,7 @@ export function AgentChat() {
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-purple/20 text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-30"
               title="Envoyer"
               aria-label="Envoyer le message"
             >

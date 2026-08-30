@@ -31,7 +31,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         'group relative flex flex-col items-start p-4 rounded-md',
         'bg-surface-elevated/60 backdrop-blur-sm',
         'transition-all duration-200 text-left',
-        'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
+        'focus:outline-none focus:ring-2 focus:ring-ring/30',
         isPersonnaliser
           ? 'border-2 border-dashed border-border/40 cursor-default opacity-70'
           : 'border-[1.5px] border-border hover:border-[var(--btn-ink)] hover:shadow-[var(--shadow-card)]'

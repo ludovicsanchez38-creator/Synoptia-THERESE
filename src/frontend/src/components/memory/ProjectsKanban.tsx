@@ -36,9 +36,9 @@ import type { Project } from '../../services/api';
 // =============================================================================
 
 const STATUS_COLUMNS = [
-  { id: 'active', label: 'Actif', icon: Circle, color: 'text-success', bg: 'bg-green-500/10', border: 'border-green-500/20' },
-  { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-warning', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-  { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-info', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  { id: 'active', label: 'Actif', icon: Circle, color: 'text-success', bg: 'bg-agent-green/10', border: 'border-agent-green/20' },
+  { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-warning', bg: 'bg-agent-amber/10', border: 'border-agent-amber/20' },
+  { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-info', bg: 'bg-agent-blue/10', border: 'border-agent-blue/20' },
   { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
 ] as const;
 
@@ -300,7 +300,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
       whileHover={isOverlay ? undefined : { scale: 1.01 }}
       whileTap={isOverlay ? undefined : { scale: 0.99 }}
       className={`mx-2 my-1 px-3 py-2 rounded-md border border-border/30 bg-surface/60 hover:bg-surface transition-colors group ${
-        isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30 bg-surface' : ''
+        isOverlay ? 'shadow-xl ring-2 ring-ring/30 bg-surface' : ''
       }`}
     >
       <div className="flex items-center gap-2">

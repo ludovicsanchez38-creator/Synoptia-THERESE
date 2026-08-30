@@ -57,7 +57,7 @@ function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }
       {attendees && <Detail label="Participants">{attendees}</Detail>}
       {value(args, 'location') && <Detail label="Lieu">{value(args, 'location')}</Detail>}
       {value(args, 'description') && <Detail label="Description">{value(args, 'description')}</Detail>}
-      {willCreateCalendar && <div className="mt-2 rounded-md border border-amber-400/30 bg-amber-400/10 p-2 text-agent-amber">Aucun calendrier local n’existe encore. La confirmation créera aussi « Mon calendrier ».</div>}
+      {willCreateCalendar && <div className="mt-2 rounded-md border border-agent-amber/30 bg-agent-amber/10 p-2 text-agent-amber">Aucun calendrier local n’existe encore. La confirmation créera aussi « Mon calendrier ».</div>}
     </dl>
   );
 }

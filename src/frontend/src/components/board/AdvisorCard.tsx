@@ -77,11 +77,11 @@ export function AdvisorCard({
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: isWaiting ? 0.4 : 1, y: 0 }}
+      // 0,7 et non 0,4 : à 0,4 le texte de la carte tombait à 1,8:1.
+      animate={{ opacity: isWaiting ? 0.7 : 1, y: 0 }}
       className={cn(
         'relative rounded-md border p-4 transition-all duration-300',
         'bg-surface-elevated/80 backdrop-blur-sm',
-        isWaiting && 'opacity-40',
         isComplete ? 'border-border' : 'border-border/50',
       )}
       style={{
@@ -136,7 +136,7 @@ export function AdvisorCard({
       {/* Content */}
       <div className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap">
         {displayContent || (
-          <span className="italic opacity-50">En attente de réponse...</span>
+          <span className="italic text-text">En attente de réponse...</span>
         )}
         {isLoading && content && (
           <span className="inline-block w-2 h-4 ml-1 bg-text-muted/50 animate-pulse" />

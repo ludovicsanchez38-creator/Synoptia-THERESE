@@ -27,15 +27,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={error || undefined}
           className={cn(
             'w-full rounded-md px-3 py-2 text-sm transition-all duration-150',
-            'bg-surface-2 border text-text placeholder:text-text-muted/50',
+            'bg-surface-2 border text-text placeholder:text-text-muted',
             'focus:outline-none focus:ring-2 focus:ring-offset-0',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             // High contrast support
             'forced-colors:border-[ButtonText] forced-colors:focus:border-[Highlight]',
             // Normal state
-            !error && 'border-border focus:ring-cyan-400 focus:border-cyan-400/50',
+            !error && 'border-border focus:ring-agent-cyan focus:border-agent-cyan/50',
             // Error state
-            error && 'border-error/50 focus:ring-red-400 focus:border-error/50',
+            error && 'border-error/50 focus:ring-error focus:border-error/50',
             // Icon padding
             icon && 'pl-10',
             className

@@ -199,7 +199,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
                     placeholder="Jean"
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   />
                 </div>
                 <div className="space-y-2">
@@ -209,7 +209,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
                     placeholder="Dupont"
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   />
                 </div>
               </div>
@@ -222,7 +222,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.company}
                   onChange={(e) => handleChange('company', e.target.value)}
                   placeholder="Synoptïa"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -234,7 +234,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="jean@example.com"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="+33 6 12 34 56 78"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -260,7 +260,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)}
                   placeholder="14 chemin des Oliviers, 04300 Mane"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -272,7 +272,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -284,7 +284,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="client, prospect, partenaire"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -302,7 +302,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce contact ?</p>
-                    <p className="text-xs text-error/70">Cette action est irréversible.</p>
+                    <p className="text-xs text-error">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button

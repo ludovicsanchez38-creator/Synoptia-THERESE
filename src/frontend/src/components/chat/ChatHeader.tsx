@@ -78,12 +78,12 @@ export function ChatHeader({
             />
             <button
               onClick={handleMinimize}
-              className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
+              className="w-3 h-3 rounded-full bg-agent-amber hover:bg-agent-amber transition-colors"
               title="Réduire"
             />
             <button
               onClick={handleMaximize}
-              className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+              className="w-3 h-3 rounded-full bg-agent-green hover:bg-agent-green transition-colors"
               title="Agrandir"
             />
           </div>
@@ -226,7 +226,7 @@ export function ChatHeader({
           variant="ghost"
           size="icon"
           onClick={toggleActionsPanel}
-          className="w-8 h-8 hover:bg-cyan-500/15"
+          className="w-8 h-8 hover:bg-agent-cyan/15"
           title="Actions"
         >
           <Play className="w-4 h-4 text-agent-cyan" />
@@ -236,7 +236,7 @@ export function ChatHeader({
             variant="ghost"
             size="icon"
             onClick={onToggleAtelierPanel}
-            className="w-8 h-8 hover:bg-purple-500/15"
+            className="w-8 h-8 hover:bg-agent-purple/15"
             title={isMac ? 'Atelier (⌘⇧A)' : 'Atelier (Ctrl+Shift+A)'}
           >
             <Zap className="w-4 h-4 text-agent-purple" />

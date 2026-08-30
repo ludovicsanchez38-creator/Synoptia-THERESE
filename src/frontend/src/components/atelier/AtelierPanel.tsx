@@ -142,7 +142,7 @@ export function AtelierPanel() {
       <div className="flex flex-col border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-agent-purple/20">
               <Zap size={14} className="text-agent-purple" />
             </div>
             <span className="text-sm font-semibold text-text">Atelier</span>
@@ -196,12 +196,12 @@ export function AtelierPanel() {
         {showModelBadge && activeView !== "agents" && (
           <div className="flex items-center gap-2 px-4 pb-2 text-xs text-text-muted">
             {katiaModel && (
-              <span className="rounded-sm bg-purple-500/10 px-1.5 py-0.5 text-agent-purple">
+              <span className="rounded-sm bg-agent-purple/10 px-1.5 py-0.5 text-agent-purple">
                 Katia: {katiaModel}
               </span>
             )}
             {zezetteModel && (
-              <span className="rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-agent-amber">
+              <span className="rounded-sm bg-agent-amber/10 px-1.5 py-0.5 text-agent-amber">
                 Zézette: {zezetteModel}
               </span>
             )}
@@ -232,7 +232,7 @@ export function AtelierPanel() {
 
             {/* Input */}
             {pendingMessage && (
-              <div className="mx-3 mb-2 rounded-md border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
+              <div className="mx-3 mb-2 rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
                 <div className="font-semibold">Confirmer la mission de code</div>
                 <p className="mt-1 leading-relaxed text-text-muted">
                   Katia et Zézette pourront lire le dépôt, transmettre les extraits utiles au modèle configuré,
@@ -310,14 +310,14 @@ function NavButton({
       onClick={onClick}
       className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium transition ${
         active
-          ? "bg-purple-500/20 text-agent-purple"
+          ? "bg-agent-purple/20 text-agent-purple"
           : "text-text-muted hover:bg-surface-2 hover:text-text-muted"
       }`}
     >
       {icon}
       {label}
       {pulse && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-agent-amber animate-pulse" />
       )}
     </button>
   );
@@ -327,10 +327,10 @@ function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <div className="flex gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-500/10">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-agent-purple/10">
           <Headphones size={24} className="text-agent-purple" />
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-amber-500/10">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-agent-amber/10">
           <Wrench size={24} className="text-agent-amber" />
         </div>
       </div>

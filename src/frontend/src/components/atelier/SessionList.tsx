@@ -13,10 +13,10 @@ import { useOpenClawStore } from "../../stores/openclawStore";
 import { useAccessibilityStore } from "../../stores/accessibilityStore";
 
 const STATUS_COLORS: Record<string, { dot: string; text: string; label: string }> = {
-  running: { dot: "bg-green-400", text: "text-agent-green", label: "En cours" },
+  running: { dot: "bg-agent-green", text: "text-agent-green", label: "En cours" },
   done: { dot: "bg-text-muted", text: "text-text-muted", label: "Terminée" },
   error: { dot: "bg-error", text: "text-error", label: "Erreur" },
-  cancelled: { dot: "bg-amber-400", text: "text-agent-amber", label: "Annulée" },
+  cancelled: { dot: "bg-agent-amber", text: "text-agent-amber", label: "Annulée" },
 };
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
@@ -36,7 +36,7 @@ function RunningProgressBar() {
   return (
     <div className="mt-1.5 ml-4 h-1 w-full overflow-hidden rounded-full bg-surface-2">
       <motion.div
-        className="h-full rounded-full bg-gradient-to-r from-purple-500 to-green-400"
+        className="h-full rounded-full bg-gradient-to-r from-agent-purple to-agent-green"
         initial={{ x: "-100%" }}
         animate={{ x: "100%" }}
         transition={{
@@ -117,7 +117,7 @@ export function SessionList() {
           <button
             onClick={openNewTask}
             disabled={!openclawConnected || runningCount >= maxAgents}
-            className="rounded-sm p-1 text-agent-purple transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-sm p-1 text-agent-purple transition hover:bg-agent-purple/10 disabled:opacity-30 disabled:cursor-not-allowed"
             title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tache"}
             aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tache"}
           >
@@ -140,7 +140,7 @@ export function SessionList() {
       <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5">
         <span
           className={`h-1.5 w-1.5 rounded-full ${
-            openclawConnected ? "bg-green-400" : "bg-error"
+            openclawConnected ? "bg-agent-green" : "bg-error"
           }`}
         />
         <span className="text-xs text-text-muted">
@@ -156,7 +156,7 @@ export function SessionList() {
             <button
               onClick={openNewTask}
               disabled={!openclawConnected || runningCount >= maxAgents}
-              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-md bg-agent-purple/10 px-3 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-agent-purple/20 disabled:opacity-30 disabled:cursor-not-allowed"
               title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
             >
               {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}
@@ -177,7 +177,7 @@ export function SessionList() {
                   onClick={() => selectSession(session.id)}
                   className={`w-full border-b border-border px-3 py-2.5 text-left transition ${
                     isActive
-                      ? "bg-purple-500/10 border-l-2 border-l-purple-400"
+                      ? "bg-agent-purple/10 border-l-2 border-l-purple-400"
                       : "hover:bg-surface-2"
                   }`}
                 >
@@ -197,7 +197,7 @@ export function SessionList() {
                     {session.status === "running" && (
                       <button
                         onClick={(e) => handleCancel(e, session.id)}
-                        className="flex-shrink-0 rounded-sm p-0.5 text-error/60 transition hover:bg-error/10 hover:text-error"
+                        className="flex-shrink-0 rounded-sm p-0.5 text-error transition hover:bg-error/10 hover:text-error"
                         title="Annuler cette session"
                         aria-label="Annuler cette session"
                       >
@@ -209,7 +209,7 @@ export function SessionList() {
                     {session.status === "error" && (
                       <button
                         onClick={(e) => handleRetry(e, session.instruction)}
-                        className="flex-shrink-0 rounded-sm p-0.5 text-agent-amber/60 transition hover:bg-amber-500/10 hover:text-agent-amber"
+                        className="flex-shrink-0 rounded-sm p-0.5 text-agent-amber/60 transition hover:bg-agent-amber/10 hover:text-agent-amber"
                         title="Relancer cette tache"
                         aria-label="Relancer cette tache"
                       >

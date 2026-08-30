@@ -410,7 +410,7 @@ function ConversationItem({
               onBlur={commitRename}
               onKeyDown={handleKeyDown}
               onClick={(e) => e.stopPropagation()}
-              className="w-full text-sm font-medium text-text bg-background/60 border border-accent-cyan/50 rounded-sm px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+              className="w-full text-sm font-medium text-text bg-background/60 border border-accent-cyan/50 rounded-sm px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring/50"
             />
           ) : (
             <p className="text-sm font-medium text-text truncate">{displayTitle}</p>

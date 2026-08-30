@@ -368,7 +368,7 @@ export function EmailMessageCanvas({
                   aria-label="Ton du brouillon"
                   value={tone}
                   onChange={(event) => { setTone(event.target.value as EmailTone); markDraftDirty(); }}
-                  className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-xs text-text"
+                  className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
                 >
                   <option value="formal">Formel</option>
                   <option value="friendly">Amical</option>
@@ -378,7 +378,7 @@ export function EmailMessageCanvas({
                   aria-label="Longueur du brouillon"
                   value={length}
                   onChange={(event) => { setLength(event.target.value as EmailLength); markDraftDirty(); }}
-                  className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-xs text-text"
+                  className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
                 >
                   <option value="short">Court</option>
                   <option value="medium">Moyen</option>
@@ -397,7 +397,7 @@ export function EmailMessageCanvas({
                   aria-describedby={errorField === 'recipient' ? 'email-draft-error' : undefined}
                   value={recipient}
                   onChange={(event) => { setRecipient(event.target.value); markDraftDirty(); if (errorField === 'recipient') { setError(null); setErrorField(null); } }}
-                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-domaine-prospects"
+                  className="rounded-sm border border-border px-2.5 py-2 text-sm text-text outline-none focus:border-domaine-prospects"
                 />
               </label>
               <label className="grid grid-cols-[72px_1fr] items-center gap-2 text-xs text-text-muted">
@@ -409,7 +409,7 @@ export function EmailMessageCanvas({
                   aria-describedby={errorField === 'subject' ? 'email-draft-error' : undefined}
                   value={subject}
                   onChange={(event) => { setSubject(event.target.value); markDraftDirty(); if (errorField === 'subject') { setError(null); setErrorField(null); } }}
-                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-domaine-prospects"
+                  className="rounded-sm border border-border px-2.5 py-2 text-sm text-text outline-none focus:border-domaine-prospects"
                 />
               </label>
             </div>

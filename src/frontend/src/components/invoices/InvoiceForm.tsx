@@ -436,7 +436,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
           {billingMissing && billingMissing.length > 0 && (
-            <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/30">
+            <div className="flex items-start gap-3 p-3 rounded-md bg-agent-amber/10 border border-agent-amber/30">
               <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-warning">
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
@@ -483,8 +483,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 className={cn(
                   'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
-                  'text-text placeholder:text-text-muted/70',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  'text-text placeholder:text-text-muted',
+                  'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
                 required
               >
@@ -509,7 +509,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
               >
                 <option value="draft">Brouillon</option>
@@ -547,7 +547,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
               >
                 {CURRENCIES.map((c) => (
@@ -571,7 +571,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
                 required
               />
@@ -590,7 +590,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                  'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
                 required
               />
@@ -612,7 +612,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                     'w-full px-3 py-2 rounded-md',
                     'bg-bg border border-border/50',
                     'text-text',
-                    'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                    'focus:outline-none focus:ring-2 focus:ring-ring'
                   )}
                 />
               </div>
@@ -651,8 +651,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                           className={cn(
                             'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
-                            'text-text placeholder:text-text-muted/70',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                            'text-text placeholder:text-text-muted',
+                            'focus:outline-none focus:ring-2 focus:ring-ring'
                           )}
                           required
                         />
@@ -680,7 +680,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                             'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                            'focus:outline-none focus:ring-2 focus:ring-ring'
                           )}
                           required
                         />
@@ -698,7 +698,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                             'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                            'focus:outline-none focus:ring-2 focus:ring-ring'
                           )}
                           required
                         />
@@ -713,7 +713,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                             'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
+                            'focus:outline-none focus:ring-2 focus:ring-ring'
                           )}
                         >
                           {TVA_RATES.map((rate) => (
@@ -750,8 +750,8 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               className={cn(
                 'w-full px-3 py-2 rounded-md',
                 'bg-bg border border-border/50',
-                'text-text placeholder:text-text-muted/70',
-                'focus:outline-none focus:ring-2 focus:ring-accent-cyan',
+                'text-text placeholder:text-text-muted',
+                'focus:outline-none focus:ring-2 focus:ring-ring',
                 'resize-none'
               )}
               placeholder="Notes internes ou mentions spécifiques..."
@@ -811,7 +811,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <button
                 type="button"
                 onClick={handleMarkPaid}
-                className="px-4 py-2 rounded-md bg-green-500/20 text-agent-green hover:bg-green-500/30 transition-colors"
+                className="px-4 py-2 rounded-md bg-agent-green/20 text-agent-green hover:bg-agent-green/30 transition-colors"
               >
                 Marquer comme payée
               </button>
@@ -822,14 +822,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('accepted')}
-                  className="px-3 py-2 rounded-md bg-emerald-500/20 text-agent-green hover:bg-emerald-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-agent-green/20 text-agent-green hover:bg-agent-green/30 transition-colors text-sm font-medium"
                 >
                   Accepter
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('refused')}
-                  className="px-3 py-2 rounded-md bg-orange-500/20 text-agent-amber hover:bg-orange-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-agent-amber/20 text-agent-amber hover:bg-agent-amber/30 transition-colors text-sm font-medium"
                 >
                   Refuser
                 </button>
@@ -844,7 +844,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 disabled={isConverting}
                 className={cn(
                   'px-4 py-2 rounded-md font-medium transition-colors',
-                  'bg-purple-500/20 text-agent-purple hover:bg-purple-500/30',
+                  'bg-agent-purple/20 text-agent-purple hover:bg-agent-purple/30',
                   'flex items-center gap-2',
                   isConverting && 'opacity-50 cursor-not-allowed'
                 )}

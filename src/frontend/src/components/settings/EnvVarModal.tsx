@@ -216,7 +216,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                       href={config.consoleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-accent-cyan-ink hover:underline flex items-center gap-1"
+                      className="text-sm text-accent-cyan-ink hover:underline flex items-center gap-1"
                     >
                       Obtenir une clé
                       <ExternalLink className="w-3 h-3" />
@@ -232,10 +232,10 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                     placeholder={config.prefix ? `${config.prefix}...` : 'Entre la clé API'}
                     className={`w-full px-3 py-2 pr-20 bg-background/60 border rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 ${
                       error
-                        ? 'border-error/40 focus:ring-red-500/50'
+                        ? 'border-error/40 focus:ring-error/50'
                         : isValidValue
-                        ? 'border-success/40 focus:ring-green-500/50'
-                        : 'border-border/50 focus:ring-accent-cyan/50'
+                        ? 'border-success/40 focus:ring-agent-green/50'
+                        : 'border-border/50 focus:ring-ring/50'
                     }`}
                   />
 

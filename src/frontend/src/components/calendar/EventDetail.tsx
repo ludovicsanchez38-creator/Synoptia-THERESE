@@ -103,7 +103,7 @@ export function EventDetail() {
           <span
             className={`inline-block px-2 py-1 text-xs rounded-sm ${
               event.status === 'tentative'
-                ? 'bg-yellow-500/10 text-warning'
+                ? 'bg-agent-amber/10 text-warning'
                 : 'bg-error/10 text-error'
             }`}
           >
