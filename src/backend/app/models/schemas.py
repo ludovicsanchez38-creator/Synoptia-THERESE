@@ -719,6 +719,10 @@ class CalendarEventResponse(BaseModel):
     recurrence: list[str] | None = None  # Parsed from JSON
     status: str
     synced_at: str  # ISO datetime
+    # « Bloque » n'est pas « annule ». Sans ce champ en LECTURE, un blocage
+    # pose disparaissait a la relecture : l'application disait avoir
+    # enregistre quelque chose qui s'evaporait.
+    blocage: str | None = None
 
 
 class CreateEventRequest(BaseModel):

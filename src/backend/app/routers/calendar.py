@@ -632,6 +632,7 @@ async def _list_events_provider(
             attendees=evt.attendees,
             recurrence=evt.recurrence,
             status=evt.status,
+            blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=datetime.now(UTC).isoformat(),
         )
         for evt in events_dto
@@ -743,6 +744,7 @@ async def _list_events_google(
                 attendees=json.loads(event.attendees) if event.attendees else None,
                 recurrence=json.loads(event.recurrence) if event.recurrence else None,
                 status=event.status,
+                blocage=getattr(event, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
                 synced_at=event.synced_at.isoformat() if event.synced_at else None,
             )
             for event in events
@@ -793,6 +795,7 @@ async def get_event(
         attendees=json.loads(event.attendees) if event.attendees else None,
         recurrence=json.loads(event.recurrence) if event.recurrence else None,
         status=event.status,
+        blocage=getattr(event, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
         synced_at=event.synced_at.isoformat(),
     )
 
@@ -899,6 +902,7 @@ async def _create_event_provider(
         attendees=evt.attendees,
         recurrence=evt.recurrence,
         status=evt.status,
+        blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
         synced_at=datetime.now(UTC).isoformat(),
     )
 
@@ -998,6 +1002,7 @@ async def _create_event_google(
             attendees=json.loads(new_event.attendees) if new_event.attendees else None,
             recurrence=json.loads(new_event.recurrence) if new_event.recurrence else None,
             status=new_event.status,
+            blocage=getattr(new_event, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=new_event.synced_at.isoformat() if new_event.synced_at else None,
         )
 
@@ -1067,6 +1072,7 @@ async def update_event(
             attendees=evt.attendees,
             recurrence=evt.recurrence,
             status=evt.status,
+            blocage=getattr(evt, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=datetime.now(UTC).isoformat(),
         )
 
@@ -1158,6 +1164,7 @@ async def update_event(
             attendees=json.loads(db_event.attendees) if db_event.attendees else None,
             recurrence=json.loads(db_event.recurrence) if db_event.recurrence else None,
             status=db_event.status,
+            blocage=getattr(db_event, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=db_event.synced_at.isoformat() if db_event.synced_at else None,
         )
 
@@ -1295,6 +1302,7 @@ async def quick_add_event(
             attendees=[],
             recurrence=[],
             status=new_event.status,
+            blocage=getattr(new_event, "blocage", None),  # notion locale : un DTO de fournisseur ne la porte pas
             synced_at=new_event.synced_at.isoformat(),
         )
 

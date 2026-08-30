@@ -209,3 +209,31 @@ async def test_l_application_ne_choisit_pas_la_phase_a_ta_place(client):
     })
 
     assert reponse.status_code in (400, 422), reponse.text
+
+
+@pytest.mark.asyncio
+async def test_un_blocage_survit_a_la_relecture(client, db_session: AsyncSession):
+    """La chaîne, pas une surface.
+
+    Trouvé par un persona avocate : « le serveur a répondu avec le motif, puis
+    j'ai relu l'événement et la liste : le blocage a disparu. L'audience est
+    toujours confirmée. Si je m'en remets à l'agenda demain matin, je me
+    présente au tribunal pour une audience qui n'existe plus. »
+
+    Le champ était posé sur la route d'écriture et absent du schéma de lecture.
+    C'est le motif des jumeaux : une règle sur un chemin, pas balayée sur les
+    autres.
+    """
+    await _evenement(db_session, id="ev-audience")
+
+    pose = await client.patch("/api/calendar/events/ev-audience/blocage",
+                              json={"blocage": "Greffe : audience renvoyée, date non communiquée"})
+    assert pose.status_code == 200, pose.text
+
+    relu = await client.get(
+        "/api/calendar/events/ev-audience?calendar_id=cal-1&account_id=local"
+    )
+    assert relu.status_code == 200, relu.text
+    assert "Greffe" in (relu.json().get("blocage") or ""), (
+        "un blocage qui disparaît à la relecture est pire que pas de blocage"
+    )
