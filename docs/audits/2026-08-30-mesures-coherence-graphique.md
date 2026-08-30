@@ -88,3 +88,64 @@ La primitive de champ existe et n'est utilisée nulle part.
   document.
 - L'**accessibilité** : ordre de tabulation, focus visible, lecteur d'écran.
 - La cohérence des **espacements verticaux** entre écrans, invisible au grep.
+
+
+---
+
+## Corrections apportées par l'audit (30/08, soir)
+
+Mes comptages étaient légèrement faux. Les valeurs retenues :
+
+| Mesure | Ce que j'avais écrit | Valeur corrigée |
+|---|---|---|
+| Couleurs Tailwind brutes | 389 | **400** |
+| Rayons arbitraires | 388 | **492** |
+| Hexadécimaux dans du TSX | 121 | **119**, dont 105 hors tests |
+| `<select>` à la main | 48 | **47** |
+
+Le diagnostic ne change pas, mais la leçon tient : **figer un script de mesure
+avec ses exclusions avant d'en faire un indicateur.** Sans ça, deux passages
+donnent deux chiffres et le suivi ne veut rien dire.
+
+## Mes mesures de contraste étaient fausses, et je les retire
+
+J'ai tenté un script maison. Il ne compose pas les fonds semi-transparents
+(`rgba(…, 0.12)` lui donnait 1,0) et ne sait pas lire `oklab()` (il a rendu
+267 967 178). J'ai aussi cru voir un bouton illisible en thème sombre : mesuré
+correctement, il est à 15,79.
+
+**Aucun chiffre de contraste de ce document ne vient de moi.** Ceux qui suivent
+viennent de l'audit, calculés sur le code des deux thèmes.
+
+## Les défauts de contraste mesurés
+
+| Association | Clair | Sombre |
+|---|---|---|
+| Cyan `#22D3EE` sur fond principal | **1,67:1** | 10,29:1 |
+| Bordure sur fond principal | **1,14:1** | **1,53:1** |
+| Anneau de focus cyan | **1,67:1** | 10,29:1 |
+| Magenta `#E11D8D` sur fond principal | **4,07:1** | **4,22:1** |
+| `error` sur sa propre teinte | 5,89:1 | **4,02:1** |
+| Badge « Bientôt » (9 px, cyan 60 %) | **1,35:1** | |
+| Boutons cyan à texte blanc | **1,81:1** | |
+| Pipeline CRM : 6 colonnes sur 7 | jaune **1,91:1**, vert 2,22, gris 2,60, orange 2,89 | |
+
+Le cyan est utilisé **242 fois** comme couleur de texte (`text-accent-cyan`) :
+montants, liens, dates, scores. Ce n'est pas une couleur décorative isolée.
+
+## Le test d'accessibilité donne une assurance fausse
+
+`src/frontend/src/test/a11y.test.tsx` passe au vert. Il ne teste que
+`success / warning / error / info` sur fond simple : **aucune occurrence de
+`accent`, `cyan` ou `magenta`**. Il ne regarde pas là où ça casse, et son
+analyseur n'extrait même pas les teintes sombres en `rgba()`.
+
+## Infractions directes à la charte
+
+Cinq fichiers contiennent des emoji dans l'interface, alors que la règle est
+« jamais d'emoji, des SVG à la place » : `EmailPriorityBadge.tsx` (🔴🟠🟢),
+`AgentSession.tsx` (🤖 👤), `RFCCapture.tsx` (📧 en placeholder),
+`MemoryPanel.tsx` (⚠).
+
+En revanche la règle « aucun dégradé sur un bouton » **est respectée** : les
+dégradés trouvés sont sur des titres, des barres de progression et des fonds.
