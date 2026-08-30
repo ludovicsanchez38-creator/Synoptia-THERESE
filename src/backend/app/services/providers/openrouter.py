@@ -276,6 +276,9 @@ class OpenRouterProvider(BaseProvider):
             status = response.status_code
             error_body = ""
             try:
+                # Reponse en FLUX : sans aread(), .text leve ResponseNotRead et le
+                # detail du refus reste vide.
+                await response.aread()
                 error_body = response.text
             except Exception as body_err:
                 logger.debug("Impossible de lire le body erreur OpenRouter: %s", body_err)

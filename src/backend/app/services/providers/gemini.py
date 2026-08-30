@@ -5,6 +5,7 @@ Google Gemini API streaming implementation.
 Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 """
 
+import contextlib
 import json
 import logging
 import re
@@ -371,7 +372,13 @@ class GeminiProvider(BaseProvider):
             )
 
         except httpx.HTTPStatusError as e:
-            error_body = e.response.text if hasattr(e.response, 'text') else str(e)
+            # hasattr() sur .text d'une reponse en flux renvoie False (la
+            # propriete leve ResponseNotRead), donc on retombait sur str(e),
+            # qui ne porte pas la raison du refus. Lire le corps d'abord.
+            error_body = str(e)
+            with contextlib.suppress(Exception):
+                await e.response.aread()
+                error_body = e.response.text[:500]
             logger.error(f"Gemini API error: {e.response.status_code} - {error_body}")
             yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
         except Exception as e:

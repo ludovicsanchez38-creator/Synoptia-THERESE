@@ -248,8 +248,14 @@ class OpenAIProvider(BaseProvider):
             # support 0.7 with this model » pour le 400 du 28/08 — et le log
             # la jetait : diagnostiquer obligeait à reproduire l'appel à la
             # main. Le détail va aux logs, jamais à l'écran (frontière 0.48).
+            # Sur une reponse en FLUX, .text leve ResponseNotRead tant que le
+            # corps n'a pas ete lu, et le suppress avalait l'exception : le
+            # detail ajoute le 28/08 pour diagnostiquer un 400 est reste vide
+            # depuis, y compris sur le 400 du 30/08 avec piece jointe. Il faut
+            # lire le corps d'abord.
             detail = ""
             with contextlib.suppress(Exception):
+                await e.response.aread()
                 detail = e.response.text[:500]
             logger.error(
                 f"{type(self).__name__} API error: {e.response.status_code} {detail}"
