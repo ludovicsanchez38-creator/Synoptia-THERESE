@@ -21,7 +21,7 @@ import {
 } from '../../services/api/variables';
 
 const inputCls =
-  'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-accent-cyan/50';
+  'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-accent-cyan/50';
 const labelCls = 'block text-xs text-text-muted mb-1';
 
 function formatValue(variable: Variable): string {
@@ -114,7 +114,7 @@ export function VariablesSection() {
   }
 
   return (
-    <section className="rounded-lg border border-border/50 p-4">
+    <section className="rounded-md border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-1">
         <Braces className="w-4 h-4 text-accent-cyan-ink" />
         Variables
@@ -164,7 +164,7 @@ export function VariablesSection() {
         <ul className="space-y-2">
           {variables.map((variable) => (
             <li key={variable.name}
-              className="rounded-lg bg-background/40 border border-border/40 p-2.5">
+              className="rounded-md bg-background/40 border border-border/40 p-2.5">
               <div className="flex items-center gap-2">
                 <code className="text-xs text-accent-cyan-ink shrink-0">
                   {'{'}{variable.name}{'}'}

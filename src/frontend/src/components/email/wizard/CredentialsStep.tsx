@@ -104,7 +104,7 @@ export function CredentialsStep({
       className="space-y-6"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
+        <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
           <Key className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">Entre tes identifiants</h3>
@@ -125,7 +125,7 @@ export function CredentialsStep({
             value={clientId}
             onChange={(e) => onChange('clientId', e.target.value)}
             placeholder="123456789-abc...apps.googleusercontent.com"
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
           {validation.clientId && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -160,7 +160,7 @@ export function CredentialsStep({
             value={clientSecret}
             onChange={(e) => onChange('clientSecret', e.target.value)}
             placeholder="GOCSPX-..."
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
           {validation.clientSecret && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -184,7 +184,7 @@ export function CredentialsStep({
       </div>
 
       {/* Import credentials.json + Info */}
-      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg space-y-3">
+      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm text-text-muted">
             <strong className="text-text">Astuce :</strong> Tu peux importer directement le fichier <code className="text-accent-cyan-ink">credentials.json</code> téléchargé depuis Google Cloud Console.

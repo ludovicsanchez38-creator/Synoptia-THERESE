@@ -72,10 +72,10 @@ function LocalMarkdownImage({ src, alt }: { src: string; alt: string }) {
     );
   }
   if (!objectUrl) {
-    return <span className="my-1 inline-block h-24 w-full max-w-sm animate-pulse rounded-xl bg-surface-2" />;
+    return <span className="my-1 inline-block h-24 w-full max-w-sm animate-pulse rounded-md bg-surface-2" />;
   }
   return (
-    <span className="my-3 block overflow-hidden rounded-xl border border-border bg-black/20">
+    <span className="my-3 block overflow-hidden rounded-md border border-border bg-black/20">
       <img src={objectUrl} alt={alt} className="w-full h-auto max-h-96 object-contain" loading="lazy" />
     </span>
   );
@@ -124,7 +124,7 @@ function CodeBlock({
   return (
     <div className="relative group/code my-3">
       {/* Language badge + Copy button */}
-      <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-3 py-1 bg-[#1e1e1e] rounded-t-lg border-b border-gray-700">
+      <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-3 py-1 bg-[#1e1e1e] rounded-t-md border-b border-gray-700">
         <span className="text-xs text-gray-400 font-mono">{language}</span>
         <button
           onClick={copyCode}
@@ -301,7 +301,7 @@ export const MessageBubble = memo(function MessageBubble({
       {/* Avatar with glow effect */}
       <div
         className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
+          'w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-all',
           isUser
             ? 'bg-accent-magenta/20 text-accent-magenta-ink shadow-[0_0_12px_rgba(225,29,141,0.2)]'
             : 'bg-accent-cyan/20 text-accent-cyan-ink shadow-[0_0_12px_rgba(34,211,238,0.2)]'
@@ -313,7 +313,7 @@ export const MessageBubble = memo(function MessageBubble({
       {/* Content with premium styling */}
       <div
         className={cn(
-          'relative flex-1 max-w-[85%] rounded-2xl px-4 py-3 transition-all',
+          'relative flex-1 max-w-[85%] rounded-md px-4 py-3 transition-all',
           isUser
             ? 'bg-accent-magenta/10 border-[1.5px] border-accent-magenta/25 hover:border-[var(--btn-ink)] hover:shadow-[var(--shadow-card)]'
             : 'bg-surface-elevated border border-border hover:border-accent-cyan/20 hover:shadow-[0_0_20px_rgba(34,211,238,0.05)]'
@@ -399,7 +399,7 @@ export const MessageBubble = memo(function MessageBubble({
                 if (isInline) {
                   return (
                     <code
-                      className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan-ink text-sm font-mono"
+                      className="px-1.5 py-0.5 rounded-sm bg-bg text-accent-cyan-ink text-sm font-mono"
                       {...props}
                     >
                       {children}
@@ -528,7 +528,7 @@ export const MessageBubble = memo(function MessageBubble({
               table({ children }) {
                 return (
                   <div className="overflow-x-auto my-3">
-                    <table className="min-w-full border border-border rounded-lg overflow-hidden">
+                    <table className="min-w-full border border-border rounded-md overflow-hidden">
                       {children}
                     </table>
                   </div>
@@ -558,7 +558,7 @@ export const MessageBubble = memo(function MessageBubble({
         {/* Fichiers générés visibles (10/07, ex-BUG-131) : bloc « Fichier
             généré » explicite - nom, taille, téléchargement, dossier local. */}
         {skillFilesList.length > 0 && !message.isStreaming && skillFilesList.map((file) => (
-          <div key={file.file_id} className="mt-3 rounded-lg w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
+          <div key={file.file_id} className="mt-3 rounded-md w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 pt-2.5">
               <FileDown className="w-3.5 h-3.5 text-accent-cyan-ink shrink-0" />
               <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan-ink">
@@ -609,7 +609,7 @@ export const MessageBubble = memo(function MessageBubble({
             {message.uncertainty?.is_uncertain && (
               <div
                 className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded-[6px]',
+                  'flex items-center gap-1.5 px-2 py-1 rounded-sm',
                   message.uncertainty.confidence_level === 'low'
                     ? 'bg-error/10 text-error'
                     : message.uncertainty.confidence_level === 'medium'
@@ -636,7 +636,7 @@ export const MessageBubble = memo(function MessageBubble({
               const isLocal = prov === 'ollama';
               return (
                 <div
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-[6px] ${
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-sm ${
                     isLocal ? 'bg-green-500/10 text-green-300' : 'bg-orange-500/10 text-orange-300'
                   }`}
                   title={
@@ -654,7 +654,7 @@ export const MessageBubble = memo(function MessageBubble({
             {/* Usage/cost display */}
             {message.usage && (
               <div
-                className="flex items-center gap-1.5 px-2 py-1 rounded-[6px] bg-surface"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-sm bg-surface"
                 title="Coût estimé de cette requête API (consommation de tokens). Ce n'est pas une facture."
               >
                 <Coins className="w-3 h-3" />

@@ -180,7 +180,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   const dernier = etat?.dernier_plan;
 
   return (
-    <div className="space-y-3 p-3 rounded-[6px] border-[1.5px] border-border bg-surface">
+    <div className="space-y-3 p-3 rounded-sm border-[1.5px] border-border bg-surface">
       <div className="flex items-center gap-2">
         <FolderSync className="w-4 h-4 text-accent" />
         <h4 className="text-sm font-medium text-text">Dossier synchronisé</h4>
@@ -199,7 +199,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               value={chemin}
               onChange={(e) => setChemin(e.target.value)}
               placeholder="/Users/toi/Documents/mon-projet"
-              className="flex-1 px-3 py-2 text-sm rounded-[6px] border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+              className="flex-1 px-3 py-2 text-sm rounded-sm border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
             />
             <Button
               size="sm"

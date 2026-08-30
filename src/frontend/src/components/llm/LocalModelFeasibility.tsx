@@ -19,7 +19,7 @@ export function LocalModelFeasibility({
 
   if (result.status === 'unknown') {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted" data-testid="local-model-feasibility" data-status="unknown">
+      <div className="flex items-start gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted" data-testid="local-model-feasibility" data-status="unknown">
         <HelpCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <span>Faisabilité RAM inconnue. Le choix reste possible.</span>
       </div>
@@ -34,7 +34,7 @@ export function LocalModelFeasibility({
 
   if (result.status === 'too-large') {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-error/50 bg-[var(--color-error-tint)] px-3 py-2 text-xs leading-5 text-error" role="alert" data-testid="local-model-feasibility" data-status="too-large">
+      <div className="flex items-start gap-2 rounded-md border border-error/50 bg-[var(--color-error-tint)] px-3 py-2 text-xs leading-5 text-error" role="alert" data-testid="local-model-feasibility" data-status="too-large">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         <span>
           <strong className="mr-1 inline-flex rounded-full bg-error/15 px-2 py-0.5">RAM déconseillée</strong>
@@ -46,7 +46,7 @@ export function LocalModelFeasibility({
   }
 
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs leading-5 text-green-400" data-testid="local-model-feasibility" data-status="feasible">
+    <div className="flex items-start gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs leading-5 text-green-400" data-testid="local-model-feasibility" data-status="feasible">
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
         <strong className="mr-1 inline-flex rounded-full bg-green-500/15 px-2 py-0.5">RAM compatible</strong>

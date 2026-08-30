@@ -77,7 +77,7 @@ export function EventDetail() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCurrentEvent(null)}
-            className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+            className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />
           </button>
@@ -101,7 +101,7 @@ export function EventDetail() {
         {/* Status */}
         {event.status !== 'confirmed' && (
           <span
-            className={`inline-block px-2 py-1 text-xs rounded ${
+            className={`inline-block px-2 py-1 text-xs rounded-sm ${
               event.status === 'tentative'
                 ? 'bg-yellow-500/10 text-warning'
                 : 'bg-error/10 text-error'

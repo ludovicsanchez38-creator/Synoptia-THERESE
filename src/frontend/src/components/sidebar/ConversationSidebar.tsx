@@ -174,7 +174,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   data-testid="sidebar-search-input"
-                  className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
             </div>
@@ -380,7 +380,7 @@ function ConversationItem({
         onDoubleClick={handleDoubleClick}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
         aria-disabled={isDeleting || isEditing}
-        className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors text-left group cursor-pointer ${
+        className={`w-full flex items-start gap-3 p-3 rounded-md transition-colors text-left group cursor-pointer ${
           isActive
             ? 'bg-accent-cyan/10 border border-accent-cyan/30'
             : 'hover:bg-background/40 border border-transparent'
@@ -388,7 +388,7 @@ function ConversationItem({
       >
         {/* Icon */}
         <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+          className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${
             isActive
               ? 'bg-accent-cyan/20'
               : 'bg-surface-2'
@@ -410,7 +410,7 @@ function ConversationItem({
               onBlur={commitRename}
               onKeyDown={handleKeyDown}
               onClick={(e) => e.stopPropagation()}
-              className="w-full text-sm font-medium text-text bg-background/60 border border-accent-cyan/50 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+              className="w-full text-sm font-medium text-text bg-background/60 border border-accent-cyan/50 rounded-sm px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
             />
           ) : (
             <p className="text-sm font-medium text-text truncate">{displayTitle}</p>
@@ -433,7 +433,7 @@ function ConversationItem({
             e.stopPropagation();
             onContextMenu(e);
           }}
-          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:bg-background/60 rounded transition-all"
+          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 p-1 hover:bg-background/60 rounded-sm transition-all"
         >
           <MoreHorizontal className="w-4 h-4 text-text-muted" />
         </button>
@@ -447,7 +447,7 @@ function ConversationItem({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -5 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-            className="absolute right-4 top-12 z-10 w-40 bg-surface border border-border rounded-lg shadow-xl py-1"
+            className="absolute right-4 top-12 z-10 w-40 bg-surface border border-border rounded-md shadow-xl py-1"
             onClick={(e) => e.stopPropagation()}
           >
             <motion.button

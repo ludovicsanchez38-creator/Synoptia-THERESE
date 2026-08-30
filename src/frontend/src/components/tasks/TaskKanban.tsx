@@ -194,7 +194,7 @@ function DroppableColumn({ column, count, children }: DroppableColumnProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[300px] flex flex-col bg-background/20 rounded-lg transition-colors ${
+      className={`flex-1 min-w-[300px] flex flex-col bg-background/20 rounded-md transition-colors ${
         isOver ? 'ring-2 ring-accent-cyan/50 bg-accent-cyan/5' : ''
       }`}
     >
@@ -292,7 +292,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
       whileTap={isOverlay ? undefined : { scale: 0.98 }}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
-      className={`p-3 bg-surface-elevated/60 hover:bg-surface-elevated rounded-lg border border-border/30 cursor-pointer transition-colors relative ${
+      className={`p-3 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors relative ${
         isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30' : ''
       }`}
       onClick={onClick}
@@ -308,7 +308,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
         {/* Priority Badge */}
         <div className="flex items-center gap-2 mb-2">
           <span
-            className={`px-2 py-0.5 text-xs rounded border ${
+            className={`px-2 py-0.5 text-xs rounded-sm border ${
               priorityColors[task.priority as keyof typeof priorityColors]
             }`}
           >
@@ -349,7 +349,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
             {task.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan-ink rounded"
+                className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan-ink rounded-sm"
               >
                 {tag}
               </span>
@@ -363,13 +363,13 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
         <motion.div
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute top-2 right-2 flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg p-1 border border-border/50"
+          className="absolute top-2 right-2 flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-md p-1 border border-border/50"
           onClick={(e) => e.stopPropagation()}
         >
           {task.status !== 'in_progress' && (
             <button
               onClick={() => onStatusChange('in_progress')}
-              className="p-1 hover:bg-blue-500/20 rounded transition-colors"
+              className="p-1 hover:bg-blue-500/20 rounded-sm transition-colors"
               title="Marquer en cours"
             >
               <Clock className="w-3 h-3 text-blue-400" />
@@ -378,7 +378,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
           {task.status !== 'done' && (
             <button
               onClick={() => onStatusChange('done')}
-              className="p-1 hover:bg-green-500/20 rounded transition-colors"
+              className="p-1 hover:bg-green-500/20 rounded-sm transition-colors"
               title="Marquer terminé"
             >
               <CheckCircle2 className="w-3 h-3 text-green-400" />
@@ -387,7 +387,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
           {task.status === 'done' && (
             <button
               onClick={() => onStatusChange('todo')}
-              className="p-1 hover:bg-gray-500/20 rounded transition-colors"
+              className="p-1 hover:bg-gray-500/20 rounded-sm transition-colors"
               title="Rouvrir"
             >
               <Circle className="w-3 h-3 text-text-muted" />

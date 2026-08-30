@@ -111,7 +111,7 @@ function ListView({
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-lg border border-border/30 transition-colors"
+                    className="w-full text-left p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -228,7 +228,7 @@ function MonthView({
           return (
             <div
               key={index}
-              className={`border border-border/30 rounded-lg p-2 overflow-hidden ${
+              className={`border border-border/30 rounded-md p-2 overflow-hidden ${
                 isCurrentMonth ? 'bg-surface-elevated/40' : 'bg-background/20 opacity-50'
               } ${isToday ? 'ring-2 ring-accent-cyan' : ''}`}
             >
@@ -238,7 +238,7 @@ function MonthView({
                   <button
                     key={event.id}
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-1 bg-accent-cyan/10 hover:bg-accent-cyan/20 rounded text-xs text-text truncate transition-colors"
+                    className="w-full text-left px-2 py-1 bg-accent-cyan/10 hover:bg-accent-cyan/20 rounded-sm text-xs text-text truncate transition-colors"
                   >
                     {event.summary}
                   </button>
@@ -418,7 +418,7 @@ function WeekView({
                   <button
                     key={event.id}
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-0.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded text-xs text-text truncate transition-colors mb-0.5"
+                    className="w-full text-left px-2 py-0.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-xs text-text truncate transition-colors mb-0.5"
                   >
                     {event.summary}
                   </button>
@@ -639,7 +639,7 @@ function DayView({
               <button
                 key={event.id}
                 onClick={() => onEventClick(event.id)}
-                className="w-full text-left px-3 py-1.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded text-sm text-text transition-colors"
+                className="w-full text-left px-3 py-1.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-sm text-text transition-colors"
               >
                 {event.summary}
               </button>

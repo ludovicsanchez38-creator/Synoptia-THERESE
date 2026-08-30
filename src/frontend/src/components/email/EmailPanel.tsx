@@ -260,7 +260,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Mail className="w-5 h-5 text-accent" />
             </div>
             <div>
@@ -276,7 +276,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                   {showAccountMenu && (
-                    <div className={`absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 ${Z_LAYER.DROPDOWN} min-w-[250px]`}>
+                    <div className={`absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-md shadow-xl py-1 ${Z_LAYER.DROPDOWN} min-w-[250px]`}>
                       {accounts.map((acc) => (
                         <div key={acc.id} className="flex items-center">
                           <button
@@ -424,7 +424,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                       <button
                         key={label.id}
                         onClick={() => setCurrentLabel(label.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                           isActive
                             ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
@@ -447,7 +447,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                             <button
                               key={label.id}
                               onClick={() => setCurrentLabel(label.id)}
-                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                                 isActive
                                   ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'
@@ -473,7 +473,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               ) : (
                 <div className="hidden min-w-0 flex-1 items-center justify-center bg-bg lg:flex">
                   <div className="flex max-w-xs flex-col items-center text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-[10px] border border-border bg-surface-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-surface-2">
                       <Mail className="h-6 w-6 text-text-muted" />
                     </div>
                     <p className="mt-3 text-sm font-semibold text-text">Sélectionne un message</p>
@@ -511,12 +511,12 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-surface border border-border rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden"
+        className="relative bg-surface border border-border rounded-md shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Mail className="w-5 h-5 text-accent" />
             </div>
             <div>
@@ -532,7 +532,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                     <ChevronDown className="w-3 h-3" />
                   </button>
                   {showAccountMenu && (
-                    <div className={`absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-lg shadow-xl py-1 ${Z_LAYER.DROPDOWN} min-w-[250px]`}>
+                    <div className={`absolute top-full left-0 mt-1 bg-surface border border-border/50 rounded-md shadow-xl py-1 ${Z_LAYER.DROPDOWN} min-w-[250px]`}>
                       {accounts.map((acc) => (
                         <div key={acc.id} className="flex items-center">
                           <button
@@ -605,7 +605,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             )}
             <button
               onClick={toggleEmailPanel}
-              className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+              className="p-2 hover:bg-border/30 rounded-md transition-colors"
             >
               <X className="w-5 h-5 text-text-muted" />
             </button>
@@ -680,7 +680,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                       <button
                         key={label.id}
                         onClick={() => setCurrentLabel(label.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                           isActive
                             ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
@@ -704,7 +704,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                             <button
                               key={label.id}
                               onClick={() => setCurrentLabel(label.id)}
-                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                                 isActive
                                   ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'

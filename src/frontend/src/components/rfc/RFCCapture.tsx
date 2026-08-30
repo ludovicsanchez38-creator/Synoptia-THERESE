@@ -84,7 +84,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           value={data.name}
           onChange={(e) => updateField('name', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
           placeholder="mon-email-pro"
-          className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
+          className="w-full px-3 py-2 rounded-md bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
         />
       </div>
 
@@ -96,7 +96,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           value={data.description}
           onChange={(e) => updateField('description', e.target.value)}
           placeholder="Rédige un email pro avec mon style"
-          className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
+          className="w-full px-3 py-2 rounded-md bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
         />
       </div>
 
@@ -110,7 +110,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
             onChange={(e) => updateField('icon', e.target.value.slice(0, 4))}
             placeholder="📧"
             maxLength={4}
-            className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm text-center border border-border focus:border-accent-cyan/50 focus:outline-none"
+            className="w-full px-3 py-2 rounded-md bg-surface-elevated text-text text-sm text-center border border-border focus:border-accent-cyan/50 focus:outline-none"
           />
         </div>
         <div className="flex-1">
@@ -118,7 +118,7 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           <select id="rfccapture-categorie"
             value={data.category}
             onChange={(e) => updateField('category', e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
+            className="w-full px-3 py-2 rounded-md bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -137,13 +137,13 @@ export function RFCCapture({ initialData, onSave, onBack }: RFCCaptureProps) {
           onChange={(e) => updateField('prompt_template', e.target.value)}
           placeholder="Rédige un email à {{destinataire}} à propos de {{sujet}}. Ton : {{ton}}."
           rows={5}
-          className="w-full px-3 py-2 rounded-lg bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none resize-none leading-5"
+          className="w-full px-3 py-2 rounded-md bg-surface-elevated text-text text-sm border border-border focus:border-accent-cyan/50 focus:outline-none resize-none leading-5"
         />
       </div>
 
       {/* Erreur */}
       {error && (
-        <div role="alert" className="px-3 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error">
+        <div role="alert" className="px-3 py-2 rounded-md bg-error/10 border border-error/20 text-sm text-error">
           {error}
         </div>
       )}

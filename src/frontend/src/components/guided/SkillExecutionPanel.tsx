@@ -104,7 +104,7 @@ export function SkillExecutionPanel({
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={cn(
         'relative w-full max-w-md mx-auto',
-        'bg-surface-elevated rounded-2xl border border-border',
+        'bg-surface-elevated rounded-md border border-border',
         'overflow-hidden shadow-xl'
       )}
     >
@@ -121,7 +121,7 @@ export function SkillExecutionPanel({
           <button
             onClick={onClose}
             className={cn(
-              'absolute top-4 right-4 p-1.5 rounded-lg',
+              'absolute top-4 right-4 p-1.5 rounded-md',
               'text-text-muted hover:text-text',
               'hover:bg-surface-2 transition-colors'
             )}
@@ -133,7 +133,7 @@ export function SkillExecutionPanel({
         {/* Icon + Status */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className={cn(
-            'relative w-16 h-16 rounded-[10px] flex items-center justify-center mb-4',
+            'relative w-16 h-16 rounded-md flex items-center justify-center mb-4',
             'border-[1.5px] border-[var(--btn-ink)]',
             config.bgTint
           )}>
@@ -200,13 +200,13 @@ export function SkillExecutionPanel({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'mb-6 p-4 rounded-xl',
+              'mb-6 p-4 rounded-md',
               'bg-surface-2 border border-border'
             )}
           >
             <div className="flex items-center gap-3">
               <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center',
+                'w-10 h-10 rounded-md flex items-center justify-center',
                 'border-[1.5px] border-[var(--btn-ink)]',
                 config.bgTint
               )}>
@@ -260,7 +260,7 @@ export function SkillExecutionPanel({
               onClick={onDownload}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-xl font-medium',
+                'px-4 py-3 rounded-md font-medium',
                 'bg-accent-cyan hover:bg-accent-cyan/90',
                 'text-bg shadow-lg shadow-accent-cyan/20',
                 'hover:shadow-accent-cyan/30 transition-all'
@@ -280,7 +280,7 @@ export function SkillExecutionPanel({
               onClick={onRetry}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-xl font-medium',
+                'px-4 py-3 rounded-md font-medium',
                 'bg-surface border border-border',
                 'text-text hover:bg-surface-elevated',
                 'transition-colors'

@@ -82,7 +82,7 @@ export function VoiceDictationButton({
         <div
           role="dialog"
           aria-label="Consentement dictée cloud"
-          className="absolute bottom-full right-0 z-30 mb-2 w-64 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
+          className="absolute bottom-full right-0 z-30 mb-2 w-64 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
           data-testid={`${testId}-consent`}
         >
           <p className="font-semibold">Autoriser la dictée cloud ?</p>
@@ -94,14 +94,14 @@ export function VoiceDictationButton({
             <button
               type="button"
               onClick={() => setConsentAsk(false)}
-              className="rounded-[6px] border border-border px-2 py-1 font-semibold text-text-muted"
+              className="rounded-sm border border-border px-2 py-1 font-semibold text-text-muted"
             >
               Pas maintenant
             </button>
             <button
               type="button"
               onClick={confirmVoiceConsent}
-              className="rounded-[6px] bg-accent-fill px-2 py-1 font-semibold text-accent-ink"
+              className="rounded-sm bg-accent-fill px-2 py-1 font-semibold text-accent-ink"
             >
               Autoriser et dicter
             </button>
@@ -112,7 +112,7 @@ export function VoiceDictationButton({
         <div
           role="status"
           aria-live="polite"
-          className="absolute bottom-full right-0 z-30 mb-2 min-w-52 rounded-[10px] border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
+          className="absolute bottom-full right-0 z-30 mb-2 min-w-52 rounded-md border border-border bg-surface px-3 py-2 text-xs text-text shadow-lg"
           data-testid={`${testId}-status`}
         >
           {isRecording ? (
@@ -131,7 +131,7 @@ export function VoiceDictationButton({
           ) : (
             <div className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2 font-semibold"><Spinner taille="ligne" />Transcription en cours</span>
-              <button type="button" onClick={cancelProcessing} className="rounded-[6px] border border-error px-2 py-1 font-semibold text-error">Annuler</button>
+              <button type="button" onClick={cancelProcessing} className="rounded-sm border border-error px-2 py-1 font-semibold text-error">Annuler</button>
             </div>
           )}
         </div>

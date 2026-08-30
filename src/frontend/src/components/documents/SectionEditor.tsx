@@ -100,17 +100,17 @@ const markdownComponents: Components = {
     const isBlock = /language-/.test(className || '');
     if (isBlock) {
       return (
-        <pre className="my-3 p-3 rounded-lg bg-bg border border-border overflow-x-auto text-sm">
+        <pre className="my-3 p-3 rounded-md bg-bg border border-border overflow-x-auto text-sm">
           <code>{children}</code>
         </pre>
       );
     }
-    return <code className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan-ink text-sm font-mono">{children}</code>;
+    return <code className="px-1.5 py-0.5 rounded-sm bg-bg text-accent-cyan-ink text-sm font-mono">{children}</code>;
   },
   table({ children }) {
     return (
       <div className="overflow-x-auto my-3">
-        <table className="min-w-full border border-border rounded-lg overflow-hidden">{children}</table>
+        <table className="min-w-full border border-border rounded-md overflow-hidden">{children}</table>
       </div>
     );
   },
@@ -255,7 +255,7 @@ export function SectionEditor({
             disabled={isStreaming}
             className="flex-1 min-w-0 px-2.5 py-1.5 bg-transparent text-lg font-semibold text-text focus:outline-none focus:bg-background/40 rounded-md transition-colors disabled:opacity-60"
           />
-          <span className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-[6px] border ${meta.className}`}>
+          <span className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}>
             {meta.label}
           </span>
         </div>
@@ -273,7 +273,7 @@ export function SectionEditor({
 
       {/* Erreur causale + Reprendre */}
       {error && (
-        <div role="alert" className="mx-5 mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 shrink-0">
+        <div role="alert" className="mx-5 mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-sm border border-error/30 bg-error/10 shrink-0">
           <span className="flex items-center gap-2 text-sm text-error min-w-0">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span className="truncate">{error}</span>

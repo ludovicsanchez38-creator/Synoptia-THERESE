@@ -117,7 +117,7 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
 
             {/* Content */}
             <div className="flex-1 pb-6">
-              <div className="bg-surface rounded-lg p-4">
+              <div className="bg-surface rounded-md p-4">
                 <div className="flex items-start justify-between mb-2">
                   <h4
                     className={`font-medium text-text-primary${annulee ? ' line-through opacity-60' : ''}`}

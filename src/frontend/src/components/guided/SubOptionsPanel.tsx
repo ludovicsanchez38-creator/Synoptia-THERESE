@@ -48,7 +48,7 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
       {/* Header with icon and question */}
       <div className="flex items-center gap-3 mb-6">
         <div className={cn(
-          'flex items-center justify-center w-12 h-12 rounded-[8px]',
+          'flex items-center justify-center w-12 h-12 rounded-sm',
           'bg-accent-tint border-[1.5px] border-[var(--btn-ink)]'
         )}>
           <Icon className="w-6 h-6 text-accent" />
@@ -90,7 +90,7 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
               const FormatIcon = config.icon;
               return (
                 <span className={cn(
-                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold',
+                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold',
                   config.color
                 )}>
                   <FormatIcon className="w-3 h-3" />

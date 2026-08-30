@@ -92,10 +92,10 @@ export function MeetingAgendaCard({
   const events = resource.status === 'ready' ? sortedEvents(resource.data.events).slice(0, 6) : [];
 
   return (
-    <section aria-labelledby="meeting-agenda-title" className="overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]" data-testid="meeting-agenda-card">
+    <section aria-labelledby="meeting-agenda-title" className="overflow-hidden rounded-md border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]" data-testid="meeting-agenda-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[9px] border border-text bg-[var(--k3bg)] text-[var(--k3)]">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--k3bg)] text-[var(--k3)]">
             <Calendar className="h-4 w-4" />
           </span>
           <div>
@@ -108,7 +108,7 @@ export function MeetingAgendaCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-[8px] bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
+          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-sm bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
             <Plus className="h-3.5 w-3.5" />
             Nouvel événement
           </button>
@@ -129,7 +129,7 @@ export function MeetingAgendaCard({
                   pixels d'ici. Deux contrôles portant le même texte ne sont pas
                   un secours de plus, c'est une ambiguïté - un testeur qui
                   signale « j'ai cliqué sur Ouvrir Agenda » ne dirait pas lequel. */}
-              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
+              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
             </div>
           </div>
         </StateShell>
@@ -139,14 +139,14 @@ export function MeetingAgendaCard({
             <Calendar className="mx-auto h-6 w-6 text-text-muted" />
             <p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous à venir</p>
             <p className="mt-1 text-xs text-text-muted">L’agenda est disponible. Tu peux y préparer un nouvel événement.</p>
-            <button type="button" onClick={onNewEvent} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un événement</button>
+            <button type="button" onClick={onNewEvent} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un événement</button>
           </div>
         </StateShell>
       ) : (
         <div className="divide-y divide-border">
           {events.map((event) => (
             <button key={meetingEventKey(event)} type="button" onClick={() => onOpenEvent(meetingEventKey(event))} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-[var(--k3bg)] text-[var(--k3)]"><Clock3 className="h-4 w-4" /></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[var(--k3bg)] text-[var(--k3)]"><Clock3 className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <strong className="block truncate text-sm text-text">{event.summary || 'Événement sans titre'}</strong>
                 <span className="mt-0.5 block truncate text-xs text-text-muted">{formatEventDate(event)}{event.location ? ` · ${event.location}` : ''}</span>
@@ -184,13 +184,13 @@ function CalendarProvisioning({ onEnsure }: { onEnsure: () => Promise<void> }) {
 
   if (failed) {
     return (
-      <div className="rounded-[12px] border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="meeting-calendar-provisioning-error">
+      <div className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="meeting-calendar-provisioning-error">
         <p>Impossible de préparer un calendrier pour le moment.</p>
         <div className="mt-3 flex gap-2">
           {/* Le pied de page du canevas porte déjà « Ouvrir Agenda », en
               permanence. Le répéter ici donnerait deux contrôles au même texte
               sur le même écran. */}
-          <button type="button" onClick={runEnsure} className="rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button>
+          <button type="button" onClick={runEnsure} className="rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button>
         </div>
       </div>
     );
@@ -273,29 +273,29 @@ function NewEventForm({
 
   return (
     <div className="space-y-4" data-testid="meeting-new-event-form">
-      <section className="rounded-[13px] border border-border bg-surface p-4">
+      <section className="rounded-md border border-border bg-surface p-4">
         <h3 className="text-sm font-bold text-text">Préparer un événement</h3>
         <p className="mt-1 text-xs leading-5 text-text-muted">Aucune donnée n’est écrite avant la confirmation finale.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="text-sm font-semibold text-text sm:col-span-2">Titre<input id="meeting-summary" aria-invalid={errorFieldId === 'meeting-summary'} aria-describedby={errorFieldId === 'meeting-summary' ? 'meeting-form-error' : undefined} value={summary} onChange={(event) => { setSummary(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-[9px] border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
-          <label className="text-sm font-semibold text-text">Début<input id="meeting-start" aria-invalid={errorFieldId === 'meeting-start'} aria-describedby={errorFieldId === 'meeting-start' ? 'meeting-form-error' : undefined} type="datetime-local" value={start} onChange={(event) => { setStart(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-[9px] border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
-          <label className="text-sm font-semibold text-text">Fin<input id="meeting-end" aria-invalid={errorFieldId === 'meeting-end'} aria-describedby={errorFieldId === 'meeting-end' ? 'meeting-form-error' : undefined} type="datetime-local" value={end} onChange={(event) => { setEnd(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-[9px] border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
-          <label className="text-sm font-semibold text-text">Calendrier<select id="meeting-calendar" aria-invalid={errorFieldId === 'meeting-calendar'} aria-describedby={errorFieldId === 'meeting-calendar' ? 'meeting-form-error' : undefined} value={calendarId} onChange={(event) => { setCalendarId(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-sm font-normal outline-none focus:border-accent">{data.calendars.map((calendar) => <option key={calendar.id} value={calendar.id}>{calendar.summary}</option>)}</select></label>
-          <label className="text-sm font-semibold text-text">Lieu ou lien<input aria-label="Lieu du rendez-vous" value={location} onChange={(event) => { setLocation(event.target.value); setConfirming(false); }} className="mt-1.5 w-full rounded-[9px] border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
-          <label className="text-sm font-semibold text-text sm:col-span-2">Participants, séparés par une virgule<input aria-label="Participants, séparés par une virgule" value={attendees} onChange={(event) => { setAttendees(event.target.value); setConfirming(false); }} placeholder="contact@exemple.fr" className="mt-1.5 w-full rounded-[9px] border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
-          <label className="text-sm font-semibold text-text sm:col-span-2">Description<textarea aria-label="Description du rendez-vous" value={description} onChange={(event) => { setDescription(event.target.value); setConfirming(false); }} rows={4} className="mt-1.5 w-full resize-y rounded-[9px] border border-border px-3 py-2 text-sm font-normal leading-5 outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text sm:col-span-2">Titre<input id="meeting-summary" aria-invalid={errorFieldId === 'meeting-summary'} aria-describedby={errorFieldId === 'meeting-summary' ? 'meeting-form-error' : undefined} value={summary} onChange={(event) => { setSummary(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-md border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text">Début<input id="meeting-start" aria-invalid={errorFieldId === 'meeting-start'} aria-describedby={errorFieldId === 'meeting-start' ? 'meeting-form-error' : undefined} type="datetime-local" value={start} onChange={(event) => { setStart(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-md border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text">Fin<input id="meeting-end" aria-invalid={errorFieldId === 'meeting-end'} aria-describedby={errorFieldId === 'meeting-end' ? 'meeting-form-error' : undefined} type="datetime-local" value={end} onChange={(event) => { setEnd(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-md border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text">Calendrier<select id="meeting-calendar" aria-invalid={errorFieldId === 'meeting-calendar'} aria-describedby={errorFieldId === 'meeting-calendar' ? 'meeting-form-error' : undefined} value={calendarId} onChange={(event) => { setCalendarId(event.target.value); setConfirming(false); setError(null); setErrorFieldId(null); }} className="mt-1.5 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm font-normal outline-none focus:border-accent">{data.calendars.map((calendar) => <option key={calendar.id} value={calendar.id}>{calendar.summary}</option>)}</select></label>
+          <label className="text-sm font-semibold text-text">Lieu ou lien<input aria-label="Lieu du rendez-vous" value={location} onChange={(event) => { setLocation(event.target.value); setConfirming(false); }} className="mt-1.5 w-full rounded-md border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text sm:col-span-2">Participants, séparés par une virgule<input aria-label="Participants, séparés par une virgule" value={attendees} onChange={(event) => { setAttendees(event.target.value); setConfirming(false); }} placeholder="contact@exemple.fr" className="mt-1.5 w-full rounded-md border border-border px-3 py-2 text-sm font-normal outline-none focus:border-accent" /></label>
+          <label className="text-sm font-semibold text-text sm:col-span-2">Description<textarea aria-label="Description du rendez-vous" value={description} onChange={(event) => { setDescription(event.target.value); setConfirming(false); }} rows={4} className="mt-1.5 w-full resize-y rounded-md border border-border px-3 py-2 text-sm font-normal leading-5 outline-none focus:border-accent" /></label>
         </div>
       </section>
-      {error && <div id="meeting-form-error" role="alert" className="rounded-[10px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">{error}</div>}
+      {error && <div id="meeting-form-error" role="alert" className="rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">{error}</div>}
       {!confirming ? (
-        <button type="button" onClick={prepare} className="w-full rounded-[10px] bg-accent-fill px-4 py-3 text-sm font-semibold text-accent-ink">Vérifier avant création</button>
+        <button type="button" onClick={prepare} className="w-full rounded-md bg-accent-fill px-4 py-3 text-sm font-semibold text-accent-ink">Vérifier avant création</button>
       ) : (
-        <div className="rounded-[12px] border border-accent-cyan/30 bg-accent-tint p-4">
+        <div className="rounded-md border border-accent-cyan/30 bg-accent-tint p-4">
           <div className="flex gap-2 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><span>Créer « {summary.trim()} » le {new Date(start).toLocaleString('fr-FR')} dans « {selectedCalendar?.summary || 'calendrier sélectionné'} » ({selectedCalendar?.provider === 'google' ? 'Google Calendar' : selectedCalendar?.provider === 'caldav' ? 'CalDAV' : 'local'}){selectedAccount ? `, compte ${selectedAccount.email}` : ''}{parsedAttendees.length ? `, avec ${parsedAttendees.length} participant${parsedAttendees.length > 1 ? 's' : ''}` : ''}. Fuseau : {Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris'}.</span></div>
           <div className="mt-3 flex gap-2">
-            <button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error">Annuler</button>
-            <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button>
-            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">{pending && <Spinner taille="ligne" />}Confirmer la création</button>
+            <button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-md border border-error bg-surface px-3 py-2 text-xs font-semibold text-error">Annuler</button>
+            <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button>
+            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">{pending && <Spinner taille="ligne" />}Confirmer la création</button>
           </div>
         </div>
       )}
@@ -343,7 +343,7 @@ function EventPreparation({
 
   return (
     <div className="space-y-5" data-testid="meeting-event-preparation">
-      <section className="rounded-[13px] border border-border bg-surface p-4">
+      <section className="rounded-md border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-text">{event.summary || 'Événement sans titre'}</h3>
@@ -351,8 +351,8 @@ function EventPreparation({
           </div>
           <span className="rounded-full bg-[var(--k3bg)] px-2.5 py-1 text-xs font-semibold text-[var(--k3)]">{event.all_day ? 'Journée entière' : 'Rendez-vous'}</span>
         </div>
-        {event.location && <p className="mt-3 flex items-center gap-2 rounded-[9px] bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-[var(--k3)]" />{event.location}</p>}
-        {event.description && <div className="mt-3 whitespace-pre-wrap rounded-[9px] bg-surface-2 px-3 py-3 text-xs leading-5 text-text">{event.description}</div>}
+        {event.location && <p className="mt-3 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-[var(--k3)]" />{event.location}</p>}
+        {event.description && <div className="mt-3 whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-3 text-xs leading-5 text-text">{event.description}</div>}
       </section>
 
       <section>
@@ -362,9 +362,9 @@ function EventPreparation({
             {event.attendees.map((attendee) => {
               const contact = relatedContacts.find((item) => item.email?.trim().toLowerCase() === attendee.replace(/^.*<|>.*$/g, '').trim().toLowerCase());
               return (
-                <div key={attendee} className="rounded-[11px] border border-border bg-surface p-3">
+                <div key={attendee} className="rounded-md border border-border bg-surface p-3">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-xs font-bold text-accent">{contact ? contactInitials(contact) : <Users className="h-4 w-4" />}</span>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-tint text-xs font-bold text-accent">{contact ? contactInitials(contact) : <Users className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{contact ? contactDisplayName(contact) : attendee}</strong><span className="block truncate text-xs text-text-muted">{contact ? [contact.company, contact.stage, contact.email].filter(Boolean).join(' · ') : 'Pas de correspondance CRM exacte'}</span></div>
                   </div>
                   {contact?.notes && <p className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-xs leading-5 text-text-muted">{contact.notes}</p>}
@@ -372,30 +372,30 @@ function EventPreparation({
               );
             })}
           </div>
-        ) : <p className="rounded-[10px] border border-border bg-surface p-3 text-xs text-text-muted">Aucun participant n’est renseigné dans l’événement.</p>}
+        ) : <p className="rounded-md border border-border bg-surface p-3 text-xs text-text-muted">Aucun participant n’est renseigné dans l’événement.</p>}
       </section>
 
       <section>
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Points à vérifier</div>
         <div className="space-y-2">
           {(checks.length > 0 ? checks : ['L’événement contient une date, un contexte et au moins un participant.']).map((item) => (
-            <div key={item} className="flex gap-2.5 rounded-[10px] border border-border bg-surface px-3 py-2.5 text-xs leading-5 text-text"><CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${checks.length ? 'text-warning' : 'text-accent'}`} />{item}</div>
+            <div key={item} className="flex gap-2.5 rounded-md border border-border bg-surface px-3 py-2.5 text-xs leading-5 text-text"><CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${checks.length ? 'text-warning' : 'text-accent'}`} />{item}</div>
           ))}
         </div>
       </section>
 
       {relatedContacts.length > 0 && (
-        <section className="rounded-[13px] border border-border bg-surface p-4">
+        <section className="rounded-md border border-border bg-surface p-4">
           <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-[var(--k3)]" /><h3 className="text-sm font-bold text-text">Ajouter une note de rendez-vous</h3></div>
           <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
-          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
-          <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-[9px] border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
+          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
+          <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-md border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
           {!confirming ? (
-            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-[9px] bg-accent-fill px-3 py-2.5 text-xs font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
+            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-md bg-accent-fill px-3 py-2.5 text-xs font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
           ) : (
-            <div className="mt-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3">
+            <div className="mt-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
               <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
-              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
+              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-sm border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-sm border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
             </div>
           )}
           {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
@@ -404,11 +404,11 @@ function EventPreparation({
 
       <section>
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Historique CRM disponible</div>
-        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => <div key={activity.id} className="rounded-[10px] border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{activity.title}</strong><span className="mt-0.5 block text-xs text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {activity.type}</span>{activity.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{activity.description}</p>}</div>)}</div> : <p className="rounded-[10px] border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
+        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => <div key={activity.id} className="rounded-md border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{activity.title}</strong><span className="mt-0.5 block text-xs text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {activity.type}</span>{activity.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{activity.description}</p>}</div>)}</div> : <p className="rounded-md border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
       </section>
 
-      {context.unavailableSources.length > 0 && <div className="rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Source indisponible : {context.unavailableSources.join(', ')}.</div>}
-      <div className="flex items-start gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Les contacts sont reliés uniquement par adresse email exacte. Aucun contexte absent n’est inventé.</div>
+      {context.unavailableSources.length > 0 && <div className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Source indisponible : {context.unavailableSources.join(', ')}.</div>}
+      <div className="flex items-start gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Les contacts sont reliés uniquement par adresse email exacte. Aucun contexte absent n’est inventé.</div>
     </div>
   );
 }
@@ -446,12 +446,12 @@ export function MeetingWorkspaceCanvas({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Chargement de l’agenda…</div>
-          : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
+          : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
             : target === 'new-event' ? (resource.data.calendars.length === 0
               ? <CalendarProvisioning onEnsure={onEnsureCalendar} />
               : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
               : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Je rassemble le contexte exact…</div>
-                : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
+                : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
                   : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>

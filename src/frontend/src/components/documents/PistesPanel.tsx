@@ -12,7 +12,7 @@
  * préremplissage de l'instruction) est fait par `DocumentWorkspace`.
  *
  * Badge compteur : rond (dette DA connue - seuls les tags de STATUT sont des
- * carrés `rounded-[6px]`, les compteurs restent ronds, cf. le badge cloche de
+ * carrés `rounded-sm`, les compteurs restent ronds, cf. le badge cloche de
  * `NotificationCenter.tsx`) mais en tokens sémantiques (bg-accent-fill /
  * text-accent-ink), jamais la couleur brute Tailwind que porte ce précédent.
  *
@@ -39,7 +39,7 @@ function StatusTag({ status }: { status: PisteStatus }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-[6px] border ${meta.className}`}
+      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
     >
       {meta.label}
     </span>
@@ -88,7 +88,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="relative w-8 h-8 grid place-items-center rounded-[6px] hover:bg-surface-elevated/60 transition-colors"
+          className="relative w-8 h-8 grid place-items-center rounded-sm hover:bg-surface-elevated/60 transition-colors"
           aria-label="Déplier le volet Pistes"
           title="Pistes"
         >
@@ -112,7 +112,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="p-1 rounded-[6px] hover:bg-surface-elevated/60 text-text-muted transition-colors"
+          className="p-1 rounded-sm hover:bg-surface-elevated/60 text-text-muted transition-colors"
           aria-label="Replier le volet Pistes"
           title="Replier"
         >
@@ -130,7 +130,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
             {nouvelles.map((piste) => (
               <li
                 key={piste.id}
-                className="rounded-lg border border-border/40 bg-surface/60 p-2.5 space-y-2"
+                className="rounded-md border border-border/40 bg-surface/60 p-2.5 space-y-2"
                 data-testid="piste-item"
               >
                 <p className="text-sm text-text leading-snug">{piste.texte}</p>
@@ -165,7 +165,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
                 {traitees.map((piste) => (
                   <li
                     key={piste.id}
-                    className="rounded-lg border border-border/30 bg-surface/30 p-2 flex items-start justify-between gap-2"
+                    className="rounded-md border border-border/30 bg-surface/30 p-2 flex items-start justify-between gap-2"
                     data-testid="piste-item-traitee"
                   >
                     <p className="text-xs text-text-muted leading-snug flex-1 min-w-0">{piste.texte}</p>

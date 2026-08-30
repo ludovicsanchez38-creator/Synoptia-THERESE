@@ -115,12 +115,12 @@ export function InvoiceWorkspaceCard({
   return (
     <section
       aria-labelledby="invoice-workspace-title"
-      className="overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]"
+      className="overflow-hidden rounded-md border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]"
       data-testid="invoice-workspace-card"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[9px] border border-text bg-[var(--color-warning-tint)] text-warning">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--color-warning-tint)] text-warning">
             <Receipt className="h-4 w-4" />
           </span>
           <div>
@@ -131,7 +131,7 @@ export function InvoiceWorkspaceCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-[8px] bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
+          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-sm bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
             <Plus className="h-3.5 w-3.5" />
             Nouveau devis
           </button>
@@ -153,7 +153,7 @@ export function InvoiceWorkspaceCard({
             <p className="mt-2 text-sm font-semibold text-text">Facturation indisponible</p>
             <p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
-              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
+              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
@@ -167,7 +167,7 @@ export function InvoiceWorkspaceCard({
             <FileText className="mx-auto h-6 w-6 text-text-muted" />
             <p className="mt-2 text-sm font-semibold text-text">Aucun devis ni facture</p>
             <p className="mt-1 text-xs text-text-muted">Tu peux préparer un premier devis sans l’envoyer.</p>
-            <button type="button" onClick={onCreateDevis} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un devis</button>
+            <button type="button" onClick={onCreateDevis} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un devis</button>
           </div>
         </StateShell>
       ) : (
@@ -176,7 +176,7 @@ export function InvoiceWorkspaceCard({
             const contact = resource.data.contacts.find((item) => item.id === invoice.contact_id);
             return (
               <button key={invoice.id} type="button" onClick={() => onOpenInvoice(invoice.id)} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-[var(--color-warning-tint)] text-warning">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[var(--color-warning-tint)] text-warning">
                   <FileText className="h-4 w-4" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
   const contact = data.contacts.find((item) => item.id === invoice.contact_id);
   return (
     <div className="space-y-4" data-testid="invoice-detail">
-      <section className="rounded-[13px] border border-border bg-surface p-4">
+      <section className="rounded-md border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
@@ -220,12 +220,12 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
           </div>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Émission</span><strong>{formatDate(invoice.issue_date)}</strong></div>
-          <div className="rounded-[9px] bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Échéance</span><strong>{formatDate(invoice.due_date)}</strong></div>
+          <div className="rounded-md bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Émission</span><strong>{formatDate(invoice.issue_date)}</strong></div>
+          <div className="rounded-md bg-surface-2 p-2.5"><span className="block text-xs text-text-muted">Échéance</span><strong>{formatDate(invoice.due_date)}</strong></div>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[13px] border border-border bg-surface">
+      <section className="overflow-hidden rounded-md border border-border bg-surface">
         <div className="border-b border-border px-4 py-3 text-sm font-bold text-text">Lignes</div>
         <div className="divide-y divide-border">
           {invoice.lines.map((line) => (
@@ -241,18 +241,18 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
       </section>
 
       {data.billingProfile && !data.billingProfile.is_complete && (
-        <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Infos de ta société incomplètes : {data.billingProfile.missing.join(', ')}. La génération PDF doit rester bloquée.
         </div>
       )}
       {!data.billingProfile && (
-        <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Les infos de ta société n’ont pas pu être vérifiées. Aucune génération PDF n’est proposée ici.
         </div>
       )}
-      <div className="flex items-start gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3 text-xs text-accent">
+      <div className="flex items-start gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-xs text-accent">
         <ShieldCheck className="h-4 w-4 shrink-0" />
         Lecture seule ici. L’envoi de facture n’est pas disponible et aucune action n’a été exécutée.
       </div>
@@ -430,9 +430,9 @@ function DevisDraftForm({
     if (!contactsUnavailable) {
       return (
         <div className="space-y-4" data-testid="invoice-first-contact-form">
-          <section className="rounded-[13px] border border-border bg-surface p-4">
+          <section className="rounded-md border border-border bg-surface p-4">
             <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-accent"><Users className="h-4 w-4" /></span>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-tint text-accent"><Users className="h-4 w-4" /></span>
               <div>
                 <h3 className="text-sm font-bold text-text">Crée le client de ce premier devis</h3>
                 <p className="mt-1 text-xs leading-5 text-text-muted">Le contact sera enregistré dans le CRM puis sélectionné automatiquement. Tu restes ici.</p>
@@ -440,27 +440,27 @@ function DevisDraftForm({
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-text-muted">Prénom
-                <input id="devis-contact-first-name" aria-label="Prénom du nouveau contact" aria-invalid={Boolean(contactError)} aria-describedby={contactError ? 'devis-contact-error' : undefined} value={contactForm.firstName} onChange={(event) => { setContactForm((current) => ({ ...current, firstName: event.target.value })); setContactError(null); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text" />
+                <input id="devis-contact-first-name" aria-label="Prénom du nouveau contact" aria-invalid={Boolean(contactError)} aria-describedby={contactError ? 'devis-contact-error' : undefined} value={contactForm.firstName} onChange={(event) => { setContactForm((current) => ({ ...current, firstName: event.target.value })); setContactError(null); }} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text" />
               </label>
               <label htmlFor="invoiceconversationcard-nom" className="text-xs text-text-muted">Nom
-                <input id="invoiceconversationcard-nom" aria-label="Nom du nouveau contact" value={contactForm.lastName} onChange={(event) => setContactForm((current) => ({ ...current, lastName: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+                <input id="invoiceconversationcard-nom" aria-label="Nom du nouveau contact" value={contactForm.lastName} onChange={(event) => setContactForm((current) => ({ ...current, lastName: event.target.value }))} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
               <label htmlFor="invoiceconversationcard-entreprise" className="text-xs text-text-muted">Entreprise
-                <input id="invoiceconversationcard-entreprise" aria-label="Entreprise du nouveau contact" value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+                <input id="invoiceconversationcard-entreprise" aria-label="Entreprise du nouveau contact" value={contactForm.company} onChange={(event) => setContactForm((current) => ({ ...current, company: event.target.value }))} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
               <label htmlFor="invoiceconversationcard-email" className="text-xs text-text-muted">Email
-                <input id="invoiceconversationcard-email" aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+                <input id="invoiceconversationcard-email" aria-label="Email du nouveau contact" type="email" value={contactForm.email} onChange={(event) => setContactForm((current) => ({ ...current, email: event.target.value }))} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
               <label htmlFor="invoiceconversationcard-telephone" className="text-xs text-text-muted">Téléphone
-                <input id="invoiceconversationcard-telephone" aria-label="Téléphone du nouveau contact" type="tel" value={contactForm.phone} onChange={(event) => setContactForm((current) => ({ ...current, phone: event.target.value }))} placeholder="06 12 34 56 78" className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+                <input id="invoiceconversationcard-telephone" aria-label="Téléphone du nouveau contact" type="tel" value={contactForm.phone} onChange={(event) => setContactForm((current) => ({ ...current, phone: event.target.value }))} placeholder="06 12 34 56 78" className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
               <label htmlFor="invoiceconversationcard-adresse" className="text-xs text-text-muted sm:col-span-2">Adresse
-                <input id="invoiceconversationcard-adresse" aria-label="Adresse du nouveau contact" value={contactForm.address} onChange={(event) => setContactForm((current) => ({ ...current, address: event.target.value }))} placeholder="14 chemin des Oliviers, 04300 Mane" className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-xs text-text" />
+                <input id="invoiceconversationcard-adresse" aria-label="Adresse du nouveau contact" value={contactForm.address} onChange={(event) => setContactForm((current) => ({ ...current, address: event.target.value }))} placeholder="14 chemin des Oliviers, 04300 Mane" className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-xs text-text" />
               </label>
             </div>
             {contactError && <p id="devis-contact-error" className="mt-3 text-sm font-semibold text-error" role="alert">{contactError}</p>}
             <div className="mt-4 flex justify-end">
-              <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">
+              <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">
                 {contactSaving ? <Spinner taille="ligne" /> : <Plus className="h-3.5 w-3.5" />}
                 {contactSaving ? 'Création du contact…' : 'Créer et continuer le devis'}
               </button>
@@ -483,13 +483,13 @@ function DevisDraftForm({
   return (
     <div className="space-y-4" data-testid="devis-draft-form">
       {data.billingProfile && !data.billingProfile.is_complete && (
-        <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Infos de ta société incomplètes : {data.billingProfile.missing.join(', ')}. Tu peux enregistrer le brouillon, mais pas générer un PDF conforme.
         </div>
       )}
       {!data.billingProfile && (
-        <div className="flex items-start gap-2 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+        <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Les infos de ta société n’ont pas pu être vérifiées. Le brouillon reste possible, mais aucune génération PDF n’est proposée.
         </div>
@@ -501,33 +501,33 @@ function DevisDraftForm({
         className="contents disabled:opacity-70"
         data-testid="devis-recipient-fields"
       >
-      <section className="rounded-[13px] border border-border bg-surface p-4">
+      <section className="rounded-md border border-border bg-surface p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs text-text-muted sm:col-span-2">Client
-            <select id="devis-contact" aria-label="Client du devis" aria-invalid={errorFieldId === 'devis-contact'} aria-describedby={errorFieldId === 'devis-contact' ? 'devis-form-error' : undefined} value={contactId} onChange={(event) => { invalidateDraft(); setContactId(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text">
+            <select id="devis-contact" aria-label="Client du devis" aria-invalid={errorFieldId === 'devis-contact'} aria-describedby={errorFieldId === 'devis-contact' ? 'devis-form-error' : undefined} value={contactId} onChange={(event) => { invalidateDraft(); setContactId(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text">
               <option value="">Sélectionner un contact</option>
               {data.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contactLabel(contact)}</option>)}
             </select>
           </label>
           <label className="text-xs text-text-muted">Date d’émission
-            <input id="devis-issue-date" aria-label="Date d’émission" aria-invalid={errorFieldId === 'devis-issue-date'} aria-describedby={errorFieldId === 'devis-issue-date' ? 'devis-form-error' : undefined} type="date" value={issueDate} onChange={(event) => { invalidateDraft(); setIssueDate(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border px-2.5 py-2 text-sm text-text" />
+            <input id="devis-issue-date" aria-label="Date d’émission" aria-invalid={errorFieldId === 'devis-issue-date'} aria-describedby={errorFieldId === 'devis-issue-date' ? 'devis-form-error' : undefined} type="date" value={issueDate} onChange={(event) => { invalidateDraft(); setIssueDate(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border px-2.5 py-2 text-sm text-text" />
           </label>
           <label className="text-xs text-text-muted">Échéance
-            <input id="devis-due-date" aria-label="Échéance du devis" aria-invalid={errorFieldId === 'devis-due-date'} aria-describedby={errorFieldId === 'devis-due-date' ? 'devis-form-error' : undefined} type="date" value={dueDate} onChange={(event) => { invalidateDraft(); setDueDate(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border px-2.5 py-2 text-sm text-text" />
+            <input id="devis-due-date" aria-label="Échéance du devis" aria-invalid={errorFieldId === 'devis-due-date'} aria-describedby={errorFieldId === 'devis-due-date' ? 'devis-form-error' : undefined} type="date" value={dueDate} onChange={(event) => { invalidateDraft(); setDueDate(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border px-2.5 py-2 text-sm text-text" />
           </label>
           <label htmlFor="invoiceconversationcard-devise" className="text-xs text-text-muted">Devise
-            <select id="invoiceconversationcard-devise" aria-label="Devise du devis" value={currency} onChange={(event) => { invalidateDraft(); setCurrency(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border bg-surface px-2.5 py-2 text-sm text-text">
+            <select id="invoiceconversationcard-devise" aria-label="Devise du devis" value={currency} onChange={(event) => { invalidateDraft(); setCurrency(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border bg-surface px-2.5 py-2 text-sm text-text">
               {['EUR', 'CHF', 'USD', 'GBP', 'CAD'].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="text-xs text-text-muted">Validité en jours
-            <input id="devis-validity" aria-label="Validité du devis" aria-invalid={errorFieldId === 'devis-validity'} aria-describedby={errorFieldId === 'devis-validity' ? 'devis-form-error' : undefined} inputMode="numeric" value={validity} onChange={(event) => { invalidateDraft(); setValidity(event.target.value); }} className="mt-1.5 w-full rounded-[8px] border border-border px-2.5 py-2 text-sm text-text" />
+            <input id="devis-validity" aria-label="Validité du devis" aria-invalid={errorFieldId === 'devis-validity'} aria-describedby={errorFieldId === 'devis-validity' ? 'devis-form-error' : undefined} inputMode="numeric" value={validity} onChange={(event) => { invalidateDraft(); setValidity(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border px-2.5 py-2 text-sm text-text" />
           </label>
         </div>
       </section>
       </fieldset>
 
-      <section className="rounded-[13px] border border-border bg-surface p-4">
+      <section className="rounded-md border border-border bg-surface p-4">
         <fieldset
           disabled={confirmationSnapshot !== null}
           onChangeCapture={() => setConfirmationSnapshot(null)}
@@ -536,41 +536,41 @@ function DevisDraftForm({
         >
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-bold text-text">Lignes du devis</h3>
-          <button id="devis-add-line" type="button" aria-invalid={errorFieldId === 'devis-add-line'} aria-describedby={errorFieldId === 'devis-add-line' ? 'devis-form-error' : undefined} onClick={() => { invalidateDraft(); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex min-h-11 items-center gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-sm font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
+          <button id="devis-add-line" type="button" aria-invalid={errorFieldId === 'devis-add-line'} aria-describedby={errorFieldId === 'devis-add-line' ? 'devis-form-error' : undefined} onClick={() => { invalidateDraft(); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex min-h-11 items-center gap-1 rounded-sm border border-border px-2.5 py-1.5 text-sm font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
         </div>
         <div className="mt-3 space-y-3">
           {lines.map((line, index) => (
-            <div key={index} className="grid gap-2 rounded-[10px] bg-surface-2 p-3 sm:grid-cols-[1fr_70px_100px_86px_32px]">
-              <input id={`devis-description-${index}`} aria-label={`Description ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-description-${index}`} aria-describedby={errorFieldId === `devis-description-${index}` ? 'devis-form-error' : undefined} placeholder="Description" value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} className="rounded-[8px] border border-border px-2.5 py-2 text-sm" />
-              <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="rounded-[8px] border border-border px-2.5 py-2 text-sm" />
-              <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="rounded-[8px] border border-border px-2.5 py-2 text-sm" />
-              <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="rounded-[8px] border border-border bg-surface px-2 py-2 text-xs">
+            <div key={index} className="grid gap-2 rounded-md bg-surface-2 p-3 sm:grid-cols-[1fr_70px_100px_86px_32px]">
+              <input id={`devis-description-${index}`} aria-label={`Description ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-description-${index}`} aria-describedby={errorFieldId === `devis-description-${index}` ? 'devis-form-error' : undefined} placeholder="Description" value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="rounded-sm border border-border bg-surface px-2 py-2 text-xs">
                 {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
               </select>
-              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { invalidateDraft(); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 place-items-center rounded-[8px] text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
+              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { invalidateDraft(); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 place-items-center rounded-sm text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           ))}
         </div>
         <label htmlFor="invoiceconversationcard-notes" className="mt-3 block text-xs text-text-muted">Notes
-          <textarea id="invoiceconversationcard-notes" aria-label="Notes du devis" value={notes} onChange={(event) => { invalidateDraft(); setNotes(event.target.value); }} className="mt-1.5 h-20 w-full resize-y rounded-[8px] border border-border p-2.5 text-sm text-text" />
+          <textarea id="invoiceconversationcard-notes" aria-label="Notes du devis" value={notes} onChange={(event) => { invalidateDraft(); setNotes(event.target.value); }} className="mt-1.5 h-20 w-full resize-y rounded-sm border border-border p-2.5 text-sm text-text" />
         </label>
-        <div className="mt-3 rounded-[10px] bg-bg p-3 text-right text-xs text-text-muted">
+        <div className="mt-3 rounded-md bg-bg p-3 text-right text-xs text-text-muted">
           HT {formatMoney(totals.ht, currency)} · TVA {formatMoney(totals.tax, currency)}
           <strong className="ml-3 text-sm text-text">TTC {formatMoney(totals.ht + totals.tax, currency)}</strong>
         </div>
         </fieldset>
 
         {error && <p id="devis-form-error" className="mt-3 text-sm font-semibold text-error" role="alert">{error}</p>}
-        {hasUnsavedChanges && <p role="status" className="mt-3 rounded-[10px] border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">Modifications non enregistrées. Le succès précédent ne correspond plus au formulaire actuel.</p>}
+        {hasUnsavedChanges && <p role="status" className="mt-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">Modifications non enregistrées. Le succès précédent ne correspond plus au formulaire actuel.</p>}
         {created && (
-          <div role="status" className="mt-3 flex items-start gap-2 rounded-[10px] border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="devis-draft-saved">
+          <div role="status" className="mt-3 flex items-start gap-2 rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="devis-draft-saved">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span><strong>{created.invoice_number} enregistré comme brouillon.</strong> Aucun PDF n’a été généré et aucun email n’a été envoyé.</span>
           </div>
         )}
 
         {confirmationSnapshot && (
-          <div className="mt-3 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3" data-testid="devis-draft-confirmation">
+          <div className="mt-3 rounded-md border border-accent-cyan/30 bg-accent-tint p-3" data-testid="devis-draft-confirmation">
             <div className="flex items-start gap-2 text-xs text-accent">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <div>
@@ -582,14 +582,14 @@ function DevisDraftForm({
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-[8px] bg-success-fill px-3 py-2 text-xs font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
+              <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
+              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-xs font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
             </div>
           </div>
         )}
 
         {!confirmationSnapshot && <div className="mt-4 flex justify-end">
-          <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
+          <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
         </div>}
       </section>
     </div>
@@ -630,13 +630,13 @@ export function InvoiceWorkspaceCanvas({
         {resource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement de la facturation…</div></StateShell>
         ) : resource.status === 'error' ? (
-          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
+          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
         ) : selection === 'new-devis' ? (
           <DevisDraftForm data={resource.data} contactInitial={contactInitial} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
         ) : !invoiceResource || invoiceResource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement du document…</div></StateShell>
         ) : invoiceResource.status === 'error' ? (
-          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{invoiceResource.error}</p><button type="button" onClick={onRetryInvoice} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
+          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{invoiceResource.error}</p><button type="button" onClick={onRetryInvoice} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
         ) : invoiceResource.status === 'ready' ? (
           <ExistingInvoiceDetail data={resource.data} invoice={invoiceResource.data} />
         ) : (

@@ -26,7 +26,7 @@ export function RecentConversations() {
   }
 
   return (
-    <section className="bg-surface border border-border rounded-xl p-5 shadow-[var(--shadow-sm)]">
+    <section className="bg-surface border border-border rounded-md p-5 shadow-[var(--shadow-sm)]">
       <h2 className="text-base font-bold text-text mb-4">Reprendre une conversation</h2>
       {recent.length === 0 ? (
         <p className="text-sm text-text-muted py-2">Aucune conversation pour l'instant.</p>
@@ -37,7 +37,7 @@ export function RecentConversations() {
               <button
                 type="button"
                 onClick={() => open(c.id)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-border bg-surface-2 hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors text-left"
+                className="w-full flex items-center gap-3 p-2.5 rounded-md border border-border bg-surface-2 hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors text-left"
               >
                 <MessageSquare className="w-4 h-4 text-accent shrink-0" />
                 <span className="text-sm text-text truncate flex-1">{c.title || 'Sans titre'}</span>

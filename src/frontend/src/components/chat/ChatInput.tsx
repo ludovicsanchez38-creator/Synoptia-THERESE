@@ -1074,7 +1074,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {modelUnavailable && (
         <div
-          className="mb-3 flex items-start gap-3 rounded-xl border border-warning/35 bg-[var(--color-warning-tint)] px-4 py-3"
+          className="mb-3 flex items-start gap-3 rounded-md border border-warning/35 bg-[var(--color-warning-tint)] px-4 py-3"
           data-testid="chat-model-unavailable"
           role="alert"
         >
@@ -1086,7 +1086,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <button
             type="button"
             onClick={() => openSettings('ai')}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"
           >
             <Settings className="h-3.5 w-3.5" />
             Ouvrir les réglages IA
@@ -1105,7 +1105,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {variablesPreview && (
         <div
           data-testid="variables-preview-chip"
-          className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg text-xs
+          className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-md text-xs
                      bg-surface-elevated/60 border border-border/40"
         >
           <span className="text-text-muted">
@@ -1131,7 +1131,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {attachedFiles.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2" aria-label="Pièces jointes">
           {attachedFiles.map((file, index) => (
-            <div key={`${file.path}-${index}`} className="flex flex-wrap items-center gap-1 rounded-lg border border-border bg-surface-elevated p-1">
+            <div key={`${file.path}-${index}`} className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-surface-elevated p-1">
               <FileChip
                 name={file.name}
                 mimeType={file.mimeType}
@@ -1146,7 +1146,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 data-testid={`index-status-${file.path}`}
                 role={file.indexStatus === 'error' ? 'alert' : 'status'}
                 aria-live="polite"
-                className={`inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-xs font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-sm px-2 py-1 text-xs font-semibold ${
                   file.indexStatus === 'ready'
                     ? 'bg-[var(--color-success-tint)] text-success'
                     : file.indexStatus === 'error'
@@ -1163,7 +1163,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 <button
                   type="button"
                   onClick={() => void indexAttachment(file.path)}
-                  className="min-h-11 rounded-[7px] px-2 text-xs font-semibold text-error hover:bg-[var(--color-error-tint)]"
+                  className="min-h-11 rounded-sm px-2 text-xs font-semibold text-error hover:bg-[var(--color-error-tint)]"
                   aria-label={`Réessayer l’indexation de ${file.name}`}
                 >
                   Réessayer
@@ -1186,7 +1186,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="flex items-center gap-2 mb-2 px-4 py-2.5 rounded-xl
+            className="flex items-center gap-2 mb-2 px-4 py-2.5 rounded-md
                        bg-surface-elevated/60 border border-accent-cyan/20"
           >
             <span className="flex-1 text-sm italic text-text-muted truncate">
@@ -1207,7 +1207,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {/* F-12/F-14/F-15 : sélecteur de modèle actif (pill interactif) */}
       {currentModel && !modelUnavailable && (
         <div className="flex items-center px-2 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
             <Cpu className="w-3.5 h-3.5 text-accent-cyan-ink" />
             {availableModels.length > 1 ? (
               <select
@@ -1228,7 +1228,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             )}
             {currentProvider && (
               <span
-                className={`text-xs px-1.5 py-0.5 rounded-[6px] ${
+                className={`text-xs px-1.5 py-0.5 rounded-sm ${
                   currentProvider === 'ollama'
                     ? 'bg-[var(--color-success-tint)] text-success'
                     : 'bg-[var(--color-warning-tint)] text-warning'
@@ -1247,11 +1247,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       )}
 
       {modelChangeError && (
-        <div role="alert" className="mb-2 flex items-center gap-2 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">
+        <div role="alert" className="mb-2 flex items-center gap-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span className="min-w-0 flex-1">Changement de modèle non enregistré. {modelChangeError}</span>
           {failedModel && (
-            <button type="button" onClick={() => void handleModelChange(failedModel)} className="min-h-11 rounded-[7px] border border-error px-2 font-semibold">
+            <button type="button" onClick={() => void handleModelChange(failedModel)} className="min-h-11 rounded-sm border border-error px-2 font-semibold">
               Réessayer
             </button>
           )}
@@ -1259,12 +1259,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       )}
 
       {pendingCloudConsent && (
-        <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-xl border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
+        <div role="alertdialog" aria-labelledby="cloud-consent-title" className="mb-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-sm text-warning" data-testid="chat-cloud-consent">
           <p id="cloud-consent-title" className="font-semibold">Autoriser ce premier envoi à {pendingCloudConsent.providerLabel} ?</p>
           <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.join(', ')}.</p>
           <div className="mt-3 flex justify-end gap-2">
-            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-            <button type="button" onClick={confirmCloudConsent} className="rounded-[8px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Autoriser et envoyer</button>
+            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
+            <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Autoriser et envoyer</button>
           </div>
         </div>
       )}
@@ -1272,7 +1272,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       <div
         ref={containerRef}
         className={cn(
-          'flex items-center gap-2 p-3 rounded-2xl',
+          'flex items-center gap-2 p-3 rounded-md',
           'bg-surface-elevated/80 backdrop-blur-sm border border-border',
           'focus-within:border-accent-cyan/50 focus-within:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
           'hover:border-border/80 transition-all duration-200',
@@ -1386,16 +1386,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* Voice error message */}
       {voiceError && (
-        <div role="alert" className="mt-2 flex items-start gap-2 rounded-lg border border-error/20 bg-error/10 p-2">
+        <div role="alert" className="mt-2 flex items-start gap-2 rounded-md border border-error/20 bg-error/10 p-2">
           <p className="flex-1 text-xs text-error">{voiceError}</p>
           <button type="button" onClick={() => setVoiceError(null)} aria-label="Fermer l’erreur de dictée" className="text-error"><X className="h-3.5 w-3.5" /></button>
         </div>
       )}
 
       {draftError && (
-        <div role="alert" className="mt-2 flex items-center gap-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-2 text-xs text-error">
+        <div role="alert" className="mt-2 flex items-center gap-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-2 text-xs text-error">
           <p className="min-w-0 flex-1">{draftError}</p>
-          <button type="button" onClick={retrySave} className="min-h-11 rounded-[7px] border border-error px-2 font-semibold">Réessayer</button>
+          <button type="button" onClick={retrySave} className="min-h-11 rounded-sm border border-error px-2 font-semibold">Réessayer</button>
         </div>
       )}
 
@@ -1412,16 +1412,16 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {/* Hints + indicateur sauvegarde */}
       <div className="flex items-center justify-center gap-4 mt-2">
         {showKeyboardHints && <p className="text-xs text-text-muted">
-          <kbd className="px-1 rounded bg-surface-elevated">⇧</kbd>+
-          <kbd className="px-1 rounded bg-surface-elevated">↵</kbd> nouvelle ligne
+          <kbd className="px-1 rounded-sm bg-surface-elevated">⇧</kbd>+
+          <kbd className="px-1 rounded-sm bg-surface-elevated">↵</kbd> nouvelle ligne
         </p>}
         {showKeyboardHints && <p className="text-xs text-text-muted">
-          <kbd className="px-1 rounded bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
-          <kbd className="px-1 rounded bg-surface-elevated">K</kbd> commandes
+          <kbd className="px-1 rounded-sm bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
+          <kbd className="px-1 rounded-sm bg-surface-elevated">K</kbd> commandes
         </p>}
         {showKeyboardHints && suggestion && (
           <p className="text-xs text-accent-cyan-ink">
-            <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd> accepter
+            <kbd className="px-1 rounded-sm bg-surface-elevated">Tab</kbd> accepter
           </p>
         )}
         {lastSavedAt && (

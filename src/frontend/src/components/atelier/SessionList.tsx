@@ -108,7 +108,7 @@ export function SessionList() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => fetchSessions()}
-            className="rounded p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
+            className="rounded-sm p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
             title="Rafraichir"
             aria-label="Rafraichir les sessions"
           >
@@ -117,7 +117,7 @@ export function SessionList() {
           <button
             onClick={openNewTask}
             disabled={!openclawConnected || runningCount >= maxAgents}
-            className="rounded p-1 text-purple-400 transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-sm p-1 text-purple-400 transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
             title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tache"}
             aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tache"}
           >
@@ -156,7 +156,7 @@ export function SessionList() {
             <button
               onClick={openNewTask}
               disabled={!openclawConnected || runningCount >= maxAgents}
-              className="rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
               title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
             >
               {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}
@@ -197,7 +197,7 @@ export function SessionList() {
                     {session.status === "running" && (
                       <button
                         onClick={(e) => handleCancel(e, session.id)}
-                        className="flex-shrink-0 rounded p-0.5 text-error/60 transition hover:bg-error/10 hover:text-error"
+                        className="flex-shrink-0 rounded-sm p-0.5 text-error/60 transition hover:bg-error/10 hover:text-error"
                         title="Annuler cette session"
                         aria-label="Annuler cette session"
                       >
@@ -209,7 +209,7 @@ export function SessionList() {
                     {session.status === "error" && (
                       <button
                         onClick={(e) => handleRetry(e, session.instruction)}
-                        className="flex-shrink-0 rounded p-0.5 text-amber-400/60 transition hover:bg-amber-500/10 hover:text-amber-400"
+                        className="flex-shrink-0 rounded-sm p-0.5 text-amber-400/60 transition hover:bg-amber-500/10 hover:text-amber-400"
                         title="Relancer cette tache"
                         aria-label="Relancer cette tache"
                       >

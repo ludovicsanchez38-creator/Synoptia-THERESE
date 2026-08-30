@@ -374,10 +374,10 @@ export function CapabilityCenter({
         exit={{ y: 18, scale: 0.985 }}
         transition={{ duration: 0.2 }}
         onClick={(event) => event.stopPropagation()}
-        className="flex h-[calc(100vh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_34px_90px_rgba(16,28,54,0.28)] sm:h-[min(760px,88vh)] sm:rounded-[20px]"
+        className="flex h-[calc(100vh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-md border border-border bg-surface shadow-[0_34px_90px_rgba(16,28,54,0.28)] sm:h-[min(760px,88vh)] sm:rounded-md"
       >
         <header className="flex items-start gap-3 border-b border-border px-4 py-4 sm:gap-5 sm:px-6 sm:py-5">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-text bg-accent-tint text-accent shadow-[var(--shadow-card)]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-text bg-accent-tint text-accent shadow-[var(--shadow-card)]">
             <Sparkles className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -387,7 +387,7 @@ export function CapabilityCenter({
             </div>
             <p className="mt-1 text-sm text-text-muted">Tu demandes un résultat. Thérèse combine les fonctions utiles et garde les détails techniques en retrait.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Fermer les capacités" className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] border border-border text-text-muted hover:bg-bg hover:text-text">
+          <button type="button" onClick={onClose} aria-label="Fermer les capacités" className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-text">
             <X className="h-4 w-4" />
           </button>
         </header>
@@ -416,9 +416,9 @@ export function CapabilityCenter({
                     setSelectedGroup(group.id);
                     setQuery('');
                   }}
-                  className={`flex min-h-11 shrink-0 items-center gap-2 rounded-[11px] px-3 py-2 text-left md:mb-1 md:w-full md:gap-3 md:py-3 ${selected ? 'bg-surface shadow-sm ring-1 ring-border' : 'hover:bg-surface/75'}`}
+                  className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left md:mb-1 md:w-full md:gap-3 md:py-3 ${selected ? 'bg-surface shadow-sm ring-1 ring-border' : 'hover:bg-surface/75'}`}
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-[9px]" style={{ backgroundColor: group.tint, color: group.color }}>
+                  <span className="grid h-8 w-8 place-items-center rounded-md" style={{ backgroundColor: group.tint, color: group.color }}>
                     <Icon className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -429,7 +429,7 @@ export function CapabilityCenter({
                 </button>
               );
             })}
-            <div className="mt-5 hidden rounded-[12px] border border-accent-cyan/30 bg-accent-tint p-3 md:block">
+            <div className="mt-5 hidden rounded-md border border-accent-cyan/30 bg-accent-tint p-3 md:block">
               <div className="flex items-center gap-2 text-xs font-semibold text-accent">
                 <ShieldCheck className="h-4 w-4 text-accent" />
                 Toujours sous contrôle
@@ -449,12 +449,12 @@ export function CapabilityCenter({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Chercher une capacité, un résultat ou un outil…"
-                  className="w-full rounded-[11px] border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-text outline-none focus:border-[#22D3EE] focus:bg-surface"
+                  className="w-full rounded-md border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-text outline-none focus:border-[#22D3EE] focus:bg-surface"
                 />
               </div>
               {!query && (
                 <div className="mt-3 flex items-start gap-3">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px]" style={{ backgroundColor: activeGroup.tint, color: activeGroup.color }}>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ backgroundColor: activeGroup.tint, color: activeGroup.color }}>
                     <ActiveGroupIcon className="h-4 w-4" />
                   </span>
                   <div>
@@ -485,15 +485,15 @@ export function CapabilityCenter({
                         key={capability.id}
                         type="button"
                         onClick={() => onChoose(capability)}
-                        className="group rounded-[14px] border border-border bg-surface p-4 text-left shadow-[0_8px_24px_-22px_rgba(16,28,54,0.55)] hover:-translate-y-0.5 hover:border-[#B8C5D8] hover:shadow-[0_14px_30px_-20px_rgba(16,28,54,0.35)]"
+                        className="group rounded-md border border-border bg-surface p-4 text-left shadow-[0_8px_24px_-22px_rgba(16,28,54,0.55)] hover:-translate-y-0.5 hover:border-[#B8C5D8] hover:shadow-[0_14px_30px_-20px_rgba(16,28,54,0.35)]"
                       >
                         <div className="flex items-start gap-3">
                           {capability.id === 'decision-board' ? (
-                            <CharacterPortrait index={1} className="h-9 w-9 rounded-[10px] border border-white shadow-sm" />
+                            <CharacterPortrait index={1} className="h-9 w-9 rounded-md border border-white shadow-sm" />
                           ) : capability.id === 'agents' ? (
-                            <CharacterPortrait index={6} className="h-9 w-9 rounded-[10px] border border-white shadow-sm" />
+                            <CharacterPortrait index={6} className="h-9 w-9 rounded-md border border-white shadow-sm" />
                           ) : (
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ backgroundColor: group.tint, color: group.color }}>
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md" style={{ backgroundColor: group.tint, color: group.color }}>
                               <Icon className="h-[18px] w-[18px]" />
                             </span>
                           )}
@@ -525,8 +525,8 @@ export function CapabilityCenter({
 
 function TrustRow({ icon, title, value }: { icon: ReactNode; title: string; value: string }) {
   return (
-    <div className="flex items-start gap-3 rounded-[10px] px-2 py-2.5 hover:bg-surface-2">
-      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-accent-tint text-accent">{icon}</span>
+    <div className="flex items-start gap-3 rounded-md px-2 py-2.5 hover:bg-surface-2">
+      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-sm bg-accent-tint text-accent">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-xs font-semibold text-text">{title}</span>
         <span className="mt-0.5 block text-xs leading-4 text-text-muted">{value}</span>
@@ -566,17 +566,17 @@ export function TrustCenter({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -8, opacity: 0 }}
         onClick={(event) => event.stopPropagation()}
-        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_24px_70px_rgba(16,28,54,0.22)] sm:left-auto sm:w-[360px]"
+        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-[0_24px_70px_rgba(16,28,54,0.22)] sm:left-auto sm:w-[360px]"
       >
         <div className="flex items-start gap-3 border-b border-border bg-accent-tint px-4 py-4">
-          <span className="grid h-9 w-9 place-items-center rounded-[10px] border border-accent-cyan/30 bg-surface text-accent">
+          <span className="grid h-9 w-9 place-items-center rounded-md border border-accent-cyan/30 bg-surface text-accent">
             <ShieldCheck className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-text">Centre de confiance</div>
             <div className="mt-0.5 text-xs leading-4 text-text-muted">Thérèse explique ce qu’elle utilise avant d’agir.</div>
           </div>
-          <button type="button" data-dialog-autofocus onClick={onClose} aria-label="Fermer le centre de confiance" className="grid h-7 w-7 place-items-center rounded-[8px] text-text-muted hover:bg-surface">
+          <button type="button" data-dialog-autofocus onClick={onClose} aria-label="Fermer le centre de confiance" className="grid h-7 w-7 place-items-center rounded-sm text-text-muted hover:bg-surface">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -588,8 +588,8 @@ export function TrustCenter({
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>
         <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
-          <button type="button" onClick={onOpenPrivacy} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text hover:border-border">Confidentialité</button>
-          <button type="button" onClick={onOpenAdvanced} className="rounded-[9px] border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réglages avancés</button>
+          <button type="button" onClick={onOpenPrivacy} className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-text hover:border-border">Confidentialité</button>
+          <button type="button" onClick={onOpenAdvanced} className="rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réglages avancés</button>
         </div>
       </motion.section>
     </motion.div>

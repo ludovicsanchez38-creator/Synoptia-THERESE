@@ -277,12 +277,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-md shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-sm bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-accent-magenta-ink" />
                 </div>
                 <div>
@@ -311,7 +311,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Refonte site web"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -323,7 +323,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="Description du projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -336,7 +336,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       key={option.value}
                       type="button"
                       onClick={() => handleChange('status', option.value)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
                         formData.status === option.value
                           ? option.color
                           : 'bg-background/40 text-text-muted border-border/50 hover:border-border'
@@ -357,7 +357,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 <select id="projectmodal-contact-associe"
                   value={formData.contact_id}
                   onChange={(e) => handleChange('contact_id', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   disabled={loadingContacts}
                 >
                   <option value="">Aucun contact</option>
@@ -385,7 +385,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   placeholder="5000"
                   min="0"
                   step="100"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
@@ -397,7 +397,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Notes internes sur le projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       {projectFiles.map((f) => (
                         <div
                           key={f.id}
-                          className="flex items-center gap-2 px-3 py-2 bg-background/40 rounded-lg border border-border/30"
+                          className="flex items-center gap-2 px-3 py-2 bg-background/40 rounded-md border border-border/30"
                         >
                           {getFileIcon(f.extension)}
                           <span className="flex-1 text-sm text-text truncate">{f.name}</span>
@@ -430,7 +430,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                               boutonSuppressionRef.current = event.currentTarget;
                               setFichierASupprimer(f);
                             }}
-                            className="p-1 rounded hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                            className="p-1 rounded-sm hover:bg-error/10 text-text-muted hover:text-error transition-colors"
                             aria-label={`Supprimer le fichier ${f.name}`}
                             title={`Supprimer le fichier ${f.name}`}
                           >
@@ -472,13 +472,13 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="web, design, urgent"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
 
               {/* Error */}
               {error && (
-                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <span className="text-sm text-error">{error}</span>
                 </div>
@@ -486,7 +486,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Suppression d'un fichier joint : confirmation en ligne */}
               {fichierASupprimer && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-lg">
+                <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-md">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">
@@ -514,7 +514,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Delete confirmation */}
               {showDeleteConfirm && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-lg">
+                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>

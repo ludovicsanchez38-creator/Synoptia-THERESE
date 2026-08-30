@@ -80,7 +80,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
     >
       {/* Header avec warning */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--color-warning-tint)] border border-warning/40">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-md bg-[var(--color-warning-tint)] border border-warning/40">
           <Shield className="w-8 h-8 text-warning" />
         </div>
         <h2 className="text-2xl font-bold text-text">Sécurité et confidentialité</h2>
@@ -91,7 +91,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       </div>
 
       {/* Alert banner */}
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--color-warning-tint)] border border-warning/40">
+      <div className="flex items-start gap-3 p-4 rounded-md bg-[var(--color-warning-tint)] border border-warning/40">
         <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm">
           <p className="text-warning font-medium">Important</p>
@@ -113,7 +113,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
               key={index}
               onClick={() => setExpanded(isExpanded ? null : index)}
               className={cn(
-                'w-full text-left p-3 rounded-xl border transition-all',
+                'w-full text-left p-3 rounded-md border transition-all',
                 'hover:bg-surface-2',
                 isExpanded ? 'bg-surface-2' : 'bg-transparent',
                 'border-border'
@@ -123,7 +123,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             >
               <div className="flex items-center gap-3">
                 <div className={cn(
-                  'w-10 h-10 rounded-lg flex items-center justify-center',
+                  'w-10 h-10 rounded-md flex items-center justify-center',
                   severityColors[risk.severity]
                 )}>
                   <Icon className="w-5 h-5" />
@@ -132,7 +132,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-text">{risk.title}</span>
                     <span className={cn(
-                      'text-xs px-2 py-0.5 rounded-[6px]',
+                      'text-xs px-2 py-0.5 rounded-sm',
                       severityColors[risk.severity]
                     )}>
                       {severityLabels[risk.severity]}
@@ -167,13 +167,13 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       </a>
 
       {/* Consentement RGPD uniquement lorsqu'un fournisseur cloud est activé. */}
-      {cloudEnabled ? <label className="flex items-start gap-3 p-4 rounded-xl bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
+      {cloudEnabled ? <label className="flex items-start gap-3 p-4 rounded-md bg-surface border border-border cursor-pointer hover:bg-surface-elevated transition-colors">
         <input
           type="checkbox"
           id="security-consent"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-1 w-5 h-5 rounded border-border bg-transparent text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
+          className="mt-1 w-5 h-5 rounded-sm border-border bg-transparent text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
         />
         <div className="text-sm">
           <p className="text-text font-medium">
@@ -186,7 +186,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           </p>
         </div>
       </label> : (
-        <div className="flex items-start gap-3 rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4" data-testid="local-security-notice">
+        <div className="flex items-start gap-3 rounded-md border border-accent-cyan/30 bg-accent-cyan/10 p-4" data-testid="local-security-notice">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-cyan-ink" />
           <div className="text-sm"><p className="font-medium text-text">Parcours local sans consentement cloud</p><p className="mt-1 text-text-muted">{provider === 'ollama' ? 'Ollama traite les messages sur cette machine.' : 'Aucun fournisseur cloud n’est activé pour le moment.'} Un accord distinct sera demandé au premier usage cloud réel, avec le fournisseur et les données transmis.</p></div>
         </div>
@@ -198,7 +198,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           onClick={onBack}
           data-testid="onboarding-prev-btn"
           className={cn(
-            'flex-1 px-4 py-3 rounded-xl font-medium',
+            'flex-1 px-4 py-3 rounded-md font-medium',
             'bg-surface border border-border',
             'text-text hover:bg-surface-elevated',
             'transition-colors'
@@ -217,7 +217,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           data-testid="onboarding-next-btn"
           className={cn(
             'flex-1 flex items-center justify-center gap-2',
-            'px-4 py-3 rounded-xl font-medium',
+            'px-4 py-3 rounded-md font-medium',
             'transition-all',
             (!cloudEnabled || acknowledged)
               ? 'bg-accent-cyan text-bg hover:bg-accent-cyan/90'

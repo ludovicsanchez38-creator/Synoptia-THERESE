@@ -105,7 +105,7 @@ function PresetCategory({
                 return (
                   <div
                     key={preset.id}
-                    className={`relative p-3 rounded-lg border text-left transition-all ${
+                    className={`relative p-3 rounded-md border text-left transition-all ${
                       runningServer
                         ? 'bg-[var(--color-success-tint)] border-success/40 cursor-default'
                         : isInstalled
@@ -120,7 +120,7 @@ function PresetCategory({
                       aria-label={isInstalled ? `${preset.name} est installé` : `Installer ${preset.name}`}
                       onClick={() => onInstall(preset.id)}
                       disabled={isInstalled || isInstalling}
-                      className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
+                      className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan"
                     />
                     <div className="pointer-events-none relative z-10 flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1.5">
@@ -129,13 +129,13 @@ function PresetCategory({
                           <Star className="w-3 h-3 text-warning fill-yellow-400" />
                         )}
                         {preset.risk_level === 'high' && (
-                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error" title={preset.risk_warning}>
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error" title={preset.risk_warning}>
                             <ShieldAlert className="w-2.5 h-2.5" />
                             Élevé
                           </span>
                         )}
                         {preset.risk_level === 'medium' && (
-                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning" title={preset.risk_warning}>
+                          <span className="flex items-center gap-0.5 px-1 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-warning-tint)] text-warning" title={preset.risk_warning}>
                             <ShieldAlert className="w-2.5 h-2.5" />
                             Moyen
                           </span>
@@ -147,7 +147,7 @@ function PresetCategory({
                             href={preset.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="pointer-events-auto p-0.5 hover:bg-border/30 rounded transition-colors"
+                            className="pointer-events-auto p-0.5 hover:bg-border/30 rounded-sm transition-colors"
                             title={`Voir ${preset.name}`}
                             aria-label={`Voir le site de ${preset.name}`}
                           >
@@ -447,25 +447,25 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     switch (serverStatus) {
       case 'running':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-success-tint)] text-success">
+          <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-success-tint)] text-success">
             Actif
           </span>
         );
       case 'starting':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
+          <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
             Démarrage...
           </span>
         );
       case 'error':
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
+          <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error">
             Erreur
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-border/50 text-text-muted">
+          <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-border/50 text-text-muted">
             Arrêté
           </span>
         );
@@ -485,7 +485,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
       {/* Header + Status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Wrench className="w-5 h-5 text-accent" />
           </div>
           <div>
@@ -518,7 +518,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-4">
+            <div className="p-4 bg-background/40 rounded-md border border-border/30 space-y-4">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-accent-cyan-ink" />
@@ -531,7 +531,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
               {/* BUG-083 : Avertissement si npx manquant */}
               {requirementsCheck && !requirementsCheck.all_satisfied && (
-                <div className="flex items-start gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
+                <div className="flex items-start gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
                   <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                   <div className="text-xs text-warning">
                     <p className="font-medium mb-1">Prérequis manquants</p>
@@ -539,7 +539,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                       .filter(([, v]) => !(v as { available: boolean }).available)
                       .map(([cmd]) => (
                         <p key={cmd} className="text-warning">
-                          <code className="bg-[var(--color-warning-tint)] px-1 rounded">{cmd}</code> non trouvé sur le système
+                          <code className="bg-[var(--color-warning-tint)] px-1 rounded-sm">{cmd}</code> non trouvé sur le système
                         </p>
                       ))}
                     {requirementsCheck.help_message && (
@@ -556,7 +556,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                 value={presetFilter}
                 onChange={(e) => setPresetFilter(e.target.value)}
                 placeholder="Rechercher un preset..."
-                className="w-full px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                className="w-full px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
               />
 
               {(() => {
@@ -639,7 +639,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-3">
+            <div className="p-4 bg-background/40 rounded-md border border-border/30 space-y-3">
               <div className="flex items-center gap-2 mb-3">
                 <Server className="w-4 h-4 text-accent-cyan-ink" />
                 <span className="text-sm font-medium text-text">Nouveau connecteur</span>
@@ -653,7 +653,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     value={newServer.name}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder="Mon serveur"
-                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
                   />
                 </div>
                 <div>
@@ -663,7 +663,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     value={newServer.command}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, command: e.target.value }))}
                     placeholder="npx"
-                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                    className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   value={newServer.args}
                   onChange={(e) => setNewServer((prev) => ({ ...prev, args: e.target.value }))}
                   placeholder="-y @anthropic/mcp-server-filesystem ~"
-                  className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+                  className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
                 />
               </div>
 
@@ -685,7 +685,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     type="checkbox"
                     checked={newServer.enabled}
                     onChange={(e) => setNewServer((prev) => ({ ...prev, enabled: e.target.checked }))}
-                    className="rounded border-border bg-background"
+                    className="rounded-sm border-border bg-background"
                   />
                   Démarrer automatiquement
                 </label>
@@ -710,7 +710,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
       {/* Servers List */}
       {servers.length === 0 ? (
-        <div className="p-8 text-center bg-background/40 rounded-lg border border-border/30">
+        <div className="p-8 text-center bg-background/40 rounded-md border border-border/30">
           <Server className="w-8 h-8 text-text-muted mx-auto mb-3" />
           <p className="text-text-muted">Aucun connecteur configuré</p>
           <p className="text-xs text-text-muted mt-1">
@@ -722,7 +722,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           {servers.map((server) => (
             <div
               key={server.id}
-              className="bg-background/40 rounded-lg border border-border/30 overflow-hidden"
+              className="bg-background/40 rounded-md border border-border/30 overflow-hidden"
             >
               {/* Server Header */}
               <div className="flex items-center justify-between p-3">
@@ -766,7 +766,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                         e.stopPropagation();
                         handleDeleteServer(server.id);
                       }}
-                      className="p-1 rounded hover:bg-[var(--color-error-tint)] transition-colors"
+                      className="p-1 rounded-sm hover:bg-[var(--color-error-tint)] transition-colors"
                       title="Supprimer"
                       aria-label={`Supprimer ${server.name}`}
                     >
@@ -806,7 +806,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                     <div className="p-3 space-y-3">
                       {/* Error message */}
                       {server.error && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md">
                           <AlertCircle className="w-4 h-4 text-error shrink-0" />
                           <span className="text-xs text-error">{server.error}</span>
                         </div>
@@ -862,7 +862,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                             {server.tools.map((tool) => (
                               <div
                                 key={tool.name}
-                                className="flex items-start gap-2 p-2 bg-background/60 rounded-lg"
+                                className="flex items-start gap-2 p-2 bg-background/60 rounded-md"
                               >
                                 <Wrench className="w-3 h-3 text-accent-cyan-ink mt-0.5 shrink-0" />
                                 <div>
@@ -930,10 +930,10 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-surface border border-border rounded-xl p-6 max-w-md w-full shadow-2xl"
+              className="relative bg-surface border border-border rounded-md p-6 max-w-md w-full shadow-2xl"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-[var(--color-error-tint)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-[var(--color-error-tint)] flex items-center justify-center">
                   <AlertCircle className="w-5 h-5 text-error" />
                 </div>
                 <div>

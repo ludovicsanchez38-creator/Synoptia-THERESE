@@ -118,7 +118,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const tasksHeader = (
     <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <ListTodo className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -129,10 +129,10 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
       <div className="flex items-center gap-2">
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-background/60 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-background/60 rounded-md p-1">
           <button
             onClick={() => setViewMode('kanban')}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2 rounded-sm transition-colors ${
               viewMode === 'kanban'
                 ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
@@ -143,7 +143,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded transition-colors ${
+            className={`p-2 rounded-sm transition-colors ${
               viewMode === 'list'
                 ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
@@ -175,7 +175,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         {!standalone && (
           <button
             onClick={onClose}
-            className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+            className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
           </button>
@@ -189,7 +189,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       <select aria-label="Filtrer par statut"
         value={filterStatus || ''}
         onChange={(e) => setFilterStatus(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
       >
         <option value="">Tous les statuts</option>
         <option value="todo">A faire</option>
@@ -201,7 +201,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       <select aria-label="Filtrer par priorité"
         value={filterPriority || ''}
         onChange={(e) => setFilterPriority(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
       >
         <option value="">Toutes les priorités</option>
         <option value="urgent">Urgent</option>
@@ -214,7 +214,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <select aria-label="Filtrer par projet"
           value={filterProjectId || ''}
           onChange={(e) => setFilterProjectId(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
         >
           <option value="">Tous les projets</option>
           {projects.map((p) => (
@@ -227,7 +227,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <select aria-label="Filtrer par étiquette"
           value={filterTag || ''}
           onChange={(e) => setFilterTag(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
         >
           <option value="">Tous les tags</option>
           {availableTags.map((t) => (
@@ -255,7 +255,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const tasksContent = (
     <>
       {error && (
-        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
           <p className="text-sm text-error">{error}</p>
         </div>
       )}
@@ -309,7 +309,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {tasksHeader}

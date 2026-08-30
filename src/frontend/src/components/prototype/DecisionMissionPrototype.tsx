@@ -15,7 +15,7 @@ const portraitPositions = [
  */
 export function CharacterPortrait({
   index,
-  className = 'h-10 w-10 rounded-[12px]',
+  className = 'h-10 w-10 rounded-md',
 }: {
   index: number;
   className?: string;

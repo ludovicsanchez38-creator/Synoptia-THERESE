@@ -97,7 +97,7 @@ export function VoiceLocalSection() {
   const downloadMb = modelInfo ? modelInfo.size_mb + 65 : 210; // + voix Piper ~60 Mo
 
   return (
-    <section className="rounded-lg border border-border/50 p-4">
+    <section className="rounded-md border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
         <Mic className="w-4 h-4 text-accent-cyan-ink" />
         Voix locale souveraine
@@ -115,7 +115,7 @@ export function VoiceLocalSection() {
         </div>
       ) : status.ready ? (
         <>
-          <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3 mb-4">
+          <div className="rounded-md bg-[var(--color-success-tint)] border border-success/40 p-3 mb-4">
             <p className="text-sm text-success">
               Voix locale prête (modèle Whisper « {status.active_whisper_model ?? status.default_whisper_model} »).
               Quand elle est activée pour le micro, ton audio ne quitte jamais ta machine.
@@ -162,7 +162,7 @@ export function VoiceLocalSection() {
               id="voice-local-model"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
             >
               {Object.entries(status.whisper_models).map(([key, info]) => (
                 <option key={key} value={key}>

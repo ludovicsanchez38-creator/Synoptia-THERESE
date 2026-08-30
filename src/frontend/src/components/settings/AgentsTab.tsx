@@ -80,7 +80,7 @@ function AgentModelSelect({
         aria-label={`Modèle pour ${label}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
+        className="w-full rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text outline-none focus:border-purple-500/50"
       >
         {Object.entries(PROVIDER_LABELS).map(([provider, providerLabel]) => {
           const providerModels = models.filter((m) => m.provider === provider);
@@ -115,13 +115,13 @@ function AgentModelSelect({
                 }
               }}
               placeholder={placeholder}
-              className="flex-1 rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50 font-mono"
+              className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50 font-mono"
             />
             <button
               type="button"
               onClick={handleUseCustom}
               disabled={!customInput.trim()}
-              className="shrink-0 rounded-lg bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
+              className="shrink-0 rounded-md bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
             >
               Utiliser
             </button>
@@ -234,7 +234,7 @@ export function AgentsTab() {
   return (
     <div className="space-y-6">
       {loadError && (
-        <div role="alert" className="rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+        <div role="alert" className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
           <p>{loadError}</p>
           <button type="button" onClick={() => void loadAgents()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer</button>
         </div>
@@ -251,7 +251,7 @@ export function AgentsTab() {
       </div>
 
       {/* Statut */}
-      <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4">
+      <div className="rounded-md border border-border/50 bg-surface-elevated/30 p-4">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-medium text-text">Statut</h4>
           <button
@@ -290,7 +290,7 @@ export function AgentsTab() {
           )}
         </div>
         {statusError && (
-          <div role="alert" className="mt-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
+          <div role="alert" className="mt-3 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
             <p>{statusError}</p>
             <button type="button" onClick={() => void handleRefreshStatus()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
           </div>
@@ -298,7 +298,7 @@ export function AgentsTab() {
       </div>
 
       {/* Choix du modèle par agent */}
-      <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4 space-y-4">
+      <div className="rounded-md border border-border/50 bg-surface-elevated/30 p-4 space-y-4">
         <h4 className="text-sm font-medium text-text">Modèle IA par agent</h4>
 
         <AgentModelSelect
@@ -323,7 +323,7 @@ export function AgentsTab() {
       </div>
 
       {/* Chemin du source */}
-      <div className="rounded-lg border border-border/50 bg-surface-elevated/30 p-4">
+      <div className="rounded-md border border-border/50 bg-surface-elevated/30 p-4">
         <h4 className="text-sm font-medium text-text mb-2">
           Chemin du code source
         </h4>
@@ -337,7 +337,7 @@ export function AgentsTab() {
             value={sourcePath}
             onChange={(e) => { setSourcePathInput(e.target.value); setSaved(false); }}
             placeholder="Ex: C:\Users\vous\Documents\Synoptia-THERESE"
-            className="flex-1 rounded-lg border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
+            className="flex-1 rounded-md border border-border/50 bg-bg px-3 py-2 text-sm text-text placeholder-text-muted/50 outline-none focus:border-purple-500/50"
           />
           <button
             type="button"
@@ -356,7 +356,7 @@ export function AgentsTab() {
                 // Annulation utilisateur
               }
             }}
-            className="shrink-0 rounded-lg border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-purple-500/50 transition"
+            className="shrink-0 rounded-md border border-border/50 bg-bg px-3 py-2 text-text-muted hover:text-text hover:border-purple-500/50 transition"
             title="Parcourir..."
             aria-label="Parcourir les dossiers"
           >
@@ -367,16 +367,16 @@ export function AgentsTab() {
 
       {/* Bouton sauver global */}
       {saveError && (
-        <div role="alert" className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+        <div role="alert" className="rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
           <p>{saveError}</p>
           <button type="button" onClick={() => void handleSave()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
         </div>
       )}
-      {saved && <p role="status" className="rounded-lg border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success">Configuration enregistrée.</p>}
+      {saved && <p role="status" className="rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success">Configuration enregistrée.</p>}
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full rounded-lg bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
+        className="w-full rounded-md bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
       >
         {saving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
       </button>

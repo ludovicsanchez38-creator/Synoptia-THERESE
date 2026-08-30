@@ -83,7 +83,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               'w-full max-w-2xl mx-4',
-              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
               'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]',
               'overflow-hidden'
             )}
@@ -92,14 +92,14 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-accent-cyan/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-md bg-accent-cyan/20 flex items-center justify-center">
                   <Keyboard className="w-4 h-4 text-accent-cyan-ink" />
                 </div>
                 <h2 className="text-lg font-semibold text-text">Raccourcis clavier</h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-surface-elevated transition-colors"
+                className="p-1.5 rounded-md hover:bg-surface-elevated transition-colors"
               >
                 <X className="w-5 h-5 text-text-muted" />
               </button>
@@ -126,7 +126,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: groupIndex * 0.05 + shortcutIndex * 0.02 }}
-                          className="flex items-center justify-between py-1.5 hover:bg-surface-elevated/30 px-2 -mx-2 rounded-lg transition-colors"
+                          className="flex items-center justify-between py-1.5 hover:bg-surface-elevated/30 px-2 -mx-2 rounded-md transition-colors"
                         >
                           <span className="text-sm text-text-muted">
                             {shortcut.description}
@@ -140,7 +140,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                                 <kbd
                                   className={cn(
                                     'min-w-[24px] h-6 px-1.5 inline-flex items-center justify-center',
-                                    'rounded bg-bg border border-border/50',
+                                    'rounded-sm bg-bg border border-border/50',
                                     'text-xs font-mono text-text',
                                     'shadow-[0_1px_2px_rgba(0,0,0,0.2)]'
                                   )}
@@ -161,7 +161,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             {/* Footer */}
             <div className="px-6 py-3 border-t border-border/50 bg-bg/30">
               <p className="text-xs text-text-muted text-center">
-                Appuie sur <kbd className="px-1.5 py-0.5 rounded bg-surface-elevated border border-border/50">Échap</kbd> pour fermer
+                Appuie sur <kbd className="px-1.5 py-0.5 rounded-sm bg-surface-elevated border border-border/50">Échap</kbd> pour fermer
               </p>
             </div>
           </motion.div>

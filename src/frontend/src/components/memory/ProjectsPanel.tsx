@@ -120,7 +120,7 @@ export function ProjectsPanel() {
         {/* En-tête */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-lg grid place-items-center bg-accent-cyan/10 text-accent-cyan-ink">
+            <span className="w-9 h-9 rounded-md grid place-items-center bg-accent-cyan/10 text-accent-cyan-ink">
               <Briefcase className="w-5 h-5" />
             </span>
             <div>
@@ -149,7 +149,7 @@ export function ProjectsPanel() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-xl border border-border/40 bg-surface/40 overflow-hidden">
+          <div className="rounded-md border border-border/40 bg-surface/40 overflow-hidden">
             <ProjectsKanban
               projects={projects}
               onSelect={handleSelect}
@@ -179,7 +179,7 @@ export function ProjectsPanel() {
           aria-modal="true"
           aria-labelledby="delete-project-title"
         >
-          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5 shadow-xl">
             <h2 id="delete-project-title" className="text-base font-semibold text-text">
               Supprimer le projet ?
             </h2>

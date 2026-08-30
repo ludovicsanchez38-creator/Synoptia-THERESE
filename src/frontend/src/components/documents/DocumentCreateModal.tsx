@@ -125,12 +125,12 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-xl shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-md shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
                   <FileText className="w-5 h-5 text-accent-cyan-ink" />
                 </div>
                 <div>
@@ -158,7 +158,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                     setFormError(null);
                   }}
                   placeholder="Proposition commerciale - Client X"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   autoFocus
                 />
               </div>
@@ -173,7 +173,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Objectif, contexte, destinataire..."
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
+                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
               </div>
 
@@ -183,7 +183,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                   Projet lié (optionnel)
                 </label>
                 {projectsUnavailable ? (
-                  <p className="px-4 py-2.5 bg-background/40 border border-border/40 rounded-lg text-sm text-text-muted">
+                  <p className="px-4 py-2.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted">
                     Projets indisponibles - le document sera créé sans projet lié.
                   </p>
                 ) : (
@@ -191,7 +191,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                     id="document-project"
                     value={projectId}
                     onChange={(e) => setProjectId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
                     disabled={loadingProjects}
                   >
                     <option value="">Aucun projet</option>
@@ -211,7 +211,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
               </div>
 
               {formError && (
-                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
                   <span className="text-sm text-error">{formError}</span>
                 </div>
               )}

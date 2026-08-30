@@ -24,7 +24,7 @@ function ContactAvatar({ contact, className = '' }: { contact: Contact; classNam
   return (
     <span
       aria-hidden="true"
-      className={`grid shrink-0 place-items-center rounded-[10px] border border-accent-cyan/30 bg-accent-tint font-bold text-accent ${className}`}
+      className={`grid shrink-0 place-items-center rounded-md border border-accent-cyan/30 bg-accent-tint font-bold text-accent ${className}`}
     >
       {contactInitials(contact)}
     </span>
@@ -60,12 +60,12 @@ export function ContactsMemoryCard({
   return (
     <section
       aria-labelledby="contacts-memory-title"
-      className="overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]"
+      className="overflow-hidden rounded-md border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]"
       data-testid="contacts-memory-card"
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-[9px] border border-text bg-[var(--k4bg)] text-[var(--k4)]">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--k4bg)] text-[var(--k4)]">
             <Users className="h-4 w-4" />
           </span>
           <div>
@@ -94,7 +94,7 @@ export function ContactsMemoryCard({
             <button
               type="button"
               onClick={onRetry}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-[9px] border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Réessayer
@@ -174,7 +174,7 @@ export function ContactsMemoryCanvas({
           <div>
             <AlertCircle className="mx-auto h-5 w-5 text-warning" />
             <p className="mt-2 text-sm font-semibold text-text">{resource.error}</p>
-            <button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
+            <button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
               Réessayer
             </button>
           </div>
@@ -191,7 +191,7 @@ export function ContactsMemoryCanvas({
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label="Rechercher un contact"
                 placeholder="Rechercher…"
-                className="w-full rounded-[9px] border border-border bg-surface-2 py-2 pl-8 pr-2 text-xs text-text outline-none focus:border-[var(--k4)]"
+                className="w-full rounded-md border border-border bg-surface-2 py-2 pl-8 pr-2 text-xs text-text outline-none focus:border-[var(--k4)]"
               />
             </div>
             <div className="h-[calc(100%-46px)] space-y-1 overflow-y-auto">
@@ -201,7 +201,7 @@ export function ContactsMemoryCanvas({
                   type="button"
                   onClick={() => onSelectContact(contact.id)}
                   aria-current={selectedContact?.id === contact.id ? 'true' : undefined}
-                  className={`flex w-full items-center gap-2 rounded-[9px] px-2 py-2 text-left ${
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left ${
                     selectedContact?.id === contact.id ? 'bg-[var(--k4bg)]' : 'hover:bg-surface-2'
                   }`}
                 >
@@ -230,13 +230,13 @@ export function ContactsMemoryCanvas({
 
                 <div className="mt-5 grid gap-2">
                   {selectedContact.email && (
-                    <div className="flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2.5 text-xs text-text">
+                    <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-xs text-text">
                       <Mail className="h-3.5 w-3.5 text-[var(--k4)]" />
                       {selectedContact.email}
                     </div>
                   )}
                   {selectedContact.phone && (
-                    <div className="rounded-[10px] border border-border bg-surface px-3 py-2.5 text-xs text-text">
+                    <div className="rounded-md border border-border bg-surface px-3 py-2.5 text-xs text-text">
                       {selectedContact.phone}
                     </div>
                   )}
@@ -244,7 +244,7 @@ export function ContactsMemoryCanvas({
 
                 <div className="mt-5">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Notes mémorisées</div>
-                  <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-[12px] border border-border bg-surface p-3 text-sm leading-6 text-text">
+                  <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-sm leading-6 text-text">
                     {selectedContact.notes || 'Aucune note enregistrée pour ce contact.'}
                   </div>
                 </div>

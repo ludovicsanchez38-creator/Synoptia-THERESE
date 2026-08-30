@@ -62,14 +62,14 @@ function AgentCard({
       whileTap={{ scale: 0.99 }}
       onClick={() => onSelect(agent)}
       className={cn(
-        'w-full text-left p-4 rounded-xl',
+        'w-full text-left p-4 rounded-md',
         'bg-surface/60 hover:bg-surface-elevated border border-border hover:border-border',
         'transition-colors duration-150',
         'group cursor-pointer',
       )}
     >
       <div className="flex items-start gap-3">
-        <div className={cn('p-2 rounded-lg bg-surface-2', colorClass)}>
+        <div className={cn('p-2 rounded-md bg-surface-2', colorClass)}>
           <IconComp size={20} />
         </div>
         <div className="flex-1 min-w-0">
@@ -86,10 +86,10 @@ function AgentCard({
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-[6px]">
+            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-sm">
               {agent.steps_count} étapes
             </span>
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-[6px] bg-surface-2', colorClass)}>
+            <span className={cn('text-[10px] px-2 py-0.5 rounded-sm bg-surface-2', colorClass)}>
               {CATEGORY_LABELS[agent.category] || agent.category}
             </span>
           </div>
@@ -133,11 +133,11 @@ function ParamsForm({
       <div className="flex items-center gap-3 p-4 border-b border-border">
         <button
           onClick={onBack}
-          className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text"
+          className="p-1 rounded-sm hover:bg-surface-2 text-text-muted hover:text-text"
         >
           <ChevronRight size={16} className="rotate-180" />
         </button>
-        <div className={cn('p-2 rounded-lg bg-surface-2', colorClass)}>
+        <div className={cn('p-2 rounded-md bg-surface-2', colorClass)}>
           <IconComp size={18} />
         </div>
         <div>
@@ -163,7 +163,7 @@ function ParamsForm({
                   setValues((prev) => ({ ...prev, [param.id]: e.target.value }))
                 }
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg text-sm',
+                  'w-full px-3 py-2 rounded-md text-sm',
                   'bg-bg border border-border text-text',
                   'focus:border-[#2451FF] focus:outline-none',
                 )}
@@ -184,7 +184,7 @@ function ParamsForm({
                 }
                 placeholder={param.placeholder}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg text-sm',
+                  'w-full px-3 py-2 rounded-md text-sm',
                   'bg-bg border border-border text-text',
                   'placeholder:text-text-muted',
                   'focus:border-[#2451FF] focus:outline-none',
@@ -200,7 +200,7 @@ function ParamsForm({
           type="submit"
           disabled={!isValid || isLoading}
           className={cn(
-            'w-full py-2.5 rounded-lg text-sm font-medium',
+            'w-full py-2.5 rounded-md text-sm font-medium',
             'bg-[#2451FF] text-white hover:bg-[#2451FF]/80',
             'disabled:opacity-40 disabled:cursor-not-allowed',
             'transition-colors duration-150',
@@ -269,7 +269,7 @@ function TaskProgress({
           <button
             onClick={onCancel}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs',
               'bg-error/10 text-error hover:bg-error/20',
               'transition-colors',
             )}
@@ -278,14 +278,14 @@ function TaskProgress({
             Annuler
           </button>
         ) : isStopping ? (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-warning">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-warning">
             <Spinner taille="ligne" />
             Arrêt en cours
           </span>
         ) : (
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-2 text-text-muted"
+            className="p-1 rounded-sm hover:bg-surface-2 text-text-muted"
           >
             <X size={16} />
           </button>
@@ -350,7 +350,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
   return (
     <div
       className={cn(
-        'rounded-lg border transition-colors',
+        'rounded-md border transition-colors',
         step.status === 'running'
           ? 'border-cyan-400/20 bg-cyan-400/5'
           : step.status === 'completed'
@@ -388,7 +388,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
                 className={cn(
                   'text-xs text-text-muted whitespace-pre-wrap',
                   'max-h-40 overflow-y-auto',
-                  'bg-bg/50 rounded-lg p-2',
+                  'bg-bg/50 rounded-md p-2',
                 )}
               >
                 {step.content}
@@ -534,7 +534,7 @@ export function ActionPanel() {
             </div>
             <button
               onClick={closePanel}
-              className="p-1 rounded hover:bg-surface-2 text-text-muted hover:text-text"
+              className="p-1 rounded-sm hover:bg-surface-2 text-text-muted hover:text-text"
             >
               <X size={16} />
             </button>

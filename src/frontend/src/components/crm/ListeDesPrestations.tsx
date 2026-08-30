@@ -82,7 +82,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
       ) : (
         <ul className="space-y-2">
           {prestations.map((p) => (
-            <li key={p.id} className="rounded-lg border border-border bg-surface p-3">
+            <li key={p.id} className="rounded-md border border-border bg-surface p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-text">{p.intitule}</p>
@@ -93,7 +93,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
                       en dessous donnait deux fois le meme mot a l'ecran. */}
                   <span className="sr-only">Phase de {p.intitule}</span>
                   <select
-                    className="rounded border border-border bg-surface-2 px-2 py-1 text-xs text-text"
+                    className="rounded-sm border border-border bg-surface-2 px-2 py-1 text-xs text-text"
                     value={p.phase}
                     onChange={(e) => basculer(p.id, e.target.value as PhaseDePrestation)}
                   >
@@ -114,7 +114,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         <label className="text-xs text-text-muted">
           Intitulé
           <input
-            className="mt-1 block rounded border border-border bg-surface px-2 py-1 text-sm text-text"
+            className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
             value={intitule}
             onChange={(e) => setIntitule(e.target.value)}
             placeholder="FORGER, PROPULSER, diagnostic…"
@@ -123,7 +123,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         <label className="text-xs text-text-muted">
           Où ça en est
           <select
-            className="mt-1 block rounded border border-border bg-surface px-2 py-1 text-sm text-text"
+            className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
             value={phase}
             onChange={(e) => setPhase(e.target.value as PhaseDePrestation)}
           >
@@ -137,7 +137,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         <label className="text-xs text-text-muted">
           Montant HT (facultatif)
           <input
-            className="mt-1 block w-32 rounded border border-border bg-surface px-2 py-1 text-sm text-text"
+            className="mt-1 block w-32 rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
             value={montant}
             onChange={(e) => setMontant(e.target.value)}
             inputMode="decimal"
@@ -146,7 +146,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         <button
           type="button"
           onClick={ajouter}
-          className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white"
+          className="rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white"
         >
           Ajouter
         </button>

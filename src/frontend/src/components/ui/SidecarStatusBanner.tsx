@@ -55,7 +55,7 @@ export function SidecarStatusBanner() {
       </span>
       <button
         type="button"
-        className="rounded-[6px] border border-error px-2 py-1 font-semibold text-error transition-colors hover:bg-error-fill/10"
+        className="rounded-sm border border-error px-2 py-1 font-semibold text-error transition-colors hover:bg-error-fill/10"
         onClick={() => {
           setStatus({ state: 'restarting', attempt: 0 });
           void import('@tauri-apps/api/core').then(({ invoke }) =>

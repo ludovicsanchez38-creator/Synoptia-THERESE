@@ -165,7 +165,7 @@ export function LLMTab({
       {/* Sélection du provider */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Cpu className="w-5 h-5 text-accent" />
           </div>
           <div>
@@ -191,7 +191,7 @@ export function LLMTab({
                 onClick={() => onSelectProvider(provider.id)}
                 onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
                 disabled={!isAvailable && provider.id === 'ollama'}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left ${
                   selectedProvider === provider.id
                     ? 'bg-accent-cyan/10 border-accent-cyan/50'
                     : 'bg-background/40 border-border/50 hover:border-border'
@@ -212,12 +212,12 @@ export function LLMTab({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-text">{provider.name}</span>
                     {provider.id === 'anthropic' && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
+                      <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
                         Recommandé
                       </span>
                     )}
                     {provider.id === 'ollama' && !isAvailable && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
+                      <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error">
                         Non disponible
                       </span>
                     )}
@@ -239,7 +239,7 @@ export function LLMTab({
       {needsApiKey && (
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Key className="w-5 h-5 text-accent-magenta-ink" />
             </div>
             <div>
@@ -252,17 +252,17 @@ export function LLMTab({
 
           {/* Statut */}
           {corruptedKeys.includes(selectedProvider) ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md">
               <XCircle className="w-4 h-4 text-error" />
               <span className="text-sm text-error">Clé API corrompue - ressaisis-la</span>
             </div>
           ) : hasApiKey ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
               <Check className="w-4 h-4 text-success" />
               <span className="text-sm text-success">Clé API configurée</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
               <AlertCircle className="w-4 h-4 text-warning" />
               <span className="text-sm text-warning">Aucune clé API configurée</span>
             </div>
@@ -287,7 +287,7 @@ export function LLMTab({
                     }
                   }}
                   placeholder={currentProviderConfig?.keyPlaceholder || '...'}
-                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                  className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                 />
                 <button
                   type="button"
@@ -346,7 +346,7 @@ export function LLMTab({
       {selectedProvider === 'ollama' && (
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Database className="w-5 h-5 text-success" />
             </div>
             <div>
@@ -361,12 +361,12 @@ export function LLMTab({
 
           <div className="flex items-center gap-2">
             {ollamaStatus?.available ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg flex-1">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md flex-1">
                 <Check className="w-4 h-4 text-success" />
                 <span className="text-sm text-success">Ollama connecté ({ollamaStatus.base_url})</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-lg flex-1">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md flex-1">
                 <AlertCircle className="w-4 h-4 text-error" />
                 <span className="text-sm text-error">
                   {ollamaStatus?.error || 'Ollama non disponible'}
@@ -402,7 +402,7 @@ export function LLMTab({
       {/* Adresse d'espace de travail Qwen (dette 0.43.4) : l'URL contient
           l'identifiant du compte, le défaut ne peut fonctionner pour personne. */}
       {selectedProvider === 'qwen' && (
-        <div className="space-y-2 p-3 rounded-[6px] border-[1.5px] border-border bg-surface">
+        <div className="space-y-2 p-3 rounded-sm border-[1.5px] border-border bg-surface">
           <label htmlFor="qwen-base-url" className="text-sm font-medium text-text">
             Adresse de ton espace de travail
           </label>
@@ -417,7 +417,7 @@ export function LLMTab({
               value={baseUrlInput}
               onChange={(e) => setBaseUrlInput(e.target.value)}
               placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-              className="flex-1 px-3 py-2 text-sm rounded-[6px] border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
+              className="flex-1 px-3 py-2 text-sm rounded-sm border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
             />
             <Button
               onClick={() => void handleSaveBaseUrl()}
@@ -491,7 +491,7 @@ function ModelSelector({
         id="settings-llm-model"
         value={selectedModel}
         onChange={(e) => onSelectModel(e.target.value)}
-        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
+        className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
       >
         {availableModels.map((model) => (
           <option key={model.id} value={model.id}>
@@ -532,7 +532,7 @@ function ModelSelector({
                 selectedProvider === 'openrouter' ? 'anthropic/claude-opus-4-8' :
                 'identifiant-du-modele'
               }
-              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+              className="flex-1 px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
             />
             <Button
               variant="primary"
@@ -634,7 +634,7 @@ function EffortSelector({
         value={effort}
         disabled={saving}
         onChange={(e) => void handleChange(e.target.value)}
-        className="px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
+        className="px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
       >
         {EFFORT_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -645,7 +645,7 @@ function EffortSelector({
       </div>
       {status && <p role="status" className="mt-2 text-xs text-info">{status}</p>}
       {error && (
-        <div role="alert" className="mt-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
+        <div role="alert" className="mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
           <p>{error}</p>
           <button type="button" onClick={() => failedEffort && void handleChange(failedEffort)} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
         </div>

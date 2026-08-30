@@ -37,11 +37,11 @@ export function QuickActions() {
           key={id}
           type="button"
           onClick={() => handle(id)}
-          className="card-brutal flex items-center gap-2.5 p-3 rounded-[9px] bg-surface border-[1.5px] border-border text-left"
+          className="card-brutal flex items-center gap-2.5 p-3 rounded-md bg-surface border-[1.5px] border-border text-left"
         >
           {/* Pastille duotone : accent catégoriel k1-k4, cerclée d'encre */}
           <span
-            className="w-8 h-8 rounded-[6px] grid place-items-center shrink-0 border-[1.5px] border-[var(--btn-ink)]"
+            className="w-8 h-8 rounded-sm grid place-items-center shrink-0 border-[1.5px] border-[var(--btn-ink)]"
             style={{ background: `var(--k${(i % 4) + 1}bg)`, color: `var(--k${(i % 4) + 1})` }}
           >
             <Icon className="w-4 h-4" />

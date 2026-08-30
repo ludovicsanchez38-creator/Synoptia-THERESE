@@ -383,7 +383,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
             initial="initial"
             animate="animate"
             exit="exit"
-            className="mx-3 mt-2 p-2 rounded-lg bg-error/10 border border-error/20 flex items-center gap-2"
+            className="mx-3 mt-2 p-2 rounded-md bg-error/10 border border-error/20 flex items-center gap-2"
           >
             <AlertCircle className="w-4 h-4 text-error flex-shrink-0" />
             <p className="text-xs text-error">{error}</p>

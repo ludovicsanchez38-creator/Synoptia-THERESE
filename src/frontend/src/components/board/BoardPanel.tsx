@@ -79,7 +79,7 @@ function BoardDialogShell({
       exit="exit"
       className={cn(
         'fixed inset-4 md:inset-8 lg:inset-12',
-        'bg-surface rounded-2xl border border-border',
+        'bg-surface rounded-md border border-border',
         Z_LAYER.MODAL, 'overflow-hidden flex flex-col',
         'shadow-2xl'
       )}
@@ -487,7 +487,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     >
                       <FileDown className="w-4 h-4 mr-1.5" />
                       PDF
-                      <span className="ml-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] rounded">Bientôt</span>
+                      <span className="ml-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] rounded-sm">Bientôt</span>
                     </Button>
                     <Button variant="primary" size="sm" onClick={handleNewDeliberation}>
                       + Nouvelle question
@@ -515,8 +515,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     {/* Avatar et intro */}
                     <div className="text-center mb-8">
                       <div className="relative w-16 h-16 mx-auto mb-4">
-                        <div className="absolute inset-0 rounded-2xl bg-accent-cyan/30 blur-xl animate-pulse" />
-                        <div className="relative w-full h-full rounded-2xl bg-accent-cyan/20 border-2 border-accent-cyan/30 flex items-center justify-center">
+                        <div className="absolute inset-0 rounded-md bg-accent-cyan/30 blur-xl animate-pulse" />
+                        <div className="relative w-full h-full rounded-md bg-accent-cyan/20 border-2 border-accent-cyan/30 flex items-center justify-center">
                           <svg viewBox="0 0 40 40" className="w-9 h-9" fill="none">
                             <circle cx="20" cy="20" r="5.5" fill="#E6EDF7" />
                             <circle cx="20" cy="8" r="3" stroke="#22D3EE" strokeWidth="1.5" />
@@ -566,7 +566,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                           placeholder="Ex: Dois-je passer ma société en SASU ?"
                           rows={3}
                           className={cn(
-                            'w-full p-4 rounded-xl',
+                            'w-full p-4 rounded-md',
                             'bg-surface-elevated border border-border',
                             'text-text placeholder:text-text-muted',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan/50',
@@ -585,7 +585,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                           placeholder="Informations supplémentaires sur ta situation..."
                           rows={2}
                           className={cn(
-                            'w-full p-4 rounded-xl',
+                            'w-full p-4 rounded-md',
                             'bg-surface-elevated border border-border',
                             'text-text placeholder:text-text-muted',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan/50',
@@ -597,7 +597,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       {runError && <p className="text-sm text-error" role="alert">{runError}</p>}
 
                       {confirmationOpen && (
-                        <div className="rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4 text-sm text-text-muted" data-testid="board-confirmation">
+                        <div className="rounded-md border border-accent-cyan/30 bg-accent-cyan/10 p-4 text-sm text-text-muted" data-testid="board-confirmation">
                           <p className="font-semibold text-text">Confirmer le lancement</p>
                           <p className="mt-1">Mode : {mode === 'cloud' ? 'cloud avec recherche web' : 'souverain via Ollama local'}.</p>
                           <p className="mt-1">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>
@@ -613,7 +613,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         disabled={question.trim().length < 10}
                         data-testid="board-submit-btn"
                         className={cn(
-                          'w-full py-3 px-6 rounded-xl font-semibold text-white',
+                          'w-full py-3 px-6 rounded-md font-semibold text-white',
                           'bg-accent-cyan hover:bg-accent-cyan/90',
                           'hover:scale-[1.02] active:scale-[0.98] transition-all duration-200',
                           'shadow-[0_4px_20px_rgba(34,211,238,0.3)]',
@@ -638,7 +638,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                   >
-                    {runError && <div className="mb-4 rounded-xl border border-error/30 bg-error/10 p-3 text-sm text-error" role="alert">{runError}</div>}
+                    {runError && <div className="mb-4 rounded-md border border-error/30 bg-error/10 p-3 text-sm text-error" role="alert">{runError}</div>}
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
@@ -681,7 +681,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                           <div
                             key={decision.id}
                             className={cn(
-                              'relative p-4 rounded-xl',
+                              'relative p-4 rounded-md',
                               'bg-surface-elevated border border-border',
                               'hover:border-accent-cyan/30 transition-colors',
                               'group cursor-pointer'
@@ -706,7 +706,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                             <button
                               onClick={(e) => handleDeleteDecision(decision.id, e)}
                               className={cn(
-                                'absolute top-3 right-3 p-2 rounded-lg',
+                                'absolute top-3 right-3 p-2 rounded-md',
                                 'text-text-muted hover:text-error',
                                 'hover:bg-error/10 transition-colors',
                                 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'

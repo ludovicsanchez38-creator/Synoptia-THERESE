@@ -177,7 +177,7 @@ export function CodeReviewPanel() {
         </div>
       ) : confirmation ? (
         <div className="border-t border-border px-4 py-3">
-          <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
+          <div className="rounded-md border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
             <div className="font-semibold">
               {confirmation === 'approve'
                 ? 'Appliquer ces changements sur main ?'
@@ -209,7 +209,7 @@ export function CodeReviewPanel() {
           <button
             onClick={() => setConfirmation('approve')}
             disabled={actionPending !== null}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500/20 px-4 py-2.5 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-green-500/20 px-4 py-2.5 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
           >
             <Check size={16} />
             {actionPending === 'approve' ? 'Application...' : 'Appliquer les changements'}
@@ -217,7 +217,7 @@ export function CodeReviewPanel() {
           <button
             onClick={() => setConfirmation('reject')}
             disabled={actionPending !== null}
-            className="flex items-center justify-center gap-2 rounded-lg bg-error/10 px-4 py-2.5 text-sm font-medium text-error transition hover:bg-error/20 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-md bg-error/10 px-4 py-2.5 text-sm font-medium text-error transition hover:bg-error/20 disabled:opacity-50"
           >
             <X size={16} />
             {actionPending === 'reject' ? 'Refus...' : 'Refuser'}

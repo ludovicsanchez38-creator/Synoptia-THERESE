@@ -72,7 +72,7 @@ function HighlightedPrompt({ text }: { text: string }) {
         part.startsWith('{') && part.endsWith('}') ? (
           <span
             key={i}
-            className="inline-block bg-accent-cyan/20 text-accent-cyan-ink px-1 rounded font-medium"
+            className="inline-block bg-accent-cyan/20 text-accent-cyan-ink px-1 rounded-sm font-medium"
           >
             {part}
           </span>
@@ -111,7 +111,7 @@ function PromptCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-surface border border-border/30 rounded-lg p-4 hover:border-accent-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.08)] transition-all duration-200 cursor-pointer"
+      className="group bg-surface border border-border/30 rounded-md p-4 hover:border-accent-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.08)] transition-all duration-200 cursor-pointer"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -146,7 +146,7 @@ function PromptCard({
         {prompt.tags.slice(0, 4).map((tag) => (
           <span
             key={tag}
-            className="text-[10px] px-1.5 py-0.5 rounded bg-surface/50 text-text-muted border border-border/20"
+            className="text-[10px] px-1.5 py-0.5 rounded-sm bg-surface/50 text-text-muted border border-border/20"
           >
             {tag}
           </span>
@@ -201,7 +201,7 @@ function CategoryAccordion({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-border/20 rounded-xl overflow-hidden bg-bg/80">
+    <div className="border border-border/20 rounded-md overflow-hidden bg-bg/80">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
@@ -358,12 +358,12 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher un prompt (ex : relance, LinkedIn, CGV...)"
-            className="w-full pl-10 pr-10 py-2.5 bg-surface/50 border border-border/30 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/20 transition-colors"
+            className="w-full pl-10 pr-10 py-2.5 bg-surface/50 border border-border/30 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-accent-cyan/20 transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-text-muted hover:text-text transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-sm text-text-muted hover:text-text transition-colors"
             >
               <X className="w-4 h-4" />
             </button>

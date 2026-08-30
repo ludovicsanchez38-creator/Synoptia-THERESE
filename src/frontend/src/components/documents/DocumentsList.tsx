@@ -87,13 +87,13 @@ function DocumentCard({ document, onOpen }: DocumentCardProps) {
     <button
       type="button"
       onClick={() => onOpen(document.id)}
-      className="w-full text-left px-4 py-3 rounded-xl border border-border/40 bg-surface/60 hover:bg-surface hover:border-border transition-colors"
+      className="w-full text-left px-4 py-3 rounded-md border border-border/40 bg-surface/60 hover:bg-surface hover:border-border transition-colors"
       data-testid="document-card"
     >
       <div className="flex items-center gap-2 min-w-0">
         <p className="text-sm font-medium text-text truncate">{document.title}</p>
         <span
-          className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-[6px] border ${
+          className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-sm border ${
             isTermine
               ? 'text-success border-success/30 bg-success/10'
               : sansTrame
@@ -214,7 +214,7 @@ export function DocumentsList() {
         {/* En-tête */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-[6px] grid place-items-center bg-accent-tint text-accent-cyan-ink border-[1.5px] border-[var(--btn-ink)]">
+            <span className="w-9 h-9 rounded-sm grid place-items-center bg-accent-tint text-accent-cyan-ink border-[1.5px] border-[var(--btn-ink)]">
               <FileText className="w-5 h-5" />
             </span>
             <div>
@@ -231,7 +231,7 @@ export function DocumentsList() {
         </div>
 
         {error && (
-          <div role="alert" className="mb-4 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-sm text-error">
+          <div role="alert" className="mb-4 px-3 py-2 rounded-sm border border-error/30 bg-error/10 text-sm text-error">
             {error}
           </div>
         )}

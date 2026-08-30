@@ -173,7 +173,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               className={cn(
-                'px-3 py-2 rounded-xl text-sm max-w-[85%]',
+                'px-3 py-2 rounded-md text-sm max-w-[85%]',
                 msg.role === 'user'
                   ? 'ml-auto bg-accent-cyan/10 text-text'
                   : 'mr-auto bg-surface-elevated text-text',
@@ -208,7 +208,7 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
             placeholder={placeholder}
             disabled={isStreaming}
             rows={2}
-            className="flex-1 resize-none bg-surface-elevated/60 text-text text-sm leading-5 rounded-lg px-3 py-2 border border-border focus:border-accent-cyan/50 focus:outline-none placeholder:text-text-muted"
+            className="flex-1 resize-none bg-surface-elevated/60 text-text text-sm leading-5 rounded-md px-3 py-2 border border-border focus:border-accent-cyan/50 focus:outline-none placeholder:text-text-muted"
           />
           {/* BUG-097 : Stop button pendant le streaming */}
           {isStreaming ? (

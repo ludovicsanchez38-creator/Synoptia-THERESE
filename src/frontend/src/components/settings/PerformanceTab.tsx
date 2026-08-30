@@ -63,7 +63,7 @@ export function PerformanceTab() {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <Gauge className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -79,29 +79,29 @@ export function PerformanceTab() {
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-text">Temps de réponse</h4>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">
                 {status.streaming.avg_first_token_ms?.toFixed(0) || '-'} ms
               </p>
               <p className="text-xs text-text-muted">Premier token (moyenne)</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">
                 {status.streaming.p95_first_token_ms?.toFixed(0) || '-'} ms
               </p>
               <p className="text-xs text-text-muted">Premier token (P95)</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">{status.streaming.total_requests}</p>
               <p className="text-xs text-text-muted">Requêtes totales</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">{status.streaming.total_tokens?.toLocaleString('fr-FR') || 0}</p>
               <p className="text-xs text-text-muted">Tokens générés</p>
             </div>
           </div>
           {/* Statut SLA */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
             status.streaming.meets_sla
               ? 'bg-[var(--color-success-tint)] border border-success/40'
               : 'bg-[var(--color-warning-tint)] border border-warning/40'
@@ -140,13 +140,13 @@ export function PerformanceTab() {
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">
                 {status.memory.uptime_hours.toFixed(1)}h
               </p>
               <p className="text-xs text-text-muted">Uptime</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-2xl font-bold text-text">
                 {status.memory.last_cleanup_ago_minutes.toFixed(0)} min
               </p>
@@ -180,11 +180,11 @@ export function PerformanceTab() {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-2 bg-background/40 rounded border border-border/30">
+            <div className="p-2 bg-background/40 rounded-sm border border-border/30">
               <span className="text-text-muted">Health check : </span>
               <span className="text-text">{status.power.health_check_interval}s</span>
             </div>
-            <div className="p-2 bg-background/40 rounded border border-border/30">
+            <div className="p-2 bg-background/40 rounded-sm border border-border/30">
               <span className="text-text-muted">Animations : </span>
               <span className="text-text">{status.power.reduce_animations ? 'Réduites' : 'Normales'}</span>
             </div>
@@ -195,7 +195,7 @@ export function PerformanceTab() {
       {/* Nombre de conversations indexées */}
       {status?.conversations_total !== undefined && (
         <div className="pt-4 border-t border-border/30">
-          <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+          <div className="p-3 bg-background/40 rounded-md border border-border/30">
             <p className="text-2xl font-bold text-text">{status.conversations_total}</p>
             <p className="text-xs text-text-muted">Conversations indexées</p>
           </div>

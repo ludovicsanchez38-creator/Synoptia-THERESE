@@ -88,7 +88,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={onBack}
-          className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-elevated hover:bg-surface-elevated/80 text-text-muted hover:text-text transition-colors"
+          className="flex items-center justify-center w-8 h-8 rounded-md bg-surface-elevated hover:bg-surface-elevated/80 text-text-muted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -112,7 +112,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: brief-client"
             className={cn(
-              'w-full px-3 py-2 rounded-lg text-sm',
+              'w-full px-3 py-2 rounded-md text-sm',
               'bg-surface-elevated border border-border text-text',
               'placeholder:text-text-muted/50',
               'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
@@ -137,7 +137,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ex : Génère un brief pour un nouveau client"
             className={cn(
-              'w-full px-3 py-2 rounded-lg text-sm',
+              'w-full px-3 py-2 rounded-md text-sm',
               'bg-surface-elevated border border-border text-text',
               'placeholder:text-text-muted/50',
               'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
@@ -147,7 +147,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
 
         {/* Aperçu de la réponse capturée */}
         {capturedPreview && (
-          <div className="px-3 py-2 rounded-lg bg-accent-cyan/5 border border-accent-cyan/20">
+          <div className="px-3 py-2 rounded-md bg-accent-cyan/5 border border-accent-cyan/20">
             <p className="text-xs font-medium text-accent-cyan-ink mb-1">Réponse capturée</p>
             <p className="text-xs text-text-muted line-clamp-4">{capturedPreview}</p>
           </div>
@@ -164,7 +164,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className={cn(
-                'w-full px-3 py-2 rounded-lg text-sm',
+                'w-full px-3 py-2 rounded-md text-sm',
                 'bg-surface-elevated border border-border text-text',
                 'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
               )}
@@ -188,7 +188,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
               placeholder="Ex: />"
               maxLength={4}
               className={cn(
-                'w-full px-3 py-2 rounded-lg text-sm',
+                'w-full px-3 py-2 rounded-md text-sm',
                 'bg-surface-elevated border border-border text-text',
                 'placeholder:text-text-muted/50',
                 'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
@@ -204,7 +204,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             type="checkbox"
             checked={showOnHome}
             onChange={(e) => setShowOnHome(e.target.checked)}
-            className="w-4 h-4 rounded border-border bg-surface-elevated text-accent-cyan-ink focus:ring-accent-cyan/30"
+            className="w-4 h-4 rounded-sm border-border bg-surface-elevated text-accent-cyan-ink focus:ring-accent-cyan/30"
           />
           <label htmlFor="cmd-home" className="text-sm text-text">
             Afficher sur la page d'accueil
@@ -223,7 +223,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             placeholder="Écris le prompt que THÉRÈSE utilisera quand cette commande sera déclenchée..."
             rows={6}
             className={cn(
-              'w-full px-3 py-2 rounded-lg text-sm resize-none',
+              'w-full px-3 py-2 rounded-md text-sm resize-none',
               'bg-surface-elevated border border-border text-text',
               'placeholder:text-text-muted/50',
               'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30 focus:border-accent-cyan/50'
@@ -233,7 +233,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
 
         {/* Error */}
         {error && (
-          <div role="alert" className="px-3 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error">
+          <div role="alert" className="px-3 py-2 rounded-md bg-error/10 border border-error/20 text-sm text-error">
             {error}
           </div>
         )}

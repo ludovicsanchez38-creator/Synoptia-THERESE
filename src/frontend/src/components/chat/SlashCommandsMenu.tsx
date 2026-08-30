@@ -348,7 +348,7 @@ export function SlashCommandsMenu({
       style={menuStyle}
       className={cn(
         Z_LAYER.MODAL, 'w-full max-w-md',
-        'bg-surface border border-border rounded-lg shadow-xl',
+        'bg-surface border border-border rounded-md shadow-xl',
         'overflow-hidden'
       )}
     >
@@ -396,11 +396,11 @@ export function SlashCommandsMenu({
       <div className="px-3 py-1.5 border-t border-border bg-bg/50">
         <div className="flex items-center gap-2 text-xs text-text-muted">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 rounded bg-surface-elevated">↑↓</kbd>
+            <kbd className="px-1 rounded-sm bg-surface-elevated">↑↓</kbd>
             naviguer
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd>
+            <kbd className="px-1 rounded-sm bg-surface-elevated">Tab</kbd>
             compléter
           </span>
         </div>

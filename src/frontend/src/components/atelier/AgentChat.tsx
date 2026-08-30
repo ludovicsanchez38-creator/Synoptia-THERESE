@@ -91,7 +91,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="rounded p-0.5 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
+      className="rounded-sm p-0.5 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
       title="Copier le message"
       aria-label="Copier le message"
     >
@@ -221,7 +221,7 @@ export function AgentChat() {
         <div className="flex items-center gap-1 ml-2">
           <button
             onClick={refreshActiveSession}
-            className="rounded p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
+            className="rounded-sm p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
             title="Rafraichir"
             aria-label="Rafraichir la session"
           >
@@ -230,7 +230,7 @@ export function AgentChat() {
           {activeSession.status === "running" && (
             <button
               onClick={() => cancelSession(activeSessionId)}
-              className="rounded p-1 text-error/70 transition hover:bg-error/10 hover:text-error"
+              className="rounded-sm p-1 text-error/70 transition hover:bg-error/10 hover:text-error"
               title="Annuler la session"
               aria-label="Annuler la session"
             >
@@ -304,7 +304,7 @@ export function AgentChat() {
                         </div>
                       )}
                       <div
-                        className={`rounded-lg px-3 py-2 text-sm leading-relaxed ${
+                        className={`rounded-md px-3 py-2 text-sm leading-relaxed ${
                           isAction
                             ? "border border-amber-500/20 bg-amber-500/5"
                             : ""
@@ -360,7 +360,7 @@ export function AgentChat() {
             placeholder="Envoyer un message a Katia..."
             disabled={isSending}
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
+            className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50 disabled:opacity-50"
             style={{ minHeight: "38px", maxHeight: "120px" }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -370,7 +370,7 @@ export function AgentChat() {
           />
           {isSending ? (
             <button
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-text-muted"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-2 text-text-muted"
               disabled
             >
               <Square size={16} className="animate-pulse" />
@@ -379,7 +379,7 @@ export function AgentChat() {
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/20 text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-30"
               title="Envoyer"
               aria-label="Envoyer le message"
             >

@@ -63,7 +63,7 @@ export function DeliberationView({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          'p-4 rounded-xl',
+          'p-4 rounded-md',
           'bg-accent-tint',
           'border-[1.5px] border-[var(--btn-ink)]'
         )}
@@ -83,7 +83,7 @@ export function DeliberationView({
             exit={{ opacity: 0, scale: 0.95 }}
             className={cn(
               'flex items-center justify-center gap-3 py-6',
-              'rounded-xl bg-surface-elevated border border-border'
+              'rounded-md bg-surface-elevated border border-border'
             )}
           >
             <Globe className="w-5 h-5 text-accent-cyan-ink animate-pulse" />
@@ -100,7 +100,7 @@ export function DeliberationView({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-magenta/10 border border-accent-magenta/20"
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-accent-magenta/10 border border-accent-magenta/20"
         >
           <Shield className="w-4 h-4 text-accent-magenta-ink" />
           <span className="text-sm text-accent-magenta-ink">

@@ -148,11 +148,11 @@ export function ResponseGeneratorModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${Z_LAYER.MODAL_NESTED} w-full max-w-3xl`}
           >
-            <div className="bg-surface border border-text-muted/20 rounded-xl shadow-2xl p-6">
+            <div className="bg-surface border border-text-muted/20 rounded-md shadow-2xl p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
+                  <div className="p-2 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
                     <Sparkles className="w-5 h-5 text-accent-cyan-ink" />
                   </div>
                   <div>
@@ -184,7 +184,7 @@ export function ResponseGeneratorModal({
                       <button
                         key={option.value}
                         onClick={() => setTone(option.value)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
                           tone === option.value
                             ? 'border-accent-cyan bg-accent-cyan/10'
                             : 'border-text-muted/20 hover:border-text-muted/40'
@@ -211,7 +211,7 @@ export function ResponseGeneratorModal({
                       <button
                         key={option.value}
                         onClick={() => setLength(option.value)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border transition-all ${
+                        className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
                           length === option.value
                             ? 'border-accent-magenta bg-accent-magenta/10'
                             : 'border-text-muted/20 hover:border-text-muted/40'
@@ -233,7 +233,7 @@ export function ResponseGeneratorModal({
                   pour réessayer sans fermer la fenêtre. */}
               {erreur && (
                 <div
-                  className="mb-4 flex items-start gap-2 rounded-lg border border-error/40 bg-[var(--color-error-tint)] px-3 py-3"
+                  className="mb-4 flex items-start gap-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-3"
                   role="alert"
                 >
                   <span className="flex-1 text-sm text-error">{erreur}</span>
@@ -258,7 +258,7 @@ export function ResponseGeneratorModal({
                   onChange={(e) => setDraft(e.target.value)}
                   disabled={isGenerating}
                   placeholder="Génération en cours..."
-                  className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none font-mono text-sm"
+                  className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none font-mono text-sm"
                 />
               </div>
 
@@ -275,7 +275,7 @@ export function ResponseGeneratorModal({
                   <button
                     onClick={handleRegenerate}
                     disabled={isGenerating}
-                    className="flex items-center gap-2 px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-md transition-colors disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <Spinner taille="bouton" />
@@ -289,7 +289,7 @@ export function ResponseGeneratorModal({
                 <button
                   onClick={handleUse}
                   disabled={!hasGenerated || isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" />
                   Utiliser

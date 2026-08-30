@@ -79,7 +79,7 @@ export function AdvisorCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: isWaiting ? 0.4 : 1, y: 0 }}
       className={cn(
-        'relative rounded-xl border p-4 transition-all duration-300',
+        'relative rounded-md border p-4 transition-all duration-300',
         'bg-surface-elevated/80 backdrop-blur-sm',
         isWaiting && 'opacity-40',
         isComplete ? 'border-border' : 'border-border/50',
@@ -116,7 +116,7 @@ export function AdvisorCard({
         </div>
         {providerInfo && (
           <span
-            className="text-[10px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide"
+            className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium uppercase tracking-wide"
             style={{
               backgroundColor: `${providerInfo.color}20`,
               color: providerInfo.color,

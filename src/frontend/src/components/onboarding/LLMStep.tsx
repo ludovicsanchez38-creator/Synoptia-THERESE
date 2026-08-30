@@ -257,7 +257,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center">
           <Cpu className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
@@ -289,7 +289,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               onClick={() => handleSelectProvider(provider.id)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
               disabled={!isAvailable && provider.id === 'ollama'}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left focus:outline-none focus:ring-2 focus:ring-accent-cyan ${
+              className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left focus:outline-none focus:ring-2 focus:ring-accent-cyan ${
                 isSelected
                   ? 'bg-accent-cyan/10 border-accent-cyan/50'
                   : 'bg-background/40 border-border/50 hover:border-border'
@@ -310,12 +310,12 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-text">{provider.name}</span>
                   {provider.id === 'anthropic' && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
+                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
                       Recommandé
                     </span>
                   )}
                   {provider.id === 'ollama' && !isAvailable && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-error-tint)] text-error">
+                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error">
                       Non disponible
                     </span>
                   )}
@@ -336,7 +336,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       {needsApiKey && selectedProvider && (
         <div className="space-y-3 mb-6 pt-4 border-t border-border/30">
           {hasApiKey ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
               <Check className="w-4 h-4 text-success" />
               <span className="text-sm text-success">Clé API configurée (chiffrée localement)</span>
             </div>
@@ -359,7 +359,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                       }
                     }}
                     placeholder={currentProviderConfig?.keyPlaceholder || 'Clé API...'}
-                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                   />
                   <button
                     type="button"
@@ -418,7 +418,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             value={baseUrlInput}
             onChange={(e) => setBaseUrlInput(e.target.value)}
             placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
           />
           <p className="text-xs text-text-muted mt-2">
             Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton
@@ -438,7 +438,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               modeleChoisiParLUtilisateur.current = true;
               setSelectedModel(e.target.value);
             }}
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
+            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors"
           >
             {availableModels.map((model) => (
               <option key={model.id} value={model.id} disabled={model.indisponible}>
@@ -477,7 +477,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           démarré — il fallait relancer tout l'assistant. On propose la
           revérification dès qu'Ollama est absent, erreur ou pas. */}
       {!loadError && ollamaStatus && !ollamaStatus.available && (
-        <div className="mb-6 rounded-lg border border-border bg-surface px-3 py-3">
+        <div className="mb-6 rounded-md border border-border bg-surface px-3 py-3">
           <p className="text-sm text-text-muted">
             Ollama n'a pas répondu. S'il n'était pas encore lancé, démarre-le
             puis revérifie : inutile de recommencer l'installation.
@@ -494,7 +494,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
       {/* Error */}
       {loadError && (
-        <div className="mb-6 rounded-lg border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-3" role="alert">
+        <div className="mb-6 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-3" role="alert">
           <div className="flex items-start gap-2 text-sm text-warning">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="flex-1">{loadError}</span>
@@ -505,7 +505,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-[var(--color-error-tint)] border border-error/40 rounded-lg" role="alert">
+        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
           <AlertCircle className="w-4 h-4 text-error" />
           <span className="text-sm text-error">{error}</span>
         </div>
@@ -513,7 +513,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
       {/* Warning if no API key configured */}
       {needsApiKey && !hasApiKey && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
           <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
           <span className="text-sm text-warning">
             Sans clé API, THÉRÈSE ne pourra pas fonctionner. Configure une clé ou utilise Ollama.

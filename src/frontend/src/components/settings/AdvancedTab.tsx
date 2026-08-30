@@ -31,7 +31,7 @@ function CollapsibleSection({
   const panelId = useId();
 
   return (
-    <div className="border border-border/30 rounded-lg overflow-hidden">
+    <div className="border border-border/30 rounded-md overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
@@ -67,7 +67,7 @@ export function AdvancedTab({
       <CollapsibleSection title="Stockage des données" defaultOpen>
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
               <Database className="w-5 h-5 text-accent" />
             </div>
             <div>
@@ -86,7 +86,7 @@ export function AdvancedTab({
                 Parcourir
               </Button>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xs text-text font-mono truncate">
                 {workingDir || 'Non configuré'}
               </p>
@@ -101,7 +101,7 @@ export function AdvancedTab({
                 <StatCard label="Contacts" value={stats.entities.contacts} />
                 <StatCard label="Projets" value={stats.entities.projects} />
               </div>
-              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
                 <Check className="w-4 h-4 text-success" />
                 <span className="text-sm text-success">Stockées sur cette machine</span>
               </div>
@@ -166,7 +166,7 @@ function StartupBehavior() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="p-2 bg-background/40 rounded-lg border border-border/30 text-center">
+    <div className="p-2 bg-background/40 rounded-md border border-border/30 text-center">
       <p className="text-lg font-bold text-text">{value.toLocaleString('fr-FR')}</p>
       <p className="text-xs text-text-muted">{label}</p>
     </div>

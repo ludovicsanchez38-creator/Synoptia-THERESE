@@ -79,10 +79,11 @@
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* Deux tailles, plus la pleine (rounded-full). L'application en portait 26
+     avant le 30/08/2026 : quatre jetons, quinze valeurs en pixels et sept
+     classes nommées, la plupart à un pixel les unes des autres. */
+  --radius-sm: 0.5rem;    /* 8 px  : champs, puces, petits contrôles */
+  --radius-md: 0.875rem;  /* 14 px : boutons, cartes, panneaux (valeur de la DA) */
 
   /* Shadows (clair) */
   --shadow-sm: 0 1px 2px rgba(16, 28, 54, 0.05);
@@ -349,7 +350,7 @@ svg.lucide { stroke-width: 2.25; }
 .code-block {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
 [data-theme="dark"] .code-block {

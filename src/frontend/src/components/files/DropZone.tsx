@@ -57,7 +57,7 @@ export function DropZone({ isDragging, className }: DropZoneProps) {
             transition={{ duration: 0.2 }}
             className={cn(
               'flex flex-col items-center justify-center gap-4 p-12',
-              'rounded-3xl border-2 border-dashed border-accent-cyan/50',
+              'rounded-md border-2 border-dashed border-accent-cyan/50',
               'bg-surface/50'
             )}
           >
@@ -114,7 +114,7 @@ export function InlineDropZone({ isDragging, className }: InlineDropZoneProps) {
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            'overflow-hidden rounded-xl border border-dashed border-accent-cyan/50',
+            'overflow-hidden rounded-md border border-dashed border-accent-cyan/50',
             'bg-accent-cyan/5 mb-2',
             className
           )}
@@ -166,7 +166,7 @@ export function FileChip({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       className={cn(
-        'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg',
+        'inline-flex items-center gap-2 px-3 py-1.5 rounded-md',
         'bg-surface-elevated border border-border',
         'text-sm text-text',
         className
@@ -183,7 +183,7 @@ export function FileChip({
         <button
           onClick={onRemove}
           className={cn(
-            'flex-shrink-0 p-0.5 rounded hover:bg-error/20',
+            'flex-shrink-0 p-0.5 rounded-sm hover:bg-error/20',
             'text-text-muted hover:text-error transition-colors'
           )}
           title="Retirer"

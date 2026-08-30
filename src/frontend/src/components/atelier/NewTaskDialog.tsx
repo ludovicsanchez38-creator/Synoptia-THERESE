@@ -54,13 +54,13 @@ export function NewTaskDialog() {
         role="dialog"
         aria-modal="true"
         aria-label="Nouvelle tâche pour Katia"
-        className="mx-4 w-full max-w-lg rounded-xl border border-border bg-bg shadow-2xl"
+        className="mx-4 w-full max-w-lg rounded-md border border-border bg-bg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
               <Zap size={14} className="text-purple-400" />
             </div>
             <span className="text-sm font-semibold text-text">
@@ -69,7 +69,7 @@ export function NewTaskDialog() {
           </div>
           <button
             onClick={closeNewTask}
-            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text"
+            className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
           </button>
@@ -78,7 +78,7 @@ export function NewTaskDialog() {
         {/* Body */}
         <div className="px-5 py-4">
           {!openclawConnected && (
-            <div className="mb-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <div className="mb-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
               OpenClaw n&apos;est pas connecté. Vérifie que le gateway tourne.
             </div>
           )}
@@ -93,7 +93,7 @@ export function NewTaskDialog() {
             onKeyDown={handleKeyDown}
             placeholder="Ex: Envoie un email de relance à Jean Dupont pour la facture F-2024-042..."
             rows={4}
-            className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50"
+            className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-purple-500/50"
             disabled={isDispatching}
           />
           <p className="mt-1.5 text-xs text-text-muted">
@@ -102,7 +102,7 @@ export function NewTaskDialog() {
           </p>
 
           {isMaxReached && (
-            <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <div className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
               Tu as déjà {maxAgents} agents en cours. Attends qu&apos;un se termine ou annule-en un.
             </div>
           )}
@@ -112,7 +112,7 @@ export function NewTaskDialog() {
         <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
           <button
             onClick={closeNewTask}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-text-muted transition hover:bg-surface-2"
+            className="rounded-md px-3 py-1.5 text-xs font-medium text-text-muted transition hover:bg-surface-2"
             disabled={isDispatching}
           >
             Annuler
@@ -120,7 +120,7 @@ export function NewTaskDialog() {
           <button
             onClick={handleSubmit}
             disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
-            className="flex items-center gap-1.5 rounded-lg bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (
               <>

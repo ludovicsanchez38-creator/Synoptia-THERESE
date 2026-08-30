@@ -112,7 +112,7 @@ export function ImageGenerationPanel({
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={cn(
         'relative w-full max-w-md mx-auto',
-        'bg-surface-elevated rounded-2xl border border-border',
+        'bg-surface-elevated rounded-md border border-border',
         'overflow-hidden shadow-xl'
       )}
     >
@@ -129,7 +129,7 @@ export function ImageGenerationPanel({
           <button
             onClick={onClose}
             className={cn(
-              'absolute top-4 right-4 p-1.5 rounded-lg z-10',
+              'absolute top-4 right-4 p-1.5 rounded-md z-10',
               'text-text-muted hover:text-text',
               'hover:bg-surface-2 transition-colors'
             )}
@@ -141,7 +141,7 @@ export function ImageGenerationPanel({
         {/* Icon + Status */}
         <div className="flex flex-col items-center text-center mb-6">
           <div className={cn(
-            'relative w-16 h-16 rounded-[10px] flex items-center justify-center mb-4',
+            'relative w-16 h-16 rounded-md flex items-center justify-center mb-4',
             'border-[1.5px] border-[var(--btn-ink)]',
             config.bgTint
           )}>
@@ -213,7 +213,7 @@ export function ImageGenerationPanel({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              'mb-6 rounded-xl overflow-hidden',
+              'mb-6 rounded-md overflow-hidden',
               'bg-surface-2 border border-border'
             )}
           >
@@ -268,7 +268,7 @@ export function ImageGenerationPanel({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className={cn(
-              'mb-6 p-3 rounded-lg',
+              'mb-6 p-3 rounded-md',
               'bg-surface-2 border border-border'
             )}
           >
@@ -315,7 +315,7 @@ export function ImageGenerationPanel({
               onClick={onUse}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-xl font-medium',
+                'px-4 py-3 rounded-md font-medium',
                 'bg-accent-cyan hover:bg-accent-cyan/90',
                 'text-bg shadow-lg shadow-accent-cyan/20',
                 'hover:shadow-accent-cyan/30 transition-all'
@@ -335,7 +335,7 @@ export function ImageGenerationPanel({
               onClick={onDownload}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-xl font-medium',
+                'px-4 py-3 rounded-md font-medium',
                 onUse
                   ? 'bg-surface border border-border text-text hover:bg-surface-elevated transition-colors'
                   : 'bg-accent-cyan hover:bg-accent-cyan/90 text-bg shadow-lg shadow-accent-cyan/20 hover:shadow-accent-cyan/30 transition-all'
@@ -355,7 +355,7 @@ export function ImageGenerationPanel({
               onClick={onRetry}
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-xl font-medium',
+                'px-4 py-3 rounded-md font-medium',
                 'bg-surface border border-border',
                 'text-text hover:bg-surface-elevated',
                 'transition-colors'

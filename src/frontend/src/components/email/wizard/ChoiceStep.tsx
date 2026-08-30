@@ -34,7 +34,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
       </div>
 
       {mcpCredentials && (
-        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
           <div className="flex items-start gap-3">
             <Zap className="w-5 h-5 text-accent-cyan-ink shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -54,17 +54,17 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           onClick={() => onSelect('gmail')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
+          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-md hover:border-accent-cyan/60 transition-all group text-left"
         >
           {/* US-012 : « Recommandé » retiré - ce chemin exige de créer un
               projet Google Cloud, ce qui était l'impasse n°1 des testeurs */}
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-[6px]">
+            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-sm">
               Avancé
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Mail className="w-6 h-6 text-accent-cyan-ink" />
           </div>
 
@@ -94,15 +94,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           onClick={() => onSelect('smtp')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
+          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-md hover:border-accent-cyan/60 transition-all group text-left"
         >
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink rounded-[6px]">
+            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink rounded-sm">
               Recommandé
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-[8px] bg-text-muted/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-sm bg-text-muted/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Server className="w-6 h-6 text-text-muted" />
           </div>
 
@@ -130,7 +130,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
       {/* US-012 : le chemin Gmail SANS créer de projet Google Cloud doit être
           visible - c'était l'impasse n°1 des testeurs alpha */}
-      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
         <p className="text-sm text-text-muted">
           <strong className="text-text">Gmail sans prise de tête :</strong> choisis « SMTP / IMAP
           classique », sélectionne le preset Gmail et utilise un{' '}

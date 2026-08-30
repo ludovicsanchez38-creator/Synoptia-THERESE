@@ -67,11 +67,11 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
             role="dialog"
             aria-modal="true"
             aria-labelledby="external-action-confirmation-title"
-            className="relative w-full max-w-lg rounded-xl border border-accent-cyan/30 bg-surface p-5 shadow-2xl"
+            className="relative w-full max-w-lg rounded-md border border-accent-cyan/30 bg-surface p-5 shadow-2xl"
             data-testid="external-action-confirmation"
           >
             <div className="flex items-start gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[9px] bg-accent-tint text-accent">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-tint text-accent">
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <div>
@@ -83,7 +83,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
               </div>
             </div>
 
-            <dl className="mt-4 space-y-2 rounded-[10px] border border-border bg-bg p-3 text-sm">
+            <dl className="mt-4 space-y-2 rounded-md border border-border bg-bg p-3 text-sm">
               {pending.details.filter((detail) => detail.value).map((detail) => (
                 <div key={detail.label} className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
                   <dt className="font-medium text-text-muted">{detail.label}</dt>
@@ -97,7 +97,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
                 type="button"
                 onClick={clearPending}
                 disabled={busy}
-                className="rounded-[8px] border border-border bg-surface px-3 py-2 text-sm font-semibold text-text disabled:opacity-50"
+                className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text disabled:opacity-50"
               >
                 Annuler
               </button>
@@ -105,7 +105,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
                 type="button"
                 onClick={() => void confirm()}
                 disabled={busy}
-                className="inline-flex items-center gap-2 rounded-[8px] bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-50"
               >
                 {busy && <Spinner taille="bouton" />}
                 {pending.confirmLabel}

@@ -259,7 +259,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCurrentMessage(null)}
-            className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+            className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />
           </button>
@@ -331,7 +331,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
             return (
               <>
                 {hasBlockedImages && (
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted">
                     <span>Les images distantes sont bloquées pour protéger ta vie privée.</span>
                     <button
                       type="button"
@@ -365,19 +365,19 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Erreur suppression */}
       {trashError && (
-        <div role="alert" className="mx-6 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-lg shrink-0">
+        <div role="alert" className="mx-6 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md shrink-0">
           <p className="text-xs text-error">{trashError}</p>
         </div>
       )}
 
       {followUpFeedback && (
-        <div role="status" className="mx-6 mb-2 shrink-0 rounded-lg border border-accent-cyan/20 bg-accent-cyan/5 px-3 py-2">
+        <div role="status" className="mx-6 mb-2 shrink-0 rounded-md border border-accent-cyan/20 bg-accent-cyan/5 px-3 py-2">
           <p className="text-xs text-text-muted">{followUpFeedback}</p>
         </div>
       )}
 
       {showFollowUpForm && (
-        <div className="mx-6 mb-3 shrink-0 rounded-lg border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
+        <div className="mx-6 mb-3 shrink-0 rounded-md border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
           <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
             <label className="text-xs font-medium text-text-muted">
               Échéance

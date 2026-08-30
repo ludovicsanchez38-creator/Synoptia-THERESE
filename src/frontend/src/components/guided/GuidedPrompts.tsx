@@ -439,8 +439,8 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
       >
         {/* Glowing avatar */}
         <div className="relative w-20 h-20 mx-auto mb-4">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
-          <div className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+          <div className="absolute inset-0 rounded-md bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
+          <div className="relative w-full h-full rounded-md overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
             {/* Harmonisation 17/07 : portrait officiel de la nouvelle
                 interface (l'ancien PNG cyberpunk part avec les vestiges) */}
             <CharacterPortrait index={0} className="h-full w-full" />
@@ -461,7 +461,7 @@ export function GuidedPrompts({ onPromptSelect, onImageGenerated }: GuidedPrompt
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="w-full max-w-2xl mb-4 px-4 py-2 rounded-lg bg-error/10 border border-error/20 text-sm text-error"
+            className="w-full max-w-2xl mb-4 px-4 py-2 rounded-md bg-error/10 border border-error/20 text-sm text-error"
           >
             {schemaLoadError}
           </motion.div>

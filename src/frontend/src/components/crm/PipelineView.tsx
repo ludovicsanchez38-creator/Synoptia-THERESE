@@ -154,7 +154,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
   return (
     <div ref={setNodeRef} className="flex-shrink-0 w-72">
       {/* Header colonne */}
-      <div className={`${stage.color} text-white rounded-t-lg px-4 py-3`}>
+      <div className={`${stage.color} text-white rounded-t-md px-4 py-3`}>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">{stage.label}</h3>
           <span className="text-sm opacity-80">{count}</span>
@@ -163,7 +163,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
 
       {/* Cards contacts */}
       <div
-        className={`bg-surface border border-surface rounded-b-lg p-2 min-h-[200px] space-y-2 transition-colors ${
+        className={`bg-surface border border-surface rounded-b-md p-2 min-h-[200px] space-y-2 transition-colors ${
           isOver ? 'ring-2 ring-accent-cyan/50 bg-accent-cyan/5' : ''
         }`}
       >
@@ -227,7 +227,7 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
       animate={isOverlay ? undefined : { opacity: 1, y: 0 }}
       exit={isOverlay ? undefined : { opacity: 0, y: -10 }}
       onClick={onClick}
-      className={`bg-background border border-surface hover:border-accent-cyan rounded-lg p-3 cursor-pointer transition-colors relative ${
+      className={`bg-background border border-surface hover:border-accent-cyan rounded-md p-3 cursor-pointer transition-colors relative ${
         isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30' : ''
       }`}
     >
@@ -283,7 +283,7 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
           </div>
 
           {contact.source && (
-            <span className="text-xs bg-surface px-2 py-0.5 rounded text-text-muted">
+            <span className="text-xs bg-surface px-2 py-0.5 rounded-sm text-text-muted">
               {contact.source}
             </span>
           )}

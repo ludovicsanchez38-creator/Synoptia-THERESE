@@ -103,7 +103,7 @@ export function ProfileTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <User className="w-5 h-5 text-accent" />
           </div>
           <div>
@@ -131,7 +131,7 @@ export function ProfileTab({
             role="dialog"
             aria-modal="true"
             aria-label="Aperçu THERESE.md"
-            className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-xl shadow-2xl flex flex-col max-h-[80vh]"
+            className="w-full max-w-2xl mx-4 bg-surface border border-border rounded-md shadow-2xl flex flex-col max-h-[80vh]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
@@ -146,7 +146,7 @@ export function ProfileTab({
               </div>
               <button
                 onClick={closeMdModal}
-                className="p-1 rounded-lg hover:bg-border/30 text-text-muted hover:text-text transition-colors"
+                className="p-1 rounded-md hover:bg-border/30 text-text-muted hover:text-text transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -166,7 +166,7 @@ export function ProfileTab({
                     setMdContent(e.target.value);
                     setMdSaved(false);
                   }}
-                  className="w-full h-80 px-4 py-3 bg-background/80 border border-border/50 rounded-lg text-sm text-text font-mono resize-y focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                  className="w-full h-80 px-4 py-3 bg-background/80 border border-border/50 rounded-md text-sm text-text font-mono resize-y focus:outline-none focus:ring-2 focus:ring-accent-cyan"
                   placeholder="# Mon contexte personnel&#10;&#10;Écris ici les informations que THÉRÈSE doit connaître sur toi..."
                 />
               )}
@@ -213,12 +213,12 @@ export function ProfileTab({
 
       {/* Statut du profil */}
       {profile ? (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
           <Check className="w-4 h-4 text-success" />
           <span className="text-sm text-success">Profil configuré : {profile.display_name}</span>
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
           <AlertCircle className="w-4 h-4 text-warning" />
           <span className="text-sm text-warning">Profil non configuré - Configure ton identité</span>
         </div>
@@ -238,7 +238,7 @@ export function ProfileTab({
                 setError(null);
               }}
               placeholder="Ludovic Sanchez"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -249,7 +249,7 @@ export function ProfileTab({
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ludo"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -263,7 +263,7 @@ export function ProfileTab({
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Synoptïa"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -274,7 +274,7 @@ export function ProfileTab({
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Entrepreneur IA"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -288,7 +288,7 @@ export function ProfileTab({
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ludo@synoptia.fr"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -299,7 +299,7 @@ export function ProfileTab({
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Manosque, France"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
@@ -313,7 +313,7 @@ export function ProfileTab({
             value={profileForm.address}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
             placeholder="294 Montée des Genêts, 04100 Manosque"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
           />
         </div>
 
@@ -326,7 +326,7 @@ export function ProfileTab({
               value={profileForm.siren}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
               placeholder="991 606 781"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -337,7 +337,7 @@ export function ProfileTab({
               value={profileForm.tva_intra}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
               placeholder="FR 08 991 606 781"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
         </div>
@@ -352,7 +352,7 @@ export function ProfileTab({
               value={profileForm.siret}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
               placeholder="991 606 781 00011"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
           <div>
@@ -363,7 +363,7 @@ export function ProfileTab({
               value={profileForm.code_ape}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
               placeholder="6202A"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
         </div>
@@ -376,7 +376,7 @@ export function ProfileTab({
             value={profileForm.nda}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
             placeholder="93 04 01236 04"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
           />
         </div>
 
@@ -393,7 +393,7 @@ export function ProfileTab({
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
+            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none"
           />
         </div>
       </div>
@@ -434,7 +434,7 @@ function DemoModeSection() {
   return (
     <div className="space-y-3 pt-4 border-t border-border/30">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
+        <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
           <Eye className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div className="flex-1">
@@ -458,7 +458,7 @@ function DemoModeSection() {
       </div>
 
       {demoEnabled && (
-        <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+        <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
           <span className="text-sm text-accent-cyan-ink">
             Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
           </span>

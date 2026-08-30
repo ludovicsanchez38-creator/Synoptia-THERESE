@@ -10,12 +10,12 @@ export function TypingIndicator() {
       className="flex gap-3"
     >
       {/* Avatar with glow */}
-      <div className="w-8 h-8 rounded-lg bg-accent-cyan/20 text-accent-cyan-ink flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(34,211,238,0.3)]">
+      <div className="w-8 h-8 rounded-md bg-accent-cyan/20 text-accent-cyan-ink flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(34,211,238,0.3)]">
         <Bot className="w-4 h-4" />
       </div>
 
       {/* Typing indicator with premium styling */}
-      <div className="bg-surface-elevated border border-border hover:border-accent-cyan/20 rounded-2xl px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all">
+      <div className="bg-surface-elevated border border-border hover:border-accent-cyan/20 rounded-md px-4 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.2)] transition-all">
         <div className="flex items-center gap-2">
           <Sparkles className="w-3 h-3 text-accent-cyan-ink" />
           <div className="flex items-center gap-1.5">

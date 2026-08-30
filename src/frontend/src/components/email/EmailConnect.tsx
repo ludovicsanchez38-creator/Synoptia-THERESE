@@ -61,7 +61,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
       <div className="max-w-md w-full mx-auto space-y-6 py-4">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-[10px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-md bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
             <Mail className="w-8 h-8 text-accent-cyan-ink" />
           </div>
           <h3 className="text-2xl font-semibold text-text">Connecter Gmail</h3>
@@ -71,7 +71,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
         </div>
 
         {/* Instructions */}
-        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg space-y-2">
+        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md space-y-2">
           <p className="text-sm text-text font-medium">Configuration requise :</p>
           <ol className="text-sm text-text-muted space-y-1 list-decimal list-inside">
             <li>
@@ -101,7 +101,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               placeholder="123456789-abc...apps.googleusercontent.com"
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
               disabled={loading}
             />
           </div>
@@ -113,20 +113,20 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}
               placeholder="GOCSPX-..."
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
               disabled={loading}
             />
           </div>
 
           {error && (
-            <div role="alert" className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-lg">
+            <div role="alert" className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-md">
               <AlertCircle className="w-4 h-4 text-error shrink-0" />
               <p className="text-sm text-error">{error}</p>
             </div>
           )}
 
           {authUrl && (
-            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-md">
               <p className="text-sm text-green-400">
                 Fenêtre d'autorisation ouverte. Suis les instructions.
               </p>

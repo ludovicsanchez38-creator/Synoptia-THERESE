@@ -130,9 +130,9 @@ export function AboutTab() {
   return (
     <div className="space-y-6">
       {/* Version actuelle */}
-      <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
+      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-fill border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-fill border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <span className="text-lg font-bold text-accent-ink">T</span>
           </div>
           <div>
@@ -157,7 +157,7 @@ export function AboutTab() {
 
       {/* US-012 : communauté et retours - le testeur alpha doit pouvoir
           signaler un bug sans connaître l'URL Discord par coeur */}
-      <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
+      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
           <MessageSquareWarning className="w-4 h-4 text-accent-cyan-ink" />
           Un bug ? Une idée ?
@@ -179,7 +179,7 @@ export function AboutTab() {
       </div>
 
       {/* Vérification des mises à jour */}
-      <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
+      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
           <RefreshCw className="w-4 h-4 text-accent-cyan-ink" />
           Mises à jour

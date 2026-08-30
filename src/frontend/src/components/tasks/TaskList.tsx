@@ -119,7 +119,7 @@ export function TaskList() {
               whileHover={{ scale: 1.005 }}
               whileTap={{ scale: 0.995 }}
               onClick={() => handleTaskClick(task.id)}
-              className={`p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-lg border border-border/30 cursor-pointer transition-colors ${
+              className={`p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors ${
                 isDone ? 'opacity-60' : ''
               }`}
             >
@@ -197,7 +197,7 @@ export function TaskList() {
                           {task.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan-ink rounded"
+                              className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan-ink rounded-sm"
                             >
                               {tag}
                             </span>
@@ -209,7 +209,7 @@ export function TaskList() {
                     {/* Delete Button */}
                     <button
                       onClick={(e) => handleDelete(task.id, e)}
-                      className="p-1 hover:bg-error/20 rounded transition-colors"
+                      className="p-1 hover:bg-error/20 rounded-sm transition-colors"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />

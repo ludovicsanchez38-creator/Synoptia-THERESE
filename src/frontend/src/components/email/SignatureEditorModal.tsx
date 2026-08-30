@@ -127,11 +127,11 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${Z_LAYER.MODAL} w-full max-w-3xl`}
       >
-        <div className="bg-surface border border-text-muted/20 rounded-xl shadow-2xl p-6">
+        <div className="bg-surface border border-text-muted/20 rounded-md shadow-2xl p-6">
           {/* En-tête */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent-cyan/10">
+              <div className="p-2 rounded-md bg-accent-cyan/10">
                 <Mail className="w-5 h-5 text-accent-cyan-ink" />
               </div>
               <div>
@@ -169,7 +169,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                     value={html}
                     onChange={(e) => setHtml(e.target.value)}
                     placeholder={'<p>Ludovic Sanchez<br/>Synoptïa</p>'}
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-lg text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none font-mono text-sm"
+                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan resize-none font-mono text-sm"
                   />
                 </div>
                 <div>
@@ -179,7 +179,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                   <div
                     role="region"
                     aria-labelledby="signature-preview-label"
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-lg overflow-auto text-sm text-text [&_a]:text-accent-cyan-ink [&_a]:underline"
+                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md overflow-auto text-sm text-text [&_a]:text-accent-cyan-ink [&_a]:underline"
                     dangerouslySetInnerHTML={{ __html: preview }}
                   />
                 </div>
@@ -191,14 +191,14 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-lg transition-colors"
+                  className="px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-md transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <Spinner taille="bouton" />

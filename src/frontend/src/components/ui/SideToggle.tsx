@@ -35,7 +35,7 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
       className={`
         fixed ${Z_LAYER.SIDEBAR} overflow-hidden
         cursor-pointer
-        ${isLeft ? 'left-0 rounded-r-lg' : 'right-0 rounded-l-lg'}
+        ${isLeft ? 'left-0 rounded-r-md' : 'right-0 rounded-l-md'}
       `}
       style={{
         top: '56px',

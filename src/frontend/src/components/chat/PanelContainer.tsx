@@ -165,13 +165,13 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className="relative bg-surface-elevated border border-border rounded-2xl p-6 shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+              className="relative bg-surface-elevated border border-border rounded-md p-6 shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Bouton fermer */}
               <button
                 onClick={closeSaveCommand}
-                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-surface text-text-muted hover:text-text transition-colors"
+                className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-surface text-text-muted hover:text-text transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>

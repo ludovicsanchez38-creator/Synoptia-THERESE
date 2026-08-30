@@ -139,7 +139,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const crmHeader = (
     <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <LayoutDashboard className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -151,7 +151,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       </div>
 
       <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-lg transition-colors text-sm text-text-muted cursor-pointer">
+        <label className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-md transition-colors text-sm text-text-muted cursor-pointer">
           <Upload className="w-4 h-4" />
           <span className="hidden sm:inline">Import .vcf</span>
           <input type="file" accept=".vcf" className="hidden" onChange={handleImportVCF} />
@@ -159,7 +159,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-lg transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
         >
           <UserPlus className="w-4 h-4" />
           Ajouter un contact
@@ -168,7 +168,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
         {!standalone && (
           <button
             onClick={onClose}
-            className="p-2 hover:bg-surface rounded-lg transition-colors"
+            className="p-2 hover:bg-surface rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
           </button>
@@ -188,7 +188,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors relative
+              flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors relative
               ${
                 isActive
                   ? 'bg-surface text-text-primary'
@@ -214,7 +214,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const crmContent = (
     <div className="flex-1 overflow-auto p-6">
       {error && (
-        <div role="alert" className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
           <p className="text-sm text-error">{error}</p>
         </div>
       )}
@@ -258,7 +258,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                 </div>
                 <button
                   onClick={() => setShowAddActivity(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-lg transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
                 >
                   <Plus className="w-4 h-4" />
                   Ajouter une activité
@@ -338,7 +338,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`fixed inset-8 bg-background border border-surface rounded-xl shadow-2xl ${Z_LAYER.MODAL} flex flex-col`}
+            className={`fixed inset-8 bg-background border border-surface rounded-md shadow-2xl ${Z_LAYER.MODAL} flex flex-col`}
           >
             {crmHeader}
             {crmTabs}
@@ -414,18 +414,18 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-surface border border-border rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"
+        className="relative bg-surface border border-border rounded-md shadow-2xl p-6 w-full max-w-lg mx-4"
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouveau contact</h3>
-          <button onClick={onClose} className="p-1 hover:bg-background rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-background rounded-md transition-colors">
             <X className="w-5 h-5 text-text-muted" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
-            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
               <p className="text-sm text-error">{formError}</p>
             </div>
           )}
@@ -436,7 +436,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="text"
                 value={form.first_name}
                 onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
                 required
               />
             </div>
@@ -446,7 +446,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="text"
                 value={form.last_name || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
               />
             </div>
           </div>
@@ -457,7 +457,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               type="text"
               value={form.company || ''}
               onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
             />
           </div>
 
@@ -468,7 +468,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="email"
                 value={form.email || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
               />
             </div>
             <div>
@@ -477,7 +477,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 type="tel"
                 value={form.phone || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
               />
             </div>
           </div>
@@ -490,7 +490,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 value={form.source || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))}
                 placeholder="LinkedIn, Site web..."
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
               />
             </div>
             <div>
@@ -498,7 +498,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
               <select id="crmpanel-stage"
                 value={form.stage}
                 onChange={(e) => setForm(prev => ({ ...prev, stage: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
+                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-accent-cyan outline-none"
               >
                 {STAGES.map(s => (
                   <option key={s.id} value={s.id}>{s.label}</option>
@@ -511,14 +511,14 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-lg transition-colors"
+              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-md transition-colors"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={!form.first_name.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Création...' : 'Créer le contact'}
             </button>
@@ -622,7 +622,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
             <button
               key={chip.id}
               onClick={() => setFilter(chip.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                   : 'bg-surface text-text-muted hover:bg-surface-elevated'
@@ -673,7 +673,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
                   <Icon className="w-4 h-4" />
                 </div>
 
-                <div className="flex-1 bg-surface rounded-lg p-3">
+                <div className="flex-1 bg-surface rounded-md p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
@@ -766,18 +766,18 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-surface border border-border rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"
+        className="relative bg-surface border border-border rounded-md shadow-2xl p-6 w-full max-w-lg mx-4"
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouvelle activité</h3>
-          <button onClick={onClose} className="p-1 hover:bg-background rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-background rounded-md transition-colors">
             <X className="w-5 h-5 text-text-muted" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {activityError && (
-            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
               <p className="text-sm text-error">{activityError}</p>
             </div>
           )}
@@ -792,7 +792,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
                     key={at.id}
                     type="button"
                     onClick={() => setType(at.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                         : 'bg-background text-text-muted hover:bg-background/80'
@@ -813,7 +813,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Appel de suivi, Envoi devis..."
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none"
               required
             />
           </div>
@@ -825,7 +825,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Détails de l'activité..."
               rows={3}
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none resize-none"
+              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted/50 focus:ring-2 focus:ring-accent-cyan outline-none resize-none"
             />
           </div>
 
@@ -833,14 +833,14 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-lg transition-colors"
+              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-md transition-colors"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={!title.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-lg hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Ajout...' : 'Ajouter'}
             </button>

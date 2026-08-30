@@ -66,7 +66,7 @@ export function Notifications() {
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 50, scale: 0.9 }}
               transition={{ duration: reduceMotion ? 0 : 0.2 }}
               className={cn(
-                'flex items-start gap-3 p-4 rounded-xl border shadow-lg backdrop-blur-sm',
+                'flex items-start gap-3 p-4 rounded-md border shadow-lg backdrop-blur-sm',
                 colors[notification.type]
               )}
             >
@@ -82,7 +82,7 @@ export function Notifications() {
               </div>
               <button
                 onClick={() => dismissNotification(notification.id)}
-                className="p-1 hover:bg-surface rounded transition-colors"
+                className="p-1 hover:bg-surface rounded-sm transition-colors"
               >
                 <X className="w-4 h-4 text-text-muted" />
               </button>

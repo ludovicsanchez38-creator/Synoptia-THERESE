@@ -142,7 +142,7 @@ export function AtelierPanel() {
       <div className="flex flex-col border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
               <Zap size={14} className="text-purple-400" />
             </div>
             <span className="text-sm font-semibold text-text">Atelier</span>
@@ -186,7 +186,7 @@ export function AtelierPanel() {
 
           <button
             onClick={handleClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-2 hover:text-text"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-2 hover:text-text"
           >
             <X size={16} />
           </button>
@@ -196,12 +196,12 @@ export function AtelierPanel() {
         {showModelBadge && activeView !== "agents" && (
           <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-text-muted">
             {katiaModel && (
-              <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
+              <span className="rounded-sm bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
                 Katia: {katiaModel}
               </span>
             )}
             {zezetteModel && (
-              <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-400">
+              <span className="rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-amber-400">
                 Zézette: {zezetteModel}
               </span>
             )}
@@ -232,7 +232,7 @@ export function AtelierPanel() {
 
             {/* Input */}
             {pendingMessage && (
-              <div className="mx-3 mb-2 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
+              <div className="mx-3 mb-2 rounded-md border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
                 <div className="font-semibold">Confirmer la mission de code</div>
                 <p className="mt-1 leading-relaxed text-text-muted">
                   Katia et Zézette pourront lire le dépôt, transmettre les extraits utiles au modèle configuré,
@@ -327,10 +327,10 @@ function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <div className="flex gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-500/10">
           <Headphones size={24} className="text-purple-400" />
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-amber-500/10">
           <Wrench size={24} className="text-amber-400" />
         </div>
       </div>

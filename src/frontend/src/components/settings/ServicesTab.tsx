@@ -83,7 +83,7 @@ export function ServicesTab({
   return (
     <div className="space-y-6">
       {error && (
-        <div role="alert" className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+        <div role="alert" className="rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
           {error}
         </div>
       )}
@@ -96,7 +96,7 @@ export function ServicesTab({
 
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <ImageIcon className="w-5 h-5 text-purple-400" />
           </div>
           <div>
@@ -123,7 +123,7 @@ export function ServicesTab({
                   tabIndex={selectedImageProvider === provider.id ? 0 : -1}
                   onClick={() => onSelectImageProvider(provider.id)}
                   onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                  className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left ${
                     selectedImageProvider === provider.id
                       ? 'bg-accent-cyan/10 border-accent-cyan/50'
                       : 'bg-background/40 border-border/50 hover:border-border'
@@ -144,11 +144,11 @@ export function ServicesTab({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text">{provider.name}</span>
                       {hasImageKey ? (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-success-tint)] text-success">
+                        <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-success-tint)] text-success">
                           Clé OK
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
+                        <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
                           Clé requise
                         </span>
                       )}
@@ -175,7 +175,7 @@ export function ServicesTab({
                           }
                         }}
                         placeholder={provider.keyPlaceholder}
-                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                        className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
                       />
                       <button
                         type="button"
@@ -219,7 +219,7 @@ export function ServicesTab({
       {/* Transcription vocale Groq */}
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Mic className="w-5 h-5 text-accent-magenta-ink" />
           </div>
           <div>
@@ -231,12 +231,12 @@ export function ServicesTab({
         </div>
 
         {hasGroqKey ? (
-          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
             <Check className="w-4 h-4 text-success" />
             <span className="text-sm text-success">Dictée vocale active</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-lg">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
             <AlertCircle className="w-4 h-4 text-warning" />
             <span className="text-sm text-warning">Dictée vocale désactivée</span>
           </div>
@@ -260,7 +260,7 @@ export function ServicesTab({
                   }
                 }}
                 placeholder="gsk_..."
-                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
+                className="w-full px-3 py-2 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan transition-colors font-mono"
               />
               <button
                 type="button"
@@ -297,7 +297,7 @@ export function ServicesTab({
       {/* Recherche Web */}
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Globe className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1">
@@ -357,7 +357,7 @@ export function ServicesTab({
               value={braveKeyInput}
               onChange={(e) => setBraveKeyInput(e.target.value)}
               placeholder="BSA..."
-              className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+              className="flex-1 px-3 py-1.5 rounded-md bg-surface border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
             <Button variant="primary" size="sm" onClick={onSaveBraveKey} disabled={braveSaving || !braveKeyInput.trim()} className="text-xs px-3">
               {braveSaving ? <Spinner taille="ligne" /> : braveSaved ? <Check className="w-3 h-3" /> : 'Sauver'}
@@ -370,7 +370,7 @@ export function ServicesTab({
       {/* Extraction automatique */}
       <div className="pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-accent" />
           </div>
           <div className="flex-1">

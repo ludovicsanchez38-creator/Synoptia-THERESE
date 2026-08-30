@@ -201,7 +201,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
       {/* Header */}
       <div className="mb-5 text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cyan-500/10">
           <Bot size={20} className="text-cyan-400" />
         </div>
         <h3 className="mb-1 text-sm font-semibold text-text">
@@ -215,7 +215,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
       {/* Selecteur de modele LLM */}
       {availableModels.length > 0 && (
         <div className="mb-4 space-y-2">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
             <Brain size={14} className="shrink-0 text-cyan-400" />
             <select aria-label="Modèle de l’agent"
               value={selectedModel}
@@ -246,7 +246,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           </div>
 
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+          <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
             <span className="shrink-0 text-[10px] text-cyan-400/70">OR</span>
             <input aria-label="Modèle personnalisé"
               type="text"
@@ -296,11 +296,11 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.06 }}
               onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
-              className={`group flex flex-col items-center gap-2 rounded-xl border ${colors.border} bg-surface p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-surface-elevated`}
+              className={`group flex flex-col items-center gap-2 rounded-md border ${colors.border} bg-surface p-4 text-center transition-all hover:border-cyan-400/50 hover:bg-surface-elevated`}
             >
               {/* Icone */}
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-lg ${colors.bg} transition-transform group-hover:scale-110`}
+                className={`flex h-10 w-10 items-center justify-center rounded-md ${colors.bg} transition-transform group-hover:scale-110`}
               >
                 {(() => {
                   const IconComponent = PROFILE_ICONS[profile.id];

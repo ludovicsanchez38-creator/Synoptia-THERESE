@@ -36,7 +36,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'rounded-2xl border p-6',
+        'rounded-md border p-6',
         'bg-surface-elevated',
         'border-accent-cyan/30'
       )}
@@ -48,7 +48,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
           Synthèse du Board
         </h3>
         <span className={cn(
-          'px-3 py-1 rounded-[6px] text-xs font-medium',
+          'px-3 py-1 rounded-sm text-xs font-medium',
           config.bg,
           config.border,
           config.color,
@@ -60,7 +60,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
 
       {/* Recommendation */}
       <div className={cn(
-        'mb-6 p-4 rounded-xl',
+        'mb-6 p-4 rounded-md',
         'bg-accent-cyan/5 border border-accent-cyan/20'
       )}>
         <h4 className="text-sm font-medium text-accent-cyan-ink mb-2">

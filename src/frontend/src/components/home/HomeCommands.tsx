@@ -171,8 +171,8 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
         className="text-center mb-8"
       >
         <div className="relative w-20 h-20 mx-auto mb-4">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
-          <div className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
+          <div className="absolute inset-0 rounded-md bg-gradient-to-br from-accent-cyan/40 to-accent-magenta/40 blur-xl animate-pulse" />
+          <div className="relative w-full h-full rounded-md overflow-hidden border-2 border-accent-cyan/30 shadow-[0_0_40px_rgba(34,211,238,0.3)]">
             <CharacterPortrait index={0} className="h-full w-full" />
           </div>
         </div>
@@ -235,7 +235,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
 
             {/* Header avec icône et question */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center justify-center w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
+              <div className="flex items-center justify-center w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
                 <selectedCategory.icon className="w-6 h-6 text-accent-cyan-ink" />
               </div>
               <div>
@@ -264,14 +264,14 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                             setShowMoveMenuId(showMoveMenuId === cmd.id ? null : cmd.id);
                             setConfirmDeleteId(null);
                           }}
-                          className="p-1 rounded-[6px] hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan-ink transition-colors"
+                          className="p-1 rounded-sm hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan-ink transition-colors"
                           title="Déplacer"
                         >
                           <ArrowRightLeft className="w-3 h-3" />
                         </button>
                         {/* Menu de déplacement */}
                         {showMoveMenuId === cmd.id && (
-                          <div className={`absolute top-full left-0 mt-1 ${Z_LAYER.DROPDOWN} bg-surface border border-border rounded-lg shadow-xl py-1 min-w-[140px]`}>
+                          <div className={`absolute top-full left-0 mt-1 ${Z_LAYER.DROPDOWN} bg-surface border border-border rounded-md shadow-xl py-1 min-w-[140px]`}>
                             {CATEGORY_BLOCKS.filter((cat) => cat.id !== selectedCategory.id).map((cat) => (
                               <button
                                 key={cat.id}
@@ -296,7 +296,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                               e.stopPropagation();
                               handleDeleteCommand(cmd.id);
                             }}
-                            className="px-2 py-0.5 rounded text-xs font-medium bg-error/20 text-error hover:bg-error/30 transition-colors"
+                            className="px-2 py-0.5 rounded-sm text-xs font-medium bg-error/20 text-error hover:bg-error/30 transition-colors"
                           >
                             Confirmer
                           </button>
@@ -305,7 +305,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                               e.stopPropagation();
                               setConfirmDeleteId(null);
                             }}
-                            className="px-2 py-0.5 rounded text-xs font-medium text-text-muted hover:text-text transition-colors"
+                            className="px-2 py-0.5 rounded-sm text-xs font-medium text-text-muted hover:text-text transition-colors"
                           >
                             Annuler
                           </button>
@@ -374,7 +374,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleCategoryClick(cat)}
                   className={cn(
-                    'group relative flex flex-col items-start p-4 rounded-xl',
+                    'group relative flex flex-col items-start p-4 rounded-md',
                     'bg-surface-elevated/60 backdrop-blur-sm',
                     'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
                     'hover:shadow-[var(--shadow-card)]',
@@ -384,7 +384,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                 >
                   {/* Icon container */}
                   <div
-                    className="relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3 border-[1.5px] border-[var(--btn-ink)]"
+                    className="relative flex items-center justify-center w-10 h-10 rounded-sm mb-3 border-[1.5px] border-[var(--btn-ink)]"
                     style={{ background: `var(--k${(index % 4) + 1}bg)`, color: `var(--k${(index % 4) + 1})` }}
                   >
                     <cat.icon className="w-5 h-5" />
@@ -413,7 +413,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setShowPromptLibrary(true)}
                 className={cn(
-                  'group relative flex flex-col items-start p-4 rounded-xl',
+                  'group relative flex flex-col items-start p-4 rounded-md',
                   'bg-surface-elevated/60 backdrop-blur-sm',
                   'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
                   'hover:shadow-[var(--shadow-card)]',
@@ -422,7 +422,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                 )}
               >
                 <div
-                  className="relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3 border-[1.5px] border-[var(--btn-ink)]"
+                  className="relative flex items-center justify-center w-10 h-10 rounded-sm mb-3 border-[1.5px] border-[var(--btn-ink)]"
                   style={{ background: 'var(--k4bg)', color: 'var(--k4)' }}
                 >
                   <BookOpen className="w-5 h-5" />

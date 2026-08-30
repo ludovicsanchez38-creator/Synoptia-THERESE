@@ -129,7 +129,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
         className="mb-8"
       >
-        <div className="w-24 h-24 rounded-2xl bg-accent-cyan/10 flex items-center justify-center border border-border/30">
+        <div className="w-24 h-24 rounded-md bg-accent-cyan/10 flex items-center justify-center border border-border/30">
           <PartyPopper className="w-12 h-12 text-accent-cyan-ink" />
         </div>
       </motion.div>
@@ -157,12 +157,12 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         className="w-full max-w-md space-y-3 mb-6"
       >
         {loading && (
-          <div role="status" className="rounded-xl border border-info/40 bg-[var(--color-info-tint)] p-4 text-sm text-info">
+          <div role="status" className="rounded-md border border-info/40 bg-[var(--color-info-tint)] p-4 text-sm text-info">
             Vérification de la configuration…
           </div>
         )}
         {!loading && summaryUnavailable.length > 0 && (
-          <div role="alert" className="rounded-xl border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-left text-sm text-warning">
+          <div role="alert" className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-left text-sm text-warning">
             <p><strong>Récapitulatif partiel.</strong> Indisponible{summaryUnavailable.length > 1 ? 's' : ''} : {summaryUnavailable.join(', ')}.</p>
             <button type="button" onClick={() => void loadSummary()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer</button>
           </div>
@@ -173,10 +173,10 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 + index * 0.1 }}
-            className="flex items-center gap-3 p-4 rounded-xl bg-background/40 border border-border/30 text-left"
+            className="flex items-center gap-3 p-4 rounded-md bg-background/40 border border-border/30 text-left"
           >
             <div
-              className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+              className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
                 item.configured
                   ? 'bg-[var(--color-success-tint)] text-success'
                   : 'bg-[var(--color-warning-tint)] text-warning'
@@ -199,7 +199,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
-        className="mb-6 p-3 rounded-xl bg-accent-cyan/5 border border-accent-cyan/20 text-left w-full max-w-md"
+        className="mb-6 p-3 rounded-md bg-accent-cyan/5 border border-accent-cyan/20 text-left w-full max-w-md"
       >
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-accent-cyan-ink" />
@@ -215,7 +215,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 rounded-xl bg-[var(--color-error-tint)] border border-error/40 text-left w-full max-w-md"
+          className="mb-4 p-3 rounded-md bg-[var(--color-error-tint)] border border-error/40 text-left w-full max-w-md"
           role="alert"
         >
           <div className="flex items-center gap-2">

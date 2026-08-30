@@ -413,7 +413,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         transition={{ duration: 0.2 }}
         className={cn(
           'relative w-full max-w-4xl max-h-[90vh] mx-4',
-          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
           'shadow-2xl overflow-hidden flex flex-col'
         )}
         onClick={(e) => e.stopPropagation()}
@@ -426,7 +426,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-elevated transition-colors"
+            className="p-2 rounded-md hover:bg-surface-elevated transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
           </button>
@@ -436,7 +436,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
           {billingMissing && billingMissing.length > 0 && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/30">
               <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
               <p className="text-sm text-warning">
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
@@ -457,7 +457,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                     type="button"
                     onClick={() => setDocumentType(type)}
                     className={cn(
-                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      'px-4 py-2 rounded-md text-sm font-medium transition-colors',
                       documentType === type
                         ? 'bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/50'
                         : 'bg-surface border border-border/50 text-text-muted hover:bg-surface-elevated'
@@ -481,7 +481,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 value={contactId}
                 onChange={(e) => setContactId(e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg',
+                  'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text placeholder:text-text-muted/70',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -506,7 +506,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 value={status}
                 onChange={(e) => setStatus(e.target.value as typeof status)}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg',
+                  'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -544,7 +544,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg',
+                  'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -568,7 +568,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg',
+                  'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -587,7 +587,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className={cn(
-                  'w-full px-3 py-2 rounded-lg',
+                  'w-full px-3 py-2 rounded-md',
                   'bg-bg border border-border/50',
                   'text-text',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -609,7 +609,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   value={validiteJours}
                   onChange={(e) => setValiditeJours(parseInt(e.target.value, 10) || 30)}
                   className={cn(
-                    'w-full px-3 py-2 rounded-lg',
+                    'w-full px-3 py-2 rounded-md',
                     'bg-bg border border-border/50',
                     'text-text',
                     'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -628,7 +628,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <button
                 type="button"
                 onClick={addLine}
-                className="px-3 py-1 rounded-lg bg-accent-cyan/20 text-accent-cyan-ink hover:bg-accent-cyan/30 transition-colors flex items-center gap-2"
+                className="px-3 py-1 rounded-md bg-accent-cyan/20 text-accent-cyan-ink hover:bg-accent-cyan/30 transition-colors flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter une ligne
@@ -640,7 +640,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 const { totalHT } = calculateLineTotals(line, index);
 
                 return (
-                  <div key={index} className="p-4 rounded-lg bg-bg border border-border/50 space-y-3">
+                  <div key={index} className="p-4 rounded-md bg-bg border border-border/50 space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
                         <input aria-label="Description de la ligne"
@@ -649,7 +649,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                           value={line.description}
                           onChange={(e) => updateLine(index, 'description', e.target.value)}
                           className={cn(
-                            'w-full px-3 py-2 rounded-lg',
+                            'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text placeholder:text-text-muted/70',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -661,7 +661,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <button
                         type="button"
                         onClick={() => removeLine(index)}
-                        className="p-2 rounded-lg bg-error/10 hover:bg-error/20 transition-colors"
+                        className="p-2 rounded-md bg-error/10 hover:bg-error/20 transition-colors"
                       >
                         <Trash2 className="w-4 h-4 text-error" />
                       </button>
@@ -677,7 +677,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                           value={lineInputs[index]?.quantity ?? formatDecimalInput(line.quantity)}
                           onChange={(e) => updateDecimalLineInput(index, 'quantity', e.target.value)}
                           className={cn(
-                            'w-full px-3 py-2 rounded-lg',
+                            'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -695,7 +695,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                           value={lineInputs[index]?.unit_price_ht ?? formatDecimalInput(line.unit_price_ht)}
                           onChange={(e) => updateDecimalLineInput(index, 'unit_price_ht', e.target.value)}
                           className={cn(
-                            'w-full px-3 py-2 rounded-lg',
+                            'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -710,7 +710,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                           value={line.tva_rate}
                           onChange={(e) => updateLine(index, 'tva_rate', parseFloat(e.target.value))}
                           className={cn(
-                            'w-full px-3 py-2 rounded-lg',
+                            'w-full px-3 py-2 rounded-md',
                             'bg-surface border border-border/50',
                             'text-text',
                             'focus:outline-none focus:ring-2 focus:ring-accent-cyan'
@@ -726,7 +726,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Total HT</label>
-                        <div className="px-3 py-2 rounded-lg bg-surface-elevated text-text font-medium">
+                        <div className="px-3 py-2 rounded-md bg-surface-elevated text-text font-medium">
                           {totalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}
                         </div>
                       </div>
@@ -748,7 +748,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               className={cn(
-                'w-full px-3 py-2 rounded-lg',
+                'w-full px-3 py-2 rounded-md',
                 'bg-bg border border-border/50',
                 'text-text placeholder:text-text-muted/70',
                 'focus:outline-none focus:ring-2 focus:ring-accent-cyan',
@@ -760,7 +760,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
           {/* Payment info (read-only if present from conversion) */}
           {invoice?.payment_terms && (
-            <div className="p-4 rounded-lg bg-surface-elevated/30 border border-border/50 space-y-2">
+            <div className="p-4 rounded-md bg-surface-elevated/30 border border-border/50 space-y-2">
               <h3 className="text-sm font-medium text-text mb-2">Conditions de paiement</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
@@ -787,7 +787,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
           )}
 
           {/* Totals */}
-          <div className="p-4 rounded-lg bg-surface-elevated/50 border border-border/50 space-y-2">
+          <div className="p-4 rounded-md bg-surface-elevated/50 border border-border/50 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-muted">Total HT</span>
               <span className="font-medium text-text">{subtotalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
@@ -811,7 +811,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <button
                 type="button"
                 onClick={handleMarkPaid}
-                className="px-4 py-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
+                className="px-4 py-2 rounded-md bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
               >
                 Marquer comme payée
               </button>
@@ -822,14 +822,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('accepted')}
-                  className="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
                 >
                   Accepter
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('refused')}
-                  className="px-3 py-2 rounded-lg bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors text-sm font-medium"
                 >
                   Refuser
                 </button>
@@ -843,7 +843,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 onClick={() => setShowConvertDialog(true)}
                 disabled={isConverting}
                 className={cn(
-                  'px-4 py-2 rounded-lg font-medium transition-colors',
+                  'px-4 py-2 rounded-md font-medium transition-colors',
                   'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
                   'flex items-center gap-2',
                   isConverting && 'opacity-50 cursor-not-allowed'
@@ -859,7 +859,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
+              className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
             >
               Annuler
             </button>
@@ -868,7 +868,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               onClick={handleSubmit}
               disabled={isSaving}
               className={cn(
-                'px-4 py-2 rounded-lg font-medium transition-colors',
+                'px-4 py-2 rounded-md font-medium transition-colors',
                 'bg-accent-cyan text-bg hover:bg-accent-cyan/90',
                 'flex items-center gap-2',
                 isSaving && 'opacity-50 cursor-not-allowed'
@@ -886,14 +886,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             className="absolute inset-0 z-10 flex items-center justify-center"
             onClick={() => setShowConvertDialog(false)}
           >
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl" />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-md" />
             <div
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la conversion"
               className={cn(
                 'relative w-full max-w-md mx-4 p-6',
-                'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+                'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
                 'shadow-2xl space-y-4'
               )}
               onClick={(e) => e.stopPropagation()}
@@ -903,7 +903,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 Une facture sera créée à partir du devis <strong>{invoice?.invoice_number}</strong> avec
                 les mêmes lignes et montants. Le devis sera marqué comme converti.
               </p>
-              <div className="p-3 rounded-lg bg-surface-elevated/50 border border-border/30 text-sm space-y-1">
+              <div className="p-3 rounded-md bg-surface-elevated/50 border border-border/30 text-sm space-y-1">
                 <p className="text-text-muted">
                   <span className="font-medium text-text">Conditions :</span> 30 jours, virement bancaire
                 </p>
@@ -914,14 +914,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowConvertDialog(false)}
-                  className="px-4 py-2 rounded-lg bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
+                  className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleConvertToInvoice}
                   className={cn(
-                    'px-4 py-2 rounded-lg font-medium transition-colors',
+                    'px-4 py-2 rounded-md font-medium transition-colors',
                     'bg-purple-500 text-white hover:bg-purple-600',
                     'flex items-center gap-2'
                   )}

@@ -24,7 +24,7 @@ export function AccessibilityTab() {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <Accessibility className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -51,7 +51,7 @@ export function AccessibilityTab() {
               tabIndex={theme === v ? 0 : -1}
               onClick={() => setTheme(v)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
+              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 theme === v
                   ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
@@ -105,7 +105,7 @@ export function AccessibilityTab() {
               tabIndex={fontSize === size ? 0 : -1}
               onClick={() => setFontSize(size)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
+              className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 fontSize === size
                   ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
@@ -176,7 +176,7 @@ export function AccessibilityTab() {
       </div>
 
       {/* Boîte d'information */}
-      <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+      <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
         <div className="flex items-start gap-2">
           <Accessibility className="w-4 h-4 text-accent-cyan-ink mt-0.5" />
           <div className="text-sm text-accent-cyan-ink">

@@ -48,7 +48,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       >
         <CharacterPortrait
           index={0}
-          className="mx-auto mb-6 h-24 w-24 rounded-2xl border border-border/30"
+          className="mx-auto mb-6 h-24 w-24 rounded-md border border-border/30"
         />
         <h1 className="mb-3 text-3xl font-bold text-text sm:text-4xl">
           Bienvenue sur THÉRÈSE
@@ -71,9 +71,9 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 + index * 0.1 }}
-            className="p-4 rounded-xl bg-background/40 border border-border/30"
+            className="p-4 rounded-md bg-background/40 border border-border/30"
           >
-            <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center mb-3 mx-auto">
+            <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center mb-3 mx-auto">
               <feature.icon className="w-5 h-5 text-accent-cyan-ink" />
             </div>
             <h3 className="font-medium text-text text-sm mb-1">{feature.title}</h3>
@@ -89,7 +89,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ delay: 0.7 }}
         onClick={onNext}
         data-testid="onboarding-next-btn"
-        className="px-8 py-3 rounded-xl bg-accent-cyan text-background font-medium hover:bg-accent-cyan/90 transition-colors"
+        className="px-8 py-3 rounded-md bg-accent-cyan text-background font-medium hover:bg-accent-cyan/90 transition-colors"
       >
         Commencer la configuration
       </motion.button>

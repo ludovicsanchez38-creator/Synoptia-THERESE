@@ -126,7 +126,7 @@ export function TaskForm() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCancel}
-            className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+            className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />
           </button>
@@ -153,7 +153,7 @@ export function TaskForm() {
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {error && (
-          <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
             <p className="text-sm text-error">{error}</p>
           </div>
         )}
@@ -166,7 +166,7 @@ export function TaskForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de la tâche"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
         </div>
 
@@ -178,7 +178,7 @@ export function TaskForm() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de la tâche"
             rows={4}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 resize-none focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 resize-none focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
         </div>
 
@@ -189,7 +189,7 @@ export function TaskForm() {
             <select id="taskform-statut"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
             >
               <option value="todo">À faire</option>
               <option value="in_progress">En cours</option>
@@ -203,7 +203,7 @@ export function TaskForm() {
             <select id="taskform-priorite"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
             >
               <option value="low">Basse</option>
               <option value="medium">Moyenne</option>
@@ -220,7 +220,7 @@ export function TaskForm() {
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
         </div>
 
@@ -232,7 +232,7 @@ export function TaskForm() {
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="design, urgent, client"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
           <p className="text-xs text-text-muted mt-1">Séparez les tags par des virgules</p>
         </div>
@@ -243,7 +243,7 @@ export function TaskForm() {
           <select id="taskform-projet-lie"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           >
             <option value="">Aucun</option>
             // Map projects here

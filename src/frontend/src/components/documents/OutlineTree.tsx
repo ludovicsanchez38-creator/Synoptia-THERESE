@@ -48,7 +48,7 @@ function StatusTag({ status }: { status: DocumentSection['status'] }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-[6px] border ${meta.className}`}
+      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
     >
       {meta.label}
     </span>
@@ -139,13 +139,13 @@ export function OutlineTree({
       </div>
 
       {error && (
-        <div role="alert" className="mx-3 mt-2 px-3 py-2 rounded-[6px] border border-error/30 bg-error/10 text-xs text-error">
+        <div role="alert" className="mx-3 mt-2 px-3 py-2 rounded-sm border border-error/30 bg-error/10 text-xs text-error">
           {error}
         </div>
       )}
 
       {addingSection && (
-        <div className="mx-3 mt-2 p-3 rounded-lg border border-border/40 bg-surface/60 space-y-2">
+        <div className="mx-3 mt-2 p-3 rounded-md border border-border/40 bg-surface/60 space-y-2">
           <input
             type="text"
             value={newTitle}
@@ -168,7 +168,7 @@ export function OutlineTree({
             <button
               type="button"
               onClick={() => setNewDepth(0)}
-              className={`px-2 py-1 text-xs rounded-[6px] border transition-colors ${
+              className={`px-2 py-1 text-xs rounded-sm border transition-colors ${
                 newDepth === 0
                   ? 'border-accent-cyan text-accent-cyan-ink bg-accent-cyan/10'
                   : 'border-border/40 text-text-muted'
@@ -179,7 +179,7 @@ export function OutlineTree({
             <button
               type="button"
               onClick={() => setNewDepth(1)}
-              className={`px-2 py-1 text-xs rounded-[6px] border transition-colors ${
+              className={`px-2 py-1 text-xs rounded-sm border transition-colors ${
                 newDepth === 1
                   ? 'border-accent-cyan text-accent-cyan-ink bg-accent-cyan/10'
                   : 'border-border/40 text-text-muted'
@@ -282,7 +282,7 @@ interface SectionRowProps {
 function SectionRow({ section, isActive, isOverlay, onSelect }: SectionRowProps) {
   return (
     <div
-      className={`mx-2 my-0.5 rounded-lg border transition-colors ${
+      className={`mx-2 my-0.5 rounded-md border transition-colors ${
         isOverlay
           ? 'shadow-xl ring-2 ring-accent-cyan/30 bg-surface border-border'
           : isActive

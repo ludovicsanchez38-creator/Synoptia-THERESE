@@ -78,7 +78,7 @@ export function DeliverablesList({ projectId }: DeliverablesListProps) {
   return (
     <div className="space-y-4">
       {/* Progress bar */}
-      <div className="bg-surface rounded-lg p-4">
+      <div className="bg-surface rounded-md p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-text-primary">Progression</span>
           <span className="text-sm font-semibold text-accent-cyan-ink">{progress}%</span>
@@ -102,7 +102,7 @@ export function DeliverablesList({ projectId }: DeliverablesListProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="bg-surface rounded-lg p-4 hover:bg-background transition-colors"
+            className="bg-surface rounded-md p-4 hover:bg-background transition-colors"
           >
             <div className="flex items-start gap-3">
               <Icon className={`w-5 h-5 mt-0.5 ${statusInfo.color}`} />
@@ -110,7 +110,7 @@ export function DeliverablesList({ projectId }: DeliverablesListProps) {
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-1">
                   <h4 className="font-medium text-text-primary">{deliverable.title}</h4>
-                  <span className={`text-xs px-2 py-1 rounded ${statusInfo.color} bg-surface`}>
+                  <span className={`text-xs px-2 py-1 rounded-sm ${statusInfo.color} bg-surface`}>
                     {statusInfo.label}
                   </span>
                 </div>

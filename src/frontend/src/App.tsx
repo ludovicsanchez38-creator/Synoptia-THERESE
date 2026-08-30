@@ -192,7 +192,7 @@ function ApplicationBootstrap() {
         {/* Skip link accessibilite (visible uniquement au focus clavier) */}
         <a
           href="#main-content"
-          className={`sr-only focus:not-sr-only focus:absolute focus:${Z_LAYER.MODAL} focus:p-3 focus:bg-accent-cyan focus:text-bg focus:rounded`}
+          className={`sr-only focus:not-sr-only focus:absolute focus:${Z_LAYER.MODAL} focus:p-3 focus:bg-accent-cyan focus:text-bg focus:rounded-sm`}
         >
           Aller au contenu principal
         </a>

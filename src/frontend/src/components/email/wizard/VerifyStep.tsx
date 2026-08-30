@@ -178,11 +178,11 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
 
           {/* URI exacte à ajouter dans Google Cloud Console (prévention redirect_uri_mismatch) */}
           {redirectUri && (
-            <div className="p-3 bg-surface/60 border border-border/50 rounded-lg text-left space-y-1 mt-2">
+            <div className="p-3 bg-surface/60 border border-border/50 rounded-md text-left space-y-1 mt-2">
               <p className="text-xs text-text-muted">
                 Si Google affiche une erreur, ajoute cette URI dans Google Cloud Console :
               </p>
-              <code className="block text-xs text-accent-cyan-ink bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
+              <code className="block text-xs text-accent-cyan-ink bg-background/60 px-2 py-1 rounded-sm font-mono break-all select-all">
                 {redirectUri}
               </code>
             </div>
@@ -193,7 +193,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
             <summary className="text-xs text-text-muted/70 cursor-pointer hover:text-text-muted transition-colors">
               Google affiche une erreur 403 ?
             </summary>
-            <div className="mt-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-1.5 text-xs text-text-muted">
+            <div className="mt-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-md space-y-1.5 text-xs text-text-muted">
               <p className="font-medium text-amber-400">Causes fréquentes :</p>
               <p>• <strong className="text-text">App en mode Test</strong> : ajoute ton email dans Google Cloud Console → Écran de consentement OAuth → Utilisateurs de test.</p>
               <p>• <strong className="text-text">APIs non activées</strong> : active "Gmail API" et "Google Calendar API" dans la Bibliothèque de ton projet.</p>
@@ -226,7 +226,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           </p>
 
           {accountEmail && (
-            <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+            <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
               <p className="text-sm text-text-muted">
                 <strong className="text-text">Compte :</strong> {accountEmail}
               </p>
@@ -254,11 +254,11 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
 
           {/* Si redirect_uri_mismatch, afficher l'URI exacte à copier dans Google Cloud */}
           {(error?.includes('redirect_uri_mismatch') || error?.includes('redirect_uri')) && redirectUri && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-left space-y-1">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-md text-left space-y-1">
               <p className="text-xs font-medium text-amber-400">
                 Ajoute cette URI dans Google Cloud Console → OAuth → URIs de redirection autorisées :
               </p>
-              <code className="block text-xs text-text bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
+              <code className="block text-xs text-text bg-background/60 px-2 py-1 rounded-sm font-mono break-all select-all">
                 {redirectUri}
               </code>
             </div>

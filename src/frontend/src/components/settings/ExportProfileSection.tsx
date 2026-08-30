@@ -91,11 +91,11 @@ export function ExportProfileSection() {
     setProfile({ ...profile, margins_cm: { ...profile.margins_cm, [side]: value } });
 
   const inputCls =
-    'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-accent-cyan/50';
+    'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-accent-cyan/50';
   const labelCls = 'block text-xs text-text-muted mb-1';
 
   return (
-    <section className="rounded-lg border border-border/50 p-4">
+    <section className="rounded-md border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-1">
         <FileDown className="w-4 h-4 text-accent-cyan-ink" />
         Exports Word (Atelier et conversations)
@@ -107,7 +107,7 @@ export function ExportProfileSection() {
       </p>
 
       {warning && (
-        <div className="rounded-lg bg-warning/10 border border-warning/40 p-2.5 mb-3">
+        <div className="rounded-md bg-warning/10 border border-warning/40 p-2.5 mb-3">
           <p className="text-xs text-text">{warning}</p>
         </div>
       )}
@@ -142,19 +142,19 @@ export function ExportProfileSection() {
         <div className="flex items-end gap-2">
           <div className="flex-1">
             <label htmlFor="ep-heading-color" className={labelCls}>Couleur titres</label>
-            <input id="ep-heading-color" type="color" className="h-8 w-full rounded cursor-pointer bg-transparent"
+            <input id="ep-heading-color" type="color" className="h-8 w-full rounded-sm cursor-pointer bg-transparent"
               value={profile.heading_color}
               onChange={(e) => set({ heading_color: e.target.value, title_color: e.target.value })} />
           </div>
           <div className="flex-1">
             <label htmlFor="ep-h2-color" className={labelCls}>Couleur H2</label>
-            <input id="ep-h2-color" type="color" className="h-8 w-full rounded cursor-pointer bg-transparent"
+            <input id="ep-h2-color" type="color" className="h-8 w-full rounded-sm cursor-pointer bg-transparent"
               value={profile.h2_color}
               onChange={(e) => set({ h2_color: e.target.value })} />
           </div>
           <div className="flex-1">
             <label htmlFor="ep-body-color" className={labelCls}>Couleur corps</label>
-            <input id="ep-body-color" type="color" className="h-8 w-full rounded cursor-pointer bg-transparent"
+            <input id="ep-body-color" type="color" className="h-8 w-full rounded-sm cursor-pointer bg-transparent"
               value={profile.body_color}
               onChange={(e) => set({ body_color: e.target.value })} />
           </div>

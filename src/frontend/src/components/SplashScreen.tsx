@@ -201,7 +201,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           {appVersion && (
             <p className="text-text-muted text-xs mb-4">v{appVersion}-alpha</p>
           )}
-          <div className="bg-error/10 border border-error/30 rounded-lg p-4">
+          <div className="bg-error/10 border border-error/30 rounded-md p-4">
             <p className="text-error text-sm">{error}</p>
           </div>
         </div>

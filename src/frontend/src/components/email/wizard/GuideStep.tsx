@@ -45,7 +45,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
       className="space-y-6"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
+        <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
           <HelpCircle className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">
@@ -63,7 +63,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
             onClick={() => handleSelect(true)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-xl hover:border-accent-cyan/60 transition-all text-left"
+            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
           >
             <p className="text-base font-medium text-text">✓ Oui, j'ai déjà des identifiants</p>
             <p className="text-sm text-text-muted mt-1">
@@ -75,7 +75,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
             onClick={() => handleSelect(false)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-xl hover:border-accent-cyan/60 transition-all text-left"
+            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
           >
             <p className="text-base font-medium text-text">✗ Non, guide-moi</p>
             <p className="text-sm text-text-muted mt-1">
@@ -92,7 +92,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+          <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
             {loading ? (
               <p className="text-sm text-text-muted">Génération du guide...</p>
             ) : (

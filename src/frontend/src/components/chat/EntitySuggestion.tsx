@@ -61,7 +61,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      className="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-elevated border border-border"
+      className="flex items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
         <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-cyan-500/20' : 'bg-magenta-500/20'}`}>
@@ -85,14 +85,14 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
           <>
             <button
               onClick={handleSave}
-              className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400 transition-colors"
+              className="p-1 rounded-sm hover:bg-cyan-500/20 text-cyan-400 transition-colors"
               title="Sauvegarder"
             >
               <Check className="w-4 h-4" />
             </button>
             <button
               onClick={handleIgnore}
-              className="p-1 rounded hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+              className="p-1 rounded-sm hover:bg-error/20 text-text-muted hover:text-error transition-colors"
               title="Ignorer"
             >
               <X className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function EntitySuggestion({
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="mt-2 ml-10 overflow-hidden"
     >
-      <div className="p-3 rounded-xl bg-surface border border-border/50">
+      <div className="p-3 rounded-md bg-surface border border-border/50">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-medium text-text-muted">

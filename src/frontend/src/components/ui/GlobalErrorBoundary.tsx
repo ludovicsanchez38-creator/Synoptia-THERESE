@@ -49,13 +49,13 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               Une erreur inattendue s'est produite.
             </p>
             {this.state.error && (
-              <p className="text-text-muted text-sm mb-6 font-mono bg-surface rounded-lg p-3 break-all">
+              <p className="text-text-muted text-sm mb-6 font-mono bg-surface rounded-md p-3 break-all">
                 {sanitizeErrorMessage(this.state.error.message)}
               </p>
             )}
             <button
               onClick={this.handleReload}
-              className="px-6 py-3 bg-accent-cyan text-bg font-semibold rounded-xl hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-bg"
+              className="px-6 py-3 bg-accent-cyan text-bg font-semibold rounded-md hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-accent-cyan focus:ring-offset-2 focus:ring-offset-bg"
             >
               Recharger l'application
             </button>

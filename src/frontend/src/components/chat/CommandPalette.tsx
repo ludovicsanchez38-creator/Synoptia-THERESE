@@ -195,7 +195,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               'relative w-full max-w-lg',
-              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
               'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_40px_rgba(34,211,238,0.1)]',
               'overflow-hidden'
             )}
@@ -218,7 +218,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           />
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-surface-elevated transition-colors"
+            className="p-1 rounded-sm hover:bg-surface-elevated transition-colors"
           >
             <X className="w-4 h-4 text-text-muted" />
           </button>
@@ -268,7 +268,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 {cmd.shortcut && (
                   <kbd
                     className={cn(
-                      'flex-shrink-0 px-1.5 py-0.5 rounded text-xs',
+                      'flex-shrink-0 px-1.5 py-0.5 rounded-sm text-xs',
                       'bg-bg border border-border/50 font-mono',
                       index === selectedIndex && 'border-accent-cyan/30'
                     )}
@@ -286,16 +286,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             <div className="flex items-center justify-between text-xs text-text-muted">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 rounded bg-surface-elevated">↑↓</kbd>
+                  <kbd className="px-1 rounded-sm bg-surface-elevated">↑↓</kbd>
                   naviguer
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 rounded bg-surface-elevated">↵</kbd>
+                  <kbd className="px-1 rounded-sm bg-surface-elevated">↵</kbd>
                   sélectionner
                 </span>
               </div>
               <span className="flex items-center gap-1">
-                <kbd className="px-1 rounded bg-surface-elevated">esc</kbd>
+                <kbd className="px-1 rounded-sm bg-surface-elevated">esc</kbd>
                 fermer
               </span>
             </div>

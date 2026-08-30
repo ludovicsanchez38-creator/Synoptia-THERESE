@@ -74,7 +74,7 @@ function SourceBadge({ source }: { source: string }) {
   return (
     <span
       className={cn(
-        "text-[10px] font-medium px-1.5 py-0.5 rounded-[6px]",
+        "text-[10px] font-medium px-1.5 py-0.5 rounded-sm",
         colors[source] || colors.system
       )}
     >
@@ -104,7 +104,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
       transition={{ duration: reduceMotion ? 0 : 0.15 }}
       onClick={handleClick}
       className={cn(
-        "flex gap-3 p-3 rounded-lg cursor-pointer transition-colors border",
+        "flex gap-3 p-3 rounded-md cursor-pointer transition-colors border",
         notification.is_read
           ? "bg-surface/30 border-transparent hover:bg-surface/50"
           : "bg-surface-elevated/60 border-border/40 hover:bg-surface-elevated/80"
@@ -201,7 +201,7 @@ export function NotificationCenter() {
       {/* Bouton cloche */}
       <button
         onClick={toggle}
-        className="relative w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-elevated/80 transition-colors"
+        className="relative w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-elevated/80 transition-colors"
         title="Notifications"
       >
         <Bell className="w-4.5 h-4.5 text-text-muted" />
@@ -224,7 +224,7 @@ export function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: reduceMotion ? 0 : 0.15 }}
-            className={`fixed right-4 top-16 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-2xl z-[90] overflow-hidden flex flex-col`}
+            className={`fixed right-4 top-16 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-md shadow-2xl z-[90] overflow-hidden flex flex-col`}
             aria-live="polite"
           >
             {/* Header */}
@@ -243,7 +243,7 @@ export function NotificationCenter() {
                 )}
                 <button
                   onClick={close}
-                  className="p-1 hover:bg-surface-elevated rounded transition-colors"
+                  className="p-1 hover:bg-surface-elevated rounded-sm transition-colors"
                 >
                   <X className="w-3.5 h-3.5 text-text-muted" />
                 </button>

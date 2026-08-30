@@ -354,7 +354,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const calendarHeader = (
     <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <CalendarIcon className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -367,12 +367,12 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
       <div className="flex items-center gap-2">
         {/* View Mode */}
-        <div className="flex items-center gap-1 bg-background/60 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-background/60 rounded-md p-1">
           {(['month', 'week', 'day', 'list'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
-              className={`px-3 py-1 text-sm rounded transition-colors ${
+              className={`px-3 py-1 text-sm rounded-sm transition-colors ${
                 viewMode === mode
                   ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                   : 'text-text-muted hover:text-text'
@@ -413,7 +413,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         {!standalone && (
           <button
             onClick={onClose}
-            className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+            className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
           </button>
@@ -448,7 +448,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         <select aria-label="Calendrier affiché"
           value={currentCalendarId || ''}
           onChange={(e) => setCurrentCalendar(e.target.value)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
         >
           {calendars.map((cal) => (
             <option key={cal.id} value={cal.id}>
@@ -492,7 +492,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     <>
       {/* Error */}
       {error && !needsReauth && (
-        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
           <p className="text-sm text-error">{error}</p>
         </div>
       )}
@@ -549,7 +549,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {calendarHeader}

@@ -100,7 +100,7 @@ export function ChatHeader({
             <h1 className="text-lg font-bold gradient-text tracking-tight">THÉRÈSE</h1>
           </button>
           {demoEnabled && (
-            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/40 rounded-[6px] animate-pulse">
+            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/40 rounded-sm animate-pulse">
               Mode Démo
             </span>
           )}
@@ -118,14 +118,14 @@ export function ChatHeader({
       {/* Centre: Accueil isolé + Navigation */}
       <div className="flex-shrink-0 flex items-center gap-2.5">
         {/* Accueil : sa propre barre, séparée du groupe de navigation */}
-        <div className="flex items-center px-1 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
+        <div className="flex items-center px-1 py-1 rounded-md bg-surface-elevated/50 border border-border/40">
           <Button variant="ghost" size="icon" onClick={onHome} className="w-8 h-8 hover:bg-accent-cyan/10" title="Accueil" aria-label="Accueil">
             <Home className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Navigation (7 boutons icônes, + Board en mode Contributeur) */}
-        <div className="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-surface-elevated/50 border border-border/40">
+        <div className="flex items-center gap-0.5 px-2 py-1 rounded-md bg-surface-elevated/50 border border-border/40">
         <Button
           variant="ghost"
           size="icon"
@@ -253,21 +253,21 @@ export function ChatHeader({
             <div className="h-6 w-px bg-border/50" />
             <button
               onClick={handleMinimize}
-              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-elevated/80 rounded transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-elevated/80 rounded-sm transition-colors"
               title="Réduire"
             >
               <span className="text-xs leading-none">─</span>
             </button>
             <button
               onClick={handleMaximize}
-              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-elevated/80 rounded transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-elevated/80 rounded-sm transition-colors"
               title="Agrandir"
             >
               <span className="text-xs leading-none">□</span>
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-error rounded transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-error rounded-sm transition-colors"
               title="Fermer"
             >
               <span className="text-xs leading-none">✕</span>

@@ -28,7 +28,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
       onClick={isPersonnaliser ? undefined : onClick}
       disabled={isPersonnaliser}
       className={cn(
-        'group relative flex flex-col items-start p-4 rounded-xl',
+        'group relative flex flex-col items-start p-4 rounded-md',
         'bg-surface-elevated/60 backdrop-blur-sm',
         'transition-all duration-200 text-left',
         'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
@@ -39,7 +39,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
     >
       {/* Badge Bientôt */}
       {isPersonnaliser && (
-        <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-cyan/10 text-accent-cyan-ink border border-accent-cyan/20">
+        <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-sm text-[9px] font-medium bg-accent-cyan/10 text-accent-cyan-ink border border-accent-cyan/20">
           Bientôt
         </span>
       )}
@@ -47,7 +47,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
       {/* Pastille duotone : accent catégoriel k1-k4 cerclé d'encre (DA brutaliste) */}
       <div
         className={cn(
-          'relative flex items-center justify-center w-10 h-10 rounded-[6px] mb-3',
+          'relative flex items-center justify-center w-10 h-10 rounded-sm mb-3',
           'border-[1.5px] border-[var(--btn-ink)]',
           isPersonnaliser && 'opacity-50'
         )}

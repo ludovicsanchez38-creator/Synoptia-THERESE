@@ -188,7 +188,7 @@ export function EmailCompose() {
         <h3 className="text-lg font-semibold text-text">Nouveau message</h3>
         <button
           onClick={handleCancel}
-          className="p-2 hover:bg-border/30 rounded-lg transition-colors"
+          className="p-2 hover:bg-border/30 rounded-md transition-colors"
         >
           <X className="w-5 h-5 text-text-muted" />
         </button>
@@ -279,7 +279,7 @@ export function EmailCompose() {
           <p className="text-sm text-yellow-200 flex-1">Abandonner ce brouillon ?</p>
           <button
             onClick={confirmCancel}
-            className="px-3 py-1.5 text-sm bg-error/20 text-error hover:bg-error/30 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm bg-error/20 text-error hover:bg-error/30 rounded-md transition-colors"
           >
             Oui, abandonner
           </button>
@@ -295,7 +295,7 @@ export function EmailCompose() {
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30">
         {error && (
-          <div role="alert" className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-lg">
+          <div role="alert" className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
             <p className="text-sm text-error">{error}</p>
           </div>
         )}

@@ -147,7 +147,7 @@ export function ConversationProjectPicker({
         value={selection}
         disabled={enCours}
         onChange={(e) => void surChangement(e.target.value)}
-        className="min-w-0 max-w-[11rem] truncate rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text disabled:opacity-60"
+        className="min-w-0 max-w-[11rem] truncate rounded-sm border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text disabled:opacity-60"
       >
         {/* Libellés honnêtes : ils annoncent ce que la conversation CONSULTE.
             « Toute la mémoire » par défaut aurait menti — le défaut est

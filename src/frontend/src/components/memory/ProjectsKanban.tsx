@@ -299,7 +299,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
     <motion.div
       whileHover={isOverlay ? undefined : { scale: 1.01 }}
       whileTap={isOverlay ? undefined : { scale: 0.99 }}
-      className={`mx-2 my-1 px-3 py-2 rounded-lg border border-border/30 bg-surface/60 hover:bg-surface transition-colors group ${
+      className={`mx-2 my-1 px-3 py-2 rounded-md border border-border/30 bg-surface/60 hover:bg-surface transition-colors group ${
         isOverlay ? 'shadow-xl ring-2 ring-accent-cyan/30 bg-surface' : ''
       }`}
     >

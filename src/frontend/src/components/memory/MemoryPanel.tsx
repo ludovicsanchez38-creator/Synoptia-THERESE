@@ -235,7 +235,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                 page était un vestige du tiroir, absurde sur une vue) */}
             <div className="flex min-h-14 flex-wrap items-center justify-between gap-y-2 border-b border-border/50 px-4 py-2">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[6px] border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
                   <Users className="h-5 w-5 text-accent" />
                 </div>
                 <h2 className="text-lg font-semibold text-text">Contacts</h2>
@@ -292,7 +292,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     data-testid="memory-search-input"
-                    className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
+                    className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   />
                 </div>
                 {/* E3-05: Scope filter pills */}
@@ -301,7 +301,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     <button
                       key={scope}
                       onClick={() => setScopeFilter(scope)}
-                      className={`px-2.5 py-1 text-xs font-medium rounded-[6px] transition-colors ${
+                      className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
                         scopeFilter === scope
                           ? 'bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/50'
                           : 'bg-background/40 text-text-muted hover:bg-background/60 border border-transparent'
@@ -316,7 +316,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
             {/* RGPD Alert Banner */}
             {rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
-              <div className="mx-3 mt-3 p-2.5 rounded-lg bg-orange-500/10 border border-orange-500/30">
+              <div className="mx-3 mt-3 p-2.5 rounded-md bg-orange-500/10 border border-orange-500/30">
                 <div className="flex items-center gap-2 text-sm text-orange-400">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span>
@@ -363,7 +363,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="bg-surface border border-border rounded-xl p-5 w-full max-w-sm shadow-xl"
+                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm shadow-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-3 mb-4">
@@ -379,7 +379,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       Les projets et fichiers associés seront aussi supprimés.
                     </p>
                     {deleteError && (
-                      <div role="alert" className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-lg">
+                      <div role="alert" className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-md">
                         <AlertCircle className="w-4 h-4 text-error shrink-0" />
                         <span className="text-sm text-error">{deleteError}</span>
                       </div>
@@ -428,7 +428,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.95, opacity: 0 }}
-                    className="bg-surface border border-border rounded-xl p-5 w-full max-w-sm shadow-xl"
+                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm shadow-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {rgpdAction.type === 'export' && (
@@ -489,7 +489,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}
                             placeholder="Ex: Demande du contact, fin de relation..."
-                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-error/50"
+                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted/50 focus:outline-none focus:border-error/50"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -715,7 +715,7 @@ function ContactsList({
                     initial={{ opacity: 0, scale: 0.95, y: -5 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-lg shadow-xl ${Z_LAYER.DROPDOWN} py-1`}
+                    className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
@@ -767,7 +767,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
+      <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
         RGPD ?
       </span>
     );
@@ -800,7 +800,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   return (
     <span
-      className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+      className={`px-1.5 py-0.5 rounded-sm text-[10px] font-medium ${
         isExpired ? 'bg-error/20 text-error' :
         isExpiringSoon ? 'bg-orange-500/20 text-orange-400' :
         badgeColors[baseLegale] || 'bg-gray-500/20 text-gray-400'

@@ -314,7 +314,7 @@ export function UpdateBanner() {
       {state.phase !== 'downloading' && (
         <button
           onClick={() => setDismissed(true)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-sm text-text-muted hover:text-text transition-colors"
           aria-label="Fermer le bandeau de mise à jour"
         >
           <X size={14} />

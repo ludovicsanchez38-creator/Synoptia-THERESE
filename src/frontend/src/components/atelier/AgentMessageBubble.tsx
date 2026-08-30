@@ -59,7 +59,7 @@ export function AgentMessageBubble({ message }: Props) {
   if (message.type === 'handoff') {
     return (
       <div
-        className="mx-3 my-2 rounded-lg p-3 text-sm"
+        className="mx-3 my-2 rounded-md p-3 text-sm"
         style={{
           background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(245,158,11,0.15))',
           borderLeft: '3px solid',
@@ -104,7 +104,7 @@ export function AgentMessageBubble({ message }: Props) {
             clair, un texte clair figé donnait « blanc sur blanc » (réponse de
             l'agent codeur invisible). Le token s'adapte clair/sombre. */}
         <div
-          className="rounded-lg px-3 py-2 text-sm leading-relaxed text-text"
+          className="rounded-md px-3 py-2 text-sm leading-relaxed text-text"
           style={{
             backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)' : style.bg,
             borderLeft: isUser ? 'none' : `2px solid ${style.color}`,

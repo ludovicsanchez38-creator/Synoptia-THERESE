@@ -48,10 +48,10 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
   if (steps.length === 0 && invérifiables.size === 0) return null;
 
   return (
-    <section className="rounded-xl border border-border bg-surface-2 p-4">
+    <section className="rounded-md border border-border bg-surface-2 p-4">
       <h2 className="text-sm font-semibold text-text mb-3">Mise en route</h2>
       {invérifiables.size > 0 && (
-        <p className="mb-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-2 text-xs leading-5 text-warning">
+        <p className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-2 text-xs leading-5 text-warning">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             Une partie de ta configuration n’a pas pu être vérifiée pour l’instant.
@@ -65,7 +65,7 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
             key={label}
             type="button"
             onClick={action}
-            className="flex items-center gap-2.5 p-2.5 rounded-lg border border-border bg-surface hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors text-left"
+            className="flex items-center gap-2.5 p-2.5 rounded-md border border-border bg-surface hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors text-left"
           >
             <Icon className="w-4 h-4 text-accent shrink-0" />
             <span className="text-[13px] text-text leading-tight flex-1">{label}</span>

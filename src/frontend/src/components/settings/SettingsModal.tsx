@@ -744,7 +744,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 flex max-h-[calc(100vh-1rem)] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl sm:max-h-[85vh] ${Z_LAYER.MODAL}`}
+            className={`fixed left-1/2 top-1/2 flex max-h-[calc(100vh-1rem)] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-2xl sm:max-h-[85vh] ${Z_LAYER.MODAL}`}
           >
             {/* En-tête */}
             <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
@@ -827,7 +827,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                     LECTURE. Le testeur a cru à un défaut de configuration de la
                     génération d'images. */}
                 {loadWarnings.length > 0 && (
-                  <div role="alert" data-testid="settings-load-warning" className="mb-4 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
+                  <div role="alert" data-testid="settings-load-warning" className="mb-4 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
                     <p>
                       <strong>
                         {loadWarnings.length > 1 ? 'Ces réglages n’ont pas pu être lus' : 'Ce réglage n’a pas pu être lu'} : {loadWarnings.join(', ')}.
@@ -837,9 +837,9 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                     <button type="button" onClick={() => void loadSettings()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer le chargement</button>
                   </div>
                 )}
-                {operationStatus && <p role="status" className="mb-4 rounded-lg border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{operationStatus}</p>}
+                {operationStatus && <p role="status" className="mb-4 rounded-md border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{operationStatus}</p>}
                 {error && retryOperation && (
-                  <div role="alert" className="mb-4 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+                  <div role="alert" className="mb-4 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
                     <p>{error}</p>
                     <button type="button" onClick={retryOperation} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
                   </div>

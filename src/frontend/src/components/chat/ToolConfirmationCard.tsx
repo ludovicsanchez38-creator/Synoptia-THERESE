@@ -103,7 +103,7 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
   }
 
   return (
-    <div className="rounded-lg border border-accent-cyan/30 bg-surface p-3" data-testid="tool-confirmation">
+    <div className="rounded-md border border-accent-cyan/30 bg-surface p-3" data-testid="tool-confirmation">
       <div className="mb-2 flex items-center gap-2 text-accent-cyan-ink">
         {isCalendar ? <Calendar className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
         <span className="text-sm font-medium text-text">{title}</span>

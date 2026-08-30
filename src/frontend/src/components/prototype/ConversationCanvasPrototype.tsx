@@ -155,7 +155,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={`grid h-11 w-11 place-items-center rounded-[10px] border transition-colors ${
+      className={`grid h-11 w-11 place-items-center rounded-md border transition-colors ${
         active
           ? 'border-accent-fill bg-accent-fill text-accent-ink'
           : 'border-transparent text-text-muted hover:border-border hover:bg-surface hover:text-text'
@@ -505,7 +505,7 @@ function CommandPalette({
         animate={{ y: 0, scale: 1 }}
         exit={{ y: -12, scale: 0.98 }}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-[570px] overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_26px_70px_rgba(16,28,54,0.25)]"
+        className="w-full max-w-[570px] overflow-hidden rounded-md border border-border bg-surface shadow-[0_26px_70px_rgba(16,28,54,0.25)]"
       >
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
           <Search className="h-5 w-5 text-text-muted" />
@@ -524,8 +524,8 @@ function CommandPalette({
             placeholder="Chercher ou demander à Thérèse…"
             className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
           />
-          <kbd className="rounded-[6px] border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">Échap</kbd>
-          <button type="button" onClick={onClose} className="rounded-[7px] border border-border px-2 py-1 text-xs font-semibold text-text-muted hover:text-text">Fermer</button>
+          <kbd className="rounded-sm border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">Échap</kbd>
+          <button type="button" onClick={onClose} className="rounded-sm border border-border px-2 py-1 text-xs font-semibold text-text-muted hover:text-text">Fermer</button>
         </div>
         <div id="prototype-command-results" role="listbox" aria-label="Résultats" className="max-h-[440px] overflow-y-auto p-2">
           <div className="sr-only" role="status" aria-live="polite">{optionCount} résultat{optionCount > 1 ? 's' : ''}</div>
@@ -545,9 +545,9 @@ function CommandPalette({
                     onSelect(action.id);
                     onClose();
                   }}
-                  className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
                 >
-                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-[8px] bg-accent-tint text-accent">
+                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-sm bg-accent-tint text-accent">
                     {(() => {
                       // Table exhaustive plutôt qu'une cascade : la branche
                       // fourre-tout d'avant donnait l'icône de la facture à
@@ -584,14 +584,14 @@ function CommandPalette({
                   onCapability(capability);
                   onClose();
                 }}
-                className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg"
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
               >
                 {capability.id === 'decision-board' ? (
-                  <CharacterPortrait index={1} className="h-8 w-8 rounded-[8px]" />
+                  <CharacterPortrait index={1} className="h-8 w-8 rounded-sm" />
                 ) : capability.id === 'agents' ? (
-                  <CharacterPortrait index={6} className="h-8 w-8 rounded-[8px]" />
+                  <CharacterPortrait index={6} className="h-8 w-8 rounded-sm" />
                 ) : (
-                  <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-[var(--k4bg)] text-[var(--k4)]">
+                  <span className="grid h-8 w-8 place-items-center rounded-sm bg-[var(--k4bg)] text-[var(--k4)]">
                     <Icon className="h-4 w-4" />
                   </span>
                 )}
@@ -612,10 +612,10 @@ function CommandPalette({
               <SectionLabel>Commandes de l’application</SectionLabel>
               {visibleActions.map((action, actionIndex) => {
                 const optionIndex = scenarioCount + visibleCapabilities.length + actionIndex;
-                return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left hover:bg-bg">
-                  <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
+                return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg">
+                  <span className="grid h-8 w-8 place-items-center rounded-sm bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
-                  {action.shortcut && <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{action.shortcut}</kbd>}
+                  {action.shortcut && <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{action.shortcut}</kbd>}
                 </button>;
               })}
             </>
@@ -1449,7 +1449,7 @@ export function ConversationCanvasPrototype() {
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
+          <div className="hidden items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
             <Briefcase className="h-3.5 w-3.5 text-accent" />
             {workspaceName}
           </div>
@@ -1474,11 +1474,11 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setTrustCenterOpen(false);
               }}
-              className="hidden items-center gap-2 rounded-[9px] border border-border bg-surface px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-2 md:flex"
+              className="hidden items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
-              <kbd className="rounded-[5px] bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
+              <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
             <TraitementsIndicator />
             <WindowControls side="right" />
@@ -1575,12 +1575,12 @@ export function ConversationCanvasPrototype() {
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
-                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
-                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
+                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
+                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
                     </div>
                   )}
                   <div className="mb-7 flex items-start gap-3">
-                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[var(--shadow-card)]" />
+                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-md border border-text shadow-[var(--shadow-card)]" />
                     <div>
                       <h1 className="text-[24px] font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
@@ -1602,7 +1602,7 @@ export function ConversationCanvasPrototype() {
                   </div>
 
                   <div className="mb-3 flex items-center gap-2 text-xs font-semibold text-text-muted">
-                    <CharacterPortrait index={0} className="h-5 w-5 rounded-[6px] border border-text" />
+                    <CharacterPortrait index={0} className="h-5 w-5 rounded-sm border border-text" />
                     THÉRÈSE
                     {/* « maintenant » était écrit en dur : il ne changeait
                         jamais et n'apprenait donc rien, tout en occupant une
@@ -1811,14 +1811,14 @@ export function ConversationCanvasPrototype() {
                 data-testid="prototype-composer-backdrop"
               >
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
-                  <div className="rounded-[18px] border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
+                  <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (
-                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-[10px] border border-[var(--k4)]/30 bg-[var(--k4bg)] px-2.5 py-2 text-xs text-[var(--k4)]">
-                        <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-[var(--k4bg)] text-[var(--k4)]">
+                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-2.5 py-2 text-xs text-[var(--k4)]">
+                        <span className="grid h-6 w-6 place-items-center rounded-sm bg-[var(--k4bg)] text-[var(--k4)]">
                           <SelectedCapabilityIcon className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0 flex-1 truncate"><span className="font-semibold">Capacité :</span> {selectedCapability.title}</span>
-                        <button type="button" onClick={() => setSelectedCapability(null)} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-[7px] hover:bg-surface">
+                        <button type="button" onClick={() => setSelectedCapability(null)} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-sm hover:bg-surface">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -1841,7 +1841,7 @@ export function ConversationCanvasPrototype() {
                       />
                     ) : (
                       <div
-                        className={`mx-1 my-2 rounded-[10px] border px-3 py-2.5 text-xs leading-5 ${
+                        className={`mx-1 my-2 rounded-md border px-3 py-2.5 text-xs leading-5 ${
                           destinationIsPending
                             ? 'border-warning/40 bg-[var(--color-warning-tint)] text-warning'
                             : 'border-accent-cyan/30 bg-accent-tint text-accent'
@@ -1854,7 +1854,7 @@ export function ConversationCanvasPrototype() {
                       </div>
                     )}
                     {composerVoiceError && (
-                      <div role="alert" className="mx-1 mb-2 flex items-start gap-2 rounded-[8px] border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
+                      <div role="alert" className="mx-1 mb-2 flex items-start gap-2 rounded-sm border border-error/20 bg-error/10 px-3 py-2 text-xs text-error">
                         <span className="flex-1">{composerVoiceError}</span>
                         <button type="button" onClick={() => setComposerVoiceError(null)} aria-label="Fermer l’erreur de dictée"><X className="h-3.5 w-3.5" /></button>
                       </div>
@@ -1871,7 +1871,7 @@ export function ConversationCanvasPrototype() {
                             onTranscript={handleComposerTranscript}
                             onError={handleComposerVoiceError}
                             testId="prototype-chat-voice-btn"
-                            className="rounded-[10px] border border-transparent text-text-muted hover:border-border hover:bg-bg hover:text-text"
+                            className="rounded-md border border-transparent text-text-muted hover:border-border hover:bg-bg hover:text-text"
                           />
                         )}
                         <button
@@ -1880,7 +1880,7 @@ export function ConversationCanvasPrototype() {
                           disabled={destinationIsPending || (destinationUsesChat && !composerValue.trim())}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
-                          className="grid h-11 w-11 place-items-center rounded-[10px] border border-text bg-accent-fill text-accent-ink shadow-[var(--shadow-card)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
+                          className="grid h-11 w-11 place-items-center rounded-md border border-text bg-accent-fill text-accent-ink shadow-[var(--shadow-card)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
                         >
                           {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>

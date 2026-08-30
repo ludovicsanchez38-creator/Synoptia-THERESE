@@ -88,7 +88,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
           whileTap={{ scale: 0.95 }}
           onClick={onBack}
           className={cn(
-            'p-2 rounded-xl',
+            'p-2 rounded-md',
             'bg-surface-elevated border border-border',
             'text-text-muted hover:text-text',
             'transition-colors'
@@ -99,7 +99,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
 
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-[6px] flex items-center justify-center',
+            'w-10 h-10 rounded-sm flex items-center justify-center',
             'border-[1.5px] border-[var(--btn-ink)]',
             config.bgTint
           )}>
@@ -118,7 +118,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
 
       {/* Prompt textarea */}
       <div className={cn(
-        'rounded-2xl border border-border',
+        'rounded-md border border-border',
         'bg-surface-elevated/80 backdrop-blur-sm',
         'focus-within:border-accent-cyan/50',
         'focus-within:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
@@ -142,11 +142,11 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
         {/* Footer with hints and generate button */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border/50">
           <p className="text-xs text-text-muted">
-            <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-muted">
+            <kbd className="px-1.5 py-0.5 rounded-sm bg-surface text-text-muted">
               {navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl'}
             </kbd>
             <span className="mx-1">+</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-muted">↵</kbd>
+            <kbd className="px-1.5 py-0.5 rounded-sm bg-surface text-text-muted">↵</kbd>
             <span className="ml-2">pour générer</span>
           </p>
 
@@ -156,7 +156,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
             onClick={handleGenerate}
             disabled={!prompt.trim()}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-xl',
+              'flex items-center gap-2 px-4 py-2 rounded-md',
               'font-medium text-sm',
               'bg-accent-cyan hover:bg-accent-cyan/90',
               'text-bg shadow-lg shadow-accent-cyan/20',
@@ -179,7 +179,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
               key={i}
               onClick={() => setPrompt(suggestion)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs',
+                'px-3 py-1.5 rounded-md text-xs',
                 'bg-surface border border-border',
                 'text-text-muted hover:text-text',
                 'hover:border-accent-cyan/30',

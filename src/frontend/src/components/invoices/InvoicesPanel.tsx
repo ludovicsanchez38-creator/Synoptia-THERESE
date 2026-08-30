@@ -162,7 +162,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const invoicesHeader = (
     <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-accent-cyan/20 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-md bg-accent-cyan/20 flex items-center justify-center">
           <FileText className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
@@ -176,7 +176,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           type="button"
           onClick={handleCreateNew}
           className={cn(
-            'px-4 py-2 rounded-lg',
+            'px-4 py-2 rounded-md',
             'bg-accent-cyan text-bg font-medium',
             'hover:bg-accent-cyan/90 transition-colors',
             'flex items-center gap-2'
@@ -190,7 +190,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <button
             type="button"
             onClick={() => setIsInvoicePanelOpen(false)}
-            className="p-2 rounded-lg hover:bg-surface-elevated transition-colors"
+            className="p-2 rounded-md hover:bg-surface-elevated transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
           </button>
@@ -210,7 +210,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             key={type}
             onClick={() => setFilters({ ...filters, document_type: type === 'all' ? undefined : type })}
             className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
+              'px-3 py-1 rounded-md text-sm transition-colors',
               (type === 'all' && !filters.document_type) || filters.document_type === type
                 ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:bg-surface-elevated'
@@ -233,7 +233,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             key={status}
             onClick={() => setFilters({ ...filters, status })}
             className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
+              'px-3 py-1 rounded-md text-sm transition-colors',
               filters.status === status
                 ? 'bg-accent-cyan text-bg font-medium'
                 : 'bg-surface-elevated text-text-muted hover:bg-surface-elevated/70'
@@ -260,7 +260,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <button
             type="button"
             onClick={handleCreateNew}
-            className="px-4 py-2 rounded-lg bg-accent-cyan text-bg hover:bg-accent-cyan/90"
+            className="px-4 py-2 rounded-md bg-accent-cyan text-bg hover:bg-accent-cyan/90"
           >
             Créer une facture
           </button>
@@ -276,7 +276,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  'p-4 rounded-lg border border-border/50',
+                  'p-4 rounded-md border border-border/50',
                   'hover:bg-surface-elevated/30 transition-colors',
                   'cursor-pointer group'
                 )}
@@ -296,14 +296,14 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       )}
                       {invoice.document_type && invoice.document_type !== 'facture' && (
                         <span className={cn(
-                          'px-2 py-0.5 rounded text-xs font-medium',
+                          'px-2 py-0.5 rounded-sm text-xs font-medium',
                           invoice.document_type === 'devis' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'
                         )}>
                           {invoice.document_type === 'devis' ? 'Devis' : 'Avoir'}
                         </span>
                       )}
                       <div className={cn(
-                        'flex items-center gap-1.5 px-2 py-0.5 rounded-[6px] text-xs font-medium',
+                        'flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-xs font-medium',
                         STATUS_CONFIG[invoice.status]?.color || 'text-text-muted',
                         STATUS_CONFIG[invoice.status]?.badgeBg || 'bg-gray-500/20'
                       )}>
@@ -338,7 +338,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                           e.stopPropagation();
                           handleGeneratePDF(invoice);
                         }}
-                        className="p-2 rounded-lg bg-surface-elevated hover:bg-surface-elevated/70"
+                        className="p-2 rounded-md bg-surface-elevated hover:bg-surface-elevated/70"
                         title="Générer et ouvrir le PDF"
                       >
                         <Download className="w-4 h-4 text-text-muted" />
@@ -351,7 +351,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                           e.stopPropagation();
                           handleDeleteInvoice(invoice);
                         }}
-                        className="p-2 rounded-lg bg-error/10 hover:bg-error/20"
+                        className="p-2 rounded-md bg-error/10 hover:bg-error/20"
                         title="Supprimer"
                       >
                         <X className="w-4 h-4 text-error" />
@@ -379,7 +379,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         aria-label="Confirmer la suppression"
         className={cn(
           'relative w-full max-w-md mx-4 p-6',
-          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
           'shadow-2xl space-y-4'
         )}
         onClick={(e) => e.stopPropagation()}
@@ -397,7 +397,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
               setDeletingInvoice(null);
             }}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-lg bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
+            className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
           >
             Annuler
           </button>
@@ -409,7 +409,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             }}
             disabled={isDeleting}
             className={cn(
-              'px-4 py-2 rounded-lg font-medium transition-colors',
+              'px-4 py-2 rounded-md font-medium transition-colors',
               'bg-error text-white hover:bg-error',
               isDeleting && 'opacity-50 cursor-not-allowed'
             )}
@@ -471,7 +471,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           transition={{ duration: 0.2 }}
           className={cn(
             'relative w-full max-w-6xl h-[85vh] mx-4',
-            'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-xl',
+            'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
             'shadow-2xl overflow-hidden flex flex-col'
           )}
           onClick={(e) => e.stopPropagation()}

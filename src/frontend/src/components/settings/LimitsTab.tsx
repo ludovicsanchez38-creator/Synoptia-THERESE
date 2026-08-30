@@ -67,7 +67,7 @@ export function LimitsTab() {
     <div className="space-y-6">
       {/* En-tête */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <AlertTriangle className="w-5 h-5 text-accent" />
         </div>
         <div>
@@ -83,19 +83,19 @@ export function LimitsTab() {
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-text">Usage aujourd'hui</h4>
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {(status.daily_usage.input_tokens / 1000).toFixed(1)}K
               </p>
               <p className="text-xs text-text-muted">Tokens entrée</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {(status.daily_usage.output_tokens / 1000).toFixed(1)}K
               </p>
               <p className="text-xs text-text-muted">Tokens sortie</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {formaterCout(status.daily_usage.cost_eur)}
               </p>
@@ -125,13 +125,13 @@ export function LimitsTab() {
         <div className="space-y-3 pt-4 border-t border-border/30">
           <h4 className="text-sm font-medium text-text">Usage ce mois</h4>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {(status.monthly_usage.input_tokens / 1000).toFixed(1)}K
               </p>
               <p className="text-xs text-text-muted">Tokens totaux</p>
             </div>
-            <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+            <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
                 {formaterCout(status.monthly_usage.cost_eur)}
               </p>
@@ -178,7 +178,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.max_input_tokens}
                 onChange={(e) => setLimits({ ...limits, max_input_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
@@ -188,7 +188,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.max_output_tokens}
                 onChange={(e) => setLimits({ ...limits, max_output_tokens: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
@@ -198,7 +198,7 @@ export function LimitsTab() {
                 type="number"
                 value={limits.daily_input_limit}
                 onChange={(e) => setLimits({ ...limits, daily_input_limit: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
             <div>
@@ -213,7 +213,7 @@ export function LimitsTab() {
                 step="0.01"
                 value={limits.monthly_budget_eur}
                 onChange={(e) => setLimits({ ...limits, monthly_budget_eur: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+                className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
               />
             </div>
           </div>
@@ -226,14 +226,14 @@ export function LimitsTab() {
               max="100"
               value={limits.warn_at_percentage}
               onChange={(e) => setLimits({ ...limits, warn_at_percentage: parseInt(e.target.value) || 80 })}
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
+              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent-cyan"
             />
           </div>
         </div>
       )}
 
       {/* Information */}
-      <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
+      <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
         <div className="flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-accent-cyan-ink mt-0.5" />
           <div className="text-sm text-accent-cyan-ink">

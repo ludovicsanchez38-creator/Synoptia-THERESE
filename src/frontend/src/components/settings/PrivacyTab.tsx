@@ -244,12 +244,12 @@ export function PrivacyTab() {
       </div>
 
       {/* Section : Stockage */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
           <HardDrive className="w-4 h-4 text-success" />
           Stockage
         </h4>
-        <div className="rounded-lg bg-[var(--color-success-tint)] border border-success/40 p-3">
+        <div className="rounded-md bg-[var(--color-success-tint)] border border-success/40 p-3">
           <p className="text-sm text-success">
             Tes données métier sont stockées sur ta machine, dans ton dossier utilisateur :
             base SQLite chiffrée au repos (SQLCipher AES-256 ; seule une échappatoire de
@@ -267,7 +267,7 @@ export function PrivacyTab() {
               Trois personas dont le métier l'exige (avocat, médecin, magistrate) ont trouvé
               l'écart et sont partis. On énonce des CLASSES de sortie plutôt qu'une liste
               nominative : une liste pourrit au premier ajout. */}
-          <div className="mt-3 rounded-lg border border-border/60 bg-surface p-3">
+          <div className="mt-3 rounded-md border border-border/60 bg-surface p-3">
             <p className="text-xs font-semibold text-text">Ce qui peut sortir de ta machine</p>
             <ul className="mt-1.5 space-y-1 text-xs text-text-muted">
               <li>• <strong>Ce que tu as branché</strong> : le fournisseur du modèle si tu
@@ -293,7 +293,7 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Portabilité et sauvegardes globales */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-text">
@@ -321,7 +321,7 @@ export function PrivacyTab() {
               placeholder="Passphrase de chiffrement"
               aria-label="Passphrase de chiffrement de la sauvegarde"
               autoComplete="new-password"
-              className="rounded-lg border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+              className="rounded-md border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
             />
             <Button
               variant="primary"
@@ -338,10 +338,10 @@ export function PrivacyTab() {
           </p>
         </div>
 
-        {dataMessage && <div role="status" className="mb-3 rounded-lg border border-success/40 bg-[var(--color-success-tint)] px-3 py-2 text-xs text-success">{dataMessage}</div>}
-        {dataError && <div role="alert" className="mb-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{dataError}</div>}
+        {dataMessage && <div role="status" className="mb-3 rounded-md border border-success/40 bg-[var(--color-success-tint)] px-3 py-2 text-xs text-success">{dataMessage}</div>}
+        {dataError && <div role="alert" className="mb-3 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{dataError}</div>}
 
-        <div className="overflow-hidden rounded-lg border border-border/30">
+        <div className="overflow-hidden rounded-md border border-border/30">
           <div className="flex items-center justify-between bg-surface-elevated/40 px-3 py-2">
             <span className="text-xs font-semibold text-text">Sauvegardes disponibles</span>
             <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan-ink hover:underline">Actualiser</button>
@@ -377,7 +377,7 @@ export function PrivacyTab() {
                       </div>
                     </div>
                     {restoreConfirmation === backup.backup_name && (
-                      <div className="mt-3 rounded-lg border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+                      <div className="mt-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
                         Cette restauration remplace l’état courant. Une sauvegarde de sécurité sera créée automatiquement.
                         <input
                           type="password"
@@ -386,7 +386,7 @@ export function PrivacyTab() {
                           placeholder="Passphrase de la sauvegarde"
                           aria-label="Passphrase de la sauvegarde à restaurer"
                           autoComplete="off"
-                          className="mt-2 w-full rounded-lg border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
+                          className="mt-2 w-full rounded-md border border-border/50 bg-surface px-2 py-1.5 text-xs text-text placeholder:text-text-muted focus:border-accent-cyan focus:outline-none"
                         />
                         <div className="mt-2 flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => { setRestoreConfirmation(null); setRestorePassword(''); }}>Annuler</Button>
@@ -395,7 +395,7 @@ export function PrivacyTab() {
                       </div>
                     )}
                     {backupDeleteConfirmation === backup.backup_name && (
-                      <div className="mt-3 rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
+                      <div className="mt-3 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
                         Supprimer définitivement cette archive locale ?
                         <div className="mt-2 flex justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => setBackupDeleteConfirmation(null)}>Annuler</Button>
@@ -412,7 +412,7 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Consentements cloud par finalité (revue 0.40) */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="mb-1 flex items-center gap-2 text-sm font-semibold text-text">
           <UserCheck className="h-4 w-4 text-accent-cyan-ink" />
           Consentements cloud
@@ -426,7 +426,7 @@ export function PrivacyTab() {
             {cloudGrants.map((grant) => (
               <li
                 key={`${grant.purpose}:${grant.provider}`}
-                className="flex items-center justify-between gap-3 rounded-lg bg-surface-elevated/30 px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-md bg-surface-elevated/30 px-3 py-2"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-text">{PURPOSE_LABELS[grant.purpose]}</p>
@@ -452,7 +452,7 @@ export function PrivacyTab() {
           </p>
         )}
         {!voiceGranted && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-surface px-3 py-2">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/50 bg-surface px-3 py-2">
             <p className="text-xs text-text-muted">
               Dictée cloud (Groq) : non autorisée. La dictée reste possible en 100 % local.
             </p>
@@ -462,7 +462,7 @@ export function PrivacyTab() {
           </div>
         )}
         {!boardGranted && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 bg-surface px-3 py-2">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/50 bg-surface px-3 py-2">
             <p className="text-xs text-text-muted">
               Board cloud : non autorisé. Il interroge plusieurs fournisseurs IA (jusqu'à six appels par délibération).
             </p>
@@ -477,7 +477,7 @@ export function PrivacyTab() {
       <VoiceLocalSection />
 
       {/* Section : Tes données */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
           <Database className="w-4 h-4 text-accent-cyan-ink" />
           Tes données
@@ -486,7 +486,7 @@ export function PrivacyTab() {
           {DATA_TYPES.map(({ type, description }) => (
             <div
               key={type}
-              className="flex items-start gap-3 rounded-lg bg-surface-elevated/30 px-3 py-2"
+              className="flex items-start gap-3 rounded-md bg-surface-elevated/30 px-3 py-2"
             >
               <span className="text-xs font-medium text-accent-cyan-ink min-w-[100px]">{type}</span>
               <span className="text-xs text-text-muted">{description}</span>
@@ -496,12 +496,12 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Durées de conservation */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
           <Clock className="w-4 h-4 text-warning" />
           Durées de conservation
         </h4>
-        <div className="overflow-hidden rounded-lg border border-border/30">
+        <div className="overflow-hidden rounded-md border border-border/30">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-surface-elevated/50">
@@ -524,27 +524,27 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Tes droits */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
           <UserCheck className="w-4 h-4 text-purple-400" />
           Tes droits
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
+          <div className="rounded-md bg-surface-elevated/30 p-3 text-center">
             <Download className="w-5 h-5 text-accent-cyan-ink mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Exporter</span>
             <span className="block text-xs text-text-muted">
               L’export global est disponible ci-dessus ; l’export individuel reste accessible dans le CRM.
             </span>
           </div>
-          <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
+          <div className="rounded-md bg-surface-elevated/30 p-3 text-center">
             <EyeOff className="w-5 h-5 text-warning mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Anonymiser</span>
             <span className="block text-xs text-text-muted">
               Tu peux anonymiser un contact à tout moment via le CRM (bouton RGPD &gt; Anonymiser).
             </span>
           </div>
-          <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
+          <div className="rounded-md bg-surface-elevated/30 p-3 text-center">
             <Trash2 className="w-5 h-5 text-error mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Supprimer</span>
             <span className="block text-xs text-text-muted">
@@ -555,7 +555,7 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Effacement global */}
-      <section className="rounded-lg border border-error/40 bg-[var(--color-error-tint)] p-4">
+      <section className="rounded-md border border-error/40 bg-[var(--color-error-tint)] p-4">
         <div className="flex items-start gap-3">
           <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-error" />
           <div className="min-w-0 flex-1">
@@ -568,7 +568,7 @@ export function PrivacyTab() {
                 Préparer la suppression
               </Button>
             ) : (
-              <div className="mt-3 rounded-lg border border-error/40 bg-background/40 p-3">
+              <div className="mt-3 rounded-md border border-error/40 bg-background/40 p-3">
                 <label htmlFor="delete-all-confirmation" className="block text-xs font-medium text-error">
                   Saisis SUPPRIMER pour confirmer
                 </label>
@@ -598,7 +598,7 @@ export function PrivacyTab() {
       </section>
 
       {/* Section : Purge automatique */}
-      <section className="rounded-lg border border-border/50 p-4">
+      <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
           <Clock className="w-4 h-4 text-accent-magenta-ink" />
           Purge automatique
@@ -646,7 +646,7 @@ export function PrivacyTab() {
               step={6}
               value={purgeMonths}
               onChange={(e) => setPurgeMonths(parseInt(e.target.value, 10))}
-              className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-surface-elevated
+              className="w-full h-2 rounded-md appearance-none cursor-pointer bg-surface-elevated
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4
                 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full
                 [&::-webkit-slider-thumb]:bg-accent-cyan [&::-webkit-slider-thumb]:cursor-pointer"

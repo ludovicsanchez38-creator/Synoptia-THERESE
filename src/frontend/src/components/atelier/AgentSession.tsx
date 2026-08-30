@@ -141,7 +141,7 @@ function ToolCallBlock({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="mx-3 my-1.5 rounded-lg border border-border bg-surface-2">
+    <div className="mx-3 my-1.5 rounded-md border border-border bg-surface-2">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-muted transition hover:bg-surface-elevated"
@@ -394,7 +394,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <button
           onClick={onBack}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition hover:bg-surface-2 hover:text-text"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-2 hover:text-text"
           title="Retour au catalogue"
         >
           <ArrowLeft size={16} />
@@ -402,7 +402,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
         {/* Icone agent */}
         <div
-          className={`flex h-7 w-7 items-center justify-center rounded-lg ${colors.bg} text-sm`}
+          className={`flex h-7 w-7 items-center justify-center rounded-md ${colors.bg} text-sm`}
         >
           {profile?.icon || <Bot size={14} />}
         </div>
@@ -414,7 +414,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
         {/* Badge modele */}
         {activeModel && (
-          <span className="ml-auto rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">
+          <span className="ml-auto rounded-sm bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">
             {activeModel}
           </span>
         )}
@@ -453,7 +453,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                     key={msg.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mx-3 my-1.5 rounded-lg border border-error/20 bg-error/5 px-3 py-2 text-xs text-error"
+                    className="mx-3 my-1.5 rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error"
                   >
                     {msg.content}
                   </motion.div>
@@ -491,7 +491,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                       </div>
                     )}
                     <div
-                      className="rounded-lg px-3 py-2 text-sm leading-relaxed"
+                      className="rounded-md px-3 py-2 text-sm leading-relaxed"
                       style={{
                         backgroundColor: isUser
                           ? "rgba(34, 211, 238, 0.1)"
@@ -534,7 +534,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       {/* Input */}
       {pendingInstruction && (
         <div className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
-          <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
+          <div className="rounded-md border border-amber-400/40 bg-amber-500/10 p-3 text-xs text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">
               Modèle : {activeModel || "non identifié"}. Outils déclarés : {profile?.tools.join(", ") || "aucun"}.
@@ -561,7 +561,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           }
           disabled={isStreaming}
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-cyan-500/50 disabled:opacity-50"
+          className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder-[#6B7280] outline-none transition focus:border-cyan-500/50 disabled:opacity-50"
           style={{ minHeight: "38px", maxHeight: "120px" }}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
@@ -573,7 +573,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         {isStreaming ? (
           <button
             onClick={handleCancel}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-error/20 text-error transition hover:bg-error/30"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-error/20 text-error transition hover:bg-error/30"
             title="Annuler"
           >
             <Square size={16} />
@@ -582,7 +582,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400 transition hover:bg-cyan-500/30 disabled:opacity-30 disabled:hover:bg-cyan-500/20"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-500/20 text-cyan-400 transition hover:bg-cyan-500/30 disabled:opacity-30 disabled:hover:bg-cyan-500/20"
             title="Envoyer"
           >
             <Send size={16} />
@@ -614,7 +614,7 @@ function InitialPrompt({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl ${colors.bg} text-2xl`}
+        className={`flex h-14 w-14 items-center justify-center rounded-md ${colors.bg} text-2xl`}
       >
         {profile.icon}
       </motion.div>
@@ -630,7 +630,7 @@ function InitialPrompt({
         {profile.tools.map((tool) => (
           <span
             key={tool}
-            className="rounded bg-surface-2 px-2 py-0.5 text-[10px] text-text-muted"
+            className="rounded-sm bg-surface-2 px-2 py-0.5 text-[10px] text-text-muted"
           >
             {tool}
           </span>

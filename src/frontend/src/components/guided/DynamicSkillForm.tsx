@@ -85,7 +85,7 @@ export function DynamicSkillForm({
         <button
           onClick={onBack}
           disabled={isSubmitting}
-          className="p-2 hover:bg-surface rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 hover:bg-surface rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Retour"
         >
           <ArrowLeft className="w-5 h-5 text-muted" />
@@ -118,7 +118,7 @@ export function DynamicSkillForm({
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   placeholder={field.placeholder}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-lg border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-describedby={field.help_text ? `help-${key}` : undefined}
                 />
               )}
@@ -132,7 +132,7 @@ export function DynamicSkillForm({
                   placeholder={field.placeholder}
                   rows={4}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-lg border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all resize-y min-h-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all resize-y min-h-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-describedby={field.help_text ? `help-${key}` : undefined}
                 />
               )}
@@ -144,7 +144,7 @@ export function DynamicSkillForm({
                   value={inputs[key] || field.default || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-lg border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-describedby={field.help_text ? `help-${key}` : undefined}
                 >
                   {!field.required && <option value="">-- Choisir --</option>}
@@ -165,7 +165,7 @@ export function DynamicSkillForm({
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   placeholder={field.placeholder}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-lg border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-describedby={field.help_text ? `help-${key}` : undefined}
                 />
               )}

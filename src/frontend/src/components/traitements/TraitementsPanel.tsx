@@ -31,7 +31,7 @@ export function TraitementsPanel() {
 
   return (
     <div
-      className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[90vw] rounded-[10px] border border-border bg-surface p-3 shadow-lg"
+      className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[90vw] rounded-md border border-border bg-surface p-3 shadow-lg"
       role="dialog"
       aria-label="Travaux en cours"
     >
@@ -63,7 +63,7 @@ export function TraitementsPanel() {
           return (
             <li
               key={t.id}
-              className="rounded-[8px] border border-border/60 bg-surface-2 p-2"
+              className="rounded-sm border border-border/60 bg-surface-2 p-2"
               data-testid="traitement"
             >
               <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ export function TraitementsPanel() {
                     type="button"
                     onClick={() => void annuler(t.id)}
                     aria-label={`Arrêter ${t.label}`}
-                    className="flex items-center gap-1 rounded-[6px] border border-border px-1.5 py-0.5 text-xs text-text-muted hover:border-error hover:text-error"
+                    className="flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 text-xs text-text-muted hover:border-error hover:text-error"
                   >
                     <Square className="h-3 w-3" />
                     Arrêter

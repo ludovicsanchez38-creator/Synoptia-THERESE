@@ -24,7 +24,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
       <button
         onClick={() => onChange('cloud')}
         className={cn(
-          'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+          'relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
           mode === 'cloud'
             ? 'text-accent-cyan-ink'
             : 'text-text-muted hover:text-text',
@@ -33,7 +33,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         {mode === 'cloud' && (
           <motion.div
             layoutId="mode-indicator"
-            className="absolute inset-0 bg-accent-cyan/10 border border-accent-cyan/30 rounded-lg"
+            className="absolute inset-0 bg-accent-cyan/10 border border-accent-cyan/30 rounded-md"
             transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
           />
         )}
@@ -46,7 +46,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         disabled={!ollamaAvailable}
         title={ollamaAvailable ? 'Mode souverain - Ollama local' : 'Ollama non disponible'}
         className={cn(
-          'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+          'relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
           !ollamaAvailable && 'opacity-40 cursor-not-allowed',
           mode === 'sovereign'
             ? 'text-accent-magenta-ink'
@@ -56,7 +56,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         {mode === 'sovereign' && (
           <motion.div
             layoutId="mode-indicator"
-            className="absolute inset-0 bg-accent-magenta/10 border border-accent-magenta/30 rounded-lg"
+            className="absolute inset-0 bg-accent-magenta/10 border border-accent-magenta/30 rounded-md"
             transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
           />
         )}
@@ -68,7 +68,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         <button
           onClick={onRefreshOllama}
           title="Vérifier Ollama"
-          className="p-1.5 rounded-lg text-text-muted hover:text-accent-cyan-ink hover:bg-accent-cyan/10 transition-colors"
+          className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-cyan/10 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>

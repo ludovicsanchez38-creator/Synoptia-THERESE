@@ -86,7 +86,7 @@ export function AdvisorArcLayout({
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="mb-4 px-4 py-2.5 rounded-lg bg-surface-elevated/60 border border-border/40 text-center space-y-1"
+          className="mb-4 px-4 py-2.5 rounded-md bg-surface-elevated/60 border border-border/40 text-center space-y-1"
         >
           <p className="text-xs text-text-muted">
             <span className="text-green-400">&#9679;</span> &lt; 4 Go (8 Go RAM)
@@ -106,7 +106,7 @@ export function AdvisorArcLayout({
         {/* Halo atmosphérique neutre (les anciens visages androïdes en
             filigrane sont partis avec le strip - remarque Ludo 17/07) */}
         <div
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+          className="pointer-events-none absolute inset-0 overflow-hidden rounded-md"
           style={{
             background:
               'radial-gradient(ellipse 70% 90% at center 40%, var(--color-accent-tint) 0%, transparent 75%)',
@@ -132,7 +132,7 @@ export function AdvisorArcLayout({
             >
               {/* Portrait partagé avec la nouvelle interface, anneau couleur conservé */}
               <div
-                className="w-16 h-16 rounded-[14px] mb-2 relative overflow-hidden"
+                className="w-16 h-16 rounded-md mb-2 relative overflow-hidden"
                 style={{
                   boxShadow: `0 0 16px ${meta.color}30`,
                   outline: `2px solid ${meta.color}50`,
@@ -141,7 +141,7 @@ export function AdvisorArcLayout({
               >
                 <CharacterPortrait index={ADVISOR_PORTRAITS[role]} className="h-full w-full" />
                 <div
-                  className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-tl-[8px]"
+                  className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-tl-sm"
                   style={{ backgroundColor: meta.color }}
                 >
                   <Icon className="h-3 w-3 text-white" />
@@ -164,7 +164,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1.5 w-full text-[10px] px-1.5 py-1 bg-surface border border-border/50 rounded text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
+                  className="mt-1.5 w-full text-[10px] px-1.5 py-1 bg-surface border border-border/50 rounded-sm text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name} className={sizeColor(m.size)}>
@@ -191,17 +191,17 @@ export function AdvisorArcLayout({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.06 }}
               className={cn(
-                'flex flex-col items-center p-2 rounded-lg bg-surface-elevated/50 border border-border/30',
+                'flex flex-col items-center p-2 rounded-md bg-surface-elevated/50 border border-border/30',
                 i >= 3 && 'col-span-1',
               )}
             >
               <div
-                className="relative mb-1 h-10 w-10 overflow-hidden rounded-[10px]"
+                className="relative mb-1 h-10 w-10 overflow-hidden rounded-md"
                 style={{ outline: `2px solid ${meta.color}50` }}
               >
                 <CharacterPortrait index={ADVISOR_PORTRAITS[role]} className="h-full w-full" />
                 <div
-                  className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-tl-[6px]"
+                  className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-tl-sm"
                   style={{ backgroundColor: meta.color }}
                 >
                   <Icon className="h-2.5 w-2.5 text-white" />
@@ -215,7 +215,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1 w-full text-[9px] px-1 py-0.5 bg-surface border border-border/50 rounded text-text-muted"
+                  className="mt-1 w-full text-[9px] px-1 py-0.5 bg-surface border border-border/50 rounded-sm text-text-muted"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name}>

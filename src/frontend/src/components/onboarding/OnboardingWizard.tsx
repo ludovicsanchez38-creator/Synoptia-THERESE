@@ -134,7 +134,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             {isDesktopNonMac && (
               <button
                 onClick={handleClose}
-                className="ml-auto grid h-11 w-11 place-items-center rounded text-text-muted transition-colors hover:bg-surface-elevated/60 hover:text-text"
+                className="ml-auto grid h-11 w-11 place-items-center rounded-sm text-text-muted transition-colors hover:bg-surface-elevated/60 hover:text-text"
                 title="Fermer (Échap)"
                 aria-label="Fermer"
               >
@@ -156,7 +156,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             data-testid="onboarding-wizard"
-            className="relative my-6 flex max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-2xl"
+            className="relative my-6 flex max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-md border border-border/50 bg-surface shadow-2xl"
           >
             <h1 id="onboarding-title" tabIndex={-1} data-dialog-autofocus className="sr-only">
               Configuration initiale de Thérèse

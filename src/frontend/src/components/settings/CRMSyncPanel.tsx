@@ -283,7 +283,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-[6px] bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+        <div className="w-10 h-10 rounded-sm bg-[var(--color-success-tint)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
           <Cloud className="w-5 h-5 text-success" />
         </div>
         <div>
@@ -296,7 +296,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
       {/* Error/Success messages */}
       {error && (
-        <div className="p-3 bg-[var(--color-error-tint)] border border-error/40 rounded-lg">
+        <div className="p-3 bg-[var(--color-error-tint)] border border-error/40 rounded-md">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-error mt-0.5" />
             <span className="text-sm text-error whitespace-pre-line">{error}</span>
@@ -305,7 +305,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       )}
 
       {success && (
-        <div className="p-3 bg-[var(--color-success-tint)] border border-success/40 rounded-lg">
+        <div className="p-3 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-success" />
             <span className="text-sm text-success">{success}</span>
@@ -340,7 +340,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
         {/* BUG-B : Liste des feuilles existantes */}
         {showExistingSheets && (
-          <div className="mb-3 p-3 bg-surface-muted border border-border/50 rounded-lg">
+          <div className="mb-3 p-3 bg-surface-muted border border-border/50 rounded-md">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-text">
                 Vos feuilles Google Sheets ({filteredSheets.length})
@@ -363,7 +363,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                   value={sheetSearch}
                   onChange={(e) => setSheetSearch(e.target.value)}
                   placeholder="Rechercher une feuille..."
-                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
+                  className="flex-1 px-2 py-1 bg-surface border border-border/50 rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-cyan/50"
                 />
               </div>
             )}
@@ -377,7 +377,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 filteredSheets.map((sheet) => (
                   <div
                     key={sheet.id}
-                    className="flex items-center justify-between p-2 hover:bg-surface rounded border border-border/30 cursor-pointer group"
+                    className="flex items-center justify-between p-2 hover:bg-surface rounded-sm border border-border/30 cursor-pointer group"
                     onClick={() => handleSelectExistingSheet(sheet)}
                   >
                     <div className="flex-1 min-w-0">
@@ -416,7 +416,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
             placeholder="ID du spreadsheet (ex: 1gXhiy43...)"
-            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
+            className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50"
           />
           <Button
             variant="ghost"
@@ -433,7 +433,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       </div>
 
       {/* Auth status */}
-      <div className="p-3 bg-background/40 rounded-lg border border-border/30 space-y-2">
+      <div className="p-3 bg-background/40 rounded-md border border-border/30 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-sm text-text">Authentification</span>
           {hasAuthMethod ? (
@@ -488,7 +488,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
       {/* F-13 : formulaire re-saisie credentials Google OAuth */}
       {showCredentialsForm && (
-        <div className="p-3 bg-background/40 rounded-lg border border-border/30 space-y-3">
+        <div className="p-3 bg-background/40 rounded-md border border-border/30 space-y-3">
           <div className="flex items-start justify-between">
             <div>
               <h4 className="text-sm font-medium text-text">Credentials Google OAuth</h4>
@@ -533,7 +533,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientIdInput}
                 onChange={(e) => setClientIdInput(e.target.value)}
                 placeholder="...apps.googleusercontent.com"
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
               />
             </div>
             <div>
@@ -543,7 +543,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                 value={clientSecretInput}
                 onChange={(e) => setClientSecretInput(e.target.value)}
                 placeholder="GOCSPX-..."
-                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
+                className="w-full mt-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-cyan/50 font-mono"
               />
             </div>
           </div>
@@ -570,7 +570,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
       {/* Last sync info */}
       {config?.last_sync && (
-        <div className="p-3 bg-background/40 rounded-lg border border-border/30">
+        <div className="p-3 bg-background/40 rounded-md border border-border/30">
           <p className="text-xs text-text-muted">
             Dernière synchronisation : {new Date(config.last_sync).toLocaleString('fr-FR')}
           </p>
@@ -580,19 +580,19 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       {/* Sync stats */}
       {lastSyncStats && lastSyncStats.total_synced > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2 bg-background/40 rounded-lg border border-border/30 text-center">
+          <div className="p-2 bg-background/40 rounded-md border border-border/30 text-center">
             <p className="text-lg font-bold text-text">
               {lastSyncStats.contacts_created + lastSyncStats.contacts_updated}
             </p>
             <p className="text-xs text-text-muted">Contacts</p>
           </div>
-          <div className="p-2 bg-background/40 rounded-lg border border-border/30 text-center">
+          <div className="p-2 bg-background/40 rounded-md border border-border/30 text-center">
             <p className="text-lg font-bold text-text">
               {lastSyncStats.projects_created + lastSyncStats.projects_updated}
             </p>
             <p className="text-xs text-text-muted">Projets</p>
           </div>
-          <div className="p-2 bg-background/40 rounded-lg border border-border/30 text-center">
+          <div className="p-2 bg-background/40 rounded-md border border-border/30 text-center">
             <p className="text-lg font-bold text-text">
               {lastSyncStats.deliverables_created + lastSyncStats.deliverables_updated}
             </p>
